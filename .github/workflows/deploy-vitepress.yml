@@ -23,6 +23,9 @@ jobs:
       - name: Change working directory to root
         run: cd "$GITHUB_WORKSPACE"
 
+      - name: Print current working directory
+        run: pwd
+
       - name: Install dependencies
         run: yarn install
 
