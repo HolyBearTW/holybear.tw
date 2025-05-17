@@ -20,6 +20,9 @@ jobs:
           cache: 'yarn'
           cache-dependency-path: 'yarn.lock'
 
+      - name: Change working directory to root
+        run: cd "$GITHUB_WORKSPACE"
+
       - name: Install dependencies
         run: yarn install
 
@@ -34,9 +37,6 @@ jobs:
             git commit -m "自動建立 yarn.lock 文件"
             git push origin main
           fi
-
-      - name: Change working directory to root
-        run: cd "$GITHUB_WORKSPACE"
 
       - name: Build VitePress site
         run: yarn build
