@@ -1,6 +1,7 @@
 ---
 # https://vitepress.dev/reference/default-theme-home-page
 layout: home
+title: HolyBear's Secret Base
 
 hero:
   name: "HolyBear's Secret Base"
