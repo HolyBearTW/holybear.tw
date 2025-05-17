@@ -21,6 +21,9 @@ jobs:
       - name: Install dependencies
         run: yarn install # 假設您使用 yarn
 
+      - name: Change working directory to root
+        run: cd "$GITHUB_WORKSPACE"
+
       - name: Build VitePress site
         run: yarn build
 
@@ -29,5 +32,5 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: main # 部署到 main 分支
-          folder: .vitepress/dist # VitePress 的輸出目錄
+          folder: .vitepress/dist # VitePress 的輸出目錄，請根據您的實際設定調整
           clean-exclude: .nojekyll # 排除 .nojekyll 檔案，如果需要
