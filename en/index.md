@@ -5,7 +5,7 @@ title: HolyBear's Secret Base
 
 hero:
   name: "HolyBear's Secret Base"
-  text: "This is Saint Bear's personal website"
+  text: "This is HolyBear's personal website"
   tagline: "Also a personal collection of HyperOS Mod's works"
   image:
     src: /logo.png
