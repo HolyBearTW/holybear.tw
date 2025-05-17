@@ -48,6 +48,7 @@ pnpm run dev
 
 如果您想將網站內容翻譯為其他語言，您需要在本專案根目錄中新增您語言的資料夾（如 [en](/en)），同時需要在 [.vitepress/locales](/.vitepress/locales) 中新增您語言的設定檔。
 
-##感謝
+## 感謝
 
 感謝 [VitePress](https://vitepress.dev) 以及 [VuePress](https://v2.vuepress.vuejs.org)（曾使用）架構。
+感謝 [HyperCeiler](https://github.com/ReChronoRain/website) 提供網頁範本
