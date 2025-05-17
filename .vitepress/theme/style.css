@@ -73,19 +73,19 @@
 :root .image-src {
   width: auto;
   min-height: 238px;
-  object-fit: cover;
-  border-radius: 30px; /* 調整這裡的數值來控制圓角大小，數值越大，圓角越大 */
-  clip-path: inset(0px round 30px); /* 這個確保內部的圓角也正確顯示 */
-  aspect-ratio: 1/1; /* 強制維持 1:1 的正方形比例 */
+  border-radius: 30px;
+  clip-path: inset(0px round 30px);
+  aspect-ratio: 1/1;
+  object-fit: contain;
 }
 
 @media (min-width: 640px) {
   :root .image-src {
     max-width: 238px;
     min-height: auto;
-    object-fit: cover;
-    border-radius: 30px; /* 同樣調整這裡的數值 */
+    border-radius: 30px;
     clip-path: inset(0px round 30px);
+    object-fit: contain;
   }
 }
 
