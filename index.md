@@ -15,7 +15,7 @@ hero:
       link: https://t.me/HolyBearTW
     - theme: alt
       text: GitHub
-      link: https://github.com/HolyBearTW/holybear.me
+      link: https://github.com/HolyBearTW
 
 features:
   - title: 集中
