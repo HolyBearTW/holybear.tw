@@ -37,4 +37,5 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: main # 部署到 main 分支
           folder: .vitepress/dist # VitePress 的輸出目錄，請根據您的實際設定調整
+          clean: false # 關閉預設的檔案清理功能
           clean-exclude: .nojekyll # 排除 .nojekyll 檔案，如果需要
