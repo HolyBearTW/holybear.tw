@@ -42,7 +42,7 @@ jobs:
           fi
 
       - name: Build VitePress site
-        run: yarn build
+        run: yarn --cwd . build
         working-directory: ${{ github.workspace }}
 
       - name: Deploy to GitHub Pages
