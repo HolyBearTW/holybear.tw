@@ -13,7 +13,7 @@ https://holybear.me
 ### 1.克隆原始碼
 
 ```bash
-git clone https://github.com/ReChronoRain/website.git
+git clone https://github.com/HolyBearTW/holybear.me.git
 ```
 
 ### 2. 安裝依賴
