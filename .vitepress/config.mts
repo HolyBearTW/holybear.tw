@@ -15,7 +15,7 @@ export default defineConfig( {
     themeConfig: {
         footer: {
             message: 'AGPL-3.0 Licensed',
-            copyright: 'Copyright © 2023-2025 聖小熊 & HolyBear'
+            copyright: 'Copyright © 2025 聖小熊 & HolyBear'
         },
         socialLinks: [
             { icon: 'github', link: 'https://github.com/HolyBearTW' }
