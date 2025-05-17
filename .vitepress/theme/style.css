@@ -73,19 +73,18 @@
 :root .image-src {
   width: auto;
   min-height: 238px;
-  border-radius: 30px;
-  clip-path: inset(0px round 30px);
-  aspect-ratio: 1/1;
-  object-fit: contain;
+  object-fit: contain; /* 保留 contain */
+  border-radius: 30px; /* 直接應用圓角 */
+  /* clip-path: inset(0px round 30px); /* 先把 clip-path 註解掉 */
 }
 
 @media (min-width: 640px) {
   :root .image-src {
     max-width: 238px;
     min-height: auto;
-    border-radius: 30px;
-    clip-path: inset(0px round 30px);
-    object-fit: contain;
+    object-fit: contain; /* 保留 contain */
+    border-radius: 30px; /* 直接應用圓角 */
+    /* clip-path: inset(0px round 30px); /* 先把 clip-path 註解掉 */
   }
 }
 
