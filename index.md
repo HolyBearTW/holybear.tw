@@ -8,17 +8,14 @@ hero:
   tagline: "同時也是 HyperOS Mod 的個人作品集"
   image:
     src: /logo.png
-    alt: HolyBear
+    alt: HolyBearTW
   actions:
     - theme: brand
-      text: 下載
-      link: /Download.html
+      text: Telegram
+      link: https://t.me/HolyBearTW
     - theme: alt
       text: GitHub
-      link: https://github.com/holybear.me
-    - theme: alt
-      text: 感謝列表
-      link: /Thank.html
+      link: https://github.com/HolyBearTW/holybear.me
 
 features:
   - title: 集中
