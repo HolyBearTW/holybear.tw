@@ -3,8 +3,8 @@ name: Deploy VitePress Site to GitHub Pages
 on:
   push:
     branches:
-      - main # 請根據您的專案調整：如果您的主要分支是 master，請將 main 改為 master
-        workflow_dispatch: # 添加這一行以啟用手動觸發
+      - main # 您的主要分支名稱
+  workflow_dispatch:
 
 jobs:
   build-and-deploy:
@@ -19,15 +19,15 @@ jobs:
           node-version: 'lts/*'
 
       - name: Install dependencies
-        run: npm install # 請根據您的專案調整：如果您使用 yarn，請改為 yarn install
+        run: yarn install # 假設您使用 yarn
 
       - name: Build VitePress site
-        run: |
-          npm run build
+        run: yarn build
 
       - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
+        uses: JamesIves/github-pages-deploy-action@v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: .vitepress/dist # 請根據您的專案調整：VitePress 預設的輸出目錄是 .vitepress/dist。如果您的設定不同，請修改此路徑。
-          force_orphan: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: main # 部署到 main 分支
+          folder: .vitepress/dist # VitePress 的輸出目錄
+          clean-exclude: .nojekyll # 排除 .nojekyll 檔案，如果需要
