@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main # 請根據您的專案調整：如果您的主要分支是 master，請將 main 改為 master
+        workflow_dispatch: # 添加這一行以啟用手動觸發
 
 jobs:
   build-and-deploy:
