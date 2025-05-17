@@ -80,11 +80,11 @@
 
 @media (min-width: 640px) {
   :root .image-src {
-    max-width: 255px;
+    max-width: 238px;
     min-height: auto;
     object-fit: cover;
     border-radius: 30px; /* 同樣調整這裡的數值 */
-    clip-path: inset(0px round 10px);
+    clip-path: inset(0px round 30px);
   }
 }
 
