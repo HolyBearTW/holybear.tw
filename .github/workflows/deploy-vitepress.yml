@@ -23,26 +23,12 @@ jobs:
       - name: Change working directory to root
         run: cd "$GITHUB_WORKSPACE"
 
-      - name: Print current working directory
-        run: pwd
-
       - name: Install dependencies
         run: yarn install
-
-      - name: Check for yarn.lock and commit if missing
-        run: |
-          if [ ! -f yarn.lock ]; then
-            echo "yarn.lock 文件不存在，正在嘗試建立..."
-            yarn install --lock-file
-            git config --local user.email "actions@github.com"
-            git config --local user.name "GitHub Actions"
-            git add yarn.lock
-            git commit -m "自動建立 yarn.lock 文件"
-            git push origin main
-          fi
+        working-directory: ${{ github.workspace }} # 明確設定工作目錄
 
       - name: Build VitePress site
-        run: yarn --cwd . build
+        run: yarn build
         working-directory: ${{ github.workspace }}
 
       - name: Deploy to GitHub Pages
