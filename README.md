@@ -50,5 +50,5 @@ pnpm run dev
 
 ## 感謝
 
-感謝 [VitePress](https://vitepress.dev) 以及 [VuePress](https://v2.vuepress.vuejs.org)（曾使用）架構。
-感謝 [HyperCeiler](https://github.com/ReChronoRain/website) 提供網頁範本
+- 感謝 [VitePress](https://vitepress.dev) 以及 [VuePress](https://v2.vuepress.vuejs.org)（曾使用）架構。
+- 感謝 [HyperCeiler](https://github.com/ReChronoRain/website) 提供網頁範本
