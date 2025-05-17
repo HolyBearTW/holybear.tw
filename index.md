@@ -3,28 +3,28 @@
 layout: home
 
 hero:
-  name: "HyperCeiler"
-  text: "让 HyperOS 再次伟大！"
-  tagline: "HyperOS 系统增强模块"
+  name: "聖小熊的秘密基地"
+  text: "這裡是聖小熊的個人網站"
+  tagline: "同時也是 HyperOS Mod 的個人作品集"
   image:
-    src: /logo.svg
-    alt: HyperCeiler
+    src: /logo.png
+    alt: HolyBear
   actions:
     - theme: brand
-      text: 下载
+      text: 下載
       link: /Download.html
     - theme: alt
       text: GitHub
-      link: https://github.com/ReChronoRain/HyperCeiler
+      link: https://github.com/holybear.me
     - theme: alt
-      text: 感谢列表
+      text: 感謝列表
       link: /Thank.html
 
 features:
   - title: 集中
-    details: 本模块包含了众多优秀模块的功能
-  - title: 开源
-    details: 所有代码都在 GitHub 上开源
-  - title: 免费
-    details: 不需要一分钱即可以个人用途使用
+    details: 本網站包含了眾多優秀的模組
+  - title: 開源
+    details: 所有程式碼都在 GitHub 上開源
+  - title: 免費
+    details: 不需要一分錢即可於個人用途使用
 ---
