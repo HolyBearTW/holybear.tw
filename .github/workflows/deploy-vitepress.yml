@@ -28,7 +28,7 @@ jobs:
         working-directory: ${{ github.workspace }} # 明確設定工作目錄
 
       - name: Build VitePress site
-        run: yarn build
+        run: yarn run build
         working-directory: ${{ github.workspace }}
 
       - name: Deploy to GitHub Pages
