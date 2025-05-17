@@ -2,7 +2,7 @@ import { defineConfig } from 'vitepress'
 
 export default defineConfig({
     lang: 'en-US',
-    description: 'This is Saint Bear's personal website',
+    description: 'This is HolyBear personal website',
 
     themeConfig: {
         nav: nav(),
