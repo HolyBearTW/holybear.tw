@@ -8,7 +8,7 @@ export default defineConfig( {
   locales: locales.locales,
   srcExclude: ['README.md'],
     head: [
-        ['meta', { name: 'theme-color', content: '#ea668d' }],
+        ['meta', { name: 'theme-color', content: '#00FFEE' }],
         ['link', { rel: 'stylesheet', href: 'https://font.sec.miui.com/font/css?family=MiSans:200,300,400,450,500,600,650,700:Chinese_Simplify,Latin&display=swap' }],
         ['link', { rel: 'stylesheet', href: 'https://font.sec.miui.com/font/css?family=MiSans:200,300,400,450,500,600,650,700:Chinese_Traditional,Latin&display=swap' }]
       ],
