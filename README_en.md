@@ -46,7 +46,7 @@ pnpm run dev
 
 Issues and Pull requests are welcome\!
 
-If you want to translate the website content into another language, you need to add a folder for your language in the project root directory (e.g., [en](https://www.google.com/search?q=/en)), and also add a configuration file for your language in [.vitepress/locales](https://www.google.com/search?q=/.vitepress/locales).
+If you want to translate the website content into another language, you need to add a folder for your language in the project root directory (e.g., [en](/en)), and also add a configuration file for your language in [.vitepress/locales](/.vitepress/locales).
 
 ## Acknowledgements
 
