@@ -8,7 +8,7 @@ https://holybear.me
 
 ## 開發
 
-本站基於[VitePress](https://vitepress.dev)建立，網站內容皆使用Markdown格式書寫。
+- 本站基於[VitePress](https://vitepress.dev)建立，網站內容皆使用Markdown格式書寫。
 
 ### 1.克隆原始碼
 
@@ -44,11 +44,10 @@ pnpm run dev
 
 ## 貢獻
 
-歡迎提出 Issue 和 Pull requests！
-
-如果您想將網站內容翻譯為其他語言，您需要在本專案根目錄中新增您語言的資料夾（如 [en](/en)），同時需要在 [.vitepress/locales](/.vitepress/locales) 中新增您語言的設定檔。
+- 歡迎提出 Issue 和 Pull requests！
+- 如果您想將網站內容翻譯為其他語言，您需要在本專案根目錄中新增您語言的資料夾（如 [en](/en)），同時需要在 [.vitepress/locales](/.vitepress/locales) 中新增您語言的設定檔。
 
 ## 感謝
 
 - 感謝 [VitePress](https://vitepress.dev) 以及 [VuePress](https://v2.vuepress.vuejs.org)（曾使用）架構。
-- 感謝 [HyperCeiler](https://github.com/ReChronoRain/website) 提供網頁範本
+- 感謝 [HyperCeiler](https://github.com/ReChronoRain/website) 提供網頁範本。
