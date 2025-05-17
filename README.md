@@ -50,6 +50,4 @@ pnpm run dev
 
 ##感謝
 
-貢獻者清單請參閱[貢獻者](https://github.com/ReChronoRain/website/graphs/contributors)。
-
 感謝 [VitePress](https://vitepress.dev) 以及 [VuePress](https://v2.vuepress.vuejs.org)（曾使用）架構。
