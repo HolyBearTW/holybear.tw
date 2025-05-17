@@ -23,13 +23,13 @@
 
 :root {
   --vp-button-brand-border: var(--vp-c-brand-light);
-  --vp-button-brand-text: var(--vp-c-white);
+  --vp-button-brand-text: black;
   --vp-button-brand-bg: var(--vp-c-brand);
   --vp-button-brand-hover-border: var(--vp-c-brand-light);
-  --vp-button-brand-hover-text: var(--vp-c-white);
+  --vp-button-brand-hover-text: black;
   --vp-button-brand-hover-bg: var(--vp-c-brand-light);
   --vp-button-brand-active-border: var(--vp-c-brand-light);
-  --vp-button-brand-active-text: var(--vp-c-white);
+  --vp-button-brand-active-text: black;
   --vp-button-brand-active-bg: var(--vp-button-brand-bg);
 }
 
@@ -71,19 +71,19 @@
 }
 
 :root .image-src {
-  width: 100%;
-  min-height: 300px;
+  width: auto;
+  min-height: 238px;
   object-fit: cover;
-  border-radius: 10px; /* 調整這裡的數值來控制圓角大小，數值越大，圓角越大 */
-  clip-path: inset(0px round 10px); /* 這個確保內部的圓角也正確顯示 */
+  border-radius: 30px; /* 調整這裡的數值來控制圓角大小，數值越大，圓角越大 */
+  clip-path: inset(0px round 30px); /* 這個確保內部的圓角也正確顯示 */
 }
 
 @media (min-width: 640px) {
   :root .image-src {
-    max-width: 240px;
-    min-height: 380px;
+    max-width: 255px;
+    min-height: auto;
     object-fit: cover;
-    border-radius: 10px; /* 同樣調整這裡的數值 */
+    border-radius: 30px; /* 同樣調整這裡的數值 */
     clip-path: inset(0px round 10px);
   }
 }
