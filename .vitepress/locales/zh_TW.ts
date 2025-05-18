@@ -23,7 +23,7 @@ export default defineConfig({
 
 function nav() {
     return [
-        { text: 'Mod列表', link: '/Mod.html' },
+        { text: '作品集', link: '/Mod.html' },
         { text: 'Telegram', link: 'https://t.me/HolyBearTW' },
         { text: '贊助', link: 'https://paypal.me/holybear0610' },
     ]
