@@ -12,7 +12,7 @@ hero:
     alt: HolyBearTW
   actions:
     - theme: brand
-      text: Mod List
+      text: Portfolio
       link: /Mod.html
     - theme: alt
       text: Telegram
