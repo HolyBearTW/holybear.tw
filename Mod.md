@@ -28,8 +28,8 @@
 
 ## 協作者
 
-- [tims33](t.me/tims33) (玄哥)
-- [tavricccc](t.me/tavricccc) (酪梨)
+- [tims33](https://t.me/tims33) (玄哥)
+- [tavricccc](https://t.me/tavricccc) (酪梨)
 
 
 ## 注意事項
