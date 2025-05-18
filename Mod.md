@@ -10,6 +10,7 @@
 - HyperOS 系統桌面
 - HyperOS 手機管家
 - HyperOS 系統介面模組
+- HyperOS 搜尋
 - ASUS 錄音程式（通話錄音）*
 - WhosCall
 - HyperOS Monet 項目（Magisk 模組）*
