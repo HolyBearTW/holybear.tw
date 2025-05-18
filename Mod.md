@@ -1,14 +1,18 @@
 ## 模組列表
 
+::: tip
+標註 * 星號的項目表示有其他協作者共同製作，詳細可查看下方協作者名單。
+:::
+
 - Miui 相機
 - 小米相簿-編輯
 - 小米相簿
 - HyperOS 系統桌面
 - HyperOS 手機管家
 - HyperOS 系統介面模組
-- ASUS 錄音程式（通話錄音）
+- ASUS 錄音程式（通話錄音）*
 - WhosCall
-- HyperOS Monet 項目（Magisk 模組）
+- HyperOS Monet 項目（Magisk 模組）*
 - HyperOS 系統流暢度優化（Magisk 模組）
 - HyperOS 國際版體驗優化（Magisk 模組）
 - HyperOS FBO 自動執行
@@ -21,6 +25,12 @@
 - HyperOS 初音主題
 - HyperOS 門禁卡
 - HyperOS 開機動畫
+
+## 協作者
+
+- [tims33](t.me/tims33) (玄哥)
+- [tavricccc](t.me/tavricccc) (酪梨)
+
 
 ## 注意事項
 
