@@ -16,7 +16,7 @@
 - HyperOS Monet 項目（Magisk 模組）★
 - HyperOS 系統流暢度優化（Magisk 模組）
 - HyperOS 國際版體驗優化（Magisk 模組）
-- HyperOS FBO 自動執行
+- HyperOS FBO 自動執行（Magisk 模組）
 - InstallerX 繁體中文化
 - 仲恩字體
 - 初音字體
@@ -24,7 +24,7 @@
 - HyperOS 鋼鐵人主題
 - HyperOS 哈利波特主題
 - HyperOS 初音主題
-- HyperOS 門禁卡
+- HyperOS 門禁卡（Magisk 模組）
 - HyperOS 開機動畫
 
 ## 協作者
