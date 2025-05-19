@@ -16,7 +16,7 @@ Items marked with a ★ indicate collaboration with other contributors. Please r
 - HyperOS Monet Project (Magisk Module) ★
 - HyperOS System Performance Optimization (Magisk Module)
 - HyperOS Global Version Experience Optimization (Magisk Module)
-- HyperOS FBO Auto Execution
+- HyperOS FBO Auto Execution (Magisk Module)
 - InstallerX Traditional Chinese Localization
 - ZhongEn Font
 - Hatsune Font
@@ -24,7 +24,7 @@ Items marked with a ★ indicate collaboration with other contributors. Please r
 - HyperOS Iron Man Theme
 - HyperOS Harry Potter Theme
 - HyperOS Hatsune Theme
-- HyperOS NFC Access Card
+- HyperOS NFC Access Card (Magisk Module)
 - HyperOS Boot Animation
 
 ## Contributors
