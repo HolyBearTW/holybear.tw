@@ -41,3 +41,5 @@
 <ClientOnly>
   <FbComments />
 </ClientOnly>
+
+<ClientOnly><Test /></ClientOnly>
