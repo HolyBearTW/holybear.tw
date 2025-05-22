@@ -41,3 +41,7 @@
 
 註：頻道有附設交流群，僅為用戶玩機交流與回饋 Bug 而用，群組內提問並不能保證 100% 解決。
 :::
+
+<ClientOnly>
+  <FbComments />
+</ClientOnly>
