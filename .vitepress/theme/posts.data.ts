@@ -10,7 +10,7 @@ export interface Post {
   excerpt?: string // 文章摘要
 }
 
-const DEFAULT_IMAGE = '/default-blog-image.jpg' // 或者您希望的預設圖片路徑
+const DEFAULT_IMAGE = '/blog_no_image.svg' // 或者您希望的預設圖片路徑
 
 export default createContentLoader('blog/**/*.md', {
   excerpt: true, // 確保摘要提取功能開啟
