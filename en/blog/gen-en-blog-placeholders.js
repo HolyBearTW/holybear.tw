@@ -18,8 +18,7 @@ title: Blog Not Supported in English
 
 for (const file of files) {
   const enFile = path.join(enBlogDir, file);
-  if (!fs.existsSync(enFile)) {
-    fs.writeFileSync(enFile, content, 'utf8');
-    console.log('Created:', enFile);
-  }
+  // 直接覆寫，不管本來有沒有
+  fs.writeFileSync(enFile, content, 'utf8');
+  console.log('Generated/Overwritten:', enFile);
 }
