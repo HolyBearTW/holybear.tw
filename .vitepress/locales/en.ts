@@ -23,6 +23,7 @@ export default defineConfig({
 
 function nav() {
     return [
+        { text: 'Blog', link: '/blog' },
         { text: 'Portfolio', link: '/Mod.html' },
         { text: 'Telegram', link: 'https://t.me/HolyBearTW' },
         { text: 'Donate', link: 'https://paypal.me/holybear0610' },
