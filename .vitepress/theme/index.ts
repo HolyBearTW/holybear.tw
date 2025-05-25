@@ -1,12 +1,15 @@
-// https://vitepress.dev/guide/custom-theme
-import Theme from 'vitepress/theme-without-fonts' // 主題基於這個
+// docs/.vitepress/theme/index.ts
+import MyCustomLayout from './MyCustomLayout.vue'
 import './style.css' // 載入你的樣式
 
-// 引入我們剛剛建立的自訂佈局組件
-import MyCustomLayout from './MyCustomLayout.vue'
-
 export default {
-  extends: Theme, // 繼承預設主題的所有配置
-  // 將 Layout 指向我們新的 MyCustomLayout 組件
-  Layout: MyCustomLayout
+  // 直接匯出 Layout 元件，而不是使用 extends
+  // MyCustomLayout.vue 內部會處理如何使用 DefaultTheme.Layout
+  Layout: MyCustomLayout,
+
+  // 如果您有其他的 VitePress 主題相關的配置，可以在這裡添加
+  // 例如 enhanceApp (用於註冊全局組件或插件)
+  // enhanceApp({ app, router, siteData }) {
+  //   // app.component('MyGlobalComponent', MyGlobalComponent)
+  // }
 }
