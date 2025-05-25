@@ -49,7 +49,7 @@ const isEnBlogPage = computed(() =>
     </template>
 
     <template #doc-after>
-      <div v-if="!isHomePage">
+      <div v-if="!isHomePage && !isEnBlogPage">
         <VotePanel />
         <FbComments />
       </div>
