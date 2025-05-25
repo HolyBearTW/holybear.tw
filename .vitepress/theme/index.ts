@@ -3,7 +3,7 @@ import MyCustomLayout from './MyCustomLayout.vue'
 import './style.css'
 
 // 引入我們新的 MyVPDoc 組件
-import MyVPDoc from './components/MyVPDoc.vue'
+import MyVPDoc from '../components/MyVPDoc.vue'
 
 export default {
   Layout: MyCustomLayout,
