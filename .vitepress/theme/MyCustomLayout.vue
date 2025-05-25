@@ -11,7 +11,6 @@ const currentTitle = computed(() =>
   frontmatter.value ? (frontmatter.value.title || '無標題文章') : 'frontmatter.value is UNDEFINED'
 )
 
-// 解析 git_date 成 YYYY-MM-DD HH:mm 格式
 const currentDisplayDate = computed(() => {
   if (frontmatter.value?.git_date) {
     const date = new Date(frontmatter.value.git_date)
@@ -28,12 +27,20 @@ const currentDisplayDate = computed(() => {
 const isHomePage = computed(() =>
   page.value && (page.value.path === '/' || page.value.path === '/index.html')
 )
+
+const isEnBlogPage = computed(() =>
+  page.value && page.value.path.startsWith('/en/blog/')
+)
 </script>
 
 <template>
   <Theme.Layout>
     <template #doc-before>
-      <div v-if="currentTitle" class="blog-post-header-injected">
+      <p v-if="isEnBlogPage" class="en-blog-warning">
+        Sorry, the blog does not support English.<br>
+        <a href="javascript:history.back()">Click here to go back.</a>
+      </p>
+      <div v-else-if="currentTitle" class="blog-post-header-injected">
         <h1 class="blog-post-title">{{ currentTitle }}</h1>
         <p v-if="frontmatter.author || currentDisplayDate" class="blog-post-date-in-content">
           作者：{{ frontmatter.author }}<span v-if="frontmatter.author && currentDisplayDate">｜</span>{{ currentDisplayDate }}
@@ -54,7 +61,16 @@ const isHomePage = computed(() =>
 :deep(.vp-doc h1:first-of-type) {
   display: none !important;
 }
-
+.en-blog-warning {
+  background: #fffbcc;
+  color: #b07d00;
+  border: 1px solid #ffe58f;
+  padding: 1.5em;
+  margin: 2em 0;
+  text-align: center;
+  border-radius: 8px;
+  font-size: 1.2em;
+}
 .blog-post-header-injected {
   position: relative;
   width: 100%;
