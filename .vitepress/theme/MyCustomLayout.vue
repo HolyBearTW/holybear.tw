@@ -3,7 +3,7 @@ import Theme from 'vitepress/theme-without-fonts'
 import { useData } from 'vitepress'
 import { computed } from 'vue'
 import FbComments from '../components/FbComments.vue'
-import VotePanel from '../components/VotePanel.vue' // 新增這行
+import VotePanel from '../components/VotePanel.vue'
 
 const { frontmatter, page } = useData()
 
@@ -34,17 +34,16 @@ const isHomePage = computed(() =>
 <template>
   <Theme.Layout>
     <template #doc-before>
-      <div v-if="currentIsBlogPost" class="blog-post-header-injected">
+      <!-- 只要有 title 就顯示 injected header，部落格才顯示日期 -->
+      <div v-if="currentTitle" class="blog-post-header-injected">
         <h1 class="blog-post-title">{{ currentTitle }}</h1>
         <p v-if="currentDisplayDate" class="blog-post-date-in-content">發布日期：{{ currentDisplayDate }}</p>
       </div>
-      <div v-else>
-        </div>
     </template>
 
     <template #doc-after>
       <div v-if="!isHomePage">
-        <VotePanel /> <!-- 新增這行 -->
+        <VotePanel />
         <FbComments />
       </div>
     </template>
