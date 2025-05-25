@@ -1,7 +1,7 @@
 <script setup>
 import Theme from 'vitepress/theme-without-fonts'
-import { useData, ClientOnly } from 'vitepress'
-import { computed } from 'vue'
+import { useData } from 'vitepress'
+import { computed, ref, onMounted } from 'vue'
 import FbComments from '../components/FbComments.vue'
 import VotePanel from '../components/VotePanel.vue'
 
@@ -30,8 +30,13 @@ const isHomePage = computed(() =>
 
 const isEnBlogPage = computed(() => {
   const path = (page.value?.path || '').toLowerCase()
-  // 命中所有 /en/blog 開頭頁面
   return path.startsWith('/en/blog')
+})
+
+// 這個 flag 只在 client 端設為 true
+const isClient = ref(false)
+onMounted(() => {
+  isClient.value = true
 })
 </script>
 
@@ -51,12 +56,10 @@ const isEnBlogPage = computed(() => {
     </template>
 
     <template #doc-after>
-      <ClientOnly>
-        <div v-if="!isHomePage && !isEnBlogPage">
-          <VotePanel />
-          <FbComments />
-        </div>
-      </ClientOnly>
+      <div v-if="isClient && !isHomePage && !isEnBlogPage">
+        <VotePanel />
+        <FbComments />
+      </div>
     </template>
   </Theme.Layout>
 </template>
