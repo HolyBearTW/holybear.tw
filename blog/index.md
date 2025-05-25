@@ -1,6 +1,6 @@
 ---
-layout: home # 讓這個頁面看起來像個首頁，或者您可以選擇其他佈局
-title: 我的部落格文章 # 這個頁面的標題
+layout: home
+title: 個人日誌
 ---
 
 <script setup>
