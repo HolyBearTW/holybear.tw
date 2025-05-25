@@ -1,24 +1,25 @@
 <script setup>
-import Theme from 'vitepress/theme-without-fonts' // 引入您在 index.ts 中使用的基礎主題
+import Theme from 'vitepress/theme-without-fonts'
 import { useData } from 'vitepress'
 import { computed, h } from 'vue'
 import FbComments from '../components/FbComments.vue' // 引入您的 FbComments 元件
 
 const { frontmatter, page } = useData() // 獲取文章 Front Matter 和頁面資訊
 
-// 判斷是否為首頁 (用於 FbComments 的顯示邏輯)
-const isHomePage = computed(() => page.value.path === '/' || page.value.path === '/index.html')
+// 判斷是否為首頁
+const isHomePage = computed(() => page.value && (page.value.path === '/' || page.value.path === '/index.html'))
 
-// 判斷當前頁面是否為部落格文章 (用於日期顯示)
+// 判斷當前頁面是否為部落格文章
 const isBlogPost = computed(() => {
-  const isBlog = page.value.relativePath.startsWith('blog/') && !page.value.relativePath.endsWith('blog/index.md');
+  // 增加對 page.value 是否存在的檢查
+  const isBlog = page.value && page.value.relativePath.startsWith('blog/') && !page.value.relativePath.endsWith('blog/index.md');
 
   // --- 偵錯訊息 (這些訊息將會被渲染到 HTML 頁面中) ---
   console.log('--- Debugging MyCustomLayout.vue (Page Data) ---');
-  console.log('page.value.relativePath:', page.value.relativePath);
+  console.log('page.value.relativePath:', page.value ? page.value.relativePath : 'page.value is UNDEFINED'); // 更安全的顯示
   console.log('isBlogPost calculated:', isBlog);
-  console.log('frontmatter.value.title:', frontmatter.value.title);
-  console.log('frontmatter.value.date:', frontmatter.value.date);
+  console.log('frontmatter.value.title:', frontmatter.value ? frontmatter.value.title : 'frontmatter.value is UNDEFINED'); // 更安全的顯示
+  console.log('frontmatter.value.date:', frontmatter.value ? frontmatter.value.date : 'frontmatter.value is UNDEFINED'); // 更安全的顯示
   console.log('------------------------------------');
   // --------------------------------------------------
 
@@ -27,34 +28,63 @@ const isBlogPost = computed(() => {
 
 // 格式化發布日期
 const displayDate = computed(() => {
-  if (isBlogPost.value && frontmatter.value.date) {
+  // 增加對 frontmatter.value.date 是否存在的檢查
+  if (isBlogPost.value && frontmatter.value && frontmatter.value.date) {
     const date = new Date(frontmatter.value.date)
     return date.toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric' })
   }
   return null
 })
+
+// 這是實際渲染佈局的函數
+const renderLayout = () => {
+  return h(Theme.Layout, null, {
+    // 覆寫預設的 content slot，來控制文章內容的渲染
+    default: () => {
+      // 確保在渲染之前，page.value 和 frontmatter.value 都是存在的
+      if (page.value && frontmatter.value && isBlogPost.value) {
+        return h('div', { class: 'blog-post-content-wrapper' }, [
+          // 渲染偵錯訊息
+          h('p', null, `Debug: relativePath = ${page.value.relativePath}`),
+          h('p', null, `Debug: isBlogPost = ${isBlogPost.value}`),
+          h('p', null, `Debug: frontmatter.title = ${frontmatter.value.title}`),
+          h('p', null, `Debug: frontmatter.date = ${frontmatter.value.date}`),
+          h('hr'), // 分隔線
+
+          // 顯示文章標題
+          h('h1', { class: 'blog-post-title' }, frontmatter.value.title || '無標題文章'),
+          // 顯示發布日期
+          displayDate.value
+            ? h('p', { class: 'blog-post-date-in-content' }, `發布日期：${displayDate.value}`)
+            : null,
+          // 渲染文章其餘的 Markdown 內容
+          h(Theme.Content)
+        ])
+      }
+      // 對於非部落格文章（或 page.value/frontmatter.value 不存在的情況），也輸出基本偵錯訊息，然後渲染原始內容
+      return h('div', null, [
+        // 渲染偵錯訊息
+        h('p', null, `Debug: relativePath = ${page.value ? page.value.relativePath : 'N/A'}`),
+        h('p', null, `Debug: isBlogPost = ${isBlogPost.value}`),
+        h('p', null, `Debug: frontmatter.title = ${frontmatter.value ? frontmatter.value.title : 'N/A'}`),
+        h('p', null, `Debug: frontmatter.date = ${frontmatter.value ? frontmatter.value.date : 'N/A'}`),
+        h('hr'), // 分隔線
+        h(Theme.Content) // 渲染原始內容
+      ]);
+    },
+    // 注入 FbComments 到 #doc-after slot (保持您原有的邏輯)
+    'doc-after': () => {
+      if (isHomePage.value) { // 這裡也要確保 isHomePage 是對的
+        return null;
+      }
+      return h(FbComments);
+    }
+  })
+}
 </script>
 
 <template>
-  <Theme.Layout>
-    <template #doc-before>
-      <div v-if="isBlogPost">
-        <p>Debug: relativePath = {{ page.value.relativePath }}</p>
-        <p>Debug: isBlogPost = {{ isBlogPost }}</p>
-        <p>Debug: frontmatter.title = {{ frontmatter.value.title }}</p>
-        <p>Debug: frontmatter.date = {{ frontmatter.value.date }}</p>
-        <hr> <h1 class="blog-post-title">{{ frontmatter.value.title || '無標題文章' }}</h1>
-        <p v-if="displayDate" class="blog-post-date-in-content">發布日期：{{ displayDate }}</p>
-      </div>
-    </template>
-
-    <template #doc-after>
-      <div v-if="!isHomePage">
-        <FbComments />
-      </div>
-    </template>
-
-    </Theme.Layout>
+  <renderLayout />
 </template>
 
 <style scoped>
@@ -66,11 +96,6 @@ const displayDate = computed(() => {
 :deep(.vp-doc h1:first-of-type) {
   display: none;
 }
-
-/* 部落格文章內容的整體容器 (這個樣式現在會影響整個 .VPDocContent 區塊) */
-/* 由於我們將標題和日期放在 #doc-before，這個樣式可能需要根據實際顯示微調 */
-/* .blog-post-content-wrapper 類別現在不再使用於外層 div，因為我們使用插槽 */
-
 
 /* 自訂的文章標題樣式 */
 .blog-post-title {
@@ -95,10 +120,12 @@ const displayDate = computed(() => {
 /* 其他 Markdown 內容的樣式調整，確保它們有適當的間距 */
 :deep(.vp-doc p),
 :deep(.vp-doc ul),
-:deep(.vp-doc .custom-block), /* 例如 :::tip */
-:deep(.vp-doc h2),
-:deep(.vp-doc h3),
-:deep(.vp-doc img) {
+:deep(.vp-doc ol),
+:deep(.vp-doc img),
+:deep(.vp-doc table),
+:deep(.vp-doc blockquote),
+:deep(.vp-doc pre),
+:deep(.vp-doc .custom-block) { /* 增加更多常見的 Markdown 元素 */
   margin-top: 1rem;
   margin-bottom: 1rem;
 }
@@ -107,10 +134,4 @@ const displayDate = computed(() => {
   margin-top: 1.5rem;
   margin-bottom: 1.5rem;
 }
-
-/* 之前部落格列表的樣式，如果還沒移除請移除 */
-/* .blog-post-content-wrapper { ... } */
-/* .blog-articles-grid { ... } */
-/* .post-item { ... } */
-/* ... 許多其他的部落格列表樣式應該只在 blog/index.md 中定義 ... */
 </style>
