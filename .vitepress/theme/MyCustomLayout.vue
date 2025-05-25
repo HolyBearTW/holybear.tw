@@ -1,6 +1,6 @@
 <script setup>
 import Theme from 'vitepress/theme-without-fonts'
-import { useData } from 'vitepress'
+import { useData, ClientOnly } from 'vitepress'
 import { computed } from 'vue'
 import FbComments from '../components/FbComments.vue'
 import VotePanel from '../components/VotePanel.vue'
@@ -30,9 +30,7 @@ const isHomePage = computed(() =>
 
 const isEnBlogPage = computed(() => {
   const path = (page.value?.path || '').toLowerCase()
-  // 如果 path 為空，先視為不是 EnBlog 頁面（避免 SSR hydration mismatch）
-  if (!path) return false
-  // 命中 /en/blog/xxx, /en/blog/xxx.html, /en/blog/xxx/
+  // 命中所有 /en/blog 開頭頁面
   return path.startsWith('/en/blog')
 })
 </script>
@@ -53,11 +51,12 @@ const isEnBlogPage = computed(() => {
     </template>
 
     <template #doc-after>
-      <!-- 只有 page.value.path 不為空、且不是 EnBlog 頁面才渲染留言區 -->
-      <div v-if="!isHomePage && page.value?.path && !isEnBlogPage">
-        <VotePanel />
-        <FbComments />
-      </div>
+      <ClientOnly>
+        <div v-if="!isHomePage && !isEnBlogPage">
+          <VotePanel />
+          <FbComments />
+        </div>
+      </ClientOnly>
     </template>
   </Theme.Layout>
 </template>
