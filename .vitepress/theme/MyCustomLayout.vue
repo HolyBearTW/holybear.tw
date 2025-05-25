@@ -30,11 +30,9 @@ const isHomePage = computed(() =>
 
 const isEnBlogPage = computed(() => {
   const path = (page.value?.path || '').toLowerCase()
-  // Debug print
   console.log('page.value.path:', path)
-  return path.startsWith('/en/blog/')
-      || path.startsWith('/en/blog')
-      || path.includes('/en/blog/')
+  return /^\/en\/blog(\/|$)/.test(path)
+    || /^\/en\/blog\/.+/.test(path)
 })
 </script>
 
