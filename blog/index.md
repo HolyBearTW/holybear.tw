@@ -15,7 +15,7 @@ const { site } = useData()
 <div class="blog-list">
   <div v-for="post in posts" :key="post.url" class="post-item">
     <h2>
-      <a :href="site.base + post.url">
+      <a :href="post.url">
         {{ post.title }}
       </a>
     </h2>
