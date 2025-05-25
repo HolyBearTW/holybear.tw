@@ -10,6 +10,6 @@ import { useData } from 'vitepress'
 import { computed } from 'vue'
 
 const { page } = useData()
-const articleId = computed(() => page.value.relativePath)
+const articleId = computed(() => page.value.relativePath.replaceAll('/', '__'))
 const { up, down, vote, loading } = useVote(articleId.value)
 </script>
