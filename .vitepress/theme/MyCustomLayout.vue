@@ -30,7 +30,14 @@ const isHomePage = computed(() =>
 
 const isEnBlogPage = computed(() => {
   const path = (page.value?.path || '').toLowerCase()
-  return path.startsWith('/en/blog')
+  console.log('page.value.path:', path)
+  // 命中 /en/blog, /en/blog/, /en/blog/xxx, /en/blog/xxx.html, /en/blog/xxx/
+  return path === '/en/blog'
+      || path === '/en/blog/'
+      || path.startsWith('/en/blog/')
+      || path.startsWith('/en/blog-')
+      || path.startsWith('/en/blog_')
+      || /^\/en\/blog[^/]*$/.test(path)
 })
 
 // 這個 flag 只在 client 端設為 true
