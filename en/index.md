@@ -12,8 +12,11 @@ hero:
     alt: HolyBearTW
   actions:
     - theme: brand
+      text: Blog
+      link: /blog
+    - theme: alt
       text: Portfolio
-      link: /Mod.html
+      link: /Mod
     - theme: alt
       text: Telegram
       link: https://t.me/HolyBearTW
