@@ -32,9 +32,7 @@ Items marked with a ★ indicate collaboration with other contributors. Please r
 - [tims33](https://t.me/tims33) (Xuan)
 - [tavricccc](https://t.me/tavricccc) (Avocado)
 
-## Notes
-
-::: tip
+::: danger tip
 This section only lists all available works.
 All modules can be found on the Telegram channel.
 
