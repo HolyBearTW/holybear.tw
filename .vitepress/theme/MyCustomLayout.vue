@@ -1,18 +1,19 @@
 <script setup>
 import Theme from 'vitepress/theme-without-fonts'
 import { useData } from 'vitepress'
-import { computed, h } from 'vue' // 引入 Vue 的 h 函數
-import FbComments from '../components/FbComments.vue' // 引入您的 FbComments 元件
+import { computed, h } from 'vue'
+import FbComments from '../components/FbComments.vue'
 
-const { frontmatter, page } = useData() // 獲取文章 Front Matter 和頁面資訊
+const { frontmatter, page } = useData()
 
 // 判斷是否為首頁 (用於 FbComments 的顯示邏輯)
 const isHomePage = computed(() => page.value.path === '/' || page.value.path === '/index.html')
 
-// 判斷當前頁面是否為部落格文章 (用於日期顯示)
-// 條件：頁面路徑在 'blog/' 開頭，且不是 'blog/index.md' 這個列表頁
+// 判斷當前頁面是否為部落格文章
 const isBlogPost = computed(() => {
-  return page.value.relativePath.startsWith('blog/') && !page.value.relativePath.endsWith('blog/index.md')
+  // 檢查頁面路徑是否以 'blog/' 開頭，且不是 'blog/index.md' 這個列表頁
+  const isBlog = page.value.relativePath.startsWith('blog/') && !page.value.relativePath.endsWith('blog/index.md');
+  return isBlog;
 })
 
 // 格式化發布日期
@@ -24,23 +25,25 @@ const displayDate = computed(() => {
   return null
 })
 
-// 這是實際渲染佈局的函數，它會返回一個 Vue 虛擬節點 (VNode)
+// 這是實際渲染佈局的函數
 const renderLayout = () => {
   return h(Theme.Layout, null, {
-    // 這裡我們覆寫了預設的 content slot
-    // 讓它先顯示標題和日期，然後才是文章內容
+    // 覆寫預設的 content slot，來控制文章內容的渲染
     default: () => {
+      // 如果是部落格文章
       if (isBlogPost.value) {
         return h('div', { class: 'blog-post-content-wrapper' }, [
-          // 顯示文章標題 (從 Front Matter 獲取)
-          h('h1', { class: 'blog-post-title' }, frontmatter.value.title),
-          // 顯示發布日期 (在標題下方，字體會小一點)
-          h('p', { class: 'blog-post-date-in-content' }, `發布日期：${displayDate.value}`),
-          // 渲染 Markdown 內容 (這是 VitePress 處理過的 Markdown 內容，現在不包含 H1)
+          // 顯示文章標題 (從 Front Matter 獲取，若無則顯示 '無標題文章')
+          h('h1', { class: 'blog-post-title' }, frontmatter.value.title || '無標題文章'),
+          // 顯示發布日期 (若有日期則顯示，否則不顯示該段落)
+          displayDate.value
+            ? h('p', { class: 'blog-post-date-in-content' }, `發布日期：${displayDate.value}`)
+            : null, // 如果沒有日期就不渲染這個 <p> 標籤
+          // 渲染文章其餘的 Markdown 內容
           h(Theme.Content)
         ])
       }
-      // 對於非部落格文章，保持預設內容渲染
+      // 對於非部落格文章（例如首頁、Mod.html 等），保持預設內容渲染
       return h(Theme.Content)
     },
     // 注入 FbComments 到 #doc-after slot (保持您原有的邏輯)
@@ -48,7 +51,7 @@ const renderLayout = () => {
       if (!isHomePage.value) {
         return h(FbComments)
       }
-      return null // 如果是首頁，則不顯示
+      return null
     }
   })
 }
@@ -61,12 +64,11 @@ const renderLayout = () => {
 <style scoped>
 /* 部落格文章內容的整體容器 */
 .blog-post-content-wrapper {
-  /* 這裡可以添加一些整體文章內容的樣式，例如左右內邊距 */
   padding-top: 2rem;
   padding-bottom: 2rem;
 }
 
-/* 自訂的文章標題樣式 (取代預設的 H1) */
+/* 自訂的文章標題樣式 */
 .blog-post-title {
   font-size: 2.5rem; /* 標題大小，可調整 */
   line-height: 1.2;
@@ -85,20 +87,26 @@ const renderLayout = () => {
   border-bottom: 1px dashed var(--vp-c-divider); /* 在日期下方加一條虛線分隔 */
 }
 
-/* 您可能需要覆蓋 VitePress 預設對 .vp-doc h1 的樣式，以避免樣式衝突 */
-/* 這裡使用 :deep() 來穿透 scoped CSS，影響 .vp-doc 內部由 Markdown 生成的 H1 */
-/* 目的是確保即使 Markdown 裡不小心留了 H1，它也不會被渲染出來 */
+/* 確保隱藏由 Markdown 內容自動渲染的第一個 H1，避免重複標題 */
 :deep(.vp-doc h1:first-of-type) {
-  display: none; /* 隱藏由 Markdown 內容自動渲染的第一個 H1 */
+  display: none;
 }
 
 /* 其他可能影響文章內容樣式，例如段落、列表、圖片等 */
 :deep(.vp-doc p),
 :deep(.vp-doc ul),
 :deep(.vp-doc ol),
-:deep(.vp-doc img) {
+:deep(.vp-doc img),
+:deep(.vp-doc table),
+:deep(.vp-doc blockquote),
+:deep(.vp-doc pre),
+:deep(.vp-doc .custom-block) { /* 增加更多常見的 Markdown 元素 */
   margin-top: 1rem;
   margin-bottom: 1rem;
 }
-
+/* 調整 Code Block 預設樣式避免衝突 */
+:deep(.vp-doc div[class*="language-"]) {
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+}
 </style>
