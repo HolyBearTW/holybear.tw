@@ -33,17 +33,18 @@ onMounted(() => {
   isClient.value = true
 })
 
-// 只有 /en/blog 或 /en/blog/xxx... 才會是 true
+// 只有在 client 端才判斷，避免 SSR 階段誤判
 const isEnBlogPage = computed(() => {
+  if (!isClient.value) return false
   const path = (page.value?.path || '').toLowerCase()
-  return !!path && (path === '/en/blog' || path.startsWith('/en/blog/'))
+  return path === '/en/blog' || path.startsWith('/en/blog/')
 })
 </script>
 
 <template>
   <Theme.Layout>
     <template #doc-before>
-      <div v-if="currentTitle" class="blog-post-header-injected">
+      <div class="blog-post-header-injected">
         <h1 class="blog-post-title">{{ currentTitle }}</h1>
         <p v-if="frontmatter.author || currentDisplayDate" class="blog-post-date-in-content">
           作者：{{ frontmatter.author }}<span v-if="frontmatter.author && currentDisplayDate">｜</span>{{ currentDisplayDate }}
@@ -52,8 +53,8 @@ const isEnBlogPage = computed(() => {
     </template>
 
     <template #doc-after>
-      <!-- 只在 client 端、非首頁、非 /en/blog 路徑才顯示留言控件 -->
-      <div v-if="isClient && page.value?.path && !isHomePage && !isEnBlogPage">
+      <!-- 只在 client、非首頁、非 /en/blog 路徑才顯示留言控件 -->
+      <div v-if="isClient && !isHomePage && !isEnBlogPage">
         <VotePanel />
         <FbComments />
       </div>
@@ -62,9 +63,7 @@ const isEnBlogPage = computed(() => {
 </template>
 
 <style scoped>
-:deep(.vp-doc h1:first-of-type) {
-  display: none !important;
-}
+:deep(.vp-doc h1:first-of-type) { display: none !important; }
 .en-blog-warning {
   background: #fffbcc;
   color: #b07d00;
@@ -87,17 +86,8 @@ const isEnBlogPage = computed(() => {
   background-color: var(--vp-c-bg);
   z-index: 1;
 }
-
-:deep(.vp-doc) {
-  padding-top: 0 !important;
-  margin-top: 0 !important;
-}
-
-/* 讓內文首段更貼近 header */
-:deep(.vp-doc > p:first-of-type) {
-  margin-top: 0;
-}
-
+:deep(.vp-doc) { padding-top: 0 !important; margin-top: 0 !important; }
+:deep(.vp-doc > p:first-of-type) { margin-top: 0; }
 @media (max-width: 768px) {
   .blog-post-header-injected {
     padding-left: var(--vp-content-padding);
@@ -106,15 +96,9 @@ const isEnBlogPage = computed(() => {
     padding-bottom: 0;
     margin-bottom: 0;
   }
-  :deep(.vp-doc) {
-    padding-top: 0 !important;
-    margin-top: 0 !important;
-  }
-  :deep(.vp-doc > p:first-of-type) {
-    margin-top: 0;
-  }
+  :deep(.vp-doc) { padding-top: 0 !important; margin-top: 0 !important; }
+  :deep(.vp-doc > p:first-of-type) { margin-top: 0; }
 }
-
 .blog-post-title {
   font-size: 2.5rem;
   line-height: 1.2;
@@ -122,7 +106,6 @@ const isEnBlogPage = computed(() => {
   margin-bottom: 0.5rem;
   color: var(--vp-c-text-1);
 }
-
 .blog-post-date-in-content {
   color: var(--vp-c-text-2);
   font-size: 0.85rem;
@@ -131,7 +114,6 @@ const isEnBlogPage = computed(() => {
   padding-bottom: 0.5rem;
   border-bottom: 1px dashed var(--vp-c-divider);
 }
-
 :deep(.vp-doc p),
 :deep(.vp-doc ul),
 :deep(.vp-doc ol),
