@@ -53,7 +53,7 @@ const isHomePage = computed(() => page.value && (page.value.path === '/' || page
 
 <style scoped>
 /*
-  這些樣式是為了確保標題和日期與內容完美對齊，不重疊不裁切。
+  這些樣式是為了解決標題和日期與內容重疊的問題。
   我們將 .blog-post-header-injected 定位到正確的位置，
   然後用 margin-top 把 .vp-doc 內容往下推，為它騰出空間。
 */
@@ -74,12 +74,10 @@ const isHomePage = computed(() => page.value && (page.value.path === '/' || page
   padding-left: var(--vp-content-padding);
   padding-right: var(--vp-content-padding);
   
-  /* 調整這裡：確保標題區塊與導航欄有適當距離 */
-  padding-top: calc(var(--vp-nav-height) + 24px); /* 導航欄高度 + 額外間距 */
+  /* ******** 估計調整這裡：讓標題區塊更往上靠 ******* */
+  padding-top: calc(var(--vp-nav-height) + 0px); /* 導航欄高度 + 0px 額外間距 */
   
   padding-bottom: 2rem; /* 標題日期區塊下方的內距 */
-  
-  /* 這個負邊距會讓 .blog-post-header-injected 往上拉，但這次我們要讓 .vp-doc 推開它 */
   margin-bottom: 0; 
 
   box-sizing: border-box;
@@ -91,9 +89,9 @@ const isHomePage = computed(() => page.value && (page.value.path === '/' || page
 /* 這是**解決文字被裁切的關鍵！** */
 :deep(.vp-doc) {
   padding-top: 0 !important; /* 確保沒有多餘的 padding-top */
-  /* 將 margin-top 設為一個足夠大的正值，以推開上面的注入區塊 */
+  /* ******** 估計調整這裡：將文章內容往下推，避免裁切 ******* */
   /* 這個值應約等於 .blog-post-header-injected 的**實際高度** + 期望的**小間距** */
-  margin-top: 200px; /* <-- 請微調此值！這是解決錯位和裁切的關鍵 */
+  margin-top: 180px; /* 估計值，桌面版，您可能需要微調 */
 }
 
 /* 手機版調整 */
@@ -102,15 +100,16 @@ const isHomePage = computed(() => page.value && (page.value.path === '/' || page
     padding-left: var(--vp-content-padding);
     padding-right: var(--vp-content-padding);
     
-    /* 手機版頂部內距 */
-    padding-top: calc(var(--vp-nav-height) + 16px); /* 手機版間距可能需要小一點 */
+    /* ******** 估計調整這裡 (手機版) ******* */
+    padding-top: calc(var(--vp-nav-height) + 0px); /* 手機版頂部內距也調整 */
     
     margin-bottom: 0;
   }
   /* 手機版下，Markdown 內容區塊的頂部邊距 */
   :deep(.vp-doc) {
     padding-top: 0 !important;
-    margin-top: 150px; /* <-- 手機版也請微調此值！ */
+    /* ******** 估計調整這裡 (手機版) ******* */
+    margin-top: 130px; /* 估計值，手機版，您可能需要微調 */
   }
 }
 
