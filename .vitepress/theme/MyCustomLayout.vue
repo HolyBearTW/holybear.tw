@@ -29,9 +29,12 @@ const isHomePage = computed(() =>
 )
 
 const isEnBlogPage = computed(() => {
-  if (!page.value || !page.value.path) return false
-  // 強制只抓 /en/blog/ 開頭
-  return /^\/en\/blog\//.test(page.value.path)
+  const path = (page.value?.path || '').toLowerCase()
+  // Debug print
+  console.log('page.value.path:', path)
+  return path.startsWith('/en/blog/')
+      || path.startsWith('/en/blog')
+      || path.includes('/en/blog/')
 })
 </script>
 
