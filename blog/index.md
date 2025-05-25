@@ -8,20 +8,19 @@ title: 我的部落格文章 # 這個頁面的標題
 // @ts-ignore
 import { data as posts } from '../.vitepress/theme/posts.data.ts' // 載入文章資料
 
-import { useData } from 'vitepress' // 載入 VitePress 的資料工具
-const { site } = useData() // 取得網站基本資訊，可以用來處理網址
+import { useData } from 'vitepress'
+const { site } = useData()
 </script>
 
 <div class="blog-list">
   <div v-for="post in posts" :key="post.url" class="post-item">
     <h2>
-      <a :href="site.base + post.url.replace('.html', '')">
+      <a :href="site.base + post.url">
         {{ post.title }}
       </a>
     </h2>
-    <p v-if="post.date">
-      發布日期：{{ new Date(post.date).toLocaleDateString('zh-TW') }}
-    </p>
+    <p v-if="post.date">發布日期：{{ new Date(post.date).toLocaleDateString('zh-TW') }}</p>
+    <p v-if="post.excerpt" v-html="post.excerpt"></p>
   </div>
 </div>
 
