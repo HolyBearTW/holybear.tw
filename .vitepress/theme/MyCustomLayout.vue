@@ -65,24 +65,31 @@ const isHomePage = computed(() => page.value && (page.value.path === '/' || page
 
 /* .blog-post-header-injected 是包裹客製化標題和日期的 div */
 .blog-post-header-injected {
-  position: relative; /* 相對定位，使其在文檔流中正常排列 */
+  position: relative;
   top: auto;
   left: auto;
-  width: 100%; /* 佔據 100% 寬度 */
-
-  /* 增加內距，使其內容與 VitePress 的標準內容區對齊 */
+  width: 100%;
   padding-left: var(--vp-content-padding);
   padding-right: var(--vp-content-padding);
-  
-  /* ******** 估計調整這裡：讓標題區塊更往上靠 ******* */
   padding-top: calc(var(--vp-nav-height) + 0px); /* 導航欄高度 + 0px 額外間距 */
   
-  padding-bottom: 2rem; /* 標題日期區塊下方的內距 */
-  margin-bottom: 0; 
+  /* ******** 調整這裡：進一步減少標題日期區塊下方的內邊距 ****** */
+  /* 從 2rem 減少到 1rem */
+  padding-bottom: 1rem; 
+  
+  margin-bottom: 0; /* 確保這裡沒有負邊距或任何導致推開下方的外邊距 */
 
   box-sizing: border-box;
-  background-color: var(--vp-c-bg); /* 添加背景色，確保內容不透明 */
-  z-index: 1; /* 確保在其他內容之上（如果需要） */
+  background-color: var(--vp-c-bg);
+  z-index: 1;
+}
+
+/* 調整 Markdown 內容區塊的頂部邊距 */
+/* 這裡應該是完全重設，讓它緊隨 injected header */
+:deep(.vp-doc) {
+  padding-top: 0 !important;
+  /* ******** 確保這裡完全歸零，沒有任何推開下方的頂部外邊距 ****** */
+  margin-top: 0 !important; 
 }
 
 /* 手機版調整 */
@@ -90,10 +97,16 @@ const isHomePage = computed(() => page.value && (page.value.path === '/' || page
   .blog-post-header-injected {
     padding-left: var(--vp-content-padding);
     padding-right: var(--vp-content-padding);
+    padding-top: calc(var(--vp-nav-height) + 0px);
     
-    /* ******** 估計調整這裡 (手機版) ******* */
-    padding-top: calc(var(--vp-nav-height) + 0px); /* 手機版頂部內距也調整 */
+    /* ****** 調整這裡 (手機版)：減少下方內邊距 ****** */
+    padding-bottom: 1rem; 
+    
     margin-bottom: 0;
+  }
+  :deep(.vp-doc) {
+    padding-top: 0 !important;
+    margin-top: 0 !important; /* ****** 確保這裡完全歸零 ****** */
   }
 }
 
