@@ -7,25 +7,24 @@ import VotePanel from '../components/VotePanel.vue'
 
 const { frontmatter, page } = useData()
 
-const currentIsBlogPost = computed(() =>
-  page.value &&
-  page.value.relativePath &&
-  page.value.relativePath.startsWith('blog/') &&
-  !page.value.relativePath.endsWith('blog/index.md')
-)
 const currentTitle = computed(() =>
   frontmatter.value ? (frontmatter.value.title || '無標題文章') : 'frontmatter.value is UNDEFINED'
 )
-const currentFrontmatterDate = computed(() =>
-  frontmatter.value && frontmatter.value.date ? frontmatter.value.date.toString() : 'No date in frontmatter'
-)
+
+// 解析 git_date 成 YYYY-MM-DD HH:mm 格式
 const currentDisplayDate = computed(() => {
-  if (currentIsBlogPost.value && frontmatter.value && frontmatter.value.date) {
-    const date = new Date(frontmatter.value.date)
-    return date.toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric' })
+  if (frontmatter.value?.git_date) {
+    const date = new Date(frontmatter.value.git_date)
+    const yyyy = date.getFullYear()
+    const mm = String(date.getMonth() + 1).padStart(2, '0')
+    const dd = String(date.getDate()).padStart(2, '0')
+    const hh = String(date.getHours()).padStart(2, '0')
+    const min = String(date.getMinutes()).padStart(2, '0')
+    return `${yyyy}-${mm}-${dd} ${hh}:${min}`
   }
-  return null
+  return ''
 })
+
 const isHomePage = computed(() =>
   page.value && (page.value.path === '/' || page.value.path === '/index.html')
 )
@@ -34,10 +33,11 @@ const isHomePage = computed(() =>
 <template>
   <Theme.Layout>
     <template #doc-before>
-      <!-- 只要有 title 就顯示 injected header，部落格才顯示日期 -->
       <div v-if="currentTitle" class="blog-post-header-injected">
         <h1 class="blog-post-title">{{ currentTitle }}</h1>
-        <p v-if="currentDisplayDate" class="blog-post-date-in-content">發布日期：{{ currentDisplayDate }}</p>
+        <p v-if="frontmatter.author || currentDisplayDate" class="blog-post-date-in-content">
+          作者：{{ frontmatter.author }}<span v-if="frontmatter.author && currentDisplayDate">｜</span>{{ currentDisplayDate }}
+        </p>
       </div>
     </template>
 
