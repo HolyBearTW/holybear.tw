@@ -14,9 +14,9 @@ This site is built with [VitePress](https://vitepress.dev). All website content 
 
 ```bash
 git clone https://github.com/HolyBearTW/holybear.me.git
-````
+```
 
-### 2\. Install Dependencies
+### 2. Install Dependencies
 
 ```bash
 # Using npm
@@ -29,7 +29,7 @@ yarn
 pnpm install
 ```
 
-### 3\. Run Local Preview
+### 3. Run Local Preview
 
 ```bash
 # Using npm
@@ -44,7 +44,7 @@ pnpm run dev
 
 ## Contribution
 
-Issues and Pull requests are welcome\!
+Issues and Pull requests are welcome!
 
 If you want to translate the website content into another language, you need to add a folder for your language in the project root directory (e.g., [en](/en)), and also add a configuration file for your language in [.vitepress/locales](/.vitepress/locales).
 
