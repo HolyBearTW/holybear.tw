@@ -28,29 +28,24 @@ const isHomePage = computed(() =>
   page.value && (page.value.path === '/' || page.value.path === '/index.html')
 )
 
-// 只要 path 有值且以 /en/blog 開頭就命中
-const isEnBlogPage = computed(() => {
-  const path = (page.value?.path || '').toLowerCase()
-  // debug可留著，正式上線可拿掉
-  console.log('page.value.path:', path)
-  return !!path && path.startsWith('/en/blog')
-})
-
-// 這個 flag 只在 client 端設為 true
 const isClient = ref(false)
 onMounted(() => {
   isClient.value = true
+})
+
+// 只有 /en/blog 或 /en/blog/xxx... 才會是 true
+const isEnBlogPage = computed(() => {
+  const path = (page.value?.path || '').toLowerCase()
+  // debug 可留著
+  // console.log('page.value.path:', path)
+  return !!path && (path === '/en/blog' || path.startsWith('/en/blog/'))
 })
 </script>
 
 <template>
   <Theme.Layout>
     <template #doc-before>
-      <p v-if="isEnBlogPage" class="en-blog-warning">
-        Sorry, the blog does not support English.<br>
-        <a href="javascript:history.back()">Click here to go back.</a>
-      </p>
-      <div v-else-if="currentTitle" class="blog-post-header-injected">
+      <div v-if="currentTitle" class="blog-post-header-injected">
         <h1 class="blog-post-title">{{ currentTitle }}</h1>
         <p v-if="frontmatter.author || currentDisplayDate" class="blog-post-date-in-content">
           作者：{{ frontmatter.author }}<span v-if="frontmatter.author && currentDisplayDate">｜</span>{{ currentDisplayDate }}
@@ -59,8 +54,8 @@ onMounted(() => {
     </template>
 
     <template #doc-after>
-      <!-- 只在 client 端且 path 有值且不是首頁且不是 enBlog 頁面才顯示留言控件 -->
-      <div v-if="isClient && page.value?.path && !isHomePage && !isEnBlogPage">
+      <!-- 只在 client 端、非首頁、非 /en/blog 路徑才顯示留言控件 -->
+      <div v-if="isClient && !isHomePage && !isEnBlogPage">
         <VotePanel />
         <FbComments />
       </div>
