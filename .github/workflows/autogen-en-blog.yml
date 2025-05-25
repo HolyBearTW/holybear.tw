@@ -3,7 +3,7 @@ name: Auto Generate EN Blog Placeholders
 on:
   push:
     branches:
-      - main  # 或你 deploy 的分支
+      - main
 
 jobs:
   generate-en-placeholders:
@@ -17,7 +17,7 @@ jobs:
           node-version: 20
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: yarn install
 
       - name: Generate EN blog placeholders
         run: yarn gen-en-blog
