@@ -32,16 +32,9 @@
 - [tims33](https://t.me/tims33) (玄哥)
 - [tavricccc](https://t.me/tavricccc) (酪梨)
 
-
-## 注意事項
-
-::: tip
+::: danger 注意事項
 此處僅會列出所有作品清單
 所有模組都可以在 Telegram 頻道上找到。
 
 註：頻道有附設交流群，僅為用戶玩機交流與回饋 Bug 而用，群組內提問並不能保證 100% 解決。
 :::
-
-<ClientOnly>
-  <FbComments />
-</ClientOnly>
