@@ -1,4 +1,7 @@
-# HolyBear's Secret Base Official Website
+---
+title: HolyBear's Secret Base Official Website
+lang: en
+---
 
 [Chinese](/README.md) | English
 
