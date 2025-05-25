@@ -55,25 +55,35 @@ async function handleVote(type) {
   display: flex;
   gap: 1rem;
 }
+/* 基本按鈕樣式 */
 button {
   font-size: 1.1rem;
-  padding: 0.5em 1em;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  background: #fff;
+  padding: 0.5em 1.5em;
+  border-radius: 16px;
+  border: 2px solid var(--vp-button-brand-border, #33FFFF);
+  background: var(--vp-button-brand-bg, #00FFEE);
+  color: var(--vp-button-brand-text, black);
+  font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  box-shadow: 0 2px 8px 0 rgba(0,255,238,0.08);
+  transition: background 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+/* hover 狀態 */
+button:hover:not(:disabled) {
+  background: var(--vp-button-brand-hover-bg, #33FFFF);
+  color: var(--vp-button-brand-hover-text, black);
+  border-color: var(--vp-button-brand-hover-border, #33FFFF);
+  box-shadow: 0 2px 16px 0 rgba(0,255,238,0.18);
+}
+/* active 狀態（已投票） */
+button.active {
+  background: var(--vp-c-brand-dark, #00CCEE);
+  color: var(--vp-button-brand-active-text, black);
+  border-color: var(--vp-c-brand-darker, #0099BB);
+  box-shadow: 0 2px 16px 0 rgba(0,204,238,0.30);
 }
 button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-button.active {
-  background: #ffe066;
-  border-color: #f7b731;
-  font-weight: bold;
-}
-button:hover:not(:disabled) {
-  background: #f6f6f6;
 }
 </style>
