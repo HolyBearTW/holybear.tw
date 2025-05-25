@@ -24,17 +24,16 @@ const currentDisplayDate = computed(() => {
   return ''
 })
 
-const isHomePage = computed(() => page.value && (page.value.path === '/' || page.value.path === '/index.html'))
+const isHomePage = computed(() =>
+  page.value && (page.value.path === '/' || page.value.path === '/index.html')
+)
 
-// 只在 client 端才設為 true
 const isClient = ref(false)
 onMounted(() => {
   isClient.value = true
 })
 
-// 只在 client + path 有值時判斷 /en/blog
 function isEnBlogPath() {
-  if (!isClient.value) return false
   const path = (page.value?.path || '').toLowerCase()
   return path === '/en/blog' || path.startsWith('/en/blog/')
 }
@@ -51,8 +50,8 @@ function isEnBlogPath() {
       </div>
     </template>
     <template #doc-after>
-      <!-- 只在 client、有 path、非首頁、非 /en/blog 開頭才顯示留言控件 -->
-      <div v-if="isClient && page.value?.path && !isHomePage && !isEnBlogPath()">
+      <!-- 用 v-show，不用 v-if，SSR 階段也有 DOM，client 階段才顯示 -->
+      <div v-show="isClient && !isHomePage && !isEnBlogPath()" style="display: none;">
         <VotePanel />
         <FbComments />
       </div>
