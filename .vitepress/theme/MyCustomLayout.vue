@@ -28,9 +28,11 @@ const isHomePage = computed(() =>
   page.value && (page.value.path === '/' || page.value.path === '/index.html')
 )
 
-const isEnBlogPage = computed(() =>
-  page.value && page.value.path && page.value.path.startsWith('/en/blog/')
-)
+const isEnBlogPage = computed(() => {
+  if (!page.value || !page.value.path) return false
+  // 強制只抓 /en/blog/ 開頭
+  return /^\/en\/blog\//.test(page.value.path)
+})
 </script>
 
 <template>
