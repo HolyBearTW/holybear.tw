@@ -1,10 +1,10 @@
 <script setup>
 import Theme from 'vitepress/theme-without-fonts'
 import { useData } from 'vitepress'
-import { computed, ref, onMounted } from 'vue' // 引入 ref 和 onMounted
+import { computed, ref, onMounted } from 'vue'
 import FbComments from '../components/FbComments.vue' // 引入您的 FbComments 元件
 
-const { frontmatter, page } = useData()
+const { frontmatter, page } = useData() // 獲取文章 Front Matter 和頁面資訊
 
 // 使用 ref 儲存最終的數據狀態，確保在客戶端 Hydration 後數據可用
 const currentRelativePath = ref('N/A');
@@ -32,16 +32,6 @@ onMounted(() => {
   } else {
     currentDisplayDate.value = null;
   }
-
-  // --- 偵錯訊息 (會在客戶端控制台顯示，原始碼中是 initial 狀態) ---
-  console.log('--- Debugging MyCustomLayout.vue (onMounted Final State) ---');
-  console.log('Final relativePath:', currentRelativePath.value);
-  console.log('Final isBlogPost:', currentIsBlogPost.value);
-  console.log('Final Title:', currentTitle.value);
-  console.log('Final Frontmatter Date:', currentFrontmatterDate.value);
-  console.log('Final Display Date:', currentDisplayDate.value);
-  console.log('------------------------------------');
-  // ------------------------------------------------------------------
 });
 
 
@@ -53,19 +43,11 @@ const isHomePage = computed(() => page.value && (page.value.path === '/' || page
   <Theme.Layout>
     <template #doc-before>
       <div v-if="currentIsBlogPost" class="blog-post-header-injected">
-        <p>Debug: relativePath = {{ currentRelativePath }}</p>
-        <p>Debug: isBlogPost = {{ currentIsBlogPost }}</p>
-        <p>Debug: frontmatter.title = {{ currentTitle }}</p>
-        <p>Debug: frontmatter.date = {{ currentFrontmatterDate }}</p>
-        <hr>
-
         <h1 class="blog-post-title">{{ currentTitle }}</h1>
         <p v-if="currentDisplayDate" class="blog-post-date-in-content">發布日期：{{ currentDisplayDate }}</p>
       </div>
       <div v-else>
-        <p>Debug: Not a blog post OR data not ready ({{ page.value ? page.value.relativePath : 'N/A' }})</p>
-        <hr>
-      </div>
+        </div>
     </template>
 
     <template #doc-after>
