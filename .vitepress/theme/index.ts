@@ -2,13 +2,13 @@
 import MyCustomLayout from './MyCustomLayout.vue'
 import './style.css'
 
-// 移除 MyVPDoc 相關的引用和 enhanceApp
-// import MyVPDoc from '../components/MyVPDoc.vue' // 刪除這行
+// 重新引入 MyVPDoc
+import MyVPDoc from '../components/MyVPDoc.vue' // <-- 請將這行改回來
 
 export default {
   Layout: MyCustomLayout,
-  // 刪除 enhanceApp 區塊
-  // enhanceApp({ app }) {
-  //   app.component('VPDoc', MyVPDoc);
-  // }
+  enhanceApp({ app }) {
+    // 重新啟用 VPDoc 的覆蓋
+    app.component('VPDoc', MyVPDoc);
+  }
 }
