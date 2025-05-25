@@ -85,12 +85,6 @@ const isHomePage = computed(() => page.value && (page.value.path === '/' || page
   z-index: 1; /* 確保在其他內容之上（如果需要） */
 }
 
-/* 調整 Markdown 內容區塊的頂部邊距，為我們注入的標題和日期騰出空間 */
-/* 這是**解決文字被裁切的關鍵！** */
-:deep(.vp-doc) {
-  padding-top: 0 !important; /* 確保沒有多餘的 padding-top */
-}
-
 /* 手機版調整 */
 @media (max-width: 768px) {
   .blog-post-header-injected {
@@ -100,10 +94,6 @@ const isHomePage = computed(() => page.value && (page.value.path === '/' || page
     /* ******** 估計調整這裡 (手機版) ******* */
     padding-top: calc(var(--vp-nav-height) + 0px); /* 手機版頂部內距也調整 */
     margin-bottom: 0;
-  }
-  /* 手機版下，Markdown 內容區塊的頂部邊距 */
-  :deep(.vp-doc) {
-    padding-top: 0 !important;
   }
 }
 
