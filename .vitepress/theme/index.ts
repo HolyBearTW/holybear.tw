@@ -2,14 +2,13 @@
 import MyCustomLayout from './MyCustomLayout.vue'
 import './style.css'
 
-// 引入我們新的 MyVPDoc 組件
-import MyVPDoc from '../components/MyVPDoc.vue'
+// 移除 MyVPDoc 相關的引用和 enhanceApp
+// import MyVPDoc from '../components/MyVPDoc.vue' // 刪除這行
 
 export default {
   Layout: MyCustomLayout,
-  // 使用 enhanceApp 函數註冊組件覆蓋
-  enhanceApp({ app }) {
-    // 告訴 VitePress，當需要渲染 VPDoc 時，使用我們的 MyVPDoc.vue
-    app.component('VPDoc', MyVPDoc);
-  }
+  // 刪除 enhanceApp 區塊
+  // enhanceApp({ app }) {
+  //   app.component('VPDoc', MyVPDoc);
+  // }
 }
