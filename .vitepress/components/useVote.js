@@ -1,13 +1,29 @@
-import { ref } from 'vue'
-import { db } from './firebase'
-import { doc, getDoc, setDoc, updateDoc, increment } from "firebase/firestore"
+import { ref, onMounted } from 'vue'
 
 export function useVote(articleId) {
   const up = ref(0)
   const down = ref(0)
   const loading = ref(true)
 
+  let db, doc, getDoc, setDoc, updateDoc, increment
+
   async function fetchVotes() {
+    if (typeof window === 'undefined') {
+      loading.value = false
+      return
+    }
+    if (!db) {
+      const { initializeApp } = await import('firebase/app')
+      const firestore = await import('firebase/firestore')
+      doc = firestore.doc
+      getDoc = firestore.getDoc
+      setDoc = firestore.setDoc
+      updateDoc = firestore.updateDoc
+      increment = firestore.increment
+      const firebaseConfig = { ... } // 你的 config
+      const app = initializeApp(firebaseConfig)
+      db = firestore.getFirestore(app)
+    }
     loading.value = true
     const docRef = doc(db, 'votes', articleId)
     const snap = await getDoc(docRef)
@@ -23,12 +39,13 @@ export function useVote(articleId) {
   }
 
   async function vote(type) {
+    if (!db) await fetchVotes()
     const docRef = doc(db, 'votes', articleId)
     await updateDoc(docRef, { [type]: increment(1) })
     await fetchVotes()
   }
 
-  fetchVotes()
+  onMounted(fetchVotes)
 
   return { up, down, vote, loading }
 }
