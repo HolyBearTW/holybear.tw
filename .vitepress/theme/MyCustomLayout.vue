@@ -75,7 +75,7 @@ const isHomePage = computed(() => page.value && (page.value.path === '/' || page
   
   /* ******** 調整這裡：進一步減少標題日期區塊下方的內邊距 ****** */
   /* 從 2rem 減少到 1rem */
-  padding-bottom: 1rem; 
+  padding-bottom: 0; 
   
   margin-bottom: 0; /* 確保這裡沒有負邊距或任何導致推開下方的外邊距 */
 
@@ -100,7 +100,7 @@ const isHomePage = computed(() => page.value && (page.value.path === '/' || page
     padding-top: 0; /* 或者 0.5rem、1rem，看你要多貼 */
     
     /* ****** 調整這裡 (手機版)：減少下方內邊距 ****** */
-    padding-bottom: 1rem; 
+    padding-bottom: 0; 
     
     margin-bottom: 0;
   }
