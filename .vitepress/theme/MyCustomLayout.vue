@@ -71,7 +71,7 @@ const isHomePage = computed(() => page.value && (page.value.path === '/' || page
   width: 100%;
   padding-left: var(--vp-content-padding);
   padding-right: var(--vp-content-padding);
-  padding-top: calc(var(--vp-nav-height) + 0px); /* 導航欄高度 + 0px 額外間距 */
+  padding-top: 0; /* 或者 0.5rem、1rem，看你要多貼 */
   
   /* ******** 調整這裡：進一步減少標題日期區塊下方的內邊距 ****** */
   /* 從 2rem 減少到 1rem */
@@ -97,7 +97,7 @@ const isHomePage = computed(() => page.value && (page.value.path === '/' || page
   .blog-post-header-injected {
     padding-left: var(--vp-content-padding);
     padding-right: var(--vp-content-padding);
-    padding-top: calc(var(--vp-nav-height) + 0px);
+    padding-top: 0; /* 或者 0.5rem、1rem，看你要多貼 */
     
     /* ****** 調整這裡 (手機版)：減少下方內邊距 ****** */
     padding-bottom: 1rem; 
