@@ -1,8 +1,8 @@
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
 
-const blogDir = path.join(__dirname, '../blog');
-const enBlogDir = path.join(__dirname, '../en/blog');
+const blogDir = path.resolve('blog');
+const enBlogDir = path.resolve('en/blog');
 
 if (!fs.existsSync(enBlogDir)) fs.mkdirSync(enBlogDir, { recursive: true });
 
