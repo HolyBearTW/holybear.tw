@@ -53,16 +53,10 @@ const isHomePage = computed(() => page.value && (page.value.path === '/' || page
 
 <style scoped>
 /*
-  這個樣式區塊非常重要！它會調整 #doc-before 插槽中內容的位置，
-  讓它看起來像是位於 Markdown 內容的 h1 和其餘內容之間。
-  我們還會隱藏 VitePress 預設為 Markdown 內容生成的 h1。
+  這些樣式是為了確保標題和日期與內容完美對齊，不重疊不裁切。
+  我們將 .blog-post-header-injected 定位到正確的位置，
+  然後用 margin-top 把 .vp-doc 內容往下推，為它騰出空間。
 */
-
-/* 將 .VPContent 設為定位上下文，以便其內部的絕對定位元素能相對於它定位 */
-/* 使用 :deep() 來穿透 scoped CSS，因為 .VPContent 在外部 */
-:deep(.VPContent) {
-  position: relative; /* <-- 這是關鍵，讓絕對定位的子元素相對於它 */
-}
 
 /* 隱藏由 Markdown 自動生成的第一個 H1 (因為我們在 #doc-before 渲染了自訂的) */
 :deep(.vp-doc h1:first-of-type) {
@@ -71,48 +65,52 @@ const isHomePage = computed(() => page.value && (page.value.path === '/' || page
 
 /* .blog-post-header-injected 是包裹客製化標題和日期的 div */
 .blog-post-header-injected {
-  position: absolute; /* 相對於 .VPContent 絕對定位 */
-  top: 0; /* 位於 .VPContent 頂部 */
-  left: 0; /* 位於 .VPContent 左側 */
-  width: 100%; /* 佔據 .VPContent 的全部寬度 */
-  
-  /* 調整內距，使其內容與 VitePress 的標準內容區對齊 */
-  /* 這些 padding 值會將內容推離 .VPContent 的邊界 */
-  padding-top: calc(var(--vp-nav-height) + 16px); /* 導航欄下方的間距 */
-  padding-left: var(--vp-sidebar-width); /* 側邊欄寬度 */
-  padding-right: var(--vp-content-padding); /* 內容區塊的右側內距 */
-  padding-bottom: 2rem; /* 標題日期區塊下方的內距 */
+  position: relative; /* 相對定位，使其在文檔流中正常排列 */
+  top: auto;
+  left: auto;
+  width: 100%; /* 佔據 100% 寬度 */
 
-  box-sizing: border-box; /* 確保 padding 包含在 width 計算中 */
+  /* 增加內距，使其內容與 VitePress 的標準內容區對齊 */
+  padding-left: var(--vp-content-padding);
+  padding-right: var(--vp-content-padding);
+  
+  /* 調整這裡：確保標題區塊與導航欄有適當距離 */
+  padding-top: calc(var(--vp-nav-height) + 24px); /* 導航欄高度 + 額外間距 */
+  
+  padding-bottom: 2rem; /* 標題日期區塊下方的內距 */
+  
+  /* 這個負邊距會讓 .blog-post-header-injected 往上拉，但這次我們要讓 .vp-doc 推開它 */
+  margin-bottom: 0; 
+
+  box-sizing: border-box;
   background-color: var(--vp-c-bg); /* 添加背景色，確保內容不透明 */
-  z-index: 10; /* 確保在其他內容之上 */
+  z-index: 1; /* 確保在其他內容之上（如果需要） */
 }
 
 /* 調整 Markdown 內容區塊的頂部邊距，為我們注入的標題和日期騰出空間 */
-/* 這個 margin-top 值需要精確調整，以確保 Markdown 內容從正確位置開始 */
+/* 這是**解決文字被裁切的關鍵！** */
 :deep(.vp-doc) {
   padding-top: 0 !important; /* 確保沒有多餘的 padding-top */
-  margin-top: 200px; /* <-- 這是關鍵值！請根據實際顯示效果微調此值！ */
-                     /* 應該略大於 .blog-post-header-injected 的實際高度 */
+  /* 將 margin-top 設為一個足夠大的正值，以推開上面的注入區塊 */
+  /* 這個值應約等於 .blog-post-header-injected 的**實際高度** + 期望的**小間距** */
+  margin-top: 200px; /* <-- 請微調此值！這是解決錯位和裁切的關鍵 */
 }
 
 /* 手機版調整 */
 @media (max-width: 768px) {
   .blog-post-header-injected {
-    position: relative; /* 手機版改為相對定位，避免脫離文檔流 */
     padding-left: var(--vp-content-padding);
     padding-right: var(--vp-content-padding);
-    padding-top: calc(var(--vp-nav-height) + 16px);
-    margin-bottom: 2rem; /* 標題日期區塊下方留出空間 */
-    box-sizing: border-box;
-    left: auto;
-    top: auto;
-    width: auto;
+    
+    /* 手機版頂部內距 */
+    padding-top: calc(var(--vp-nav-height) + 16px); /* 手機版間距可能需要小一點 */
+    
+    margin-bottom: 0;
   }
-  /* 手機版下，Markdown 內容區塊的頂部邊距可能需要調整 */
+  /* 手機版下，Markdown 內容區塊的頂部邊距 */
   :deep(.vp-doc) {
     padding-top: 0 !important;
-    margin-top: 0 !important; /* 手機版通常不需要特別的 margin-top，因為它是相對定位的 */
+    margin-top: 150px; /* <-- 手機版也請微調此值！ */
   }
 }
 
