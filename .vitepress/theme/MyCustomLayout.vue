@@ -1,44 +1,72 @@
 <script setup>
 import Theme from 'vitepress/theme-without-fonts'
 import { useData } from 'vitepress'
-import { computed, h } from 'vue' // 引入 Vue 的 h 函數
-import FbComments from '../components/FbComments.vue' // 引入您的 FbComments 元件
+import { computed, ref, onMounted } from 'vue' // 引入 ref 和 onMounted
+import FbComments from '../components/FbComments.vue'
 
-const { frontmatter, page } = useData() // 獲取文章 Front Matter 和頁面資訊
+const { frontmatter, page } = useData()
 
-// 判斷是否為首頁
-const isHomePage = computed(() => page.value && (page.value.path === '/' || page.value.path === '/index.html'))
+// 使用 ref 儲存資料，並在 onMounted 後設定
+const currentRelativePath = ref('N/A');
+const currentIsBlogPost = ref(false);
+const currentTitle = ref('N/A');
+const currentFrontmatterDate = ref('N/A');
+const currentDisplayDate = ref('N/A');
 
-// 判斷當前頁面是否為部落格文章
-const isBlogPost = computed(() => {
-  // 確保 page.value 存在且 relativePath 存在時才進行判斷
-  return page.value && page.value.relativePath &&
-         page.value.relativePath.startsWith('blog/') &&
-         !page.value.relativePath.endsWith('blog/index.md');
-})
+// 在組件掛載後確保數據可用
+onMounted(() => {
+  // 這裡的 page.value 和 frontmatter.value 應該是最終確定的值
+  currentRelativePath.value = page.value ? page.value.relativePath : 'page.value is UNDEFINED in onMounted';
+  currentTitle.value = frontmatter.value ? (frontmatter.value.title || '無標題文章') : 'frontmatter.value is UNDEFINED in onMounted';
+  currentFrontmatterDate.value = frontmatter.value ? (frontmatter.value.date ? frontmatter.value.date.toString() : 'No date in frontmatter') : 'frontmatter.value is UNDEFINED in onMounted';
 
-// 格式化發布日期
-const displayDate = computed(() => {
-  if (isBlogPost.value && frontmatter.value && frontmatter.value.date) {
-    const date = new Date(frontmatter.value.date)
-    return date.toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric' })
+  // 重新計算 isBlogPost
+  currentIsBlogPost.value = page.value && page.value.relativePath &&
+                             page.value.relativePath.startsWith('blog/') &&
+                             !page.value.relativePath.endsWith('blog/index.md');
+  
+  // 重新計算 displayDate
+  if (currentIsBlogPost.value && frontmatter.value && frontmatter.value.date) {
+    const date = new Date(frontmatter.value.date);
+    currentDisplayDate.value = date.toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric' });
+  } else {
+    currentDisplayDate.value = null; // 如果不是部落格文章或沒有日期，則設為 null
   }
-  return null
-})
+
+  // --- 偵錯訊息 (會在客戶端控制台顯示，但原始碼中會是 N/A) ---
+  console.log('--- Debugging MyCustomLayout.vue (onMounted) ---');
+  console.log('Final relativePath:', currentRelativePath.value);
+  console.log('Final isBlogPost:', currentIsBlogPost.value);
+  console.log('Final Title:', currentTitle.value);
+  console.log('Final Frontmatter Date:', currentFrontmatterDate.value);
+  console.log('Final Display Date:', currentDisplayDate.value);
+  console.log('------------------------------------');
+  // ----------------------------------------------------
+});
+
+
+// 判斷是否為首頁 (確保 page.value 存在)
+const isHomePage = computed(() => page.value && (page.value.path === '/' || page.value.path === '/index.html'))
 </script>
 
 <template>
   <Theme.Layout>
     <template #doc-before>
-      <div v-if="isBlogPost" class="blog-post-header-injected">
-        <p>Debug: relativePath = {{ page.value ? page.value.relativePath : 'N/A' }}</p>
-        <p>Debug: isBlogPost = {{ isBlogPost }}</p>
-        <p>Debug: frontmatter.title = {{ frontmatter.value ? (frontmatter.value.title || 'N/A') : 'N/A' }}</p>
-        <p>Debug: frontmatter.date = {{ frontmatter.value ? (frontmatter.value.date.toString() || 'N/A') : 'N/A' }}</p>
+      <div class="blog-post-header-injected">
+        <p>Debug (Initial): relativePath = {{ page.value ? page.value.relativePath : 'N/A' }}</p>
+        <p>Debug (Initial): isBlogPost = {{ isBlogPost }}</p>
+        <p>Debug (Initial): frontmatter.title = {{ frontmatter.value ? (frontmatter.value.title || 'N/A') : 'N/A' }}</p>
+        <p>Debug (Initial): frontmatter.date = {{ frontmatter.value ? (frontmatter.value.date ? frontmatter.value.date.toString() : 'N/A') : 'N/A' }}</p>
         <hr>
 
-        <h1 class="blog-post-title">{{ frontmatter.value ? (frontmatter.value.title || '無標題文章') : '載入中...' }}</h1>
-        <p v-if="displayDate" class="blog-post-date-in-content">發布日期：{{ displayDate }}</p>
+        <template v-if="currentIsBlogPost">
+          <h1 class="blog-post-title">{{ currentTitle || '無標題文章' }}</h1>
+          <p v-if="currentDisplayDate" class="blog-post-date-in-content">發布日期：{{ currentDisplayDate }}</p>
+        </template>
+        <template v-else>
+          <h1 class="blog-post-title">載入中...</h1>
+          <p class="blog-post-date-in-content">正在確認文章類型和日期...</p>
+        </template>
       </div>
     </template>
 
@@ -52,37 +80,35 @@ const displayDate = computed(() => {
 
 <style scoped>
 /*
-  這個樣式區塊非常重要！它會調整 #doc-before 插槽中內容的位置，
-  讓它看起來像是位於 Markdown 內容的 h1 和其餘內容之間。
-  我們還會隱藏 VitePress 預設為 Markdown 內容生成的 h1。
+  由於我們在 #doc-before 插槽中渲染了自訂的 H1 標題。
+  VitePress 預設會從 Front Matter 的 `title` 生成一個 `<h1>` 標籤，
+  這個 `<h1>` 會位於 `.vp-doc` 內部。我們需要隱藏這個 H1，避免重複。
 */
-
-/* 隱藏由 Markdown 自動生成的第一個 H1 (因為我們在 #doc-before 渲染了自訂的) */
 :deep(.vp-doc h1:first-of-type) {
-  display: none;
+  display: none !important; /* 強制隱藏，確保不被其他樣式覆蓋 */
 }
 
 /* 調整 Markdown 內容區塊的頂部邊距，為我們注入的標題和日期留出空間 */
 :deep(.vp-doc) {
-  /* 調整此值以控制標題和日期與其上方元素的距離 */
-  /* 假設標題和日期總高度約 100px-150px，這裡是視覺微調的關鍵 */
-  padding-top: 50px; /* 根據實際效果調整，這是讓內容往下移的距離 */
+  padding-top: 180px; /* 根據實際效果調整，這是讓下方內容往下移的距離 */
+  margin-top: -100px; /* 嘗試用負邊距將整個 .vp-doc 往上拉，與頂部對齊 */
 }
 
 /* .blog-post-header-injected 是包裹客製化標題和日期的 div */
 .blog-post-header-injected {
-  /* 將其定位到正確的位置 */
-  position: absolute;
-  top: 0; /* 讓它位於 main 標籤的頂部 */
+  position: absolute; /* 絕對定位 */
+  top: 0; /* 位於頁面頂部 */
   left: 0;
   width: 100%;
-  padding-top: var(--vp-nav-height); /* 加上導航欄高度 */
+  padding-top: calc(var(--vp-nav-height) + 16px); /* 加上導航欄高度 */
   padding-left: var(--vp-sidebar-width); /* 加上側邊欄寬度 */
   box-sizing: border-box; /* 確保 padding 不影響寬度 */
-  z-index: 1; /* 確保在其他內容之上 */
+  z-index: 10; /* 確保在其他內容之上 */
+  background-color: var(--vp-c-bg); /* 添加背景色，避免透視下方的內容 */
 }
 
-@media (max-width: 768px) { /* 手機版調整 */
+/* 手機版調整 */
+@media (max-width: 768px) {
   .blog-post-header-injected {
     position: relative; /* 手機版改為相對定位，避免脫離文檔流 */
     padding-left: var(--vp-content-padding); /* 調整左右內距 */
@@ -92,19 +118,21 @@ const displayDate = computed(() => {
     box-sizing: border-box;
     left: auto;
     top: auto;
+    width: auto; /* 寬度自動調整 */
   }
+  /* 手機版下，Markdown 內容區塊不需要額外的 padding-top */
   :deep(.vp-doc) {
-    padding-top: 0; /* 手機版重設為0，因為 .blog-post-header-injected 自己會佔位 */
+    padding-top: 0;
+    margin-top: 0; /* 手機版移除負邊距 */
   }
 }
-
 
 /* 客製化的標題樣式 */
 .blog-post-title {
   font-size: 2.5rem; /* 標題大小，可調整 */
   line-height: 1.2;
   margin-top: 0; /* 確保沒有多餘的上方外距 */
-  margin-bottom: 0.5rem; /* 標題下方與日期的間距 */
+  margin-bottom: 0.5rem;
   color: var(--vp-c-text-1);
 }
 
@@ -112,12 +140,11 @@ const displayDate = computed(() => {
 .blog-post-date-in-content {
   color: var(--vp-c-text-2); /* 次要文字顏色 */
   font-size: 0.85rem; /* 字體更小 */
-  margin-top: 0; /* 確保沒有多餘的上方外距 */
-  margin-bottom: 1.5rem; /* 日期下方與文章內容的間距 */
-  padding-bottom: 1rem; /* 日期與下方分隔線的間距 */
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
   border-bottom: 1px dashed var(--vp-c-divider); /* 在日期下方加一條虛線分隔 */
 }
-
 
 /* 調整 Markdown 內容元素的間距，避免與日期重疊或過於緊密 */
 :deep(.vp-doc p),
@@ -136,6 +163,7 @@ const displayDate = computed(() => {
   margin-top: 1rem;
   margin-bottom: 1rem;
 }
+/* 調整 Code Block 預設樣式避免衝突 */
 :deep(.vp-doc div[class*="language-"]) {
   margin-top: 1.5rem;
   margin-bottom: 1.5rem;
