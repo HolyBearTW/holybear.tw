@@ -91,7 +91,7 @@ const isHomePage = computed(() => page.value && (page.value.path === '/' || page
   padding-top: 0 !important; /* 確保沒有多餘的 padding-top */
   /* ******** 估計調整這裡：將文章內容往下推，避免裁切 ******* */
   /* 這個值應約等於 .blog-post-header-injected 的**實際高度** + 期望的**小間距** */
-  margin-top: 180px; /* 估計值，桌面版，您可能需要微調 */
+  margin-top: 10px; /* 估計值，桌面版，您可能需要微調 */
 }
 
 /* 手機版調整 */
