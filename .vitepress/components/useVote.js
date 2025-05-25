@@ -7,11 +7,7 @@ export function useVote(articleId) {
 
   let db, doc, getDoc, setDoc, updateDoc, increment
 
-  async function fetchVotes() {
-    if (typeof window === 'undefined') {
-      loading.value = false
-      return
-    }
+  async function initFirebaseIfNeeded() {
     if (!db) {
       const { initializeApp } = await import('firebase/app')
       const firestore = await import('firebase/firestore')
@@ -21,17 +17,25 @@ export function useVote(articleId) {
       updateDoc = firestore.updateDoc
       increment = firestore.increment
       const firebaseConfig = {
-  apiKey: "AIzaSyA7DEXo4vLvGinpIrOhhCXtoawV0l4zBBc",
-  authDomain: "holybear-goodbad.firebaseapp.com",
-  projectId: "holybear-goodbad",
-  storageBucket: "holybear-goodbad.appspot.com",
-  messagingSenderId: "227880753618",
-  appId: "1:227880753618:web:280ac7b02894ea857cd00b",
-  measurementId: "G-1FQ8WE5HHE"
-}
+        apiKey: "AIzaSyA7DEXo4vLvGinpIrOhhCXtoawV0l4zBBc",
+        authDomain: "holybear-goodbad.firebaseapp.com",
+        projectId: "holybear-goodbad",
+        storageBucket: "holybear-goodbad.appspot.com",
+        messagingSenderId: "227880753618",
+        appId: "1:227880753618:web:280ac7b02894ea857cd00b",
+        measurementId: "G-1FQ8WE5HHE"
+      }
       const app = initializeApp(firebaseConfig)
       db = firestore.getFirestore(app)
     }
+  }
+
+  async function fetchVotes() {
+    if (typeof window === 'undefined') {
+      loading.value = false
+      return
+    }
+    await initFirebaseIfNeeded()
     loading.value = true
     const docRef = doc(db, 'votes', articleId)
     const snap = await getDoc(docRef)
@@ -47,13 +51,20 @@ export function useVote(articleId) {
   }
 
   async function vote(type) {
-    if (!db) await fetchVotes()
+    await initFirebaseIfNeeded()
     const docRef = doc(db, 'votes', articleId)
     await updateDoc(docRef, { [type]: increment(1) })
     await fetchVotes()
   }
 
+  async function unvote(type) {
+    await initFirebaseIfNeeded()
+    const docRef = doc(db, 'votes', articleId)
+    await updateDoc(docRef, { [type]: increment(-1) })
+    await fetchVotes()
+  }
+
   onMounted(fetchVotes)
 
-  return { up, down, vote, loading }
+  return { up, down, vote, unvote, loading, fetchVotes }
 }
