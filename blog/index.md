@@ -11,29 +11,12 @@ import { data as posts } from '../.vitepress/theme/posts.data.ts'
 
 const { site } = useData()
 
-// 確保文章已經按日期排序 (posts.data.ts 應該已經做了)
-// 取得最新的一篇文章作為主打文章
-const featuredPost = posts[0]
-
-// 取得其餘的文章
-const otherPosts = posts.slice(1)
+// 現在所有文章都直接在 posts 陣列中，不需要額外區分主打文章
 </script>
 
 <div class="blog-home">
-  <div v-if="featuredPost" class="featured-post">
-    <a :href="featuredPost.url" class="featured-post-link">
-      <img :src="featuredPost.image" :alt="featuredPost.title" class="featured-post-image" />
-      <div class="featured-post-content">
-        <h1 class="featured-post-title">{{ featuredPost.title }}</h1>
-        <p class="featured-post-date">發布日期：{{ new Date(featuredPost.date).toLocaleDateString('zh-TW') }}</p>
-        <div class="featured-post-excerpt" v-html="featuredPost.excerpt"></div>
-        <span class="read-more">繼續閱讀 &gt;</span>
-      </div>
-    </a>
-  </div>
-
-  <div class="other-posts-grid">
-    <div v-for="post in otherPosts" :key="post.url" class="post-item">
+  <div class="blog-articles-grid">
+    <div v-for="post in posts" :key="post.url" class="post-item">
       <a :href="post.url" class="post-item-link">
         <div class="post-thumbnail-wrapper">
           <img :src="post.image" :alt="post.title" class="post-thumbnail" />
@@ -57,100 +40,70 @@ const otherPosts = posts.slice(1)
   padding: 2rem 0;
 }
 
-/* 主打文章樣式 */
-.featured-post {
-  margin-bottom: 3rem; /* 與下方文章列表的間距 */
-  border-bottom: 1px dashed var(--vp-c-divider); /* 底部虛線分隔 */
-  padding-bottom: 2rem; /* 內容與虛線間距 */
-}
-.featured-post-link {
-  display: block; /* 讓整個區塊可點擊 */
-  text-decoration: none;
-  color: inherit; /* 繼承文字顏色 */
-}
-.featured-post-image {
-  width: 100%; /* 圖片佔滿寬度 */
-  max-height: 300px; /* 主打圖片最大高度 */
-  object-fit: cover; /* 圖片裁切方式，確保填滿 */
-  border-radius: 8px; /* 圓角 */
-  margin-bottom: 1.5rem; /* 圖片下方間距 */
-}
-.featured-post-content {
-  padding: 0 1rem; /* 內文左右內距 */
-}
-.featured-post-title {
-  font-size: 2.5rem; /* 主打文章標題較大 */
-  line-height: 1.2;
-  margin-top: 0;
-  margin-bottom: 0.8rem;
-  color: var(--vp-c-text-1);
-}
-.featured-post-date {
-  color: var(--vp-c-text-2);
-  font-size: 1rem;
-  margin-bottom: 1rem;
-}
-.featured-post-excerpt {
-  color: var(--vp-c-text-2);
-  line-height: 1.6;
-  font-size: 1.1rem;
-  margin-bottom: 1.5rem;
-  display: -webkit-box; /* 限制摘要行數 */
-  -webkit-line-clamp: 4; /* 最多顯示4行 */
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* 其他文章網格佈局 */
-.other-posts-grid {
+/* 所有文章網格佈局 */
+.blog-articles-grid {
   display: grid;
   grid-template-columns: 1fr; /* 預設手機版單欄 */
-  gap: 2rem; /* 文章間距 */
+  gap: 1.5rem; /* 文章卡片之間的垂直間距 */
 }
 
 /* 當螢幕寬度大於 768px 時，改為兩欄 */
 @media (min-width: 768px) {
-  .other-posts-grid {
+  .blog-articles-grid {
     grid-template-columns: 1fr 1fr; /* 兩欄佈局 */
+    column-gap: 2rem; /* 兩欄之間的水平間距 */
   }
 }
 
 .post-item {
-  border: 1px solid var(--vp-c-divider); /* 卡片邊框 */
-  border-radius: 8px;
-  overflow: hidden;
-  transition: transform 0.2s ease-in-out; /* 懸停動畫 */
+  /* GNN 的列表項通常沒有明顯的邊框，而是在項目之間有分隔線 */
+  /* 這裡我們先用底部虛線分隔，若不喜歡可移除 */
+  border-bottom: 1px dashed var(--vp-c-divider);
+  padding-bottom: 1.5rem; /* 內容與底部虛線間距 */
+  margin-bottom: 1.5rem; /* 每個項目底部的間距 */
+  transition: transform 0.2s ease-in-out, background-color 0.2s ease-in-out; /* 懸停動畫 */
 }
+/* 移除最後一個項目的底部邊線，避免多餘的線條 */
+.blog-articles-grid > .post-item:last-child {
+    border-bottom: none;
+}
+/* 在兩欄佈局下，第二欄的最後一個項目可能不是 .post-item:last-child，這需要更複雜的選擇器來處理。
+   如果只使用 border-bottom 且不去除最後一個，通常也能接受。
+   或者，可以在 CSS Grid 容器中使用 grid-row-gap 來代替 border-bottom。
+   為求簡潔，先保持 current post-item 的 border-bottom。
+*/
+
+
 .post-item:hover {
-  transform: translateY(-5px); /* 懸停時輕微上浮 */
+  transform: translateY(-3px); /* 懸停時輕微上浮 */
+  background-color: var(--vp-c-bg-soft); /* 懸停時背景色變化 */
 }
 .post-item-link {
-  display: flex; /* 圖片和文字並排 */
-  align-items: flex-start; /* 文字內容頂部對齊 */
-  padding: 1.5rem; /* 卡片內部間距 */
+  display: flex; /* 圖片和文字內容並排 */
+  align-items: flex-start; /* 內容頂部對齊 */
+  padding: 0.5rem 0; /* 鏈接內部頂部和底部的內距 */
   text-decoration: none;
   color: inherit;
-  height: 100%; /* 確保連結佔滿卡片高度 */
+  height: 100%; /* 確保連結佔滿整個項目高度 */
 }
 .post-thumbnail-wrapper {
   flex-shrink: 0; /* 圖片不縮小 */
-  width: 100px; /* 縮圖固定寬度 */
-  height: 100px; /* 縮圖固定高度 */
-  margin-right: 1.5rem; /* 圖片右側間距 */
-  border-radius: 4px;
+  width: 120px; /* 縮圖固定寬度，可調整 */
+  height: 90px; /* 縮圖固定高度，可調整為 4:3 比例 */
+  margin-right: 1rem; /* 圖片右側間距 */
+  border-radius: 4px; /* 輕微圓角 */
   overflow: hidden;
 }
 .post-thumbnail {
   width: 100%;
   height: 100%;
-  object-fit: cover; /* 縮圖裁切方式 */
+  object-fit: cover; /* 縮圖裁切方式，確保填滿空間 */
 }
 .post-info {
   flex-grow: 1; /* 文字內容佔據剩餘空間 */
 }
 .post-title {
-  font-size: 1.3rem; /* 其他文章標題大小 */
+  font-size: 1.3rem; /* 文章標題大小 */
   line-height: 1.3;
   margin-top: 0;
   margin-bottom: 0.5rem;
@@ -158,13 +111,13 @@ const otherPosts = posts.slice(1)
 }
 .post-date {
   color: var(--vp-c-text-2);
-  font-size: 0.85rem;
+  font-size: 0.85rem; /* 日期文字大小 */
   margin-bottom: 0.8rem;
 }
 .post-excerpt {
   color: var(--vp-c-text-2);
   line-height: 1.5;
-  font-size: 0.95rem;
+  font-size: 0.95rem; /* 摘要文字大小 */
   margin-bottom: 1rem;
   display: -webkit-box; /* 多行文字省略 */
   -webkit-line-clamp: 3; /* 限制摘要顯示3行 */
@@ -176,25 +129,31 @@ const otherPosts = posts.slice(1)
   display: inline-block;
   color: var(--vp-c-brand-1); /* 使用品牌色作為連結顏色 */
   font-weight: 500;
+  font-size: 0.9rem;
   margin-top: 0.5rem;
 }
 .read-more:hover {
   text-decoration: underline; /* 懸停時加底線 */
 }
 
-/* 手機版調整 */
+/* 手機版調整：確保小螢幕下依然是圖片在左，文字在右 */
 @media (max-width: 767px) {
   .post-item-link {
-    flex-direction: column; /* 手機版圖片和文字垂直堆疊 */
-    align-items: center;
-    text-align: center;
+    flex-direction: row; /* 在手機版也保持圖片和文字並排 */
+    align-items: flex-start;
+    text-align: left;
   }
   .post-thumbnail-wrapper {
-    margin-right: 0;
-    margin-bottom: 1rem; /* 圖片下方間距 */
+    width: 100px; /* 手機版縮圖寬度 */
+    height: 75px; /* 手機版縮圖高度 (維持 4:3 比例) */
+    margin-right: 1rem;
+    margin-bottom: 0;
   }
   .post-title {
-    font-size: 1.5rem; /* 手機版標題稍微大一點 */
+    font-size: 1.25rem; /* 手機版標題稍微大一點點 */
+  }
+  .post-excerpt {
+    -webkit-line-clamp: 2; /* 限制摘要顯示2行 */
   }
 }
 </style>
