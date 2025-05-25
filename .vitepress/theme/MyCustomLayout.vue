@@ -29,7 +29,7 @@ const isHomePage = computed(() =>
 )
 
 const isEnBlogPage = computed(() =>
-  page.value && page.value.path.startsWith('/en/blog/')
+  page.value && page.value.path && page.value.path.startsWith('/en/blog/')
 )
 </script>
 
