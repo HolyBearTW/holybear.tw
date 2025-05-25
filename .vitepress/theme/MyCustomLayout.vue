@@ -89,9 +89,6 @@ const isHomePage = computed(() => page.value && (page.value.path === '/' || page
 /* 這是**解決文字被裁切的關鍵！** */
 :deep(.vp-doc) {
   padding-top: 0 !important; /* 確保沒有多餘的 padding-top */
-  /* ******** 估計調整這裡：將文章內容往下推，避免裁切 ******* */
-  /* 這個值應約等於 .blog-post-header-injected 的**實際高度** + 期望的**小間距** */
-  margin-top: 10px; /* 估計值，桌面版，您可能需要微調 */
 }
 
 /* 手機版調整 */
@@ -102,14 +99,11 @@ const isHomePage = computed(() => page.value && (page.value.path === '/' || page
     
     /* ******** 估計調整這裡 (手機版) ******* */
     padding-top: calc(var(--vp-nav-height) + 0px); /* 手機版頂部內距也調整 */
-    
     margin-bottom: 0;
   }
   /* 手機版下，Markdown 內容區塊的頂部邊距 */
   :deep(.vp-doc) {
     padding-top: 0 !important;
-    /* ******** 估計調整這裡 (手機版) ******* */
-    margin-top: 130px; /* 估計值，手機版，您可能需要微調 */
   }
 }
 
