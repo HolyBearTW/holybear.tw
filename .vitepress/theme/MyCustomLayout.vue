@@ -24,10 +24,7 @@ const currentDisplayDate = computed(() => {
   return ''
 })
 
-// 首頁判斷
-const isHomePage = computed(() =>
-  page.value && (page.value.path === '/' || page.value.path === '/index.html')
-)
+const isHomePage = computed(() => page.value && (page.value.path === '/' || page.value.path === '/index.html'))
 
 // 只在 client 端才設為 true
 const isClient = ref(false)
@@ -35,25 +32,17 @@ onMounted(() => {
   isClient.value = true
 })
 
-// **留言控件的條件**
-// SSR 階段 isClient = false，這時一律不顯示留言控件
-// hydration 後才判斷 path
-const shouldShowComments = computed(() => {
+// 只在 client + path 有值時判斷 /en/blog
+function isEnBlogPath() {
   if (!isClient.value) return false
   const path = (page.value?.path || '').toLowerCase()
-  // 首頁不顯示
-  if (path === '/' || path === '/index.html') return false
-  // /en/blog 與其子頁面不顯示
-  if (path === '/en/blog' || path.startsWith('/en/blog/')) return false
-  // 其他都顯示
-  return true
-})
+  return path === '/en/blog' || path.startsWith('/en/blog/')
+}
 </script>
 
 <template>
   <Theme.Layout>
     <template #doc-before>
-      <!-- 主內容永遠顯示，不用 isClient 包 -->
       <div class="blog-post-header-injected">
         <h1 class="blog-post-title">{{ currentTitle }}</h1>
         <p v-if="frontmatter.author || currentDisplayDate" class="blog-post-date-in-content">
@@ -62,8 +51,8 @@ const shouldShowComments = computed(() => {
       </div>
     </template>
     <template #doc-after>
-      <!-- 留言控件只在 client + 非首頁 + 非 /en/blog 路徑下才顯示 -->
-      <div v-if="shouldShowComments">
+      <!-- 只在 client、有 path、非首頁、非 /en/blog 開頭才顯示留言控件 -->
+      <div v-if="isClient && page.value?.path && !isHomePage && !isEnBlogPath()">
         <VotePanel />
         <FbComments />
       </div>
