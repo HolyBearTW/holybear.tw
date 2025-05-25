@@ -3,6 +3,7 @@ import Theme from 'vitepress/theme-without-fonts'
 import { useData } from 'vitepress'
 import { computed } from 'vue'
 import FbComments from '../components/FbComments.vue'
+import VotePanel from '../components/VotePanel.vue' // 新增這行
 
 const { frontmatter, page } = useData()
 
@@ -43,6 +44,7 @@ const isHomePage = computed(() =>
 
     <template #doc-after>
       <div v-if="!isHomePage">
+        <VotePanel /> <!-- 新增這行 -->
         <FbComments />
       </div>
     </template>
@@ -106,8 +108,8 @@ const isHomePage = computed(() =>
   color: var(--vp-c-text-2);
   font-size: 0.85rem;
   margin-top: 0;
-  margin-bottom: 0.5rem;  /* 關鍵調整，讓內文更貼近 */
-  padding-bottom: 0.5rem; /* 關鍵調整，讓內文更貼近 */
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
   border-bottom: 1px dashed var(--vp-c-divider);
 }
 
