@@ -36,8 +36,6 @@ onMounted(() => {
 // 只有 /en/blog 或 /en/blog/xxx... 才會是 true
 const isEnBlogPage = computed(() => {
   const path = (page.value?.path || '').toLowerCase()
-  // debug 可留著
-  // console.log('page.value.path:', path)
   return !!path && (path === '/en/blog' || path.startsWith('/en/blog/'))
 })
 </script>
@@ -55,7 +53,7 @@ const isEnBlogPage = computed(() => {
 
     <template #doc-after>
       <!-- 只在 client 端、非首頁、非 /en/blog 路徑才顯示留言控件 -->
-      <div v-if="isClient && !isHomePage && !isEnBlogPage">
+      <div v-if="isClient && page.value?.path && !isHomePage && !isEnBlogPage">
         <VotePanel />
         <FbComments />
       </div>
