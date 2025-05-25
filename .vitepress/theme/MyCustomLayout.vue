@@ -28,16 +28,12 @@ const isHomePage = computed(() =>
   page.value && (page.value.path === '/' || page.value.path === '/index.html')
 )
 
+// 只要 path 有值且以 /en/blog 開頭就命中
 const isEnBlogPage = computed(() => {
   const path = (page.value?.path || '').toLowerCase()
+  // debug可留著，正式上線可拿掉
   console.log('page.value.path:', path)
-  // 命中 /en/blog, /en/blog/, /en/blog/xxx, /en/blog/xxx.html, /en/blog/xxx/
-  return path === '/en/blog'
-      || path === '/en/blog/'
-      || path.startsWith('/en/blog/')
-      || path.startsWith('/en/blog-')
-      || path.startsWith('/en/blog_')
-      || /^\/en\/blog[^/]*$/.test(path)
+  return !!path && path.startsWith('/en/blog')
 })
 
 // 這個 flag 只在 client 端設為 true
@@ -63,7 +59,8 @@ onMounted(() => {
     </template>
 
     <template #doc-after>
-      <div v-if="isClient && !isHomePage && !isEnBlogPage">
+      <!-- 只在 client 端且 path 有值且不是首頁且不是 enBlog 頁面才顯示留言控件 -->
+      <div v-if="isClient && page.value?.path && !isHomePage && !isEnBlogPage">
         <VotePanel />
         <FbComments />
       </div>
