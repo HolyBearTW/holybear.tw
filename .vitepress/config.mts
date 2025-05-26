@@ -1,6 +1,7 @@
 import { defineConfig } from 'vitepress'
 import locales from './locales'
 import gitMetaPlugin from './git-meta.js'
+import { execSync } from 'child_process'
 
 export default defineConfig({
   ignoreDeadLinks: true,
@@ -28,5 +29,20 @@ export default defineConfig({
     socialLinks: [
       { icon: 'github', link: 'https://github.com/HolyBearTW' }
     ]
+  },
+  extendsPage(page) {
+    if (page.filePath) {
+      try {
+        // 抓第一次 commit 的作者和時間
+        const log = execSync(
+          `git log --diff-filter=A --follow --format=%aN,%aI -- "${page.filePath}" | tail -1`
+        ).toString().trim()
+        const [author, date] = log.split(',')
+        if (!page.frontmatter.author) page.frontmatter.author = author
+        if (!page.frontmatter.date) page.frontmatter.date = date
+      } catch (e) {
+        // 沒有 git 資訊就略過
+      }
+    }
   }
 })
