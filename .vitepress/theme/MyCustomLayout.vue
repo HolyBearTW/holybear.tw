@@ -59,8 +59,8 @@ function hasNoEnglishMsg() {
       </div>
     </template>
     <template #doc-after>
-      <!-- 只要不是首頁、而且 page.value.content 有值、且 markdown 原文沒有英文警語時才顯示留言控件 -->
-     <div v-if="isClient && !isHomePage && page.value?.content && !hasNoEnglishMsg()">
+      <!-- 只在日誌才顯示留言控件 -->
+     <div v-if="isClient && !isHomePage && page.value.path?.startsWith('/blog/')">
      <VotePanel />
      <FbComments />
      </div>
