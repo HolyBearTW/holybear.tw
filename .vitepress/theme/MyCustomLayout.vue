@@ -44,7 +44,12 @@ onMounted(() => {
 <template>
   <Theme.Layout>
     <template #doc-before>
-  <div>test</div>
+  <div class="blog-post-header-injected">
+    <h1 class="blog-post-title">{{ frontmatter.title ?? '' }}</h1>
+    <p v-if="(frontmatter.author ?? '') || currentDisplayDate" class="blog-post-date-in-content">
+      作者：{{ frontmatter.author ?? '' }}<span v-if="(frontmatter.author ?? '') && currentDisplayDate">｜</span>{{ currentDisplayDate }}</span>
+    </p>
+  </div>
 </template>
     <template #doc-after>
   <div>test</div>
