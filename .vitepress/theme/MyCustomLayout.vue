@@ -28,7 +28,14 @@ const isHomePage = computed(() =>
   page.value && (page.value.path === '/' || page.value.path === '/index.html')
 )
 
+// 補上這個 function
+function hasNoEnglishMsg() {
+  return (page.value?.content || '').includes('Sorry, this blog post is not available in English.')
+}
+
+const isClient = ref(false)
 onMounted(() => {
+  isClient.value = true
   // 只要 page 有變化就 log
   watch(page, (val) => {
     console.log('==============[DEBUG: page.value 全部]==============')
@@ -38,9 +45,6 @@ onMounted(() => {
     console.log('=======================================================')
   }, { immediate: true, deep: true })
 })
-
-const isClient = ref(false)
-onMounted(() => { isClient.value = true })
 </script>
 
 <template>
