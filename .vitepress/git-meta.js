@@ -14,17 +14,31 @@ export default function gitMetaPlugin() {
       let author = ''
       let datetime = ''
       try {
-        author = execSync(`git log -1 --pretty=format:%an -- "${id}"`).toString().trim()
-        // 取得 ISO 格式（後面再轉字串）
-        datetime = execSync(`git log -1 --pretty=format:%cI -- "${id}"`).toString().trim()
+        // 抓第一次 commit 的作者與時間
+        author = execSync(`git log --diff-filter=A --follow --format=%aN -- "${id}" | tail -1`).toString().trim()
+        datetime = execSync(`git log --diff-filter=A --follow --format=%aI -- "${id}" | tail -1`).toString().trim()
       } catch (e) {
         // 檔案沒 commit 過會 error
         return src
       }
 
-      // 只在 YAML frontmatter 最前面加 author/date（不覆蓋原有欄位）
-      // 若已有 author/date，這邊會覆蓋
-      const injected = `---\nauthor: ${author}\ngit_date: ${datetime}\n` + src.replace(/^---\n/, '')
+      // 只補 author/date，已有時不覆蓋
+      // 解析現有 frontmatter
+      const frontmatterMatch = src.match(/^---\n([\s\S]*?)\n---\n/)
+      let frontmatter = frontmatterMatch ? frontmatterMatch[1] : ''
+      let rest = frontmatterMatch ? src.slice(frontmatterMatch[0].length) : src
+
+      let hasAuthor = /^author:/m.test(frontmatter)
+      let hasDate = /^date:/m.test(frontmatter)
+
+      if (!hasAuthor) {
+        frontmatter = `author: ${author}\n` + frontmatter
+      }
+      if (!hasDate) {
+        frontmatter = `date: ${datetime}\n` + frontmatter
+      }
+
+      const injected = `---\n${frontmatter}\n---\n${rest}`
 
       return injected
     }
