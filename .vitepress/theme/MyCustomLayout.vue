@@ -1,5 +1,5 @@
 <script setup>
-import Theme from 'vitepress/theme-without-fonts'
+import Theme from 'vitepress/theme'  // <--- 這裡改為官方 theme
 import { useData } from 'vitepress'
 import { computed, ref, onMounted, watch } from 'vue'
 import FbComments from '../components/FbComments.vue'
@@ -10,7 +10,6 @@ const { frontmatter, page } = useData()
 const currentTitle = computed(() =>
   frontmatter.value ? (frontmatter.value.title || '無標題文章') : 'frontmatter.value is UNDEFINED'
 )
-
 const currentDisplayDate = computed(() => {
   if (frontmatter.value?.git_date) {
     const date = new Date(frontmatter.value.git_date)
@@ -23,20 +22,15 @@ const currentDisplayDate = computed(() => {
   }
   return ''
 })
-
 const isHomePage = computed(() =>
   page.value && (page.value.path === '/' || page.value.path === '/index.html')
 )
-
-// 補上這個 function
 function hasNoEnglishMsg() {
   return (page.value?.content || '').includes('Sorry, this blog post is not available in English.')
 }
-
 const isClient = ref(false)
 onMounted(() => {
   isClient.value = true
-  // 只要 page 有變化就 log
   watch(page, (val) => {
     console.log('==============[DEBUG: page.value 全部]==============')
     console.log(val)
