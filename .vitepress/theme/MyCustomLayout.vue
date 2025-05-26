@@ -59,13 +59,13 @@ function hasNoEnglishMsg() {
       </div>
     </template>
     <template #doc-after>
-      <div>
-        <template v-if="isClient && !isHomePage && page.value.path?.startsWith('/blog/')">
-          <VotePanel />
-          <FbComments />
-        </template>
-      </div>
+  <div>
+    <template v-if="!isHomePage && page.value.path && page.value.path.startsWith('/blog/')">
+      <VotePanel />
+      <FbComments />
     </template>
+  </div>
+</template>
   </Theme.Layout>
 </template>
 
