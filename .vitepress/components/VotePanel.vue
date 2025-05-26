@@ -1,5 +1,5 @@
 <template>
-  <div class="vote-panel" v-if="showPanel">
+  <div class="vote-panel" v-if="hydrated">
     <button
       @click="handleVote('up')"
       :disabled="loading"
@@ -24,15 +24,15 @@ const articleId = computed(() => page.value.relativePath.replaceAll('/', '__'))
 const { up, down, vote, unvote, loading, fetchVotes } = useVote(articleId.value)
 
 const userVote = ref(null)
-const showPanel = ref(false)
+const hydrated = ref(false)
 
 onMounted(() => {
   userVote.value = localStorage.getItem('vote_' + articleId.value) || null
-  showPanel.value = true
+  hydrated.value = true
 })
 
 watch(articleId, () => {
-  if (showPanel.value) {
+  if (hydrated.value) {
     userVote.value = localStorage.getItem('vote_' + articleId.value) || null
   }
 })
