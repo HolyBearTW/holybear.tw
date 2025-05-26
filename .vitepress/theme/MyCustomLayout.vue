@@ -34,11 +34,11 @@ onMounted(() => {
 
   // 只要 content 一有變化就 log
   watch(() => page.value.content, (val) => {
-    console.log('==============[DEBUG: page.value.content]==============');
-    console.log(val);
-    console.log('==============[hasNoEnglishMsg()]==============');
-    console.log(hasNoEnglishMsg());
-    console.log('=======================================================');
+    console.log('==============[DEBUG: page.value.path]==============');
+console.log(page.value?.path);
+console.log('==============[hasNoEnglishMsg()]==============');
+console.log(hasNoEnglishMsg());
+console.log('=======================================================');
   }, { immediate: true })
 })
 
