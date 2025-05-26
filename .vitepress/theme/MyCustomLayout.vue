@@ -28,18 +28,15 @@ const isHomePage = computed(() =>
   page.value && (page.value.path === '/' || page.value.path === '/index.html')
 )
 
-const isClient = ref(false)
 onMounted(() => {
-  isClient.value = true
-
-  // 只要 content 一有變化就 log
-  watch(() => page.value.content, (val) => {
-    console.log('==============[DEBUG: page.value.path]==============');
-console.log(page.value?.path);
-console.log('==============[hasNoEnglishMsg()]==============');
-console.log(hasNoEnglishMsg());
-console.log('=======================================================');
-  }, { immediate: true })
+  // 只要 page 有變化就 log
+  watch(page, (val) => {
+    console.log('==============[DEBUG: page.value 全部]==============')
+    console.log(val)
+    console.log('==============[hasNoEnglishMsg()]==============')
+    console.log(hasNoEnglishMsg())
+    console.log('=======================================================')
+  }, { immediate: true, deep: true })
 })
 
 // 判斷 markdown 原文是否含有那句英文警語
@@ -59,11 +56,11 @@ function hasNoEnglishMsg() {
       </div>
     </template>
     <template #doc-after>
-  <div>
-    <VotePanel />
-    <FbComments />
-  </div>
-</template>
+      <div v-if="page.value && page.value.path && page.value.path.startsWith('/blog/')">
+        <VotePanel />
+        <FbComments />
+      </div>
+    </template>
   </Theme.Layout>
 </template>
 
