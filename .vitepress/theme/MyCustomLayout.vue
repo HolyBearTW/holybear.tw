@@ -47,10 +47,10 @@ onMounted(() => {
   <div class="blog-post-header-injected">
     <h1 class="blog-post-title">{{ String(frontmatter.title || '') }}</h1>
     <p class="blog-post-date-in-content">
-  <template v-if="String(frontmatter.author || '') !== ''">作者：{{ String(frontmatter.author || '') }}</template>
-  <template v-if="String(frontmatter.author || '') !== '' && currentDisplayDate">｜</template>
-  <template v-if="currentDisplayDate">{{ currentDisplayDate }}</template>
-</p>
+      <template v-if="String(frontmatter.author || '') !== ''">作者：{{ String(frontmatter.author || '') }}</template>
+      <template v-if="String(frontmatter.author || '') !== '' && currentDisplayDate">｜</template>
+      <template v-if="currentDisplayDate">{{ currentDisplayDate }}</template>
+    </p>
   </div>
 </template>
     <template #doc-after>
