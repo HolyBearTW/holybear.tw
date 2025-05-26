@@ -1,5 +1,5 @@
 <script setup>
-import Theme from 'vitepress/theme'  // <--- 這裡改為官方 theme
+import Theme from 'vitepress/theme'
 import { useData } from 'vitepress'
 import { computed, ref, onMounted, watch } from 'vue'
 import FbComments from '../components/FbComments.vue'
@@ -44,15 +44,20 @@ onMounted(() => {
 <template>
   <Theme.Layout>
     <template #doc-before>
-  <div class="blog-post-header-injected">
-    <h1 class="blog-post-title">{{ frontmatter.title ?? '' }}</h1>
-    <p v-if="(frontmatter.author ?? '') || currentDisplayDate" class="blog-post-date-in-content">
-      作者：{{ frontmatter.author ?? '' }}<span v-if="(frontmatter.author ?? '') && currentDisplayDate">｜</span>{{ currentDisplayDate }}</span>
-    </p>
-  </div>
-</template>
+      <div class="blog-post-header-injected">
+        <h1 class="blog-post-title">{{ frontmatter.title ?? '' }}</h1>
+        <p v-if="(frontmatter.author ?? '') || currentDisplayDate" class="blog-post-date-in-content">
+          作者：{{ frontmatter.author ?? '' }}<span v-if="(frontmatter.author ?? '') && currentDisplayDate">｜</span>{{ currentDisplayDate }}
+        </p>
+      </div>
+    </template>
     <template #doc-after>
-  <div>test</div>
+      <div>
+        <template v-if="page.value && page.value.relativePath && page.value.relativePath.startsWith('blog/')">
+          <VotePanel v-if="isClient" />
+          <FbComments v-if="isClient" />
+        </template>
+      </div>
     </template>
   </Theme.Layout>
 </template>
