@@ -51,7 +51,7 @@ function hasNoEnglishMsg() {
     </template>
     <template #doc-after>
       <!-- 加入 no-english-msg 判斷 -->
-<div v-if="false">
+<div v-if="isClient">
   <VotePanel />
   <FbComments />
 </div>
