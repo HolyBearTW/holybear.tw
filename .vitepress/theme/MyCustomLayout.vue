@@ -44,13 +44,15 @@ onMounted(() => {
 <template>
   <Theme.Layout>
     <template #doc-before>
-      <div class="blog-post-header-injected">
-        <h1 class="blog-post-title">{{ String(frontmatter.title || '') }}</h1>
-<p v-if="String(frontmatter.author || '') !== '' || currentDisplayDate" class="blog-post-date-in-content">
-  作者：{{ String(frontmatter.author || '') }}<span v-if="String(frontmatter.author || '') !== '' && currentDisplayDate">｜</span>{{ currentDisplayDate }}
-</p>
-      </div>
-    </template>
+  <div class="blog-post-header-injected">
+    <h1 class="blog-post-title">{{ String(frontmatter.title || '') }}</h1>
+    <p class="blog-post-date-in-content">
+      <template v-if="String(frontmatter.author || '') !== ''">作者：{{ String(frontmatter.author || '') }}</template>
+      <template v-if="String(frontmatter.author || '') !== '' && currentDisplayDate">｜</template>
+      <template v-if="currentDisplayDate">{{ currentDisplayDate }}</template>
+    </p>
+  </div>
+</template>
     <template #doc-after>
       <div>
         <template v-if="page.value && page.value.relativePath && page.value.relativePath.startsWith('blog/')">
