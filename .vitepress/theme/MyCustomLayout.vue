@@ -7,12 +7,20 @@ import VotePanel from '../components/VotePanel.vue'
 
 const { frontmatter, page } = useData()
 
+// 判斷是否首頁
+const isHomePage = computed(() =>
+  page.value && (page.value.path === '/' || page.value.path === '/index.html')
+)
+
+// 標題
 const currentTitle = computed(() =>
   frontmatter.value ? (frontmatter.value.title || '無標題文章') : 'frontmatter.value is UNDEFINED'
 )
+
+// 日期（建議用 date，不要用 git_date）
 const currentDisplayDate = computed(() => {
-  if (frontmatter.value?.git_date) {
-    const date = new Date(frontmatter.value.git_date)
+  if (frontmatter.value?.date) {
+    const date = new Date(frontmatter.value.date)
     const yyyy = date.getFullYear()
     const mm = String(date.getMonth() + 1).padStart(2, '0')
     const dd = String(date.getDate()).padStart(2, '0')
@@ -22,12 +30,13 @@ const currentDisplayDate = computed(() => {
   }
   return ''
 })
-const isHomePage = computed(() =>
-  page.value && (page.value.path === '/' || page.value.path === '/index.html')
-)
+
+// 判斷是否有英文缺少訊息
 function hasNoEnglishMsg() {
   return (page.value?.content || '').includes('Sorry, this blog post is not available in English.')
 }
+
+// 判斷是否 client
 const isClient = ref(false)
 onMounted(() => {
   isClient.value = true
@@ -44,8 +53,15 @@ onMounted(() => {
 <template>
   <Theme.Layout>
     <template #doc-before>
-  <div>{{ frontmatter.title }}</div>
-</template>
+      <div v-if="!isHomePage" class="blog-post-header-injected">
+        <h1 class="blog-post-title">{{ currentTitle }}</h1>
+        <p class="blog-post-date-in-content">
+          <template v-if="frontmatter.author">作者：{{ frontmatter.author }}</template>
+          <template v-if="frontmatter.author && currentDisplayDate">｜</template>
+          <template v-if="currentDisplayDate">{{ currentDisplayDate }}</template>
+        </p>
+      </div>
+    </template>
     <template #doc-after>
       <div>
         <template v-if="page.value && page.value.relativePath && page.value.relativePath.startsWith('blog/')">
