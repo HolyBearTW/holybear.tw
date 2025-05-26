@@ -31,12 +31,18 @@ const isHomePage = computed(() =>
 const isClient = ref(false)
 onMounted(() => {
   isClient.value = true
+
+  // debug: 輸出 page.value.content 內容和判斷結果
+  if (typeof window !== 'undefined') {
+    console.log('==============[DEBUG: page.value.content]==============');
+    console.log(page.value?.content);
+    console.log('==============[hasNoEnglishMsg()]==============');
+    console.log(hasNoEnglishMsg());
+    console.log('=======================================================');
+  }
 })
 
-/**
- * 判斷 markdown 原文是否含有英文警語
- * 若你之後有多個警語可自行擴充
- */
+// 判斷 markdown 原文是否含有那句英文警語
 function hasNoEnglishMsg() {
   return (page.value?.content || '').includes('Sorry, this blog post is not available in English.')
 }
@@ -53,7 +59,7 @@ function hasNoEnglishMsg() {
       </div>
     </template>
     <template #doc-after>
-      <!-- 只要不是首頁、且 md 原文沒有英文警語時才顯示留言控件 -->
+      <!-- 只要不是首頁、且 markdown 原文沒有英文警語時才顯示留言控件 -->
       <div v-if="isClient && !isHomePage && !hasNoEnglishMsg()">
         <VotePanel />
         <FbComments />
