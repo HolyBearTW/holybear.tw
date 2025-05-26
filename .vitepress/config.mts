@@ -3,6 +3,16 @@ import locales from './locales'
 import gitMetaPlugin from './git-meta.js'
 import { execSync } from 'child_process'
 
+// 取得當前 git branch 名稱
+function getCurrentBranch() {
+  try {
+    return execSync('git rev-parse --abbrev-ref HEAD').toString().trim()
+  } catch (e) {
+    // 無法取得 branch 則回傳空字串
+    return ''
+  }
+}
+
 export default defineConfig({
   ignoreDeadLinks: true,
   title: '聖小熊的秘密基地',
@@ -31,7 +41,9 @@ export default defineConfig({
     ]
   },
   extendsPage(page) {
-    if (page.filePath) {
+    const branch = getCurrentBranch()
+    // 只允許在 main 或 master branch 處理
+    if ((branch === 'main' || branch === 'master') && page.filePath && page.filePath.endsWith('.md')) {
       try {
         // 抓第一次 commit 的作者和時間
         const log = execSync(
