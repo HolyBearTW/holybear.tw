@@ -12,6 +12,7 @@
     >👎 噓 ({{ down }})</button>
   </div>
 </template>
+
 <script setup>
 import { ref, watch, onMounted } from 'vue'
 import { useVote } from './useVote'
@@ -53,13 +54,13 @@ async function handleVote(type) {
   await fetchVotes()
 }
 </script>
+
 <style scoped>
 .vote-panel {
   margin: 2rem 0 1.5rem 0;
   display: flex;
   gap: 1rem;
 }
-/* 基本按鈕樣式 */
 button {
   font-size: 1.1rem;
   padding: 0.5em 1.5em;
@@ -72,14 +73,12 @@ button {
   box-shadow: 0 2px 8px 0 rgba(0,255,238,0.08);
   transition: background 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
 }
-/* hover 狀態 */
 button:hover:not(:disabled) {
   background: var(--vp-button-brand-hover-bg, #33FFFF);
   color: var(--vp-button-brand-hover-text, black);
   border-color: var(--vp-button-brand-hover-border, #33FFFF);
   box-shadow: 0 2px 16px 0 rgba(0,255,238,0.18);
 }
-/* active 狀態（已投票） */
 button.active {
   background: var(--vp-c-brand-dark, #00CCEE);
   color: var(--vp-button-brand-active-text, black);
