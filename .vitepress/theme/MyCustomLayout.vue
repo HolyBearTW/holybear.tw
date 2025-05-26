@@ -57,8 +57,6 @@ function hasNoEnglishMsg() {
     </template>
     <template #doc-after>
   <div>
-    <template #doc-after>
-  <div>
     <template v-if="page.value && page.value.relativePath && page.value.relativePath.startsWith('blog/')">
       <div>這是測試內容</div>
     </template>
