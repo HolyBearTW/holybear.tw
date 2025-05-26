@@ -33,7 +33,10 @@ onMounted(() => {
   isClient.value = true
 })
 
-// 新增：判斷內容是否有那句英文警語
+/**
+ * 判斷 markdown 原文是否含有英文警語
+ * 若你之後有多個警語可自行擴充
+ */
 function hasNoEnglishMsg() {
   return (page.value?.content || '').includes('Sorry, this blog post is not available in English.')
 }
@@ -49,13 +52,13 @@ function hasNoEnglishMsg() {
         </p>
       </div>
     </template>
-<template #doc-after>
-  <!-- 只要不是首頁、不是有那句 warning 的文章就顯示留言控件 -->
-  <div v-if="isClient && !(page.value?.content || '').includes('Sorry, this blog post is not available in English.')">
-    <VotePanel />
-    <FbComments />
-  </div>
-</template>
+    <template #doc-after>
+      <!-- 只要不是首頁、且 md 原文沒有英文警語時才顯示留言控件 -->
+      <div v-if="isClient && !isHomePage && !hasNoEnglishMsg()">
+        <VotePanel />
+        <FbComments />
+      </div>
+    </template>
   </Theme.Layout>
 </template>
 
