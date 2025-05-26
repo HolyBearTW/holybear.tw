@@ -39,10 +39,8 @@ onMounted(() => {
   }, { immediate: true, deep: true })
 })
 
-// 判斷 markdown 原文是否含有那句英文警語
-function hasNoEnglishMsg() {
-  return (page.value?.content || '').includes('Sorry, this blog post is not available in English.')
-}
+const isClient = ref(false)
+onMounted(() => { isClient.value = true })
 </script>
 
 <template>
@@ -56,12 +54,13 @@ function hasNoEnglishMsg() {
       </div>
     </template>
     <template #doc-after>
-  <div>
-    <template v-if="page.value && page.value.relativePath && page.value.relativePath.startsWith('blog/')">
-      <div>這是測試內容</div>
+      <div>
+        <template v-if="page.value && page.value.relativePath && page.value.relativePath.startsWith('blog/')">
+          <VotePanel v-if="isClient" />
+          <FbComments v-if="isClient" />
+        </template>
+      </div>
     </template>
-  </div>
-</template>
   </Theme.Layout>
 </template>
 
