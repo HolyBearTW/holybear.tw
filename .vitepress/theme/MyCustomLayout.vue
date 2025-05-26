@@ -33,9 +33,9 @@ onMounted(() => {
   isClient.value = true
 })
 
-function isEnBlogPath() {
-  const path = (page.value?.path || '').toLowerCase()
-  return path === '/en/blog' || path.startsWith('/en/blog/')
+// 新增：判斷內容是否有那句英文警語
+function hasNoEnglishMsg() {
+  return (page.value?.content || '').includes('Sorry, this blog post is not available in English.')
 }
 </script>
 
@@ -50,8 +50,8 @@ function isEnBlogPath() {
       </div>
     </template>
     <template #doc-after>
-      <!-- 用 v-show，不用 v-if，SSR 階段也有 DOM，client 階段才顯示 -->
-      <div v-show="isClient && !isHomePage && !isEnBlogPath()" style="display: none;">
+      <!-- 加入 no-english-msg 判斷 -->
+      <div v-show="isClient && !isHomePage && !hasNoEnglishMsg()" style="display: none;">
         <VotePanel />
         <FbComments />
       </div>
