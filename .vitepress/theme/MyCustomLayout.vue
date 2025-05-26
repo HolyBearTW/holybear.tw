@@ -1,7 +1,7 @@
 <script setup>
 import Theme from 'vitepress/theme-without-fonts'
 import { useData } from 'vitepress'
-import { computed, ref, onMounted } from 'vue'
+import { computed, ref, onMounted, watch } from 'vue'
 import FbComments from '../components/FbComments.vue'
 import VotePanel from '../components/VotePanel.vue'
 
@@ -32,14 +32,14 @@ const isClient = ref(false)
 onMounted(() => {
   isClient.value = true
 
-  // debug: 輸出 page.value.content 內容和判斷結果
-  if (typeof window !== 'undefined') {
+  // 只要 content 一有變化就 log
+  watch(() => page.value.content, (val) => {
     console.log('==============[DEBUG: page.value.content]==============');
-    console.log(page.value?.content);
+    console.log(val);
     console.log('==============[hasNoEnglishMsg()]==============');
     console.log(hasNoEnglishMsg());
     console.log('=======================================================');
-  }
+  }, { immediate: true })
 })
 
 // 判斷 markdown 原文是否含有那句英文警語
@@ -59,8 +59,8 @@ function hasNoEnglishMsg() {
       </div>
     </template>
     <template #doc-after>
-      <!-- 只要不是首頁、且 markdown 原文沒有英文警語時才顯示留言控件 -->
-      <div v-if="isClient && !isHomePage && !hasNoEnglishMsg()">
+      <!-- 只要不是首頁、而且 page.value.content 有值、且 markdown 原文沒有英文警語時才顯示留言控件 -->
+      <div v-if="isClient && !isHomePage && page.value?.content && !hasNoEnglishMsg()">
         <VotePanel />
         <FbComments />
       </div>
