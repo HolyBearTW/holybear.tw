@@ -51,19 +51,20 @@ function hasNoEnglishMsg() {
 <template>
   <Theme.Layout>
     <template #doc-before>
-      <div class="blog-post-header-injected">
-        <h1 class="blog-post-title">{{ currentTitle }}</h1>
-        <p v-if="frontmatter.author || currentDisplayDate" class="blog-post-date-in-content">
-          作者：{{ frontmatter.author }}<span v-if="frontmatter.author && currentDisplayDate">｜</span>{{ currentDisplayDate }}
-        </p>
+      <div v-if="isClient">
+        <div class="blog-post-header-injected">
+          <h1 class="blog-post-title">{{ currentTitle }}</h1>
+          <p v-if="frontmatter.author || currentDisplayDate" class="blog-post-date-in-content">
+            作者：{{ frontmatter.author }}<span v-if="frontmatter.author && currentDisplayDate">｜</span>{{ currentDisplayDate }}
+          </p>
+        </div>
       </div>
     </template>
     <template #doc-after>
-      <!-- 只在日誌才顯示留言控件 -->
-     <div v-if="isClient && !isHomePage && page.value.path?.startsWith('/blog/')">
-     <VotePanel />
-     <FbComments />
-     </div>
+      <div v-if="isClient && !isHomePage && page.value.path?.startsWith('/blog/')">
+        <VotePanel />
+        <FbComments />
+      </div>
     </template>
   </Theme.Layout>
 </template>
