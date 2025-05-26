@@ -49,13 +49,13 @@ function hasNoEnglishMsg() {
         </p>
       </div>
     </template>
-    <template #doc-after>
-      <!-- 加入 no-english-msg 判斷 -->
-<div v-if="isClient">
-  <VotePanel />
-  <FbComments />
-</div>
-    </template>
+<template #doc-after>
+  <!-- 只要不是首頁、不是有那句 warning 的文章就顯示留言控件 -->
+  <div v-if="isClient && !(page.value?.content || '').includes('Sorry, this blog post is not available in English.')">
+    <VotePanel />
+    <FbComments />
+  </div>
+</template>
   </Theme.Layout>
 </template>
 
