@@ -3,7 +3,7 @@ name: Deploy VitePress Site to GitHub Pages
 on:
   push:
     branches:
-      - main # 你的主要分支名稱
+      - main
   workflow_dispatch:
 
 jobs:
@@ -12,6 +12,8 @@ jobs:
     steps:
       - name: 遷出程式碼
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: 設定 Node.js
         uses: actions/setup-node@v3
@@ -25,7 +27,7 @@ jobs:
 
       - name: 安裝相依套件
         run: yarn install
-        working-directory: ${{ github.workspace }} # 明確設定工作目錄
+        working-directory: ${{ github.workspace }}
 
       - name: 建置 VitePress 網站
         run: yarn run build
@@ -35,6 +37,6 @@ jobs:
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          branch: gh-pages # 部署到 gh-pages 分支
-          folder: .vitepress/dist # VitePress 的輸出目錄
-          clean: true # 清理先前部署的檔案 (建議開啟)
+          branch: gh-pages
+          folder: .vitepress/dist
+          clean: true
