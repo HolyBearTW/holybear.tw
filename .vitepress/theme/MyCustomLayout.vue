@@ -51,7 +51,6 @@ function hasNoEnglishMsg() {
 <template>
   <Theme.Layout>
     <template #doc-before>
-      <!-- 這區塊 SSR+Client 都渲染，SEO沒問題 -->
       <div class="blog-post-header-injected">
         <h1 class="blog-post-title">{{ frontmatter.title }}</h1>
         <p v-if="frontmatter.author || currentDisplayDate" class="blog-post-date-in-content">
@@ -60,10 +59,11 @@ function hasNoEnglishMsg() {
       </div>
     </template>
     <template #doc-after>
-      <!-- 只有留言控件才用 isClient 控制，避免 hydration mismatch -->
-      <div v-if="isClient && !isHomePage && page.value.path?.startsWith('/blog/')">
-        <VotePanel />
-        <FbComments />
+      <div>
+        <template v-if="isClient && !isHomePage && page.value.path?.startsWith('/blog/')">
+          <VotePanel />
+          <FbComments />
+        </template>
       </div>
     </template>
   </Theme.Layout>
