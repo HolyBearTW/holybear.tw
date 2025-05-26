@@ -15,14 +15,16 @@ const currentTitle = computed(() =>
   frontmatter.value ? (frontmatter.value.title || '無標題文章') : 'frontmatter.value is UNDEFINED'
 )
 
+// 用台灣時區 (Asia/Taipei) 顯示日期
 const currentDisplayDate = computed(() => {
   if (frontmatter.value?.date) {
     const date = new Date(frontmatter.value.date)
-    const yyyy = date.getFullYear()
-    const mm = String(date.getMonth() + 1).padStart(2, '0')
-    const dd = String(date.getDate()).padStart(2, '0')
-    const hh = String(date.getHours()).padStart(2, '0')
-    const min = String(date.getMinutes()).padStart(2, '0')
+    const twDate = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }))
+    const yyyy = twDate.getFullYear()
+    const mm = String(twDate.getMonth() + 1).padStart(2, '0')
+    const dd = String(twDate.getDate()).padStart(2, '0')
+    const hh = String(twDate.getHours()).padStart(2, '0')
+    const min = String(twDate.getMinutes()).padStart(2, '0')
     return `${yyyy}-${mm}-${dd} ${hh}:${min}`
   }
   return ''
