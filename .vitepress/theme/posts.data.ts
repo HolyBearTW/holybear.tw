@@ -53,12 +53,17 @@ export default createContentLoader('blog/**/*.md', {
 
         // 沒有 frontmatter.date 就自動抓 git 建立日期
         let date: string | undefined = frontmatter.date
-        if (!date && relativePath) {
-          date = getGitCreatedDate(relativePath)
-        }
-        if (!date) {
-          date = '2000-01-01'
-        }
+if (!date && relativePath) {
+  date = getGitCreatedDate(relativePath)
+}
+if (!date) {
+  date = '2000-01-01'
+}
+return {
+  ...
+  date, // 直接保留原字串！不要 new Date 也不要 toISOString
+  ...
+}
 
         return {
           title: frontmatter.title,
