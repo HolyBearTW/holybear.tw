@@ -2,7 +2,7 @@
 import Theme from 'vitepress/theme'
 import { useData } from 'vitepress'
 import { computed } from 'vue'
-import FbComments from '../components/FbComments.vue'
+import GiscusComments from '../components/GiscusComments.vue'
 import VotePanel from '../components/VotePanel.vue'
 
 const { frontmatter, page } = useData()
@@ -45,7 +45,7 @@ const currentDisplayDate = computed(() => {
     </template>
     <template #doc-after>
       <VotePanel />
-      <FbComments />
+      <GiscusComments />
     </template>
   </Theme.Layout>
 </template>
