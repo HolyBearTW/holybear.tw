@@ -51,6 +51,11 @@ const currentDisplayDate = computed(() => {
 </template>
 
 <style scoped>
+.blog-articles-grid .post-item .post-info h2.post-title {
+  border-top: none;
+  padding-top: 0;
+  margin-top: 0;
+}
 :deep(.vp-doc h1:first-of-type) { display: none !important; }
 .blog-post-header-injected {
   position: relative;
@@ -100,9 +105,7 @@ const currentDisplayDate = computed(() => {
 :deep(.vp-doc blockquote),
 :deep(.vp-doc pre),
 :deep(.vp-doc .custom-block),
-:deep(.vp-doc h2) {
-  border-top: none !important;
-}
+:deep(.vp-doc h2),
 :deep(.vp-doc h3),
 :deep(.vp-doc h4),
 :deep(.vp-doc h5),
