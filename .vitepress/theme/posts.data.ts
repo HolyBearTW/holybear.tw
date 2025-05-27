@@ -6,33 +6,12 @@ const DEFAULT_IMAGE = '/blog_no_image.svg'
 function getGitCreatedDate(relativePath: string): string {
   try {
     const fullPath = `docs/${relativePath}`
-    return execSync(`git log --diff-filter=A --follow --format=%cI -1 "${fullPath}"`).toString().trim()
+    // 用 ISO 格式，跟 VitePress 內頁一致
+    // 取首次 commit 的作者日期
+    return execSync(`git log --diff-filter=A --follow --format=%aI -1 "${fullPath}"`).toString().trim()
   } catch {
     return ''
   }
-}
-
-// 取得文章第一個非空行段落（純文字，不含 markdown 標記）
-function getFirstParagraph(content: string): string {
-  // 切行、去頭尾空白，找到第一個非空行
-  const lines = content.split('\n').map(line => line.trim())
-  // 過濾掉 frontmatter、HTML註解、image/link 標記等
-  for (const line of lines) {
-    if (
-      line &&
-      !line.startsWith('<!--') &&
-      !line.startsWith('---') &&
-      !line.startsWith('#') &&
-      !line.startsWith('![') &&
-      !line.startsWith('>') &&
-      !line.startsWith('<') &&
-      !line.startsWith('```')
-    ) {
-      // 去掉 markdown link 語法
-      return line.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/[*_~`]/g, '')
-    }
-  }
-  return ''
 }
 
 export default createContentLoader('blog/**/*.md', {
@@ -41,7 +20,7 @@ export default createContentLoader('blog/**/*.md', {
     return raw
       .filter(({ url }) => !url.endsWith('/blog/'))
       .map(({ url, frontmatter, content, excerpt, relativePath }) => {
-        // 日期
+        // 日期：優先 frontmatter.date，否則自動抓 git 建檔日期
         let date: string = frontmatter.date || ''
         if (!date && relativePath) {
           date = getGitCreatedDate(relativePath)
@@ -62,8 +41,12 @@ export default createContentLoader('blog/**/*.md', {
         // 摘要
         let summary = excerpt?.trim()
         if (!summary) summary = (frontmatter.description || '').trim()
-        if (!summary && content) summary = getFirstParagraph(content)
-        if (!summary) summary = ''  // 如果真的什麼都沒有
+        if (!summary && content) {
+          // 抓第一個純文字段落
+          const lines = content.split('\n').map(line => line.trim())
+          summary = lines.find(line => line && !line.startsWith('#') && !line.startsWith('![') && !line.startsWith('>') && !line.startsWith('<!--') && !line.startsWith('---')) || ''
+        }
+        if (!summary) summary = ''
 
         return {
           title: frontmatter.title,
@@ -73,12 +56,10 @@ export default createContentLoader('blog/**/*.md', {
           excerpt: summary
         }
       })
+      .filter(post => !!post.date) // 沒有 date 的文章直接排除（極少見例外）
       .sort((a, b) => {
-        const aStr = typeof a.date === 'string' ? a.date : ''
-        const bStr = typeof b.date === 'string' ? b.date : ''
-        const aTime = new Date(aStr.replace(/-/g, '/')).getTime() || 0
-        const bTime = new Date(bStr.replace(/-/g, '/')).getTime() || 0
-        return bTime - aTime
+        // 直接用 ISO 字串排序，保證正確
+        return (b.date > a.date ? 1 : b.date < a.date ? -1 : 0)
       })
   }
 })
