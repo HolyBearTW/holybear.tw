@@ -11,13 +11,14 @@ export interface Post {
 
 const DEFAULT_IMAGE = '/blog_no_image.svg' // 或者您希望的預設圖片路徑
 
-// 新增：取得 git 建立日期（第一次 commit 時間）
-function getGitCreatedDate(filePath: string): string | undefined {
+// 取得 git 建立日期（第一次 commit 時間）
+function getGitCreatedDate(relativePath: string): string | undefined {
   try {
-    // 取得第一次 commit 的日期（%cI 是 ISO 格式）
-    const dateStr = execSync(`git log --diff-filter=A --follow --format=%cI -1 ${filePath}`).toString().trim()
+    // 以 repo 根目錄為基準，例如 docs/blog/xxx.md
+    const fullPath = `docs/${relativePath}`
+    const dateStr = execSync(`git log --diff-filter=A --follow --format=%cI -1 "${fullPath}"`).toString().trim()
     return dateStr
-  } catch (e) {
+  } catch {
     return undefined
   }
 }
@@ -27,7 +28,7 @@ export default createContentLoader('blog/**/*.md', {
   transform(raw) {
     return raw
       .filter(({ url }) => !url.endsWith('/blog/'))
-      .map(({ url, frontmatter, content, excerpt, filePath }) => {
+      .map(({ url, frontmatter, content, excerpt, relativePath }) => {
         let imageUrl: string | undefined = undefined;
 
         if (frontmatter.image) {
@@ -50,10 +51,10 @@ export default createContentLoader('blog/**/*.md', {
           imageUrl = `/${imageUrl}`;
         }
 
-        // 這裡是重點：沒 frontmatter.date 就自動抓 git 建立日期
+        // 沒有 frontmatter.date 就自動抓 git 建立日期
         let date: string | undefined = frontmatter.date
-        if (!date && filePath) {
-          date = getGitCreatedDate(filePath)
+        if (!date && relativePath) {
+          date = getGitCreatedDate(relativePath)
         }
         if (!date) {
           date = '2000-01-01'
