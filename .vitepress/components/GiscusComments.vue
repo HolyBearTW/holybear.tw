@@ -1,11 +1,11 @@
 <template>
   <div class="giscus-comments-container">
-    <div v-if="!giscusLoaded" class="giscus-comments-placeholder">
+    <div v-show="!giscusLoaded" class="giscus-comments-placeholder">
       <p>正在載入留言...</p>
       <div class="spinner"></div>
     </div>
 
-    <div v-if="giscusLoaded" ref="giscusContainer" class="giscus-actual-comments">
+    <div v-show="giscusLoaded" ref="giscusContainer" class="giscus-actual-comments">
       </div>
   </div>
 </template>
@@ -28,12 +28,12 @@ onMounted(() => {
     const script = document.createElement('script');
     script.src = 'https://giscus.app/client.js';
     
-    // ******** 這裡已經替換為您提供的正確 ID 了！ ********
+    // ******** 這裡使用您提供的正確 ID ********
     script.setAttribute('data-repo', 'HolyBearTW/holybear.me');
-    script.setAttribute('data-repo-id', 'R_kgDOJmguVg'); // 從您提供的腳本複製
-    script.setAttribute('data-category', 'General'); // 從您提供的腳本複製
-    script.setAttribute('data-category-id', 'DIC_kwDOJmguVs4Cqo90'); // 從您提供的腳本複製
-    // ******************************************************
+    script.setAttribute('data-repo-id', 'R_kgDOJmguVg');
+    script.setAttribute('data-category', 'General');
+    script.setAttribute('data-category-id', 'DIC_kwDOJmguVs4Cqo90');
+    // **************************************
 
     script.setAttribute('data-mapping', 'pathname');
     script.setAttribute('data-strict', '0');
@@ -47,6 +47,7 @@ onMounted(() => {
 
     giscusContainer.value.appendChild(script);
 
+    // Giscus 腳本一旦添加到 DOM，就認為它開始載入，可以顯示實際區塊並隱藏佔位符
     giscusLoaded.value = true;
   }
 
