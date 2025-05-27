@@ -6,18 +6,21 @@ description: 聖小熊的部落格文章列表
 
 <script setup>
 import { ref, computed } from 'vue'
-import { data as allPosts } from '../.vitepress/theme/posts.data.ts'
+import { data as allPosts } from '../../.vitepress/theme/posts.data.ts'
 
-const formatDateToTaipei = (dateString) => {
-  if (!dateString) return ''
-  const date = new Date(dateString)
-  const twDate = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }))
-  const yyyy = twDate.getFullYear()
-  const mm = String(twDate.getMonth() + 1).padStart(2, '0')
-  const dd = String(twDate.getDate()).padStart(2, '0')
-  const hh = String(twDate.getHours()).padStart(2, '0')
-  const min = String(twDate.getMinutes()).padStart(2, '0')
-  return `${yyyy}-${mm}-${dd} ${hh}:${min}`
+// 這段就是從單篇內容頁搬過來的，只是變成 function 方便每篇用
+function formatDateExactlyLikePostPage(dateString) {
+  if (dateString) {
+    const date = new Date(dateString)
+    const twDate = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }))
+    const yyyy = twDate.getFullYear()
+    const mm = String(twDate.getMonth() + 1).padStart(2, '0')
+    const dd = String(twDate.getDate()).padStart(2, '0')
+    const hh = String(twDate.getHours()).padStart(2, '0')
+    const min = String(twDate.getMinutes()).padStart(2, '0')
+    return `${yyyy}-${mm}-${dd} ${hh}:${min}`
+  }
+  return ''
 }
 
 const postsPerPage = 10
@@ -55,7 +58,7 @@ const pageNumbers = computed(() => {
         <div class="post-info">
           <h2 class="post-title">{{ post.title }}</h2>
           <p v-if="post.date" class="post-date">
-            發布日期：{{ formatDateToTaipei(post.date) }}
+            發布日期：{{ formatDateExactlyLikePostPage(post.date) }}
           </p>
           <div v-if="post.excerpt" class="post-excerpt" v-html="post.excerpt"></div>
           <span class="read-more">繼續閱讀 &gt;</span>
@@ -65,7 +68,12 @@ const pageNumbers = computed(() => {
   </div>
   <div class="pagination" v-if="totalPages > 1">
     <button class="pagination-button" :disabled="currentPage === 1" @click="goToPage(currentPage - 1)">上一頁</button>
-    <button v-for="page in pageNumbers" :key="page" class="pagination-button" :class="{ active: page === currentPage }" @click="goToPage(page)">
+    <button
+      v-for="page in pageNumbers"
+      :key="page"
+      class="pagination-button"
+      :class="{ active: page === currentPage }"
+      @click="goToPage(page)">
       {{ page }}
     </button>
     <button class="pagination-button" :disabled="currentPage === totalPages" @click="goToPage(currentPage + 1)">下一頁</button>
