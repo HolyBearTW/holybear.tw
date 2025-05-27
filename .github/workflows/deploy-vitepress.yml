@@ -19,8 +19,6 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 'lts/*'
-          cache: 'yarn'
-          cache-dependency-path: 'yarn.lock'
 
       - name: 切換到根目錄
         run: cd "$GITHUB_WORKSPACE"
