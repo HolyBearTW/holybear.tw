@@ -1,1 +1,0 @@
-import{_ as e,c as t,o,ae as r}from"./chunks/framework.Cthp9TdA.js";const m=JSON.parse('{"title":"","description":"","frontmatter":{},"headers":[],"relativePath":"Mod.md","filePath":"Mod.md"}'),l={name:"Mod.md"};function s(i,a,c,d,n,_){return o(),t("div",null,a[0]||(a[0]=[r("",4)]))}const u=e(l,[["render",s]]);export{m as __pageData,u as default};
