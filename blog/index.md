@@ -63,31 +63,12 @@ const pageNumbers = computed(() => {
       </a>
     </div>
   </div>
-
   <div class="pagination" v-if="totalPages > 1">
-    <button
-      class="pagination-button"
-      :disabled="currentPage === 1"
-      @click="goToPage(currentPage - 1)"
-    >
-      上一頁
-    </button>
-    <button
-      v-for="page in pageNumbers"
-      :key="page"
-      class="pagination-button"
-      :class="{ active: page === currentPage }"
-      @click="goToPage(page)"
-    >
+    <button class="pagination-button" :disabled="currentPage === 1" @click="goToPage(currentPage - 1)">上一頁</button>
+    <button v-for="page in pageNumbers" :key="page" class="pagination-button" :class="{ active: page === currentPage }" @click="goToPage(page)">
       {{ page }}
     </button>
-    <button
-      class="pagination-button"
-      :disabled="currentPage === totalPages"
-      @click="goToPage(currentPage + 1)"
-    >
-      下一頁
-    </button>
+    <button class="pagination-button" :disabled="currentPage === totalPages" @click="goToPage(currentPage + 1)">下一頁</button>
   </div>
 </div>
 
