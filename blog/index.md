@@ -6,37 +6,23 @@ description: 聖小熊的部落格文章列表
 
 <script setup>
 import { ref, computed } from 'vue'
-import { useData } from 'vitepress'
-// 載入所有文章資料，確保 posts.data.ts 已正確設定
 import { data as allPosts } from '../.vitepress/theme/posts.data.ts'
+import { formatDateTime } from '../.vitepress/theme/formatDateTime'
 
-const { site } = useData()
-
-const postsPerPage = 10 // 每頁顯示的文章數量
-const currentPage = ref(1) // 當前頁碼，預設為第一頁
-
-// 計算總頁數
-const totalPages = computed(() => {
-  return Math.ceil(allPosts.length / postsPerPage)
-})
-
-// 根據當前頁碼和每頁數量，計算當前頁要顯示的文章
+const postsPerPage = 10
+const currentPage = ref(1)
+const totalPages = computed(() => Math.ceil(allPosts.length / postsPerPage))
 const paginatedPosts = computed(() => {
   const start = (currentPage.value - 1) * postsPerPage
   const end = start + postsPerPage
   return allPosts.slice(start, end)
 })
-
-// 點擊頁碼按鈕時的處理函數
 const goToPage = (page) => {
   if (page >= 1 && page <= totalPages.value) {
     currentPage.value = page
-    // 捲動到頁面頂部，提升使用者體驗
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 }
-
-// 生成頁碼陣列，用於 v-for 迴圈
 const pageNumbers = computed(() => {
   const pages = []
   for (let i = 1; i <= totalPages.value; i++) {
@@ -44,19 +30,6 @@ const pageNumbers = computed(() => {
   }
   return pages
 })
-
-// 格式化日期+時間（台灣時區、與文章內頁一致）
-function formatDateTime(dateString) {
-  if (!dateString) return ''
-  const date = new Date(dateString)
-  const twDate = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }))
-  const yyyy = twDate.getFullYear()
-  const mm = String(twDate.getMonth() + 1).padStart(2, '0')
-  const dd = String(twDate.getDate()).padStart(2, '0')
-  const hh = String(twDate.getHours()).padStart(2, '0')
-  const min = String(twDate.getMinutes()).padStart(2, '0')
-  return `${yyyy}-${mm}-${dd} ${hh}:${min}`
-}
 </script>
 
 <div class="blog-home">
@@ -106,112 +79,99 @@ function formatDateTime(dateString) {
 </div>
 
 <style scoped>
-/* 部落格首頁的整體容器 */
 .blog-home {
-  max-width: 960px; /* 根據您的網站版面調整最大寬度 */
+  max-width: 960px;
   margin: 0 auto;
   padding: 2rem 0;
 }
-
-/* 所有文章單欄佈局 (預設為一排一篇文章) */
 .blog-articles-grid {
   display: grid;
-  grid-template-columns: 1fr; /* 單欄佈局 */
-  gap: 1.5rem; /* 文章卡片之間的垂直間距 */
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
 }
-
 .post-item {
-  border-bottom: 1px dashed var(--vp-c-divider); /* 底部虛線分隔 */
-  padding-bottom: 1.5rem; /* 內容與底部虛線間距 */
-  margin-bottom: 1.5rem; /* 每個項目底部的間距 */
-  transition: transform 0.2s ease-in-out, background-color 0.2s ease-in-out; /* 懸停動畫 */
+  border-bottom: 1px dashed var(--vp-c-divider);
+  padding-bottom: 1.5rem;
+  margin-bottom: 1.5rem;
+  transition: transform 0.2s ease-in-out, background-color 0.2s ease-in-out;
 }
-/* 移除網格中最後一個項目的底部邊線 */
 .blog-articles-grid > .post-item:last-child {
   border-bottom: none;
 }
-/* 在分頁情況下，確保當前頁的最後一個項目也沒有底部線條 */
 .blog-articles-grid .post-item:nth-last-child(1):not(:only-child) {
   border-bottom: none;
 }
-
 .post-item:hover {
-  transform: translateY(-3px); /* 懸停時輕微上浮 */
-  background-color: var(--vp-c-bg-soft); /* 懸停時背景色變化 */
+  transform: translateY(-3px);
+  background-color: var(--vp-c-bg-soft);
 }
 .post-item-link {
-  display: flex; /* 圖片和文字內容並排 */
-  align-items: flex-start; /* 內容頂部對齊 */
-  padding: 0.5rem 0; /* 鏈接內部頂部和底部的內距 */
+  display: flex;
+  align-items: flex-start;
+  padding: 0.5rem 0;
   text-decoration: none;
   color: inherit;
-  height: 100%; /* 確保連結佔滿整個項目高度 */
+  height: 100%;
 }
 .post-thumbnail-wrapper {
-  flex-shrink: 0; /* 圖片不縮小 */
-  width: 120px; /* 縮圖固定寬度，可調整 */
-  height: 90px; /* 縮圖固定高度，可調整為 4:3 比例 */
-  margin-right: 1rem; /* 圖片右側間距 */
-  border-radius: 4px; /* 輕微圓角 */
+  flex-shrink: 0;
+  width: 120px;
+  height: 90px;
+  margin-right: 1rem;
+  border-radius: 4px;
   overflow: hidden;
 }
 .post-thumbnail {
   width: 100%;
   height: 100%;
-  object-fit: cover; /* 縮圖裁切方式，確保填滿空間 */
+  object-fit: cover;
 }
 .post-info {
-  flex-grow: 1; /* 文字內容佔據剩餘空間 */
+  flex-grow: 1;
 }
-
-/* 覆蓋 VitePress 預設的 h2 樣式，移除頂部邊框和多餘的內外距 */
-.post-info .post-title { /* 使用 .post-info 作為前綴增加選擇器權重 */
-  border-top: none; /* 移除頂部邊框 */
-  padding-top: 0; /* 移除頂部內距 */
-  margin-top: 0; /* 移除頂部外距 */
-  font-size: 1.3rem; /* 標題大小 */
+.post-info .post-title {
+  border-top: none;
+  padding-top: 0;
+  margin-top: 0;
+  font-size: 1.3rem;
   line-height: 1.3;
-  margin-bottom: 0.5rem; /* 標題下方外距 */
+  margin-bottom: 0.5rem;
   color: var(--vp-c-text-1);
 }
-
 .post-date {
   color: var(--vp-c-text-2);
-  font-size: 0.85rem; /* 日期文字大小 */
+  font-size: 0.85rem;
   margin-bottom: 0.8rem;
 }
 .post-excerpt {
   color: var(--vp-c-text-2);
   line-height: 1.5;
-  font-size: 0.95rem; /* 摘要文字大小 */
+  font-size: 0.95rem;
   margin-bottom: 1rem;
-  display: -webkit-box; /* 多行文字省略 */
-  -webkit-line-clamp: 3; /* 限制摘要顯示3行 */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .read-more {
   display: inline-block;
-  color: var(--vp-c-brand-1); /* 使用品牌色作為連結顏色 */
+  color: var(--vp-c-brand-1);
   font-weight: 500;
   font-size: 0.9rem;
   margin-top: 0.5rem;
 }
 .read-more:hover {
-  text-decoration: underline; /* 懸停時加底線 */
+  text-decoration: underline;
 }
-
-/* 分頁按鈕樣式 */
 .pagination {
   display: flex;
   justify-content: center;
   align-items: center;
   margin-top: 3rem;
   gap: 0.5rem;
-  flex-wrap: wrap; /* 換行以應對多頁數或小螢幕 */
+  flex-wrap: wrap;
 }
-
 .pagination-button {
   background-color: var(--vp-c-bg-soft);
   color: var(--vp-c-text-1);
@@ -222,43 +182,38 @@ function formatDateTime(dateString) {
   transition: background-color 0.2s, border-color 0.2s, color 0.2s;
   font-size: 0.95rem;
 }
-
 .pagination-button:hover:not(:disabled) {
   background-color: var(--vp-c-brand-1);
   color: var(--vp-c-white);
   border-color: var(--vp-c-brand-1);
 }
-
 .pagination-button.active {
   background-color: var(--vp-c-brand-1);
   color: var(--vp-c-white);
   border-color: var(--vp-c-brand-1);
   cursor: default;
 }
-
 .pagination-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
-
-/* 手機版調整：確保小螢幕下依然是圖片在左，文字在右 */
 @media (max-width: 767px) {
   .post-item-link {
-    flex-direction: row; /* 在手機版也保持圖片和文字並排 */
+    flex-direction: row;
     align-items: flex-start;
     text-align: left;
   }
   .post-thumbnail-wrapper {
-    width: 100px; /* 手機版縮圖寬度 */
-    height: 75px; /* 手機版縮圖高度 (維持 4:3 比例) */
+    width: 100px;
+    height: 75px;
     margin-right: 1rem;
     margin-bottom: 0;
   }
   .post-title {
-    font-size: 1.25rem; /* 手機版標題稍微大一點點 */
+    font-size: 1.25rem;
   }
   .post-excerpt {
-    -webkit-line-clamp: 2; /* 限制摘要顯示2行 */
+    -webkit-line-clamp: 2;
   }
 }
 </style>
