@@ -7,7 +7,7 @@ description: 聖小熊的部落格文章列表
 <script setup>
 import { ref, computed } from 'vue'
 // 用 VitePress 靜態 import JSON（build 完後路徑請根據你的 dist 位置調整）
-import blogDates from '../../dist/blog-dates.json'
+import blogDates from '../.vitepress/theme/blog-dates.json'
 
 // 你的文章資料（假設還是從 posts.data.ts 來）
 import { data as allPosts } from '../.vitepress/theme/posts.data.ts'
