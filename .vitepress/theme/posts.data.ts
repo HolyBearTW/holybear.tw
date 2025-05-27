@@ -5,8 +5,8 @@ export interface Post {
   title: string
   url: string
   date: string
-  image?: string // 第一張圖片的網址
-  excerpt?: string // 文章摘要
+  image?: string
+  excerpt?: string
 }
 
 const DEFAULT_IMAGE = '/blog_no_image.svg'
@@ -54,17 +54,17 @@ export default createContentLoader('blog/**/*.md', {
           date = getGitCreatedDate(relativePath)
         }
         if (!date) {
-          date = '2000-01-01'
+          date = '2000-01-01 00:00:00'
         }
 
         return {
           title: frontmatter.title,
           url,
-          date, // 保留原始 date 字串
+          date, // 保留原字串
           image: imageUrl || DEFAULT_IMAGE,
           excerpt: excerpt || ''
         }
       })
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .sort((a, b) => new Date(b.date.replace(/-/g, '/')).getTime() - new Date(a.date.replace(/-/g, '/')).getTime())
   }
 })
