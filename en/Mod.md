@@ -2,11 +2,10 @@
 title: Portfolio
 layout_type: custom_header
 ---
-## Module List
-
 ::: tip
 Items marked with a ★ indicate collaboration with other contributors. Please refer to the contributor list below for details.
 :::
+## Module List
 
 - Miui Camera
 - Xiaomi Gallery - Editor
