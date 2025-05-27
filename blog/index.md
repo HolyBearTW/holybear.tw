@@ -44,6 +44,19 @@ const pageNumbers = computed(() => {
   }
   return pages
 })
+
+// 格式化日期+時間（台灣時區、與文章內頁一致）
+function formatDateTime(dateString) {
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  const twDate = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }))
+  const yyyy = twDate.getFullYear()
+  const mm = String(twDate.getMonth() + 1).padStart(2, '0')
+  const dd = String(twDate.getDate()).padStart(2, '0')
+  const hh = String(twDate.getHours()).padStart(2, '0')
+  const min = String(twDate.getMinutes()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd} ${hh}:${min}`
+}
 </script>
 
 <div class="blog-home">
@@ -55,7 +68,9 @@ const pageNumbers = computed(() => {
         </div>
         <div class="post-info">
           <h2 class="post-title">{{ post.title }}</h2>
-          <p v-if="post.date" class="post-date">發布日期：{{ new Date(post.date).toLocaleDateString('zh-TW') }}</p>
+          <p v-if="post.date" class="post-date">
+            發布日期：{{ formatDateTime(post.date) }}
+          </p>
           <div v-if="post.excerpt" class="post-excerpt" v-html="post.excerpt"></div>
           <span class="read-more">繼續閱讀 &gt;</span>
         </div>
