@@ -11,7 +11,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, computed } from 'vue' // 多加 computed
+import { ref, onMounted, watch, computed } from 'vue'
 import { useRoute, useData } from 'vitepress'
 
 const giscusLoaded = ref(false)
@@ -19,46 +19,56 @@ const giscusContainer = ref(null)
 const route = useRoute()
 const { isDark } = useData()
 
-const pageUrl = `https://holybear.me${route.path}`
+const giscusTheme = computed(() => isDark.value ? 'dark_dimmed' : 'light')
 
-const giscusTheme = computed(() => isDark.value ? 'dark_dimmed' : 'light');
-
-onMounted(() => {
+// 注入 giscus script 的方法（可重複調用）
+function loadGiscus() {
   if (giscusContainer.value) {
-    const script = document.createElement('script');
-    script.src = 'https://giscus.app/client.js';
-    script.setAttribute('data-repo', 'HolyBearTW/holybear.me');
-    script.setAttribute('data-repo-id', 'R_kgDOJmguVg');
-    script.setAttribute('data-category', 'General');
-    script.setAttribute('data-category-id', 'DIC_kwDOJmguVs4Cqo90');
-    script.setAttribute('data-mapping', 'pathname');
-    script.setAttribute('data-strict', '0');
-    script.setAttribute('data-reactions-enabled', '1');
-    script.setAttribute('data-emit-metadata', '0');
-    script.setAttribute('data-input-position', 'bottom');
-    script.setAttribute('data-theme', giscusTheme.value);
-    script.setAttribute('data-lang', 'zh-TW');
-    script.setAttribute('crossorigin', 'anonymous');
-    script.async = true;
-
-    giscusContainer.value.appendChild(script);
-
-    giscusLoaded.value = true;
+    giscusContainer.value.innerHTML = '' // 先清空舊 iframe
+    const script = document.createElement('script')
+    script.src = 'https://giscus.app/client.js'
+    script.setAttribute('data-repo', 'HolyBearTW/holybear.me')
+    script.setAttribute('data-repo-id', 'R_kgDOJmguVg')
+    script.setAttribute('data-category', 'General')
+    script.setAttribute('data-category-id', 'DIC_kwDOJmguVs4Cqo90')
+    script.setAttribute('data-mapping', 'pathname')
+    script.setAttribute('data-strict', '0')
+    script.setAttribute('data-reactions-enabled', '1')
+    script.setAttribute('data-emit-metadata', '0')
+    script.setAttribute('data-input-position', 'bottom')
+    script.setAttribute('data-theme', giscusTheme.value)
+    script.setAttribute('data-lang', 'zh-TW')
+    script.setAttribute('crossorigin', 'anonymous')
+    script.async = true
+    giscusContainer.value.appendChild(script)
+    giscusLoaded.value = true
   }
+}
 
-  watch(giscusTheme, (newTheme) => {
-    const iframe = document.querySelector('iframe.giscus-frame');
-    if (iframe && iframe.contentWindow) {
-      iframe.contentWindow.postMessage({
-        giscus: {
-          setConfig: {
-            theme: newTheme
-          }
+// 第一次進入頁面時載入
+onMounted(() => {
+  loadGiscus()
+})
+
+// 監聽路由變化，切換文章時重新載入 giscus
+watch(() => route.path, () => {
+  giscusLoaded.value = false
+  loadGiscus()
+})
+
+// 監聽 dark mode 變化，動態切換主題
+watch(giscusTheme, (newTheme) => {
+  const iframe = document.querySelector('iframe.giscus-frame')
+  if (iframe && iframe.contentWindow) {
+    iframe.contentWindow.postMessage({
+      giscus: {
+        setConfig: {
+          theme: newTheme
         }
-      }, 'https://giscus.app');
-    }
-  }, { immediate: true });
-});
+      }
+    }, 'https://giscus.app')
+  }
+}, { immediate: true })
 </script>
 
 <style scoped>
