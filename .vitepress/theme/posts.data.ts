@@ -29,7 +29,7 @@ export default createContentLoader('blog/**/*.md', {
     return raw
       .filter(({ url }) => !url.endsWith('/blog/'))
       .map(({ url, frontmatter, content, excerpt, relativePath }) => {
-        // 日期：優先 frontmatter.date，否則 git 建檔日期，最後用 fs 建檔日期
+        // 日期：優先 frontmatter.date，否則 git 建檔日期，否則 fs 建檔日期
         let date: string = frontmatter.date || ''
         if (!date && relativePath) {
           date = getGitCreatedDate(relativePath)
@@ -67,13 +67,14 @@ export default createContentLoader('blog/**/*.md', {
           excerpt: summary
         }
       })
-      // 不再 filter 掉沒 date 的文章
+      // 不 filter 掉沒 date 的文章，保證都顯示
       .sort((a, b) => {
-        // 沒有 date 的文章放最後
+        // 沒有 date 的文章放在最下面
         if (!a.date && !b.date) return 0
         if (!a.date) return 1
         if (!b.date) return -1
-        return (b.date > a.date ? 1 : b.date < a.date ? -1 : 0)
+        // 用字串比較 ISO 格式就能正確排序
+        return b.date.localeCompare(a.date)
       })
   }
 })
