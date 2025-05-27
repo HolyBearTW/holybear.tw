@@ -2,7 +2,7 @@ const fs = require('fs')
 const path = require('path')
 const cheerio = require('cheerio')
 
-const blogDir = path.resolve(__dirname, '../dist/blog')
+const blogDir = path.resolve(__dirname, '../blog')
 const files = fs.readdirSync(blogDir).filter(f => f.endsWith('.html'))
 
 const result = []
@@ -19,6 +19,6 @@ for (const file of files) {
 }
 
 // 輸出到 .vitepress/theme/blog-dates.json
-const outPath = path.resolve(__dirname, '../docs/.vitepress/theme/blog-dates.json')
+const outPath = path.resolve(__dirname, '../.vitepress/theme/blog-dates.json')
 fs.writeFileSync(outPath, JSON.stringify(result, null, 2))
 console.log('Done! blog-dates.json generated at', outPath)
