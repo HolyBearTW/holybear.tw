@@ -1,4 +1,4 @@
-name: Deploy VitePress Site to GitHub Pages
+name: 部署 VitePress 靜態網站到 GitHub Pages
 
 on:
   push:
@@ -16,20 +16,26 @@ jobs:
           fetch-depth: 0
 
       - name: 設定 Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 'lts/*'
-
-      - name: 切換到根目錄
-        run: cd "$GITHUB_WORKSPACE"
+          cache: 'yarn'
 
       - name: 安裝相依套件
         run: yarn install
-        working-directory: ${{ github.workspace }}
+
+      - name: 如果 yarn.lock 產生則自動 commit
+        run: |
+          if [[ -n "$(git status --porcelain yarn.lock)" ]]; then
+            git config --global user.name 'github-actions[bot]'
+            git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+            git add yarn.lock
+            git commit -m "ci: 自動產生 yarn.lock [skip ci]"
+            git push
+          fi
 
       - name: 建置 VitePress 網站
         run: yarn run build
-        working-directory: ${{ github.workspace }}
 
       - name: 部署到 GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
