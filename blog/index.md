@@ -7,7 +7,18 @@ description: 聖小熊的部落格文章列表
 <script setup>
 import { ref, computed } from 'vue'
 import { data as allPosts } from '../.vitepress/theme/posts.data.ts'
-import { formatDateTime } from '../.vitepress/theme/formatDateTime'
+
+const formatDateToTaipei = (dateString) => {
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  const twDate = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }))
+  const yyyy = twDate.getFullYear()
+  const mm = String(twDate.getMonth() + 1).padStart(2, '0')
+  const dd = String(twDate.getDate()).padStart(2, '0')
+  const hh = String(twDate.getHours()).padStart(2, '0')
+  const min = String(twDate.getMinutes()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd} ${hh}:${min}`
+}
 
 const postsPerPage = 10
 const currentPage = ref(1)
@@ -44,7 +55,7 @@ const pageNumbers = computed(() => {
         <div class="post-info">
           <h2 class="post-title">{{ post.title }}</h2>
           <p v-if="post.date" class="post-date">
-            發布日期：{{ formatDateTime(post.date) }}
+            發布日期：{{ formatDateToTaipei(post.date) }}
           </p>
           <div v-if="post.excerpt" class="post-excerpt" v-html="post.excerpt"></div>
           <span class="read-more">繼續閱讀 &gt;</span>
