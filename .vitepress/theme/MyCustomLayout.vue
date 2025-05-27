@@ -15,6 +15,7 @@ const currentTitle = computed(() =>
   frontmatter.value ? (frontmatter.value.title || '無標題文章') : 'frontmatter.value is UNDEFINED'
 )
 
+// 用台灣時區 (Asia/Taipei) 顯示日期
 const currentDisplayDate = computed(() => {
   if (frontmatter.value?.date) {
     const date = new Date(frontmatter.value.date)
@@ -33,120 +34,82 @@ const currentDisplayDate = computed(() => {
 <template>
   <Theme.Layout>
     <template #doc-before>
-      <div v-if="!isHomePage" class="post-container">
-        <h1 class="post-title">{{ currentTitle }}</h1>
-        <div class="post-meta">
-          <span class="post-author" v-if="frontmatter.author">作者：{{ frontmatter.author }}</span>
-          <span v-if="frontmatter.author && currentDisplayDate">｜</span>
-          <span class="post-date" v-if="currentDisplayDate">{{ currentDisplayDate }}</span>
-        </div>
-        <div class="post-content">
-          <Content />
-        </div>
-        <VotePanel />
-        <GiscusComments />
+      <div v-if="!isHomePage" class="blog-post-header-injected">
+        <h1 class="blog-post-title">{{ currentTitle }}</h1>
+        <p class="blog-post-date-in-content">
+          <template v-if="frontmatter.author">作者：{{ frontmatter.author }}</template>
+          <template v-if="frontmatter.author && currentDisplayDate">｜</template>
+          <template v-if="currentDisplayDate">{{ currentDisplayDate }}</template>
+        </p>
       </div>
+    </template>
+    <template #doc-after>
+      <VotePanel />
+      <GiscusComments />
     </template>
   </Theme.Layout>
 </template>
 
-<style>
-/* Blog 內容頁主體容器 */
-.post-container {
-  max-width: 700px;
-  margin: 48px auto 32px auto;
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-  padding: 2rem 2.5rem;
+<style scoped>
+:deep(.vp-doc h1:first-of-type) { display: none !important; }
+.blog-post-header-injected {
+  position: relative;
+  width: 100%;
+  padding-left: var(--vp-content-padding);
+  padding-right: var(--vp-content-padding);
+  padding-top: 0;
+  padding-bottom: 0;
+  margin-bottom: 0;
+  box-sizing: border-box;
+  background-color: var(--vp-c-bg);
+  z-index: 1;
 }
-
-/* 標題 */
-.post-title {
+:deep(.vp-doc) { padding-top: 0 !important; margin-top: 0 !important; }
+:deep(.vp-doc > p:first-of-type) { margin-top: 0; }
+@media (max-width: 768px) {
+  .blog-post-header-injected {
+    padding-left: var(--vp-content-padding);
+    padding-right: var(--vp-content-padding);
+    padding-top: 0;
+    padding-bottom: 0;
+    margin-bottom: 0;
+  }
+  :deep(.vp-doc) { padding-top: 0 !important; margin-top: 0 !important; }
+  :deep(.vp-doc > p:first-of-type) { margin-top: 0; }
+}
+.blog-post-title {
   font-size: 2.5rem;
-  font-weight: bold;
-  margin-bottom: 1.2rem;
-  color: #222;
+  line-height: 1.2;
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  color: var(--vp-c-text-1);
 }
-
-/* 作者、日期資訊 */
-.post-meta {
-  color: #888;
-  font-size: 1rem;
-  margin-bottom: 2.2rem;
+.blog-post-date-in-content {
+  color: var(--vp-c-text-2);
+  font-size: 0.85rem;
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px dashed var(--vp-c-divider);
 }
-
-/* 文章內容 */
-.post-content {
-  font-size: 1.18rem;
-  line-height: 1.8;
-  color: #222;
-}
-
-/* 內容常見元素細節 */
-.post-content h2 {
-  font-size: 1.7rem;
-  margin: 2.5rem 0 1.2rem 0;
-  font-weight: bold;
-  color: #1a1a1a;
-}
-.post-content h3 {
-  font-size: 1.35rem;
-  margin: 2rem 0 1rem 0;
-  font-weight: bold;
-  color: #1a1a1a;
-}
-.post-content p,
-.post-content ul,
-.post-content ol,
-.post-content table,
-.post-content blockquote,
-.post-content pre {
+:deep(.vp-doc p),
+:deep(.vp-doc ul),
+:deep(.vp-doc ol),
+:deep(.vp-doc img),
+:deep(.vp-doc table),
+:deep(.vp-doc blockquote),
+:deep(.vp-doc pre),
+:deep(.vp-doc .custom-block),
+:deep(.vp-doc h2),
+:deep(.vp-doc h3),
+:deep(.vp-doc h4),
+:deep(.vp-doc h5),
+:deep(.vp-doc h6) {
   margin-top: 1rem;
   margin-bottom: 1rem;
 }
-.post-content img {
-  max-width: 100%;
-  display: block;
-  margin: 1.5rem auto;
-  border-radius: 8px;
-  box-shadow: 0 1px 6px rgba(0,0,0,0.04);
-}
-.post-content code {
-  background: #f4f4f4;
-  border-radius: 4px;
-  padding: 0.2em 0.4em;
-  font-size: 95%;
-}
-.post-content pre {
-  background: #f6f8fa;
-  border-radius: 8px;
-  padding: 1.2rem;
-  overflow-x: auto;
-}
-.post-content blockquote {
-  border-left: 4px solid #eee;
-  background: #fafbfc;
-  color: #666;
-  margin: 1.5em 0;
-  padding: 0.6em 1em;
-  border-radius: 6px;
-}
-.post-content ul,
-.post-content ol {
-  padding-left: 2em;
-}
-
-/* 手機版 RWD */
-@media (max-width: 768px) {
-  .post-container {
-    padding: 1rem 0.5rem;
-    border-radius: 0;
-    box-shadow: none;
-    margin: 20px 0 0 0;
-  }
-  .post-title {
-    font-size: 2rem;
-  }
+:deep(.vp-doc div[class*="language-"]) {
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
 }
 </style>
