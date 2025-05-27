@@ -11,7 +11,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue' // 多加 computed
 import { useRoute, useData } from 'vitepress'
 
 const giscusLoaded = ref(false)
@@ -27,14 +27,10 @@ onMounted(() => {
   if (giscusContainer.value) {
     const script = document.createElement('script');
     script.src = 'https://giscus.app/client.js';
-    
-    // ******** 這裡使用您提供的正確 ID ********
     script.setAttribute('data-repo', 'HolyBearTW/holybear.me');
     script.setAttribute('data-repo-id', 'R_kgDOJmguVg');
     script.setAttribute('data-category', 'General');
     script.setAttribute('data-category-id', 'DIC_kwDOJmguVs4Cqo90');
-    // **************************************
-
     script.setAttribute('data-mapping', 'pathname');
     script.setAttribute('data-strict', '0');
     script.setAttribute('data-reactions-enabled', '1');
@@ -47,7 +43,6 @@ onMounted(() => {
 
     giscusContainer.value.appendChild(script);
 
-    // Giscus 腳本一旦添加到 DOM，就認為它開始載入，可以顯示實際區塊並隱藏佔位符
     giscusLoaded.value = true;
   }
 
