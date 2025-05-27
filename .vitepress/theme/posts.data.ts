@@ -23,27 +23,15 @@ function getFsCreatedDate(relativePath: string): string {
   }
 }
 
-function safeDate(date: unknown): string {
-  if (typeof date === 'string') return date
-  if (!date) return ''
-  return String(date)
-}
-
 export default createContentLoader('blog/**/*.md', {
   excerpt: true,
   transform(raw) {
     return raw
       .filter(({ url }) => !url.endsWith('/blog/'))
       .map(({ url, frontmatter, content, excerpt, relativePath }) => {
-        // 日期：優先 frontmatter.date，否則 git 建檔日期，否則 fs 建檔日期
-        let date = safeDate(frontmatter.date)
-        if (!date && relativePath) {
-          date = safeDate(getGitCreatedDate(relativePath))
-        }
-        if (!date && relativePath) {
-          date = safeDate(getFsCreatedDate(relativePath))
-        }
-
+        // 日期
+        let date = typeof frontmatter.date === 'string' ? frontmatter.date : ''
+        if (!date && relativePath) date = getGitCreatedDate(relativePath) || getFsCreatedDate(relativePath) || ''
         // 圖片
         let imageUrl: string | undefined = frontmatter.image
         if (!imageUrl && content) {
@@ -55,7 +43,6 @@ export default createContentLoader('blog/**/*.md', {
           imageUrl = `/${imageUrl}`
         }
         if (!imageUrl) imageUrl = DEFAULT_IMAGE
-
         // 摘要
         let summary = excerpt?.trim()
         if (!summary) summary = (frontmatter.description || '').trim()
@@ -64,18 +51,16 @@ export default createContentLoader('blog/**/*.md', {
           summary = lines.find(line => line && !line.startsWith('#') && !line.startsWith('![') && !line.startsWith('>') && !line.startsWith('<!--') && !line.startsWith('---')) || ''
         }
         if (!summary) summary = ''
-
         return {
-          title: frontmatter.title,
+          title: frontmatter.title ?? '',
           url,
           date,
           image: imageUrl,
           excerpt: summary
         }
       })
-      // 不 filter 掉沒 date 的文章，保證都顯示
+      // 不 filter 掉沒 date，排序時沒 date 放最後
       .sort((a, b) => {
-        // 沒有 date 的文章放在最下面
         const aDate = typeof a.date === 'string' ? a.date : ''
         const bDate = typeof b.date === 'string' ? b.date : ''
         if (!aDate && !bDate) return 0
