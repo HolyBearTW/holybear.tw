@@ -100,7 +100,9 @@ const currentDisplayDate = computed(() => {
 :deep(.vp-doc blockquote),
 :deep(.vp-doc pre),
 :deep(.vp-doc .custom-block),
-:deep(.vp-doc h2),
+:deep(.vp-doc h2) {
+  border-top: none !important;
+}
 :deep(.vp-doc h3),
 :deep(.vp-doc h4),
 :deep(.vp-doc h5),
