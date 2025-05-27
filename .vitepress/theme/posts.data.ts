@@ -12,6 +12,29 @@ function getGitCreatedDate(relativePath: string): string {
   }
 }
 
+// 取得文章第一個非空行段落（純文字，不含 markdown 標記）
+function getFirstParagraph(content: string): string {
+  // 切行、去頭尾空白，找到第一個非空行
+  const lines = content.split('\n').map(line => line.trim())
+  // 過濾掉 frontmatter、HTML註解、image/link 標記等
+  for (const line of lines) {
+    if (
+      line &&
+      !line.startsWith('<!--') &&
+      !line.startsWith('---') &&
+      !line.startsWith('#') &&
+      !line.startsWith('![') &&
+      !line.startsWith('>') &&
+      !line.startsWith('<') &&
+      !line.startsWith('```')
+    ) {
+      // 去掉 markdown link 語法
+      return line.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/[*_~`]/g, '')
+    }
+  }
+  return ''
+}
+
 export default createContentLoader('blog/**/*.md', {
   excerpt: true,
   transform(raw) {
@@ -36,9 +59,11 @@ export default createContentLoader('blog/**/*.md', {
         }
         if (!imageUrl) imageUrl = DEFAULT_IMAGE
 
-        // 摘要邏輯：優先 excerpt，其次 frontmatter.description
+        // 摘要
         let summary = excerpt?.trim()
         if (!summary) summary = (frontmatter.description || '').trim()
+        if (!summary && content) summary = getFirstParagraph(content)
+        if (!summary) summary = ''  // 如果真的什麼都沒有
 
         return {
           title: frontmatter.title,
