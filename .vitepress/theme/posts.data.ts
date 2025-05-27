@@ -23,6 +23,12 @@ function getFsCreatedDate(relativePath: string): string {
   }
 }
 
+function safeDate(date: unknown): string {
+  if (typeof date === 'string') return date
+  if (!date) return ''
+  return String(date)
+}
+
 export default createContentLoader('blog/**/*.md', {
   excerpt: true,
   transform(raw) {
@@ -30,12 +36,12 @@ export default createContentLoader('blog/**/*.md', {
       .filter(({ url }) => !url.endsWith('/blog/'))
       .map(({ url, frontmatter, content, excerpt, relativePath }) => {
         // 日期：優先 frontmatter.date，否則 git 建檔日期，否則 fs 建檔日期
-        let date: string = frontmatter.date || ''
+        let date = safeDate(frontmatter.date)
         if (!date && relativePath) {
-          date = getGitCreatedDate(relativePath)
+          date = safeDate(getGitCreatedDate(relativePath))
         }
         if (!date && relativePath) {
-          date = getFsCreatedDate(relativePath)
+          date = safeDate(getFsCreatedDate(relativePath))
         }
 
         // 圖片
@@ -70,11 +76,12 @@ export default createContentLoader('blog/**/*.md', {
       // 不 filter 掉沒 date 的文章，保證都顯示
       .sort((a, b) => {
         // 沒有 date 的文章放在最下面
-        if (!a.date && !b.date) return 0
-        if (!a.date) return 1
-        if (!b.date) return -1
-        // 用字串比較 ISO 格式就能正確排序
-        return b.date.localeCompare(a.date)
+        const aDate = typeof a.date === 'string' ? a.date : ''
+        const bDate = typeof b.date === 'string' ? b.date : ''
+        if (!aDate && !bDate) return 0
+        if (!aDate) return 1
+        if (!bDate) return -1
+        return bDate.localeCompare(aDate)
       })
   }
 })
