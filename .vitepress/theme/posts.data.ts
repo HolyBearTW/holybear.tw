@@ -49,9 +49,17 @@ export default createContentLoader('blog/**/*.md', {
           imageUrl = `/${imageUrl}`
         }
 
-        let date: string | undefined = frontmatter.date
-        if (!date && relativePath) {
-          date = getGitCreatedDate(relativePath)
+        // 處理 date 欄位，確保一定是字串
+        let date: string = ''
+        if (typeof frontmatter.date === 'string') {
+          date = frontmatter.date
+        } else if (frontmatter.date instanceof Date) {
+          date = frontmatter.date.toISOString()
+        } else if (!frontmatter.date && relativePath) {
+          const gitDate = getGitCreatedDate(relativePath)
+          if (gitDate) {
+            date = gitDate
+          }
         }
         if (!date) {
           date = '2000-01-01 00:00:00'
@@ -60,11 +68,18 @@ export default createContentLoader('blog/**/*.md', {
         return {
           title: frontmatter.title,
           url,
-          date, // 保留原字串
+          date: String(date), // 保證是字串
           image: imageUrl || DEFAULT_IMAGE,
           excerpt: excerpt || ''
         }
       })
-      .sort((a, b) => new Date(b.date.replace(/-/g, '/')).getTime() - new Date(a.date.replace(/-/g, '/')).getTime())
+      .sort((a, b) => {
+        // 防呆：確保 date 一定是字串
+        const aStr = typeof a.date === 'string' ? a.date : ''
+        const bStr = typeof b.date === 'string' ? b.date : ''
+        const aTime = new Date(aStr.replace(/-/g, '/')).getTime() || 0
+        const bTime = new Date(bStr.replace(/-/g, '/')).getTime() || 0
+        return bTime - aTime
+      })
   }
 })
