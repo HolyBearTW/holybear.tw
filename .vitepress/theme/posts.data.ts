@@ -6,8 +6,8 @@ const DEFAULT_IMAGE = '/blog_no_image.svg'
 
 function getGitCreatedDate(relativePath: string): string {
   try {
-    const fullPath = `docs/${relativePath}`
-    return execSync(`git log --diff-filter=A --follow --format=%aI -1 "${fullPath}"`).toString().trim()
+    // 不要加 docs/ 路徑，relativePath 就是 blog/xxx.md
+    return execSync(`git log --diff-filter=A --follow --format=%aI -1 "${relativePath}"`).toString().trim()
   } catch {
     return ''
   }
@@ -15,8 +15,7 @@ function getGitCreatedDate(relativePath: string): string {
 
 function getFsCreatedDate(relativePath: string): string {
   try {
-    const fullPath = `docs/${relativePath}`
-    const stat = fs.statSync(fullPath)
+    const stat = fs.statSync(relativePath)
     return stat.birthtime.toISOString()
   } catch {
     return ''
@@ -31,7 +30,15 @@ export default createContentLoader('blog/**/*.md', {
       .map(({ url, frontmatter, content, excerpt, relativePath }) => {
         // 日期
         let date = typeof frontmatter.date === 'string' ? frontmatter.date : ''
-        if (!date && relativePath) date = getGitCreatedDate(relativePath) || getFsCreatedDate(relativePath) || ''
+        let gitDate = '', fsDate = ''
+        if (!date && relativePath) {
+          gitDate = getGitCreatedDate(relativePath)
+          fsDate = getFsCreatedDate(relativePath)
+          date = gitDate || fsDate || ''
+        }
+        // DEBUG 檢查用
+        // console.log({ url, frontmatterDate: frontmatter.date, gitDate, fsDate, finalDate: date })
+
         // 圖片
         let imageUrl: string | undefined = frontmatter.image
         if (!imageUrl && content) {
@@ -43,6 +50,7 @@ export default createContentLoader('blog/**/*.md', {
           imageUrl = `/${imageUrl}`
         }
         if (!imageUrl) imageUrl = DEFAULT_IMAGE
+
         // 摘要
         let summary = excerpt?.trim()
         if (!summary) summary = (frontmatter.description || '').trim()
@@ -51,6 +59,7 @@ export default createContentLoader('blog/**/*.md', {
           summary = lines.find(line => line && !line.startsWith('#') && !line.startsWith('![') && !line.startsWith('>') && !line.startsWith('<!--') && !line.startsWith('---')) || ''
         }
         if (!summary) summary = ''
+
         return {
           title: frontmatter.title ?? '',
           url,
@@ -59,7 +68,6 @@ export default createContentLoader('blog/**/*.md', {
           excerpt: summary
         }
       })
-      // 不 filter 掉沒 date，排序時沒 date 放最後
       .sort((a, b) => {
         const aDate = typeof a.date === 'string' ? a.date : ''
         const bDate = typeof b.date === 'string' ? b.date : ''
