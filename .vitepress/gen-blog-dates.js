@@ -11,7 +11,6 @@ for (const file of files) {
   const filePath = path.join(blogDir, file)
   const html = fs.readFileSync(filePath, 'utf-8')
   const $ = cheerio.load(html)
-  // 假設單篇內容那裡 class="post-date"
   const dateText = $('.post-date').text().replace('發布日期：', '').trim()
   result.push({
     url: `/blog/${file}`,
@@ -19,5 +18,7 @@ for (const file of files) {
   })
 }
 
-fs.writeFileSync(path.resolve(__dirname, '../dist/blog-dates.json'), JSON.stringify(result, null, 2))
-console.log('Done!')
+// 輸出到 .vitepress/theme/blog-dates.json
+const outPath = path.resolve(__dirname, '../docs/.vitepress/theme/blog-dates.json')
+fs.writeFileSync(outPath, JSON.stringify(result, null, 2))
+console.log('Done! blog-dates.json generated at', outPath)
