@@ -36,10 +36,9 @@ export default createContentLoader('blog/**/*.md', {
         }
         if (!imageUrl) imageUrl = DEFAULT_IMAGE
 
-        // 摘要
-        let summary = excerpt || ''
-        // 若沒有 excerpt 也沒有內容就給一個預設文字
-        if (!summary) summary = '（本文無摘要）'
+        // 摘要邏輯：優先 excerpt，其次 frontmatter.description
+        let summary = excerpt?.trim()
+        if (!summary) summary = (frontmatter.description || '').trim()
 
         return {
           title: frontmatter.title,
