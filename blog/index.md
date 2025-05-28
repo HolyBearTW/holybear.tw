@@ -6,21 +6,36 @@ description: 聖小熊的部落格文章列表
 
 <script setup>
 import { ref, computed } from 'vue'
+// 用 VitePress 靜態 import JSON（build 完後路徑請根據你的 dist 位置調整）
+import blogDates from '../../dist/blog-dates.json'
+
+// 你的文章資料（假設還是從 posts.data.ts 來）
 import { data as allPosts } from '../.vitepress/theme/posts.data.ts'
 
-// DEBUG: 檢查所有 post 的 date 欄位
-console.log('allPosts:', JSON.stringify(allPosts, null, 2))
+// 幫每篇 post 加入正確的 date
+const postsWithDate = allPosts.map(post => {
+  const matched = blogDates.find(item => item.url === post.url)
+  return {
+    ...post,
+    // 用 blog-dates.json 裡的 date
+    date: matched ? matched.date : ''
+  }
+})
 
-const postsWithDate = allPosts.filter(Boolean)
+// 按日期新到舊排序
+postsWithDate.sort((a, b) => new Date(b.date) - new Date(a.date))
 
+// 完全跟單篇內容頁一樣的格式 function
 function formatDateExactlyLikePostPage(dateString) {
   if (dateString) {
     const date = new Date(dateString)
-    if (isNaN(date.getTime())) return dateString // fallback
-    const yyyy = date.getFullYear()
-    const mm = String(date.getMonth() + 1).padStart(2, '0')
-    const dd = String(date.getDate()).padStart(2, '0')
-    return `${yyyy}-${mm}-${dd}`
+    const twDate = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }))
+    const yyyy = twDate.getFullYear()
+    const mm = String(twDate.getMonth() + 1).padStart(2, '0')
+    const dd = String(twDate.getDate()).padStart(2, '0')
+    const hh = String(twDate.getHours()).padStart(2, '0')
+    const min = String(twDate.getMinutes()).padStart(2, '0')
+    return `${yyyy}-${mm}-${dd} ${hh}:${min}`
   }
   return ''
 }
@@ -59,7 +74,7 @@ const pageNumbers = computed(() => {
         </div>
         <div class="post-info">
           <h2 class="post-title">{{ post.title }}</h2>
-          <p class="post-date">
+          <p v-if="post.date" class="post-date">
             發布日期：{{ formatDateExactlyLikePostPage(post.date) }}
           </p>
           <div v-if="post.excerpt" class="post-excerpt" v-html="post.excerpt"></div>
