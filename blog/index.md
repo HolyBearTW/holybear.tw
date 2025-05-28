@@ -8,45 +8,23 @@ description: 聖小熊的部落格文章列表
 import { ref, computed } from 'vue'
 import { data as allPosts } from '../.vitepress/theme/posts.data.ts'
 
-// DEBUG: 輸出 loader 結果
-console.log('allPosts:', allPosts)
+// DEBUG: 檢查所有 post 的 date 欄位
+console.log('allPosts:', JSON.stringify(allPosts, null, 2))
 
-// 防呆，確保沒有 undefined/null，且 date 一定有值
-const postsWithDate = allPosts
-  .filter(Boolean)
-  .map(post => ({
-    ...post,
-    date: post.date || ''
-  }))
+const postsWithDate = allPosts.filter(Boolean)
 
-// 日期新到舊排序
-postsWithDate.sort((a, b) => new Date(b.date) - new Date(a.date))
-
-/**
- * 日期格式化函數
- * - 若只有日期（yyyy-mm-dd），就只顯示日期
- * - 若有時間，顯示到時分
- * - 若解析失敗，直接顯示原字串
- */
 function formatDateExactlyLikePostPage(dateString) {
   if (dateString) {
     const date = new Date(dateString)
-    if (isNaN(date.getTime())) return dateString // 若無法解析則直接顯示原字串
+    if (isNaN(date.getTime())) return dateString // fallback
     const yyyy = date.getFullYear()
     const mm = String(date.getMonth() + 1).padStart(2, '0')
     const dd = String(date.getDate()).padStart(2, '0')
-    if (dateString.length > 10) {
-      const hh = String(date.getHours()).padStart(2, '0')
-      const min = String(date.getMinutes()).padStart(2, '0')
-      return `${yyyy}-${mm}-${dd} ${hh}:${min}`
-    } else {
-      return `${yyyy}-${mm}-${dd}`
-    }
+    return `${yyyy}-${mm}-${dd}`
   }
   return ''
 }
 
-// 分頁
 const postsPerPage = 10
 const currentPage = ref(1)
 const totalPages = computed(() => Math.ceil(postsWithDate.length / postsPerPage))
