@@ -8,7 +8,10 @@ description: 聖小熊的部落格文章列表
 import { ref, computed } from 'vue'
 import { data as allPosts } from '../.vitepress/theme/posts.data.ts'
 
-// 防呆，確保沒有 undefined/null
+// DEBUG: 輸出 loader 結果
+console.log('allPosts:', allPosts)
+
+// 防呆，確保沒有 undefined/null，且 date 一定有值
 const postsWithDate = allPosts
   .filter(Boolean)
   .map(post => ({
@@ -16,19 +19,25 @@ const postsWithDate = allPosts
     date: post.date || ''
   }))
 
+// 日期新到舊排序
 postsWithDate.sort((a, b) => new Date(b.date) - new Date(a.date))
 
+/**
+ * 日期格式化函數
+ * - 若只有日期（yyyy-mm-dd），就只顯示日期
+ * - 若有時間，顯示到時分
+ * - 若解析失敗，直接顯示原字串
+ */
 function formatDateExactlyLikePostPage(dateString) {
   if (dateString) {
     const date = new Date(dateString)
-    const twDate = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }))
-    const yyyy = twDate.getFullYear()
-    const mm = String(twDate.getMonth() + 1).padStart(2, '0')
-    const dd = String(twDate.getDate()).padStart(2, '0')
-    const hh = String(twDate.getHours()).padStart(2, '0')
-    const min = String(twDate.getMinutes()).padStart(2, '0')
-    // 如果你只有日期沒有時間，不顯示時間
+    if (isNaN(date.getTime())) return dateString // 若無法解析則直接顯示原字串
+    const yyyy = date.getFullYear()
+    const mm = String(date.getMonth() + 1).padStart(2, '0')
+    const dd = String(date.getDate()).padStart(2, '0')
     if (dateString.length > 10) {
+      const hh = String(date.getHours()).padStart(2, '0')
+      const min = String(date.getMinutes()).padStart(2, '0')
       return `${yyyy}-${mm}-${dd} ${hh}:${min}`
     } else {
       return `${yyyy}-${mm}-${dd}`
@@ -37,6 +46,7 @@ function formatDateExactlyLikePostPage(dateString) {
   return ''
 }
 
+// 分頁
 const postsPerPage = 10
 const currentPage = ref(1)
 const totalPages = computed(() => Math.ceil(postsWithDate.length / postsPerPage))
@@ -71,7 +81,7 @@ const pageNumbers = computed(() => {
         </div>
         <div class="post-info">
           <h2 class="post-title">{{ post.title }}</h2>
-          <p v-if="post.date" class="post-date">
+          <p class="post-date">
             發布日期：{{ formatDateExactlyLikePostPage(post.date) }}
           </p>
           <div v-if="post.excerpt" class="post-excerpt" v-html="post.excerpt"></div>
