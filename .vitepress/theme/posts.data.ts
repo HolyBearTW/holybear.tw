@@ -6,7 +6,6 @@ const DEFAULT_IMAGE = '/blog_no_image.svg'
 
 function getGitCreatedDate(relativePath: string): string {
   try {
-    // 不要加 docs/ 路徑，relativePath 就是 blog/xxx.md
     return execSync(`git log --diff-filter=A --follow --format=%aI -1 "${relativePath}"`).toString().trim()
   } catch {
     return ''
@@ -28,18 +27,15 @@ export default createContentLoader('blog/**/*.md', {
     return raw
       .filter(({ url }) => !url.endsWith('/blog/'))
       .map(({ url, frontmatter, content, excerpt, relativePath }) => {
-        // 日期
-        let date = typeof frontmatter.date === 'string' ? frontmatter.date : ''
+        // 這裡改成抓 listDate
+        let date = typeof frontmatter.listDate === 'string' ? frontmatter.listDate : ''
         let gitDate = '', fsDate = ''
         if (!date && relativePath) {
           gitDate = getGitCreatedDate(relativePath)
           fsDate = getFsCreatedDate(relativePath)
           date = gitDate || fsDate || ''
         }
-        // DEBUG 檢查用
-        // console.log({ url, frontmatterDate: frontmatter.date, gitDate, fsDate, finalDate: date })
 
-        // 圖片
         let imageUrl: string | undefined = frontmatter.image
         if (!imageUrl && content) {
           const markdownImageRegex = /!\[.*?\]\((.*?)\)/
@@ -51,7 +47,6 @@ export default createContentLoader('blog/**/*.md', {
         }
         if (!imageUrl) imageUrl = DEFAULT_IMAGE
 
-        // 摘要
         let summary = excerpt?.trim()
         if (!summary) summary = (frontmatter.description || '').trim()
         if (!summary && content) {
