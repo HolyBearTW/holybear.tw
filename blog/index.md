@@ -6,26 +6,9 @@ description: 聖小熊的部落格文章列表
 
 <script setup>
 import { ref, computed } from 'vue'
-// 用 VitePress 靜態 import JSON（build 完後路徑請根據你的 dist 位置調整）
-import blogDates from '../../dist/blog-dates.json'
+import { data as allPosts } from '../../.vitepress/theme/posts.data.ts'
 
-// 你的文章資料（假設還是從 posts.data.ts 來）
-import { data as allPosts } from '../.vitepress/theme/posts.data.ts'
-
-// 幫每篇 post 加入正確的 date
-const postsWithDate = allPosts.map(post => {
-  const matched = blogDates.find(item => item.url === post.url)
-  return {
-    ...post,
-    // 用 blog-dates.json 裡的 date
-    date: matched ? matched.date : ''
-  }
-})
-
-// 按日期新到舊排序
-postsWithDate.sort((a, b) => new Date(b.date) - new Date(a.date))
-
-// 完全跟單篇內容頁一樣的格式 function
+// 這段就是從單篇內容頁搬過來的，只是變成 function 方便每篇用
 function formatDateExactlyLikePostPage(dateString) {
   if (dateString) {
     const date = new Date(dateString)
@@ -42,11 +25,11 @@ function formatDateExactlyLikePostPage(dateString) {
 
 const postsPerPage = 10
 const currentPage = ref(1)
-const totalPages = computed(() => Math.ceil(postsWithDate.length / postsPerPage))
+const totalPages = computed(() => Math.ceil(allPosts.length / postsPerPage))
 const paginatedPosts = computed(() => {
   const start = (currentPage.value - 1) * postsPerPage
   const end = start + postsPerPage
-  return postsWithDate.slice(start, end)
+  return allPosts.slice(start, end)
 })
 const goToPage = (page) => {
   if (page >= 1 && page <= totalPages.value) {
