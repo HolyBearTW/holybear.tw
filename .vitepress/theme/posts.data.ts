@@ -6,44 +6,60 @@ const DEFAULT_IMAGE = '/blog_no_image.svg'
 
 function getGitCreatedDate(relativePath: string): string {
   try {
+    // 不要加 docs/ 路徑，relativePath 就是 blog/xxx.md
     return execSync(`git log --diff-filter=A --follow --format=%aI -1 "${relativePath}"`).toString().trim()
   } catch {
     return ''
   }
 }
+
 function getFsCreatedDate(relativePath: string): string {
   try {
-    return fs.statSync(relativePath).birthtime.toISOString()
+    const stat = fs.statSync(relativePath)
+    return stat.birthtime.toISOString()
   } catch {
     return ''
   }
 }
 
-export default createContentLoader('/blog/**/*.md', {
+export default createContentLoader('blog/**/*.md', {
   excerpt: true,
   transform(raw) {
-    const posts = raw
+    return raw
       .filter(({ url }) => !url.endsWith('/blog/'))
       .map(({ url, frontmatter, content, excerpt, relativePath }) => {
-        let date = typeof frontmatter.listDate === 'string' ? frontmatter.listDate : ''
+        // 日期
+        let date = typeof frontmatter.date === 'string' ? frontmatter.date : ''
+        let gitDate = '', fsDate = ''
         if (!date && relativePath) {
-          date = getGitCreatedDate(relativePath) || getFsCreatedDate(relativePath) || ''
+          gitDate = getGitCreatedDate(relativePath)
+          fsDate = getFsCreatedDate(relativePath)
+          date = gitDate || fsDate || ''
         }
-        let imageUrl = frontmatter.image
+        // DEBUG 檢查用
+        // console.log({ url, frontmatterDate: frontmatter.date, gitDate, fsDate, finalDate: date })
+
+        // 圖片
+        let imageUrl: string | undefined = frontmatter.image
         if (!imageUrl && content) {
-          const match = content.match(/!\[.*?\]\((.*?)\)/)
+          const markdownImageRegex = /!\[.*?\]\((.*?)\)/
+          let match = content.match(markdownImageRegex)
           if (match && match[1]) imageUrl = match[1]
         }
         if (imageUrl && !imageUrl.startsWith('/') && !imageUrl.startsWith('http')) {
           imageUrl = `/${imageUrl}`
         }
         if (!imageUrl) imageUrl = DEFAULT_IMAGE
-        let summary = excerpt?.trim() || (frontmatter.description || '').trim()
+
+        // 摘要
+        let summary = excerpt?.trim()
+        if (!summary) summary = (frontmatter.description || '').trim()
         if (!summary && content) {
           const lines = content.split('\n').map(line => line.trim())
           summary = lines.find(line => line && !line.startsWith('#') && !line.startsWith('![') && !line.startsWith('>') && !line.startsWith('<!--') && !line.startsWith('---')) || ''
         }
         if (!summary) summary = ''
+
         return {
           title: frontmatter.title ?? '',
           url,
@@ -52,9 +68,13 @@ export default createContentLoader('/blog/**/*.md', {
           excerpt: summary
         }
       })
-      .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
-    // 方便 debug
-    console.log('posts loader result:', posts)
-    return posts
+      .sort((a, b) => {
+        const aDate = typeof a.date === 'string' ? a.date : ''
+        const bDate = typeof b.date === 'string' ? b.date : ''
+        if (!aDate && !bDate) return 0
+        if (!aDate) return 1
+        if (!bDate) return -1
+        return bDate.localeCompare(aDate)
+      })
   }
 })
