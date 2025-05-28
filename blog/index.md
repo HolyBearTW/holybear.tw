@@ -6,7 +6,7 @@ description: 聖小熊的部落格文章列表
 
 <script setup>
 import { ref, computed } from 'vue'
-import { data as allPosts } from '.vitepress/theme/posts.data.ts'
+import { data as allPosts } from '../.vitepress/theme/posts.data.ts'
 
 // 這段就是從單篇內容頁搬過來的，只是變成 function 方便每篇用
 function formatDateExactlyLikePostPage(dateString) {
