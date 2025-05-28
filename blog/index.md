@@ -6,26 +6,16 @@ description: 聖小熊的部落格文章列表
 
 <script setup>
 import { ref, computed } from 'vue'
-// 用 VitePress 靜態 import JSON（build 完後路徑請根據你的 dist 位置調整）
-import blogDates from '../.vitepress/theme/blog-dates.json'
-
-// 你的文章資料（假設還是從 posts.data.ts 來）
 import { data as allPosts } from '../.vitepress/theme/posts.data.ts'
 
-// 幫每篇 post 加入正確的 date
-const postsWithDate = allPosts.map(post => {
-  const matched = blogDates.find(item => item.url === post.url)
-  return {
-    ...post,
-    // 用 blog-dates.json 裡的 date
-    date: matched ? matched.date : ''
-  }
-})
+// 直接用 frontmatter 的 listDate
+const postsWithDate = allPosts.map(post => ({
+  ...post,
+  date: post.frontmatter.listDate || ''
+}))
 
-// 按日期新到舊排序
 postsWithDate.sort((a, b) => new Date(b.date) - new Date(a.date))
 
-// 完全跟單篇內容頁一樣的格式 function
 function formatDateExactlyLikePostPage(dateString) {
   if (dateString) {
     const date = new Date(dateString)
