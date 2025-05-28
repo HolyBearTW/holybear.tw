@@ -7,7 +7,7 @@ export default createContentLoader('blog/**/*.md', {
     return raw
       .filter(({ url }) => !url.endsWith('/blog/'))
       .map(({ url, frontmatter, content, excerpt }) => {
-        // 只用 listDate
+        // 只用 listDate，不再 fallback git/fs
         let date = typeof frontmatter.listDate === 'string' ? frontmatter.listDate : ''
 
         // 圖片
@@ -40,12 +40,11 @@ export default createContentLoader('blog/**/*.md', {
         }
       })
       .sort((a, b) => {
-        const aDate = typeof a.date === 'string' ? a.date : ''
-        const bDate = typeof b.date === 'string' ? b.date : ''
-        if (!aDate && !bDate) return 0
-        if (!aDate) return 1
-        if (!bDate) return -1
-        return bDate.localeCompare(aDate)
+        // 新到舊，date 必須是 ISO 格式
+        if (!a.date && !b.date) return 0
+        if (!a.date) return 1
+        if (!b.date) return -1
+        return b.date.localeCompare(a.date)
       })
   }
 })
