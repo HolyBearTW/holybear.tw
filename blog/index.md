@@ -8,11 +8,13 @@ description: 聖小熊的部落格文章列表
 import { ref, computed } from 'vue'
 import { data as allPosts } from '../.vitepress/theme/posts.data.ts'
 
-// 直接用 frontmatter 的 listDate
-const postsWithDate = allPosts.map(post => ({
-  ...post,
-  date: post.frontmatter.listDate || ''
-}))
+// 防呆，確保沒有 undefined/null
+const postsWithDate = allPosts
+  .filter(Boolean)
+  .map(post => ({
+    ...post,
+    date: post.date || ''
+  }))
 
 postsWithDate.sort((a, b) => new Date(b.date) - new Date(a.date))
 
@@ -25,7 +27,12 @@ function formatDateExactlyLikePostPage(dateString) {
     const dd = String(twDate.getDate()).padStart(2, '0')
     const hh = String(twDate.getHours()).padStart(2, '0')
     const min = String(twDate.getMinutes()).padStart(2, '0')
-    return `${yyyy}-${mm}-${dd} ${hh}:${min}`
+    // 如果你只有日期沒有時間，不顯示時間
+    if (dateString.length > 10) {
+      return `${yyyy}-${mm}-${dd} ${hh}:${min}`
+    } else {
+      return `${yyyy}-${mm}-${dd}`
+    }
   }
   return ''
 }
