@@ -1,43 +1,14 @@
 import { createContentLoader } from 'vitepress'
-import { execSync } from 'child_process'
-import fs from 'fs'
-
 const DEFAULT_IMAGE = '/blog_no_image.svg'
-
-function getGitCreatedDate(relativePath: string): string {
-  try {
-    // 不要加 docs/ 路徑，relativePath 就是 blog/xxx.md
-    return execSync(`git log --diff-filter=A --follow --format=%aI -1 "${relativePath}"`).toString().trim()
-  } catch {
-    return ''
-  }
-}
-
-function getFsCreatedDate(relativePath: string): string {
-  try {
-    const stat = fs.statSync(relativePath)
-    return stat.birthtime.toISOString()
-  } catch {
-    return ''
-  }
-}
 
 export default createContentLoader('blog/**/*.md', {
   excerpt: true,
   transform(raw) {
     return raw
       .filter(({ url }) => !url.endsWith('/blog/'))
-      .map(({ url, frontmatter, content, excerpt, relativePath }) => {
-        // 日期
-        let date = typeof frontmatter.date === 'string' ? frontmatter.date : ''
-        let gitDate = '', fsDate = ''
-        if (!date && relativePath) {
-          gitDate = getGitCreatedDate(relativePath)
-          fsDate = getFsCreatedDate(relativePath)
-          date = gitDate || fsDate || ''
-        }
-        // DEBUG 檢查用
-        // console.log({ url, frontmatterDate: frontmatter.date, gitDate, fsDate, finalDate: date })
+      .map(({ url, frontmatter, content, excerpt }) => {
+        // 只用 listDate
+        let date = typeof frontmatter.listDate === 'string' ? frontmatter.listDate : ''
 
         // 圖片
         let imageUrl: string | undefined = frontmatter.image
