@@ -19,7 +19,7 @@ function getFsCreatedDate(relativePath: string): string {
   }
 }
 
-export default createContentLoader('blog/**/*.md', {
+export default createContentLoader('docs/blog/**/*.md', {
   excerpt: true,
   transform(raw) {
     const posts = raw
