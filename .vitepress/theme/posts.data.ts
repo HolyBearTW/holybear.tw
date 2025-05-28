@@ -5,10 +5,18 @@ import fs from 'fs'
 const DEFAULT_IMAGE = '/blog_no_image.svg'
 
 function getGitCreatedDate(relativePath: string): string {
-  try { return execSync(`git log --diff-filter=A --follow --format=%aI -1 "${relativePath}"`).toString().trim() } catch { return '' }
+  try {
+    return execSync(`git log --diff-filter=A --follow --format=%aI -1 "${relativePath}"`).toString().trim()
+  } catch {
+    return ''
+  }
 }
 function getFsCreatedDate(relativePath: string): string {
-  try { return fs.statSync(relativePath).birthtime.toISOString() } catch { return '' }
+  try {
+    return fs.statSync(relativePath).birthtime.toISOString()
+  } catch {
+    return ''
+  }
 }
 
 export default createContentLoader('blog/**/*.md', {
@@ -36,9 +44,16 @@ export default createContentLoader('blog/**/*.md', {
           summary = lines.find(line => line && !line.startsWith('#') && !line.startsWith('![') && !line.startsWith('>') && !line.startsWith('<!--') && !line.startsWith('---')) || ''
         }
         if (!summary) summary = ''
-        return { title: frontmatter.title ?? '', url, date, image: imageUrl, excerpt: summary }
+        return {
+          title: frontmatter.title ?? '',
+          url,
+          date,
+          image: imageUrl,
+          excerpt: summary
+        }
       })
       .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
+    // 方便 debug
     console.log('posts loader result:', posts)
     return posts
   }
