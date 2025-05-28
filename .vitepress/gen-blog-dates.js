@@ -7,8 +7,8 @@ const files = fs.readdirSync(blogDir).filter(f => f.endsWith('.md') && f !== 'in
 const result = files.map(file => {
   const filePath = path.join(blogDir, file)
   const content = fs.readFileSync(filePath, 'utf-8')
-  // 嘗試抓 frontmatter 的 date 欄位
-  const match = content.match(/date:\s*["']?([\d\-: ]+)["']?/)
+  // 改成抓 listDate 欄位
+  const match = content.match(/listDate:\s*["']?([\d\-: ]+)["']?/)
   const date = match ? match[1].trim() : file.replace('.md', '')
   return {
     url: `/blog/${file.replace('.md', '')}/`,
