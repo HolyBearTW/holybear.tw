@@ -16,7 +16,7 @@ hero:
       link: /blog
     - theme: alt
       text: Portfolio
-      link: /Mod
+      link: en/Mod
     - theme: alt
       text: Telegram
       link: https://t.me/HolyBearTW
