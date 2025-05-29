@@ -4,10 +4,10 @@ description: 聖小熊的部落格文章列表
 ---
 
 <script setup>
-import { ref, computed, nextTick, onMounted } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 import { data as allPosts } from '../.vitepress/theme/posts.data.ts'
 
-// 日期格式化函數 (保持不變，它不依賴瀏覽器API)
+// 日期格式化函數 (保持不變)
 function formatDateExactlyLikePostPage(dateStringInput) {
   if (dateStringInput === null || dateStringInput === undefined) {
     return '';
@@ -49,16 +49,16 @@ const totalPages = computed(() => {
 
 const paginatedPosts = computed(() => {
   if (!allPosts || !Array.isArray(allPosts)) return [];
-  const start = (currentPage.value - 1) * postsPerPage
-  const end = start + postsPerPage
-  return allPosts.slice(start, end)
+  // 在這裡也對每個 post 進行一次額外的檢查，確保不會有 undefined 混入
+  return allPosts.slice(
+    (currentPage.value - 1) * postsPerPage,
+    (currentPage.value - 1) * postsPerPage + postsPerPage
+  ).filter(post => post !== undefined && post !== null); // 確保過濾掉任何 undefined/null 的項目
 })
 
 const goToPage = (page) => {
   if (page >= 1 && page <= totalPages.value) {
     currentPage.value = page
-    // 確保滾動只在客戶端執行。
-    // `import.meta.env.SSR` 在伺服器端為 true，在客戶端為 false。
     if (!import.meta.env.SSR) {
       nextTick(() => {
         window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -74,13 +74,6 @@ const pageNumbers = computed(() => {
   }
   return pages
 })
-
-// *** 重要：任何其他需要直接操作 document 或 window 的程式碼，
-// *** 都應該放在 onMounted 鉤子中，因為它只在客戶端執行。
-// onMounted(() => {
-//   // 例如：某些第三方JS庫的初始化，如果它們需要訪問DOM
-//   // console.log('This runs only on the client side, document exists here!');
-// });
 </script>
 
 <template>
@@ -89,13 +82,11 @@ const pageNumbers = computed(() => {
 
     <div v-if="paginatedPosts.length > 0" class="post-cards-wrapper">
       <div v-for="post in paginatedPosts" :key="post.url" class="post-card">
-        <a :href="post.url" class="post-link" v-if="post && post.url">
-          <div class="post-image-wrapper">
-            <img :src="post.image" :alt="post.title" class="post-image" />
+        <a :href="post.url || '#'" class="post-link"> <div class="post-image-wrapper">
+            <img :src="post.image || '/blog_no_image.svg'" :alt="post.title || '無標題圖片'" class="post-image" />
           </div>
           <div class="post-content">
-            <h2 class="post-title">{{ post.title || '無標題' }}</h2>
-            <p v-if="post.date" class="post-date">
+            <h2 class="post-title">{{ post.title || '無標題文章' }}</h2> <p v-if="post.date" class="post-date">
               <time :datetime="post.date">{{ formatDateExactlyLikePostPage(post.date) }}</time>
             </p>
             <p v-if="post.summary" class="post-summary">{{ post.summary }}</p>
@@ -104,9 +95,6 @@ const pageNumbers = computed(() => {
             </div>
           </div>
         </a>
-        <div v-else class="post-card error-card">
-          <p>載入文章資料失敗，可能文章檔案有問題或 URL 遺失。</p>
-        </div>
       </div>
     </div>
     <div v-else class="no-posts-message">
@@ -172,8 +160,8 @@ h1 {
   flex-direction: column;
 }
 
-.post-card.error-card {
-  background-color: var(--vp-c-bg-alt); /* 錯誤卡片用不同背景色 */
+.post-card.error-card { /* 這個樣式現在可能不會觸發，因為 v-else 不會被渲染 */
+  background-color: var(--vp-c-bg-alt);
   color: var(--vp-c-text-2);
   border: 1px dashed var(--vp-c-divider);
   text-align: center;
