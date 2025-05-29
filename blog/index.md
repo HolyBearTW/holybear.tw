@@ -36,6 +36,8 @@ function formatDateExactlyLikePostPage(dateStringInput) {
   const hasSpecifiedTime = containsTimeChars;
 
   // 轉換到台北時區 (Asia/Taipei)
+  // 注意：在瀏覽器環境下，toLocaleString 的 timeZone 選項可能會依賴瀏覽器對 Intl API 的支援。
+  // 在 Node.js 環境（VitePress 打包時），可能需要 node-icu-data 或 polyfill。
   const twDate = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
 
   // 再次檢查轉換後的 twDate 是否有效
@@ -94,3 +96,213 @@ const pageNumbers = computed(() => {
   return pages
 })
 </script>
+
+<template>
+  <div class="blog-list-container">
+    <h1>部落格文章</h1>
+
+    <div v-if="paginatedPosts.length > 0" class="post-cards-wrapper">
+      <div v-for="post in paginatedPosts" :key="post.url" class="post-card">
+        <a :href="post.url" class="post-link">
+          <div class="post-image-wrapper">
+            <img :src="post.image" :alt="post.title" class="post-image" />
+          </div>
+          <div class="post-content">
+            <h2 class="post-title">{{ post.title }}</h2>
+            <p v-if="post.date" class="post-date">
+              <time :datetime="post.date">{{ formatDateExactlyLikePostPage(post.date) }}</time>
+            </p>
+            <p v-if="post.summary" class="post-summary">{{ post.summary }}</p>
+            <div v-if="post.tags && post.tags.length > 0" class="post-tags">
+              <span v-for="tag in post.tags" :key="tag" class="tag">#{{ tag }}</span>
+            </div>
+          </div>
+        </a>
+      </div>
+    </div>
+    <div v-else class="no-posts-message">
+      <p>目前沒有任何部落格文章可以顯示。</p>
+      <p>請確認您的文章檔案路徑和篩選條件是否正確。</p>
+    </div>
+
+    <div v-if="totalPages > 1" class="pagination">
+      <button
+        :disabled="currentPage === 1"
+        @click="goToPage(currentPage - 1)"
+        class="pagination-button"
+      >
+        上一頁
+      </button>
+      <button
+        v-for="page in pageNumbers"
+        :key="page"
+        @click="goToPage(page)"
+        :class="['pagination-button', { active: page === currentPage }]"
+      >
+        {{ page }}
+      </button>
+      <button
+        :disabled="currentPage === totalPages"
+        @click="goToPage(currentPage + 1)"
+        class="pagination-button"
+      >
+        下一頁
+      </button>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.blog-list-container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 40px;
+  color: var(--vp-c-text-1);
+}
+
+.post-cards-wrapper {
+  display: grid;
+  gap: 30px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); /* 響應式佈局 */
+  margin-bottom: 40px;
+}
+
+.post-card {
+  background-color: var(--vp-c-bg-soft);
+  border-radius: 8px;
+  box-shadow: var(--vp-shadow-1);
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.post-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--vp-shadow-2);
+}
+
+.post-link {
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  height: 100%; /* 確保連結填滿卡片 */
+}
+
+.post-image-wrapper {
+  width: 100%;
+  padding-top: 56.25%; /* 16:9 比例 */
+  position: relative;
+  overflow: hidden;
+}
+
+.post-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.post-card:hover .post-image {
+  transform: scale(1.05);
+}
+
+.post-content {
+  padding: 20px;
+  flex-grow: 1; /* 內容區塊彈性成長 */
+  display: flex;
+  flex-direction: column;
+}
+
+.post-title {
+  font-size: 1.5em;
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: var(--vp-c-brand-1);
+  line-height: 1.3;
+}
+
+.post-date {
+  font-size: 0.9em;
+  color: var(--vp-c-text-2);
+  margin-bottom: 15px;
+}
+
+.post-summary {
+  font-size: 1em;
+  color: var(--vp-c-text-1);
+  line-height: 1.6;
+  margin-bottom: 15px;
+  flex-grow: 1; /* 摘要彈性成長 */
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3; /* 限制摘要顯示三行 */
+  -webkit-box-orient: vertical;
+}
+
+.post-tags {
+  margin-top: 15px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag {
+  background-color: var(--vp-c-badge-tip-bg);
+  color: var(--vp-c-badge-tip-text);
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 0.85em;
+  white-space: nowrap; /* 避免標籤換行 */
+}
+
+.no-posts-message {
+  text-align: center;
+  padding: 50px 0;
+  color: var(--vp-c-text-2);
+}
+
+/* 分頁樣式 */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 50px;
+  gap: 10px;
+}
+
+.pagination-button {
+  background-color: var(--vp-c-bg-soft);
+  color: var(--vp-c-text-1);
+  border: 1px solid var(--vp-c-divider);
+  padding: 8px 15px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.pagination-button:hover:not(:disabled) {
+  background-color: var(--vp-c-bg-alt);
+  border-color: var(--vp-c-brand-1);
+}
+
+.pagination-button.active {
+  background-color: var(--vp-c-brand-1);
+  color: var(--vp-c-white);
+  border-color: var(--vp-c-brand-1);
+}
+
+.pagination-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+</style>
