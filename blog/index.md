@@ -33,11 +33,11 @@ const postsPerPage = 10
 const currentPage = ref(1)
 const clientPosts = ref([])
 
-// SSR/CSR 通用 posts
 const effectivePosts = computed(() => {
   const posts = import.meta.env.SSR ? allPosts : clientPosts.value
+  // 只檢查 post.url，完全不理會 title
   return Array.isArray(posts)
-    ? posts.filter(p => !!p && typeof p.title === 'string' && p.title.trim())
+    ? posts.filter(p => !!p && typeof p.url === 'string' && p.url)
     : []
 })
 
@@ -78,10 +78,13 @@ onMounted(() => {
       <div v-for="post in paginatedPosts" :key="post.url" class="post-card">
         <a :href="post.url || '#'" class="post-link">
           <div class="post-image-wrapper">
-            <img :src="post.image || '/blog_no_image.svg'" :alt="post.title || '無標題圖片'" class="post-image" />
+            <img :src="post.image || '/blog_no_image.svg'" alt="部落格封面" class="post-image" />
           </div>
           <div class="post-content">
-            <h2 class="post-title">{{ post.title || '無標題文章' }}</h2>
+            <!-- 完全不顯示 title，改顯示網址最後一段當作標題 -->
+            <h2 class="post-title">
+              {{ post.url.split('/').filter(Boolean).pop() }}
+            </h2>
             <p v-if="post.date" class="post-date">
               <time :datetime="post.date">{{ formatDateExactlyLikePostPage(post.date) }}</time>
             </p>
@@ -163,7 +166,6 @@ h1 {
   text-align: center;
   padding: 20px;
 }
-
 
 .post-card:hover {
   transform: translateY(-5px);
@@ -254,7 +256,6 @@ h1 {
   color: var(--vp-c-text-2);
 }
 
-/* 分頁樣式 */
 .pagination {
   display: flex;
   justify-content: center;
