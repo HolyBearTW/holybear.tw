@@ -13,6 +13,6 @@
     "dev": "vitepress dev",
     "build": "vitepress build",
     "preview": "vitepress preview",
-    "gen-en-blog": "node en/blog/gen-en-blog-placeholders.js",
+    "gen-en-blog": "node en/blog/gen-en-blog-placeholders.js"
   }
 }
