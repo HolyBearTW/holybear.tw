@@ -1,4 +1,7 @@
-::: danger Blog Not Supported in English
+---
+title: Blog Not Supported in English
+---
+::: danger tip
 > ⚠️ Sorry, this blog post is not available in English.<br>
 > [Go to Home](/en/)
 :::
