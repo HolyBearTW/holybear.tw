@@ -1,6 +1,7 @@
 ---
-title: 部落格文章
-description: 聖小熊的部落格文章列表
+layout: home
+title: "部落格首頁"
+description: "這是部落格首頁的簡短描述"
 ---
 
 <script setup>
