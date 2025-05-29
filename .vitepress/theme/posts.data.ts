@@ -2,7 +2,6 @@ import { createContentLoader } from 'vitepress';
 const DEFAULT_IMAGE = '/blog_no_image.svg';
 
 function extractDate(frontmatter) {
-  // 支援 listDate、date、created、publishDate 四種欄位
   return (
     frontmatter.listDate ||
     frontmatter.date ||
@@ -27,7 +26,6 @@ export default createContentLoader('blog/**/*.md', {
       .map(({ url, frontmatter, content, excerpt }) => {
         frontmatter = frontmatter && typeof frontmatter === 'object' ? frontmatter : {};
         const title = frontmatter.title || '無標題文章';
-        // 這裡用 extractDate
         const date = extractDate(frontmatter);
         let imageUrl = frontmatter.image;
         if (!imageUrl && content) {
@@ -40,8 +38,9 @@ export default createContentLoader('blog/**/*.md', {
         }
         if (!imageUrl) imageUrl = DEFAULT_IMAGE;
 
-        let summary = excerpt?.trim();
-        if (!summary) summary = (frontmatter.description || '').trim();
+        // 讓 description 永遠優先
+        let summary = (frontmatter.description || '').trim();
+        if (!summary && excerpt) summary = excerpt.trim();
         if (!summary && content) {
           const lines = content.split('\n').map(line => line.trim());
           summary = lines.find(line => line && !line.startsWith('#') && !line.startsWith('![') && !line.startsWith('>')) || '';
@@ -52,7 +51,10 @@ export default createContentLoader('blog/**/*.md', {
           frontmatter,
           title,
           date,
-          tags: Array.isArray(frontmatter.tags) ? frontmatter.tags : [],
+          tags: Array.isArray(frontmatter.tags)
+            ? frontmatter.tags
+            : (Array.isArray(frontmatter.tag) ? frontmatter.tag : []),
+          category: Array.isArray(frontmatter.category) ? frontmatter.category : [],
           image: imageUrl,
           summary,
           excerpt: summary,
