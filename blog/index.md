@@ -4,7 +4,7 @@ description: 聖小熊的部落格文章列表
 ---
 
 <script setup>
-import { ref, computed, nextTick } from 'vue'
+import { ref, computed, nextTick, onMounted } from 'vue' // 引入 onMounted
 import { data as allPosts } from '../.vitepress/theme/posts.data.ts'
 
 // 日期格式化函數 (保持不變)
@@ -42,15 +42,19 @@ function formatDateExactlyLikePostPage(dateStringInput) {
 const postsPerPage = 10
 const currentPage = ref(1)
 
+// 使用一個 ref 來保存實際的文章數據，只在客戶端載入後才賦值
+const clientPosts = ref([]); 
+
+// totalPages 和 paginatedPosts 的計算將依賴 clientPosts
 const totalPages = computed(() => {
-  if (!allPosts || !Array.isArray(allPosts)) return 0;
-  return Math.ceil(allPosts.length / postsPerPage);
+  if (!clientPosts.value || !Array.isArray(clientPosts.value)) return 0;
+  return Math.ceil(clientPosts.value.length / postsPerPage);
 })
 
 const paginatedPosts = computed(() => {
-  if (!allPosts || !Array.isArray(allPosts)) return [];
+  if (!clientPosts.value || !Array.isArray(clientPosts.value)) return [];
   // 在這裡也對每個 post 進行一次額外的檢查，確保不會有 undefined 混入
-  return allPosts.slice(
+  return clientPosts.value.slice(
     (currentPage.value - 1) * postsPerPage,
     (currentPage.value - 1) * postsPerPage + postsPerPage
   ).filter(post => post !== undefined && post !== null); // 確保過濾掉任何 undefined/null 的項目
@@ -74,6 +78,15 @@ const pageNumbers = computed(() => {
   }
   return pages
 })
+
+// !!! 核心修正：在組件掛載後才將 allPosts 數據賦值給 clientPosts !!!
+// 這樣可以確保在 SSR 階段，`clientPosts` 始終為空陣列，避免嘗試渲染不存在的數據。
+onMounted(() => {
+  if (!import.meta.env.SSR) { // 再次確認在客戶端執行
+    clientPosts.value = allPosts; 
+  }
+});
+
 </script>
 
 <template>
@@ -82,11 +95,13 @@ const pageNumbers = computed(() => {
 
     <div v-if="paginatedPosts.length > 0" class="post-cards-wrapper">
       <div v-for="post in paginatedPosts" :key="post.url" class="post-card">
-        <a :href="post.url || '#'" class="post-link"> <div class="post-image-wrapper">
+        <a :href="post.url || '#'" class="post-link">
+          <div class="post-image-wrapper">
             <img :src="post.image || '/blog_no_image.svg'" :alt="post.title || '無標題圖片'" class="post-image" />
           </div>
           <div class="post-content">
-            <h2 class="post-title">{{ post.title || '無標題文章' }}</h2> <p v-if="post.date" class="post-date">
+            <h2 class="post-title">{{ post.title || '無標題文章' }}</h2>
+            <p v-if="post.date" class="post-date">
               <time :datetime="post.date">{{ formatDateExactlyLikePostPage(post.date) }}</time>
             </p>
             <p v-if="post.summary" class="post-summary">{{ post.summary }}</p>
@@ -160,7 +175,7 @@ h1 {
   flex-direction: column;
 }
 
-.post-card.error-card { /* 這個樣式現在可能不會觸發，因為 v-else 不會被渲染 */
+.post-card.error-card {
   background-color: var(--vp-c-bg-alt);
   color: var(--vp-c-text-2);
   border: 1px dashed var(--vp-c-divider);
