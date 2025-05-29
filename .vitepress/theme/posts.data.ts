@@ -8,6 +8,7 @@ export default createContentLoader('blog/**/*.md', {
     if (raw.length > 0) {
       console.log('[posts.data.ts] URLs of raw posts:', raw.map(p => p.url));
     }
+
     const filteredPosts = raw.filter(({ url }) => {
       const isBlogIndexPage =
         url === '/blog/' ||
@@ -16,6 +17,7 @@ export default createContentLoader('blog/**/*.md', {
         url === '/en/blog/index.html';
       return !isBlogIndexPage;
     });
+
     console.log(`[posts.data.ts] Filtered posts count: ${filteredPosts.length}`);
     if (filteredPosts.length === 0 && raw.length > 0) {
       console.warn("[posts.data.ts] WARNING: All posts were filtered out by the url.endsWith('/blog/') condition. Please check your post URLs and filter logic.");
@@ -23,9 +25,21 @@ export default createContentLoader('blog/**/*.md', {
     } else if (raw.length === 0) {
       console.warn('[posts.data.ts] WARNING: No posts found by createContentLoader("blog/**/*.md"). Please check your glob pattern and that markdown files exist in the "blog" directory.');
     }
+
     return filteredPosts
       .map(({ url, frontmatter, content, excerpt }) => {
+        // 確保 frontmatter 一定是物件
         frontmatter = (frontmatter && typeof frontmatter === 'object') ? frontmatter : {};
+
+        // 強化 title fallback
+        let title = '';
+        if (typeof frontmatter.title === 'string' && frontmatter.title.trim()) {
+          title = frontmatter.title.trim();
+        } else if (url) {
+          title = url.replace(/\.html$/, '').split('/').pop() || '';
+        }
+        if (!title) title = '無標題文章';
+
         let date = typeof frontmatter.listDate === 'string' ? frontmatter.listDate : '';
         let imageUrl: string | undefined = frontmatter.image;
         if (!imageUrl && content) {
@@ -37,22 +51,20 @@ export default createContentLoader('blog/**/*.md', {
           imageUrl = `/${imageUrl}`;
         }
         if (!imageUrl) imageUrl = DEFAULT_IMAGE;
+
         let summary = excerpt?.trim();
         if (!summary) summary = (frontmatter.description || '').trim();
         if (!summary && content) {
           const lines = content.split('\n').map(line => line.trim());
           summary = lines.find(line => line && !line.startsWith('#') && !line.startsWith('![') && !line.startsWith('>')) || '';
         }
-        // 強化 title fallback
-        const title = (frontmatter.title && String(frontmatter.title).trim())
-          || (url.replace(/\.html$/, '').split('/').pop() || '').trim()
-          || '無標題文章';
+
         return {
           url,
           frontmatter,
           title,
           date,
-          tags: frontmatter.tags || [],
+          tags: Array.isArray(frontmatter.tags) ? frontmatter.tags : [],
           image: imageUrl,
           summary,
         };
