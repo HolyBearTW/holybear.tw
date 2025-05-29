@@ -4,28 +4,27 @@ const DEFAULT_IMAGE = '/blog_no_image.svg';
 export default createContentLoader('blog/**/*.md', {
   excerpt: true,
   transform(raw) {
-    const filteredPosts = raw.filter(({ url }) => {
-      const isBlogIndexPage =
-        url === '/blog/' ||
-        url === '/blog/index.html' ||
-        url === '/en/blog/' ||
-        url === '/en/blog/index.html';
-      return !isBlogIndexPage;
-    });
-
-    const mapped = filteredPosts
+    return raw
+      .filter(({ url }) => {
+        // 過濾掉部落格首頁
+        const isBlogIndexPage =
+          url === '/blog/' ||
+          url === '/blog/index.html' ||
+          url === '/en/blog/' ||
+          url === '/en/blog/index.html';
+        return !isBlogIndexPage;
+      })
       .map(({ url, frontmatter, content, excerpt }) => {
-        frontmatter = (frontmatter && typeof frontmatter === 'object') ? frontmatter : {};
-        let title = '';
-        if (typeof frontmatter.title === 'string' && frontmatter.title.trim()) {
-          title = frontmatter.title.trim();
-        } else if (url) {
-          title = url.replace(/\.html$/, '').split('/').pop() || '';
-        }
+        // frontmatter 必須是 object
+        frontmatter = frontmatter && typeof frontmatter === 'object' ? frontmatter : {};
+
+        let title = typeof frontmatter.title === 'string' && frontmatter.title.trim()
+          ? frontmatter.title.trim()
+          : (url ? url.replace(/\.html$/, '').split('/').pop() || '' : '');
         if (!title) title = '無標題文章';
 
         let date = typeof frontmatter.listDate === 'string' ? frontmatter.listDate : '';
-        let imageUrl: string | undefined = frontmatter.image;
+        let imageUrl = frontmatter.image;
         if (!imageUrl && content) {
           const markdownImageRegex = /!\[.*?\]\((.*?)\)/;
           let match = content.match(markdownImageRegex);
@@ -53,11 +52,17 @@ export default createContentLoader('blog/**/*.md', {
           summary,
         };
       })
-      // 額外防呆：只保留 title 存在的物件
-      .filter(post => post && typeof post.title === 'string' && post.title);
-
-    return mapped.sort((a, b) => {
-      return new Date(b.date).getTime() - new Date(a.date).getTime();
-    });
+      // ***這邊是最重要的防呆！***
+      .filter(
+        post =>
+          post &&
+          typeof post.title === 'string' &&
+          !!post.title &&
+          typeof post.url === 'string' &&
+          !!post.url
+      )
+      .sort((a, b) => {
+        return new Date(b.date).getTime() - new Date(a.date).getTime();
+      });
   },
 });
