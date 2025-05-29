@@ -31,48 +31,45 @@ export default createContentLoader('blog/**/*.md', {
     }
 
     return filteredPosts
-      .map(({ url, frontmatter, content, excerpt }) => {
-        // 日期處理：只取 frontmatter 中的 listDate 屬性
-        let date = typeof frontmatter.listDate === 'string' ? frontmatter.listDate : '';
+  .map(({ url, frontmatter, content, excerpt }) => {
+    // 新增防呆：frontmatter 不存在時給預設空物件
+    if (!frontmatter) {
+      console.warn(`[posts.data.ts] WARNING: Missing frontmatter for post at URL: ${url}`);
+      frontmatter = {};
+    }
 
-        // 圖片處理：優先使用 frontmatter.image，其次從內容中提取第一張圖片，最後使用預設圖片
-        let imageUrl: string | undefined = frontmatter.image;
-        if (!imageUrl && content) {
-          const markdownImageRegex = /!\[.*?\]\((.*?)\)/; // 匹配 Markdown 圖片語法
-          let match = content.match(markdownImageRegex);
-          if (match && match[1]) imageUrl = match[1];
-        }
-        // 確保圖片路徑以 / 開頭，如果沒有的話 (針對相對路徑)
-        if (imageUrl && !imageUrl.startsWith('/') && !imageUrl.startsWith('http')) {
-          imageUrl = `/${imageUrl}`;
-        }
-        if (!imageUrl) imageUrl = DEFAULT_IMAGE; // 如果沒有找到圖片，使用預設圖片
+    // 其餘邏輯不變
+    let date = typeof frontmatter.listDate === 'string' ? frontmatter.listDate : '';
+    let imageUrl: string | undefined = frontmatter.image;
+    if (!imageUrl && content) {
+      const markdownImageRegex = /!\[.*?\]\((.*?)\)/;
+      let match = content.match(markdownImageRegex);
+      if (match && match[1]) imageUrl = match[1];
+    }
+    if (imageUrl && !imageUrl.startsWith('/') && !imageUrl.startsWith('http')) {
+      imageUrl = `/${imageUrl}`;
+    }
+    if (!imageUrl) imageUrl = DEFAULT_IMAGE;
 
-        // 摘要處理：優先使用 excerpt，其次 frontmatter.description，最後從內容中提取
-        let summary = excerpt?.trim();
-        if (!summary) summary = (frontmatter.description || '').trim();
-        if (!summary && content) {
-          const lines = content.split('\n').map(line => line.trim());
-          // 尋找內容中第一行非空，且不以標題(#)、圖片(![)或引用(>)開頭的行作為摘要
-          summary = lines.find(line => line && !line.startsWith('#') && !line.startsWith('![') && !line.startsWith('>')) || '';
-        }
+    let summary = excerpt?.trim();
+    if (!summary) summary = (frontmatter.description || '').trim();
+    if (!summary && content) {
+      const lines = content.split('\n').map(line => line.trim());
+      summary = lines.find(line => line && !line.startsWith('#') && !line.startsWith('![') && !line.startsWith('>')) || '';
+    }
 
-        // 標題處理：如果 frontmatter.title 不存在，則從 URL 提取或提供預設值
-        const title = frontmatter.title || url.replace(/\.html$/, '').split('/').pop() || '無標題文章';
+    const title = frontmatter.title || url.replace(/\.html$/, '').split('/').pop() || '無標題文章';
 
-        return {
-          url,
-          frontmatter,
-          title: title, // 使用處理後的標題
-          date,
-          tags: frontmatter.tags || [], // 如果沒有標籤，返回空陣列
-          image: imageUrl,
-          summary,
-        };
-      })
-      .sort((a, b) => {
-        // 根據日期降序排列（最新的文章在前）
-        return new Date(b.date).getTime() - new Date(a.date).getTime();
-      });
-  },
-});
+    return {
+      url,
+      frontmatter,
+      title,
+      date,
+      tags: frontmatter.tags || [],
+      image: imageUrl,
+      summary,
+    };
+  })
+  .sort((a, b) => {
+    return new Date(b.date).getTime() - new Date(a.date).getTime();
+  });
