@@ -1,7 +1,6 @@
-// --- 程式碼開始 ---
 // 檔案路徑: .vitepress/theme/posts.data.ts
 import { createContentLoader } from 'vitepress';
-const DEFAULT_IMAGE = '/blog_no_image.svg';
+const DEFAULT_IMAGE = '/blog_no_image.svg'; // 預設圖片路徑
 
 export default createContentLoader('blog/**/*.md', {
   excerpt: true, // 啟用摘要提取
@@ -15,6 +14,7 @@ export default createContentLoader('blog/**/*.md', {
     // 過濾掉作為部落格首頁的 index.md 檔案
     const filteredPosts = raw.filter(({ url }) => {
       // 判斷是否為部落格的根目錄頁面 (如 /blog/ 或 /blog/index.html)
+      // 同時也考慮英文路徑 /en/blog/
       const isBlogIndexPage = url === '/blog/' || url === '/blog/index.html' || url === '/en/blog/' || url === '/en/blog/index.html';
       return !isBlogIndexPage; // 如果是部落格首頁，就過濾掉
     });
@@ -32,21 +32,21 @@ export default createContentLoader('blog/**/*.md', {
 
     return filteredPosts
       .map(({ url, frontmatter, content, excerpt }) => {
-        // 日期處理：只取 listDate
+        // 日期處理：只取 frontmatter 中的 listDate 屬性
         let date = typeof frontmatter.listDate === 'string' ? frontmatter.listDate : '';
 
         // 圖片處理：優先使用 frontmatter.image，其次從內容中提取第一張圖片，最後使用預設圖片
         let imageUrl: string | undefined = frontmatter.image;
         if (!imageUrl && content) {
-          const markdownImageRegex = /!\[.*?\]\((.*?)\)/;
+          const markdownImageRegex = /!\[.*?\]\((.*?)\)/; // 匹配 Markdown 圖片語法
           let match = content.match(markdownImageRegex);
           if (match && match[1]) imageUrl = match[1];
         }
-        // 確保圖片路徑以 / 開頭，如果沒有的話
+        // 確保圖片路徑以 / 開頭，如果沒有的話 (針對相對路徑)
         if (imageUrl && !imageUrl.startsWith('/') && !imageUrl.startsWith('http')) {
           imageUrl = `/${imageUrl}`;
         }
-        if (!imageUrl) imageUrl = DEFAULT_IMAGE; // 如果沒有圖片，使用預設圖片
+        if (!imageUrl) imageUrl = DEFAULT_IMAGE; // 如果沒有找到圖片，使用預設圖片
 
         // 摘要處理：優先使用 excerpt，其次 frontmatter.description，最後從內容中提取
         let summary = excerpt?.trim();
@@ -57,7 +57,7 @@ export default createContentLoader('blog/**/*.md', {
           summary = lines.find(line => line && !line.startsWith('#') && !line.startsWith('![') && !line.startsWith('>')) || '';
         }
 
-        // 標題處理：如果 frontmatter.title 不存在，則從 URL 或提供預設值
+        // 標題處理：如果 frontmatter.title 不存在，則從 URL 提取或提供預設值
         const title = frontmatter.title || url.replace(/\.html$/, '').split('/').pop() || '無標題文章';
 
         return {
@@ -65,7 +65,7 @@ export default createContentLoader('blog/**/*.md', {
           frontmatter,
           title: title, // 使用處理後的標題
           date,
-          tags: frontmatter.tags || [],
+          tags: frontmatter.tags || [], // 如果沒有標籤，返回空陣列
           image: imageUrl,
           summary,
         };
