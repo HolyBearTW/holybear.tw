@@ -5,7 +5,7 @@ description: 聖小熊的部落格文章列表
 ---
 
 <script setup>
-import { ref, computed, nextTick } from 'vue' // 導入 nextTick
+import { ref, computed, nextTick } from 'vue' // 導入 nextTick 用於 DOM 操作的時機控制
 // 1. 從 .vitepress/theme/posts.data.ts 導入文章資料
 import { data as allPosts } from '../.vitepress/theme/posts.data.ts'
 
@@ -81,10 +81,9 @@ const goToPage = (page) => {
   if (page >= 1 && page <= totalPages.value) {
     currentPage.value = page
     // 使用 nextTick 確保 DOM 更新後再執行滾動，避免 SSR 錯誤
+    // 這行程式碼在客戶端事件循環執行，此時 window 必然存在
     nextTick(() => {
-      if (typeof window !== 'undefined') { // 再次確認是否在瀏覽器環境
-        window.scrollTo({ top: 0, behavior: 'smooth' }) // 平滑滾動到頁面頂部
-      }
+      window.scrollTo({ top: 0, behavior: 'smooth' }) // 平滑滾動到頁面頂部
     })
   }
 }
@@ -105,12 +104,12 @@ const pageNumbers = computed(() => {
 
     <div v-if="paginatedPosts.length > 0" class="post-cards-wrapper">
       <div v-for="post in paginatedPosts" :key="post.url" class="post-card">
-        <a :href="post.url" class="post-link">
+        <a :href="post.url" class="post-link" v-if="post">
           <div class="post-image-wrapper">
             <img :src="post.image" :alt="post.title" class="post-image" />
           </div>
           <div class="post-content">
-            <h2 class="post-title">{{ post.title }}</h2>
+            <h2 class="post-title">{{ post.title || '無標題' }}</h2>
             <p v-if="post.date" class="post-date">
               <time :datetime="post.date">{{ formatDateExactlyLikePostPage(post.date) }}</time>
             </p>
@@ -120,6 +119,9 @@ const pageNumbers = computed(() => {
             </div>
           </div>
         </a>
+        <div v-else class="post-card error-card">
+          <p>載入文章資料失敗，可能文章檔案有問題。</p>
+        </div>
       </div>
     </div>
     <div v-else class="no-posts-message">
