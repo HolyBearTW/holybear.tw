@@ -41,6 +41,15 @@ const currentDisplayDate = computed(() => {
           <template v-if="frontmatter.author && currentDisplayDate">｜</template>
           <template v-if="currentDisplayDate">{{ currentDisplayDate }}</template>
         </p>
+        <!-- 新增標籤區塊 -->
+        <div v-if="frontmatter.tag && frontmatter.tag.length" class="blog-post-tags">
+          <span class="tag-label">標籤：</span>
+          <span v-for="t in frontmatter.tag" :key="t" class="tag">{{ t }}</span>
+        </div>
+        <div v-if="frontmatter.category && frontmatter.category.length" class="blog-post-category">
+          <span class="category-label">分類：</span>
+          <span v-for="c in frontmatter.category" :key="c" class="category">{{ c }}</span>
+        </div>
       </div>
     </template>
     <template #doc-after>
@@ -91,6 +100,25 @@ const currentDisplayDate = computed(() => {
   margin-bottom: 0.5rem;
   padding-bottom: 0.5rem;
   border-bottom: 1px dashed var(--vp-c-divider);
+}
+/* 新增標籤與分類樣式 */
+.blog-post-tags, .blog-post-category {
+  margin-bottom: 0.5rem;
+}
+.tag, .category {
+  display: inline-block;
+  background: var(--vp-c-bg-soft, #f0f0f0);
+  color: var(--vp-c-brand-1, #0078e7);
+  border-radius: 3px;
+  padding: 0 0.5em;
+  margin-right: 0.5em;
+  font-size: 0.85em;
+}
+.tag-label, .category-label {
+  color: var(--vp-c-text-2);
+  font-weight: bold;
+  margin-right: 0.5em;
+  font-size: 0.85em;
 }
 :deep(.vp-doc p),
 :deep(.vp-doc ul),
