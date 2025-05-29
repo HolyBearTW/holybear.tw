@@ -15,6 +15,7 @@ export default createContentLoader('blog/**/*.md', {
       })
       .map(({ url, frontmatter, content, excerpt }) => {
         frontmatter = frontmatter && typeof frontmatter === 'object' ? frontmatter : {};
+        const title = frontmatter.title || '無標題文章';
         let date = typeof frontmatter.listDate === 'string' ? frontmatter.listDate : '';
         let imageUrl = frontmatter.image;
         if (!imageUrl && content) {
@@ -37,13 +38,14 @@ export default createContentLoader('blog/**/*.md', {
         return {
           url,
           frontmatter,
+          title,               // <--- 新增 title
           date,
           tags: Array.isArray(frontmatter.tags) ? frontmatter.tags : [],
           image: imageUrl,
           summary,
+          excerpt: summary,    // <--- 新增 excerpt 給前端用
         };
       })
-      // 核心：過濾掉沒有 url 的物件，或 null/undefined
       .filter(post => !!post && typeof post.url === 'string' && !!post.url)
       .sort((a, b) => {
         return new Date(b.date).getTime() - new Date(a.date).getTime();
