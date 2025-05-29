@@ -6,7 +6,7 @@
     </div>
 
     <div v-show="giscusLoaded" ref="giscusContainer" class="giscus-actual-comments">
-      </div>
+    </div>
   </div>
 </template>
 
@@ -23,25 +23,28 @@ const giscusTheme = computed(() => isDark.value ? 'dark_dimmed' : 'light')
 
 // 注入 giscus script 的方法（可重複調用）
 function loadGiscus() {
-  if (giscusContainer.value) {
-    giscusContainer.value.innerHTML = '' // 先清空舊 iframe
-    const script = document.createElement('script')
-    script.src = 'https://giscus.app/client.js'
-    script.setAttribute('data-repo', 'HolyBearTW/holybear.me')
-    script.setAttribute('data-repo-id', 'R_kgDOJmguVg')
-    script.setAttribute('data-category', 'General')
-    script.setAttribute('data-category-id', 'DIC_kwDOJmguVs4Cqo90')
-    script.setAttribute('data-mapping', 'pathname')
-    script.setAttribute('data-strict', '0')
-    script.setAttribute('data-reactions-enabled', '1')
-    script.setAttribute('data-emit-metadata', '0')
-    script.setAttribute('data-input-position', 'bottom')
-    script.setAttribute('data-theme', giscusTheme.value)
-    script.setAttribute('data-lang', 'zh-TW')
-    script.setAttribute('crossorigin', 'anonymous')
-    script.async = true
-    giscusContainer.value.appendChild(script)
-    giscusLoaded.value = true
+  // 確保只在客戶端執行此操作
+  if (!import.meta.env.SSR) {
+    if (giscusContainer.value) {
+      giscusContainer.value.innerHTML = '' // 先清空舊 iframe
+      const script = document.createElement('script')
+      script.src = 'https://giscus.app/client.js'
+      script.setAttribute('data-repo', 'HolyBearTW/holybear.me')
+      script.setAttribute('data-repo-id', 'R_kgDOJmguVg')
+      script.setAttribute('data-category', 'General')
+      script.setAttribute('data-category-id', 'DIC_kwDOJmguVs4Cqo90')
+      script.setAttribute('data-mapping', 'pathname')
+      script.setAttribute('data-strict', '0')
+      script.setAttribute('data-reactions-enabled', '1')
+      script.setAttribute('data-emit-metadata', '0')
+      script.setAttribute('data-input-position', 'bottom')
+      script.setAttribute('data-theme', giscusTheme.value)
+      script.setAttribute('data-lang', 'zh-TW')
+      script.setAttribute('crossorigin', 'anonymous')
+      script.async = true
+      giscusContainer.value.appendChild(script)
+      giscusLoaded.value = true
+    }
   }
 }
 
@@ -52,23 +55,27 @@ onMounted(() => {
 
 // 監聽路由變化，切換文章時重新載入 giscus
 watch(() => route.path, () => {
+  // 路由變化發生在客戶端，所以這裡不需要額外的 import.meta.env.SSR 判斷
   giscusLoaded.value = false
   loadGiscus()
 })
 
 // 監聽 dark mode 變化，動態切換主題
+// !!! 核心修正：將所有操作 document 的邏輯包裝在 if (!import.meta.env.SSR) 中
 watch(giscusTheme, (newTheme) => {
-  const iframe = document.querySelector('iframe.giscus-frame')
-  if (iframe && iframe.contentWindow) {
-    iframe.contentWindow.postMessage({
-      giscus: {
-        setConfig: {
-          theme: newTheme
+  if (!import.meta.env.SSR) { // <-- 關鍵的 SSR 判斷
+    const iframe = document.querySelector('iframe.giscus-frame')
+    if (iframe && iframe.contentWindow) {
+      iframe.contentWindow.postMessage({
+        giscus: {
+          setConfig: {
+            theme: newTheme
+          }
         }
-      }
-    }, 'https://giscus.app')
+      }, 'https://giscus.app')
+    }
   }
-}, { immediate: true })
+}, { immediate: true }) // immediate: true 仍然需要，但現在有 SSR 判斷保護了
 </script>
 
 <style scoped>
