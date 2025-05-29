@@ -12,12 +12,13 @@ export default createContentLoader('**/blog/**/*.md', {
       console.log('[posts.data.ts] URLs of raw posts:', raw.map(p => p.url));
     }
 
-    const filteredPosts = raw.filter(({ url }) => {
-      const endsWithBlogSlash = url.endsWith('/blog/');
-      // 如果需要更詳細的逐條過濾日誌，可以取消下面這行的註釋
-      // console.log(`[posts.data.ts] Checking URL: "${url}", endsWith /blog/: ${endsWithBlogSlash}, will be kept: ${!endsWithBlogSlash}`);
-      return !endsWithBlogSlash;
-    });
+const filteredPosts = raw.filter(({ url }) => {
+  // 只排除掉作為部落格根目錄的 index.md 頁面
+  // 例如，你的部落格文章應該是 /blog/YYYY-MM-DD-title.md 或 /blog/some-post.md
+  // 而不是 /blog/ 或 /blog/index.html
+  const isBlogIndexPage = url === '/blog/' || url === '/blog/index.html';
+  return !isBlogIndexPage;
+});
 
     // 調試日誌：打印過濾後的文章數量
     console.log(`[posts.data.ts] Filtered posts count: ${filteredPosts.length}`);
