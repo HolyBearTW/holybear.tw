@@ -13,7 +13,6 @@ export default createContentLoader('blog/**/*.md', {
       return !isBlogIndexPage;
     });
 
-    // 產生每篇文章物件並加強防呆
     const mapped = filteredPosts
       .map(({ url, frontmatter, content, excerpt }) => {
         frontmatter = (frontmatter && typeof frontmatter === 'object') ? frontmatter : {};
@@ -54,7 +53,7 @@ export default createContentLoader('blog/**/*.md', {
           summary,
         };
       })
-      // 過濾掉任何 undefined/null 或 title 為空的資料
+      // 額外防呆：只保留 title 存在的物件
       .filter(post => post && typeof post.title === 'string' && post.title);
 
     return mapped.sort((a, b) => {
