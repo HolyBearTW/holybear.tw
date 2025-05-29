@@ -1,94 +1,72 @@
 ---
-layout: home
-title: 部落格文章
+layout: home title: 部落格文章
 description: 聖小熊的部落格文章列表
 ---
 
 <script setup>
-import { ref, computed, nextTick } from 'vue' // 導入 nextTick 用於 DOM 操作的時機控制
-// 1. 從 .vitepress/theme/posts.data.ts 導入文章資料
+import { ref, computed, nextTick, onMounted } from 'vue'
 import { data as allPosts } from '../.vitepress/theme/posts.data.ts'
 
-// 2. 日期格式化函數，確保與文章頁面顯示一致
+// 日期格式化函數 (保持不變，它不依賴瀏覽器API)
 function formatDateExactlyLikePostPage(dateStringInput) {
-  // 處理無效輸入 (null, undefined, 空白字串)
   if (dateStringInput === null || dateStringInput === undefined) {
     return '';
   }
-  const dateString = String(dateStringInput).trim(); // 轉換為字串並移除頭尾空白
+  const dateString = String(dateStringInput).trim();
   if (!dateString) {
-    return ''; // 如果是空字串，則不顯示
+    return '';
   }
-
-  // 判斷原始字串是否包含時間特徵 (例如冒號)
   const containsTimeChars = dateString.includes(':');
-
-  // 解析日期字串
   const date = new Date(dateString);
-
-  // 檢查日期是否有效
   if (isNaN(date.getTime())) {
-    return ''; // 如果日期無效，返回空字串
+    return '';
   }
-
-  // 決定是否有實際指定的時間
   const hasSpecifiedTime = containsTimeChars;
-
-  // 轉換到台北時區 (Asia/Taipei)
   const twDate = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
-
-  // 再次檢查轉換後的 twDate 是否有效
   if (isNaN(twDate.getTime())) {
     return '';
   }
-
   const yyyy = twDate.getFullYear();
-  const mm = String(twDate.getMonth() + 1).padStart(2, '0'); // 月份是從 0 開始的，所以要 +1
+  const mm = String(twDate.getMonth() + 1).padStart(2, '0');
   const dd = String(twDate.getDate()).padStart(2, '0');
 
-  // 根據是否有指定時間來格式化輸出
   if (hasSpecifiedTime) {
     const hh = String(twDate.getHours()).padStart(2, '0');
     const min = String(twDate.getMinutes()).padStart(2, '0');
-    return `${yyyy}-${mm}-${dd} ${hh}:${min}`; // 顯示日期和時間
+    return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
   } else {
-    return `${yyyy}-${mm}-${dd}`; // 只顯示日期
+    return `${yyyy}-${mm}-${dd}`;
   }
 }
 
-// 分頁邏輯設定
-const postsPerPage = 10 // 每頁顯示的文章數量
-const currentPage = ref(1) // 當前頁碼，預設為第一頁
+const postsPerPage = 10
+const currentPage = ref(1)
 
-// 計算總頁數
 const totalPages = computed(() => {
-  // 確保 allPosts 存在且是陣列，防止空值錯誤
   if (!allPosts || !Array.isArray(allPosts)) return 0;
   return Math.ceil(allPosts.length / postsPerPage);
 })
 
-// 計算當前頁要顯示的文章
 const paginatedPosts = computed(() => {
-  // 確保 allPosts 存在且是陣列
   if (!allPosts || !Array.isArray(allPosts)) return [];
-  const start = (currentPage.value - 1) * postsPerPage // 起始索引
-  const end = start + postsPerPage // 結束索引
-  return allPosts.slice(start, end) // 截取陣列
+  const start = (currentPage.value - 1) * postsPerPage
+  const end = start + postsPerPage
+  return allPosts.slice(start, end)
 })
 
-// 跳轉到指定頁面
 const goToPage = (page) => {
   if (page >= 1 && page <= totalPages.value) {
     currentPage.value = page
-    // 使用 nextTick 確保 DOM 更新後再執行滾動，避免 SSR 錯誤
-    // 這行程式碼在客戶端事件循環執行，此時 window 必然存在
-    nextTick(() => {
-      window.scrollTo({ top: 0, behavior: 'smooth' }) // 平滑滾動到頁面頂部
-    })
+    // 確保滾動只在客戶端執行。
+    // `import.meta.env.SSR` 在伺服器端為 true，在客戶端為 false。
+    if (!import.meta.env.SSR) {
+      nextTick(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      })
+    }
   }
 }
 
-// 計算分頁按鈕的頁碼列表
 const pageNumbers = computed(() => {
   const pages = []
   for (let i = 1; i <= totalPages.value; i++) {
@@ -96,6 +74,13 @@ const pageNumbers = computed(() => {
   }
   return pages
 })
+
+// *** 重要：任何其他需要直接操作 document 或 window 的程式碼，
+// *** 都應該放在 onMounted 鉤子中，因為它只在客戶端執行。
+// onMounted(() => {
+//   // 例如：某些第三方JS庫的初始化，如果它們需要訪問DOM
+//   // console.log('This runs only on the client side, document exists here!');
+// });
 </script>
 
 <template>
@@ -104,7 +89,7 @@ const pageNumbers = computed(() => {
 
     <div v-if="paginatedPosts.length > 0" class="post-cards-wrapper">
       <div v-for="post in paginatedPosts" :key="post.url" class="post-card">
-        <a :href="post.url" class="post-link" v-if="post">
+        <a :href="post.url" class="post-link" v-if="post && post.url">
           <div class="post-image-wrapper">
             <img :src="post.image" :alt="post.title" class="post-image" />
           </div>
@@ -120,7 +105,7 @@ const pageNumbers = computed(() => {
           </div>
         </a>
         <div v-else class="post-card error-card">
-          <p>載入文章資料失敗，可能文章檔案有問題。</p>
+          <p>載入文章資料失敗，可能文章檔案有問題或 URL 遺失。</p>
         </div>
       </div>
     </div>
@@ -157,7 +142,7 @@ const pageNumbers = computed(() => {
 </template>
 
 <style scoped>
-/* 部落格列表容器樣式 */
+/* 樣式保持不變 */
 .blog-list-container {
   max-width: 960px;
   margin: 0 auto;
@@ -167,45 +152,51 @@ const pageNumbers = computed(() => {
 h1 {
   text-align: center;
   margin-bottom: 40px;
-  color: var(--vp-c-text-1); /* 使用 VitePress 變數定義文字顏色 */
+  color: var(--vp-c-text-1);
 }
 
-/* 文章卡片網格佈局 */
 .post-cards-wrapper {
   display: grid;
-  gap: 30px; /* 卡片間距 */
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); /* 響應式網格，最小 300px，自動填滿 */
+  gap: 30px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   margin-bottom: 40px;
 }
 
-/* 單篇文章卡片樣式 */
 .post-card {
-  background-color: var(--vp-c-bg-soft); /* 使用 VitePress 變數定義背景色 */
+  background-color: var(--vp-c-bg-soft);
   border-radius: 8px;
-  box-shadow: var(--vp-shadow-1); /* 使用 VitePress 變數定義陰影 */
+  box-shadow: var(--vp-shadow-1);
   overflow: hidden;
-  transition: transform 0.3s ease, box-shadow 0.3s ease; /* 平滑過渡效果 */
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
   display: flex;
-  flex-direction: column; /* 內容垂直排列 */
+  flex-direction: column;
 }
 
+.post-card.error-card {
+  background-color: var(--vp-c-bg-alt); /* 錯誤卡片用不同背景色 */
+  color: var(--vp-c-text-2);
+  border: 1px dashed var(--vp-c-divider);
+  text-align: center;
+  padding: 20px;
+}
+
+
 .post-card:hover {
-  transform: translateY(-5px); /* 滑鼠懸停時上移 */
-  box-shadow: var(--vp-shadow-2); /* 滑鼠懸停時加深陰影 */
+  transform: translateY(-5px);
+  box-shadow: var(--vp-shadow-2);
 }
 
 .post-link {
-  text-decoration: none; /* 移除下劃線 */
-  color: inherit; /* 繼承父元素顏色 */
+  text-decoration: none;
+  color: inherit;
   display: flex;
   flex-direction: column;
-  height: 100%; /* 確保連結填滿卡片高度 */
+  height: 100%;
 }
 
-/* 圖片容器與圖片樣式 */
 .post-image-wrapper {
   width: 100%;
-  padding-top: 56.25%; /* 16:9 比例 (高 / 寬 = 9 / 16 = 0.5625) */
+  padding-top: 56.25%; /* 16:9 比例 */
   position: relative;
   overflow: hidden;
 }
@@ -216,18 +207,17 @@ h1 {
   left: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover; /* 保持圖片比例並填滿容器 */
-  transition: transform 0.3s ease; /* 平滑過渡效果 */
+  object-fit: cover;
+  transition: transform 0.3s ease;
 }
 
 .post-card:hover .post-image {
-  transform: scale(1.05); /* 滑鼠懸停時圖片放大 */
+  transform: scale(1.05);
 }
 
-/* 文章內容區塊樣式 */
 .post-content {
   padding: 20px;
-  flex-grow: 1; /* 內容區塊彈性成長，填滿剩餘空間 */
+  flex-grow: 1;
   display: flex;
   flex-direction: column;
 }
@@ -236,65 +226,63 @@ h1 {
   font-size: 1.5em;
   margin-top: 0;
   margin-bottom: 10px;
-  color: var(--vp-c-brand-1); /* 使用 VitePress 品牌色 */
+  color: var(--vp-c-brand-1);
   line-height: 1.3;
 }
 
 .post-date {
   font-size: 0.9em;
-  color: var(--vp-c-text-2); /* 次要文字顏色 */
+  color: var(--vp-c-text-2);
   margin-bottom: 15px;
 }
 
 .post-summary {
   font-size: 1em;
-  color: var(--vp-c-text-1); /* 主要文字顏色 */
+  color: var(--vp-c-text-1);
   line-height: 1.6;
   margin-bottom: 15px;
-  flex-grow: 1; /* 摘要彈性成長 */
-  overflow: hidden; /* 隱藏超出內容 */
-  display: -webkit-box; /* 實現多行文字截斷 */
-  -webkit-line-clamp: 3; /* 限制摘要顯示三行 */
+  flex-grow: 1;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
 }
 
-/* 標籤樣式 */
 .post-tags {
   margin-top: 15px;
   display: flex;
-  flex-wrap: wrap; /* 標籤換行 */
-  gap: 8px; /* 標籤間距 */
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .tag {
-  background-color: var(--vp-c-badge-tip-bg); /* 使用 VitePress 提示標籤背景色 */
-  color: var(--vp-c-badge-tip-text); /* 使用 VitePress 提示標籤文字顏色 */
+  background-color: var(--vp-c-badge-tip-bg);
+  color: var(--vp-c-badge-tip-text);
   padding: 4px 10px;
   border-radius: 4px;
   font-size: 0.85em;
-  white-space: nowrap; /* 避免標籤文字換行 */
+  white-space: nowrap;
 }
 
-/* 沒有文章時的提示訊息 */
 .no-posts-message {
   text-align: center;
   padding: 50px 0;
   color: var(--vp-c-text-2);
 }
 
-/* 分頁導航樣式 */
+/* 分頁樣式 */
 .pagination {
   display: flex;
-  justify-content: center; /* 水平居中 */
+  justify-content: center;
   align-items: center;
   margin-top: 50px;
-  gap: 10px; /* 按鈕間距 */
+  gap: 10px;
 }
 
 .pagination-button {
   background-color: var(--vp-c-bg-soft);
   color: var(--vp-c-text-1);
-  border: 1px solid var(--vp-c-divider); /* 分隔線顏色 */
+  border: 1px solid var(--vp-c-divider);
   padding: 8px 15px;
   border-radius: 6px;
   cursor: pointer;
@@ -302,18 +290,18 @@ h1 {
 }
 
 .pagination-button:hover:not(:disabled) {
-  background-color: var(--vp-c-bg-alt); /* 滑鼠懸停時背景色 */
-  border-color: var(--vp-c-brand-1); /* 滑鼠懸停時邊框顏色 */
+  background-color: var(--vp-c-bg-alt);
+  border-color: var(--vp-c-brand-1);
 }
 
 .pagination-button.active {
-  background-color: var(--vp-c-brand-1); /* 當前頁按鈕的背景色 */
-  color: var(--vp-c-white); /* 當前頁按鈕的文字顏色 */
+  background-color: var(--vp-c-brand-1);
+  color: var(--vp-c-white);
   border-color: var(--vp-c-brand-1);
 }
 
 .pagination-button:disabled {
-  opacity: 0.5; /* 禁用時半透明 */
-  cursor: not-allowed; /* 禁用時滑鼠樣式 */
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 </style>
