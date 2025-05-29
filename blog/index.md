@@ -3,6 +3,7 @@ layout: home
 title: "部落格首頁"
 description: "這是部落格首頁的簡短描述"
 ---
+<pre>{{ JSON.stringify(effectivePosts, null, 2) }}</pre>
 
 <script setup>
 import { ref, computed, nextTick, onMounted } from 'vue'
