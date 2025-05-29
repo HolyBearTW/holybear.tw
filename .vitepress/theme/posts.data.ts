@@ -1,6 +1,17 @@
 import { createContentLoader } from 'vitepress';
 const DEFAULT_IMAGE = '/blog_no_image.svg';
 
+function extractDate(frontmatter) {
+  // 支援 listDate、date、created、publishDate 四種欄位
+  return (
+    frontmatter.listDate ||
+    frontmatter.date ||
+    frontmatter.created ||
+    frontmatter.publishDate ||
+    ''
+  );
+}
+
 export default createContentLoader('blog/**/*.md', {
   excerpt: true,
   transform(raw) {
@@ -16,8 +27,8 @@ export default createContentLoader('blog/**/*.md', {
       .map(({ url, frontmatter, content, excerpt }) => {
         frontmatter = frontmatter && typeof frontmatter === 'object' ? frontmatter : {};
         const title = frontmatter.title || '無標題文章';
-        // 支援 listDate
-        let date = typeof frontmatter.listDate === 'string' ? frontmatter.listDate : '';
+        // 這裡用 extractDate
+        const date = extractDate(frontmatter);
         let imageUrl = frontmatter.image;
         if (!imageUrl && content) {
           const markdownImageRegex = /!\[.*?\]\((.*?)\)/;
@@ -40,7 +51,7 @@ export default createContentLoader('blog/**/*.md', {
           url,
           frontmatter,
           title,
-          date, // <--- 這裡是 listDate，給前端用 post.date
+          date,
           tags: Array.isArray(frontmatter.tags) ? frontmatter.tags : [],
           image: imageUrl,
           summary,
