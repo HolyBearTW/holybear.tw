@@ -6,97 +6,75 @@ description: 聖小熊的部落格文章列表
 
 <script setup>
 import { ref, computed } from 'vue'
+// 1. 恢復從 .vitepress/theme/posts.data.ts 導入數據
+import { data as allPosts } from '../.vitepress/theme/posts.data.ts'
 
-// 1. 移除了從 '../.vitepress/theme/posts.data.ts' 的導入
-// import { data as allPosts } from '../.vitepress/theme/posts.data.ts'
-
-// 2. 將 allPosts 初始化為一個 ref。
-//    您需要自行決定如何填充 allPosts.value 的數據。
-//    下方是一個示意，您需要用您的實際數據源替換。
-const allPosts = ref([]) // 初始化為空陣列
-
-// -------------------------------------------------------------------------
-// 重要：您需要在此處或透過其他方式填充 `allPosts.value` 的數據。
-// 例如，如果您選擇生成一個 JSON 檔案：
-//
-// import postsDataFromJson from './path/to/your/all-posts-data.json' // 假設您生成了這個 JSON
-// allPosts.value = postsDataFromJson;
-//
-// 或者，如果您從 API 獲取 (注意這對 SSG 的影響)：
-// import { onMounted } from 'vue'
-// onMounted(async () => {
-//   try {
-//     const response = await fetch('/api/posts'); // 您的 API 端點
-//     if (response.ok) {
-//       allPosts.value = await response.json();
-//     } else {
-//       console.error('無法獲取文章列表');
-//       allPosts.value = [];
-//     }
-//   } catch (error) {
-//     console.error('獲取文章列表時發生錯誤:', error);
-//     allPosts.value = [];
-//   }
-// });
-//
-// 請確保 `allPosts.value` 填充的數據結構與之前 `posts.data.ts` 提供的類似，
-// 即一個物件陣列，每個物件至少包含 `url`, `title`, `date`, `image`, `excerpt` 等文章屬性。
-// 並且，如果您的頁面需要靜態生成 (SSG)，這個數據需要在建構時可用。
-// -------------------------------------------------------------------------
-
-
-// 3. 日期格式化函數 (與先前修改後的版本相同)
+// 2. 使用先前調整好的日期格式化函數
 function formatDateExactlyLikePostPage(dateStringInput) {
+  // 處理無效輸入 (null, undefined, 空白字串)
   if (dateStringInput === null || dateStringInput === undefined) {
     return '';
   }
-  const dateString = String(dateStringInput).trim();
+  const dateString = String(dateStringInput).trim(); // 轉換為字串並移除頭尾空白
   if (!dateString) {
-    return '';
+    return ''; // 如果是空字串，則不顯示
   }
 
+  // 判斷原始字串是否包含時間特徵 (例如冒號)
   const containsTimeChars = dateString.includes(':');
+
+  // 解析日期字串
   const date = new Date(dateString);
 
+  // 檢查日期是否有效
   if (isNaN(date.getTime())) {
-    return '';
+    // console.warn(`[Blog Date] Invalid date string provided: ${dateStringInput}`);
+    return ''; // 如果日期無效，返回空字串
   }
 
+  // 決定是否有實際指定的時間
   const hasSpecifiedTime = containsTimeChars;
-  // 轉換到台北時區
+
+  // 轉換到台北時區 (Asia/Taipei)
   const twDate = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
 
+  // 再次檢查轉換後的 twDate 是否有效
   if (isNaN(twDate.getTime())) {
+    // console.warn(`[Blog Date] Invalid date after Asia/Taipei conversion for: ${dateStringInput}`);
     return '';
   }
 
   const yyyy = twDate.getFullYear();
-  const mm = String(twDate.getMonth() + 1).padStart(2, '0');
+  const mm = String(twDate.getMonth() + 1).padStart(2, '0'); // 月份是從 0 開始的，所以要 +1
   const dd = String(twDate.getDate()).padStart(2, '0');
 
+  // 根據是否有指定時間來格式化輸出
   if (hasSpecifiedTime) {
     const hh = String(twDate.getHours()).padStart(2, '0');
     const min = String(twDate.getMinutes()).padStart(2, '0');
-    return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
+    return `${yyyy}-${mm}-${dd} ${hh}:${min}`; // 顯示日期和時間
   } else {
-    return `${yyyy}-${mm}-${dd}`;
+    return `${yyyy}-${mm}-${dd}`; // 只顯示日期
   }
 }
 
-// 分頁邏輯 (現在依賴於 ref allPosts.value)
+// 分頁邏輯 (直接使用導入的 allPosts)
 const postsPerPage = 10
 const currentPage = ref(1)
 
+// allPosts 從 .data.ts 導入時已具備響應性
 const totalPages = computed(() => {
-  if (!allPosts.value) return 0; // 防禦性檢查
-  return Math.ceil(allPosts.value.length / postsPerPage);
+  // 確保 allPosts 存在且是陣列
+  if (!allPosts || !Array.isArray(allPosts)) return 0;
+  return Math.ceil(allPosts.length / postsPerPage);
 })
 
 const paginatedPosts = computed(() => {
-  if (!allPosts.value) return []; // 防禦性檢查
+  // 確保 allPosts 存在且是陣列
+  if (!allPosts || !Array.isArray(allPosts)) return [];
   const start = (currentPage.value - 1) * postsPerPage
   const end = start + postsPerPage
-  return allPosts.value.slice(start, end)
+  return allPosts.slice(start, end)
 })
 
 const goToPage = (page) => {
