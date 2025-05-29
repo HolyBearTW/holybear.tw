@@ -13,8 +13,10 @@ export default createContentLoader('blog/**/*.md', {
 
     // 過濾掉作為部落格首頁的 index.md 檔案
     const filteredPosts = raw.filter(({ url }) => {
+      // 判斷是否為部落格的根目錄頁面 (如 /blog/ 或 /blog/index.html)
+      // 同時也考慮英文路徑 /en/blog/
       const isBlogIndexPage = url === '/blog/' || url === '/blog/index.html' || url === '/en/blog/' || url === '/en/blog/index.html';
-      return !isBlogIndexPage;
+      return !isBlogIndexPage; // 如果是部落格首頁，就過濾掉
     });
 
     // 調試日誌：打印過濾後的文章數量
@@ -30,11 +32,13 @@ export default createContentLoader('blog/**/*.md', {
 
     return filteredPosts
       .map(({ url, frontmatter, content, excerpt }) => {
+        // 新增防呆：frontmatter 不存在時給預設空物件
         if (!frontmatter) {
           console.warn(`[posts.data.ts] WARNING: Missing frontmatter for post at URL: ${url}`);
           frontmatter = {};
         }
 
+        // 其餘邏輯不變
         let date = typeof frontmatter.listDate === 'string' ? frontmatter.listDate : '';
         let imageUrl: string | undefined = frontmatter.image;
         if (!imageUrl && content) {
