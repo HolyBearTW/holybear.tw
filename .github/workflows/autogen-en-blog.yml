@@ -24,9 +24,10 @@ jobs:
 
       - name: Commit and push generated files
         run: |
-          git config --global user.name 'github-actions[bot]'
+          git config --global user.name 'System Administrator'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           git add en/blog/
+          git reset en/blog/index.md
           if git diff --cached --quiet; then
             echo "No changes to commit."
           else
