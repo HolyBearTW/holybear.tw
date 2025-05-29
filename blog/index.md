@@ -4,32 +4,22 @@ description: 聖小熊的部落格文章列表
 ---
 
 <script setup>
-import { ref, computed, nextTick, onMounted } from 'vue' // 引入 onMounted
+import { ref, computed, nextTick, onMounted } from 'vue'
 import { data as allPosts } from '../.vitepress/theme/posts.data.ts'
 
-// 日期格式化函數 (保持不變)
 function formatDateExactlyLikePostPage(dateStringInput) {
-  if (dateStringInput === null || dateStringInput === undefined) {
-    return '';
-  }
+  if (dateStringInput === null || dateStringInput === undefined) return '';
   const dateString = String(dateStringInput).trim();
-  if (!dateString) {
-    return '';
-  }
+  if (!dateString) return '';
   const containsTimeChars = dateString.includes(':');
   const date = new Date(dateString);
-  if (isNaN(date.getTime())) {
-    return '';
-  }
+  if (isNaN(date.getTime())) return '';
   const hasSpecifiedTime = containsTimeChars;
   const twDate = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
-  if (isNaN(twDate.getTime())) {
-    return '';
-  }
+  if (isNaN(twDate.getTime())) return '';
   const yyyy = twDate.getFullYear();
   const mm = String(twDate.getMonth() + 1).padStart(2, '0');
   const dd = String(twDate.getDate()).padStart(2, '0');
-
   if (hasSpecifiedTime) {
     const hh = String(twDate.getHours()).padStart(2, '0');
     const min = String(twDate.getMinutes()).padStart(2, '0');
@@ -41,52 +31,43 @@ function formatDateExactlyLikePostPage(dateStringInput) {
 
 const postsPerPage = 10
 const currentPage = ref(1)
+const clientPosts = ref([])
 
-// 使用一個 ref 來保存實際的文章數據，只在客戶端載入後才賦值
-const clientPosts = ref([]); 
-
-// totalPages 和 paginatedPosts 的計算將依賴 clientPosts
-const totalPages = computed(() => {
-  if (!clientPosts.value || !Array.isArray(clientPosts.value)) return 0;
-  return Math.ceil(clientPosts.value.length / postsPerPage);
+// SSR/CSR 通用 posts
+const effectivePosts = computed(() => {
+  const posts = import.meta.env.SSR ? allPosts : clientPosts.value
+  return Array.isArray(posts)
+    ? posts.filter(p => !!p && typeof p.title === 'string' && p.title.trim())
+    : []
 })
 
+const totalPages = computed(() => Math.ceil(effectivePosts.value.length / postsPerPage))
+
 const paginatedPosts = computed(() => {
-  if (!clientPosts.value || !Array.isArray(clientPosts.value)) return [];
-  // 在這裡也對每個 post 進行一次額外的檢查，確保不會有 undefined 混入
-  return clientPosts.value.slice(
+  return effectivePosts.value.slice(
     (currentPage.value - 1) * postsPerPage,
     (currentPage.value - 1) * postsPerPage + postsPerPage
-  ).filter(post => post !== undefined && post !== null); // 確保過濾掉任何 undefined/null 的項目
+  )
 })
 
 const goToPage = (page) => {
   if (page >= 1 && page <= totalPages.value) {
     currentPage.value = page
     if (!import.meta.env.SSR) {
-      nextTick(() => {
-        window.scrollTo({ top: 0, behavior: 'smooth' })
-      })
+      nextTick(() => window.scrollTo({ top: 0, behavior: 'smooth' }))
     }
   }
 }
 
 const pageNumbers = computed(() => {
   const pages = []
-  for (let i = 1; i <= totalPages.value; i++) {
-    pages.push(i)
-  }
+  for (let i = 1; i <= totalPages.value; i++) pages.push(i)
   return pages
 })
 
-// !!! 核心修正：在組件掛載後才將 allPosts 數據賦值給 clientPosts !!!
-// 這樣可以確保在 SSR 階段，`clientPosts` 始終為空陣列，避免嘗試渲染不存在的數據。
 onMounted(() => {
-  if (!import.meta.env.SSR) { // 再次確認在客戶端執行
-    clientPosts.value = allPosts; 
-  }
-});
-
+  if (!import.meta.env.SSR) clientPosts.value = allPosts
+})
 </script>
 
 <template>
