@@ -46,12 +46,16 @@ const currentDisplayDate = computed(() => {
           v-if="(frontmatter.tag && frontmatter.tag.length) || (frontmatter.category && frontmatter.category.length)"
           class="blog-post-meta-row"
         >
-          <template v-for="t in frontmatter.tag">
-            <span :key="'tag-' + t" class="tag">{{ t }}</span>
-          </template>
-          <template v-for="c in frontmatter.category">
-            <span :key="'cat-' + c" class="category">{{ c }}</span>
-          </template>
+          <span
+            v-for="t in frontmatter.tag"
+            :key="'tag-' + t"
+            class="tag"
+          >{{ t }}</span>
+          <span
+            v-for="c in frontmatter.category"
+            :key="'cat-' + c"
+            class="category"
+          >{{ c }}</span>
         </div>
       </div>
     </template>
