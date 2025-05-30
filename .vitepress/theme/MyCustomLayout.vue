@@ -41,7 +41,7 @@ const currentDisplayDate = computed(() => {
           <template v-if="frontmatter.author && currentDisplayDate">｜</template>
           <template v-if="currentDisplayDate">{{ currentDisplayDate }}</template>
         </p>
-        <!-- 讓分類在前，標籤在後，並在虛線上方 -->
+        <!-- 類型(分類)在前、標籤在後，並使用對應色系 -->
         <div
           v-if="(frontmatter.category && frontmatter.category.length) || (frontmatter.tag && frontmatter.tag.length)"
           class="blog-post-meta-row"
@@ -113,18 +113,18 @@ const currentDisplayDate = computed(() => {
   flex-wrap: wrap;
   gap: 0.5em;
 }
-.tag {
+.category {
   display: inline-block;
-  background: #ffe8d2; /* 橘色淡色背景 */
-  color: #f78c2b;      /* 橘色字 */
+  background: var(--vp-c-brand-lightest, #99FFFF); /* 首頁色系的最淡背景 */
+  color: var(--vp-c-brand, #00FFEE);               /* 首頁主色 */
   border-radius: 3px;
   padding: 0 0.5em;
   font-size: 0.85em;
 }
-.category {
+.tag {
   display: inline-block;
-  background: #d2eaff; /* 藍色淡色背景 */
-  color: #2077c7;      /* 藍色字 */
+  background: #e3f2fd;  /* 藍色淡色背景 */
+  color: #2077c7;       /* 藍色字 */
   border-radius: 3px;
   padding: 0 0.5em;
   font-size: 0.85em;
