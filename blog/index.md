@@ -64,11 +64,9 @@ const pageNumbers = computed(() => {
             >{{ c }}</span>
             <h2 class="post-title">{{ post.title }}</h2>
           </div>
-          <div class="post-date-row">
-            <span class="post-date">
-              發布日期：{{ formatDateExactlyLikePostPage(post.date) }}
-            </span>
-          </div>
+          <p class="post-date">
+            發布日期：{{ formatDateExactlyLikePostPage(post.date) }}
+          </p>
           <div v-if="post.excerpt" class="post-excerpt" v-html="post.excerpt"></div>
           <span class="read-more">繼續閱讀 &gt;</span>
         </div>
@@ -95,25 +93,24 @@ const pageNumbers = computed(() => {
   margin: 0 auto;
   padding: 2rem 0;
 }
-
 .blog-articles-grid {
   display: grid;
   grid-template-columns: 1fr;
   gap: 0.5rem;
 }
-
-/* 1. 緊縮虛線與標題間隔、讓分隔線更貼近下一篇標題 */
 .post-item {
   border-bottom: 1px dashed var(--vp-c-divider);
-  padding-bottom: 0.6rem;
+  padding-bottom: 0.6rem;   /* 虛線與標題間距縮小 */
   margin-bottom: 0.2rem;
   transition: transform 0.2s ease-in-out, background-color 0.2s ease-in-out;
 }
 .blog-articles-grid > .post-item:last-child {
   border-bottom: none;
 }
-
-/* 2. 讓圖片與內容完全貼齊 */
+.post-item:hover {
+  transform: translateY(-3px);
+  background-color: var(--vp-c-bg-soft);
+}
 .post-item-link {
   display: flex;
   align-items: flex-start;
@@ -123,7 +120,6 @@ const pageNumbers = computed(() => {
   height: 100%;
   min-height: 82px;
 }
-
 .post-thumbnail-wrapper {
   flex-shrink: 0;
   width: 110px;
@@ -132,72 +128,65 @@ const pageNumbers = computed(() => {
   border-radius: 4px;
   overflow: hidden;
   display: flex;
-  align-items: flex-start;
+  align-items: flex-start; /* 保證和內容頂部齊 */
+  justify-content: center;
 }
 .post-thumbnail {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
-
 .post-info {
   flex-grow: 1;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
 }
-
-/* 3. 分類和標題同一行，分類緊貼標題，字體、色彩保持你的主色 */
 .post-title-row {
   display: flex;
   align-items: center;
-  gap: 0.45em;
-  margin-bottom: 0;
-  margin-top: 0;
+  gap: 0.4em;
+  margin-bottom: 0 !important;
+  margin-top: 0 !important;
 }
-
 .category {
   display: inline-block;
-  background: #00FFEE;
-  color: #000;
+  background: #00FFEE;  /* 主色系背景 */
+  color: #000;          /* 黑色字 */
   border-radius: 3px;
   padding: 0 0.5em;
-  font-size: 0.88em;
-  margin-right: 0.17em;
+  font-size: 0.85em;
+  margin-right: 0.15em;
   margin-top: 0;
   margin-bottom: 0;
   line-height: 1.6;
   height: 1.6em;
   font-weight: 500;
-  /* 保持你原本的色系和字重 */
 }
-
-/* 4. 標題設定（和分類齊頭，移除上下 margin，維持字重與色彩） */
 .post-title, .post-info .post-title {
-  margin-bottom: 0 !important;
+  border-top: none !important;  /* 移除標題上方線條 */
+  padding-top: 0;
   margin-top: 0 !important;
-  font-size: 1.15rem;
-  line-height: 1.35;
+  margin-bottom: 0 !important;
+  font-size: 1.3rem;
+  line-height: 1.3;
   color: var(--vp-c-text-1);
   font-weight: 700;
   display: inline;
   vertical-align: middle;
 }
-
-/* 5. 日期行緊貼標題，行高小一點 */
 .post-date {
   color: var(--vp-c-text-2);
-  font-size: 0.92em;
-  margin: 0;
-  padding: 0;
+  font-size: 0.85rem;
+  margin-top: 0 !important;
+  margin-bottom: 0.2rem !important;
   line-height: 1.2;
+  padding: 0;
 }
-
-/* 6. 摘要段落間距適中 */
 .post-excerpt {
   color: var(--vp-c-text-2);
   line-height: 1.5;
-  font-size: 0.97rem;
+  font-size: 0.95rem;
   margin-bottom: 0.2rem;
   margin-top: 0.13rem;
   display: -webkit-box;
@@ -206,21 +195,17 @@ const pageNumbers = computed(() => {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
-/* 7. 閱讀更多保持品牌色與 hover 效果 */
 .read-more {
   display: inline-block;
   color: var(--vp-c-brand-1);
   font-weight: 500;
-  font-size: 0.92rem;
+  font-size: 0.9rem;
   margin-top: 0.15rem;
   margin-bottom: 0;
 }
 .read-more:hover {
   text-decoration: underline;
 }
-
-/* 8. 分頁樣式維持你原本設計 */
 .pagination {
   display: flex;
   justify-content: center;
@@ -255,7 +240,6 @@ const pageNumbers = computed(() => {
   cursor: not-allowed;
 }
 
-/* 9. 響應式 */
 @media (max-width: 767px) {
   .post-item-link {
     flex-direction: row;
@@ -269,7 +253,7 @@ const pageNumbers = computed(() => {
     margin-bottom: 0;
   }
   .post-title, .post-info .post-title {
-    font-size: 1rem;
+    font-size: 1.05rem;
   }
   .post-excerpt {
     font-size: 0.92rem;
