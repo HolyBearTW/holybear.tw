@@ -146,7 +146,7 @@ const pageNumbers = computed(() => {
   display: flex;
   align-items: center;
   gap: 0.4em;
-  margin-bottom: 0 !important;
+  margin-bottom: 0.2rem !important;
   margin-top: 0 !important;
 }
 .category {
@@ -167,7 +167,7 @@ const pageNumbers = computed(() => {
   border-top: none !important;  /* 移除標題上方線條 */
   padding-top: 0;
   margin-top: 0 !important;
-  margin-bottom: 0 !important;
+  margin-bottom: 0.2rem !important;
   font-size: 1.3rem;
   line-height: 1.3;
   color: var(--vp-c-text-1);
