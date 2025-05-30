@@ -64,9 +64,11 @@ const pageNumbers = computed(() => {
             >{{ c }}</span>
             <h2 class="post-title">{{ post.title }}</h2>
           </div>
-          <p class="post-date">
-            發布日期：{{ formatDateExactlyLikePostPage(post.date) }}
-          </p>
+          <div class="post-date-row">
+            <span class="post-date">
+              發布日期：{{ formatDateExactlyLikePostPage(post.date) }}
+            </span>
+          </div>
           <div v-if="post.excerpt" class="post-excerpt" v-html="post.excerpt"></div>
           <span class="read-more">繼續閱讀 &gt;</span>
         </div>
@@ -96,105 +98,132 @@ const pageNumbers = computed(() => {
 .blog-articles-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 1.5rem;
+  gap: 0.3rem; /* 更小的格間距 */
 }
 .post-item {
   border-bottom: 1px dashed var(--vp-c-divider);
-  padding-bottom: 1.5rem;
-  margin-bottom: 1.5rem;
-  transition: transform 0.2s ease-in-out, background-color 0.2s ease-in-out;
+  padding-bottom: 0.5rem; /* 更緊湊 */
+  margin-bottom: 0.3rem;  /* 更緊湊 */
+  transition: transform 0.2s, background-color 0.2s;
 }
 .blog-articles-grid > .post-item:last-child {
   border-bottom: none;
 }
-.blog-articles-grid .post-item:nth-last-child(1):not(:only-child) {
-  border-bottom: none;
-}
-.post-item:hover {
-  transform: translateY(-3px);
-  background-color: var(--vp-c-bg-soft);
-}
 .post-item-link {
   display: flex;
   align-items: flex-start;
-  padding: 0.5rem 0;
+  padding: 0;
   text-decoration: none;
   color: inherit;
   height: 100%;
+  min-height: 90px;
 }
+
 .post-thumbnail-wrapper {
   flex-shrink: 0;
-  width: 120px;
-  height: 90px;
+  width: 110px;
+  height: 82px;
   margin-right: 1rem;
   border-radius: 4px;
   overflow: hidden;
+  display: flex;
+  align-items: flex-start; /* 保證和內容頂部齊 */
+  justify-content: center;
 }
 .post-thumbnail {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
+
 .post-info {
   flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  /* 不要有多餘的 padding/margin-top */
 }
+
 .post-title-row {
   display: flex;
   align-items: center;
-  gap: 0.4em;
-  margin-bottom: 0.05rem;
+  gap: 0.5em;
+  margin-bottom: 0;
+  margin-top: 0;
 }
+
 .category {
   display: inline-block;
-  background: #00FFEE;  /* 主色系背景 */
-  color: #000;          /* 黑色字 */
+  background: #00FFEE;
+  color: #000;
   border-radius: 3px;
   padding: 0 0.5em;
-  font-size: 0.85em;
-  margin-right: 0.15em;
-}
-.post-info .post-title {
-  border-top: none;
-  padding-top: 0;
+  font-size: 0.88em;
+  margin-right: 0.18em;
   margin-top: 0;
-  font-size: 1.3rem;
-  line-height: 1.3;
-  margin-bottom: 0 !important;
-  color: var(--vp-c-text-1);
-  display: inline;
+  margin-bottom: 0;
+  line-height: 1.6;
+  height: 1.6em;
+  display: flex;
+  align-items: center;
 }
+
+.post-title, .post-info .post-title {
+  margin-bottom: 0 !important;
+  margin-top: 0 !important;
+  font-size: 1.18rem;
+  line-height: 1.4;
+  color: var(--vp-c-text-1);
+  font-weight: 700;
+  display: inline;
+  vertical-align: middle;
+}
+
+.post-date-row {
+  margin-top: 0;
+  margin-bottom: 0.08em;
+  display: flex;
+  align-items: center;
+}
+
 .post-date {
   color: var(--vp-c-text-2);
-  font-size: 0.85rem;
-  margin-bottom: 0.8rem;
-  margin-top: 0 !important;
+  font-size: 0.89em;
+  margin: 0;
+  padding: 0;
+  line-height: 1.3;
 }
+
 .post-excerpt {
   color: var(--vp-c-text-2);
   line-height: 1.5;
-  font-size: 0.95rem;
-  margin-bottom: 1rem;
+  font-size: 0.97rem;
+  margin-bottom: 0.2rem;
+  margin-top: 0.13rem;
   display: -webkit-box;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
 .read-more {
   display: inline-block;
   color: var(--vp-c-brand-1);
   font-weight: 500;
-  font-size: 0.9rem;
-  margin-top: 0.5rem;
+  font-size: 0.92rem;
+  margin-top: 0.15rem;
+  margin-bottom: 0;
 }
 .read-more:hover {
   text-decoration: underline;
 }
+
 .pagination {
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-top: 3rem;
+  margin-top: 2rem;
   gap: 0.5rem;
   flex-wrap: wrap;
 }
@@ -223,6 +252,7 @@ const pageNumbers = computed(() => {
   opacity: 0.6;
   cursor: not-allowed;
 }
+
 @media (max-width: 767px) {
   .post-item-link {
     flex-direction: row;
@@ -230,18 +260,16 @@ const pageNumbers = computed(() => {
     text-align: left;
   }
   .post-thumbnail-wrapper {
-    width: 100px;
-    height: 75px;
-    margin-right: 1rem;
+    width: 80px;
+    height: 60px;
+    margin-right: 0.7rem;
     margin-bottom: 0;
   }
-  .post-title {
-    font-size: 1.25rem;
-  }
-  .post-title-row {
-    font-size: 1em;
+  .post-title, .post-info .post-title {
+    font-size: 1.05rem;
   }
   .post-excerpt {
+    font-size: 0.92rem;
     -webkit-line-clamp: 2;
   }
 }
