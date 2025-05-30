@@ -1,9 +1,3 @@
----
-layout: home
-title: 部落格文章
-description: 聖小熊的部落格文章列表
----
-
 <script setup>
 import { ref, computed } from 'vue'
 import { data as allPosts } from '../.vitepress/theme/posts.data.ts'
@@ -56,6 +50,7 @@ const pageNumbers = computed(() => {
         </div>
         <div class="post-info">
           <div class="post-title-row">
+            <!-- 分類 -->
             <span
               v-if="post.category && post.category.length"
               class="category"
@@ -64,6 +59,7 @@ const pageNumbers = computed(() => {
             >{{ c }}</span>
             <h2 class="post-title">{{ post.title }}</h2>
           </div>
+          <!-- 標籤 -->
           <div
             v-if="post.tag && post.tag.length"
             class="post-tag-row"
@@ -74,6 +70,7 @@ const pageNumbers = computed(() => {
               class="tag"
             >{{ t }}</span>
           </div>
+          <!-- 作者與日期 -->
           <div class="post-meta-author-date">
             <span v-if="post.author">作者：{{ post.author }}</span>
             <template v-if="post.author && post.date">｜</template>
@@ -150,8 +147,8 @@ const pageNumbers = computed(() => {
 .post-title-row {
   display: flex;
   align-items: center;
-  gap: 0.5em;
-  margin-bottom: 0.13rem;
+  gap: 0.35em;
+  margin-bottom: 0.08rem;
 }
 .category {
   display: inline-block;
@@ -160,7 +157,7 @@ const pageNumbers = computed(() => {
   border-radius: 3px;
   padding: 0 0.5em;
   font-size: 0.85em;
-  margin-right: 0.3em;
+  margin-right: 0.13em;
 }
 .post-title {
   font-size: 1.23rem;
@@ -173,7 +170,7 @@ const pageNumbers = computed(() => {
   display: flex;
   align-items: center;
   gap: 0.3em;
-  margin-bottom: 0.11rem;
+  margin-bottom: 0.08rem;
 }
 .tag {
   display: inline-block;
