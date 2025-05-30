@@ -8,9 +8,6 @@ description: 聖小熊的部落格文章列表
 import { ref, computed } from 'vue'
 import { data as allPosts } from '../.vitepress/theme/posts.data.ts'
 
-// DEBUG: 檢查所有 post 的 date 欄位
-console.log('allPosts:', JSON.stringify(allPosts, null, 2))
-
 const postsWithDate = allPosts.filter(Boolean)
 
 function formatDateExactlyLikePostPage(dateString) {
@@ -59,9 +56,26 @@ const pageNumbers = computed(() => {
         </div>
         <div class="post-info">
           <h2 class="post-title">{{ post.title }}</h2>
-          <p class="post-date">
-            發布日期：{{ formatDateExactlyLikePostPage(post.date) }}
-          </p>
+          <div class="post-meta-author-date">
+            <span v-if="post.author">作者：{{ post.author }}</span>
+            <template v-if="post.author && post.date">｜</template>
+            <span v-if="post.date">{{ formatDateExactlyLikePostPage(post.date) }}</span>
+          </div>
+          <div
+            v-if="(post.category && post.category.length) || (post.tag && post.tag.length)"
+            class="post-meta-row"
+          >
+            <span
+              v-for="c in post.category"
+              :key="'cat-' + c"
+              class="category"
+            >{{ c }}</span>
+            <span
+              v-for="t in post.tag"
+              :key="'tag-' + t"
+              class="tag"
+            >{{ t }}</span>
+          </div>
           <div v-if="post.excerpt" class="post-excerpt" v-html="post.excerpt"></div>
           <span class="read-more">繼續閱讀 &gt;</span>
         </div>
@@ -95,19 +109,12 @@ const pageNumbers = computed(() => {
 }
 .post-item {
   border-bottom: 1px dashed var(--vp-c-divider);
-  padding-bottom: 1.5rem;
-  margin-bottom: 1.5rem;
+  padding-bottom: 1.2rem;
+  margin-bottom: 1.2rem;
   transition: transform 0.2s ease-in-out, background-color 0.2s ease-in-out;
 }
 .blog-articles-grid > .post-item:last-child {
   border-bottom: none;
-}
-.blog-articles-grid .post-item:nth-last-child(1):not(:only-child) {
-  border-bottom: none;
-}
-.post-item:hover {
-  transform: translateY(-3px);
-  background-color: var(--vp-c-bg-soft);
 }
 .post-item-link {
   display: flex;
@@ -134,24 +141,45 @@ const pageNumbers = computed(() => {
   flex-grow: 1;
 }
 .post-info .post-title {
-  border-top: none;
-  padding-top: 0;
+  font-size: 1.23rem;
+  line-height: 1.2;
   margin-top: 0;
-  font-size: 1.3rem;
-  line-height: 1.3;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.17rem;
   color: var(--vp-c-text-1);
 }
-.post-date {
+.post-meta-author-date {
   color: var(--vp-c-text-2);
-  font-size: 0.85rem;
-  margin-bottom: 0.8rem;
+  font-size: 0.83em;
+  margin-bottom: 0.12rem;
+}
+.post-meta-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35em;
+  margin-bottom: 0.12rem;
+}
+.category {
+  display: inline-block;
+  background: #00FFEE;  /* 主色系背景 */
+  color: #000;          /* 黑色字 */
+  border-radius: 3px;
+  padding: 0 0.5em;
+  font-size: 0.85em;
+}
+.tag {
+  display: inline-block;
+  background: #e3f2fd;
+  color: #2077c7;
+  border-radius: 3px;
+  padding: 0 0.5em;
+  font-size: 0.83em;
 }
 .post-excerpt {
   color: var(--vp-c-text-2);
   line-height: 1.5;
   font-size: 0.95rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.6rem;
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
@@ -163,7 +191,7 @@ const pageNumbers = computed(() => {
   color: var(--vp-c-brand-1);
   font-weight: 500;
   font-size: 0.9rem;
-  margin-top: 0.5rem;
+  margin-top: 0.2rem;
 }
 .read-more:hover {
   text-decoration: underline;
@@ -214,7 +242,10 @@ const pageNumbers = computed(() => {
     margin-bottom: 0;
   }
   .post-title {
-    font-size: 1.25rem;
+    font-size: 1.13rem;
+  }
+  .post-meta-row {
+    font-size: 0.8em;
   }
   .post-excerpt {
     -webkit-line-clamp: 2;
