@@ -56,7 +56,6 @@ const pageNumbers = computed(() => {
         </div>
         <div class="post-info">
           <div class="post-title-row">
-            <!-- 分類 -->
             <span
               v-if="post.category && post.category.length"
               class="category"
@@ -65,23 +64,9 @@ const pageNumbers = computed(() => {
             >{{ c }}</span>
             <h2 class="post-title">{{ post.title }}</h2>
           </div>
-          <!-- 標籤 -->
-          <div
-            v-if="post.tag && post.tag.length"
-            class="post-tag-row"
-          >
-            <span
-              v-for="t in post.tag"
-              :key="'tag-' + t"
-              class="tag"
-            >{{ t }}</span>
-          </div>
-          <!-- 作者與日期 -->
-          <div class="post-meta-author-date">
-            <span v-if="post.author">作者：{{ post.author }}</span>
-            <template v-if="post.author && post.date">｜</template>
-            <span v-if="post.date">{{ formatDateExactlyLikePostPage(post.date) }}</span>
-          </div>
+          <p class="post-date">
+            發布日期：{{ formatDateExactlyLikePostPage(post.date) }}
+          </p>
           <div v-if="post.excerpt" class="post-excerpt" v-html="post.excerpt"></div>
           <span class="read-more">繼續閱讀 &gt;</span>
         </div>
@@ -115,16 +100,19 @@ const pageNumbers = computed(() => {
 }
 .post-item {
   border-bottom: 1px dashed var(--vp-c-divider);
-  padding-bottom: 1.2rem;
-  margin-bottom: 1.2rem;
+  padding-bottom: 1.5rem;
+  margin-bottom: 1.5rem;
   transition: transform 0.2s ease-in-out, background-color 0.2s ease-in-out;
+}
+.blog-articles-grid > .post-item:last-child {
+  border-bottom: none;
+}
+.blog-articles-grid .post-item:nth-last-child(1):not(:only-child) {
+  border-bottom: none;
 }
 .post-item:hover {
   transform: translateY(-3px);
   background-color: var(--vp-c-bg-soft);
-}
-.blog-articles-grid > .post-item:last-child {
-  border-bottom: none;
 }
 .post-item-link {
   display: flex;
@@ -153,8 +141,8 @@ const pageNumbers = computed(() => {
 .post-title-row {
   display: flex;
   align-items: center;
-  gap: 0.35em;
-  margin-bottom: 0.08rem;
+  gap: 0.4em;
+  margin-bottom: 0.2rem;
 }
 .category {
   display: inline-block;
@@ -163,39 +151,28 @@ const pageNumbers = computed(() => {
   border-radius: 3px;
   padding: 0 0.5em;
   font-size: 0.85em;
-  margin-right: 0.13em;
+  margin-right: 0.15em;
 }
-.post-title {
-  font-size: 1.23rem;
-  line-height: 1.2;
-  margin: 0;
+.post-info .post-title {
+  border-top: none;
+  padding-top: 0;
+  margin-top: 0;
+  font-size: 1.3rem;
+  line-height: 1.3;
+  margin-bottom: 0;
   color: var(--vp-c-text-1);
   display: inline;
 }
-.post-tag-row {
-  display: flex;
-  align-items: center;
-  gap: 0.3em;
-  margin-bottom: 0.08rem;
-}
-.tag {
-  display: inline-block;
-  background: #e3f2fd;
-  color: #2077c7;
-  border-radius: 3px;
-  padding: 0 0.5em;
-  font-size: 0.83em;
-}
-.post-meta-author-date {
+.post-date {
   color: var(--vp-c-text-2);
-  font-size: 0.83em;
-  margin-bottom: 0.13rem;
+  font-size: 0.85rem;
+  margin-bottom: 0.8rem;
 }
 .post-excerpt {
   color: var(--vp-c-text-2);
   line-height: 1.5;
   font-size: 0.95rem;
-  margin-bottom: 0.6rem;
+  margin-bottom: 1rem;
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
@@ -207,7 +184,7 @@ const pageNumbers = computed(() => {
   color: var(--vp-c-brand-1);
   font-weight: 500;
   font-size: 0.9rem;
-  margin-top: 0.2rem;
+  margin-top: 0.5rem;
 }
 .read-more:hover {
   text-decoration: underline;
@@ -258,13 +235,10 @@ const pageNumbers = computed(() => {
     margin-bottom: 0;
   }
   .post-title {
-    font-size: 1.13rem;
+    font-size: 1.25rem;
   }
   .post-title-row {
     font-size: 1em;
-  }
-  .post-tag-row {
-    font-size: 0.8em;
   }
   .post-excerpt {
     -webkit-line-clamp: 2;
