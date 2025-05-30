@@ -167,6 +167,7 @@ const pageNumbers = computed(() => {
   color: var(--vp-c-text-2);
   font-size: 0.85rem;
   margin-bottom: 0.8rem;
+  margin-top: 0;
 }
 .post-excerpt {
   color: var(--vp-c-text-2);
