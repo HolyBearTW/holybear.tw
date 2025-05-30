@@ -142,7 +142,7 @@ const pageNumbers = computed(() => {
   display: flex;
   align-items: center;
   gap: 0.4em;
-  margin-bottom: 0.05rem; /* 讓標題和日期更貼近 */
+  margin-bottom: 0.05rem;
 }
 .category {
   display: inline-block;
@@ -159,7 +159,7 @@ const pageNumbers = computed(() => {
   margin-top: 0;
   font-size: 1.3rem;
   line-height: 1.3;
-  margin-bottom: 0;
+  margin-bottom: 0 !important;
   color: var(--vp-c-text-1);
   display: inline;
 }
