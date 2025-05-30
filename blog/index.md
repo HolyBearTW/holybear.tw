@@ -142,7 +142,7 @@ const pageNumbers = computed(() => {
   display: flex;
   align-items: center;
   gap: 0.4em;
-  margin-bottom: 0.2rem;
+  margin-bottom: 0.05rem; /* 讓標題和日期更貼近 */
 }
 .category {
   display: inline-block;
