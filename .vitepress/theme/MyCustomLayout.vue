@@ -41,21 +41,21 @@ const currentDisplayDate = computed(() => {
           <template v-if="frontmatter.author && currentDisplayDate">｜</template>
           <template v-if="currentDisplayDate">{{ currentDisplayDate }}</template>
         </p>
-        <!-- 標籤與分類合併一行，放在虛線上方 -->
+        <!-- 讓分類在前，標籤在後，並在虛線上方 -->
         <div
-          v-if="(frontmatter.tag && frontmatter.tag.length) || (frontmatter.category && frontmatter.category.length)"
+          v-if="(frontmatter.category && frontmatter.category.length) || (frontmatter.tag && frontmatter.tag.length)"
           class="blog-post-meta-row"
         >
-          <span
-            v-for="t in frontmatter.tag"
-            :key="'tag-' + t"
-            class="tag"
-          >{{ t }}</span>
           <span
             v-for="c in frontmatter.category"
             :key="'cat-' + c"
             class="category"
           >{{ c }}</span>
+          <span
+            v-for="t in frontmatter.tag"
+            :key="'tag-' + t"
+            class="tag"
+          >{{ t }}</span>
         </div>
         <div class="blog-post-date-divider"></div>
       </div>
@@ -95,7 +95,7 @@ const currentDisplayDate = computed(() => {
   :deep(.vp-doc > p:first-of-type) { margin-top: 0; }
 }
 .blog-post-title {
-  font-size: 2.5rem;
+  font-size: 2rem; /* 小一點 */
   line-height: 1.2;
   margin-top: 0;
   margin-bottom: 0.5rem;
