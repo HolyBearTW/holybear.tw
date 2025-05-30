@@ -41,7 +41,7 @@ const currentDisplayDate = computed(() => {
           <template v-if="frontmatter.author && currentDisplayDate">｜</template>
           <template v-if="currentDisplayDate">{{ currentDisplayDate }}</template>
         </p>
-        <!-- 標籤與分類合併成一行，顏色區分 -->
+        <!-- 標籤與分類合併一行，放在虛線上方 -->
         <div
           v-if="(frontmatter.tag && frontmatter.tag.length) || (frontmatter.category && frontmatter.category.length)"
           class="blog-post-meta-row"
@@ -57,6 +57,7 @@ const currentDisplayDate = computed(() => {
             class="category"
           >{{ c }}</span>
         </div>
+        <div class="blog-post-date-divider"></div>
       </div>
     </template>
     <template #doc-after>
@@ -104,11 +105,8 @@ const currentDisplayDate = computed(() => {
   color: var(--vp-c-text-2);
   font-size: 0.85rem;
   margin-top: 0;
-  margin-bottom: 0.5rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px dashed var(--vp-c-divider);
+  margin-bottom: 0.2rem;
 }
-/* 標籤與分類一行顯示並用顏色區分 */
 .blog-post-meta-row {
   margin-bottom: 0.5rem;
   display: flex;
@@ -130,6 +128,10 @@ const currentDisplayDate = computed(() => {
   border-radius: 3px;
   padding: 0 0.5em;
   font-size: 0.85em;
+}
+.blog-post-date-divider {
+  border-bottom: 1px dashed var(--vp-c-divider);
+  margin-bottom: 0.5rem;
 }
 :deep(.vp-doc p),
 :deep(.vp-doc ul),
