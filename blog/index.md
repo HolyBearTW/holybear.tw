@@ -95,20 +95,25 @@ const pageNumbers = computed(() => {
   margin: 0 auto;
   padding: 2rem 0;
 }
+
 .blog-articles-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 0.3rem; /* 更小的格間距 */
+  gap: 0.5rem;
 }
+
+/* 1. 緊縮虛線與標題間隔、讓分隔線更貼近下一篇標題 */
 .post-item {
   border-bottom: 1px dashed var(--vp-c-divider);
-  padding-bottom: 0.5rem; /* 更緊湊 */
-  margin-bottom: 0.3rem;  /* 更緊湊 */
-  transition: transform 0.2s, background-color 0.2s;
+  padding-bottom: 0.6rem;
+  margin-bottom: 0.2rem;
+  transition: transform 0.2s ease-in-out, background-color 0.2s ease-in-out;
 }
 .blog-articles-grid > .post-item:last-child {
   border-bottom: none;
 }
+
+/* 2. 讓圖片與內容完全貼齊 */
 .post-item-link {
   display: flex;
   align-items: flex-start;
@@ -116,7 +121,7 @@ const pageNumbers = computed(() => {
   text-decoration: none;
   color: inherit;
   height: 100%;
-  min-height: 90px;
+  min-height: 82px;
 }
 
 .post-thumbnail-wrapper {
@@ -127,8 +132,7 @@ const pageNumbers = computed(() => {
   border-radius: 4px;
   overflow: hidden;
   display: flex;
-  align-items: flex-start; /* 保證和內容頂部齊 */
-  justify-content: center;
+  align-items: flex-start;
 }
 .post-thumbnail {
   width: 100%;
@@ -141,13 +145,13 @@ const pageNumbers = computed(() => {
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  /* 不要有多餘的 padding/margin-top */
 }
 
+/* 3. 分類和標題同一行，分類緊貼標題，字體、色彩保持你的主色 */
 .post-title-row {
   display: flex;
   align-items: center;
-  gap: 0.5em;
+  gap: 0.45em;
   margin-bottom: 0;
   margin-top: 0;
 }
@@ -159,41 +163,37 @@ const pageNumbers = computed(() => {
   border-radius: 3px;
   padding: 0 0.5em;
   font-size: 0.88em;
-  margin-right: 0.18em;
+  margin-right: 0.17em;
   margin-top: 0;
   margin-bottom: 0;
   line-height: 1.6;
   height: 1.6em;
-  display: flex;
-  align-items: center;
+  font-weight: 500;
+  /* 保持你原本的色系和字重 */
 }
 
+/* 4. 標題設定（和分類齊頭，移除上下 margin，維持字重與色彩） */
 .post-title, .post-info .post-title {
   margin-bottom: 0 !important;
   margin-top: 0 !important;
-  font-size: 1.18rem;
-  line-height: 1.4;
+  font-size: 1.15rem;
+  line-height: 1.35;
   color: var(--vp-c-text-1);
   font-weight: 700;
   display: inline;
   vertical-align: middle;
 }
 
-.post-date-row {
-  margin-top: 0;
-  margin-bottom: 0.08em;
-  display: flex;
-  align-items: center;
-}
-
+/* 5. 日期行緊貼標題，行高小一點 */
 .post-date {
   color: var(--vp-c-text-2);
-  font-size: 0.89em;
+  font-size: 0.92em;
   margin: 0;
   padding: 0;
-  line-height: 1.3;
+  line-height: 1.2;
 }
 
+/* 6. 摘要段落間距適中 */
 .post-excerpt {
   color: var(--vp-c-text-2);
   line-height: 1.5;
@@ -207,6 +207,7 @@ const pageNumbers = computed(() => {
   text-overflow: ellipsis;
 }
 
+/* 7. 閱讀更多保持品牌色與 hover 效果 */
 .read-more {
   display: inline-block;
   color: var(--vp-c-brand-1);
@@ -219,6 +220,7 @@ const pageNumbers = computed(() => {
   text-decoration: underline;
 }
 
+/* 8. 分頁樣式維持你原本設計 */
 .pagination {
   display: flex;
   justify-content: center;
@@ -253,6 +255,7 @@ const pageNumbers = computed(() => {
   cursor: not-allowed;
 }
 
+/* 9. 響應式 */
 @media (max-width: 767px) {
   .post-item-link {
     flex-direction: row;
@@ -266,7 +269,7 @@ const pageNumbers = computed(() => {
     margin-bottom: 0;
   }
   .post-title, .post-info .post-title {
-    font-size: 1.05rem;
+    font-size: 1rem;
   }
   .post-excerpt {
     font-size: 0.92rem;
