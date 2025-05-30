@@ -41,14 +41,17 @@ const currentDisplayDate = computed(() => {
           <template v-if="frontmatter.author && currentDisplayDate">｜</template>
           <template v-if="currentDisplayDate">{{ currentDisplayDate }}</template>
         </p>
-        <!-- 新增標籤區塊 -->
-        <div v-if="frontmatter.tag && frontmatter.tag.length" class="blog-post-tags">
-          <span class="tag-label">標籤：</span>
-          <span v-for="t in frontmatter.tag" :key="t" class="tag">{{ t }}</span>
-        </div>
-        <div v-if="frontmatter.category && frontmatter.category.length" class="blog-post-category">
-          <span class="category-label">分類：</span>
-          <span v-for="c in frontmatter.category" :key="c" class="category">{{ c }}</span>
+        <!-- 標籤與分類合併成一行，顏色區分 -->
+        <div
+          v-if="(frontmatter.tag && frontmatter.tag.length) || (frontmatter.category && frontmatter.category.length)"
+          class="blog-post-meta-row"
+        >
+          <template v-for="t in frontmatter.tag">
+            <span :key="'tag-' + t" class="tag">{{ t }}</span>
+          </template>
+          <template v-for="c in frontmatter.category">
+            <span :key="'cat-' + c" class="category">{{ c }}</span>
+          </template>
         </div>
       </div>
     </template>
@@ -101,23 +104,27 @@ const currentDisplayDate = computed(() => {
   padding-bottom: 0.5rem;
   border-bottom: 1px dashed var(--vp-c-divider);
 }
-/* 新增標籤與分類樣式 */
-.blog-post-tags, .blog-post-category {
+/* 標籤與分類一行顯示並用顏色區分 */
+.blog-post-meta-row {
   margin-bottom: 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5em;
 }
-.tag, .category {
+.tag {
   display: inline-block;
-  background: var(--vp-c-bg-soft, #f0f0f0);
-  color: var(--vp-c-brand-1, #0078e7);
+  background: #ffe8d2; /* 橘色淡色背景 */
+  color: #f78c2b;      /* 橘色字 */
   border-radius: 3px;
   padding: 0 0.5em;
-  margin-right: 0.5em;
   font-size: 0.85em;
 }
-.tag-label, .category-label {
-  color: var(--vp-c-text-2);
-  font-weight: bold;
-  margin-right: 0.5em;
+.category {
+  display: inline-block;
+  background: #d2eaff; /* 藍色淡色背景 */
+  color: #2077c7;      /* 藍色字 */
+  border-radius: 3px;
+  padding: 0 0.5em;
   font-size: 0.85em;
 }
 :deep(.vp-doc p),
