@@ -55,26 +55,29 @@ const pageNumbers = computed(() => {
           <img :src="post.image" :alt="post.title" class="post-thumbnail" />
         </div>
         <div class="post-info">
-          <h2 class="post-title">{{ post.title }}</h2>
-          <div class="post-meta-author-date">
-            <span v-if="post.author">作者：{{ post.author }}</span>
-            <template v-if="post.author && post.date">｜</template>
-            <span v-if="post.date">{{ formatDateExactlyLikePostPage(post.date) }}</span>
-          </div>
-          <div
-            v-if="(post.category && post.category.length) || (post.tag && post.tag.length)"
-            class="post-meta-row"
-          >
+          <div class="post-title-row">
             <span
+              v-if="post.category && post.category.length"
+              class="category"
               v-for="c in post.category"
               :key="'cat-' + c"
-              class="category"
             >{{ c }}</span>
+            <h2 class="post-title">{{ post.title }}</h2>
+          </div>
+          <div
+            v-if="post.tag && post.tag.length"
+            class="post-tag-row"
+          >
             <span
               v-for="t in post.tag"
               :key="'tag-' + t"
               class="tag"
             >{{ t }}</span>
+          </div>
+          <div class="post-meta-author-date">
+            <span v-if="post.author">作者：{{ post.author }}</span>
+            <template v-if="post.author && post.date">｜</template>
+            <span v-if="post.date">{{ formatDateExactlyLikePostPage(post.date) }}</span>
           </div>
           <div v-if="post.excerpt" class="post-excerpt" v-html="post.excerpt"></div>
           <span class="read-more">繼續閱讀 &gt;</span>
@@ -113,6 +116,10 @@ const pageNumbers = computed(() => {
   margin-bottom: 1.2rem;
   transition: transform 0.2s ease-in-out, background-color 0.2s ease-in-out;
 }
+.post-item:hover {
+  transform: translateY(-3px);
+  background-color: var(--vp-c-bg-soft);
+}
 .blog-articles-grid > .post-item:last-child {
   border-bottom: none;
 }
@@ -140,24 +147,11 @@ const pageNumbers = computed(() => {
 .post-info {
   flex-grow: 1;
 }
-.post-info .post-title {
-  font-size: 1.23rem;
-  line-height: 1.2;
-  margin-top: 0;
-  margin-bottom: 0.17rem;
-  color: var(--vp-c-text-1);
-}
-.post-meta-author-date {
-  color: var(--vp-c-text-2);
-  font-size: 0.83em;
-  margin-bottom: 0.12rem;
-}
-.post-meta-row {
+.post-title-row {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 0.35em;
-  margin-bottom: 0.12rem;
+  gap: 0.5em;
+  margin-bottom: 0.13rem;
 }
 .category {
   display: inline-block;
@@ -166,6 +160,20 @@ const pageNumbers = computed(() => {
   border-radius: 3px;
   padding: 0 0.5em;
   font-size: 0.85em;
+  margin-right: 0.3em;
+}
+.post-title {
+  font-size: 1.23rem;
+  line-height: 1.2;
+  margin: 0;
+  color: var(--vp-c-text-1);
+  display: inline;
+}
+.post-tag-row {
+  display: flex;
+  align-items: center;
+  gap: 0.3em;
+  margin-bottom: 0.11rem;
 }
 .tag {
   display: inline-block;
@@ -174,6 +182,11 @@ const pageNumbers = computed(() => {
   border-radius: 3px;
   padding: 0 0.5em;
   font-size: 0.83em;
+}
+.post-meta-author-date {
+  color: var(--vp-c-text-2);
+  font-size: 0.83em;
+  margin-bottom: 0.13rem;
 }
 .post-excerpt {
   color: var(--vp-c-text-2);
@@ -244,7 +257,10 @@ const pageNumbers = computed(() => {
   .post-title {
     font-size: 1.13rem;
   }
-  .post-meta-row {
+  .post-title-row {
+    font-size: 1em;
+  }
+  .post-tag-row {
     font-size: 0.8em;
   }
   .post-excerpt {
