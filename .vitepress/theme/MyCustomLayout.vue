@@ -36,12 +36,6 @@ const currentDisplayDate = computed(() => {
     <template #doc-before>
       <div v-if="!isHomePage" class="blog-post-header-injected">
         <h1 class="blog-post-title">{{ currentTitle }}</h1>
-        <p class="blog-post-date-in-content">
-          <template v-if="frontmatter.author">作者：{{ frontmatter.author }}</template>
-          <template v-if="frontmatter.author && currentDisplayDate">｜</template>
-          <template v-if="currentDisplayDate">{{ currentDisplayDate }}</template>
-        </p>
-        <!-- 類型(分類)在前、標籤在後，並使用對應色系 -->
         <div
           v-if="(frontmatter.category && frontmatter.category.length) || (frontmatter.tag && frontmatter.tag.length)"
           class="blog-post-meta-row"
@@ -57,6 +51,11 @@ const currentDisplayDate = computed(() => {
             class="tag"
           >{{ t }}</span>
         </div>
+        <p class="blog-post-date-in-content">
+          <template v-if="frontmatter.author">作者：{{ frontmatter.author }}</template>
+          <template v-if="frontmatter.author && currentDisplayDate">｜</template>
+          <template v-if="currentDisplayDate">{{ currentDisplayDate }}</template>
+        </p>
         <div class="blog-post-date-divider"></div>
       </div>
     </template>
@@ -101,12 +100,6 @@ const currentDisplayDate = computed(() => {
   margin-bottom: 0.5rem;
   color: var(--vp-c-text-1);
 }
-.blog-post-date-in-content {
-  color: var(--vp-c-text-2);
-  font-size: 0.85rem;
-  margin-top: 0;
-  margin-bottom: 0.2rem;
-}
 .blog-post-meta-row {
   margin-bottom: 0.5rem;
   display: flex;
@@ -115,8 +108,8 @@ const currentDisplayDate = computed(() => {
 }
 .category {
   display: inline-block;
-  background: var(--vp-c-brand-lightest, #99FFFF); /* 首頁色系的最淡背景 */
-  color: var(--vp-c-brand, #00FFEE);               /* 首頁主色 */
+  background: #00FFEE;  /* 主色系背景 */
+  color: #000;       /* 黑色字 */
   border-radius: 3px;
   padding: 0 0.5em;
   font-size: 0.85em;
@@ -128,6 +121,12 @@ const currentDisplayDate = computed(() => {
   border-radius: 3px;
   padding: 0 0.5em;
   font-size: 0.85em;
+}
+.blog-post-date-in-content {
+  color: var(--vp-c-text-2);
+  font-size: 0.85rem;
+  margin-top: 0;
+  margin-bottom: 0.2rem;
 }
 .blog-post-date-divider {
   border-bottom: 1px dashed var(--vp-c-divider);
