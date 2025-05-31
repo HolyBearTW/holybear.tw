@@ -1,65 +1,52 @@
-import { defineConfig } from 'vitepress'
-import locales from './locales'
-import gitMetaPlugin from './git-meta.js'
 import { execSync } from 'child_process'
+import fs from 'fs'
 
-// 取得當前 git branch 名稱
-function getCurrentBranch() {
-  try {
-    return execSync('git rev-parse --abbrev-ref HEAD').toString().trim()
-  } catch (e) {
-    // 無法取得 branch 則回傳空字串
-    return ''
-  }
-}
+export default function gitMetaPlugin() {
+  return {
+    name: 'inject-git-meta-frontmatter',
+    enforce: 'pre',
+    async transform(src, id) {
+      if (!id.endsWith('.md')) return
+      // 排除 /en/blog/ 目錄（處理 Windows 路徑）
+      if (id.replaceAll('\\','/').includes('/en/blog/')) return src
+      if (!fs.existsSync(id)) return
 
-export default defineConfig({
-  ignoreDeadLinks: true,
-  title: '聖小熊的祕密基地',
-  base: '/',
-  locales: locales.locales,
-  srcExclude: ['README.md'],
-  head: [
-    ['meta', { name: 'theme-color', content: '#00FFEE' }],
-    ['link', { rel: 'icon', href: '/favicon.ico' }],
-    ['link', { rel: 'apple-touch-icon', href: '/favicon.ico' }],
-    ['link', { rel: 'stylesheet', href: 'https://font.sec.miui.com/font/css?family=MiSans:200,300,400,450,500,600,650,700:Chinese_Simplify,Latin&display=swap' }],
-    ['link', { rel: 'stylesheet', href: 'https://font.sec.miui.com/font/css?family=MiSans:200,300,400,450,500,600,650,700:Chinese_Traditional,Latin&display=swap' }],
-    ['script', { async: true, defer: true, crossorigin: 'anonymous', src: 'https://connect.facebook.net/zh_TW/sdk.js#xfbml=1&version=v22.0', nonce: 'z9c34u1R' }],
-    ['meta', { property: 'fb:app_id', content: '705847265169451' }]
-  ],
-  vite: {
-    plugins: [gitMetaPlugin()]
-  },
-  themeConfig: {
-    footer: {
-      message: 'AGPL-3.0 Licensed',
-      copyright: 'Copyright © 2025 聖小熊 & HolyBear'
-    },
-    socialLinks: [
-      { icon: 'github', link: 'https://github.com/HolyBearTW' }
-    ]
-  },
-  extendsPage(page) {
-    const branch = getCurrentBranch()
-    // 只允許在 main 或 master branch 處理，且排除 /en/blog/ 路徑
-    if (
-      (branch === 'main' || branch === 'master') &&
-      page.filePath &&
-      page.filePath.endsWith('.md') &&
-      !page.filePath.replaceAll('\\','/').includes('/en/blog/')
-    ) {
+      // 只處理本來就有 frontmatter 的檔案
+      const frontmatterMatch = src.match(/^---\n([\s\S]*?)\n---\n/)
+      if (!frontmatterMatch) return src
+
+      let author = ''
+      let datetime = ''
       try {
-        // 抓第一次 commit 的作者和時間
-        const log = execSync(
-          `git log --diff-filter=A --follow --format=%aN,%aI -- "${page.filePath}" | tail -1`
-        ).toString().trim()
-        const [author, date] = log.split(',')
-        if (!page.frontmatter.author) page.frontmatter.author = author
-        if (!page.frontmatter.date) page.frontmatter.date = date
+        author = execSync(`git log --diff-filter=A --follow --format=%aN -- "${id}" | tail -1`).toString().trim()
+        datetime = execSync(`git log --diff-filter=A --follow --format=%aI -- "${id}" | tail -1`).toString().trim()
       } catch (e) {
-        // 沒有 git 資訊就略過
+        return src
       }
+
+      // 轉換為台灣時區
+      let dateTW = ''
+      if (datetime) {
+        const d = new Date(datetime)
+        dateTW = new Date(d.getTime() + 8 * 60 * 60 * 1000).toISOString().replace('Z', '+08:00')
+      }
+
+      let frontmatter = frontmatterMatch[1]
+      let rest = src.slice(frontmatterMatch[0].length)
+
+      let hasAuthor = /^author:/m.test(frontmatter)
+      let hasDate = /^date:/m.test(frontmatter)
+
+      if (!hasAuthor) {
+        frontmatter = `author: ${author}\n` + frontmatter
+      }
+      if (!hasDate) {
+        frontmatter = `date: ${dateTW}\n` + frontmatter
+      }
+
+      const injected = `---\n${frontmatter}\n---\n${rest}`
+
+      return injected
     }
   }
-})
+}
