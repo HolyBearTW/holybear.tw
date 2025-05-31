@@ -9,6 +9,10 @@ export default function gitMetaPlugin() {
       if (!id.endsWith('.md')) return
       if (!fs.existsSync(id)) return
 
+      // 只處理本來就有 frontmatter 的檔案
+      const frontmatterMatch = src.match(/^---\n([\s\S]*?)\n---\n/)
+      if (!frontmatterMatch) return src
+
       let author = ''
       let datetime = ''
       try {
@@ -22,13 +26,11 @@ export default function gitMetaPlugin() {
       let dateTW = ''
       if (datetime) {
         const d = new Date(datetime)
-        // 轉成台灣時區 ISO 字串（含 +08:00）
         dateTW = new Date(d.getTime() + 8 * 60 * 60 * 1000).toISOString().replace('Z', '+08:00')
       }
 
-      const frontmatterMatch = src.match(/^---\n([\s\S]*?)\n---\n/)
-      let frontmatter = frontmatterMatch ? frontmatterMatch[1] : ''
-      let rest = frontmatterMatch ? src.slice(frontmatterMatch[0].length) : src
+      let frontmatter = frontmatterMatch[1]
+      let rest = src.slice(frontmatterMatch[0].length)
 
       let hasAuthor = /^author:/m.test(frontmatter)
       let hasDate = /^date:/m.test(frontmatter)
