@@ -5,7 +5,6 @@ export default function injectGitMeta() {
   return {
     name: 'vitepress-plugin-git-meta',
     transform(src, id) {
-      // 只處理 Markdown
       if (!id.endsWith('.md')) return src
       if (!fs.existsSync(id)) return src
 
@@ -25,23 +24,24 @@ export default function injectGitMeta() {
         dateTW = new Date(d.getTime() + 8 * 60 * 60 * 1000).toISOString().replace('Z', '+08:00')
       }
 
-      // 補 frontmatter
+      // 若有 frontmatter 就只補欄位，沒有就插入
       const frontmatterMatch = src.match(/^---\n([\s\S]*?)\n---\n/)
-      let frontmatter = frontmatterMatch ? frontmatterMatch[1] : ''
-      let rest = frontmatterMatch ? src.slice(frontmatterMatch[0].length) : src
+      if (frontmatterMatch) {
+        let frontmatter = frontmatterMatch[1]
+        let rest = src.slice(frontmatterMatch[0].length)
 
-      let hasAuthor = /^author:/m.test(frontmatter)
-      let hasDate = /^date:/m.test(frontmatter)
-
-      if (!hasAuthor) {
-        frontmatter = `author: ${author}\n` + frontmatter
+        // 僅補沒有的欄位
+        if (!/^author:/m.test(frontmatter)) {
+          frontmatter = `author: ${author}\n` + frontmatter
+        }
+        if (!/^date:/m.test(frontmatter)) {
+          frontmatter = `date: ${dateTW}\n` + frontmatter
+        }
+        return `---\n${frontmatter}\n---\n${rest}`
+      } else {
+        // 沒 frontmatter 就整組插入
+        return `---\ndate: ${dateTW}\nauthor: ${author}\n---\n${src}`
       }
-      if (!hasDate) {
-        frontmatter = `date: ${dateTW}\n` + frontmatter
-      }
-
-      const injected = `---\n${frontmatter}\n---\n${rest}`
-      return injected
     }
   }
 }
