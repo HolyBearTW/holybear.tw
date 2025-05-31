@@ -1,7 +1,7 @@
 import fs from 'fs'
 import { execSync } from 'child_process'
 
-export default function injectGitMeta() {
+export default function gitMetaPlugin() {
   return {
     name: 'vitepress-plugin-git-meta',
     transform(src, id) {
@@ -13,7 +13,7 @@ export default function injectGitMeta() {
       try {
         author = execSync(`git log --diff-filter=A --follow --format=%aN -- "${id}" | tail -1`).toString().trim()
         datetime = execSync(`git log --diff-filter=A --follow --format=%aI -- "${id}" | tail -1`).toString().trim()
-      } catch (e) {
+      } catch {
         return src
       }
 
@@ -24,22 +24,26 @@ export default function injectGitMeta() {
         dateTW = new Date(d.getTime() + 8 * 60 * 60 * 1000).toISOString().replace('Z', '+08:00')
       }
 
-      // 若有 frontmatter 就只補欄位，沒有就插入
-      const frontmatterMatch = src.match(/^---\n([\s\S]*?)\n---\n/)
-      if (frontmatterMatch) {
-        let frontmatter = frontmatterMatch[1]
-        let rest = src.slice(frontmatterMatch[0].length)
-
-        // 僅補沒有的欄位
-        if (!/^author:/m.test(frontmatter)) {
-          frontmatter = `author: ${author}\n` + frontmatter
+      // 若有 frontmatter, 只補欄位，沒 frontmatter 才插入
+      const fmMatch = src.match(/^---\n([\s\S]*?)\n---\n/)
+      if (fmMatch) {
+        let fm = fmMatch[1]
+        let rest = src.slice(fmMatch[0].length)
+        let changed = false
+        if (!/^author:/m.test(fm)) {
+          fm = `author: ${author}\n` + fm
+          changed = true
         }
-        if (!/^date:/m.test(frontmatter)) {
-          frontmatter = `date: ${dateTW}\n` + frontmatter
+        if (!/^date:/m.test(fm)) {
+          fm = `date: ${dateTW}\n` + fm
+          changed = true
         }
-        return `---\n${frontmatter}\n---\n${rest}`
+        if (changed) {
+          return `---\n${fm}\n---\n${rest}`
+        }
+        return src
       } else {
-        // 沒 frontmatter 就整組插入
+        // 沒 frontmatter 才加
         return `---\ndate: ${dateTW}\nauthor: ${author}\n---\n${src}`
       }
     }
