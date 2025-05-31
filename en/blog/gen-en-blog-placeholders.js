@@ -25,7 +25,7 @@ for (const file of files) {
 title: Blog Not Supported in English
 ${author ? `author: ${author}` : ''}
 ---
-::: danger tip
+::: danger Blog Not Supported in English
 > ⚠️ Sorry, this blog post is not available in English.<br>
 > [Go to Home](/en/)
 :::
