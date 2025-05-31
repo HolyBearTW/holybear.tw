@@ -160,8 +160,11 @@ const pageNumbers = computed(() => {
   margin-top: 0;
   margin-bottom: 0.2rem !important;
   line-height: 1.6;
-  height: 1.6em;
   font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 .post-title, .post-info .post-title {
   border-top: none !important;  /* 移除標題上方線條 */
