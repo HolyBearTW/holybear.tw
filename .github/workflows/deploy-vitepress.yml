@@ -7,24 +7,28 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-and-deploy:
+  full-pipeline:
     runs-on: ubuntu-latest
     steps:
+      # Checkout the repository
       - name: 遷出程式碼
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: 設定 Node.js
+      # Setup Node.js and enable yarn cache
+      - name: 設定 Node.js 與快取
         uses: actions/setup-node@v4
         with:
-          node-version: 'lts/*'
+          node-version: 20
           cache: 'yarn'
 
+      # Install dependencies (cache will be used automatically)
       - name: 安裝相依套件
         run: yarn install
 
-      - name: 如果 yarn.lock 產生則自動 commit
+      # Auto commit yarn.lock if it is generated
+      - name: 自動 commit yarn.lock（如有產生）
         run: |
           if [[ -n "$(git status --porcelain yarn.lock)" ]]; then
             git config --global user.name 'github-actions[bot]'
@@ -34,9 +38,11 @@ jobs:
             git push
           fi
 
+      # Build the VitePress site
       - name: 建置 VitePress 網站
         run: yarn run build
 
+      # Deploy to GitHub Pages
       - name: 部署到 GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
@@ -44,3 +50,21 @@ jobs:
           branch: gh-pages
           folder: .vitepress/dist
           clean: true
+
+      # Generate EN blog placeholder files
+      - name: 產生英文 Blog 遞補檔案
+        run: yarn gen-en-blog
+
+      # Commit and push generated files if there are changes
+      - name: Commit 並 push 產生的檔案
+        run: |
+          git config --global user.name 'System Administrator'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add en/blog/
+          git reset en/blog/index.md
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "chore: auto-generate en blog placeholders"
+            git push
+          fi
