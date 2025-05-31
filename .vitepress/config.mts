@@ -42,11 +42,12 @@ export default defineConfig({
   },
   extendsPage(page) {
     const branch = getCurrentBranch()
-    // 只允許在 main 或 master branch 處理，且處理所有 .md
+    // 只允許在 main 或 master branch 處理，且排除 /en/blog/ 路徑
     if (
       (branch === 'main' || branch === 'master') &&
       page.filePath &&
-      page.filePath.endsWith('.md')
+      page.filePath.endsWith('.md') &&
+      !page.filePath.replaceAll('\\','/').includes('/en/blog/')
     ) {
       try {
         // 抓第一次 commit 的作者和時間
