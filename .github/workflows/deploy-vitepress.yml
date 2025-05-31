@@ -24,30 +24,11 @@ jobs:
       - name: 安裝相依套件
         run: yarn install
 
-      - name: 自動 commit yarn.lock（如有產生）
-        run: |
-          if [[ -n "$(git status --porcelain yarn.lock)" ]]; then
-            git config --global user.name 'github-actions[bot]'
-            git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-            git add yarn.lock
-            git commit -m "ci: 自動產生 yarn.lock [skip ci]"
-            git push --set-upstream origin main || git push
-          fi
-
-      - name: 建置 VitePress 網站
-        run: yarn run build
-
-      - name: 部署到 GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: gh-pages
-          folder: .vitepress/dist
-          clean: true
-
+      # 1. 先產生英文 Blog 遞補檔案
       - name: 產生英文 Blog 遞補檔案
         run: yarn gen-en-blog
 
+      # 2. Commit 並 push 產生的檔案（如果有更動）
       - name: Commit 並 push 產生的檔案
         run: |
           git config --global user.name 'System Administrator'
@@ -62,3 +43,16 @@ jobs:
             git pull --rebase origin main
             git push --set-upstream origin main || git push
           fi
+
+      # 3. 建置 VitePress 網站
+      - name: 建置 VitePress 網站
+        run: yarn run build
+
+      # 4. 部署到 GitHub Pages
+      - name: 部署到 GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: gh-pages
+          folder: .vitepress/dist
+          clean: true
