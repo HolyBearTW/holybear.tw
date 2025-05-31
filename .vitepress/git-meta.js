@@ -24,26 +24,27 @@ export default function gitMetaPlugin() {
         dateTW = new Date(d.getTime() + 8 * 60 * 60 * 1000).toISOString().replace('Z', '+08:00')
       }
 
-      // 若有 frontmatter, 只補欄位，沒 frontmatter 才插入
+      // 檢查 frontmatter
       const fmMatch = src.match(/^---\n([\s\S]*?)\n---\n/)
       if (fmMatch) {
         let fm = fmMatch[1]
         let rest = src.slice(fmMatch[0].length)
         let changed = false
         if (!/^author:/m.test(fm)) {
-          fm = `author: ${author}\n` + fm
+          fm = `author: ${author}\n${fm}`
           changed = true
         }
         if (!/^date:/m.test(fm)) {
-          fm = `date: ${dateTW}\n` + fm
+          fm = `date: ${dateTW}\n${fm}`
           changed = true
         }
         if (changed) {
           return `---\n${fm}\n---\n${rest}`
         }
+        // 如果都已經有，不動原文
         return src
       } else {
-        // 沒 frontmatter 才加
+        // 沒 frontmatter 才插入
         return `---\ndate: ${dateTW}\nauthor: ${author}\n---\n${src}`
       }
     }
