@@ -1,37 +1,48 @@
-import fs from 'fs'
 import { execSync } from 'child_process'
+import fs from 'fs'
 
 export default function gitMetaPlugin() {
   return {
-    name: 'vitepress-plugin-git-meta',
-    transform(src, id) {
-      if (!id.endsWith('.md')) return src
-      if (!fs.existsSync(id)) return src
+    name: 'inject-git-meta-frontmatter',
+    enforce: 'pre',
+    async transform(src, id) {
+      if (!id.endsWith('.md')) return
+      if (!fs.existsSync(id)) return
 
       let author = ''
       let datetime = ''
       try {
         author = execSync(`git log --diff-filter=A --follow --format=%aN -- "${id}" | tail -1`).toString().trim()
         datetime = execSync(`git log --diff-filter=A --follow --format=%aI -- "${id}" | tail -1`).toString().trim()
-      } catch {
+      } catch (e) {
         return src
       }
 
-      // 轉台灣時區
+      // 轉換為台灣時區
       let dateTW = ''
       if (datetime) {
         const d = new Date(datetime)
+        // 轉成台灣時區 ISO 字串（含 +08:00）
         dateTW = new Date(d.getTime() + 8 * 60 * 60 * 1000).toISOString().replace('Z', '+08:00')
       }
 
-      // 只在沒有 frontmatter（---）時插入
-      if (/^---\n/.test(src)) {
-        // 已有 frontmatter，完全不碰
-        return src
-      } else {
-        // 沒有 frontmatter 才插入
-        return `---\ndate: ${dateTW}\nauthor: ${author}\n---\n${src}`
+      const frontmatterMatch = src.match(/^---\n([\s\S]*?)\n---\n/)
+      let frontmatter = frontmatterMatch ? frontmatterMatch[1] : ''
+      let rest = frontmatterMatch ? src.slice(frontmatterMatch[0].length) : src
+
+      let hasAuthor = /^author:/m.test(frontmatter)
+      let hasDate = /^date:/m.test(frontmatter)
+
+      if (!hasAuthor) {
+        frontmatter = `author: ${author}\n` + frontmatter
       }
+      if (!hasDate) {
+        frontmatter = `date: ${dateTW}\n` + frontmatter
+      }
+
+      const injected = `---\n${frontmatter}\n---\n${rest}`
+
+      return injected
     }
   }
 }
