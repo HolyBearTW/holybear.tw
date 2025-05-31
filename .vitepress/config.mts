@@ -42,8 +42,12 @@ export default defineConfig({
   },
   extendsPage(page) {
     const branch = getCurrentBranch()
-    // 只允許在 main 或 master branch 處理
-    if ((branch === 'main' || branch === 'master') && page.filePath && page.filePath.endsWith('.md')) {
+    // 只允許在 main 或 master branch 處理，且處理所有 .md
+    if (
+      (branch === 'main' || branch === 'master') &&
+      page.filePath &&
+      page.filePath.endsWith('.md')
+    ) {
       try {
         // 抓第一次 commit 的作者和時間
         const log = execSync(
