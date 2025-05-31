@@ -161,10 +161,11 @@ const pageNumbers = computed(() => {
   margin-bottom: 0.2rem !important;
   line-height: 1.6;
   font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
+  white-space: nowrap;         /* 單行顯示，不自動換行 */
+  overflow: visible;           /* 超出內容不被截斷 */
+  text-overflow: unset;        /* 不顯示 ... */
+  height: auto;                /* 不要設定固定高度，讓內容自動撐開 */
+  max-width: none;             /* 讓分類標籤寬度自適應 */
 }
 .post-title, .post-info .post-title {
   border-top: none !important;  /* 移除標題上方線條 */
