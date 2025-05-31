@@ -5,6 +5,7 @@ export default function gitMetaPlugin() {
   return {
     name: 'vitepress-plugin-git-meta',
     transform(src, id) {
+      // 只處理 .md 檔案
       if (!id.endsWith('.md')) return src
       if (!fs.existsSync(id)) return src
 
@@ -24,27 +25,28 @@ export default function gitMetaPlugin() {
         dateTW = new Date(d.getTime() + 8 * 60 * 60 * 1000).toISOString().replace('Z', '+08:00')
       }
 
-      // 檢查 frontmatter
+      // 檢查有無 frontmatter
       const fmMatch = src.match(/^---\n([\s\S]*?)\n---\n/)
       if (fmMatch) {
         let fm = fmMatch[1]
         let rest = src.slice(fmMatch[0].length)
         let changed = false
+        // 只補沒有的欄位
         if (!/^author:/m.test(fm)) {
-          fm = `author: ${author}\n${fm}`
+          fm += `\nauthor: ${author}`
           changed = true
         }
         if (!/^date:/m.test(fm)) {
-          fm = `date: ${dateTW}\n${fm}`
+          fm += `\ndate: ${dateTW}`
           changed = true
         }
         if (changed) {
-          return `---\n${fm}\n---\n${rest}`
+          return `---\n${fm.trim()}\n---\n${rest}`
         }
-        // 如果都已經有，不動原文
+        // 都有就什麼都不動
         return src
       } else {
-        // 沒 frontmatter 才插入
+        // 沒 frontmatter 才插入新的
         return `---\ndate: ${dateTW}\nauthor: ${author}\n---\n${src}`
       }
     }
