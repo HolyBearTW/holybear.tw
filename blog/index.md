@@ -158,7 +158,7 @@ const pageNumbers = computed(() => {
   font-size: 0.85em;
   margin-right: 0.15em;
   margin-top: 0;
-  margin-bottom: 0;
+  margin-bottom: 0.2rem !important;
   line-height: 1.6;
   height: 1.6em;
   font-weight: 500;
