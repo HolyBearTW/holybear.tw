@@ -58,12 +58,13 @@ jobs:
 
       # Commit and push generated files if there are changes
       - name: Commit 並 push 產生的檔案
-        run: |
-          git config --global user.name 'System Administrator'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git add en/blog/
-          git reset en/blog/index.md
-          if git diff --cached --quiet; then
+          run: |
+            git config --global user.name 'System Administrator'
+            git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+            git add en/blog/
+            git reset en/blog/index.md
+            git checkout -- en/blog/index.md
+            if git diff --cached --quiet; then
             echo "No changes to commit."
           else
             git commit -m "chore: auto-generate en blog placeholders"
