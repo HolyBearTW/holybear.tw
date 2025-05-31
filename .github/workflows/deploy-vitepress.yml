@@ -35,6 +35,7 @@ jobs:
             git config --global user.email 'github-actions[bot]@users.noreply.github.com'
             git add yarn.lock
             git commit -m "ci: 自動產生 yarn.lock [skip ci]"
+            git pull --rebase origin main
             git push --set-upstream origin main || git push
           fi
 
@@ -66,5 +67,6 @@ jobs:
             echo "No changes to commit."
           else
             git commit -m "chore: auto-generate en blog placeholders"
+            git pull --rebase origin main
             git push --set-upstream origin main || git push
           fi
