@@ -44,11 +44,16 @@ jobs:
             git push --set-upstream origin main || git push
           fi
 
-      # 3. 建置 VitePress 網站
+      # 3. 建置 VitePress 網站前先清除快取
+      - name: 清除 Vite/VitePress 快取
+        run: |
+          rm -rf .vitepress/.cache .vitepress/dist .vite node_modules/.vite
+
+      # 4. 建置 VitePress 網站
       - name: 建置 VitePress 網站
         run: yarn run build
 
-      # 4. 部署到 GitHub Pages
+      # 5. 部署到 GitHub Pages
       - name: 部署到 GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
