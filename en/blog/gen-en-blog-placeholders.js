@@ -8,8 +8,24 @@ if (!fs.existsSync(enBlogDir)) fs.mkdirSync(enBlogDir, { recursive: true });
 
 const files = fs.readdirSync(blogDir).filter(f => f.endsWith('.md'));
 
-const content = `---
+function extractFieldFromFrontmatter(content, field) {
+  const match = content.match(/---([\s\S]*?)---/);
+  if (!match) return '';
+  const frontmatter = match[1];
+  const line = frontmatter.split('\n').find(line => line.trim().startsWith(`${field}:`));
+  if (!line) return '';
+  return line.replace(new RegExp(`^${field}:\\s*`), '').replace(/^["']|["']$/g, '').trim();
+}
+
+for (const file of files) {
+  const rawMd = fs.readFileSync(path.join(blogDir, file), 'utf8');
+  const date = extractFieldFromFrontmatter(rawMd, 'date');
+  const author = extractFieldFromFrontmatter(rawMd, 'author');
+
+  const content = `---
 title: Blog Not Supported in English
+${date ? `date: ${date}` : ''}
+${author ? `author: ${author}` : ''}
 ---
 ::: danger tip
 > ⚠️ Sorry, this blog post is not available in English.<br>
@@ -17,9 +33,7 @@ title: Blog Not Supported in English
 :::
 `;
 
-for (const file of files) {
   const enFile = path.join(enBlogDir, file);
-  // 直接覆寫，不管本來有沒有
   fs.writeFileSync(enFile, content, 'utf8');
-  console.log('Generated/Overwritten:', enFile);
+  console.log('Generated/Overwritten:', enFile, 'with date:', date, 'and author:', author);
 }
