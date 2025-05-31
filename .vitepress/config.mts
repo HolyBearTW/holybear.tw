@@ -15,7 +15,7 @@ function getCurrentBranch() {
 
 export default defineConfig({
   ignoreDeadLinks: true,
-  title: '聖小熊的秘密基地',
+  title: '聖小熊的祕密基地',
   base: '/',
   locales: locales.locales,
   srcExclude: ['README.md'],
