@@ -19,7 +19,6 @@ function extractFieldFromFrontmatter(content, field) {
 
 for (const file of files) {
   const rawMd = fs.readFileSync(path.join(blogDir, file), 'utf8');
-  // 不複製 date
   const author = extractFieldFromFrontmatter(rawMd, 'author');
 
   const content = `---
@@ -34,5 +33,5 @@ ${author ? `author: ${author}` : ''}
 
   const enFile = path.join(enBlogDir, file);
   fs.writeFileSync(enFile, content, 'utf8');
-  console.log('Generated/Overwritten:', enFile, 'with author:', author);
+  console.log('Generated/Overwritten:', enFile);
 }
