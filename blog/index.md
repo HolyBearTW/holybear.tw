@@ -10,6 +10,38 @@ import { data as allPosts } from '../.vitepress/theme/posts.data.ts'
 
 const postsWithDate = allPosts.filter(Boolean)
 
+/**
+ * 把傳進來的 ISO 時間字串（如 "2025-02-14T16:30:45Z" 或 "2025-02-15T08:30:45+08:00"）
+ * 轉成臺北時區 (Asia/Taipei) 的 "YYYY-MM-DD hh:mm:ss" 格式
+ */
+function formatDateTimeTaipei(isoString) {
+  if (!isoString) return ''
+  try {
+    // 先把輸入的 ISO 字串轉為 Date 物件
+    const date = new Date(isoString)
+    // 用 toLocaleString 並指定時區為 Asia/Taipei，得到類似 "2025/2/15 上午12:30:45" 這種形式
+    const twString = date.toLocaleString('zh-TW', {
+      timeZone: 'Asia/Taipei',
+      hour12: false, // 24 小時制
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    })
+    // toLocaleString 回傳的形式通常是 "2025/02/15 00:30:45"
+    // 我們把斜線換成連字號，就變成 "2025-02-15 00:30:45"
+    return twString.replace(/\//g, '-')
+  } catch {
+    return isoString
+  }
+}
+
+/**
+ * 如果你希望保留只顯示「YYYY-MM-DD」用的函式，可以繼續保留 formatDateExactlyLikePostPage，
+ * 但在本範例裡我們只在列表用到 formatDateTimeTaipei
+ */
 function formatDateExactlyLikePostPage(dateString) {
   if (dateString) {
     const date = new Date(dateString)
@@ -64,9 +96,15 @@ const pageNumbers = computed(() => {
             >{{ c }}</span>
             <h2 class="post-title">{{ post.title }}</h2>
           </div>
-          <p class="post-date">
-            發布日期：{{ formatDateExactlyLikePostPage(post.date) }}
+
+          <!-- 以下為顯示「作者」與「臺北時區完整時間」 -->
+          <p class="post-meta">
+            <template v-if="post.author">作者：{{ post.author }} ｜ </template>
+            <template v-if="post.time">
+              發布日期：{{ formatDateTimeTaipei(post.time) }}
+            </template>
           </p>
+
           <div v-if="post.excerpt" class="post-excerpt" v-html="post.excerpt"></div>
           <span class="read-more">繼續閱讀 &gt;</span>
         </div>
@@ -179,14 +217,16 @@ const pageNumbers = computed(() => {
   display: inline;
   vertical-align: middle;
 }
-.post-date {
+
+/* ──── 新增 post-meta 樣式 ──── */
+.post-meta {
   color: var(--vp-c-text-2);
   font-size: 0.85rem;
-  margin-top: 0 !important;
-  margin-bottom: 0.2rem !important;
+  margin: 0;
+  margin-bottom: 0.2rem;
   line-height: 1.2;
-  padding: 0;
 }
+
 .post-excerpt {
   color: var(--vp-c-text-2);
   line-height: 1.5;
