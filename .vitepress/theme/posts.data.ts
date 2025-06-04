@@ -23,9 +23,14 @@ export default createContentLoader('blog/**/*.md', {
         frontmatter = frontmatter && typeof frontmatter === 'object' ? frontmatter : {}
 
         const title = frontmatter.title || '無標題文章'
-        const dateOnly = extractDate(frontmatter)
+        const dateRaw = extractDate(frontmatter)
+        const dateStr = typeof dateRaw === 'string' ? dateRaw : (dateRaw ? String(dateRaw) : '')
+        const date = dateStr ? dateStr.substring(0, 10) : ''
+        const time = frontmatter.date
+          ? String(frontmatter.date)
+          : (dateStr.length > 0 ? dateStr : '')
 
-        // 處理封面
+        // 封面圖
         let imageUrl = frontmatter.image
         if (!imageUrl && content) {
           const match = content.match(/!\[.*?\]\((.*?)\)/)
@@ -38,7 +43,7 @@ export default createContentLoader('blog/**/*.md', {
         }
         if (!imageUrl) imageUrl = DEFAULT_IMAGE
 
-        // 處理摘要
+        // 摘要
         let summary = (frontmatter.description || '').trim()
         if (!summary && excerpt) summary = excerpt.trim()
         if (!summary && content) {
@@ -57,8 +62,8 @@ export default createContentLoader('blog/**/*.md', {
           url,
           frontmatter,
           title,
-          date: dateOnly ? dateOnly.substring(0, 10) : '',      // 只到日，優先用 frontmatter
-          time: frontmatter.date || '',                          // ISO 格式
+          date,
+          time,
           tags: Array.isArray(frontmatter.tags)
             ? frontmatter.tags
             : Array.isArray(frontmatter.tag)
@@ -68,7 +73,7 @@ export default createContentLoader('blog/**/*.md', {
           image: imageUrl,
           summary,
           excerpt: summary,
-          author: frontmatter.author || '未知作者',               // 直接用 frontmatter
+          author: frontmatter.author || '未知作者',
         }
       })
       .filter(post => !!post && typeof post.url === 'string')
