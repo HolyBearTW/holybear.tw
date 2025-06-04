@@ -98,7 +98,7 @@ const pageNumbers = computed(() => {
           </div>
 
           <!-- 以下為顯示「作者」與「臺北時區完整時間」 -->
-          <p class="post-meta">
+<p class="post-meta">
   <span v-if="post.author">作者：{{ post.author }} ｜ </span>
   <span v-if="post.time">發布日期：{{ formatDateTimeTaipei(post.time) }}</span>
 </p>
