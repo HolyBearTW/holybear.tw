@@ -99,11 +99,12 @@ const pageNumbers = computed(() => {
 
           <!-- 以下為顯示「作者」與「臺北時區完整時間」 -->
           <p class="post-meta">
-            <template v-if="post.author">作者：{{ post.author }} ｜ </template>
-            <template v-if="post.time">
-              發布日期：{{ formatDateTimeTaipei(post.time) }}
-            </template>
+          <template v-if="post.author">作者：{{ post.author }} ｜ </template>
+          <template v-if="post.time">
+          發布日期：{{ formatDateTimeTaipei(post.time) }}
+          </template>
           </p>
+
 
           <div v-if="post.excerpt" class="post-excerpt" v-html="post.excerpt"></div>
           <span class="read-more">繼續閱讀 &gt;</span>
