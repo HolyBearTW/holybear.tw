@@ -86,25 +86,33 @@ const pageNumbers = computed(() => {
         <div class="post-thumbnail-wrapper">
           <img :src="post.image" :alt="post.title" class="post-thumbnail" />
         </div>
-        <div class="post-info">
-          <div class="post-title-row">
-            <template v-if="post.category && post.category.length">
-              <span
-                class="category"
-                v-for="c in post.category"
-                :key="'cat-' + c"
-              >{{ c }}</span>
-            </template>
-            <h2 class="post-title">{{ post.title }}</h2>
-          </div>
-          <!-- 以下為顯示「作者」與「臺北時區完整時間」 -->
-          <p class="post-meta">
-            <span v-if="post.author">作者：{{ post.author }} ｜ </span>
-            <span v-if="post.time">發布日期：{{ formatDateTimeTaipei(post.time) }}</span>
-          </p>
-          <div v-if="post.excerpt" class="post-excerpt" v-html="post.excerpt"></div>
-          <span class="read-more">繼續閱讀 &gt;</span>
-        </div>
+        <div class="blog-post-header-injected">
+  <h2 class="blog-post-title">{{ post.title }}</h2>
+  <div
+    v-if="post.category && post.category.length"
+    class="blog-post-meta-row"
+  >
+    <span
+      v-for="c in post.category"
+      :key="'cat-' + c"
+      class="category"
+    >{{ c }}</span>
+    <span
+      v-for="t in post.tag"
+      :key="'tag-' + t"
+      class="tag"
+    >{{ t }}</span>
+  </div>
+  <p class="blog-post-date-in-content">
+    <span v-if="post.author">作者：{{ post.author }}</span>
+    <span v-if="post.author && post.date"> ｜ </span>
+    <span v-if="post.date">{{ formatDateExactlyLikePostPage(post.date) }}</span>
+  </p>
+  <div class="blog-post-date-divider"></div>
+  <!-- 其他內容像 excerpt、Read more 你可放這之後 -->
+  <div v-if="post.excerpt" class="post-excerpt" v-html="post.excerpt"></div>
+  <span class="read-more">繼續閱讀 &gt;</span>
+</div>
       </a>
     </div>
   </div>
