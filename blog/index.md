@@ -17,12 +17,12 @@ const postsWithDate = allPosts.filter(Boolean)
 function formatDateTimeTaipei(isoString) {
   if (!isoString) return ''
   try {
-    // 先把輸入的 ISO 字串轉為 Date 物件
+    // 先把 ISO 字串轉為 Date 物件
     const date = new Date(isoString)
-    // 用 toLocaleString 並指定時區為 Asia/Taipei，得到類似 "2025/2/15 上午12:30:45" 這種形式
+    // 使用 toLocaleString 並指定時區為 Asia/Taipei，24 小時制
     const twString = date.toLocaleString('zh-TW', {
       timeZone: 'Asia/Taipei',
-      hour12: false, // 24 小時制
+      hour12: false,
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
@@ -30,28 +30,11 @@ function formatDateTimeTaipei(isoString) {
       minute: '2-digit',
       second: '2-digit'
     })
-    // toLocaleString 回傳的形式通常是 "2025/02/15 00:30:45"
-    // 我們把斜線換成連字號，就變成 "2025-02-15 00:30:45"
+    // toLocaleString 通常回傳 "2025/02/15 00:30:45"，把 "/" 換成 "-"
     return twString.replace(/\//g, '-')
   } catch {
     return isoString
   }
-}
-
-/**
- * 如果你希望保留只顯示「YYYY-MM-DD」用的函式，可以繼續保留 formatDateExactlyLikePostPage，
- * 但在本範例裡我們只在列表用到 formatDateTimeTaipei
- */
-function formatDateExactlyLikePostPage(dateString) {
-  if (dateString) {
-    const date = new Date(dateString)
-    if (isNaN(date.getTime())) return dateString // fallback
-    const yyyy = date.getFullYear()
-    const mm = String(date.getMonth() + 1).padStart(2, '0')
-    const dd = String(date.getDate()).padStart(2, '0')
-    return `${yyyy}-${mm}-${dd}`
-  }
-  return ''
 }
 
 const postsPerPage = 10
@@ -81,10 +64,18 @@ const pageNumbers = computed(() => {
 
 <div class="blog-home">
   <div class="blog-articles-grid">
-    <div v-for="post in paginatedPosts" :key="post.url" class="post-item">
+    <div
+      v-for="post in paginatedPosts"
+      :key="post.url"
+      class="post-item"
+    >
       <a :href="post.url" class="post-item-link">
         <div class="post-thumbnail-wrapper">
-          <img :src="post.image" :alt="post.title" class="post-thumbnail" />
+          <img
+            :src="post.image"
+            :alt="post.title"
+            class="post-thumbnail"
+          />
         </div>
         <div class="post-info">
           <div class="post-title-row">
@@ -93,35 +84,57 @@ const pageNumbers = computed(() => {
               class="category"
               v-for="c in post.category"
               :key="'cat-' + c"
-            >{{ c }}</span>
+            >
+              {{ c }}
+            </span>
             <h2 class="post-title">{{ post.title }}</h2>
           </div>
 
-          <!-- 以下為顯示「作者」與「臺北時區完整時間」 -->
-<p class="post-meta">
-  <span v-if="post.author">作者：{{ post.author }} ｜ </span>
-  <span v-if="post.time">發布日期：{{ formatDateTimeTaipei(post.time) }}</span>
-</p>
+          <!-- 顯示「作者：XXX ｜ 發布日期：YYYY-MM-DD hh:mm:ss（臺北時間）」 -->
+          <p class="post-meta">
+            <span v-if="post.author">
+              作者：{{ post.author }} ｜&nbsp;
+            </span>
+            <span v-if="post.time">
+              發布日期：{{ formatDateTimeTaipei(post.time) }}
+            </span>
+          </p>
 
-
-
-          <div v-if="post.excerpt" class="post-excerpt" v-html="post.excerpt"></div>
+          <div
+            v-if="post.excerpt"
+            class="post-excerpt"
+            v-html="post.excerpt"
+          ></div>
           <span class="read-more">繼續閱讀 &gt;</span>
         </div>
       </a>
     </div>
   </div>
+
   <div class="pagination" v-if="totalPages > 1">
-    <button class="pagination-button" :disabled="currentPage === 1" @click="goToPage(currentPage - 1)">上一頁</button>
+    <button
+      class="pagination-button"
+      :disabled="currentPage === 1"
+      @click="goToPage(currentPage - 1)"
+    >
+      上一頁
+    </button>
     <button
       v-for="page in pageNumbers"
       :key="page"
       class="pagination-button"
       :class="{ active: page === currentPage }"
-      @click="goToPage(page)">
+      @click="goToPage(page)"
+    >
       {{ page }}
     </button>
-    <button class="pagination-button" :disabled="currentPage === totalPages" @click="goToPage(currentPage + 1)">下一頁</button>
+    <button
+      class="pagination-button"
+      :disabled="currentPage === totalPages"
+      @click="goToPage(currentPage + 1)"
+    >
+      下一頁
+    </button>
   </div>
 </div>
 
@@ -138,9 +151,10 @@ const pageNumbers = computed(() => {
 }
 .post-item {
   border-bottom: 1px dashed var(--vp-c-divider);
-  padding-bottom: 0.6rem;   /* 虛線與標題間距縮小 */
+  padding-bottom: 0.6rem;
   margin-bottom: 0.2rem;
-  transition: transform 0.2s ease-in-out, background-color 0.2s ease-in-out;
+  transition: transform 0.2s ease-in-out,
+    background-color 0.2s ease-in-out;
 }
 .blog-articles-grid > .post-item:last-child {
   border-bottom: none;
@@ -166,7 +180,7 @@ const pageNumbers = computed(() => {
   border-radius: 4px;
   overflow: hidden;
   display: flex;
-  align-items: flex-start; /* 保證和內容頂部齊 */
+  align-items: flex-start;
   justify-content: center;
 }
 .post-thumbnail {
@@ -189,8 +203,8 @@ const pageNumbers = computed(() => {
 }
 .category {
   display: inline-block;
-  background: #00FFEE;  /* 主色系背景 */
-  color: #000;          /* 黑色字 */
+  background: #00ffee;
+  color: #000;
   border-radius: 3px;
   padding: 0 0.5em;
   font-size: 0.85em;
@@ -199,14 +213,14 @@ const pageNumbers = computed(() => {
   margin-bottom: 0.2rem !important;
   line-height: 1.6;
   font-weight: 500;
-  white-space: nowrap;         /* 單行顯示，不自動換行 */
-  overflow: visible;           /* 超出內容不被截斷 */
-  text-overflow: unset;        /* 不顯示 ... */
-  height: auto;                /* 不要設定固定高度，讓內容自動撐開 */
-  max-width: none;             /* 讓分類標籤寬度自適應 */
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: unset;
+  height: auto;
+  max-width: none;
 }
-.post-title, .post-info .post-title {
-  border-top: none !important;  /* 移除標題上方線條 */
+.post-title {
+  border-top: none !important;
   padding-top: 0;
   margin-top: 0 !important;
   margin-bottom: 0.2rem !important;
@@ -218,7 +232,7 @@ const pageNumbers = computed(() => {
   vertical-align: middle;
 }
 
-/* ──── 新增 post-meta 樣式 ──── */
+/* 新增 post-meta 樣式 */
 .post-meta {
   color: var(--vp-c-text-2);
   font-size: 0.85rem;
@@ -296,7 +310,7 @@ const pageNumbers = computed(() => {
     margin-right: 0.7rem;
     margin-bottom: 0;
   }
-  .post-title, .post-info .post-title {
+  .post-title {
     font-size: 1.05rem;
   }
   .post-excerpt {
