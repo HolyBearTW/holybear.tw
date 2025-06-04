@@ -1,5 +1,4 @@
 import { createContentLoader } from 'vitepress'
-import { execSync } from 'child_process'
 
 const DEFAULT_IMAGE = '/blog_no_image.svg'
 
@@ -13,35 +12,20 @@ function extractDate(frontmatter: Record<string, any>): string {
   )
 }
 
-function getFirstCommitInfo(filePath: string): [string, string] {
-  try {
-    const cmd = `git log --diff-filter=A --follow --format="%aN,%aI" -- "${filePath}"`
-    const result = execSync(`${cmd} | tail -1`).toString().trim()
-    const [name, isoDate] = result.split(',', 2)
-    return [name || '', isoDate || '']
-  } catch {
-    // 出錯 fallback 給預設（避免 undefined）
-    return ['未知作者', '1970-01-01T00:00:00Z']
-  }
-}
-
 export default createContentLoader('blog/**/*.md', {
   excerpt: true,
   transform(raw) {
     return raw
-      .filter(({ url }) => {
-        return ![
-          '/blog/',
-          '/blog/index.html',
-          '/en/blog/',
-          '/en/blog/index.html'
-        ].includes(url)
-      })
-      .map(({ url, frontmatter, content, excerpt, file }) => {
+      .filter(({ url }) =>
+        !['/blog/', '/blog/index.html', '/en/blog/', '/en/blog/index.html'].includes(url)
+      )
+      .map(({ url, frontmatter, content, excerpt }) => {
         frontmatter = frontmatter && typeof frontmatter === 'object' ? frontmatter : {}
+
         const title = frontmatter.title || '無標題文章'
         const dateOnly = extractDate(frontmatter)
 
+        // 處理封面
         let imageUrl = frontmatter.image
         if (!imageUrl && content) {
           const match = content.match(/!\[.*?\]\((.*?)\)/)
@@ -54,6 +38,7 @@ export default createContentLoader('blog/**/*.md', {
         }
         if (!imageUrl) imageUrl = DEFAULT_IMAGE
 
+        // 處理摘要
         let summary = (frontmatter.description || '').trim()
         if (!summary && excerpt) summary = excerpt.trim()
         if (!summary && content) {
@@ -68,21 +53,12 @@ export default createContentLoader('blog/**/*.md', {
             ) || ''
         }
 
-        // 以 git log 為主（即使有 frontmatter 也不採用）
-        let author = ''
-        let isoDateTime = ''
-        if (typeof file === 'string' && file.endsWith('.md')) {
-          const [name, ts] = getFirstCommitInfo(file)
-          author = name
-          isoDateTime = ts
-        }
-
         return {
           url,
           frontmatter,
           title,
-          date: isoDateTime ? isoDateTime.substring(0, 10) : dateOnly, // 只到日
-          time: isoDateTime, // ISO 全字串
+          date: dateOnly ? dateOnly.substring(0, 10) : '',      // 只到日，優先用 frontmatter
+          time: frontmatter.date || '',                          // ISO 格式
           tags: Array.isArray(frontmatter.tags)
             ? frontmatter.tags
             : Array.isArray(frontmatter.tag)
@@ -92,7 +68,7 @@ export default createContentLoader('blog/**/*.md', {
           image: imageUrl,
           summary,
           excerpt: summary,
-          author: author || '未知作者',
+          author: frontmatter.author || '未知作者',               // 直接用 frontmatter
         }
       })
       .filter(post => !!post && typeof post.url === 'string')
