@@ -117,10 +117,8 @@ export default createContentLoader('blog/**/*.md', {
       })
       .filter(post => !!post && typeof post.url === 'string')
       .sort((a, b) => {
-        // 這裡仍以「到日的 date」做排序（最新到舊），
-        // 如果要以「精確到時分秒的 time」排序，可改成：
-        // return new Date(b.time).getTime() - new Date(a.time).getTime()
-        return new Date(b.date).getTime() - new Date(a.date).getTime()
+        // 精確到時分秒
+        return new Date(b.time).getTime() - new Date(a.time).getTime()
       })
   }
 })
