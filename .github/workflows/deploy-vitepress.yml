@@ -1,3 +1,6 @@
+permissions:
+  contents: write
+
 name: 部署 VitePress 靜態網站到 GitHub Pages
 
 on:
@@ -24,11 +27,9 @@ jobs:
       - name: 安裝相依套件
         run: yarn install
 
-      # 1. 先產生英文 Blog 遞補檔案
       - name: 產生英文 Blog 遞補檔案
         run: yarn gen-en-blog
 
-      # 2. Commit 並 push 產生的檔案（如果有更動）
       - name: Commit 並 push 產生的檔案
         run: |
           git config --global user.name 'System Administrator'
@@ -44,16 +45,13 @@ jobs:
             git push --set-upstream origin main || git push
           fi
 
-      # 3. 建置 VitePress 網站前先清除快取
       - name: 清除 Vite/VitePress 快取
         run: |
           rm -rf .vitepress/.cache .vitepress/dist .vite node_modules/.vite
 
-      # 4. 建置 VitePress 網站
       - name: 建置 VitePress 網站
         run: yarn run build
 
-      # 5. 部署到 GitHub Pages
       - name: 部署到 GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
