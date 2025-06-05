@@ -22,8 +22,8 @@ for (const file of files) {
   const author = extractFieldFromFrontmatter(rawMd, 'author');
 
   const content = `---
+layout: home
 title: Blog Not Supported in English
-${author ? `author: ${author}` : ''}
 ---
 ::: danger Blog Not Supported in English
 > ⚠️ Sorry, this blog post is not available in English.<br>
