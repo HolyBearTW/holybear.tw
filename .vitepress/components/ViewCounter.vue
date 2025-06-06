@@ -6,7 +6,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { incrementAndGetViews } from '../firebase/view-count'
+import { incrementAndGetViews } from './view-count'
 const props = defineProps({ slug: String })
 const views = ref(null)
 onMounted(async () => {
