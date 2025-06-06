@@ -99,7 +99,7 @@ jobs:
               TITLE="無標題文章"
             fi
 
-            # 【新增】從 Markdown 檔案內容中提取 category (優先從 Front Matter 提取第一個)
+            # 【修正後的邏輯】從 Markdown 檔案內容中提取 category (優先從 Front Matter 提取第一個)
             CATEGORY=""
             CATEGORY=$(echo "$file_content" | awk '
               /^---$/ { count++; if (count == 2) exit; next }
@@ -112,11 +112,17 @@ jobs:
                 print categories[1];
                 exit
               }
-              (count == 1 && /^\s*category:\s*[^\[]*/) { # 處理單一 category 沒有陣列符號的情況
+              (count == 1 && /^\s*category:\s*/) { # 處理單一 category 或非陣列的第一個值
                 gsub(/^\s*category:\s*/, "", $0);
                 gsub(/\r/, "", $0);
                 gsub(/['" ]/, "", $0); # 移除引號和空白
-                print $0;
+                # 如果是陣列形式但沒有 [，這裡會得到 "a, b, c"，取第一個
+                if (match($0, ",")) {
+                  split($0, temp_cat, ",");
+                  print temp_cat[1];
+                } else {
+                  print $0;
+                }
                 exit
               }
             ')
@@ -137,7 +143,7 @@ jobs:
             # 組裝 Telegram 訊息 (簡潔版，移除儲存庫、路徑、查看變動)
             MESSAGE="📢 **新文章通知！**\n"
             MESSAGE+="標題：**${TITLE}**\n"
-            MESSAGE+="作者：${{ github.actor }}\n"
+            MESSAGE+="作者：${{ github.actor }}\n" # 使用 GitHub 提交者名稱
             MESSAGE+="[點此閱讀文章](${ARTICLE_URL})\n" 
             MESSAGE+="提交訊息：\`${{ github.event.head_commit.message }}\`" # 放在最後，不再強制換行
 
