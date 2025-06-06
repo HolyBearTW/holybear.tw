@@ -99,35 +99,28 @@ jobs:
               TITLE="無標題文章"
             fi
 
-            # 【最新修正後的邏輯】從 Markdown 檔案內容中提取 category (優先從 Front Matter 提取第一個)
+            # 【最新修正】使用 grep 和 sed 來提取 category，更穩定處理多種 YAML 格式
             CATEGORY=""
-            CATEGORY=$(echo "$file_content" | awk '
-              /^---$/ { count++; if (count == 2) exit; next }
-              (count == 1 && /^\s*category:\s*\[/) {
-                # 提取 category 陣列的第一個元素
-                gsub(/^[[:space:]]*category:[[:space:]]*\[/, "", $0); # 更安全的匹配開頭
-                gsub(/\].*$/, "", $0);
-                split($0, categories, ",");
-                gsub(/[\x27"[:space:]]/, "", categories[1]); # 修正：使用 \x27 避免單引號問題
-                print categories[1];
-                exit
-              }
-              (count == 1 && /^\s*category:\s*/) { # 處理單一 category 或非陣列的第一個值
-                gsub(/^[[:space:]]*category:[[:space:]]*/, "", $0); # 更安全的匹配開頭
-                gsub(/\r/, "", $0);
-                gsub(/[\x27"[:space:]]/, "", $0); # 修正：使用 \x27 避免單引號問題
-                # 如果是陣列形式但沒有 [，這裡會得到 "a, b, c"，取第一個
-                if (match($0, ",")) {
-                  split($0, temp_cat, ",");
-                  print temp_cat[1];
-                } else {
-                  print $0;
-                }
-                exit
-              }
-            ')
             
-            # 如果有 category，則將標題加上前綴
+            # 1. 嘗試提取 YAML list 格式 (e.g., category:\n  - item)
+            # 從文件內容中找到 "category:" 行和緊跟其後的第一個 "- " 行
+            CATEGORY=$(echo "$file_content" | grep -A 1 -E '^\s*category:' | grep -E '^\s*-\s*' | head -n 1 | sed -E 's/^\s*-\s*(.*)/\1/' | tr -d '\r')
+            
+            # 2. 如果沒找到，嘗試提取行內陣列格式 (e.g., category: [item1, item2])
+            if [ -z "$CATEGORY" ]; then
+              CATEGORY=$(echo "$file_content" | grep -iE '^\s*category:\s*\[.*\]' | head -n 1 | sed -E 's/^\s*category:\s*\[(.*)\].*/\1/' | cut -d',' -f1 | tr -d '\r')
+            fi
+
+            # 3. 如果還是沒找到，嘗試提取單一值格式 (e.g., category: item)
+            if [ -z "$CATEGORY" ]; then
+              CATEGORY=$(echo "$file_content" | grep -iE '^\s*category:\s*[^\[-]' | head -n 1 | sed -E 's/^\s*category:\s*(.*)/\1/' | tr -d '\r')
+            fi
+            
+            # 清理提取到的類別名稱：移除前後空白、引號、斜線等符號
+            CATEGORY=$(echo "$CATEGORY" | sed -E 's/^[[:space:]]+|[[:space:]]+$//g') # 移除前後空白
+            CATEGORY=$(echo "$CATEGORY" | sed -E 's/[\x27"\/]//g') # 移除單引號、雙引號、斜線
+
+            # 如果成功提取到類別，則將標題加上前綴
             if [ -n "$CATEGORY" ]; then
               TITLE="【${CATEGORY}】${TITLE}"
             fi
