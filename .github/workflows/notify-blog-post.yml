@@ -1,0 +1,156 @@
+name: Notify New Blog Post to Telegram # 工作流程名稱
+
+# 當有新的 push 事件發生時觸發此 workflow
+on:
+  push:
+    branches:
+      - main # 請將此處改為您儲存庫的主要分支名稱，例如 master
+    paths:
+      - 'blog/**' # 監聽 'blog/' 目錄下的任何檔案變動
+      - 'blog/**/*' # 確保涵蓋 'blog/' 子目錄中的變動
+
+jobs:
+  notify_new_post:
+    runs-on: ubuntu-latest # 在 Ubuntu 系統上執行這個 job
+
+    steps:
+      - name: Checkout repository # 步驟 1: 檢出您的儲存庫程式碼
+        uses: actions/checkout@v4
+        with:
+          # 獲取所有歷史紀錄，以便 git diff 能正確判斷「新增」的檔案
+          fetch-depth: 0 
+
+      - name: Get new files in target directory # 步驟 2: 取得本次 push 中有哪些檔案是新「增」的
+        id: new-files # 給這個步驟一個 ID，以便後續引用其輸出
+        run: |
+          TARGET_DIR="blog/" # 設定您要監控的目錄
+
+          # 獲取本次 push 帶入的 commit SHA
+          CURRENT_SHA="${{ github.sha }}"
+          # 獲取本次 push 之前一個 commit 的 SHA。如果這是第一個 commit，則會是空字串。
+          LAST_COMMIT_SHA=$(git rev-parse "${CURRENT_SHA}~1" 2>/dev/null || echo "")
+
+          DETECTED_FILES=""
+          if [ -z "$LAST_COMMIT_SHA" ]; then
+            # 對於儲存庫的第一次 push，所有符合條件的文件都視為「新增」
+            # 確保 find 指令能處理路徑中的空白字元
+            find "$TARGET_DIR" -type f -print0 | xargs -0 -r -n 1 echo >> temp_new_files.txt
+            DETECTED_FILES=$(cat temp_new_files.txt)
+          else
+            # 比較本次 push 和上一個 commit 之間的差異，只篩選新增的檔案
+            # 使用 -z 和 xargs -0 來安全處理檔名中的空白
+            git diff --name-only --diff-filter=A "${LAST_COMMIT_SHA}" "${CURRENT_SHA}" -- "$TARGET_DIR" -z | xargs -0 -r -n 1 echo >> temp_new_files.txt
+            DETECTED_FILES=$(cat temp_new_files.txt)
+          fi
+
+          NEW_POST_FILES=""
+          for file in $DETECTED_FILES; do
+            # 再次確認檔案是在目標目錄下 (避免意外偵測到其他路徑的同名檔案)
+            if [[ "$file" == "$TARGET_DIR"* ]]; then
+              NEW_POST_FILES="$NEW_POST_FILES $file"
+            fi
+          done
+
+          echo "Detected NEW files in ${TARGET_DIR} directory: $NEW_POST_FILES"
+          # 將結果輸出給下一個步驟
+          echo "NEW_POST_FILES=${NEW_POST_FILES}" >> "$GITHUB_OUTPUT" 
+
+      - name: Process and send Telegram notification # 步驟 3: 處理檔案並發送 Telegram 通知
+        # 只有當 'Get new files' 步驟有偵測到新的文章檔案時才執行
+        if: steps.new-files.outputs.NEW_POST_FILES != ''
+        run: |
+          # 從 GitHub Secrets 中取得 Telegram Bot Token 和 Chat ID
+          TELEGRAM_BOT_TOKEN="${{ secrets.TELEGRAM_BOT_TOKEN }}"
+          TELEGRAM_CHAT_ID="${{ secrets.TELEGRAM_CHAT_ID }}"
+          
+          # 取得上一個步驟輸出偵測到的新文章檔案列表
+          NEW_POST_FILES="${{ steps.new-files.outputs.NEW_POST_FILES }}"
+          
+          # 【重要設定】您的網站基礎網址
+          # 請根據您的實際部落格網址進行修改
+          BASE_URL="https://holybear.me" 
+
+          # 遍歷每個新增的檔案
+          for file_path in $NEW_POST_FILES; do
+            echo "Processing file: $file_path"
+            
+            # 讀取檔案內容
+            file_content=$(cat "$file_path")
+            
+            # 從 Markdown 檔案內容中提取 title (優先從 Front Matter 提取)
+            TITLE=""
+            TITLE=$(echo "$file_content" | awk '
+              /^---$/ { count++; if (count == 2) exit; next }
+              (count == 1 && /^\s*title:/) { 
+                gsub(/^\s*title:\s*/, "", $0); 
+                gsub(/\r/, "", $0);
+                print $0; 
+                exit
+              }
+            ')
+            
+            # 如果 Front Matter 中沒有 title，則嘗試從 H1 標題提取
+            if [ -z "$TITLE" ]; then
+              TITLE=$(echo "$file_content" | grep -iE '^#\s*(.*)' | head -n 1 | sed -E 's/^#\s*(.*)/\1/' | tr -d '\r')
+            fi
+
+            # 如果仍然沒有標題，設定為預設值
+            if [ -z "$TITLE" ]; then
+              TITLE="無標題文章"
+            fi
+
+            # 【新增】從 Markdown 檔案內容中提取 category (優先從 Front Matter 提取第一個)
+            CATEGORY=""
+            CATEGORY=$(echo "$file_content" | awk '
+              /^---$/ { count++; if (count == 2) exit; next }
+              (count == 1 && /^\s*category:\s*\[/) {
+                # 提取 category 陣列的第一個元素
+                gsub(/^\s*category:\s*\[/, "", $0);
+                gsub(/\].*$/, "", $0);
+                split($0, categories, ",");
+                gsub(/['" ]/, "", categories[1]); # 移除單引號、雙引號、空白
+                print categories[1];
+                exit
+              }
+              (count == 1 && /^\s*category:\s*[^\[]*/) { # 處理單一 category 沒有陣列符號的情況
+                gsub(/^\s*category:\s*/, "", $0);
+                gsub(/\r/, "", $0);
+                gsub(/['" ]/, "", $0); # 移除引號和空白
+                print $0;
+                exit
+              }
+            ')
+            
+            # 如果有 category，則將標題加上前綴
+            if [ -n "$CATEGORY" ]; then
+              TITLE="【${CATEGORY}】${TITLE}"
+            fi
+
+            # 產生文章連結的邏輯
+            # 移除 'blog/' 前綴和副檔名，並替換為網站 URL 格式 (例如：從 blog/my-article.md 轉成 my-article)
+            ARTICLE_SLUG=$(echo "$file_path" | sed -E 's|^blog/(.*)\.md$|\1|')
+            
+            # 組合成完整的文章連結 (例如：https://holybear.me/blog/my-article/)
+            ARTICLE_URL="${BASE_URL}/blog/${ARTICLE_SLUG}/" 
+
+
+            # 組裝 Telegram 訊息 (簡潔版，移除儲存庫、路徑、查看變動)
+            MESSAGE="📢 **新文章通知！**\n"
+            MESSAGE+="標題：**${TITLE}**\n"
+            MESSAGE+="作者：${{ github.actor }}\n"
+            MESSAGE+="[點此閱讀文章](${ARTICLE_URL})\n" 
+            MESSAGE+="提交訊息：\`${{ github.event.head_commit.message }}\`" # 放在最後，不再強制換行
+
+            # 發送 Telegram 訊息
+            curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+              -H "Content-Type: application/json" \
+              -d "{
+                \"chat_id\": \"${TELEGRAM_CHAT_ID}\",
+                \"text\": \"$(echo "${MESSAGE}" | sed 's/"/\\"/g' | sed ':a;N;$!ba;s/\n/\\n/g')\",
+                \"parse_mode\": \"Markdown\"
+              }"
+            echo "Telegram notification sent for $file_path with title: $TITLE"
+          done
+        env: # 將環境變數設定在這裡，避免直接寫在 run 區塊中
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
