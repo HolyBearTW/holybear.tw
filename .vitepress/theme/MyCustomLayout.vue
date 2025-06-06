@@ -4,6 +4,7 @@ import { useData } from 'vitepress'
 import { computed } from 'vue'
 import GiscusComments from '../components/GiscusComments.vue'
 import VotePanel from '../components/VotePanel.vue'
+import ViewCounter from '../components/ViewCounter.vue' // 新增這行
 
 const { frontmatter, page } = useData()
 
@@ -13,6 +14,11 @@ const isHomePage = computed(() =>
 
 const currentTitle = computed(() =>
   frontmatter.value ? (frontmatter.value.title || '無標題文章') : 'frontmatter.value is UNDEFINED'
+)
+
+// 唯一識別 key，可根據你需求調整
+const currentSlug = computed(() =>
+  frontmatter.value?.slug || page.value?.path || frontmatter.value?.title || 'unknown'
 )
 
 // 用台灣時區 (Asia/Taipei) 顯示日期
@@ -55,6 +61,7 @@ const currentDisplayDate = computed(() => {
           <template v-if="frontmatter.author">作者：{{ frontmatter.author }}</template>
           <template v-if="frontmatter.author && currentDisplayDate">｜</template>
           <template v-if="currentDisplayDate">{{ currentDisplayDate }}</template>
+          <ViewCounter :slug="currentSlug" /> <!-- 新增這一行 -->
         </p>
         <div class="blog-post-date-divider"></div>
       </div>
