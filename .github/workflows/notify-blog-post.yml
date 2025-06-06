@@ -99,23 +99,23 @@ jobs:
               TITLE="無標題文章"
             fi
 
-            # 【修正後的邏輯】從 Markdown 檔案內容中提取 category (優先從 Front Matter 提取第一個)
+            # 【最新修正後的邏輯】從 Markdown 檔案內容中提取 category (優先從 Front Matter 提取第一個)
             CATEGORY=""
             CATEGORY=$(echo "$file_content" | awk '
               /^---$/ { count++; if (count == 2) exit; next }
               (count == 1 && /^\s*category:\s*\[/) {
                 # 提取 category 陣列的第一個元素
-                gsub(/^\s*category:\s*\[/, "", $0);
+                gsub(/^[[:space:]]*category:[[:space:]]*\[/, "", $0); # 更安全的匹配開頭
                 gsub(/\].*$/, "", $0);
                 split($0, categories, ",");
-                gsub(/['" ]/, "", categories[1]); # 移除單引號、雙引號、空白
+                gsub(/[\x27"[:space:]]/, "", categories[1]); # 修正：使用 \x27 避免單引號問題
                 print categories[1];
                 exit
               }
               (count == 1 && /^\s*category:\s*/) { # 處理單一 category 或非陣列的第一個值
-                gsub(/^\s*category:\s*/, "", $0);
+                gsub(/^[[:space:]]*category:[[:space:]]*/, "", $0); # 更安全的匹配開頭
                 gsub(/\r/, "", $0);
-                gsub(/['" ]/, "", $0); # 移除引號和空白
+                gsub(/[\x27"[:space:]]/, "", $0); # 修正：使用 \x27 避免單引號問題
                 # 如果是陣列形式但沒有 [，這裡會得到 "a, b, c"，取第一個
                 if (match($0, ",")) {
                   split($0, temp_cat, ",");
