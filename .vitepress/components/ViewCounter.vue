@@ -1,5 +1,8 @@
 <template>
-  <span class="view-count">｜瀏覽次數：{{ views === null ? "載入中..." : views }}</span>
+  <span class="view-count">
+    <img src="/icon_fire-outline.svg" width="18" height="18" alt="人氣" style="vertical-align:middle; margin-right: 4px;">
+    瀏覽次數：{{ views === null ? "載入中..." : views }}
+  </span>
 </template>
 
 <script setup>
