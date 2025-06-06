@@ -122,7 +122,7 @@ jobs:
 
             # 如果成功提取到類別，則將標題加上前綴
             if [ -n "$CATEGORY" ]; then
-              TITLE="【${CATEGORY}】${TITLE}"
+               TITLE="[${CATEGORY}] ${TITLE}" # 加 [ ]
             fi
 
             # 產生文章連結的邏輯
