@@ -9,12 +9,29 @@ import { ref, onMounted } from 'vue'
 import { incrementAndGetViews } from './view-count'
 const props = defineProps({ slug: String })
 const views = ref(null)
+
+function hasCounted(slug) {
+  const seen = JSON.parse(localStorage.getItem('viewedSlugs') || '[]')
+  return seen.includes(slug)
+}
+function markCounted(slug) {
+  const seen = JSON.parse(localStorage.getItem('viewedSlugs') || '[]')
+  if (!seen.includes(slug)) {
+    seen.push(slug)
+    localStorage.setItem('viewedSlugs', JSON.stringify(seen))
+  }
+}
+
 onMounted(async () => {
-  console.log('[ViewCounter] slug:', props.slug)
   if (props.slug) {
     try {
-      views.value = await incrementAndGetViews(props.slug)
-      console.log('[ViewCounter] views:', views.value)
+      if (!hasCounted(props.slug)) {
+        views.value = await incrementAndGetViews(props.slug)
+        markCounted(props.slug)
+      } else {
+        // 只讀取，不加1
+        views.value = await incrementAndGetViews(props.slug, { onlyRead: true })
+      }
     } catch (e) {
       views.value = '錯誤'
       console.error('[ViewCounter] 讀取失敗:', e)
