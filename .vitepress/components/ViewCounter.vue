@@ -1,6 +1,6 @@
 <template>
   <span class="view-count">
-    | 瀏覽次數：{{ views === null ? "載入中..." : views }}
+  ｜瀏覽次數：{{ views === null ? "載入中..." : views }}
   </span>
 </template>
 
