@@ -9,6 +9,10 @@
 .view-count {
   display: inline-flex;
   align-items: center;
+  color: var(--vp-c-text-2);
+  font-size: 0.85rem;
+  margin-top: 0;
+  margin-bottom: 0.2rem;
 }
 </style>
 
