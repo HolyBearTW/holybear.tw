@@ -122,7 +122,7 @@ jobs:
 
             # 如果成功提取到類別，則將標題加上前綴
             if [ -n "$CATEGORY" ]; then
-               TITLE="<${CATEGORY}> ${TITLE}" # 在方括號前加跳脫字元 \ 確保顯示 [ ]
+               TITLE="【${CATEGORY}】${TITLE}" # 標題前加【 】
             fi
 
             # 產生文章連結的邏輯
@@ -135,7 +135,7 @@ jobs:
 
             # 組裝 Telegram 訊息 (簡潔版，移除儲存庫、路徑、查看變動)
             MESSAGE="📢 **新文章通知！**\n"
-            MESSAGE+="標題：**${TITLE}**\n"
+            MESSAGE+="**${TITLE}**\n"
             MESSAGE+="作者：${{ github.event.head_commit.author.name }}\n" # 顯示 Git 提交時的作者名稱 (通常是暱稱)
             MESSAGE+="[>>點此閱讀文章](${ARTICLE_URL})\n" 
             MESSAGE+="提交訊息：\`${{ github.event.head_commit.message }}\`" # 放在最後，不再強制換行
