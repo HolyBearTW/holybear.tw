@@ -5,6 +5,13 @@
   </span>
 </template>
 
+<style scoped>
+.view-count {
+  display: inline-flex;
+  align-items: center;
+}
+</style>
+
 <script setup>
 import { ref, onMounted } from 'vue'
 import { incrementAndGetViews } from './view-count'
