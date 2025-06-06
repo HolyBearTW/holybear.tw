@@ -136,8 +136,8 @@ jobs:
             # 組裝 Telegram 訊息 (簡潔版，移除儲存庫、路徑、查看變動)
             MESSAGE="📢 **新文章通知！**\n"
             MESSAGE+="標題：**${TITLE}**\n"
-            MESSAGE+="作者：${{ github.actor }}\n" # 使用 GitHub 提交者名稱
-            MESSAGE+="[點此閱讀文章](${ARTICLE_URL})\n" 
+            MESSAGE+="作者：${{ github.event.head_commit.author.name }}\n" # 顯示 Git 提交時的作者名稱 (通常是暱稱)
+            MESSAGE+="[>>點此閱讀文章](${ARTICLE_URL})\n" 
             MESSAGE+="提交訊息：\`${{ github.event.head_commit.message }}\`" # 放在最後，不再強制換行
 
             # 發送 Telegram 訊息
