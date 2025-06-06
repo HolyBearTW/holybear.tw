@@ -1,5 +1,5 @@
 import { doc, getDoc, setDoc, updateDoc, increment } from "firebase/firestore";
-import { db } from "./firebase";
+import { db } from "../components/firebase";
 
 export async function incrementAndGetViews(slug) {
   const ref = doc(db, "views", slug);
