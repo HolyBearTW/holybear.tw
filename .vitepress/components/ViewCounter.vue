@@ -1,10 +1,10 @@
 <template>
-  <div class="view-count-container">
+  <span class="view-count-container">
     <span class="view-count">
       <img src="/icon_fire-outline.svg" alt="人氣" class="fire-icon">
       {{ views === null ? "載入中..." : views }}
     </span>
-  </div>
+  </span>
 </template>
 
 <style scoped>
