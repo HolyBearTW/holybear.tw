@@ -100,7 +100,7 @@ const pageNumbers = computed(() => {
 }
 .post-item {
   border-bottom: 1px dashed var(--vp-c-divider);
-  padding: 1.2rem 0;      /* 上下間隔一致 */
+  padding: 0.7rem 0;      /* 上下間隔一致 */
   margin: 0;
 }
 .blog-articles-grid > .post-item:last-child {
@@ -261,6 +261,9 @@ const pageNumbers = computed(() => {
     height: 83px;
     margin-right: 0.7rem;
     margin-bottom: 0;
+  }
+  .post-item {
+    padding: 0.4rem 0;    /* 手機版上下間隔再更小 */
   }
   .post-info {
     /* 不要 height: 100% */
