@@ -114,7 +114,7 @@ const pageNumbers = computed(() => {
 .post-item-link {
   display: flex;
   align-items: center;       /* 讓左右內容上下置中 */
-  min-height: 122px;         /* 跟圖片容器一樣高 */
+  min-height: 130px;         /* 跟圖片容器一樣高 */
   height: auto;
   padding: 0;
   text-decoration: none;
@@ -248,7 +248,7 @@ const pageNumbers = computed(() => {
 
 @media (max-width: 767px) {
   .post-item-link {
-    min-height: 83px;
+    min-height: 90px;
     height: auto;
     flex-direction: row;
     align-items: center;
