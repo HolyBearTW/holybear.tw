@@ -9,9 +9,10 @@
 
 <style scoped>
 .view-count-container {
-  text-align: right;
+  text-align: right; /* 讓人氣區塊靠右 */
+  width: 100%;       /* 或你想要的寬度 */
+  overflow: visible; /* 確保不會被裁切 */
 }
-
 .view-count {
   display: inline-flex;
   align-items: center;
@@ -21,7 +22,6 @@
   line-height: 1;
   white-space: nowrap;
 }
-
 .fire-icon {
   width: 1em;
   height: 1em;
