@@ -100,7 +100,7 @@ const pageNumbers = computed(() => {
 }
 .post-item {
   border-bottom: 1px dashed var(--vp-c-divider);
-  padding-bottom: 0.6rem;   /* 虛線與標題間距縮小 */
+  padding-bottom: 0.6rem;
   margin-bottom: 0.2rem;
   transition: transform 0.2s ease-in-out, background-color 0.2s ease-in-out;
 }
@@ -113,12 +113,11 @@ const pageNumbers = computed(() => {
 }
 .post-item-link {
   display: flex;
-  align-items: center;  /* 垂直置中 */
+  align-items: stretch;    /* 左右區塊同高 */
+  height: 122px;           /* 固定為圖片容器同高 */
   padding: 0;
   text-decoration: none;
   color: inherit;
-  height: 100%;
-  min-height: 122px;
 }
 .post-thumbnail-wrapper {
   flex-shrink: 0;
@@ -128,22 +127,23 @@ const pageNumbers = computed(() => {
   border-radius: 4px;
   overflow: hidden;
   display: flex;
-  align-items: center;   /* 垂直置中 */
-  justify-content: center; /* 水平置中 */
+  align-items: center;
+  justify-content: center;
 }
 .post-thumbnail {
   width: 100%;
   height: 100%;
-  object-fit: contain;   /* 防止裁切、整張顯示 */
+  object-fit: contain;
   display: block;
   margin: auto;
-  background: none;      /* 可移除多餘背景 */
+  background: none;
 }
 .post-info {
   flex-grow: 1;
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
+  justify-content: center;  /* 內容上下置中 */
+  height: 100%;             /* 必須同 post-item-link 高度 */
 }
 .post-title-row {
   display: flex;
@@ -154,8 +154,8 @@ const pageNumbers = computed(() => {
 }
 .category {
   display: inline-block;
-  background: #00FFEE;  /* 主色系背景 */
-  color: #000;          /* 黑色字 */
+  background: #00FFEE;
+  color: #000;
   border-radius: 3px;
   padding: 0 0.5em;
   font-size: 0.85em;
@@ -164,14 +164,14 @@ const pageNumbers = computed(() => {
   margin-bottom: 0.2rem !important;
   line-height: 1.6;
   font-weight: 500;
-  white-space: nowrap;         /* 單行顯示，不自動換行 */
-  overflow: visible;           /* 超出內容不被截斷 */
-  text-overflow: unset;        /* 不顯示 ... */
-  height: auto;                /* 不要設定固定高度，讓內容自動撐開 */
-  max-width: none;             /* 讓分類標籤寬度自適應 */
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: unset;
+  height: auto;
+  max-width: none;
 }
 .post-title, .post-info .post-title {
-  border-top: none !important;  /* 移除標題上方線條 */
+  border-top: none !important;
   padding-top: 0;
   margin-top: 0 !important;
   margin-bottom: 0.2rem !important;
@@ -249,9 +249,9 @@ const pageNumbers = computed(() => {
 
 @media (max-width: 767px) {
   .post-item-link {
-    min-height: 83px;
+    height: 83px;              /* 手機版固定高度 */
     flex-direction: row;
-    align-items: center; /* 保持上下置中 */
+    align-items: stretch;      /* 左右同高 */
     text-align: left;
   }
   .post-thumbnail-wrapper {
@@ -259,6 +259,9 @@ const pageNumbers = computed(() => {
     height: 83px;
     margin-right: 0.7rem;
     margin-bottom: 0;
+  }
+  .post-info {
+    height: 100%;
   }
   .post-title, .post-info .post-title {
     font-size: 1.05rem;
