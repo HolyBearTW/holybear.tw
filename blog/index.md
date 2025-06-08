@@ -110,7 +110,7 @@ const pageNumbers = computed(() => {
 .post-item-link {
   display: flex;
   align-items: center;
-  min-height: 130px;         /* 調高區塊 */
+  min-height: 122px;
   height: auto;
   padding: 0.3rem 1rem;      /* 讓 hover 灰色區塊有間距 */
   margin-bottom: 0.15rem;    /* 讓 hover 灰色不會貼住下方虛線 */
@@ -251,7 +251,7 @@ const pageNumbers = computed(() => {
 
 @media (max-width: 767px) {
   .post-item-link {
-    min-height: 90px;
+    min-height: 83px;
     height: auto;
     flex-direction: row;
     align-items: center;
