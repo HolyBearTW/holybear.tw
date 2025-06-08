@@ -122,19 +122,22 @@ const pageNumbers = computed(() => {
 }
 .post-thumbnail-wrapper {
   flex-shrink: 0;
-  width: 110px;
-  height: 82px;
+  width: 216px;
+  height: 122px;
   margin-right: 1rem;
   border-radius: 4px;
   overflow: hidden;
   display: flex;
-  align-items: flex-start; /* 保證和內容頂部齊 */
-  justify-content: center;
+  align-items: center;   /* 垂直置中 */
+  justify-content: center; /* 水平置中 */
 }
 .post-thumbnail {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: contain;   /* 防止裁切、整張顯示 */
+  display: block;
+  margin: auto;
+  background: none;      /* 可移除多餘背景 */
 }
 .post-info {
   flex-grow: 1;
