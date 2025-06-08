@@ -1,28 +1,31 @@
 <template>
-  <span class="view-count">
-    <img src="/icon_fire-outline.svg" alt="人氣" class="fire-icon">
-    {{ views === null ? "載入中..." : views }}
-  </span>
+  <div class="view-count-container">
+    <span class="view-count">
+      <img src="/icon_fire-outline.svg" alt="人氣" class="fire-icon">
+      {{ views === null ? "載入中..." : views }}
+    </span>
+  </div>
 </template>
 
 <style scoped>
+.view-count-container {
+  text-align: right;
+}
+
 .view-count {
   display: inline-flex;
   align-items: center;
-  justify-content: flex-end;    /* 靠右排列 */
+  gap: 0.3em;
   color: var(--vp-c-text-2);
   font-size: 0.85rem;
-  margin-top: 0;
-  margin-bottom: 0.2rem;
-  gap: 0.3em;                   /* icon與數字間距 */
-  line-height: 1;               /* 行高固定 */
-  white-space: nowrap;          /* 防止換行 */
-  min-width: max-content;       /* 必須設寬，justify-content 才有效 */
+  line-height: 1;
+  white-space: nowrap;
 }
+
 .fire-icon {
-  width: 1em;                   /* 隨字級縮放 */
+  width: 1em;
   height: 1em;
-  display: block;               /* baseline 對齊更好 */
+  display: block;
 }
 </style>
 
