@@ -100,9 +100,8 @@ const pageNumbers = computed(() => {
 }
 .post-item {
   border-bottom: 1px dashed var(--vp-c-divider);
-  padding-bottom: 0.6rem;
-  margin-bottom: 0.2rem;
-  /* 不要加 hover 背景色在這裡！ */
+  padding: 1.2rem 0;      /* 上下間隔一致 */
+  margin: 0;
 }
 .blog-articles-grid > .post-item:last-child {
   border-bottom: none;
@@ -110,13 +109,12 @@ const pageNumbers = computed(() => {
 .post-item-link {
   display: flex;
   align-items: center;
-  min-height: 122px;
+  min-height: 130px;
   height: auto;
-  padding: 0.3rem 1rem;      /* 讓 hover 灰色區塊有間距 */
-  margin-bottom: 0.15rem;    /* 讓 hover 灰色不會貼住下方虛線 */
+  padding: 0 1rem;        /* 僅左右內距 */
+  border-radius: 8px;
   text-decoration: none;
   color: inherit;
-  border-radius: 8px;        /* 灰底圓角更好看 */
   transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
 }
 .post-item-link:hover {
