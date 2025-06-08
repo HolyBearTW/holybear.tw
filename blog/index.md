@@ -113,32 +113,35 @@ const pageNumbers = computed(() => {
 }
 .post-item-link {
   display: flex;
-  align-items: center;      /* 關鍵：上下置中 */
-  min-height: 122px;        /* 跟圖片高度一樣 */
+  align-items: center;       /* 讓左右內容上下置中 */
+  min-height: 122px;         /* 跟圖片容器一樣高 */
   height: auto;
+  padding: 0;
+  text-decoration: none;
+  color: inherit;
 }
 .post-thumbnail-wrapper {
   flex-shrink: 0;
-  width: 216px;
-  height: 122px;
+  width: 216px;              /* 固定寬 */
+  height: 122px;             /* 固定高 */
   margin-right: 1rem;
   border-radius: 4px;
   overflow: hidden;
   display: flex;
-  align-items: center;      /* 圖片在這區塊上下置中 */
+  align-items: center;       /* 圖片在這區塊內上下置中 */
   justify-content: center;
 }
 .post-thumbnail {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: contain;       /* 圖片完整顯示不會爆大 */
   display: block;
 }
 .post-info {
   flex: 1 1 0;
   display: flex;
   flex-direction: column;
-  justify-content: center;  /* 右側內容上下置中 */
+  justify-content: center;   /* 文字內容上下置中 */
   /* 不要 height: 100% */
 }
 .post-title-row {
