@@ -113,8 +113,9 @@ const pageNumbers = computed(() => {
 }
 .post-item-link {
   display: flex;
-  align-items: stretch;    /* 左右區塊同高 */
-  height: 122px;           /* 固定為圖片容器同高 */
+  align-items: center;
+  min-height: 122px;
+  height: auto;
   padding: 0;
   text-decoration: none;
   color: inherit;
@@ -143,7 +144,6 @@ const pageNumbers = computed(() => {
   display: flex;
   flex-direction: column;
   justify-content: center;  /* 內容上下置中 */
-  height: 100%;             /* 必須同 post-item-link 高度 */
 }
 .post-title-row {
   display: flex;
@@ -249,9 +249,10 @@ const pageNumbers = computed(() => {
 
 @media (max-width: 767px) {
   .post-item-link {
-    height: 83px;              /* 手機版固定高度 */
+    min-height: 83px;
+    height: auto;
     flex-direction: row;
-    align-items: stretch;      /* 左右同高 */
+    align-items: center;
     text-align: left;
   }
   .post-thumbnail-wrapper {
@@ -261,7 +262,6 @@ const pageNumbers = computed(() => {
     margin-bottom: 0;
   }
   .post-info {
-    height: 100%;
   }
   .post-title, .post-info .post-title {
     font-size: 1.05rem;
