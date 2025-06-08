@@ -33,8 +33,10 @@ layout_type: custom_header
 
 ## 協作者
 
-- [tims33](https://t.me/tims33) (玄哥)
-- [tavricccc](https://t.me/tavricccc) (酪梨)
+- 玄哥 [[Telegram]](https://t.me/tims33)
+- 酪梨 [[GitHub]](https://github.com/ying0930) [[Telegram]](https://t.me/tavricccc)
+- Jack [[GitHub]](https://github.com/Jackboy001) [[Telegram]](https://t.me/Jackboy001)
+- LeoHsiehTW [[GitHub]](https://github.com/leohsiehtw) [[Telegram]](https://t.me/LeoHsiehTW)
 
 ::: danger 注意事項
 此處僅會列出所有作品清單，所有模組都可以在 Telegram 頻道上找到。
