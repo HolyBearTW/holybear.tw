@@ -111,19 +111,22 @@ const pageNumbers = computed(() => {
   transform: translateY(-3px);
   background-color: var(--vp-c-bg-soft);
 }
+
+/* 重點做法：讓左右區塊同高，內容都能上下置中 */
 .post-item-link {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   min-height: 122px;
   height: auto;
   padding: 0;
   text-decoration: none;
   color: inherit;
 }
+
 .post-thumbnail-wrapper {
   flex-shrink: 0;
   width: 216px;
-  height: 122px;
+  height: 100%;
   margin-right: 1rem;
   border-radius: 4px;
   overflow: hidden;
@@ -143,7 +146,8 @@ const pageNumbers = computed(() => {
   flex-grow: 1;
   display: flex;
   flex-direction: column;
-  justify-content: center;  /* 內容上下置中 */
+  justify-content: center;
+  height: 100%;
 }
 .post-title-row {
   display: flex;
@@ -252,16 +256,17 @@ const pageNumbers = computed(() => {
     min-height: 83px;
     height: auto;
     flex-direction: row;
-    align-items: center;
+    align-items: stretch;
     text-align: left;
   }
   .post-thumbnail-wrapper {
     width: 148px;
-    height: 83px;
+    height: 100%;
     margin-right: 0.7rem;
     margin-bottom: 0;
   }
   .post-info {
+    height: 100%;
   }
   .post-title, .post-info .post-title {
     font-size: 1.05rem;
