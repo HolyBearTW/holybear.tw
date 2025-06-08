@@ -113,12 +113,12 @@ const pageNumbers = computed(() => {
 }
 .post-item-link {
   display: flex;
-  align-items: flex-start;
+  align-items: center;  /* 垂直置中 */
   padding: 0;
   text-decoration: none;
   color: inherit;
   height: 100%;
-  min-height: 82px;
+  min-height: 122px;
 }
 .post-thumbnail-wrapper {
   flex-shrink: 0;
