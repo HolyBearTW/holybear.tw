@@ -254,8 +254,8 @@ const pageNumbers = computed(() => {
     text-align: left;
   }
   .post-thumbnail-wrapper {
-    width: 80px;
-    height: 60px;
+    width: 148px;
+    height: 83px;
     margin-right: 0.7rem;
     margin-bottom: 0;
   }
