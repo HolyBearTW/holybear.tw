@@ -20,15 +20,12 @@ hero:
     - theme: alt
       text: Telegram
       link: https://t.me/HolyBearTW
-    - theme: alt
-      text: GitHub
-      link: https://github.com/HolyBearTW
 
 features:
-  - title: All-in-one
-    details: This website contains many excellent modules
-  - title: Open source
-    details: All code is open source on GitHub
-  - title: Free
-    details: You can use it for personal use without paying anything
+  - title: Blog
+    details: This section chronicles my journey of learning and creation. From coding challenges and problem-solving notes to observations on daily life, these entries document my authentic growth. I hope sharing my experiences offers you some inspiration or resonates with you.
+  - title: Portfolio
+    details: My portfolio showcases various modules I've developed. Each module is meticulously designed to address specific problems or provide practical functions. While only listed here, you can find full demonstrations and details of my work on Telegram.
+  - title: Connect
+    details: If you're interested in my work or wish to discuss further, feel free to contact me via Telegram. I also regularly share the latest development progress and ideas in the group, looking forward to growing with you on this tech journey.
 ---
