@@ -1,17 +1,11 @@
 <template>
-  <span class="view-count-container">
-    <span class="view-count">
-      <img src="/icon_fire-outline.svg" alt="人氣" class="fire-icon">
-      {{ views === null ? "載入中..." : views }}
-    </span>
+  <span class="view-count">
+    <img src="/icon_fire-outline.svg" alt="人氣" class="fire-icon">
+    {{ views === null ? "載入中..." : views }}
   </span>
 </template>
 
 <style scoped>
-.view-count-container {
-  text-align: right;
-  width: 100%;
-}
 .view-count {
   display: inline-flex;
   align-items: center;
