@@ -32,8 +32,10 @@ Items marked with a ★ indicate collaboration with other contributors. Please r
 
 ## Contributors
 
-- [tims33](https://t.me/tims33) (Xuan)
-- [tavricccc](https://t.me/tavricccc) (Avocado)
+- Xuan [[Telegram]](https://t.me/tims33)
+- Avocado [[GitHub]](https://github.com/ying0930) [[Telegram]](https://t.me/tavricccc)
+- Jack [[GitHub]](https://github.com/Jackboy001) [[Telegram]](https://t.me/Jackboy001)
+- LeoHsiehTW [[GitHub]](https://github.com/leohsiehtw) [[Telegram]](https://t.me/LeoHsiehTW)
 
 ::: danger tip
 This section only lists all available works.
