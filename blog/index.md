@@ -102,47 +102,50 @@ const pageNumbers = computed(() => {
   border-bottom: 1px dashed var(--vp-c-divider);
   padding-bottom: 0.6rem;
   margin-bottom: 0.2rem;
-  transition: transform 0.2s ease-in-out, background-color 0.2s ease-in-out;
+  /* 不要加 hover 背景色在這裡！ */
 }
 .blog-articles-grid > .post-item:last-child {
   border-bottom: none;
 }
-.post-item:hover {
-  transform: translateY(-3px);
-  background-color: var(--vp-c-bg-soft);
-}
 .post-item-link {
   display: flex;
-  align-items: center;       /* 讓左右內容上下置中 */
-  min-height: 130px;         /* 跟圖片容器一樣高 */
+  align-items: center;
+  min-height: 130px;         /* 調高區塊 */
   height: auto;
-  padding: 0;
+  padding: 0.3rem 1rem;      /* 讓 hover 灰色區塊有間距 */
+  margin-bottom: 0.15rem;    /* 讓 hover 灰色不會貼住下方虛線 */
   text-decoration: none;
   color: inherit;
+  border-radius: 8px;        /* 灰底圓角更好看 */
+  transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+.post-item-link:hover {
+  background-color: var(--vp-c-bg-soft);
+  box-shadow: 0 2px 8px 0 #0001;
+  transform: translateY(-3px);
 }
 .post-thumbnail-wrapper {
   flex-shrink: 0;
-  width: 216px;              /* 固定寬 */
-  height: 122px;             /* 固定高 */
+  width: 216px;
+  height: 122px;
   margin-right: 1rem;
   border-radius: 4px;
   overflow: hidden;
   display: flex;
-  align-items: center;       /* 圖片在這區塊內上下置中 */
+  align-items: center;
   justify-content: center;
 }
 .post-thumbnail {
   width: 100%;
   height: 100%;
-  object-fit: contain;       /* 圖片完整顯示不會爆大 */
+  object-fit: contain;
   display: block;
 }
 .post-info {
   flex: 1 1 0;
   display: flex;
   flex-direction: column;
-  justify-content: center;   /* 文字內容上下置中 */
-  /* 不要 height: 100% */
+  justify-content: center;
 }
 .post-title-row {
   display: flex;
@@ -253,6 +256,7 @@ const pageNumbers = computed(() => {
     flex-direction: row;
     align-items: center;
     text-align: left;
+    padding: 0.2rem 0.5rem;
   }
   .post-thumbnail-wrapper {
     width: 148px;
