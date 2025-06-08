@@ -250,7 +250,7 @@ const pageNumbers = computed(() => {
 @media (max-width: 767px) {
   .post-item-link {
     flex-direction: row;
-    align-items: flex-start;
+    align-items: center; /* 保持上下置中 */
     text-align: left;
   }
   .post-thumbnail-wrapper {
