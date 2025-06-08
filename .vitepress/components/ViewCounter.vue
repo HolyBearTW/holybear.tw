@@ -1,11 +1,18 @@
 <template>
-  <span class="view-count">　
-    <img src="/icon_fire-outline.svg" alt="人氣" class="fire-icon">
-    {{ views === null ? "載入中..." : views }}
-  </span>
+  <div class="view-count-wrapper"> <span class="view-count">
+      <img src="/icon_fire-outline.svg" alt="人氣" class="fire-icon">
+      {{ views === null ? "載入中..." : views }}
+    </span>
+  </div>
 </template>
 
 <style scoped>
+.view-count-wrapper {
+  display: flex; /* 讓這個父元素變成 Flex 容器 */
+  justify-content: flex-end; /* 將內容推到最右邊 */
+  width: 100%; /* 確保父元素佔滿可用寬度 */
+}
+
 .view-count {
   display: inline-flex;
   align-items: center;
