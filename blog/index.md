@@ -109,7 +109,7 @@ const pageNumbers = computed(() => {
 .post-item-link {
   display: flex;
   align-items: center;
-  min-height: 130px;
+  min-height: 122px;
   height: auto;
   padding: 0 1rem;        /* 僅左右內距 */
   border-radius: 8px;
