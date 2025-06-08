@@ -249,6 +249,7 @@ const pageNumbers = computed(() => {
 
 @media (max-width: 767px) {
   .post-item-link {
+    min-height: 83px;
     flex-direction: row;
     align-items: center; /* 保持上下置中 */
     text-align: left;
