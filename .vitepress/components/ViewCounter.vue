@@ -17,7 +17,7 @@
   gap: 0.3em;                   /* icon與數字間距 */
   line-height: 1;               /* 行高固定 */
   white-space: nowrap;          /* 防止換行 */
-  width: 100%;                  /* 必須設寬，justify-content 才有效 */
+  min-width: max-content;       /* 必須設寬，justify-content 才有效 */
 }
 .fire-icon {
   width: 1em;                   /* 隨字級縮放 */
