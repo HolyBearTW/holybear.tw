@@ -38,31 +38,38 @@ jobs:
           CURRENT_SHA="${{ github.sha }}"
           LAST_COMMIT_SHA=$(git rev-parse "${CURRENT_SHA}~1" 2>/dev/null || echo "")
 
-          DETECTED_FILES=""
+          # 將輸出寫入臨時文件
+          temp_file="temp_detected_files.txt"
+          > "$temp_file" # 清空或建立文件
+
           if [ -z "$LAST_COMMIT_SHA" ]; then
             # 對於儲存庫的第一次 push，所有符合條件的文件都視為「新增」
             # 確保 find 指令能處理路徑中的空白字元
-            find "$TARGET_DIR" -type f -print0 | xargs -0 -r -n 1 echo >> temp_new_files.txt
-            DETECTED_FILES=$(cat temp_new_files.txt)
+            find "$TARGET_DIR" -type f -print0 | xargs -0 -r -n 1 echo >> "$temp_file"
           else
             # 比較本次 push 和上一個 commit 之間的差異，只篩選新增的檔案
             # 使用 -z 和 xargs -0 來安全處理檔名中的空白
-            git diff --name-only --diff-filter=A "${LAST_COMMIT_SHA}" "${CURRENT_SHA}" -- "$TARGET_DIR" -z | xargs -0 -r -n 1 echo >> temp_new_files.txt
-            DETECTED_FILES=$(cat temp_new_files.txt)
+            git diff --name-only --diff-filter=A "${LAST_COMMIT_SHA}" "${CURRENT_SHA}" -- "$TARGET_DIR" -z | xargs -0 -r -n 1 echo >> "$temp_file"
           fi
 
           NEW_POST_FILES=""
-          # 為了安全處理檔名中的空白字元，設定 IFS 為換行符號
-          IFS=$'\n'
-          for file in $DETECTED_FILES; do
-            # 再次確認檔案是在目標目錄下 (避免意外偵測到其他路徑的同名檔案)
-            if [[ "$file" == "$TARGET_DIR"* ]]; then
-              NEW_POST_FILES="$NEW_POST_FILES
-$file" # 這裡使用換行符號分隔
-            fi
-          done
+          # 檢查是否有任何檔案被偵測到，並過濾確保在目標目錄下
+          if [ -s "$temp_file" ]; then # -s 檢查檔案是否存在且不為空
+            # 使用 while read 迴圈安全地讀取檔案中的每一行 (檔名)
+            # 這能正確處理包含空白的檔名
+            while IFS= read -r file; do
+              if [[ "$file" == "$TARGET_DIR"* ]]; then
+                # 如果 NEW_POST_FILES 不為空，則先加換行符號
+                [ -n "$NEW_POST_FILES" ] && NEW_POST_FILES+=$'\n'
+                NEW_POST_FILES+="$file"
+              fi
+            done < "$temp_file"
+          fi
 
-          echo "Detected NEW files in ${TARGET_DIR} directory: ${NEW_POST_FILES}"
+          echo "Detected NEW files in ${TARGET_DIR} directory:"
+          echo "${NEW_POST_FILES}" # 這裡直接輸出 NEW_POST_FILES 的內容，會保留換行
+
+          # 將結果輸出給下一個步驟
           echo "NEW_POST_FILES=${NEW_POST_FILES}" >> "$GITHUB_OUTPUT"
 
       # --- 【這裡放您的部落格建置指令】 ---
