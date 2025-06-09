@@ -13,6 +13,9 @@ jobs:
   # --- 新增一個 Job: 負責建置和部署 GitHub Pages ---
   build_and_deploy_pages:
     runs-on: ubuntu-latest
+    # 【新增】設定 environment
+    environment:
+      name: github-pages
     permissions:
       contents: read
       pages: write # 部署 Pages 需要寫入權限
@@ -102,7 +105,7 @@ jobs:
           TELEGRAM_CHAT_ID="${{ secrets.TELEGRAM_CHAT_ID }}"
 
           # 從上一個 Job 獲取偵測到的新文章檔案列表
-          NEW_POST_FILES="${{ needs.build_and_deploy_pages.outputs.new_post_files }}"
+          NEW_POST_FILES="${{ needs.build_and_deploy_pages.outputs.NEW_POST_FILES }}"
           
           # 【重要設定】您的網站基礎網址
           BASE_URL="https://holybear.me"
@@ -161,7 +164,7 @@ jobs:
 
             # 發送 Telegram 訊息
             # 【重要】這裡需要重新調整 URL 編碼方式以支援 MarkdownV2，確保 Telegram 正常解析
-            ENCODED_MESSAGE=$(echo -e "${MESSAGE}" | sed -E 's/([_*\[\]()~`>#+-=|{}!.\\])/\\\1/g' | sed 's/ /%20/g' | sed 's/\n/%0A/g' | sed 's/\*/%2A/g' | sed 's/\[/%5B/g' | sed 's/\]/%5D/g' | sed 's/(/%28/g' | sed 's/)/%29/g' | sed 's/`/%60/g' | sed 's/{/%7B/g' | sed 's/}/%7D/g' | sed 's/~/%7E/g' | sed 's/\./%2E/g')
+            ENCODED_MESSAGE=$(echo -e "${MESSAGE}" | sed -E 's/([_*\[\]()~`>#+\-=\|{}!.\\])/\\\1/g' | sed 's/ /%20/g' | sed 's/\n/%0A/g' | sed 's/\*/%2A/g' | sed 's/\[/%5B/g' | sed 's/\]/%5D/g' | sed 's/(/%28/g' | sed 's/)/%29/g' | sed 's/`/%60/g' | sed 's/{/%7B/g' | sed 's/}/%7D/g' | sed 's/~/%7E/g' | sed 's/\./%2E/g')
 
             curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
               -d "chat_id=${TELEGRAM_CHAT_ID}" \
