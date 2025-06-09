@@ -8,7 +8,6 @@ function getCurrentBranch() {
   try {
     return execSync('git rev-parse --abbrev-ref HEAD').toString().trim()
   } catch (e) {
-    // 無法取得 branch 則回傳空字串
     return ''
   }
 }
@@ -20,13 +19,35 @@ export default defineConfig({
   locales: locales.locales,
   srcExclude: ['README.md'],
   head: [
+    // 主題顏色與圖示
     ['meta', { name: 'theme-color', content: '#00FFEE' }],
     ['link', { rel: 'icon', href: '/favicon.ico' }],
     ['link', { rel: 'apple-touch-icon', href: '/favicon.ico' }],
-    ['link', { rel: 'stylesheet', href: 'https://font.sec.miui.com/font/css?family=MiSans:200,300,400,450,500,600,650,700:Chinese_Simplify,Latin&display=swap' }],
-    ['link', { rel: 'stylesheet', href: 'https://font.sec.miui.com/font/css?family=MiSans:200,300,400,450,500,600,650,700:Chinese_Traditional,Latin&display=swap' }],
-    ['script', { async: true, defer: true, crossorigin: 'anonymous', src: 'https://connect.facebook.net/zh_TW/sdk.js#xfbml=1&version=v22.0', nonce: 'z9c34u1R' }],
-    ['meta', { property: 'fb:app_id', content: '705847265169451' }]
+
+    // 字體
+    ['link', {
+      rel: 'stylesheet',
+      href: 'https://font.sec.miui.com/font/css?family=MiSans:200,300,400,450,500,600,650,700:Chinese_Simplify,Latin&display=swap'
+    }],
+    ['link', {
+      rel: 'stylesheet',
+      href: 'https://font.sec.miui.com/font/css?family=MiSans:200,300,400,450,500,600,650,700:Chinese_Traditional,Latin&display=swap'
+    }],
+
+    // SEO meta 標籤
+    ['meta', { name: 'description', content: '聖小熊的個人網站，收錄 HyperOS 模組、技術筆記與開發心得，專注於 Android 客製化與開源創作分享。' }],
+    ['meta', { name: 'keywords', content: '聖小熊, HolyBear, HyperOS, 模組, Mod, MIUI, Android, GitHub, 技術部落格, Blog' }],
+    ['meta', { name: 'author', content: '聖小熊' }],
+
+    // Open Graph for Facebook / LINE
+    ['meta', { property: 'og:title', content: '聖小熊的秘密基地' }],
+    ['meta', { property: 'og:description', content: '聖小熊的 HyperOS 模組與技術筆記分享網站。' }],
+    ['meta', { property: 'og:type', content: 'website' }],
+    ['meta', { property: 'og:url', content: 'https://holybear.me' }],
+    ['meta', { property: 'og:image', content: 'https://holybear.me/logo.png' }],
+
+    // Twitter card
+    ['meta', { name: 'twitter:card', content: 'summary_large_image' }]
   ],
   vite: {
     plugins: [gitMetaPlugin()]
@@ -42,15 +63,13 @@ export default defineConfig({
   },
   extendsPage(page) {
     const branch = getCurrentBranch()
-    // 只允許在 main 或 master branch 處理，且排除 /en/blog/ 路徑
     if (
       (branch === 'main' || branch === 'master') &&
       page.filePath &&
       page.filePath.endsWith('.md') &&
-      !page.filePath.replaceAll('\\','/').includes('/en/blog/')
+      !page.filePath.replaceAll('\\', '/').includes('/en/blog/')
     ) {
       try {
-        // 抓第一次 commit 的作者和時間
         const log = execSync(
           `git log --diff-filter=A --follow --format=%aN,%aI -- "${page.filePath}" | tail -1`
         ).toString().trim()
@@ -58,7 +77,7 @@ export default defineConfig({
         if (!page.frontmatter.author) page.frontmatter.author = author
         if (!page.frontmatter.date) page.frontmatter.date = date
       } catch (e) {
-        // 沒有 git 資訊就略過
+        // 無 git 資訊略過
       }
     }
   }
