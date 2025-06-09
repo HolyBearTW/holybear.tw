@@ -18,7 +18,7 @@ export default defineConfig({
   base: '/',
   locales: locales.locales,
   srcExclude: ['README.md'],
-  // 這裡只放通用的 meta，不放 og:image
+  // 這裡只放通用的 meta，不放 og:title/og:description/og:image
   head: [
     // 主題顏色與圖示
     ['meta', { name: 'theme-color', content: '#00FFEE' }],
@@ -40,9 +40,10 @@ export default defineConfig({
     ['meta', { name: 'keywords', content: '聖小熊, HolyBear, HyperOS, 模組, Mod, MIUI, Android, GitHub, 技術部落格, Blog' }],
     ['meta', { name: 'author', content: '聖小熊' }],
 
-    // Open Graph for Facebook / LINE
-    ['meta', { property: 'og:title', content: '聖小熊的秘密基地' }],
-    ['meta', { property: 'og:description', content: '聖小熊的 HyperOS 模組與技術筆記分享網站。' }],
+    // 不再預設 og:title/og:description/og:image
+    // ['meta', { property: 'og:title', content: '聖小熊的秘密基地' }],
+    // ['meta', { property: 'og:description', content: '聖小熊的 HyperOS 模組與技術筆記分享網站。' }],
+    // ['meta', { property: 'og:image', content: 'https://holybear.me/logo.png' }],
     ['meta', { property: 'og:type', content: 'website' }],
     ['meta', { property: 'og:url', content: 'https://holybear.me' }],
 
@@ -81,20 +82,23 @@ export default defineConfig({
       }
     }
 
-    // 只給首頁和英文首頁設定 og:image
-    let ogImage = undefined
+    // 只給首頁和英文首頁設定 og:title、og:description、og:image
     if (
       page.relativePath === 'index.md' ||           // 首頁
       page.relativePath === 'en/index.md'           // 英文首頁
     ) {
-      ogImage = 'https://holybear.me/logo.png'
-    }
-
-    if (ogImage) {
       if (!page.frontmatter.head) page.frontmatter.head = []
       page.frontmatter.head.push([
         'meta',
-        { property: 'og:image', content: ogImage }
+        { property: 'og:title', content: '聖小熊的秘密基地' }
+      ])
+      page.frontmatter.head.push([
+        'meta',
+        { property: 'og:description', content: '聖小熊的 HyperOS 模組與技術筆記分享網站。' }
+      ])
+      page.frontmatter.head.push([
+        'meta',
+        { property: 'og:image', content: 'https://holybear.me/logo.png' }
       ])
     }
   }
