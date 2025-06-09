@@ -23,18 +23,20 @@ jobs:
 
     outputs:
       # 將偵測到的新檔案列表輸出，供後續 notify_new_post job 使用
-      new_post_files: <span class="math-inline">\{\{ steps\.get\-new\-files\.outputs\.NEW\_POST\_FILES \}\}
-steps\:
-\- name\: Checkout repository for build
-uses\: actions/checkout@v4
-with\:
-fetch\-depth\: 0 \# 獲取所有歷史紀錄，以便 git diff 能正確判斷「新增」的檔案
-\- name\: Get new files in target directory \(for decision making\)
-id\: get\-new\-files \# 保留 ID 以便輸出
-run\: \|
-TARGET\_DIR\="blog/"
-CURRENT\_SHA\="</span>{{ github.sha }}"
-          LAST_COMMIT_SHA=<span class="math-inline">\(git rev\-parse "</span>{CURRENT_SHA}~1" 2>/dev/null || echo "")
+      new_post_files: ${{ steps.get-new-files.outputs.NEW_POST_FILES }}
+
+    steps:
+      - name: Checkout repository for build
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # 獲取所有歷史紀錄，以便 git diff 能正確判斷「新增」的檔案
+
+      - name: Get new files in target directory (for decision making)
+        id: get-new-files # 保留 ID 以便輸出
+        run: |
+          TARGET_DIR="blog/"
+          CURRENT_SHA="${{ github.sha }}"
+          LAST_COMMIT_SHA=$(git rev-parse "${CURRENT_SHA}~1" 2>/dev/null || echo "")
 
           # 將原始偵測到的檔案路徑寫入臨時文件
           temp_raw_detected_files="temp_raw_detected_files.txt"
@@ -42,10 +44,10 @@ CURRENT\_SHA\="</span>{{ github.sha }}"
 
           if [ -z "$LAST_COMMIT_SHA" ]; then
             # 對於儲存庫的第一次 push，所有符合條件的文件都視為「新增」
-            find "$TARGET_DIR" -type f -print0 | xargs -0 -r -n 1 echo >> "<span class="math-inline">temp\_raw\_detected\_files"
-else
-\# 比較本次 push 和上一個 commit 之間的差異，只篩選新增的檔案
-git diff \-\-name\-only \-\-diff\-filter\=A "</span>{LAST_COMMIT_SHA}" "${CURRENT_SHA}" -- "$TARGET_DIR" -z | xargs -0 -r -n 1 echo >> "$temp_raw_detected_files"
+            find "$TARGET_DIR" -type f -print0 | xargs -0 -r -n 1 echo >> "$temp_raw_detected_files"
+          else
+            # 比較本次 push 和上一個 commit 之間的差異，只篩選新增的檔案
+            git diff --name-only --diff-filter=A "${LAST_COMMIT_SHA}" "${CURRENT_SHA}" -- "$TARGET_DIR" -z | xargs -0 -r -n 1 echo >> "$temp_raw_detected_files"
           fi
 
           NEW_POST_FILES_FINAL="" # 最終要輸出的乾淨檔案列表
@@ -56,7 +58,7 @@ git diff \-\-name\-only \-\-diff\-filter\=A "</span>{LAST_COMMIT_SHA}" "${CURREN
               # 【加強防呆】確保檔案存在且是普通文件，並且在目標目錄下
               if [ -f "$file" ] && [[ "$file" == "$TARGET_DIR"* ]]; then
                 # 如果 NEW_POST_FILES_FINAL 不為空，則先加換行符號
-                [ -n "<span class="math-inline">NEW\_POST\_FILES\_FINAL" \] && NEW\_POST\_FILES\_FINAL\+\=</span>'\n'
+                [ -n "$NEW_POST_FILES_FINAL" ] && NEW_POST_FILES_FINAL+=$'\n'
                 NEW_POST_FILES_FINAL+="$file"
               else
                 echo "Warning: Skipped non-existent or invalid file detected: ${file}"
@@ -64,8 +66,8 @@ git diff \-\-name\-only \-\-diff\-filter\=A "</span>{LAST_COMMIT_SHA}" "${CURREN
             done < "$temp_raw_detected_files"
           fi
 
-          echo "Detected NEW files in <span class="math-inline">\{TARGET\_DIR\} directory\:"
-echo "</span>{NEW_POST_FILES_FINAL}" # 這裡直接輸出 NEW_POST_FILES_FINAL 的內容，會保留換行
+          echo "Detected NEW files in ${TARGET_DIR} directory:"
+          echo "${NEW_POST_FILES_FINAL}" # 這裡直接輸出 NEW_POST_FILES_FINAL 的內容，會保留換行
 
           # 將結果輸出給下一個步驟
           echo "NEW_POST_FILES=${NEW_POST_FILES_FINAL}" >> "$GITHUB_OUTPUT"
@@ -98,137 +100,110 @@ echo "</span>{NEW_POST_FILES_FINAL}" # 這裡直接輸出 NEW_POST_FILES_FINAL �
         id: deployment # 給這個步驟一個 ID，方便後續引用
         uses: actions/deploy-pages@v4
         env:
-          GITHUB_TOKEN: <span class="math-inline">\{\{ secrets\.GITHUB\_TOKEN \}\}
-\# \-\-\- 第二個 Job\: 發送 Telegram 通知 \(在 Pages 部署成功後\) \-\-\-
-notify\_new\_post\:
-runs\-on\: ubuntu\-latest
-needs\: build\_and\_deploy\_pages \# <\-\-\- 【關鍵】這個 Job 會在 build\_and\_deploy\_pages 成功後才執行
-\# 只有當 build\_and\_deploy\_pages 成功且有新檔案被偵測到時才執行通知
-if\: success\(\) && needs\.build\_and\_deploy\_pages\.outputs\.new\_post\_files \!\= ''
-steps\:
-\- name\: Checkout repository \# 重新檢出，以便讀取文章內容
-uses\: actions/checkout@v4
-\# 這裡不需要 fetch\-depth\: 0，因為我們只讀取檔案
-\- name\: Process and send Telegram notification \# 步驟 3\: 處理檔案並發送 Telegram 通知
-run\: \|
-TELEGRAM\_BOT\_TOKEN\="</span>{{ secrets.TELEGRAM_BOT_TOKEN }}"
-          TELEGRAM_CHAT_ID="<span class="math-inline">\{\{ secrets\.TELEGRAM\_CHAT\_ID \}\}"
-\# 從上一個 Job 獲取偵測到的新文章檔案列表
-NEW\_POST\_FILES\="</span>{{ needs.build_and_deploy_pages.outputs.new_post_files }}"
-          
-          # 【重要設定】您的網站基礎網址
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # --- 第二個 Job: 發送 Telegram 通知 (在 Pages 部署成功後) ---
+  notify_new_post:
+    runs-on: ubuntu-latest
+    needs: build_and_deploy_pages # <--- 【關鍵】這個 Job 會在 build_and_deploy_pages 成功後才執行
+
+    # 只有當 build_and_deploy_pages 成功且有新檔案被偵測到時才執行通知
+    if: success() && needs.build_and_deploy_pages.outputs.new_post_files != ''
+
+    steps:
+      - name: Checkout repository # 重新檢出，以便讀取文章內容
+        uses: actions/checkout@v4
+        # 這裡不需要 fetch-depth: 0，因為我們只讀取檔案
+
+      - name: Process and send Telegram notification # 步驟 3: 處理檔案並發送 Telegram 通知
+        run: |
+          TELEGRAM_BOT_TOKEN="${{ secrets.TELEGRAM_BOT_TOKEN }}"
+          TELEGRAM_CHAT_ID="${{ secrets.TELEGRAM_CHAT_ID }}"
+          NEW_POST_FILES="${{ needs.build_and_deploy_pages.outputs.new_post_files }}"
           BASE_URL="https://holybear.me"
 
-          # 【加強防呆】檢查 NEW_POST_FILES 是否為空或只包含空白
-          if [[ -z "<span class="math-inline">\{NEW\_POST\_FILES// /\}" \]\]; then \# 移除所有空白後判斷是否為空
-echo "No valid new files detected for notification, skipping\."
-exit 0 \# 提前結束，不發送通知
-fi
-\# 遍歷每個新增的檔案
-\# 注意：為了安全處理檔名中的空白，這裡使用 IFS 和 read \-r
-IFS\=</span>'\n' # 設定內部欄位分隔符為換行符，確保檔名中的空白不會被錯誤地拆分
-          for file_path_raw in <span class="math-inline">\{NEW\_POST\_FILES\}; do
-\# 【關鍵】徹底清理 file\_path\_raw，確保它只是一個乾淨的檔案路徑
-\# 這能處理可能存在的額外空白或隱形字元
-file\_path\="</span>(echo "<span class="math-inline">\{file\_path\_raw\}" \| xargs\)"
-\# 【加強防呆】再次檢查檔案是否存在且是普通文件，避免處理無效路徑
-if \[ \! \-f "</span>{file_path}" ]; then
+          if [[ -z "${NEW_POST_FILES// /}" ]]; then
+            echo "No valid new files detected for notification, skipping."
+            exit 0
+          fi
+
+          IFS=$'\n'
+          for file_path_raw in ${NEW_POST_FILES}; do
+            file_path="$(echo "${file_path_raw}" | xargs)"
+            if [ ! -f "${file_path}" ]; then
               echo "Warning: File not found or not a regular file: ${file_path}, skipping."
-              continue # 跳過當前迴圈，處理下一個檔案
+              continue
             fi
 
-            echo "Processing file: <span class="math-inline">\{file\_path\}"
-\# 讀取檔案內容
-file\_content\="</span>(cat "${file_path}")"
-            
-            # 從 Markdown 檔案內容中提取 title (優先從 Front Matter 提取)
-            # 【修正】awk: 將雙引號的正規表達式從 `\"` 改為 `"`，並使用 gsub 處理單引號
-            TITLE="<span class="math-inline">\(echo "</span>{file_content}" | awk '
-              /^---$/ { count++; if (count == 2) exit; next }
+            echo "Processing file: ${file_path}"
+            file_content="$(cat "${file_path}")"
+
+            # 提取 title (優先從 Front Matter 提取)
+            # 【關鍵優化】awk 裡用 `["'\''\r\n]` 同時清除單雙引號、CR 和 LF
+            TITLE="$(echo "${file_content}" | awk '
+              /^---$/ { count++; next }
               (count == 1 && /^\s*title:/) {
                 gsub(/^\s*title:\s*/, "", $0);
-                gsub(/[\r\n]/, " ", $0);      # 移除換行符 (CR 和 LF)
-                gsub(/"/, "", $0);           # 移除雙引號
-                gsub(/\x27/, "", $0);        # 移除單引號 (十六進位碼)
-                print <span class="math-inline">0;
-exit
-\}
-' \| xargs\)" \# 再次用 xargs 清理前後空白及任何隱形字元
-\# 如果 Front Matter 中沒有 title，則嘗試從 H1 標題提取
-\# 【修正】sed\: 將雙引號和單引號的移除分開處理，並確保正規表達式正確
-if \[\[ \-z "</span>{TITLE}" ]]; then
-              TITLE="<span class="math-inline">\(echo "</span>{file_content}" | grep -iE '^#\s*(.*)' | head -n 1 | sed -E 's/^#\s*(.*)/\1/' | sed -E 's/[\r\n]//g' | sed -E 's/"//g' | sed -E 's/\x27//g' | xargs)" # 移除雙引號和單引號
-            fi
-            # 如果仍然沒有標題，設定為預設值
-            if [[ -z "<span class="math-inline">\{TITLE\}" \]\]; then
-TITLE\="無標題文章"
-fi
-\# 【最新修正】使用 grep 和 sed 來提取 category，更穩定處理多種 YAML 格式
-\# 【修正】sed\: 將雙引號和單引號的移除分開處理，並確保正規表達式正確
-CATEGORY\=""
-CATEGORY\_RAW\="</span>(echo "<span class="math-inline">\{file\_content\}" \| grep \-A 1 \-E '^\\s\*category\:' \| grep \-E '^\\s\*\-\\s\*' \| head \-n 1 \| sed \-E 's/^\\s\*\-\\s\*\(\.\*\)/\\1/' \| sed \-E 's/\[\\r\\n\]//g' \| sed \-E 's/"//g' \| sed \-E 's/\\x27//g' \| xargs\)" \# 移除雙引號和單引號
-\# 只有當 CATEGORY\_RAW 包含有效字元時才賦值給 CATEGORY
-if \[\[ \-n "</span>{CATEGORY_RAW}" ]]; then
-              CATEGORY="<span class="math-inline">\{CATEGORY\_RAW\}"
-\# 再次清理確保沒有任何特殊字元可能被誤解
-\# 這裡用 tr \-cd 來只保留特定字元，並用 xargs 清理多餘空白
-CATEGORY\="</span>(echo "<span class="math-inline">\{CATEGORY\}" \| tr \-cd '\[\:alnum\:\] \_\-'\)" \# 只保留字母數字、空白、底線、破折號
-CATEGORY\="</span>(echo "<span class="math-inline">\{CATEGORY\}" \| xargs\)" \# 清理因替換可能產生的多餘空白
-fi
-if \[\[ \-z "</span>{CATEGORY}" ]]; then # 如果第一個提取方式沒結果，嘗試第二種
-              CATEGORY_RAW="<span class="math-inline">\(echo "</span>{file_content}" | grep -iE '^\s*category:\s*\[.*\]' | head -n 1 | sed -E 's/^\s*category:\s*\[(.*)\].*/\1/' | cut -d',' -f1 | sed -E 's/[\r\n]//g' | sed -E 's/"//g' | sed -E 's/\x27//g' | xargs)"
-              if [[ -n "<span class="math-inline">\{CATEGORY\_RAW\}" \]\]; then
-CATEGORY\="</span>{CATEGORY_RAW}"
-                CATEGORY="<span class="math-inline">\(echo "</span>{CATEGORY}" | tr -cd '[:alnum:] _-')"
-                CATEGORY="<span class="math-inline">\(echo "</span>{CATEGORY}" | xargs)"
-              fi
-            fi
-            if [[ -z "<span class="math-inline">\{CATEGORY\}" \]\]; then \# 如果第二種也沒結果，嘗試第三種
-CATEGORY\_RAW\="</span>(echo "<span class="math-inline">\{file\_content\}" \| grep \-iE '^\\s\*category\:\\s\*\[^\\\[\-\]' \| head \-n 1 \| sed \-E 's/^\\s\*category\:\\s\*\(\.\*\)/\\1/' \| sed \-E 's/\[\\r\\n\]//g' \| sed \-E 's/^"\|"//g' \| sed \-E 's/\\x27//g' \| xargs\)"
-if \[\[ \-n "</span>{CATEGORY_RAW}" ]]; then
-                CATEGORY="<span class="math-inline">\{CATEGORY\}"
-CATEGORY\=</span>(echo "<span class="math-inline">\{CATEGORY\}" \| tr \-cd '\[\:alnum\:\] \_\-'\)
-CATEGORY\=</span>(echo "<span class="math-inline">\{CATEGORY\}" \| xargs\)
-fi
-fi
-\# 這個最終的清理保留，因為它處理的是 CATEGORY 變數可能在最後仍有的前後空白或引號問題
-\# CATEGORY\=</span>(echo "<span class="math-inline">\{CATEGORY\}" \| sed \-E 's/^\[\[\:space\:\]\]\+\|\[\[\:space\:\]\]\+</span>//g') # 移除前後空白
-            # CATEGORY=<span class="math-inline">\(echo "</span>{CATEGORY}" | sed -E 's/[\x27"\/]//g') # 移除單引號、雙引號、斜線 (這裡的 / 已經是字元，不需要跳脫)
+                gsub(/["\x27\r\n]/, "", $0); # 修正後的精確寫法：同時移除雙引號、單引號、CR、LF
+                print $0;
+                exit
+              }
+            ' | xargs)" # 確保最終輸出無前後空白
 
-            if [[ -n "<span class="math-inline">\{CATEGORY\}" \]\]; then
-TITLE\="【</span>{CATEGORY}】<span class="math-inline">\{TITLE\}"
-fi
-\# 產生文章連結的邏輯
-ARTICLE\_SLUG\="</span>(echo "<span class="math-inline">\{file\_path\}" \| sed \-E 's\|^blog/\(\.\*\)\\\.md</span>|\1|')"
-            ARTICLE_URL="<span class="math-inline">\{BASE\_URL\}/blog/</span>{ARTICLE_SLUG}.html" # 假設您的文章是 .html 結尾
-
-            # 組裝 Telegram 訊息
-            # 【修正】確保即使 TITLE 或 commit message 為空，訊息也不會完全為空
-            MESSAGE="**📢 New push to GitHub**\n"
-            if [[ -n "<span class="math-inline">\{TITLE\}" \]\]; then
-MESSAGE\+\="\*\*</span>{TITLE}**\n"
-            else
-                MESSAGE+="**(無標題文章)**\n" # 如果沒有標題，提供一個預設標題
+            # H1 標題 fallback
+            if [[ -z "$TITLE" ]]; then
+              TITLE="$(echo "$file_content" | grep -iE '^#\s*(.*)' | head -n1 | sed -E 's/^#\s*//' | sed -E 's/[\r\n]//g' | sed -E 's/["\x27]//g' | xargs)" # 精確移除引號和換行
             fi
+            [[ -z "$TITLE" ]] && TITLE="無標題文章" # 若仍無標題，設為預設值
 
-            COMMIT_MESSAGE="<span class="math-inline">\{\{ github\.event\.head\_commit\.message \}\}"
-if \[\[ \-n "</span>{COMMIT_MESSAGE}" ]]; then
-                MESSAGE+="```${COMMIT_MESSAGE}```\n"
-            else
-                MESSAGE+="```(無提交訊息)```\n" # 如果沒有提交訊息，提供一個預設值
+            # 提取 category
+            CATEGORY=""
+            CATEGORY_RAW="$(echo "${file_content}" | grep -A 1 -E '^\s*category:' | grep -E '^\s*-\s*' | head -n1 | sed -E 's/^\s*-\s*//' | sed -E 's/[\r\n]//g' | sed -E 's/["\x27]//g' | xargs)" # 精確移除引號和換行
+            
+            [[ -n "$CATEGORY_RAW" ]] && CATEGORY="$CATEGORY_RAW" # 如果提取到 CATEGORY_RAW 則賦值
+
+            if [[ -z "$CATEGORY" ]]; then # 嘗試第二種 category 格式
+              CATEGORY_RAW="$(echo "${file_content}" | grep -iE '^\s*category:\s*\[.*\]' | head -n1 | sed -E 's/^\s*category:\s*\[(.*)\].*/\1/' | cut -d',' -f1 | sed -E 's/[\r\n]//g' | sed -E 's/["\x27]//g' | xargs)"
+              [[ -n "$CATEGORY_RAW" ]] && CATEGORY="$CATEGORY_RAW"
+            fi
+            if [[ -z "$CATEGORY" ]]; then # 嘗試第三種 category 格式
+              CATEGORY_RAW="$(echo "${file_content}" | grep -iE '^\s*category:\s*[^\[-]' | head -n1 | sed -E 's/^\s*category:\s*//' | sed -E 's/[\r\n]//g' | sed -E 's/["\x27]//g' | xargs)"
+              [[ -n "$CATEGORY_RAW" ]] && CATEGORY="$CATEGORY_RAW"
             fi
             
-            MESSAGE+="[>>點此閱讀文章](${ARTICLE_URL})\n"
-            MESSAGE+="by ${{ github.event.head_commit.author.name }}"
+            # 【關鍵優化】tr -cd 中加入中文字元範圍，並強化 xargs 清理
+            CATEGORY="$(echo "$CATEGORY" | tr -cd '[:alnum:] _-一-龥')" # 只保留字母數字、空白、底線、破折號和中文字符
+            CATEGORY="$(echo "$CATEGORY" | xargs)" # 最終清理因替換可能產生的多餘空白
 
-            # 發送 Telegram 訊息
-            # 【修正】確保 ENCODED_MESSAGE 中的斜線 `/` 和百分比符號 `%` 被正確跳脫，避免 URL 編碼問題
-            ENCODED_MESSAGE=<span class="math-inline">\(echo \-e "</span>{MESSAGE}" | sed -E 's/([_*\[\]()~`>#+\-=|{}!.\\])/\\\1/g' | sed 's/\//\\\//g' | sed 's/%/%25/g' | sed 's/ /%20/g' | sed 's/\n/%0A/g' | sed 's/\*/%2A/g' | sed 's/\[/%5B/g' | sed 's/\]/%5D/g' | sed 's/(/%28/g' | sed 's/)/%29/g' | sed 's/`/%60/g' | sed 's/{/%7B/g' | sed 's/}/%7D/g' | sed 's/~/%7E/g' | sed 's/\./%2E/g')
+            [[ -n "$CATEGORY" ]] && TITLE="【${CATEGORY}】${TITLE}" # 若有分類，則加到標題前
+
+            ARTICLE_SLUG="$(echo "$file_path" | sed -E 's|^blog/(.*)\.md$|\1|')"
+            ARTICLE_URL="${BASE_URL}/blog/${ARTICLE_SLUG}.html" # 假設您的文章是 .html 結尾
+
+            # 組裝訊息，利用 Bash 參數擴展預設值，確保內容不為空
+            COMMIT_MESSAGE="${{ github.event.head_commit.message }}"
+            AUTHOR="${{ github.event.head_commit.author.name }}"
+            
+            MESSAGE="**📢 New push to GitHub**\n"
+            MESSAGE+="**${TITLE}**\n"
+            MESSAGE+="\`\`\`${COMMIT_MESSAGE:-無提交訊息}\`\`\`\n" # 如果提交訊息為空，顯示「無提交訊息」
+            MESSAGE+="[>>點此閱讀文章](${ARTICLE_URL})\n"
+            MESSAGE+="by ${AUTHOR:-unknown}" # 如果作者名稱為空，顯示「unknown」
+
+            # 【新增 Debug 輸出】
+            echo "DEBUG: Final MESSAGE content:"
+            echo "${MESSAGE}"
+            echo "DEBUG: Final ENCODED_MESSAGE content:"
+            echo "${ENCODED_MESSAGE}" # 這裡的 ENCODED_MESSAGE 會在下一行定義，所以這裡先放空
+
+            # 只跳脫 Telegram MarkdownV2 特殊字元，避免過度跳脫
+            # 【關鍵優化】精確的 sed 跳脫，只針對 Telegram MarkdownV2 要求的字元，並處理 / 和 %
+            ENCODED_MESSAGE="$(echo -e "${MESSAGE}" | sed -E 's/([_*\[\]()~`>#+\-=\|{}!.\\])/\\\1/g' | sed 's/\//\\\//g' | sed 's/%/%25/g' | sed 's/ /%20/g' | sed 's/\n/%0A/g' | sed 's/\x27/%27/g')" # 修正單引號跳脫為 %27
 
             curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
-              -d "chat_id=<span class="math-inline">\{TELEGRAM\_CHAT\_ID\}" \\
-\-d "text\=</span>{ENCODED_MESSAGE}" \
-              -d "parse_mode=MarkdownV2" # 確保這裡使用 MarkdownV2
+              -d "chat_id=${TELEGRAM_CHAT_ID}" \
+              -d "text=${ENCODED_MESSAGE}" \
+              -d "parse_mode=MarkdownV2"
             echo "Telegram notification sent for ${file_path} with title: ${TITLE}"
           done
         env:
