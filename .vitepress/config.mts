@@ -3,6 +3,7 @@ import locales from './locales'
 import gitMetaPlugin from './git-meta.js'
 import { execSync } from 'child_process'
 
+// 取得當前 git branch 名稱
 function getCurrentBranch() {
   try {
     return execSync('git rev-parse --abbrev-ref HEAD').toString().trim()
@@ -17,7 +18,7 @@ export default defineConfig({
   base: '/',
   locales: locales.locales,
   srcExclude: ['README.md'],
-  // head 這裡不再放 og:title, og:description, og:image, title
+  // head 這裡只放全站通用，不放 og:title, og:description, og:image, title
   head: [
     ['meta', { name: 'theme-color', content: '#00FFEE' }],
     ['link', { rel: 'icon', href: '/favicon.ico' }],
@@ -69,10 +70,9 @@ export default defineConfig({
       }
     }
 
-    // 判斷是否為英文頁面（en/開頭）
+    // 判斷是否是英文頁面（en/開頭）
     const isEN = page.relativePath.startsWith('en/')
 
-    // 動態設定 head
     if (!page.frontmatter.head) page.frontmatter.head = []
 
     if (isEN) {
@@ -80,16 +80,16 @@ export default defineConfig({
       page.frontmatter.head.push(['title', {}, "HolyBear's Secret Base"])
       page.frontmatter.head.push(['meta', { property: 'og:title', content: "HolyBear's Secret Base" }])
       page.frontmatter.head.push(['meta', { property: 'og:description', content: "HolyBear's personal site, featuring HyperOS modules, tech notes, and Android customization & open-source sharing." }])
-      page.frontmatter.head.push(['meta', { property: 'og:image', content: 'https://holybear.me/logo.png' }])
-    } else if (
-      page.relativePath === 'index.md'
-      // 你也可以加其它中文首頁的判斷
-    ) {
+      page.frontmatter.head.push(['meta', { property: 'og:image', content: page.frontmatter.image || 'https://holybear.me/logo.png' }])
+    } else if (page.relativePath === 'index.md') {
       // 中文首頁
       page.frontmatter.head.push(['title', {}, '聖小熊的秘密基地'])
       page.frontmatter.head.push(['meta', { property: 'og:title', content: '聖小熊的秘密基地' }])
       page.frontmatter.head.push(['meta', { property: 'og:description', content: '聖小熊的 HyperOS 模組與技術筆記分享網站。' }])
-      page.frontmatter.head.push(['meta', { property: 'og:image', content: 'https://holybear.me/logo.png' }])
+      page.frontmatter.head.push(['meta', { property: 'og:image', content: page.frontmatter.image || 'https://holybear.me/logo.png' }])
+    } else if (page.frontmatter.image) {
+      // 其它有 image 的文章
+      page.frontmatter.head.push(['meta', { property: 'og:image', content: page.frontmatter.image }])
     }
   }
 })
