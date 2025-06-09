@@ -249,7 +249,7 @@ const pageNumbers = computed(() => {
 
 @media (max-width: 767px) {
   .post-item-link {
-    min-height: 83px;
+    min-height: 53px;
     height: auto;
     flex-direction: row;
     align-items: center;
@@ -258,7 +258,7 @@ const pageNumbers = computed(() => {
   }
   .post-thumbnail-wrapper {
     width: 148px;
-    height: 83px;
+    height: 53px;
     margin-right: 0.7rem;
     margin-bottom: 0;
   }
