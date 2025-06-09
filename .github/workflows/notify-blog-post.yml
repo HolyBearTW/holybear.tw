@@ -192,12 +192,19 @@ jobs:
             # 【新增 Debug 輸出】
             echo "DEBUG: Final MESSAGE content:"
             echo "${MESSAGE}"
-            echo "DEBUG: Final ENCODED_MESSAGE content:"
-            # 【關鍵修正】ENCODED_MESSAGE 的 sed 跳脫符號，只處理 Telegram MarkdownV2 的特殊符號，避免過度跳脫。
-            # 【修正】這裡的 sed 語法應直接跳脫 MarkdownV2 特殊字元，並處理 / 和 %
-            ENCODED_MESSAGE="$(echo -e "${MESSAGE}" | sed -E 's/([_*\[\]()~`>#+\-=\|{}!.\\])/\\\1/g' | sed 's/\//\\\//g' | sed 's/%/%25/g' | sed 's/ /%20/g' | sed 's/\n/%0A/g')" # 移除對 \t 和 " 和 \x27 的額外跳脫，因為它們會被前面的 [\\] 處理或不屬於 Telegram 強制跳脫
+            
+            # 【關鍵修正】ENCODED_MESSAGE 的 sed 跳脫符號，完全按照 GitHub AI 建議
+            ENCODED_MESSAGE="$(echo -e "${MESSAGE}" \
+              | sed -E 's/([_*\[\]()~`>#+\-=\|!.\\])/\\\1/g' \
+              | sed 's/{/\\{/g' \
+              | sed 's/}/\\}/g' \
+              | sed 's/\//\\\//g' \
+              | sed 's/%/%25/g' \
+              | sed 's/ /%20/g' \
+              | sed 's/\n/%0A/g')"
 
-            echo "${ENCODED_MESSAGE}" # 這裡直接輸出編碼後的內容
+            echo "DEBUG: Final ENCODED_MESSAGE content:"
+            echo "${ENCODED_MESSAGE}"
 
             curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
               -d "chat_id=${TELEGRAM_CHAT_ID}" \
