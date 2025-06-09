@@ -38,39 +38,39 @@ jobs:
           CURRENT_SHA="${{ github.sha }}"
           LAST_COMMIT_SHA=$(git rev-parse "${CURRENT_SHA}~1" 2>/dev/null || echo "")
 
-          # 將輸出寫入臨時文件
-          temp_file="temp_detected_files.txt"
-          > "$temp_file" # 清空或建立文件
+          # 將原始偵測到的檔案路徑寫入臨時文件
+          temp_raw_detected_files="temp_raw_detected_files.txt"
+          > "$temp_raw_detected_files" # 清空或建立文件
 
           if [ -z "$LAST_COMMIT_SHA" ]; then
             # 對於儲存庫的第一次 push，所有符合條件的文件都視為「新增」
-            # 確保 find 指令能處理路徑中的空白字元
-            find "$TARGET_DIR" -type f -print0 | xargs -0 -r -n 1 echo >> "$temp_file"
+            find "$TARGET_DIR" -type f -print0 | xargs -0 -r -n 1 echo >> "$temp_raw_detected_files"
           else
             # 比較本次 push 和上一個 commit 之間的差異，只篩選新增的檔案
-            # 使用 -z 和 xargs -0 來安全處理檔名中的空白
-            git diff --name-only --diff-filter=A "${LAST_COMMIT_SHA}" "${CURRENT_SHA}" -- "$TARGET_DIR" -z | xargs -0 -r -n 1 echo >> "$temp_file"
+            git diff --name-only --diff-filter=A "${LAST_COMMIT_SHA}" "${CURRENT_SHA}" -- "$TARGET_DIR" -z | xargs -0 -r -n 1 echo >> "$temp_raw_detected_files"
           fi
 
-          NEW_POST_FILES=""
-          # 檢查是否有任何檔案被偵測到，並過濾確保在目標目錄下
-          if [ -s "$temp_file" ]; then # -s 檢查檔案是否存在且不為空
+          NEW_POST_FILES_FINAL="" # 最終要輸出的乾淨檔案列表
+          # 檢查是否有任何檔案被偵測到
+          if [ -s "$temp_raw_detected_files" ]; then # -s 檢查檔案是否存在且不為空
             # 使用 while read 迴圈安全地讀取檔案中的每一行 (檔名)
-            # 這能正確處理包含空白的檔名
             while IFS= read -r file; do
-              if [[ "$file" == "$TARGET_DIR"* ]]; then
-                # 如果 NEW_POST_FILES 不為空，則先加換行符號
-                [ -n "$NEW_POST_FILES" ] && NEW_POST_FILES+=$'\n'
-                NEW_POST_FILES+="$file"
+              # 【加強防呆】確保檔案存在且是普通文件，並且在目標目錄下
+              if [ -f "$file" ] && [[ "$file" == "$TARGET_DIR"* ]]; then
+                # 如果 NEW_POST_FILES_FINAL 不為空，則先加換行符號
+                [ -n "$NEW_POST_FILES_FINAL" ] && NEW_POST_FILES_FINAL+=$'\n'
+                NEW_POST_FILES_FINAL+="$file"
+              else
+                echo "Warning: Skipped non-existent or invalid file detected: ${file}"
               fi
-            done < "$temp_file"
+            done < "$temp_raw_detected_files"
           fi
 
           echo "Detected NEW files in ${TARGET_DIR} directory:"
-          echo "${NEW_POST_FILES}" # 這裡直接輸出 NEW_POST_FILES 的內容，會保留換行
+          echo "${NEW_POST_FILES_FINAL}" # 這裡直接輸出 NEW_POST_FILES_FINAL 的內容，會保留換行
 
           # 將結果輸出給下一個步驟
-          echo "NEW_POST_FILES=${NEW_POST_FILES}" >> "$GITHUB_OUTPUT"
+          echo "NEW_POST_FILES=${NEW_POST_FILES_FINAL}" >> "$GITHUB_OUTPUT"
 
       # --- 【這裡放您的部落格建置指令】 ---
       # 這個步驟會生成您的靜態網站檔案，並放到 _site 或 public 目錄
@@ -126,10 +126,22 @@ jobs:
           # 【重要設定】您的網站基礎網址
           BASE_URL="https://holybear.me"
 
+          # 【加強防呆】檢查 NEW_POST_FILES 是否為空或只包含空白
+          if [[ -z "${NEW_POST_FILES// /}" ]]; then # 移除所有空白後判斷是否為空
+            echo "No valid new files detected for notification, skipping."
+            exit 0 # 提前結束，不發送通知
+          fi
+
           # 遍歷每個新增的檔案
           # 注意：為了安全處理檔名中的空白，這裡使用 IFS 和 read -r
           IFS=$'\n' # 設定內部欄位分隔符為換行符，確保檔名中的空白不會被錯誤地拆分
           for file_path in ${NEW_POST_FILES}; do
+            # 【加強防呆】再次檢查檔案是否存在且是普通文件，避免處理無效路徑
+            if [ ! -f "${file_path}" ]; then
+              echo "Warning: File not found or not a regular file: ${file_path}, skipping."
+              continue # 跳過當前迴圈，處理下一個檔案
+            fi
+
             echo "Processing file: ${file_path}"
             
             # 讀取檔案內容
