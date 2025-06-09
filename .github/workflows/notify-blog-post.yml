@@ -138,10 +138,10 @@ jobs:
           for file_path_raw in ${NEW_POST_FILES}; do
             # 【關鍵】徹底清理 file_path_raw，確保它只是一個乾淨的檔案路徑
             # 這能處理可能存在的額外空白或隱形字元
-            file_path=$(echo "${file_path_raw}" | xargs)
+            file_path="$(echo "${file_path_raw}" | xargs)" # 【修正】新增雙引號
 
             # 【加強防呆】再次檢查檔案是否存在且是普通文件，避免處理無效路徑
-            if [ ! -f "${file_path}" ]; then
+            if [ ! -f "${file_path}" ]; then # 【修正】新增雙引號
               echo "Warning: File not found or not a regular file: ${file_path}, skipping."
               continue # 跳過當前迴圈，處理下一個檔案
             fi
@@ -149,11 +149,11 @@ jobs:
             echo "Processing file: ${file_path}"
             
             # 讀取檔案內容
-            file_content=$(cat "${file_path}")
+            file_content="$(cat "${file_path}")" # 【修正】新增雙引號
             
             # 從 Markdown 檔案內容中提取 title (優先從 Front Matter 提取)
             # 【最終修正】使用 awk/sed 確保輸出為單行、無引號、無換行
-            TITLE=$(echo "${file_content}" | awk '
+            TITLE="$(echo "${file_content}" | awk ' # 【修正】新增雙引號
               /^---$/ { count++; if (count == 2) exit; next }
               (count == 1 && /^\s*title:/) {
                 gsub(/^\s*title:\s*/, "", $0);
@@ -163,12 +163,12 @@ jobs:
                 print $0;
                 exit
               }
-            ' | xargs) # 再次用 xargs 清理前後空白及任何隱形字元
+            ' | xargs)" # 【修正】新增雙引號，並再次用 xargs 清理前後空白及任何隱形字元
             
             # 如果 Front Matter 中沒有 title，則嘗試從 H1 標題提取
             # 【最終修正】確保輸出為單行、無引號、無換行
             if [[ -z "${TITLE}" ]]; then
-              TITLE=$(echo "${file_content}" | grep -iE '^#\s*(.*)' | head -n 1 | sed -E 's/^#\s*(.*)/\1/' | sed -E 's/[\r\n]//g' | sed -E 's/^"|"//g' | sed -E 's/^\x27|\x27//g' | xargs) # 再次用 xargs 清理
+              TITLE="$(echo "${file_content}" | grep -iE '^#\s*(.*)' | head -n 1 | sed -E 's/^#\s*(.*)/\1/' | sed -E 's/[\r\n]//g' | sed -E 's/^"|"//g' | sed -E 's/^\x27|\x27//g' | xargs)" # 【修正】新增雙引號
             fi
             # 如果仍然沒有標題，設定為預設值
             if [[ -z "${TITLE}" ]]; then
@@ -178,31 +178,31 @@ jobs:
             # 【最新修正】使用 grep 和 sed 來提取 category，更穩定處理多種 YAML 格式
             # 【最終修正】確保輸出為單行、無引號、無換行
             CATEGORY=""
-            CATEGORY_RAW=$(echo "${file_content}" | grep -A 1 -E '^\s*category:' | grep -E '^\s*-\s*' | head -n 1 | sed -E 's/^\s*-\s*(.*)/\1/' | sed -E 's/[\r\n]//g' | sed -E 's/^"|"//g' | sed -E 's/^\x27|\x27//g' | xargs) # 再次用 xargs 清理
+            CATEGORY_RAW="$(echo "${file_content}" | grep -A 1 -E '^\s*category:' | grep -E '^\s*-\s*' | head -n 1 | sed -E 's/^\s*-\s*(.*)/\1/' | sed -E 's/[\r\n]//g' | sed -E 's/^"|"//g' | sed -E 's/^\x27|\x27//g' | xargs)" # 【修正】新增雙引號
             
             # 只有當 CATEGORY_RAW 包含有效字元時才賦值給 CATEGORY
             if [[ -n "${CATEGORY_RAW}" ]]; then
               CATEGORY="${CATEGORY_RAW}"
               # 再次清理確保沒有任何特殊字元可能被誤解
               # 這裡用 tr -cd 來只保留特定字元，並用 xargs 清理多餘空白
-              CATEGORY=$(echo "${CATEGORY}" | tr -cd '[:alnum:] _-') # 只保留字母數字、空白、底線、破折號
-              CATEGORY=$(echo "${CATEGORY}" | xargs) # 清理因替換可能產生的多餘空白
+              CATEGORY="$(echo "${CATEGORY}" | tr -cd '[:alnum:] _-')" # 【修正】新增雙引號
+              CATEGORY="$(echo "${CATEGORY}" | xargs)" # 【修正】新增雙引號
             fi
 
             if [[ -z "${CATEGORY}" ]]; then # 如果第一個提取方式沒結果，嘗試第二種
-              CATEGORY_RAW=$(echo "${file_content}" | grep -iE '^\s*category:\s*\[.*\]' | head -n 1 | sed -E 's/^\s*category:\s*\[(.*)\].*/\1/' | cut -d',' -f1 | sed -E 's/[\r\n]//g' | sed -E 's/^"|"//g' | sed -E 's/^\x27|\x27//g' | xargs)
+              CATEGORY_RAW="$(echo "${file_content}" | grep -iE '^\s*category:\s*\[.*\]' | head -n 1 | sed -E 's/^\s*category:\s*\[(.*)\].*/\1/' | cut -d',' -f1 | sed -E 's/[\r\n]//g' | sed -E 's/^"|"//g' | sed -E 's/^\x27|\x27//g' | xargs)"
               if [[ -n "${CATEGORY_RAW}" ]]; then
                 CATEGORY="${CATEGORY_RAW}"
-                CATEGORY=$(echo "${CATEGORY}" | tr -cd '[:alnum:] _-')
-                CATEGORY=$(echo "${CATEGORY}" | xargs)
+                CATEGORY="$(echo "${CATEGORY}" | tr -cd '[:alnum:] _-')"
+                CATEGORY="$(echo "${CATEGORY}" | xargs)"
               fi
             fi
             if [[ -z "${CATEGORY}" ]]; then # 如果第二種也沒結果，嘗試第三種
-              CATEGORY_RAW=$(echo "${file_content}" | grep -iE '^\s*category:\s*[^\[-]' | head -n 1 | sed -E 's/^\s*category:\s*(.*)/\1/' | sed -E 's/[\r\n]//g' | sed -E 's/^"|"//g' | sed -E 's/^\x27|\x27//g' | xargs)
+              CATEGORY_RAW="$(echo "${file_content}" | grep -iE '^\s*category:\s*[^\[-]' | head -n 1 | sed -E 's/^\s*category:\s*(.*)/\1/' | sed -E 's/[\r\n]//g' | sed -E 's/^"|"//g' | sed -E 's/^\x27|\x27//g' | xargs)"
               if [[ -n "${CATEGORY_RAW}" ]]; then
                 CATEGORY="${CATEGORY_RAW}"
-                CATEGORY=$(echo "${CATEGORY}" | tr -cd '[:alnum:] _-')
-                CATEGORY=$(echo "${CATEGORY}" | xargs)
+                CATEGORY="$(echo "${CATEGORY}" | tr -cd '[:alnum:] _-')"
+                CATEGORY="$(echo "${CATEGORY}" | xargs)"
               fi
             fi
 
@@ -216,7 +216,7 @@ jobs:
             fi
 
             # 產生文章連結的邏輯
-            ARTICLE_SLUG=$(echo "${file_path}" | sed -E 's|^blog/(.*)\.md$|\1|')
+            ARTICLE_SLUG="$(echo "${file_path}" | sed -E 's|^blog/(.*)\.md$|\1|')" # 【修正】新增雙引號
             ARTICLE_URL="${BASE_URL}/blog/${ARTICLE_SLUG}.html" # 假設您的文章是 .html 結尾
 
             # 組裝 Telegram 訊息
@@ -227,7 +227,7 @@ jobs:
             MESSAGE+="by ${{ github.event.head_commit.author.name }}"
 
             # 發送 Telegram 訊息
-            ENCODED_MESSAGE=$(echo -e "${MESSAGE}" | sed -E 's/([_*\[\]()~`>#+\-=\|{}!.\\])/\\\1/g' | sed 's/ /%20/g' | sed 's/\n/%0A/g' | sed 's/\*/%2A/g' | sed 's/\[/%5B/g' | sed 's/\]/%5D/g' | sed 's/(/%28/g' | sed 's/)/%29/g' | sed 's/`/%60/g' | sed 's/{/%7B/g' | sed 's/}/%7D/g' | sed 's/~/%7E/g' | sed 's/\./%2E/g')
+            ENCODED_MESSAGE="$(echo -e "${MESSAGE}" | sed -E 's/([_*\[\]()~`>#+\-=\|{}!.\\])/\\\1/g' | sed 's/ /%20/g' | sed 's/\n/%0A/g' | sed 's/\*/%2A/g' | sed 's/\[/%5B/g' | sed 's/\]/%5D/g' | sed 's/(/%28/g' | sed 's/)/%29/g' | sed 's/`/%60/g' | sed 's/{/%7B/g' | sed 's/}/%7D/g' | sed 's/~/%7E/g' | sed 's/\./%2E/g')" # 【修正】新增雙引號
 
             curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
               -d "chat_id=${TELEGRAM_CHAT_ID}" \
