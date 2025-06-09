@@ -166,7 +166,7 @@ jobs:
               [[ -n "$CATEGORY_RAW" ]] && CATEGORY="$CATEGORY_RAW"
             fi
             if [[ -z "$CATEGORY" ]]; then # 嘗試第三種 category 格式
-              CATEGORY_RAW="$(echo "${file_content}" | grep -iE '^\s*category:\s*[^\[-]' | head -n1 | sed -E 's/^\s*category:\s*//' | sed -E 's/[\r\n]//g' | sed -E 's/["\x27]//g' | xargs)"
+              CATEGORY_RAW="$(echo "${file_content}" | grep -iE '^\s*category:\s*[^\[-]' | head -n1 | sed -E 's/^\s*category:\s*(.*)/\1/' | sed -E 's/[\r\n]//g' | sed -E 's/["\x27]//g' | xargs)"
               [[ -n "$CATEGORY_RAW" ]] && CATEGORY="$CATEGORY_RAW"
             fi
             
