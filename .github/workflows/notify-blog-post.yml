@@ -136,48 +136,55 @@ jobs:
             file_content=$(cat "${file_path}")
             
             # 從 Markdown 檔案內容中提取 title (優先從 Front Matter 提取)
-            # 【關鍵修正】確保輸出不包含換行符，並移除可能存在的引號，強化 sed 處理
+            # 【關鍵修正】採用 GitHub AI 建議的 awk 處理方式，移除換行和引號
             TITLE=$(echo "${file_content}" | awk '
               /^---$/ { count++; if (count == 2) exit; next }
-              (count == 1 && /^\s*title:/) { 
-                gsub(/^\s*title:\s*/, "", $0); 
-                gsub(/\r/, "", $0);
-                gsub(/\n/, " ", $0); # 將內容中的換行符替換為空白，確保單行
-                gsub(/^"|"$/,"", $0); # 移除前後的雙引號
-                gsub(/^\x27|\x27$/,"", $0); # 移除前後的單引號
-                print $0; 
+              (count == 1 && /^\s*title:/) {
+                gsub(/^\s*title:\s*/, "", $0);
+                gsub(/[\r\n]/, " ", $0);     # 移除換行符 (CR 和 LF)
+                gsub(/^"|"$/, "", $0);      # 移除頭尾雙引號
+                gsub(/^\x27|\x27$/, "", $0); # 移除頭尾單引號 (x27 是單引號的十六進位碼)
+                print $0;
                 exit
               }
             ')
             
-            # 【關鍵修正】使用 [[ ... ]] 進行條件判斷，並確保輸出為單行，強化 sed 處理
-            if [[ -z "${TITLE}" ]]; then # 使用 [[ ... ]] 替代 [ ... ]，更安全地處理變數
-              TITLE=$(echo "${file_content}" | grep -iE '^#\s*(.*)' | head -n 1 | sed -E 's/^#\s*(.*)/\1/' | tr -d '\r' | tr -d '\n' | sed -E 's/^"|"$/g' | sed -E 's/^\x27|\x27$/g')
+            # 如果 Front Matter 中沒有 title，則嘗試從 H1 標題提取
+            # 【關鍵修正】採用 GitHub AI 建議的 gsub 方式處理引號，並確保移除換行
+            if [[ -z "${TITLE}" ]]; then
+              TITLE=$(echo "${file_content}" | grep -iE '^#\s*(.*)' | head -n 1 | sed -E 's/^#\s*(.*)/\1/' | sed -E 's/[\r\n]//g') # 移除換行符
+              # 再次確保移除頭尾引號
+              TITLE=$(echo "${TITLE}" | sed -E 's/^"|"//g' | sed -E 's/^\x27|\x27//g')
             fi
-            if [[ -z "${TITLE}" ]]; then # 使用 [[ ... ]]
+            # 如果仍然沒有標題，設定為預設值
+            if [[ -z "${TITLE}" ]]; then
               TITLE="無標題文章"
             fi
 
             # 【最新修正】使用 grep 和 sed 來提取 category，更穩定處理多種 YAML 格式
-            # 【關鍵修正】確保輸出不包含換行符，並移除可能存在的引號，強化 sed 處理
+            # 【關鍵修正】確保輸出不包含換行符，並移除可能存在的引號
             CATEGORY=""
-            CATEGORY=$(echo "${file_content}" | grep -A 1 -E '^\s*category:' | grep -E '^\s*-\s*' | head -n 1 | sed -E 's/^\s*-\s*(.*)/\1/' | tr -d '\r' | tr -d '\n' | sed -E 's/^"|"$/g' | sed -E 's/^\x27|\x27$/g')
+            CATEGORY=$(echo "${file_content}" | grep -A 1 -E '^\s*category:' | grep -E '^\s*-\s*' | head -n 1 | sed -E 's/^\s*-\s*(.*)/\1/' | sed -E 's/[\r\n]//g') # 移除換行符
+            CATEGORY=$(echo "${CATEGORY}" | sed -E 's/^"|"//g' | sed -E 's/^\x27|\x27//g') # 移除引號
             
-            if [[ -z "${CATEGORY}" ]]; then # 使用 [[ ... ]]
-              CATEGORY=$(echo "${file_content}" | grep -iE '^\s*category:\s*\[.*\]' | head -n 1 | sed -E 's/^\s*category:\s*\[(.*)\].*/\1/' | cut -d',' -f1 | tr -d '\r' | tr -d '\n' | sed -E 's/^"|"$/g' | sed -E 's/^\x27|\x27$/g')
+            if [[ -z "${CATEGORY}" ]]; then
+              CATEGORY=$(echo "${file_content}" | grep -iE '^\s*category:\s*\[.*\]' | head -n 1 | sed -E 's/^\s*category:\s*\[(.*)\].*/\1/' | cut -d',' -f1 | sed -E 's/[\r\n]//g') # 移除換行符
+              CATEGORY=$(echo "${CATEGORY}" | sed -E 's/^"|"//g' | sed -E 's/^\x27|\x27//g') # 移除引號
             fi
-            if [[ -z "${CATEGORY}" ]]; then # 使用 [[ ... ]]
-              CATEGORY=$(echo "${file_content}" | grep -iE '^\s*category:\s*[^\[-]' | head -n 1 | sed -E 's/^\s*category:\s*(.*)/\1/' | tr -d '\r' | tr -d '\n' | sed -E 's/^"|"$/g' | sed -E 's/^\x27|\x27$/g')
+            if [[ -z "${CATEGORY}" ]]; then
+              CATEGORY=$(echo "${file_content}" | grep -iE '^\s*category:\s*[^\[-]' | head -n 1 | sed -E 's/^\s*category:\s*(.*)/\1/' | sed -E 's/[\r\n]//g') # 移除換行符
+              CATEGORY=$(echo "${CATEGORY}" | sed -E 's/^"|"//g' | sed -E 's/^\x27|\x27//g') # 移除引號
             fi
-            CATEGORY=$(echo "${CATEGORY}" | sed -E 's/^[[:space:]]+|[[:space:]]+$//g')
-            CATEGORY=$(echo "${CATEGORY}" | sed -E 's/[\x27"\/]//g')
+            CATEGORY=$(echo "${CATEGORY}" | sed -E 's/^[[:space:]]+|[[:space:]]+$//g') # 移除前後空白
+            CATEGORY=$(echo "${CATEGORY}" | sed -E 's/[\x27"\/]//g') # 移除單引號、雙引號、斜線 (這裡的 / 已經是字元，不需要跳脫)
 
-            if [[ -n "${CATEGORY}" ]]; then # 使用 [[ ... ]]
+            if [[ -n "${CATEGORY}" ]]; then
                 TITLE="【${CATEGORY}】${TITLE}"
             fi
 
+            # 產生文章連結的邏輯
             ARTICLE_SLUG=$(echo "${file_path}" | sed -E 's|^blog/(.*)\.md$|\1|')
-            ARTICLE_URL="${BASE_URL}/blog/${ARTICLE_SLUG}.html" # 假設您的文章是 .html 結尾，確保變數加上雙引號
+            ARTICLE_URL="${BASE_URL}/blog/${ARTICLE_SLUG}.html" # 假設您的文章是 .html 結尾
 
             # 組裝 Telegram 訊息
             MESSAGE="**📢 New push to GitHub**\n"
@@ -187,6 +194,7 @@ jobs:
             MESSAGE+="by ${{ github.event.head_commit.author.name }}"
 
             # 發送 Telegram 訊息
+            # 【重要】這裡重新調整 URL 編碼方式，以支援 MarkdownV2，確保 Telegram 正常解析
             ENCODED_MESSAGE=$(echo -e "${MESSAGE}" | sed -E 's/([_*\[\]()~`>#+\-=\|{}!.\\])/\\\1/g' | sed 's/ /%20/g' | sed 's/\n/%0A/g' | sed 's/\*/%2A/g' | sed 's/\[/%5B/g' | sed 's/\]/%5D/g' | sed 's/(/%28/g' | sed 's/)/%29/g' | sed 's/`/%60/g' | sed 's/{/%7B/g' | sed 's/}/%7D/g' | sed 's/~/%7E/g' | sed 's/\./%2E/g')
 
             curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
