@@ -249,7 +249,7 @@ const pageNumbers = computed(() => {
 
 @media (max-width: 767px) {
   .post-item-link {
-    min-height: 33px;
+    min-height: 83px;
     height: auto;
     flex-direction: row;
     align-items: center;
@@ -257,10 +257,9 @@ const pageNumbers = computed(() => {
     padding: 0.2rem 0.5rem;
   }
   .post-thumbnail-wrapper {
-    width: 148px;
-    height: 83px;
-    margin-right: 0.7rem;
-    margin-bottom: 0;
+    width: 110px;   /* 更小寬度 */
+    height: 62px;   /* 更小高度 */
+    margin-right: 0.5rem;
   }
   .post-item {
     padding: 0.4rem 0;    /* 手機版上下間隔再更小 */
