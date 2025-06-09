@@ -18,6 +18,7 @@ export default defineConfig({
   base: '/',
   locales: locales.locales,
   srcExclude: ['README.md'],
+  // 這裡只放通用的 meta，不放 og:image
   head: [
     // 主題顏色與圖示
     ['meta', { name: 'theme-color', content: '#00FFEE' }],
@@ -44,7 +45,6 @@ export default defineConfig({
     ['meta', { property: 'og:description', content: '聖小熊的 HyperOS 模組與技術筆記分享網站。' }],
     ['meta', { property: 'og:type', content: 'website' }],
     ['meta', { property: 'og:url', content: 'https://holybear.me' }],
-    ['meta', { property: 'og:image', content: 'https://holybear.me/logo.png' }],
 
     // Twitter card
     ['meta', { name: 'twitter:card', content: 'summary_large_image' }]
@@ -79,6 +79,23 @@ export default defineConfig({
       } catch (e) {
         // 無 git 資訊略過
       }
+    }
+
+    // 只給首頁和英文首頁設定 og:image
+    let ogImage = undefined
+    if (
+      page.relativePath === 'index.md' ||           // 首頁
+      page.relativePath === 'en/index.md'           // 英文首頁
+    ) {
+      ogImage = 'https://holybear.me/logo.png'
+    }
+
+    if (ogImage) {
+      if (!page.frontmatter.head) page.frontmatter.head = []
+      page.frontmatter.head.push([
+        'meta',
+        { property: 'og:image', content: ogImage }
+      ])
     }
   }
 })
