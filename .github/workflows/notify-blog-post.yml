@@ -1,5 +1,6 @@
-name: Deploy Blog & Notify New Post to Telegram # 工作流程名稱，更名為部署與通知
+name: Deploy Blog & Notify New Post to Telegram # 工作流程名稱，改為部署與通知
 
+# 當有新的 push 事件發生時觸發此 workflow
 on:
   push:
     branches:
@@ -9,32 +10,28 @@ on:
       - 'blog/**/*' # 確保涵蓋 'blog/' 子目錄中的變動
 
 jobs:
-  # --- 第一個 Job: 建置部落格並部署到 GitHub Pages ---
-  build_and_deploy:
+  # --- 新增一個 Job: 負責建置和部署 GitHub Pages ---
+  build_and_deploy_pages:
     runs-on: ubuntu-latest
-    # 設定權限，以便可以部署 Pages
     permissions:
       contents: read
-      pages: write
+      pages: write # 部署 Pages 需要寫入權限
       id-token: write # 部署 Pages 需要這個權限
 
-    outputs: # 定義這個 Job 會輸出的變數，供後續 Job 使用
-      new_post_files: ${{ steps.get-new-files.outputs.NEW_POST_FILES }} # 將偵測到的新檔案列表輸出
-      # 假設您想將 TITLE 和 ARTICLE_URL 也傳遞給下一個 Job，
-      # 但因為有多個檔案，這裡會需要更複雜的處理，例如打包成 JSON 或只傳遞第一個
-      # 為了簡化，我們可以在通知 Job 中再次處理檔案，或者只通知第一個新檔案
-      # 這裡我們只傳遞 new_post_files，讓通知 Job 再去讀取檔案內容
+    outputs:
+      # 將偵測到的新檔案列表輸出，供後續 notify_new_post job 使用
+      new_post_files: ${{ steps.get-new-files.outputs.NEW_POST_FILES }}
 
     steps:
-      - name: Checkout repository
+      - name: Checkout repository for build
         uses: actions/checkout@v4
         with:
           fetch-depth: 0 # 獲取所有歷史紀錄，以便 git diff 能正確判斷「新增」的檔案
 
-      - name: Get new files in target directory
-        id: get-new-files # 保留原來的 ID，方便引用
+      - name: Get new files in target directory (for decision making)
+        id: get-new-files # 保留 ID 以便輸出
         run: |
-          TARGET_DIR="blog/" # 設定您要監控的目錄
+          TARGET_DIR="blog/"
           CURRENT_SHA="${{ github.sha }}"
           LAST_COMMIT_SHA=$(git rev-parse "${CURRENT_SHA}~1" 2>/dev/null || echo "")
 
@@ -53,58 +50,59 @@ jobs:
               NEW_POST_FILES="$NEW_POST_FILES $file"
             fi
           done
-
           echo "Detected NEW files in ${TARGET_DIR} directory: $NEW_POST_FILES"
           echo "NEW_POST_FILES=${NEW_POST_FILES}" >> "$GITHUB_OUTPUT"
 
-      # --- 【新增步驟】建置您的部落格 ---
-      # 這裡需要替換成您實際建置部落格的指令
-      # 範例：如果您使用 Jekyll，可能會有 bundle exec jekyll build
-      - name: Build Blog
+      # --- 【這裡放您的部落格建置指令】 ---
+      # 這個步驟會生成您的靜態網站檔案，並放到 _site 目錄
+      - name: Build Your Blog
+        # 這裡請替換成您實際的建置指令，例如：
+        # run: bundle exec jekyll build
+        # run: hugo
+        # run: hexo generate
         run: |
-          # 假設您的部落格建置指令會將靜態檔案輸出到 _site 目錄
-          echo "Building your blog..."
-          # 例如：bundle exec jekyll build
-          # 這裡我們假設會有一個 _site 目錄生成
-          mkdir -p _site
-          # 模擬產生一些檔案，這些檔案會在 Pages 部署
-          echo "<h1>Hello from GitHub Pages!</h1><p>這是索引頁</p>" > _site/index.html
-          echo "<h1>新文章</h1>" > _site/blog/new-article.html # 模擬您的文章內容
+          echo "這裡是您部落格的建置指令。它會產生靜態檔案到 _site 或 public 目錄。"
+          # 由於您沒有提供實際建置指令，這裡用一個假指令來模擬輸出目錄
+          mkdir -p _site # 假設您的建置會輸出到 _site
+          echo "<h1>這是首頁</h1>" > _site/index.html
+          mkdir -p _site/blog # 模擬文章子目錄
+          echo "<h1>Hello World! New Article Content</h1>" > _site/blog/first-new-article.html # 模擬新文章檔案
+          # 請移除或替換上方這些模擬指令為您真實的建置指令
 
-      # --- GitHub Pages 部署相關步驟 ---
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
-      - name: Upload artifact for deployment
+      - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './_site' # 這裡應指向您部落格的靜態檔案輸出目錄
+          path: './_site' # 確保這裡的路徑與您部落格實際的輸出目錄一致 (例如 _site 或 public)
 
       - name: Deploy to GitHub Pages
         id: deployment # 給這個步驟一個 ID，方便後續引用
         uses: actions/deploy-pages@v4
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # 使用內建的 token
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  # --- 第二個 Job: 發送 Telegram 通知 (在 Pages 部署成功後) ---
-  notify_on_deploy:
+  # --- 原有的 notify_new_post Job，現在會依賴 pages 部署成功後才執行 ---
+  notify_new_post:
     runs-on: ubuntu-latest
-    needs: build_and_deploy # 這個 Job 依賴 build_and_deploy Job，會等它成功後才執行
+    needs: build_and_deploy_pages # <--- 【關鍵】這個 Job 會在 build_and_deploy_pages 成功後才執行
 
-    # 只有當 build_and_deploy 成功完成，並且偵測到新的文章檔案時才執行通知
-    if: success() && needs.build_and_deploy.outputs.new_post_files != ''
+    # 只有當 build_and_deploy_pages 成功且有新檔案被偵測到時才執行
+    if: success() && needs.build_and_deploy_pages.outputs.new_post_files != ''
 
     steps:
-      - name: Checkout repository for notification # 重新檢出程式碼，以便讀取文章內容
+      - name: Checkout repository # 重新檢出，以便讀取文章內容
         uses: actions/checkout@v4
+        # 這裡不需要 fetch-depth: 0，因為我們只讀取檔案
 
-      - name: Send Telegram notification
+      - name: Process and send Telegram notification # 步驟 3: 處理檔案並發送 Telegram 通知
         run: |
           TELEGRAM_BOT_TOKEN="${{ secrets.TELEGRAM_BOT_TOKEN }}"
           TELEGRAM_CHAT_ID="${{ secrets.TELEGRAM_CHAT_ID }}"
 
           # 從上一個 Job 獲取偵測到的新文章檔案列表
-          NEW_POST_FILES="${{ needs.build_and_deploy.outputs.new_post_files }}"
+          NEW_POST_FILES="${{ needs.build_and_deploy_pages.outputs.new_post_files }}"
           
           # 【重要設定】您的網站基礎網址
           BASE_URL="https://holybear.me"
@@ -115,7 +113,7 @@ jobs:
             
             file_content=$(cat "$file_path")
             
-            # 從 Markdown 檔案內容中提取 title
+            # 從 Markdown 檔案內容中提取 title (優先從 Front Matter 提取)
             TITLE=""
             TITLE=$(echo "$file_content" | awk '
               /^---$/ { count++; if (count == 2) exit; next }
@@ -134,7 +132,7 @@ jobs:
               TITLE="無標題文章"
             fi
 
-            # 提取 category (沿用您的邏輯)
+            # 【最新修正】使用 grep 和 sed 來提取 category，更穩定處理多種 YAML 格式
             CATEGORY=""
             CATEGORY=$(echo "$file_content" | grep -A 1 -E '^\s*category:' | grep -E '^\s*-\s*' | head -n 1 | sed -E 's/^\s*-\s*(.*)/\1/' | tr -d '\r')
             if [ -z "$CATEGORY" ]; then
@@ -150,10 +148,7 @@ jobs:
                 TITLE="【${CATEGORY}】${TITLE}"
             fi
 
-            # 產生文章連結的邏輯 (這部分需要根據您的部落格系統實際生成 URL 的方式來調整)
-            # 因為 Pages 部署後，您通常會在 _site/blog/ 產生 HTML 檔案
-            # 所以 ARTICLE_SLUG 應該是 'blog/my-article'，最終 URL 可能是 https://holybear.me/blog/my-article.html
-            # 這裡需要注意您的部落格系統生成 URL 的最終形式是 .html 還是 /
+            # 產生文章連結的邏輯
             ARTICLE_SLUG=$(echo "$file_path" | sed -E 's|^blog/(.*)\.md$|\1|')
             ARTICLE_URL="${BASE_URL}/blog/${ARTICLE_SLUG}.html" # 假設您的文章是 .html 結尾
 
@@ -161,21 +156,19 @@ jobs:
             MESSAGE="**📢 New push to GitHub**\n"
             MESSAGE+="**${TITLE}**\n"
             MESSAGE+="```${{ github.event.head_commit.message }}```\n" # 使用您的單行程式碼區塊格式
-            MESSAGE+="[>>點此閱讀文章](${ARTICLE_URL})\n" # 文章連結
+            MESSAGE+="[>>點此閱讀文章](${ARTICLE_URL})\n"
             MESSAGE+="by ${{ github.event.head_commit.author.name }}"
 
-            # 將訊息編碼為 URL-encoded 格式，並使用 MarkdownV2
-            # 這裡對特殊字元進行更嚴格的 URL 編碼，以確保 MarkdownV2 模式下不解析錯誤
-            ENCODED_MESSAGE=$(echo -e "${MESSAGE}" | sed -E 's/([_*\[\]()~`>#+-=|{}!.\\])/\\\1/g' | sed 's/ /%20/g' | sed 's/\n/%0A/g' | sed 's/\*/%2A/g' | sed 's/\[/%5B/g' | sed 's/\]/%5D/g' | sed 's/(/%28/g' | sed 's/)/%29/g' | sed 's/`/%60/g' | sed 's/{/%7B/g' | sed 's/}/%7D/g' | sed 's/~/%7E/g' | sed 's/\./%2E/g')
-            
             # 發送 Telegram 訊息
+            # 【重要】這裡需要重新調整 URL 編碼方式以支援 MarkdownV2，確保 Telegram 正常解析
+            ENCODED_MESSAGE=$(echo -e "${MESSAGE}" | sed -E 's/([_*\[\]()~`>#+-=|{}!.\\])/\\\1/g' | sed 's/ /%20/g' | sed 's/\n/%0A/g' | sed 's/\*/%2A/g' | sed 's/\[/%5B/g' | sed 's/\]/%5D/g' | sed 's/(/%28/g' | sed 's/)/%29/g' | sed 's/`/%60/g' | sed 's/{/%7B/g' | sed 's/}/%7D/g' | sed 's/~/%7E/g' | sed 's/\./%2E/g')
+
             curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
               -d "chat_id=${TELEGRAM_CHAT_ID}" \
               -d "text=${ENCODED_MESSAGE}" \
-              -d "parse_mode=MarkdownV2" # 確保使用 MarkdownV2
-
+              -d "parse_mode=MarkdownV2" # 確保這裡使用 MarkdownV2
             echo "Telegram notification sent for $file_path with title: $TITLE"
           done
-        env: # 將環境變數設定在這裡
+        env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
