@@ -195,7 +195,7 @@ jobs:
             
             # 【關鍵修正】ENCODED_MESSAGE 的 sed 跳脫符號，完全按照 GitHub AI 建議
             ENCODED_MESSAGE="$(echo -e "${MESSAGE}" \
-              | sed -E 's/([_*\[\]()~`>#+\-=\|!.\\])/\\\1/g' \
+              | sed -E 's/([_*\[\]()~`>#+\-=\|!.\\\[\]])/\\\1/g' \
               | sed 's/{/\\{/g' \
               | sed 's/}/\\}/g' \
               | sed 's/\//\\\//g' \
