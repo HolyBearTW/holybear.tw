@@ -88,18 +88,18 @@ export default defineConfig({
       page.relativePath === 'en/index.md'           // 英文首頁
     ) {
       if (!page.frontmatter.head) page.frontmatter.head = []
-      page.frontmatter.head.push([
-        'meta',
-        { property: 'og:title', content: '聖小熊的秘密基地' }
-      ])
-      page.frontmatter.head.push([
-        'meta',
-        { property: 'og:description', content: '聖小熊的 HyperOS 模組與技術筆記分享網站。' }
-      ])
-      page.frontmatter.head.push([
-        'meta',
-        { property: 'og:image', content: 'https://holybear.me/logo.png' }
-      ])
+
+      if (page.relativePath === 'index.md') {
+        // 中文首頁
+        page.frontmatter.head.push(['meta', { property: 'og:title', content: '聖小熊的秘密基地' }])
+        page.frontmatter.head.push(['meta', { property: 'og:description', content: '聖小熊的 HyperOS 模組與技術筆記分享網站。' }])
+        page.frontmatter.head.push(['meta', { property: 'og:image', content: 'https://holybear.me/logo.png' }])
+      } else if (page.relativePath === 'en/index.md') {
+        // 英文首頁
+        page.frontmatter.head.push(['meta', { property: 'og:title', content: "HolyBear's Secret Base" }])
+        page.frontmatter.head.push(['meta', { property: 'og:description', content: "HolyBear's personal site, featuring HyperOS modules, tech notes, and Android customization & open-source sharing." }])
+        page.frontmatter.head.push(['meta', { property: 'og:image', content: 'https://holybear.me/logo.png' }])
+      }
     }
   }
 })
