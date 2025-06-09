@@ -139,12 +139,11 @@ jobs:
             file_content="$(cat "${file_path}")"
 
             # 提取 title (優先從 Front Matter 提取)
-            # 【關鍵優化】awk 裡用 `["'\''\r\n]` 同時清除單雙引號、CR 和 LF
             TITLE="$(echo "${file_content}" | awk '
               /^---$/ { count++; next }
               (count == 1 && /^\s*title:/) {
                 gsub(/^\s*title:\s*/, "", $0);
-                gsub(/["\x27\r\n]/, "", $0); # 修正後的精確寫法：同時移除雙引號、單引號、CR、LF
+                gsub(/["\x27\r\n]/, "", $0); # 移除雙引號、單引號、CR 和 LF
                 print $0;
                 exit
               }
@@ -194,16 +193,16 @@ jobs:
             echo "DEBUG: Final MESSAGE content:"
             echo "${MESSAGE}"
             echo "DEBUG: Final ENCODED_MESSAGE content:"
-            echo "${ENCODED_MESSAGE}" # 這裡的 ENCODED_MESSAGE 會在下一行定義，所以這裡先放空
+            # 【關鍵修正】ENCODED_MESSAGE 的 sed 跳脫符號，只處理 Telegram MarkdownV2 的特殊符號，避免過度跳脫。
+            # 【修正】這裡的 sed 語法應直接跳脫 MarkdownV2 特殊字元，並處理 / 和 %
+            ENCODED_MESSAGE="$(echo -e "${MESSAGE}" | sed -E 's/([_*\[\]()~`>#+\-=\|{}!.\\])/\\\1/g' | sed 's/\//\\\//g' | sed 's/%/%25/g' | sed 's/ /%20/g' | sed 's/\n/%0A/g')" # 移除對 \t 和 " 和 \x27 的額外跳脫，因為它們會被前面的 [\\] 處理或不屬於 Telegram 強制跳脫
 
-            # 只跳脫 Telegram MarkdownV2 特殊字元，避免過度跳脫
-            # 【關鍵優化】精確的 sed 跳脫，只針對 Telegram MarkdownV2 要求的字元，並處理 / 和 %
-            ENCODED_MESSAGE="$(echo -e "${MESSAGE}" | sed -E 's/([_*\[\]()~`>#+\-=\|{}!.\\])/\\\1/g' | sed 's/\//\\\//g' | sed 's/%/%25/g' | sed 's/ /%20/g' | sed 's/\n/%0A/g' | sed 's/\x27/%27/g')" # 修正單引號跳脫為 %27
+            echo "${ENCODED_MESSAGE}" # 這裡直接輸出編碼後的內容
 
             curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
               -d "chat_id=${TELEGRAM_CHAT_ID}" \
               -d "text=${ENCODED_MESSAGE}" \
-              -d "parse_mode=MarkdownV2"
+              -d "parse_mode=MarkdownV2" # 確保這裡使用 MarkdownV2
             echo "Telegram notification sent for ${file_path} with title: ${TITLE}"
           done
         env:
