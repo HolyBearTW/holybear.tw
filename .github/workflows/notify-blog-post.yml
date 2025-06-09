@@ -10,10 +10,10 @@ on:
       - 'blog/**/*' # 確保涵蓋 'blog/' 子目錄中的變動
 
 jobs:
-  # --- 新增一個 Job: 負責建置和部署 GitHub Pages ---
+  # --- 第一個 Job: 負責建置和部署 GitHub Pages ---
   build_and_deploy_pages:
     runs-on: ubuntu-latest
-    # 【新增】設定 environment
+    # 【重要】設定 environment，這是 GitHub Pages 部署所需的
     environment:
       name: github-pages
     permissions:
@@ -40,37 +40,46 @@ jobs:
 
           DETECTED_FILES=""
           if [ -z "$LAST_COMMIT_SHA" ]; then
+            # 對於儲存庫的第一次 push，所有符合條件的文件都視為「新增」
+            # 確保 find 指令能處理路徑中的空白字元
             find "$TARGET_DIR" -type f -print0 | xargs -0 -r -n 1 echo >> temp_new_files.txt
             DETECTED_FILES=$(cat temp_new_files.txt)
           else
+            # 比較本次 push 和上一個 commit 之間的差異，只篩選新增的檔案
+            # 使用 -z 和 xargs -0 來安全處理檔名中的空白
             git diff --name-only --diff-filter=A "${LAST_COMMIT_SHA}" "${CURRENT_SHA}" -- "$TARGET_DIR" -z | xargs -0 -r -n 1 echo >> temp_new_files.txt
             DETECTED_FILES=$(cat temp_new_files.txt)
           fi
 
           NEW_POST_FILES=""
+          # 為了安全處理檔名中的空白字元，設定 IFS 為換行符號
+          IFS=$'\n'
           for file in $DETECTED_FILES; do
+            # 再次確認檔案是在目標目錄下 (避免意外偵測到其他路徑的同名檔案)
             if [[ "$file" == "$TARGET_DIR"* ]]; then
-              NEW_POST_FILES="$NEW_POST_FILES $file"
+              NEW_POST_FILES="$NEW_POST_FILES
+$file" # 這裡使用換行符號分隔
             fi
           done
-          echo "Detected NEW files in ${TARGET_DIR} directory: $NEW_POST_FILES"
+
+          echo "Detected NEW files in ${TARGET_DIR} directory: ${NEW_POST_FILES}"
           echo "NEW_POST_FILES=${NEW_POST_FILES}" >> "$GITHUB_OUTPUT"
 
       # --- 【這裡放您的部落格建置指令】 ---
-      # 這個步驟會生成您的靜態網站檔案，並放到 _site 目錄
+      # 這個步驟會生成您的靜態網站檔案，並放到 _site 或 public 目錄
       - name: Build Your Blog
-        # 這裡請替換成您實際的建置指令，例如：
-        # run: bundle exec jekyll build
+        # 請在這裡替換成您實際部落格的建置指令。例如：
+        # run: bundle install && bundle exec jekyll build
         # run: hugo
-        # run: hexo generate
+        # run: npm install && hexo generate
         run: |
           echo "這裡是您部落格的建置指令。它會產生靜態檔案到 _site 或 public 目錄。"
-          # 由於您沒有提供實際建置指令，這裡用一個假指令來模擬輸出目錄
-          mkdir -p _site # 假設您的建置會輸出到 _site
+          # 以下是為了示範而放置的模擬指令，請務必替換為您真實的建置指令
+          mkdir -p _site 
           echo "<h1>這是首頁</h1>" > _site/index.html
-          mkdir -p _site/blog # 模擬文章子目錄
-          echo "<h1>Hello World! New Article Content</h1>" > _site/blog/first-new-article.html # 模擬新文章檔案
-          # 請移除或替換上方這些模擬指令為您真實的建置指令
+          mkdir -p _site/blog
+          echo "<h1>Hello World! 這是一篇新文章</h1>" > _site/blog/first-new-article.html
+          # 模擬指令結束，請移除或替換上方這些模擬指令為您真實的建置指令
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
@@ -86,12 +95,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  # --- 原有的 notify_new_post Job，現在會依賴 pages 部署成功後才執行 ---
+  # --- 第二個 Job: 發送 Telegram 通知 (在 Pages 部署成功後) ---
   notify_new_post:
     runs-on: ubuntu-latest
     needs: build_and_deploy_pages # <--- 【關鍵】這個 Job 會在 build_and_deploy_pages 成功後才執行
 
-    # 只有當 build_and_deploy_pages 成功且有新檔案被偵測到時才執行
+    # 只有當 build_and_deploy_pages 成功且有新檔案被偵測到時才執行通知
     if: success() && needs.build_and_deploy_pages.outputs.new_post_files != ''
 
     steps:
@@ -105,20 +114,24 @@ jobs:
           TELEGRAM_CHAT_ID="${{ secrets.TELEGRAM_CHAT_ID }}"
 
           # 從上一個 Job 獲取偵測到的新文章檔案列表
-          NEW_POST_FILES="${{ needs.build_and_deploy_pages.outputs.NEW_POST_FILES }}"
+          # 這裡使用雙引號，確保正確處理檔名中的空白
+          NEW_POST_FILES="${{ needs.build_and_deploy_pages.outputs.new_post_files }}"
           
           # 【重要設定】您的網站基礎網址
           BASE_URL="https://holybear.me"
 
           # 遍歷每個新增的檔案
-          for file_path in $NEW_POST_FILES; do
-            echo "Processing file: $file_path"
+          # 注意：為了安全處理檔名中的空白，這裡使用 IFS 和 read -r
+          IFS=$'\n' # 設定內部欄位分隔符為換行符，確保檔名中的空白不會被錯誤地拆分
+          for file_path in ${NEW_POST_FILES}; do # 這裡也使用雙引號
+            echo "Processing file: ${file_path}"
             
-            file_content=$(cat "$file_path")
+            # 讀取檔案內容
+            file_content=$(cat "${file_path}") # 加上雙引號
             
             # 從 Markdown 檔案內容中提取 title (優先從 Front Matter 提取)
             TITLE=""
-            TITLE=$(echo "$file_content" | awk '
+            TITLE=$(echo "${file_content}" | awk ' # 加上雙引號
               /^---$/ { count++; if (count == 2) exit; next }
               (count == 1 && /^\s*title:/) { 
                 gsub(/^\s*title:\s*/, "", $0); 
@@ -128,49 +141,50 @@ jobs:
               }
             ')
             
-            if [ -z "$TITLE" ]; then
-              TITLE=$(echo "$file_content" | grep -iE '^#\s*(.*)' | head -n 1 | sed -E 's/^#\s*(.*)/\1/' | tr -d '\r')
+            if [ -z "${TITLE}" ]; then # 加上雙引號
+              TITLE=$(echo "${file_content}" | grep -iE '^#\s*(.*)' | head -n 1 | sed -E 's/^#\s*(.*)/\1/' | tr -d '\r')
             fi
-            if [ -z "$TITLE" ]; then
+            if [ -z "${TITLE}" ]; then # 加上雙引號
               TITLE="無標題文章"
             fi
 
             # 【最新修正】使用 grep 和 sed 來提取 category，更穩定處理多種 YAML 格式
             CATEGORY=""
-            CATEGORY=$(echo "$file_content" | grep -A 1 -E '^\s*category:' | grep -E '^\s*-\s*' | head -n 1 | sed -E 's/^\s*-\s*(.*)/\1/' | tr -d '\r')
-            if [ -z "$CATEGORY" ]; then
-              CATEGORY=$(echo "$file_content" | grep -iE '^\s*category:\s*\[.*\]' | head -n 1 | sed -E 's/^\s*category:\s*\[(.*)\].*/\1/' | cut -d',' -f1 | tr -d '\r')
+            CATEGORY=$(echo "${file_content}" | grep -A 1 -E '^\s*category:' | grep -E '^\s*-\s*' | head -n 1 | sed -E 's/^\s*-\s*(.*)/\1/' | tr -d '\r')
+            if [ -z "${CATEGORY}" ]; then # 加上雙引號
+              CATEGORY=$(echo "${file_content}" | grep -iE '^\s*category:\s*\[.*\]' | head -n 1 | sed -E 's/^\s*category:\s*\[(.*)\].*/\1/' | cut -d',' -f1 | tr -d '\r')
             fi
-            if [ -z "$CATEGORY" ]; then
-              CATEGORY=$(echo "$file_content" | grep -iE '^\s*category:\s*[^\[-]' | head -n 1 | sed -E 's/^\s*category:\s*(.*)/\1/' | tr -d '\r')
+            if [ -z "${CATEGORY}" ]; then # 加上雙引號
+              CATEGORY=$(echo "${file_content}" | grep -iE '^\s*category:\s*[^\[-]' | head -n 1 | sed -E 's/^\s*category:\s*(.*)/\1/' | tr -d '\r')
             fi
-            CATEGORY=$(echo "$CATEGORY" | sed -E 's/^[[:space:]]+|[[:space:]]+$//g')
-            CATEGORY=$(echo "$CATEGORY" | sed -E 's/[\x27"\/]//g')
+            CATEGORY=$(echo "${CATEGORY}" | sed -E 's/^[[:space:]]+|[[:space:]]+$//g')
+            CATEGORY=$(echo "${CATEGORY}" | sed -E 's/[\x27"\/]//g')
 
-            if [ -n "$CATEGORY" ]; then
-                TITLE="【${CATEGORY}】${TITLE}"
+            if [ -n "${CATEGORY}" ]; then # 加上雙引號
+                TITLE="【${CATEGORY}】${TITLE}" # 變數也加上雙引號
             fi
 
             # 產生文章連結的邏輯
-            ARTICLE_SLUG=$(echo "$file_path" | sed -E 's|^blog/(.*)\.md$|\1|')
-            ARTICLE_URL="${BASE_URL}/blog/${ARTICLE_SLUG}.html" # 假設您的文章是 .html 結尾
+            ARTICLE_SLUG=$(echo "${file_path}" | sed -E 's|^blog/(.*)\.md$|\1|') # 加上雙引號
+            ARTICLE_URL="${BASE_URL}/blog/${ARTICLE_SLUG}.html" # 假設您的文章是 .html 結尾，確保變數加上雙引號
 
             # 組裝 Telegram 訊息
+            # 這裡的 MESSAGE 變數，因為是用 += 串接，要確保內容都用雙引號
             MESSAGE="**📢 New push to GitHub**\n"
             MESSAGE+="**${TITLE}**\n"
-            MESSAGE+="```${{ github.event.head_commit.message }}```\n" # 使用您的單行程式碼區塊格式
+            MESSAGE+="```${{ github.event.head_commit.message }}```\n" # 這裡 ${{...}} 會直接輸出
             MESSAGE+="[>>點此閱讀文章](${ARTICLE_URL})\n"
             MESSAGE+="by ${{ github.event.head_commit.author.name }}"
 
             # 發送 Telegram 訊息
-            # 【重要】這裡需要重新調整 URL 編碼方式以支援 MarkdownV2，確保 Telegram 正常解析
+            # 【重要】這裡重新調整 URL 編碼方式，以支援 MarkdownV2，確保 Telegram 正常解析
             ENCODED_MESSAGE=$(echo -e "${MESSAGE}" | sed -E 's/([_*\[\]()~`>#+\-=\|{}!.\\])/\\\1/g' | sed 's/ /%20/g' | sed 's/\n/%0A/g' | sed 's/\*/%2A/g' | sed 's/\[/%5B/g' | sed 's/\]/%5D/g' | sed 's/(/%28/g' | sed 's/)/%29/g' | sed 's/`/%60/g' | sed 's/{/%7B/g' | sed 's/}/%7D/g' | sed 's/~/%7E/g' | sed 's/\./%2E/g')
 
             curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
               -d "chat_id=${TELEGRAM_CHAT_ID}" \
               -d "text=${ENCODED_MESSAGE}" \
               -d "parse_mode=MarkdownV2" # 確保這裡使用 MarkdownV2
-            echo "Telegram notification sent for $file_path with title: $TITLE"
+            echo "Telegram notification sent for ${file_path} with title: ${TITLE}" # 最後的 echo 也加上雙引號
           done
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
