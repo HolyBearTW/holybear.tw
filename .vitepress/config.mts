@@ -3,7 +3,6 @@ import locales from './locales'
 import gitMetaPlugin from './git-meta.js'
 import { execSync } from 'child_process'
 
-// 取得當前 git branch 名稱
 function getCurrentBranch() {
   try {
     return execSync('git rev-parse --abbrev-ref HEAD').toString().trim()
@@ -18,14 +17,11 @@ export default defineConfig({
   base: '/',
   locales: locales.locales,
   srcExclude: ['README.md'],
-  // 這裡只放通用的 meta，不放 og:title/og:description/og:image
+  // head 這裡不再放 og:title, og:description, og:image, title
   head: [
-    // 主題顏色與圖示
     ['meta', { name: 'theme-color', content: '#00FFEE' }],
     ['link', { rel: 'icon', href: '/favicon.ico' }],
     ['link', { rel: 'apple-touch-icon', href: '/favicon.ico' }],
-
-    // 字體
     ['link', {
       rel: 'stylesheet',
       href: 'https://font.sec.miui.com/font/css?family=MiSans:200,300,400,450,500,600,650,700:Chinese_Simplify,Latin&display=swap'
@@ -34,20 +30,11 @@ export default defineConfig({
       rel: 'stylesheet',
       href: 'https://font.sec.miui.com/font/css?family=MiSans:200,300,400,450,500,600,650,700:Chinese_Traditional,Latin&display=swap'
     }],
-
-    // SEO meta 標籤
     ['meta', { name: 'description', content: '聖小熊的個人網站，收錄 HyperOS 模組、技術筆記與開發心得，專注於 Android 客製化與開源創作分享。' }],
     ['meta', { name: 'keywords', content: '聖小熊, HolyBear, HyperOS, 模組, Mod, MIUI, Android, GitHub, 技術部落格, Blog' }],
     ['meta', { name: 'author', content: '聖小熊' }],
-
-    // 不再預設 og:title/og:description/og:image
-    // ['meta', { property: 'og:title', content: '聖小熊的秘密基地' }],
-    // ['meta', { property: 'og:description', content: '聖小熊的 HyperOS 模組與技術筆記分享網站。' }],
-    // ['meta', { property: 'og:image', content: 'https://holybear.me/logo.png' }],
     ['meta', { property: 'og:type', content: 'website' }],
     ['meta', { property: 'og:url', content: 'https://holybear.me' }],
-
-    // Twitter card
     ['meta', { name: 'twitter:card', content: 'summary_large_image' }]
   ],
   vite: {
@@ -82,24 +69,27 @@ export default defineConfig({
       }
     }
 
-    // 只給首頁和英文首頁設定 og:title、og:description、og:image
-    if (
-      page.relativePath === 'index.md' ||           // 首頁
-      page.relativePath === 'en/index.md'           // 英文首頁
-    ) {
-      if (!page.frontmatter.head) page.frontmatter.head = []
+    // 判斷是否為英文頁面（en/開頭）
+    const isEN = page.relativePath.startsWith('en/')
 
-      if (page.relativePath === 'index.md') {
-        // 中文首頁
-        page.frontmatter.head.push(['meta', { property: 'og:title', content: '聖小熊的秘密基地' }])
-        page.frontmatter.head.push(['meta', { property: 'og:description', content: '聖小熊的 HyperOS 模組與技術筆記分享網站。' }])
-        page.frontmatter.head.push(['meta', { property: 'og:image', content: 'https://holybear.me/logo.png' }])
-      } else if (page.relativePath === 'en/index.md') {
-        // 英文首頁
-        page.frontmatter.head.push(['meta', { property: 'og:title', content: "HolyBear's Secret Base" }])
-        page.frontmatter.head.push(['meta', { property: 'og:description', content: "HolyBear's personal site, featuring HyperOS modules, tech notes, and Android customization & open-source sharing." }])
-        page.frontmatter.head.push(['meta', { property: 'og:image', content: 'https://holybear.me/logo.png' }])
-      }
+    // 動態設定 head
+    if (!page.frontmatter.head) page.frontmatter.head = []
+
+    if (isEN) {
+      // 英文頁面
+      page.frontmatter.head.push(['title', {}, "HolyBear's Secret Base"])
+      page.frontmatter.head.push(['meta', { property: 'og:title', content: "HolyBear's Secret Base" }])
+      page.frontmatter.head.push(['meta', { property: 'og:description', content: "HolyBear's personal site, featuring HyperOS modules, tech notes, and Android customization & open-source sharing." }])
+      page.frontmatter.head.push(['meta', { property: 'og:image', content: 'https://holybear.me/logo.png' }])
+    } else if (
+      page.relativePath === 'index.md'
+      // 你也可以加其它中文首頁的判斷
+    ) {
+      // 中文首頁
+      page.frontmatter.head.push(['title', {}, '聖小熊的秘密基地'])
+      page.frontmatter.head.push(['meta', { property: 'og:title', content: '聖小熊的秘密基地' }])
+      page.frontmatter.head.push(['meta', { property: 'og:description', content: '聖小熊的 HyperOS 模組與技術筆記分享網站。' }])
+      page.frontmatter.head.push(['meta', { property: 'og:image', content: 'https://holybear.me/logo.png' }])
     }
   }
 })
