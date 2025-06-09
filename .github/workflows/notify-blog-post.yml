@@ -176,10 +176,10 @@ jobs:
             ARTICLE_URL="${BASE_URL}/blog/${ARTICLE_SLUG}.html" # 假設您的文章是 .html 結尾，確保變數加上雙引號
 
             # 組裝 Telegram 訊息
-            # 這裡的 MESSAGE 變數，因為是用 += 串接，要確保內容都用雙引號
+            # 【重要】這裡移除了不必要的 '...' 符號
             MESSAGE="**📢 New push to GitHub**\n"
             MESSAGE+="**${TITLE}**\n"
-            MESSAGE+="```${{ github.event.head_commit.message }}```\n" # 這裡 ${{...}} 會直接輸出
+            MESSAGE+="```${{ github.event.head_commit.message }}```\n"
             MESSAGE+="[>>點此閱讀文章](${ARTICLE_URL})\n"
             MESSAGE+="by ${{ github.event.head_commit.author.name }}"
 
