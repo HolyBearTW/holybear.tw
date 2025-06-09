@@ -18,6 +18,29 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: 部屬日誌文章
+        run: |
+          git fetch origin main
+          DELETED=$(git diff --name-status origin/main...HEAD | grep '^D' | awk '{print $2}' | grep '^blog/')
+          deleted_any=0
+          for file in $DELETED; do
+            en_file="en/$file"
+            if [ -f "$en_file" ]; then
+              git rm "$en_file"
+              echo "Deleted $en_file"
+              deleted_any=1
+            fi
+          done
+          if [ $deleted_any -eq 1 ]; then
+            git config --global user.name 'System Administrator'
+            git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+            git commit -am "chore: sync delete en/blog files"
+            git pull --rebase origin main
+            git push || git push --force
+          else
+            echo "No en/blog files to delete."
+          fi
+
       - name: 設定 Node.js 與快取
         uses: actions/setup-node@v4
         with:
