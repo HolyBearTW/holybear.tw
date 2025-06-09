@@ -1,63 +1,52 @@
-name: Deploy Blog & Notify New Post to Telegram # 工作流程名稱，改為部署與通知
+name: Deploy Blog & Notify New Post to Telegram
 
-# 當有新的 push 事件發生時觸發此 workflow
 on:
   push:
     branches:
-      - main # 請將此處改為您儲存庫的主要分支名稱，例如 master
+      - main
     paths:
-      - 'blog/**' # 監聽 'blog/' 目錄下的任何檔案變動
-      - 'blog/**/*' # 確保涵蓋 'blog/' 子目錄中的變動
+      - 'blog/**'
+      - 'blog/**/*'
 
 jobs:
-  # --- 第一個 Job: 負責建置和部署 GitHub Pages ---
   build_and_deploy_pages:
     runs-on: ubuntu-latest
-    # 【重要】設定 environment，這是 GitHub Pages 部署所需的
     environment:
       name: github-pages
     permissions:
       contents: read
-      pages: write # 部署 Pages 需要寫入權限
-      id-token: write # 部署 Pages 需要這個權限
+      pages: write
+      id-token: write
 
     outputs:
-      # 將偵測到的新檔案列表輸出，供後續 notify_new_post job 使用
       new_post_files: ${{ steps.get-new-files.outputs.NEW_POST_FILES }}
 
     steps:
       - name: Checkout repository for build
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # 獲取所有歷史紀錄，以便 git diff 能正確判斷「新增」的檔案
+          fetch-depth: 0
 
       - name: Get new files in target directory (for decision making)
-        id: get-new-files # 保留 ID 以便輸出
+        id: get-new-files
         run: |
           TARGET_DIR="blog/"
           CURRENT_SHA="${{ github.sha }}"
           LAST_COMMIT_SHA=$(git rev-parse "${CURRENT_SHA}~1" 2>/dev/null || echo "")
 
-          # 將原始偵測到的檔案路徑寫入臨時文件
           temp_raw_detected_files="temp_raw_detected_files.txt"
-          > "$temp_raw_detected_files" # 清空或建立文件
+          > "$temp_raw_detected_files"
 
           if [ -z "$LAST_COMMIT_SHA" ]; then
-            # 對於儲存庫的第一次 push，所有符合條件的文件都視為「新增」
             find "$TARGET_DIR" -type f -print0 | xargs -0 -r -n 1 echo >> "$temp_raw_detected_files"
           else
-            # 比較本次 push 和上一個 commit 之間的差異，只篩選新增的檔案
             git diff --name-only --diff-filter=A "${LAST_COMMIT_SHA}" "${CURRENT_SHA}" -- "$TARGET_DIR" -z | xargs -0 -r -n 1 echo >> "$temp_raw_detected_files"
           fi
 
-          NEW_POST_FILES_FINAL="" # 最終要輸出的乾淨檔案列表
-          # 檢查是否有任何檔案被偵測到
-          if [ -s "$temp_raw_detected_files" ]; then # -s 檢查檔案是否存在且不為空
-            # 使用 while read 迴圈安全地讀取檔案中的每一行 (檔名)
+          NEW_POST_FILES_FINAL=""
+          if [ -s "$temp_raw_detected_files" ]; then
             while IFS= read -r file; do
-              # 【加強防呆】確保檔案存在且是普通文件，並且在目標目錄下
               if [ -f "$file" ] && [[ "$file" == "$TARGET_DIR"* ]]; then
-                # 如果 NEW_POST_FILES_FINAL 不為空，則先加換行符號
                 [ -n "$NEW_POST_FILES_FINAL" ] && NEW_POST_FILES_FINAL+=$'\n'
                 NEW_POST_FILES_FINAL+="$file"
               else
@@ -67,26 +56,17 @@ jobs:
           fi
 
           echo "Detected NEW files in ${TARGET_DIR} directory:"
-          echo "${NEW_POST_FILES_FINAL}" # 這裡直接輸出 NEW_POST_FILES_FINAL 的內容，會保留換行
+          echo "${NEW_POST_FILES_FINAL}"
 
-          # 將結果輸出給下一個步驟
           echo "NEW_POST_FILES=${NEW_POST_FILES_FINAL}" >> "$GITHUB_OUTPUT"
 
-      # --- 【這裡放您的部落格建置指令】 ---
-      # 這個步驟會生成您的靜態網站檔案，並放到 _site 或 public 目錄
       - name: Build Your Blog
-        # 請在這裡替換成您實際部落格的建置指令。例如：
-        # run: bundle install && bundle exec jekyll build
-        # run: hugo
-        # run: npm install && hexo generate
         run: |
           echo "這裡是您部落格的建置指令。它會產生靜態檔案到 _site 或 public 目錄。"
-          # 以下是為了示範而放置的模擬指令，請務必替換為您真實的建置指令
           mkdir -p _site 
           echo "<h1>這是首頁</h1>" > _site/index.html
           mkdir -p _site/blog
           echo "<h1>Hello World! 這是一篇新文章</h1>" > _site/blog/first-new-article.html
-          # 模擬指令結束，請移除或替換上方這些模擬指令為您真實的建置指令
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
@@ -94,145 +74,110 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './_site' # 確保這裡的路徑與您部落格實際的輸出目錄一致 (例如 _site 或 public)
+          path: './_site'
 
       - name: Deploy to GitHub Pages
-        id: deployment # 給這個步驟一個 ID，方便後續引用
+        id: deployment
         uses: actions/deploy-pages@v4
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  # --- 第二個 Job: 發送 Telegram 通知 (在 Pages 部署成功後) ---
   notify_new_post:
     runs-on: ubuntu-latest
-    needs: build_and_deploy_pages # <--- 【關鍵】這個 Job 會在 build_and_deploy_pages 成功後才執行
+    needs: build_and_deploy_pages
 
-    # 只有當 build_and_deploy_pages 成功且有新檔案被偵測到時才執行通知
     if: success() && needs.build_and_deploy_pages.outputs.new_post_files != ''
 
     steps:
-      - name: Checkout repository # 重新檢出，以便讀取文章內容
+      - name: Checkout repository
         uses: actions/checkout@v4
-        # 這裡不需要 fetch-depth: 0，因為我們只讀取檔案
 
-      - name: Process and send Telegram notification # 步驟 3: 處理檔案並發送 Telegram 通知
+      - name: Process and send Telegram notification
         run: |
           TELEGRAM_BOT_TOKEN="${{ secrets.TELEGRAM_BOT_TOKEN }}"
           TELEGRAM_CHAT_ID="${{ secrets.TELEGRAM_CHAT_ID }}"
-
-          # 從上一個 Job 獲取偵測到的新文章檔案列表
           NEW_POST_FILES="${{ needs.build_and_deploy_pages.outputs.new_post_files }}"
-          
-          # 【重要設定】您的網站基礎網址
           BASE_URL="https://holybear.me"
 
-          # 【加強防呆】檢查 NEW_POST_FILES 是否為空或只包含空白
-          if [[ -z "${NEW_POST_FILES// /}" ]]; then # 移除所有空白後判斷是否為空
+          if [[ -z "${NEW_POST_FILES// /}" ]]; then
             echo "No valid new files detected for notification, skipping."
-            exit 0 # 提前結束，不發送通知
+            exit 0
           fi
 
-          # 遍歷每個新增的檔案
-          # 注意：為了安全處理檔名中的空白，這裡使用 IFS 和 read -r
-          IFS=$'\n' # 設定內部欄位分隔符為換行符，確保檔名中的空白不會被錯誤地拆分
+          IFS=$'\n'
           for file_path_raw in ${NEW_POST_FILES}; do
-            # 【關鍵】徹底清理 file_path_raw，確保它只是一個乾淨的檔案路徑
-            # 這能處理可能存在的額外空白或隱形字元
-            file_path="$(echo "${file_path_raw}" | xargs)" # 【修正】新增雙引號
+            file_path="$(echo "${file_path_raw}" | xargs)"
 
-            # 【加強防呆】再次檢查檔案是否存在且是普通文件，避免處理無效路徑
-            if [ ! -f "${file_path}" ]; then # 【修正】新增雙引號
+            if [ ! -f "${file_path}" ]; then
               echo "Warning: File not found or not a regular file: ${file_path}, skipping."
-              continue # 跳過當前迴圈，處理下一個檔案
+              continue
             fi
 
             echo "Processing file: ${file_path}"
-            
-            # 讀取檔案內容
-            file_content="$(cat "${file_path}")" # 【修正】新增雙引號
-            
-            # 從 Markdown 檔案內容中提取 title (優先從 Front Matter 提取)
-            # 【最終修正】使用 awk/sed 確保輸出為單行、無引號、無換行
-            TITLE="$(echo "${file_content}" | awk ' # 【修正】新增雙引號
-              /^---$/ { count++; if (count == 2) exit; next }
-              (count == 1 && /^\s*title:/) {
-                gsub(/^\s*title:\s*/, "", $0);
-                gsub(/[\r\n]/, " ", $0);      # 移除換行符 (CR 和 LF)
-                gsub(/^"|"$/, "", $0);       # 移除頭尾雙引號
-                gsub(/^\x27|\x27$/, "", $0); # 移除頭尾單引號 (x27 是單引號的十六進位碼)
-                print $0;
+            file_content="$(cat "${file_path}")"
+
+            # Robust title extraction
+            TITLE="$(awk '
+              /^---$/ { count++; next }
+              (count == 1 && $0 ~ /^\s*title:/) {
+                sub(/^\s*title:\s*/, ""); 
+                gsub(/^[\"\047]+|[\"\047]+$/, ""); 
+                print; 
                 exit
               }
-            ' | xargs)" # 【修正】新增雙引號，並再次用 xargs 清理前後空白及任何隱形字元
-            
-            # 如果 Front Matter 中沒有 title，則嘗試從 H1 標題提取
-            # 【最終修正】確保輸出為單行、無引號、無換行
-            if [[ -z "${TITLE}" ]]; then
-              TITLE="$(echo "${file_content}" | grep -iE '^#\s*(.*)' | head -n 1 | sed -E 's/^#\s*(.*)/\1/' | sed -E 's/[\r\n]//g' | sed -E 's/^"|"//g' | sed -E 's/^\x27|\x27//g' | xargs)" # 【修正】新增雙引號
+            ' <<< "$file_content" | xargs)"
+
+            # Try H1 if title not found
+            if [[ -z "$TITLE" ]]; then
+              TITLE="$(echo "$file_content" | grep -iE '^#\s*(.*)' | head -n 1 | sed -E 's/^#\s*(.*)/\1/' | sed -E 's/[\r\n]//g' | sed -E 's/^"|"//g' | sed -E "s/^\x27|\x27//g" | xargs)"
             fi
-            # 如果仍然沒有標題，設定為預設值
-            if [[ -z "${TITLE}" ]]; then
+            if [[ -z "$TITLE" ]]; then
               TITLE="無標題文章"
             fi
 
-            # 【最新修正】使用 grep 和 sed 來提取 category，更穩定處理多種 YAML 格式
-            # 【最終修正】確保輸出為單行、無引號、無換行
+            # Robust category extraction
             CATEGORY=""
-            CATEGORY_RAW="$(echo "${file_content}" | grep -A 1 -E '^\s*category:' | grep -E '^\s*-\s*' | head -n 1 | sed -E 's/^\s*-\s*(.*)/\1/' | sed -E 's/[\r\n]//g' | sed -E 's/^"|"//g' | sed -E 's/^\x27|\x27//g' | xargs)" # 【修正】新增雙引號
-            
-            # 只有當 CATEGORY_RAW 包含有效字元時才賦值給 CATEGORY
-            if [[ -n "${CATEGORY_RAW}" ]]; then
-              CATEGORY="${CATEGORY_RAW}"
-              # 再次清理確保沒有任何特殊字元可能被誤解
-              # 這裡用 tr -cd 來只保留特定字元，並用 xargs 清理多餘空白
-              CATEGORY="$(echo "${CATEGORY}" | tr -cd '[:alnum:] _-')" # 【修正】新增雙引號
-              CATEGORY="$(echo "${CATEGORY}" | xargs)" # 【修正】新增雙引號
+            CATEGORY_RAW="$(echo "$file_content" | grep -A 1 -E '^\s*category:' | grep -E '^\s*-\s*' | head -n 1 | sed -E 's/^\s*-\s*(.*)/\1/' | sed -E 's/[\r\n]//g' | sed -E 's/^"|"//g' | sed -E "s/^\x27|\x27//g" | xargs)"
+            if [[ -n "$CATEGORY_RAW" ]]; then
+              CATEGORY="$CATEGORY_RAW"
+              CATEGORY="$(echo "$CATEGORY" | tr -cd '[:alnum:] _-')"
+              CATEGORY="$(echo "$CATEGORY" | xargs)"
             fi
-
-            if [[ -z "${CATEGORY}" ]]; then # 如果第一個提取方式沒結果，嘗試第二種
-              CATEGORY_RAW="$(echo "${file_content}" | grep -iE '^\s*category:\s*\[.*\]' | head -n 1 | sed -E 's/^\s*category:\s*\[(.*)\].*/\1/' | cut -d',' -f1 | sed -E 's/[\r\n]//g' | sed -E 's/^"|"//g' | sed -E 's/^\x27|\x27//g' | xargs)"
-              if [[ -n "${CATEGORY_RAW}" ]]; then
-                CATEGORY="${CATEGORY_RAW}"
-                CATEGORY="$(echo "${CATEGORY}" | tr -cd '[:alnum:] _-')"
-                CATEGORY="$(echo "${CATEGORY}" | xargs)"
+            if [[ -z "$CATEGORY" ]]; then
+              CATEGORY_RAW="$(echo "$file_content" | grep -iE '^\s*category:\s*\[.*\]' | head -n 1 | sed -E 's/^\s*category:\s*\[(.*)\].*/\1/' | cut -d',' -f1 | sed -E 's/[\r\n]//g' | sed -E 's/^"|"//g' | sed -E "s/^\x27|\x27//g" | xargs)"
+              if [[ -n "$CATEGORY_RAW" ]]; then
+                CATEGORY="$CATEGORY_RAW"
+                CATEGORY="$(echo "$CATEGORY" | tr -cd '[:alnum:] _-')"
+                CATEGORY="$(echo "$CATEGORY" | xargs)"
               fi
             fi
-            if [[ -z "${CATEGORY}" ]]; then # 如果第二種也沒結果，嘗試第三種
-              CATEGORY_RAW="$(echo "${file_content}" | grep -iE '^\s*category:\s*[^\[-]' | head -n 1 | sed -E 's/^\s*category:\s*(.*)/\1/' | sed -E 's/[\r\n]//g' | sed -E 's/^"|"//g' | sed -E 's/^\x27|\x27//g' | xargs)"
-              if [[ -n "${CATEGORY_RAW}" ]]; then
-                CATEGORY="${CATEGORY_RAW}"
-                CATEGORY="$(echo "${CATEGORY}" | tr -cd '[:alnum:] _-')"
-                CATEGORY="$(echo "${CATEGORY}" | xargs)"
+            if [[ -z "$CATEGORY" ]]; then
+              CATEGORY_RAW="$(echo "$file_content" | grep -iE '^\s*category:\s*[^\[-]' | head -n 1 | sed -E 's/^\s*category:\s*(.*)/\1/' | sed -E 's/[\r\n]//g' | sed -E 's/^"|"//g' | sed -E "s/^\x27|\x27//g" | xargs)"
+              if [[ -n "$CATEGORY_RAW" ]]; then
+                CATEGORY="$CATEGORY_RAW"
+                CATEGORY="$(echo "$CATEGORY" | tr -cd '[:alnum:] _-')"
+                CATEGORY="$(echo "$CATEGORY" | xargs)"
               fi
             fi
-
-            # 這個最終的清理保留，因為它處理的是 CATEGORY 變數可能在最後仍有的前後空白或引號問題
-            # 但考慮到 tr -cd 和 xargs 的強力清理，這裡的影響可能已很小
-            # CATEGORY=$(echo "${CATEGORY}" | sed -E 's/^[[:space:]]+|[[:space:]]+$//g') # 移除前後空白
-            # CATEGORY=$(echo "${CATEGORY}" | sed -E 's/[\x27"\/]//g') # 移除單引號、雙引號、斜線 (這裡的 / 已經是字元，不需要跳脫)
-
-            if [[ -n "${CATEGORY}" ]]; then
+            if [[ -n "$CATEGORY" ]]; then
                 TITLE="【${CATEGORY}】${TITLE}"
             fi
 
-            # 產生文章連結的邏輯
-            ARTICLE_SLUG="$(echo "${file_path}" | sed -E 's|^blog/(.*)\.md$|\1|')" # 【修正】新增雙引號
-            ARTICLE_URL="${BASE_URL}/blog/${ARTICLE_SLUG}.html" # 假設您的文章是 .html 結尾
+            ARTICLE_SLUG="$(echo "$file_path" | sed -E 's|^blog/(.*)\.md$|\1|')"
+            ARTICLE_URL="${BASE_URL}/blog/${ARTICLE_SLUG}.html"
 
-            # 組裝 Telegram 訊息
             MESSAGE="**📢 New push to GitHub**\n"
             MESSAGE+="**${TITLE}**\n"
-            MESSAGE+="```${{ github.event.head_commit.message }}```\n"
+            MESSAGE+="\`\`\`${{ github.event.head_commit.message }}\`\`\`\n"
             MESSAGE+="[>>點此閱讀文章](${ARTICLE_URL})\n"
             MESSAGE+="by ${{ github.event.head_commit.author.name }}"
 
-            # 發送 Telegram 訊息
-            ENCODED_MESSAGE="$(echo -e "${MESSAGE}" | sed -E 's/([_*\[\]()~`>#+\-=\|{}!.\\])/\\\1/g' | sed 's/ /%20/g' | sed 's/\n/%0A/g' | sed 's/\*/%2A/g' | sed 's/\[/%5B/g' | sed 's/\]/%5D/g' | sed 's/(/%28/g' | sed 's/)/%29/g' | sed 's/`/%60/g' | sed 's/{/%7B/g' | sed 's/}/%7D/g' | sed 's/~/%7E/g' | sed 's/\./%2E/g')" # 【修正】新增雙引號
+            ENCODED_MESSAGE="$(echo -e "${MESSAGE}" | sed -E 's/([_*\[\]()~`>#+\-=\|{}!.\\])/\\\1/g' | sed 's/ /%20/g' | sed 's/\n/%0A/g' | sed 's/\*/%2A/g' | sed 's/\[/%5B/g' | sed 's/\]/%5D/g' | sed 's/`/%60/g')"
 
             curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
               -d "chat_id=${TELEGRAM_CHAT_ID}" \
               -d "text=${ENCODED_MESSAGE}" \
-              -d "parse_mode=MarkdownV2" # 確保這裡使用 MarkdownV2
+              -d "parse_mode=MarkdownV2"
             echo "Telegram notification sent for ${file_path} with title: ${TITLE}"
           done
         env:
