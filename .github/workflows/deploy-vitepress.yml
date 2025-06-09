@@ -1,7 +1,7 @@
 permissions:
   contents: write
 
-name: 部署 VitePress 靜態網站到 GitHub Pages（含同步刪除 en/blog 檔案）
+name: 部署 VitePress 靜態網站到 GitHub Pages
 
 on:
   push:
