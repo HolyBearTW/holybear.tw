@@ -121,7 +121,6 @@ jobs:
           TELEGRAM_CHAT_ID="${{ secrets.TELEGRAM_CHAT_ID }}"
 
           # 從上一個 Job 獲取偵測到的新文章檔案列表
-          # 這裡使用雙引號，確保正確處理檔名中的空白
           NEW_POST_FILES="${{ needs.build_and_deploy_pages.outputs.new_post_files }}"
           
           # 【重要設定】您的網站基礎網址
@@ -130,53 +129,55 @@ jobs:
           # 遍歷每個新增的檔案
           # 注意：為了安全處理檔名中的空白，這裡使用 IFS 和 read -r
           IFS=$'\n' # 設定內部欄位分隔符為換行符，確保檔名中的空白不會被錯誤地拆分
-          for file_path in ${NEW_POST_FILES}; do # 這裡也使用雙引號
+          for file_path in ${NEW_POST_FILES}; do
             echo "Processing file: ${file_path}"
             
             # 讀取檔案內容
-            file_content=$(cat "${file_path}") # 加上雙引號
+            file_content=$(cat "${file_path}")
             
             # 從 Markdown 檔案內容中提取 title (優先從 Front Matter 提取)
-            TITLE=""
-            TITLE=$(echo "${file_content}" | awk ' # 加上雙引號
+            # 【修正】確保輸出不包含換行符
+            TITLE=$(echo "${file_content}" | awk '
               /^---$/ { count++; if (count == 2) exit; next }
               (count == 1 && /^\s*title:/) { 
                 gsub(/^\s*title:\s*/, "", $0); 
                 gsub(/\r/, "", $0);
+                gsub(/\n/, " ", $0); # 將內容中的換行符替換為空白，確保單行
                 print $0; 
                 exit
               }
             ')
             
-            if [ -z "${TITLE}" ]; then # 加上雙引號
-              TITLE=$(echo "${file_content}" | grep -iE '^#\s*(.*)' | head -n 1 | sed -E 's/^#\s*(.*)/\1/' | tr -d '\r')
+            # 【修正】確保輸出不包含換行符
+            if [ -z "${TITLE}" ]; then
+              TITLE=$(echo "${file_content}" | grep -iE '^#\s*(.*)' | head -n 1 | sed -E 's/^#\s*(.*)/\1/' | tr -d '\r' | tr -d '\n')
             fi
-            if [ -z "${TITLE}" ]; then # 加上雙引號
+            if [ -z "${TITLE}" ]; then
               TITLE="無標題文章"
             fi
 
             # 【最新修正】使用 grep 和 sed 來提取 category，更穩定處理多種 YAML 格式
+            # 【修正】確保輸出不包含換行符
             CATEGORY=""
-            CATEGORY=$(echo "${file_content}" | grep -A 1 -E '^\s*category:' | grep -E '^\s*-\s*' | head -n 1 | sed -E 's/^\s*-\s*(.*)/\1/' | tr -d '\r')
-            if [ -z "${CATEGORY}" ]; then # 加上雙引號
-              CATEGORY=$(echo "${file_content}" | grep -iE '^\s*category:\s*\[.*\]' | head -n 1 | sed -E 's/^\s*category:\s*\[(.*)\].*/\1/' | cut -d',' -f1 | tr -d '\r')
+            CATEGORY=$(echo "${file_content}" | grep -A 1 -E '^\s*category:' | grep -E '^\s*-\s*' | head -n 1 | sed -E 's/^\s*-\s*(.*)/\1/' | tr -d '\r' | tr -d '\n')
+            if [ -z "${CATEGORY}" ]; then
+              CATEGORY=$(echo "${file_content}" | grep -iE '^\s*category:\s*\[.*\]' | head -n 1 | sed -E 's/^\s*category:\s*\[(.*)\].*/\1/' | cut -d',' -f1 | tr -d '\r' | tr -d '\n')
             fi
-            if [ -z "${CATEGORY}" ]; then # 加上雙引號
-              CATEGORY=$(echo "${file_content}" | grep -iE '^\s*category:\s*[^\[-]' | head -n 1 | sed -E 's/^\s*category:\s*(.*)/\1/' | tr -d '\r')
+            if [ -z "${CATEGORY}" ]; then
+              CATEGORY=$(echo "${file_content}" | grep -iE '^\s*category:\s*[^\[-]' | head -n 1 | sed -E 's/^\s*category:\s*(.*)/\1/' | tr -d '\r' | tr -d '\n')
             fi
             CATEGORY=$(echo "${CATEGORY}" | sed -E 's/^[[:space:]]+|[[:space:]]+$//g')
             CATEGORY=$(echo "${CATEGORY}" | sed -E 's/[\x27"\/]//g')
 
-            if [ -n "${CATEGORY}" ]; then # 加上雙引號
-                TITLE="【${CATEGORY}】${TITLE}" # 變數也加上雙引號
+            if [ -n "${CATEGORY}" ]; then
+                TITLE="【${CATEGORY}】${TITLE}"
             fi
 
             # 產生文章連結的邏輯
-            ARTICLE_SLUG=$(echo "${file_path}" | sed -E 's|^blog/(.*)\.md$|\1|') # 加上雙引號
+            ARTICLE_SLUG=$(echo "${file_path}" | sed -E 's|^blog/(.*)\.md$|\1|')
             ARTICLE_URL="${BASE_URL}/blog/${ARTICLE_SLUG}.html" # 假設您的文章是 .html 結尾，確保變數加上雙引號
 
             # 組裝 Telegram 訊息
-            # 【重要】這裡移除了不必要的 '...' 符號
             MESSAGE="**📢 New push to GitHub**\n"
             MESSAGE+="**${TITLE}**\n"
             MESSAGE+="```${{ github.event.head_commit.message }}```\n"
@@ -191,7 +192,7 @@ jobs:
               -d "chat_id=${TELEGRAM_CHAT_ID}" \
               -d "text=${ENCODED_MESSAGE}" \
               -d "parse_mode=MarkdownV2" # 確保這裡使用 MarkdownV2
-            echo "Telegram notification sent for ${file_path} with title: ${TITLE}" # 最後的 echo 也加上雙引號
+            echo "Telegram notification sent for ${file_path} with title: ${TITLE}"
           done
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
