@@ -249,24 +249,23 @@ const pageNumbers = computed(() => {
 
 @media (max-width: 767px) {
   .post-item-link {
-    min-height: 122px;
-    height: auto;
     flex-direction: row;
     align-items: center;
-    text-align: left;
-    padding: 0.2rem 0.5rem;
   }
   .post-thumbnail-wrapper {
-    width: 96px;   /* 更小寬度 */
-    height: 54px;   /* 更小高度 */
-    margin-right: 0.5rem;
+    width: 120px;       /* 這裡改成你覺得剛好的寬度，不要太大 */
+    height: 72px;
+    margin-right: 0.7rem;
+    flex-shrink: 0;     /* 圖片區不要壓縮 */
   }
   .post-item {
     padding: 0.4rem 0;    /* 手機版上下間隔再更小 */
   }
   .post-info {
-    /* 不要 height: 100% */
+    flex: 1 1 0;        /* 讓文字區自適應剩下空間 */
+    min-width: 0;       /* 防止溢出 */
   }
+}
   .post-title, .post-info .post-title {
     font-size: 1.05rem;
   }
