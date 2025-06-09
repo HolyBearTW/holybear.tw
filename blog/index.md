@@ -248,18 +248,28 @@ const pageNumbers = computed(() => {
 }
 
 @media (max-width: 767px) {
+  .post-item {
+    padding: 0.2rem 0;   /* 上下間距可以再小一點 */
+    /* 不要設定height或min-height，讓內容自適應 */
+  }
   .post-item-link {
-    flex-direction: row;
-    align-items: center;
+    min-height: unset;   /* 移除 min-height 限制 */
+    padding: 0.2rem 0.5rem;
   }
   .post-thumbnail-wrapper {
-    width: 120px;
-    height: 72px;
+    width: 110px;        /* 控制左邊區塊不要過寬 */
+    height: 90px;        /* 高度可以稍微大一點，讓圖片更顯眼 */
     margin-right: 0.7rem;
     flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
-  .post-item {
-    padding: 0.4rem 0;
+  .post-thumbnail {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
   }
   .post-info {
     flex: 1 1 0;
