@@ -21,7 +21,7 @@ jobs:
       - name: 部屬日誌文章
         run: |
           git fetch origin main
-          DELETED=$(git diff --name-status origin/main...HEAD | grep '^D' | awk '{print $2}' | grep '^blog/')
+          DELETED=$(git diff --name-status origin/main...HEAD | grep '^D' | awk '{print $2}' | grep '^blog/' || true)
           deleted_any=0
           for file in $DELETED; do
             en_file="en/$file"
@@ -34,9 +34,13 @@ jobs:
           if [ $deleted_any -eq 1 ]; then
             git config --global user.name 'System Administrator'
             git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-            git commit -am "chore: sync delete en/blog files"
-            git pull --rebase origin main
-            git push || git push --force
+            if ! git diff --cached --quiet; then
+              git commit -am "chore: sync delete en/blog files"
+              git pull --rebase origin main
+              git push || git push --force
+            else
+              echo "No files staged for commit."
+            fi
           else
             echo "No en/blog files to delete."
           fi
