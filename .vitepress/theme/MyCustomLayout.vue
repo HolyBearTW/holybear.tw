@@ -61,11 +61,7 @@ const currentDisplayDate = computed(() => {
           <template v-if="frontmatter.author">作者：{{ frontmatter.author }}</template>
           <template v-if="frontmatter.author && currentDisplayDate">｜</template>
           <template v-if="currentDisplayDate">{{ currentDisplayDate }}</template>
-          <span style="float:right;">
-            <ClientOnly>
-              <ViewCounter :slug="currentSlug" />
-            </ClientOnly>
-          </span>
+
         </p>
         <div class="blog-post-date-divider"></div>
       </div>
