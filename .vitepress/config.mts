@@ -3,13 +3,16 @@ import locales from './locales'
 import gitMetaPlugin from './git-meta.js'
 import { execSync } from 'child_process'
 
-// 取得當前 git branch 名稱
+// 取得當前 git branch 名稱，只在 Node.js 環境下有效
 function getCurrentBranch() {
-  try {
-    return execSync('git rev-parse --abbrev-ref HEAD').toString().trim()
-  } catch (e) {
-    return ''
+  if (typeof process !== 'undefined' && process.versions?.node) {
+    try {
+      return execSync('git rev-parse --abbrev-ref HEAD').toString().trim()
+    } catch (e) {
+      return ''
+    }
   }
+  return ''
 }
 
 export default defineConfig({
@@ -18,7 +21,6 @@ export default defineConfig({
   base: '/',
   locales: locales.locales,
   srcExclude: ['README.md'],
-  // head 這裡只放全站通用，不放 og:title, og:description, og:image, title
   head: [
     ['meta', { name: 'theme-color', content: '#00FFEE' }],
     ['link', { rel: 'icon', href: '/favicon.ico' }],
@@ -51,44 +53,46 @@ export default defineConfig({
     ]
   },
   extendsPage(page) {
-    const branch = getCurrentBranch()
-    if (
-      (branch === 'main' || branch === 'master') &&
-      page.filePath &&
-      page.filePath.endsWith('.md') &&
-      !page.filePath.replaceAll('\\', '/').includes('/en/blog/')
-    ) {
-      try {
-        const log = execSync(
-          `git log --diff-filter=A --follow --format=%aN,%aI -- "${page.filePath}" | tail -1`
-        ).toString().trim()
-        const [author, date] = log.split(',')
-        if (!page.frontmatter.author) page.frontmatter.author = author
-        if (!page.frontmatter.date) page.frontmatter.date = date
-      } catch (e) {
-        // 無 git 資訊略過
+    // 僅在 Node.js (SSR/build) 階段執行 git 相關（避免 CSR 執行）
+    if (typeof process !== 'undefined' && process.versions?.node) {
+      const branch = getCurrentBranch()
+      if (
+        (branch === 'main' || branch === 'master') &&
+        page.filePath &&
+        page.filePath.endsWith('.md') &&
+        !page.filePath.replaceAll('\\', '/').includes('/en/blog/')
+      ) {
+        try {
+          const log = execSync(
+            `git log --diff-filter=A --follow --format=%aN,%aI -- "${page.filePath}"`
+          ).toString().trim()
+          const [author, date] = log.split(',')
+          if (!page.frontmatter.author) page.frontmatter.author = author
+          if (!page.frontmatter.date) page.frontmatter.date = date
+        } catch (e) {
+          // 無 git 資訊略過
+        }
       }
     }
 
     // 判斷是否是英文頁面（en/開頭）
     const isEN = page.relativePath.startsWith('en/')
 
+    // 保證 head 存在
     if (!page.frontmatter.head) page.frontmatter.head = []
 
+    // head 統一加法，確保 SSR/CSR 結果一致
     if (isEN) {
-      // 英文頁面
       page.frontmatter.head.push(['title', {}, "HolyBear's Secret Base"])
       page.frontmatter.head.push(['meta', { property: 'og:title', content: "HolyBear's Secret Base" }])
       page.frontmatter.head.push(['meta', { property: 'og:description', content: "HolyBear's personal site, featuring HyperOS modules, tech notes, and Android customization & open-source sharing." }])
       page.frontmatter.head.push(['meta', { property: 'og:image', content: page.frontmatter.image || 'https://holybear.me/logo.png' }])
     } else if (page.relativePath === 'index.md') {
-      // 中文首頁
       page.frontmatter.head.push(['title', {}, '聖小熊的秘密基地'])
       page.frontmatter.head.push(['meta', { property: 'og:title', content: '聖小熊的秘密基地' }])
       page.frontmatter.head.push(['meta', { property: 'og:description', content: '聖小熊的 HyperOS 模組與技術筆記分享網站。' }])
       page.frontmatter.head.push(['meta', { property: 'og:image', content: page.frontmatter.image || 'https://holybear.me/logo.png' }])
     } else if (page.frontmatter.image) {
-      // 其它有 image 的文章
       page.frontmatter.head.push(['meta', { property: 'og:image', content: page.frontmatter.image }])
     }
   }
