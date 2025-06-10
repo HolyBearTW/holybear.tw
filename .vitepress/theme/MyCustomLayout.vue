@@ -2,8 +2,8 @@
 import Theme from 'vitepress/theme'
 import { useData } from 'vitepress'
 import { computed } from 'vue'
-// import VotePanel from '../components/VotePanel.vue'
-// import GiscusComments from '../components/GiscusComments.vue'
+import VotePanel from '../components/VotePanel.vue'
+import GiscusComments from '../components/GiscusComments.vue'
 import ViewCounter from '../components/ViewCounter.vue'
 
 const { frontmatter, page } = useData()
@@ -71,7 +71,10 @@ const currentDisplayDate = computed(() => {
       </div>
     </template>
     <template #doc-after>
-
+    <ClientOnly>
+      <VotePanel />
+      <GiscusComments />
+    </ClientOnly>
     </template>
   </Theme.Layout>
 </template>
