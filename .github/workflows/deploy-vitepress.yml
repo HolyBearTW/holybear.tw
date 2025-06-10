@@ -57,6 +57,19 @@ jobs:
       - name: 安裝相依套件
         run: yarn install
 
+      - name: Commit 並 push yarn.lock
+        run: |
+          git config --global user.name 'System Administrator'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          if git diff --quiet yarn.lock; then
+            echo "No changes to yarn.lock."
+          else
+            git add yarn.lock
+            git commit -m "chore: update yarn.lock [bot]"
+            git pull --rebase origin main
+            git push || git push --force
+          fi
+
       - name: 產生英文 Blog 遞補檔案
         run: yarn gen-en-blog
 
