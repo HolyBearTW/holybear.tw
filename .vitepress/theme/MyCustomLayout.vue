@@ -7,26 +7,81 @@ import VotePanel from '../components/VotePanel.vue'
 import ViewCounter from '../components/ViewCounter.vue'
 
 const { frontmatter, page } = useData()
-const contentLoaded = ref(false)
+const imagesLoaded = ref(false)
+const allContentReady = ref(false)
 const isFirstVisit = ref(true)
+const contentLoaded = ref(false)
 
 // 檢查是否為首次訪問
 onMounted(async () => {
-  // 使用 sessionStorage 來判斷是否為首次訪問該頁面
   const pageKey = `visited-${page.value.path}`
+  
   if (sessionStorage.getItem(pageKey)) {
     isFirstVisit.value = false
     contentLoaded.value = true
+    allContentReady.value = true
   } else {
-    // 首次訪問 - 延遲一點時間確保內容正確載入
-    setTimeout(() => {
-      contentLoaded.value = true
-      sessionStorage.setItem(pageKey, 'true')
+    // 首次訪問 - 延遲等待 DOM 完全渲染後再檢查圖片
+    setTimeout(async () => {
+      await waitForImages()
+      
+      setTimeout(() => {
+        contentLoaded.value = true
+        allContentReady.value = true
+        sessionStorage.setItem(pageKey, 'true')
+      }, 300)
     }, 100)
   }
 })
 
-// 其他現有代碼保持不變...
+// 等待所有圖片載入完成
+async function waitForImages() {
+  return new Promise((resolve) => {
+    const tryWait = (attempts = 0) => {
+      nextTick(() => {
+        const images = document.querySelectorAll('.vp-doc img')
+        
+        if (images.length === 0 && attempts < 5) {
+          setTimeout(() => tryWait(attempts + 1), 200)
+          return
+        }
+        
+        if (images.length === 0) {
+          resolve()
+          return
+        }
+        
+        let loadedCount = 0
+        const totalImages = images.length
+        
+        const checkComplete = () => {
+          loadedCount++
+          if (loadedCount >= totalImages) {
+            imagesLoaded.value = true
+            resolve()
+          }
+        }
+        
+        images.forEach((img) => {
+          if (img.complete && img.naturalHeight !== 0) {
+            checkComplete()
+          } else {
+            img.addEventListener('load', checkComplete)
+            img.addEventListener('error', checkComplete)
+          }
+        })
+        
+        setTimeout(() => {
+          imagesLoaded.value = true
+          resolve()
+        }, 8000)
+      })
+    }
+    
+    tryWait()
+  })
+}
+
 const isHomePage = computed(() =>
   page.value && (page.value.path === '/' || page.value.path === '/index.html')
 )
@@ -35,12 +90,10 @@ const currentTitle = computed(() =>
   frontmatter.value ? (frontmatter.value.title || '無標題文章') : 'frontmatter.value is UNDEFINED'
 )
 
-// 唯一識別 key，可根據你需求調整
 const currentSlug = computed(() =>
   frontmatter.value?.slug || page.value?.path || frontmatter.value?.title || 'unknown'
 )
 
-// 用台灣時區 (Asia/Taipei) 顯示日期
 const currentDisplayDate = computed(() => {
   if (frontmatter.value?.date) {
     const date = new Date(frontmatter.value.date)
@@ -59,16 +112,19 @@ const currentDisplayDate = computed(() => {
 <template>
   <Theme.Layout>
     <!-- 首次加載時的臨時加載畫面 -->
-    <template v-if="isFirstVisit && !contentLoaded && !isHomePage">
+    <template v-if="isFirstVisit && !allContentReady && !isHomePage">
       <div class="content-loading-overlay">
         <div class="loading-spinner"></div>
-        <div class="loading-text">載入中...</div>
+        <div class="loading-text">載入內容中...</div>
+        <div class="loading-progress">請稍候，正在準備文章內容...</div>
       </div>
     </template>
     
     <!-- 文章頂部內容 -->
     <template #doc-before>
-      <div v-if="!isHomePage" class="blog-post-header-injected" :class="{ 'content-hidden': isFirstVisit && !contentLoaded && !isHomePage }">
+      <div v-if="!isHomePage" 
+           class="blog-post-header-injected" 
+           :class="{ 'content-hidden': isFirstVisit && !allContentReady }">
         <h1 class="blog-post-title">{{ currentTitle }}</h1>
         <div
           v-if="frontmatter && ((Array.isArray(frontmatter.category) && frontmatter.category.length) || 
@@ -102,9 +158,18 @@ const currentDisplayDate = computed(() => {
     
     <!-- 文章底部內容 -->
     <template #doc-after>
-      <div :class="{ 'content-hidden': isFirstVisit && !contentLoaded && !isHomePage }">
+      <div :class="{ 'content-hidden': isFirstVisit && !allContentReady }">
         <ClientOnly>
           <VotePanel :articleId="currentSlug" />
+        </ClientOnly>
+      </div>
+    </template>
+
+    <!-- Giscus 評論區 -->
+    <template #doc-footer>
+      <div :class="{ 'content-hidden': isFirstVisit && !allContentReady }">
+        <ClientOnly>
+          <GiscusComments :slug="currentSlug" />
         </ClientOnly>
       </div>
     </template>
@@ -112,8 +177,6 @@ const currentDisplayDate = computed(() => {
 </template>
 
 <style scoped>
-/* 現有的 CSS 保持不變 */
-
 /* 新增 loading 相關樣式 */
 .content-loading-overlay {
   position: fixed;
@@ -144,13 +207,22 @@ const currentDisplayDate = computed(() => {
   color: var(--vp-c-text-1);
 }
 
+.loading-progress {
+  margin-top: 10px;
+  font-size: 14px;
+  color: var(--vp-c-text-2);
+  text-align: center;
+}
+
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
 
 .content-hidden {
-  visibility: hidden;
+  visibility: hidden !important;
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
 }
 
 /* 原有的 CSS */
@@ -181,7 +253,7 @@ const currentDisplayDate = computed(() => {
   :deep(.vp-doc > p:first-of-type) { margin-top: 0; }
 }
 .blog-post-title {
-  font-size: 2rem; /* 小一點 */
+  font-size: 2rem;
   line-height: 1.2;
   margin-top: 0;
   margin-bottom: 0.5rem;
@@ -195,16 +267,16 @@ const currentDisplayDate = computed(() => {
 }
 .category {
   display: inline-block;
-  background: #00FFEE;  /* 主色系背景 */
-  color: #000;       /* 黑色字 */
+  background: #00FFEE;
+  color: #000;
   border-radius: 3px;
   padding: 0 0.5em;
   font-size: 0.85em;
 }
 .tag {
   display: inline-block;
-  background: #e3f2fd;  /* 藍色淡色背景 */
-  color: #2077c7;       /* 藍色字 */
+  background: #e3f2fd;
+  color: #2077c7;
   border-radius: 3px;
   padding: 0 0.5em;
   font-size: 0.85em;
