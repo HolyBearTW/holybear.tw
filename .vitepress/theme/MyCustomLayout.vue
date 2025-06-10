@@ -1,13 +1,32 @@
 <script setup>
 import Theme from 'vitepress/theme'
 import { useData } from 'vitepress'
-import { computed } from 'vue'
-import VotePanel from '../components/VotePanel.vue'
+import { computed, ref, onMounted, nextTick } from 'vue'
 import GiscusComments from '../components/GiscusComments.vue'
+import VotePanel from '../components/VotePanel.vue'
 import ViewCounter from '../components/ViewCounter.vue'
 
 const { frontmatter, page } = useData()
+const contentLoaded = ref(false)
+const isFirstVisit = ref(true)
 
+// 檢查是否為首次訪問
+onMounted(async () => {
+  // 使用 sessionStorage 來判斷是否為首次訪問該頁面
+  const pageKey = `visited-${page.value.path}`
+  if (sessionStorage.getItem(pageKey)) {
+    isFirstVisit.value = false
+    contentLoaded.value = true
+  } else {
+    // 首次訪問 - 延遲一點時間確保內容正確載入
+    setTimeout(() => {
+      contentLoaded.value = true
+      sessionStorage.setItem(pageKey, 'true')
+    }, 100)
+  }
+})
+
+// 其他現有代碼保持不變...
 const isHomePage = computed(() =>
   page.value && (page.value.path === '/' || page.value.path === '/index.html')
 )
@@ -39,27 +58,37 @@ const currentDisplayDate = computed(() => {
 
 <template>
   <Theme.Layout>
+    <!-- 首次加載時的臨時加載畫面 -->
+    <template v-if="isFirstVisit && !contentLoaded && !isHomePage">
+      <div class="content-loading-overlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">載入中...</div>
+      </div>
+    </template>
+    
+    <!-- 文章頂部內容 -->
     <template #doc-before>
-      <div v-if="!isHomePage" class="blog-post-header-injected">
+      <div v-if="!isHomePage" class="blog-post-header-injected" :class="{ 'content-hidden': isFirstVisit && !contentLoaded && !isHomePage }">
         <h1 class="blog-post-title">{{ currentTitle }}</h1>
         <div
-          v-if="(frontmatter.category && frontmatter.category.length) || (frontmatter.tag && frontmatter.tag.length)"
+          v-if="frontmatter && ((Array.isArray(frontmatter.category) && frontmatter.category.length) || 
+               (Array.isArray(frontmatter.tag) && frontmatter.tag.length))"
           class="blog-post-meta-row"
         >
           <span
-            v-for="c in frontmatter.category"
+            v-for="c in (Array.isArray(frontmatter.category) ? frontmatter.category : [])"
             :key="'cat-' + c"
             class="category"
           >{{ c }}</span>
           <span
-            v-for="t in frontmatter.tag"
+            v-for="t in (Array.isArray(frontmatter.tag) ? frontmatter.tag : [])"
             :key="'tag-' + t"
             class="tag"
           >{{ t }}</span>
         </div>
         <p class="blog-post-date-in-content">
-          <template v-if="frontmatter.author">作者：{{ frontmatter.author }}</template>
-          <template v-if="frontmatter.author && currentDisplayDate">｜</template>
+          <template v-if="frontmatter && frontmatter.author">作者：{{ frontmatter.author }}</template>
+          <template v-if="frontmatter && frontmatter.author && currentDisplayDate">｜</template>
           <template v-if="currentDisplayDate">{{ currentDisplayDate }}</template>
           <span style="float:right;">
             <ClientOnly>
@@ -70,16 +99,61 @@ const currentDisplayDate = computed(() => {
         <div class="blog-post-date-divider"></div>
       </div>
     </template>
+    
+    <!-- 文章底部內容 -->
     <template #doc-after>
-    <ClientOnly>
-      <VotePanel />
-      <GiscusComments />
-    </ClientOnly>
+      <div :class="{ 'content-hidden': isFirstVisit && !contentLoaded && !isHomePage }">
+        <ClientOnly>
+          <VotePanel :articleId="currentSlug" />
+        </ClientOnly>
+      </div>
     </template>
   </Theme.Layout>
 </template>
 
 <style scoped>
+/* 現有的 CSS 保持不變 */
+
+/* 新增 loading 相關樣式 */
+.content-loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: var(--vp-c-bg);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid var(--vp-c-divider);
+  border-top: 4px solid var(--vp-c-brand);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.loading-text {
+  margin-top: 16px;
+  font-size: 16px;
+  color: var(--vp-c-text-1);
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.content-hidden {
+  visibility: hidden;
+}
+
+/* 原有的 CSS */
 :deep(.vp-doc h1:first-of-type) { display: none !important; }
 .blog-post-header-injected {
   position: relative;
