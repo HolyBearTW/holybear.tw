@@ -7,7 +7,7 @@
     "vue": "^3.5.16"
   },
   "dependencies": {
-    "firebase": "^11.9.0"
+    "firebase": "^11.9.1"
   },
   "scripts": {
     "dev": "vitepress dev",
