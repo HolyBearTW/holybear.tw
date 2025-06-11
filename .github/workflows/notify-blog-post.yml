@@ -130,7 +130,7 @@ jobs:
             ARTICLE_SLUG=$(echo "$file_path" | sed -E 's|^blog/(.*)\.md$|\1|')
             
             # 組合成完整的文章連結 (例如：https://holybear.me/blog/my-article/)
-            ARTICLE_URL="${BASE_URL}/blog/${ARTICLE_SLUG}/" 
+            ARTICLE_URL="${BASE_URL}/blog/${ARTICLE_SLUG}.html" 
 
 
             # 組裝 Telegram 訊息 (簡潔版，移除儲存庫、路徑、查看變動)
