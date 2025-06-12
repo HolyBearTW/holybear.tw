@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "devDependencies": {
-    "vitepress": "^2.0.0-alpha.5",
+    "vitepress": "^2.0.0-alpha.6",
     "vue": "^3.5.16"
   },
   "dependencies": {
