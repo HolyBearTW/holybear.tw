@@ -77,7 +77,18 @@ jobs:
             local text="$1"
             # 使用單一的 sed 替換命令，精確跳脫所有保留字元
             # 這個正則表達式會匹配所有上述字元，並在它們前面加上一個反斜線 `\`
-            text=$(echo "$text" | sed -E 's/([_*\\[\\]()~`>#\+\-=\|\{\}\.!\\\\])/\\\1/g')
+            # 這次會更精確，只針對那些非語法用途的符號進行跳脫。
+            # 為了處理 [ ] () 等在連結語法中不需要跳脫的情況，我們會從最完整的跳脫開始，
+            # 然後在組裝MESSAGE時，手動確保連結的 []() 語法不被影響。
+            
+            # 僅跳脫 MarkdownV2 官方列表中的「非結構性」特殊字元
+            # [ ] ( ) 是結構性字元，不會被這個通用跳脫函式處理，它們在MESSAGE中會手動保持原始形式
+            text=$(echo "$text" | sed -E 's/([_*\~`>#\+\-=\|\{\}\.!\\\\])/\\\1/g')
+            
+            # 對於點 '.'，網址中的點不需要跳脫，但其他地方的點可能需要。
+            # 為簡化，我們讓它通用跳脫，如果在網址中被跳脫導致問題，再回來單獨處理。
+            text=$(echo "$text" | sed 's/\./\\./g') 
+            
             echo "$text"
           }
           
@@ -145,8 +156,8 @@ jobs:
             MESSAGE="*📢 New push to GitHub*\n" # GitHub 推播通知，粗體
             MESSAGE+="*${ESCAPED_TITLE}*\n" # 文章標題，粗體
             MESSAGE+="\`\`\`${ESCAPED_COMMIT_MESSAGE}\`\`\`\n" # 提交訊息內容，等寬字體
-            MESSAGE+="[\\>\\>點此閱讀文章](${ARTICLE_URL})\n" # 文章連結
-            MESSAGE+="by \`${ESCAPED_AUTHOR_NAME}\`" # 作者，等寬字體
+            MESSAGE+="[\\>\\>點此閱讀文章](${ARTICLE_URL})\n" # 文章連結，`>` 符號跳脫
+            MESSAGE+="by \`${ESCAPED_AUTHOR_NAME}\`" # 加上作者名稱，以等寬字體呈現實際名稱
 
             # 發送 Telegram 訊息
             # 將訊息內容傳遞給 curl，並指定 parse_mode 為 MarkdownV2 和 disable_web_page_preview
