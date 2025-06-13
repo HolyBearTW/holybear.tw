@@ -75,13 +75,15 @@ jobs:
             AUTHOR_NAME=$(git log -1 --pretty=%an)
             ESCAPED_AUTHOR_NAME=$(escape_markdownv2 "$AUTHOR_NAME")
             
-            MESSAGE="*📢 New push to GitHub*\n\n"
-            MESSAGE+="*${ESCAPED_TITLE}*\n\n"
-            MESSAGE+="\`\`\`\n${ESCAPED_COMMIT_MESSAGE}\n\`\`\`\n"
-            MESSAGE+="[➡️ 點此閱讀文章](${ARTICLE_URL})\n\n"
-            MESSAGE+="by \`${ESCAPED_AUTHOR_NAME}\`"
+            # ▼▼▼ 已修正此處的引號為 $'...' 以正確處理 \n 換行 ▼▼▼
+            MESSAGE=$'*📢 New push to GitHub*\n\n'
+            MESSAGE+=$'*${ESCAPED_TITLE}*\n\n'
+            MESSAGE+=$'*Commit Message:*\n'
+            MESSAGE+=$'\`\`\`\n${ESCAPED_COMMIT_MESSAGE}\n\`\`\`\n'
+            MESSAGE+=$'[➡️ 點此閱讀文章](${ARTICLE_URL})\n\n'
+            MESSAGE+=by\ \`$ESCAPED_AUTHOR_NAME\` # 最後一行不需要換行，且為了相容性稍微調整寫法
 
-            # ▼▼▼ 已修正此處的網址格式 ▼▼▼
+            # 發送 Telegram 訊息
             RESPONSE=$(curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
               --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
               --data-urlencode "text=${MESSAGE}" \
