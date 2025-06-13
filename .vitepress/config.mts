@@ -3,7 +3,6 @@ import locales from './locales'
 import gitMetaPlugin from './git-meta.js'
 import { execSync } from 'child_process'
 
-// 取得當前 git branch 名稱
 function getCurrentBranch() {
   try {
     return execSync('git rev-parse --abbrev-ref HEAD').toString().trim()
@@ -18,7 +17,6 @@ export default defineConfig({
   base: '/',
   locales: locales.locales,
   srcExclude: ['README.md'],
-  // head 這裡只放全站通用，不放 og:title, og:description, og:image, title
   head: [
     ['meta', { name: 'theme-color', content: '#00FFEE' }],
     ['link', { rel: 'icon', href: '/favicon.ico' }],
@@ -42,6 +40,7 @@ export default defineConfig({
     plugins: [gitMetaPlugin()]
   },
   themeConfig: {
+    logo: '/logo.png',
     footer: {
       message: 'AGPL-3.0 Licensed',
       copyright: 'Copyright © 2025 聖小熊 & HolyBear'
