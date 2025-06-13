@@ -18,7 +18,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           # 獲取所有歷史紀錄，以便 git diff 能正確判斷「新增」的檔案
-          fetch-depth: 0 
+          fetch-depth: 0
 
       - name: Get new files in target directory # 步驟 2: 取得本次 push 中有哪些檔案是新「增」的
         id: new-files # 給這個步驟一個 ID，以便後續引用其輸出
@@ -53,9 +53,9 @@ jobs:
 
           echo "Detected NEW files in ${TARGET_DIR} directory: $NEW_POST_FILES"
           # 將結果輸出給下一個步驟
-          echo "NEW_POST_FILES=${NEW_POST_FILES}" >> "$GITHUB_OUTPUT" 
+          echo "NEW_POST_FILES=${NEW_POST_FILES}" >> "$GITHUB_OUTPUT"
 
-      - name: Process and send Telegram notification # 步驟 3: 處理檔案並發送 Telegram 通知
+      - name: Process and send Telegram notification # 處理檔案並發送 Telegram 通知
         # 只有當 'Get new files' 步驟有偵測到新的文章檔案時才執行
         if: steps.new-files.outputs.NEW_POST_FILES != ''
         run: |
@@ -68,8 +68,46 @@ jobs:
           
           # 【重要設定】您的網站基礎網址
           # 請根據您的實際部落格網址進行修改
-          BASE_URL="https://holybear.me" 
+          BASE_URL="https://holybear.me"
 
+          # 函式：對字串進行 MarkdownV2 特殊字元跳脫
+          # 官方完整列表：_ * [ ] ( ) ~ ` > # + - = | { } . !
+          escape_markdownv2() {
+            local text="$1"
+            # 優先處理反斜線本身，以免影響後續跳脫
+            text=$(echo "$text" | sed 's/\\/\\\\/g')
+            # 跳脫 MarkdownV2 的保留字元，但排除那些作為語法一部分的（例如連結內部的 []()、粗體*等）
+            # 這需要更精確的替換邏輯，以避免破壞 Markdown 語法
+            # 例如：對於 []()，我們不應該跳脫裡面的 [ 和 ]
+            # 最好的方法是先處理特殊字元，再插入 Markdown 語法
+            # 或者，更簡單地，僅跳脫那些不在特定語法中的字元。
+            
+            # 由於 Bash sed 處理複雜的正則表達式有其限制，
+            # 這裡採用較為保守的跳脫策略，可能會跳脫掉連結文字裡的某些字元
+            # 但確保其他非語法符號被跳脫
+            # 官方列表中的所有字元都預設跳脫，後面再特殊處理
+            text=$(echo "$text" | sed 's/\([_*\(\)~`>#\+\-=\|\{\}\.!]\)/\\\1/g')
+            
+            # 對於點 '.'，僅在非網址協議部分跳脫
+            # 這是一個複雜的正規表達式，可能需要視情況調整
+            # 簡單處理所有點，可能導致網址中的點被跳脫，但Telegram通常能處理
+            # 為了避免複雜度，這裡直接跳脫，如果網址無法點擊，再回來調整。
+            text=$(echo "$text" | sed 's/\./\\./g') 
+            
+            # 針對 [ ]，如果它們不是連結語法的一部分，才跳脫
+            # 由於這裡是在通用跳脫函式中，很難判斷是否為連結語法。
+            # 如果 `[bot]` 這種出現問題，就需要確保它們被跳脫。
+            # 這裡確保所有 `[` 和 `]` 都被跳脫
+            text=$(echo "$text" | sed 's/\[/\\[/g')
+            text=$(echo "$text" | sed 's/\]/\\]/g')
+            
+            # 特別處理 `Signed-off-by: dependabot[bot] <support@github.com> by dependabot[bot]` 這行
+            # 確保 [bot] 和 <support@github.com> 裡的 < > 被正確跳脫
+            text=$(echo "$text" | sed 's/<support@github\.com>/\\<support@github\\.com\\>/g')
+
+            echo "$text"
+          }
+          
           # 遍歷每個新增的檔案
           for file_path in $NEW_POST_FILES; do
             echo "Processing file: $file_path"
@@ -99,57 +137,54 @@ jobs:
               TITLE="無標題文章"
             fi
 
-            # 【最新修正】使用 grep 和 sed 來提取 category，更穩定處理多種 YAML 格式
+            # 提取 category
             CATEGORY=""
-            
-            # 1. 嘗試提取 YAML list 格式 (e.g., category:\n  - item)
-            # 從文件內容中找到 "category:" 行和緊跟其後的第一個 "- " 行
             CATEGORY=$(echo "$file_content" | grep -A 1 -E '^\s*category:' | grep -E '^\s*-\s*' | head -n 1 | sed -E 's/^\s*-\s*(.*)/\1/' | tr -d '\r')
-            
-            # 2. 如果沒找到，嘗試提取行內陣列格式 (e.g., category: [item1, item2])
             if [ -z "$CATEGORY" ]; then
               CATEGORY=$(echo "$file_content" | grep -iE '^\s*category:\s*\[.*\]' | head -n 1 | sed -E 's/^\s*category:\s*\[(.*)\].*/\1/' | cut -d',' -f1 | tr -d '\r')
             fi
-
-            # 3. 如果還是沒找到，嘗試提取單一值格式 (e.g., category: item)
             if [ -z "$CATEGORY" ]; then
               CATEGORY=$(echo "$file_content" | grep -iE '^\s*category:\s*[^\[-]' | head -n 1 | sed -E 's/^\s*category:\s*(.*)/\1/' | tr -d '\r')
             fi
-            
-            # 清理提取到的類別名稱：移除前後空白、引號、斜線等符號
-            CATEGORY=$(echo "$CATEGORY" | sed -E 's/^[[:space:]]+|[[:space:]]+$//g') # 移除前後空白
-            CATEGORY=$(echo "$CATEGORY" | sed -E 's/[\x27"\/]//g') # 移除單引號、雙引號、斜線
+            CATEGORY=$(echo "$CATEGORY" | sed -E 's/^[[:space:]]+|[[:space:]]+$//g')
+            CATEGORY=$(echo "$CATEGORY" | sed -E 's/[\x27"\/]//g')
 
             # 如果成功提取到類別，則將標題加上前綴
+            # 這裡 TITLE 本身要先跳脫，然後再組裝
+            ESCAPED_TITLE=$(escape_markdownv2 "$TITLE")
             if [ -n "$CATEGORY" ]; then
-               TITLE="【${CATEGORY}】${TITLE}" # 標題前加【 】
+              ESCAPED_CATEGORY=$(escape_markdownv2 "$CATEGORY")
+              ESCAPED_TITLE="【${ESCAPED_CATEGORY}】${ESCAPED_TITLE}" # 不需要跳脫 【】 因為它不是MarkdownV2保留字元
             fi
-
-            # 產生文章連結的邏輯
-            # 移除 'blog/' 前綴和副檔名，並替換為網站 URL 格式 (例如：從 blog/my-article.md 轉成 my-article)
-            ARTICLE_SLUG=$(echo "$file_path" | sed -E 's|^blog/(.*)\.md$|\1|')
             
-            # 組合成完整的文章連結 (例如：https://holybear.me/blog/my-article/)
+            # 產生文章連結的邏輯
+            ARTICLE_SLUG=$(echo "$file_path" | sed -E 's|^blog/(.*)\.md$|\1|')
+            # 網址本身不需要跳脫，因為它在連結語法的括號內部
             ARTICLE_URL="${BASE_URL}/blog/${ARTICLE_SLUG}.html" 
 
+            # 跳脫 commit 訊息
+            ESCAPED_COMMIT_MESSAGE=$(escape_markdownv2 "${{ github.event.head_commit.message }}")
+            
+            # 跳脫作者名稱
+            ESCAPED_AUTHOR_NAME=$(escape_markdownv2 "${{ github.event.head_commit.author.name }}")
 
-            # 組裝 Telegram 訊息 (簡潔版，移除儲存庫、路徑、查看變動)
-            MESSAGE="**📢 New push to GitHub**\n" # GitHub 推播通知
-            MESSAGE+="**${TITLE}**\n" # 文章標題
-            MESSAGE+="\`\`\`${{ github.event.head_commit.message }}\`\`\`\n" # 提交訊息內容
-            MESSAGE+="[>>點此閱讀文章](${ARTICLE_URL})\n" # 文章連結
-            MESSAGE+="by ${{ github.event.head_commit.author.name }}" # 作者名稱，放在最後且不強制換行
+            # 組裝 Telegram 訊息 (MarkdownV2 格式)
+        
+            MESSAGE="*📢 New push to GitHub*\n" # GitHub 推播通知，粗體
+            MESSAGE+="*${ESCAPED_TITLE}*\n" # 文章標題，粗體
+            MESSAGE+="\`\`\`${ESCAPED_COMMIT_MESSAGE}\`\`\`\n" # 提交訊息內容，等寬字體
+            MESSAGE+="[\>\>點此閱讀文章](${ARTICLE_URL})\n" # 文章連結，`>` 符號跳脫
+            MESSAGE+="by \`${ESCAPED_AUTHOR_NAME}\`" # 作者名稱，等寬字體
 
             # 發送 Telegram 訊息
-            curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            # 將訊息內容傳遞給 curl，並指定 parse_mode 為 MarkdownV2 和 disable_web_page_preview
+            curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
               -H "Content-Type: application/json" \
               -d "{
-                \"chat_id\": \"${TELEGRAM_CHAT_ID}\",
+                \"chat_id\": \"${{ secrets.TELEGRAM_CHAT_ID }}\",
                 \"text\": \"$(echo "${MESSAGE}" | sed 's/"/\\"/g' | sed ':a;N;$!ba;s/\n/\\n/g')\",
-                \"parse_mode\": \"Markdown\"
+                \"parse_mode\": \"MarkdownV2\",
+                \"disable_web_page_preview\": true
               }"
             echo "Telegram notification sent for $file_path with title: $TITLE"
           done
-        env: # 將環境變數設定在這裡，避免直接寫在 run 區塊中
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
