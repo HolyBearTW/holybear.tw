@@ -42,8 +42,10 @@ jobs:
           BASE_URL="https://holybear.me"
 
           # 函式：對字串進行 MarkdownV2 特殊字元跳脫
+          # ▼▼▼ 確認這是包含 {} 的最完整版本 ▼▼▼
           escape_markdownv2() {
             local text="$1"
+            # 處理官方列表中的所有保留字元: _ * [ ] ( ) ~ ` > # + - = | { } . !
             echo "$text" | sed 's/\([_*\[\]()~`>#+\-=|{}.!]\)/\\\1/g'
           }
 
@@ -75,12 +77,12 @@ jobs:
             AUTHOR_NAME=$(git log -1 --pretty=%an)
             ESCAPED_AUTHOR_NAME=$(escape_markdownv2 "$AUTHOR_NAME")
             
-            # ▼▼▼ 已修正此處的引號為 $'...' 以正確處理 \n 換行 ▼▼▼
+            # 使用 $'...' 引號以正確處理 \n 換行
             MESSAGE=$'*📢 New push to GitHub*\n'
             MESSAGE+=$'*${ESCAPED_TITLE}*\n'
-            MESSAGE+=$'\`\`\`\n${ESCAPED_COMMIT_MESSAGE}\n\`\`\`\n'
+            MESSAGE+=$'\`\`\`${ESCAPED_COMMIT_MESSAGE}\`\`\`\n'
             MESSAGE+=$'[➡️ 點此閱讀文章](${ARTICLE_URL})\n'
-            MESSAGE+=by\ \`$ESCAPED_AUTHOR_NAME\` # 最後一行不需要換行，且為了相容性稍微調整寫法
+            MESSAGE+=by\ \`$ESCAPED_AUTHOR_NAME\`
 
             # 發送 Telegram 訊息
             RESPONSE=$(curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
