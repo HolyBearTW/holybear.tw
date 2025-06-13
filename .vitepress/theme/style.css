@@ -1,3 +1,12 @@
+/**
+ * Customize default theme styling by overriding CSS variables:
+ * https://github.com/vuejs/vitepress/blob/main/src/client/theme-default/styles/vars.css
+ */
+
+/**
+ * Colors
+ * -------------------------------------------------------------------------- */
+
 :root {
   --vp-c-brand: #00FFEE;
   --vp-c-brand-light: #33FFFF;
@@ -7,6 +16,10 @@
   --vp-c-brand-darker: #0099BB;
   --vp-c-brand-dimm: rgba(100, 108, 255, 0.08);
 }
+
+/**
+ * Component: Button
+ * -------------------------------------------------------------------------- */
 
 :root {
   --vp-button-brand-border: var(--vp-c-brand-light);
@@ -20,14 +33,22 @@
   --vp-button-brand-active-bg: var(--vp-button-brand-bg);
 }
 
+/**
+ * Component: Home
+ * -------------------------------------------------------------------------- */
+
 :root {
   --vp-home-hero-name-color: transparent;
   --vp-home-hero-name-background: -webkit-linear-gradient(
     120deg,
     #00FFEE 30%,
-    #ADD8E6
+    #ADD8E6 /* 淺藍色 */
   );
 }
+
+/**
+ * Component: Custom Block
+ * -------------------------------------------------------------------------- */
 
 :root {
   --vp-custom-block-tip-border: var(--vp-c-brand);
@@ -41,10 +62,15 @@
   --vp-custom-block-tip-bg: var(--vp-c-brand-dimm);
 }
 
+/**
+ * Component: Algolia
+ * -------------------------------------------------------------------------- */
+
 .DocSearch {
   --docsearch-primary-color: var(--vp-c-brand) !important;
 }
 
+/* Hero 區塊大圖（首頁主圖） */
 :root .image-src {
   width: 100%;
   height: auto;
@@ -64,21 +90,22 @@
   }
 }
 
-/* Navbar logo 圓角 */
+/* Navbar logo 圓角&發光 */
 .VPImage.logo {
   border-radius: 30px !important;
   aspect-ratio: 1/1;
   object-fit: cover;
   clip-path: inset(0px round 30px);
+  box-shadow: 0 0 32px 6px #00ffee99, 0 0 16px 2px #00ffee44;
 }
 
-/* 首頁 hero 大標題漸層發光 */
+/* ====== 首頁大標題&主圖發光特效 ====== */
+
+/* 首頁大標題漸層＋發光（保留你的漸層） */
 .VPHomeHero .name.clip {
-  background: linear-gradient(135deg, #00FFEE 30%, #66ffff 70%, #ffef8a 100%);
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-  filter: drop-shadow(0 2px 32px #00ffee90) drop-shadow(0 0px 8px #ffef8a66);
+  /* 使用預設的 background 變數產生漸層色 */
+  /* 只加發光 filter，不覆蓋 background */
+  filter: drop-shadow(0 2px 32px #00ffee88) drop-shadow(0 0px 8px #00ffee44);
 }
 
 /* 首頁 hero 主圖發光 */
