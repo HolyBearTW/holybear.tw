@@ -23,11 +23,9 @@ jobs:
         run: |
           TARGET_DIR="blog/"
           # 使用 git diff 安全地找出所有本次 commit 新增的 .md 檔案 (A=Added)
-          # --name-only 只輸出檔名
           NEW_FILES=$(git diff --name-only --diff-filter=A HEAD~1 HEAD -- "$TARGET_DIR" | grep '\.md$')
           
           # 將找到的檔案列表（可能有多行）設定為 GitHub Actions 的輸出
-          # 使用特殊的 EOF 語法來處理多行字串，這是官方建議的最穩健作法
           echo "new_files<<EOF" >> "$GITHUB_OUTPUT"
           echo "${NEW_FILES}" >> "$GITHUB_OUTPUT"
           echo "EOF" >> "$GITHUB_OUTPUT"
@@ -38,21 +36,18 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          # 將上一步的輸出傳入環境變數，以便在腳本中讀取
           NEW_POST_FILES: ${{ steps.get-new-files.outputs.new_files }}
         run: |
           # 【重要設定】您的網站基礎網址
           BASE_URL="https://holybear.me"
 
           # 函式：對字串進行 MarkdownV2 特殊字元跳脫
-          # 處理官方列表中的所有保留字元: _ * [ ] ( ) ~ ` > # + - = | { } . !
           escape_markdownv2() {
             local text="$1"
-            # 使用單一的 sed 命令，在所有保留字元前加上一個反斜線 `\`
             echo "$text" | sed 's/\([_*\[\]()~`>#+\-=|{}.!]\)/\\\1/g'
           }
 
-          # 使用 while read 迴圈安全地處理每一個檔案路徑，即使檔名包含空格
+          # 使用 while read 迴圈安全地處理每一個檔案路徑
           echo "${NEW_POST_FILES}" | while IFS= read -r file_path; do
             if [ -z "$file_path" ]; then
               continue
@@ -60,10 +55,8 @@ jobs:
             
             echo "Processing file: $file_path"
 
-            # 讀取檔案內容，並移除可能存在的 Windows 換行符 \r
             file_content=$(tr -d '\r' < "$file_path")
             
-            # 從 Markdown 檔案內容中提取 title
             TITLE=$(echo "$file_content" | awk -F': ' '/^title:/ {print $2; exit}')
             if [ -z "$TITLE" ]; then
               TITLE=$(echo "$file_content" | awk -F'# ' '/^# / {print $2; exit}')
@@ -72,39 +65,33 @@ jobs:
               TITLE="無標題文章"
             fi
 
-            # 跳脫標題
             ESCAPED_TITLE=$(escape_markdownv2 "$TITLE")
             
-            # 產生文章連結 (網址本身不需要跳脫)
             ARTICLE_SLUG=$(echo "$file_path" | sed -E 's|^blog/(.*)\.md$|\1|')
-            ARTICLE_URL="${BASE_URL}/${ARTICLE_SLUG}" # 請確認您的網址結構是否需要 .html 後綴
+            ARTICLE_URL="${BASE_URL}/${ARTICLE_SLUG}"
             
-            # 取得並跳脫 commit 相關資訊
             COMMIT_MESSAGE=$(git log -1 --pretty=%B)
             ESCAPED_COMMIT_MESSAGE=$(escape_markdownv2 "$COMMIT_MESSAGE")
             AUTHOR_NAME=$(git log -1 --pretty=%an)
             ESCAPED_AUTHOR_NAME=$(escape_markdownv2 "$AUTHOR_NAME")
             
-            # 使用您偏好的 MESSAGE+= 風格來組裝訊息
-            MESSAGE="*📢 New push to GitHub*\n\n" # GitHub 推播通知，粗體
-            MESSAGE+="*${ESCAPED_TITLE}*\n\n" # 文章標題，粗體
-            MESSAGE+="\`\`\`\n${ESCAPED_COMMIT_MESSAGE}\n\`\`\`\n" # 提交訊息內容，使用 ``` 區塊包覆
-            MESSAGE+="[➡️ 點此閱讀文章](${ARTICLE_URL})\n\n" # 文章連結
-            MESSAGE+="by \`${ESCAPED_AUTHOR_NAME}\`" # 加上作者名稱，以等寬字體呈現
+            MESSAGE="*📢 New push to GitHub*\n\n"
+            MESSAGE+="*${ESCAPED_TITLE}*\n\n"
+            MESSAGE+="\`\`\`\n${ESCAPED_COMMIT_MESSAGE}\n\`\`\`\n"
+            MESSAGE+="[➡️ 點此閱讀文章](${ARTICLE_URL})\n\n"
+            MESSAGE+="by \`${ESCAPED_AUTHOR_NAME}\`"
 
-            # 發送 Telegram 訊息 (使用 --data-urlencode，最安全可靠)
-            RESPONSE=$(curl -s -X POST "[https://api.telegram.org/bot$](https://api.telegram.org/bot$){TELEGRAM_BOT_TOKEN}/sendMessage" \
+            # ▼▼▼ 已修正此處的網址格式 ▼▼▼
+            RESPONSE=$(curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
               --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
               --data-urlencode "text=${MESSAGE}" \
               --data-urlencode "parse_mode=MarkdownV2" \
               --data-urlencode "disable_web_page_preview=true")
 
-            # 檢查 API 回應，提供更明確的成功或失敗訊息
             if echo "$RESPONSE" | grep -q '"ok":true'; then
               echo "✅ Telegram notification sent successfully for: $file_path"
             else
               echo "❌ Failed to send Telegram notification for: $file_path"
               echo "Telegram API Response: $RESPONSE"
             fi
-
           done
