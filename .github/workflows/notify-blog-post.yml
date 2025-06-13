@@ -85,7 +85,7 @@ jobs:
 
             # Generate article link
             ARTICLE_SLUG=$(echo "$file_path" | sed -E 's|^blog/(.*)\.md$|\1|')
-            ARTICLE_URL="${BASE_URL}/blog/${ARTICLE_SLUG}.html"
+            ARTICLE_URL="${BASE_URL}/blog/${ARTICLE_SLUG}"
 
             # Commit message and author
             COMMIT_MESSAGE=$(git log -1 --pretty=%B)
@@ -98,10 +98,10 @@ jobs:
 
             # Compose message using $'...' for correct newlines
             MESSAGE=$'*📢 New push to GitHub*\n'
-            MESSAGE+="*${ESCAPED_TITLE}*\n"
-            MESSAGE+="\`\`\`${ESCAPED_COMMIT_MESSAGE}\`\`\`\n"
-            MESSAGE+="[➡️ 點此閱讀文章](${ARTICLE_URL})\n"
-            MESSAGE+="by \`${ESCAPED_AUTHOR_NAME}\`"
+            MESSAGE+=$'*'"${ESCAPED_TITLE}"$'*\n'
+            MESSAGE+=$'```\n'"${ESCAPED_COMMIT_MESSAGE}"$'\n```\n'
+            MESSAGE+=$'[➡️ 點此閱讀文章]('"${ARTICLE_URL}"$')\n'
+            MESSAGE+='by `'"${ESCAPED_AUTHOR_NAME}"'`'
 
             RESPONSE=$(curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
               --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
