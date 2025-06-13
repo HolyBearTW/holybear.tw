@@ -103,20 +103,37 @@
 
 /* 首頁大標題漸層＋發光（保留你的漸層） */
 .VPHomeHero .name.clip {
-  /* 使用預設的 background 變數產生漸層色 */
-  /* 只加發光 filter，不覆蓋 background */
   filter: drop-shadow(0 2px 32px #00ffee88) drop-shadow(0 0px 8px #00ffee44);
 }
 
-/* --- 這是關鍵！首頁大 logo 強制發光 --- */
+/* --- 首頁 hero 主圖（大logo）發光與裁切修正 --- */
+.VPHomeHero .image-container {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  position: relative !important;
+  overflow: visible !important;
+}
 .VPHomeHero .VPImage.image-src,
+.VPHomeHero .image .VPImage.image-src,
 .VPHomeHero .image-src,
-.VPHomeHero .image .image-src {
-  box-shadow: 0 0 80px 32px #00ffeecc, 0 0 240px 80px #ffef8a99 !important;
+.VPHomeHero .image .image-src,
+img.VPImage.image-src,
+.VPHomeHero img.image-src {
+  box-shadow: 0 0 120px 40px #00ffee, 0 0 240px 80px #ffef8a !important;
   border-radius: 30px !important;
   clip-path: inset(0px round 30px) !important;
   aspect-ratio: 1/1 !important;
   object-fit: cover !important;
+  position: relative !important;
+  z-index: 1 !important;
+  width: 192px !important;
+  height: 192px !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  left: 0 !important;
+  top: 0 !important;
+  transform: none !important;
 }
 
 body {
