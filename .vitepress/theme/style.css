@@ -106,57 +106,48 @@
   filter: drop-shadow(0 2px 32px #00ffee88) drop-shadow(0 0px 8px #00ffee44);
 }
 
-/* --- Hero 區圖片最佳雙層包裹發光方案 --- */
-/* 結構需為
-<div class="image-container">
-  <span class="glow-wrapper">
-    <img class="VPImage image-src" src="你的圖片路徑" alt="logo" />
-  </span>
-</div>
-*/
+/* --- 首頁 hero 主圖（大logo）發光與裁切修正 --- */
 .VPHomeHero .image-container {
-  position: relative !important;
-  overflow: visible !important;
   display: flex !important;
   justify-content: center !important;
   align-items: center !important;
+  position: relative !important;
+  overflow: visible !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
 }
 
-/* 發光專用包覆層，負責 box-shadow，border-radius 保持與圖片一致 */
-.VPHomeHero .glow-wrapper {
-  box-shadow: 0 0 80px 32px #00ffee, 0 0 240px 80px #ffef8a;
-  border-radius: 30px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  overflow: visible;
-  background: transparent;
-  width: 256px;
-  height: 256px;
-}
-
-/* 內層圖片只負責裁切、圓角和內容填滿 */
+/* 修正 .image-src 被絕對定位且縮小的問題，讓圖片自適應且光暈能顯示 */
 .VPHomeHero .VPImage.image-src,
 .VPHomeHero img.image-src {
-  width: 256px;
-  height: 256px;
-  border-radius: 30px;
-  object-fit: cover;
-  display: block;
-  background: transparent;
-  box-shadow: none !important;  /* 光暈只在外層 */
-  /* clip-path: inset(0px round 30px); 如果要極致圓角可加 */
+  box-shadow: 0 0 64px 24px #00ffee, 0 0 128px 40px #ffef8a !important;
+  border-radius: 30px !important;
+  clip-path: inset(0px round 30px) !important;
+  aspect-ratio: 1 / 1 !important;
+  object-fit: cover !important;
+  position: relative !important;
+  z-index: 1 !important;
+  max-width: 256px !important;
+  max-height: 256px !important;
+  width: 100% !important;
+  height: auto !important;
+  left: auto !important;
+  top: auto !important;
+  transform: none !important;
+  background: transparent !important;
 }
 
-/* 響應式，手機時自動縮小 */
-@media (max-width: 500px) {
-  .VPHomeHero .glow-wrapper,
-  .VPHomeHero .VPImage.image-src,
-  .VPHomeHero img.image-src {
-    width: 180px;
-    height: 180px;
-    border-radius: 20px;
-  }
+/* 保險：去除舊有針對 .image-src 的絕對定位與縮小 */
+[data-v-8a17128e] .image-src {
+  position: static !important;
+  top: auto !important;
+  left: auto !important;
+  transform: none !important;
+  width: 100% !important;
+  height: auto !important;
+  max-width: 256px !important;
+  max-height: 256px !important;
+  object-fit: cover !important;
 }
 
 body {
