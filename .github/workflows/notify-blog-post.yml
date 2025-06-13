@@ -78,7 +78,6 @@ jobs:
             # ▼▼▼ 已修正此處的引號為 $'...' 以正確處理 \n 換行 ▼▼▼
             MESSAGE=$'*📢 New push to GitHub*\n\n'
             MESSAGE+=$'*${ESCAPED_TITLE}*\n\n'
-            MESSAGE+=$'*Commit Message:*\n'
             MESSAGE+=$'\`\`\`\n${ESCAPED_COMMIT_MESSAGE}\n\`\`\`\n'
             MESSAGE+=$'[➡️ 點此閱讀文章](${ARTICLE_URL})\n\n'
             MESSAGE+=by\ \`$ESCAPED_AUTHOR_NAME\` # 最後一行不需要換行，且為了相容性稍微調整寫法
