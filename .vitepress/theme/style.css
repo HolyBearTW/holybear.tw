@@ -108,14 +108,15 @@
   filter: drop-shadow(0 2px 32px #00ffee88) drop-shadow(0 0px 8px #00ffee44);
 }
 
-/* 首頁 hero 主圖發光（大logo）*/
+/* --- 這是關鍵！首頁大 logo 強制發光 --- */
+.VPHomeHero .VPImage.image-src,
 .VPHomeHero .image-src,
 .VPHomeHero .image .image-src {
-  box-shadow: 0 0 40px 10px #00ffeecc, 0 0 128px 20px #ffef8a66 !important;
-  border-radius: 30px;
-  clip-path: inset(0px round 30px);
-  aspect-ratio: 1/1;
-  object-fit: cover;
+  box-shadow: 0 0 80px 32px #00ffeecc, 0 0 240px 80px #ffef8a99 !important;
+  border-radius: 30px !important;
+  clip-path: inset(0px round 30px) !important;
+  aspect-ratio: 1/1 !important;
+  object-fit: cover !important;
 }
 
 body {
