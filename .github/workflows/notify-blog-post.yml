@@ -100,7 +100,6 @@ jobs:
             MESSAGE=$'*📢 New push to GitHub*\n'
             MESSAGE+=$'*'"${ESCAPED_TITLE}"$'*\n'
             MESSAGE+=$'```commit\n'"${ESCAPED_COMMIT_MESSAGE}"$'\n```'
-            MESSAGE+=$'```'"${ESCAPED_COMMIT_MESSAGE}"$'```\n'
             MESSAGE+=$'[➡️ 點此閱讀文章]('"${ARTICLE_URL}"$')\n'
             MESSAGE+='by `'"${ESCAPED_AUTHOR_NAME}"'`'
 
