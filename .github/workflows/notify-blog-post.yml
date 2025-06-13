@@ -1,13 +1,15 @@
-name: Notify New Blog Post to Telegram # 工作流程名稱
+name: Notify New Blog Post to Telegram # 工作流程名稱：當有新的部落格文章時，發送通知到 Telegram
 
 # 當有新的 push 事件發生時觸發此 workflow
 on:
   push:
     branches:
       - main # 請將此處改為您儲存庫的主要分支名稱，例如 master
+    # 監聽特定路徑的變動
     paths:
       - 'blog/**' # 監聽 'blog/' 目錄下的任何檔案變動
       - 'blog/**/*' # 確保涵蓋 'blog/' 子目錄中的變動
+      - '**' # 監聽所有路徑的變動，以便偵測非 blog 路徑的提交
 
 jobs:
   notify_new_post:
@@ -20,91 +22,68 @@ jobs:
           # 獲取所有歷史紀錄，以便 git diff 能正確判斷「新增」的檔案
           fetch-depth: 0
 
-      - name: Get new files in target directory # 步驟 2: 取得本次 push 中有哪些檔案是新「增」的
-        id: new-files # 給這個步驟一個 ID，以便後續引用其輸出
+      - name: Determine if blog post or other change # 步驟 2: 判斷是部落格文章更新還是其他類型變更
+        id: change-type # 給這個步驟一個 ID，以便後續引用其輸出
         run: |
-          TARGET_DIR="blog/" # 設定您要監控的目錄
-
+          # 檢查是否有任何變更發生在 'blog/' 目錄下
+          # 如果有，表示是新的部落格文章；如果沒有，則視為其他提交修復
+          
           # 獲取本次 push 帶入的 commit SHA
           CURRENT_SHA="${{ github.sha }}"
           # 獲取本次 push 之前一個 commit 的 SHA。如果這是第一個 commit，則會是空字串。
           LAST_COMMIT_SHA=$(git rev-parse "${CURRENT_SHA}~1" 2>/dev/null || echo "")
 
-          DETECTED_FILES=""
+          # 偵測 'blog/' 目錄下的新增檔案
+          BLOG_NEW_FILES=""
           if [ -z "$LAST_COMMIT_SHA" ]; then
             # 對於儲存庫的第一次 push，所有符合條件的文件都視為「新增」
-            # 確保 find 指令能處理路徑中的空白字元
-            find "$TARGET_DIR" -type f -print0 | xargs -0 -r -n 1 echo >> temp_new_files.txt
-            DETECTED_FILES=$(cat temp_new_files.txt)
+            if find blog/ -maxdepth 1 -type f -print -quit | grep -q .; then
+                echo "IS_BLOG_POST=true" >> "$GITHUB_OUTPUT"
+            else
+                echo "IS_BLOG_POST=false" >> "$GITHUB_OUTPUT"
+            fi
           else
             # 比較本次 push 和上一個 commit 之間的差異，只篩選新增的檔案
-            # 使用 -z 和 xargs -0 來安全處理檔名中的空白
-            git diff --name-only --diff-filter=A "${LAST_COMMIT_SHA}" "${CURRENT_SHA}" -- "$TARGET_DIR" -z | xargs -0 -r -n 1 echo >> temp_new_files.txt
-            DETECTED_FILES=$(cat temp_new_files.txt)
-          fi
-
-          NEW_POST_FILES=""
-          for file in $DETECTED_FILES; do
-            # 再次確認檔案是在目標目錄下 (避免意外偵測到其他路徑的同名檔案)
-            if [[ "$file" == "$TARGET_DIR"* ]]; then
-              NEW_POST_FILES="$NEW_POST_FILES $file"
+            # 使用 git diff 檢查 'blog/' 目錄是否有變動
+            if git diff --name-only "${LAST_COMMIT_SHA}" "${CURRENT_SHA}" -- 'blog/' | grep -q .; then
+              # 如果 'blog/' 目錄有變動，則標記為部落格文章更新
+              echo "IS_BLOG_POST=true" >> "$GITHUB_OUTPUT"
+              # 獲取具體新增的部落格檔案列表
+              git diff --name-only --diff-filter=A "${LAST_COMMIT_SHA}" "${CURRENT_SHA}" -- 'blog/' -z | xargs -0 -r -n 1 echo >> temp_new_blog_files.txt
+              BLOG_NEW_FILES=$(cat temp_new_blog_files.txt)
+            else
+              # 如果 'blog/' 目錄沒有變動，則標記為其他提交修復
+              echo "IS_BLOG_POST=false" >> "$GITHUB_OUTPUT"
             fi
-          done
+          fi
+          
+          # 將部落格新增檔案列表輸出，供後續步驟使用
+          echo "NEW_POST_FILES=${BLOG_NEW_FILES}" >> "$GITHUB_OUTPUT"
 
-          echo "Detected NEW files in ${TARGET_DIR} directory: $NEW_POST_FILES"
-          # 將結果輸出給下一個步驟
-          echo "NEW_POST_FILES=${NEW_POST_FILES}" >> "$GITHUB_OUTPUT"
-
-      - name: Process and send Telegram notification # 處理檔案並發送 Telegram 通知
-        # 只有當 'Get new files' 步驟有偵測到新的文章檔案時才執行
-        if: steps.new-files.outputs.NEW_POST_FILES != ''
+      - name: Process and send Telegram notification (Blog Post) # 步驟 3A: 處理並發送部落格文章 Telegram 通知
+        # 只有當 'change-type' 步驟判斷為部落格文章時才執行
+        if: steps.change-type.outputs.IS_BLOG_POST == 'true' && steps.change-type.outputs.NEW_POST_FILES != ''
         run: |
           # 從 GitHub Secrets 中取得 Telegram Bot Token 和 Chat ID
           TELEGRAM_BOT_TOKEN="${{ secrets.TELEGRAM_BOT_TOKEN }}"
           TELEGRAM_CHAT_ID="${{ secrets.TELEGRAM_CHAT_ID }}"
           
           # 取得上一個步驟輸出偵測到的新文章檔案列表
-          NEW_POST_FILES="${{ steps.new-files.outputs.NEW_POST_FILES }}"
+          NEW_POST_FILES="${{ steps.change-type.outputs.NEW_POST_FILES }}"
           
           # 【重要設定】您的網站基礎網址
           # 請根據您的實際部落格網址進行修改
           BASE_URL="https://holybear.me"
 
           # 函式：對字串進行 MarkdownV2 特殊字元跳脫
-          # 官方完整列表：_ * [ ] ( ) ~ ` > # + - = | { } . !
           escape_markdownv2() {
             local text="$1"
-            # 優先處理反斜線本身，以免影響後續跳脫
             text=$(echo "$text" | sed 's/\\/\\\\/g')
-            # 跳脫 MarkdownV2 的保留字元，但排除那些作為語法一部分的（例如連結內部的 []()、粗體*等）
-            # 這需要更精確的替換邏輯，以避免破壞 Markdown 語法
-            # 例如：對於 []()，我們不應該跳脫裡面的 [ 和 ]
-            # 最好的方法是先處理特殊字元，再插入 Markdown 語法
-            # 或者，更簡單地，僅跳脫那些不在特定語法中的字元。
-            
-            # 由於 Bash sed 處理複雜的正則表達式有其限制，
-            # 這裡採用較為保守的跳脫策略，可能會跳脫掉連結文字裡的某些字元
-            # 但確保其他非語法符號被跳脫
-            # 官方列表中的所有字元都預設跳脫，後面再特殊處理
             text=$(echo "$text" | sed 's/\([_*\(\)~`>#\+\-=\|\{\}\.!]\)/\\\1/g')
-            
-            # 對於點 '.'，僅在非網址協議部分跳脫
-            # 這是一個複雜的正規表達式，可能需要視情況調整
-            # 簡單處理所有點，可能導致網址中的點被跳脫，但Telegram通常能處理
-            # 為了避免複雜度，這裡直接跳脫，如果網址無法點擊，再回來調整。
             text=$(echo "$text" | sed 's/\./\\./g') 
-            
-            # 針對 [ ]，如果它們不是連結語法的一部分，才跳脫
-            # 由於這裡是在通用跳脫函式中，很難判斷是否為連結語法。
-            # 如果 `[bot]` 這種出現問題，就需要確保它們被跳脫。
-            # 這裡確保所有 `[` 和 `]` 都被跳脫
             text=$(echo "$text" | sed 's/\[/\\[/g')
             text=$(echo "$text" | sed 's/\]/\\]/g')
-            
-            # 特別處理 `Signed-off-by: dependabot[bot] <support@github.com> by dependabot[bot]` 這行
-            # 確保 [bot] 和 <support@github.com> 裡的 < > 被正確跳脫
             text=$(echo "$text" | sed 's/<support@github\.com>/\\<support@github\\.com\\>/g')
-
             echo "$text"
           }
           
@@ -150,16 +129,14 @@ jobs:
             CATEGORY=$(echo "$CATEGORY" | sed -E 's/[\x27"\/]//g')
 
             # 如果成功提取到類別，則將標題加上前綴
-            # 這裡 TITLE 本身要先跳脫，然後再組裝
             ESCAPED_TITLE=$(escape_markdownv2 "$TITLE")
             if [ -n "$CATEGORY" ]; then
               ESCAPED_CATEGORY=$(escape_markdownv2 "$CATEGORY")
-              ESCAPED_TITLE="【${ESCAPED_CATEGORY}】${ESCAPED_TITLE}" # 不需要跳脫 【】 因為它不是MarkdownV2保留字元
+              ESCAPED_TITLE="【${ESCAPED_CATEGORY}】${ESCAPED_TITLE}"
             fi
             
             # 產生文章連結的邏輯
             ARTICLE_SLUG=$(echo "$file_path" | sed -E 's|^blog/(.*)\.md$|\1|')
-            # 網址本身不需要跳脫，因為它在連結語法的括號內部
             ARTICLE_URL="${BASE_URL}/blog/${ARTICLE_SLUG}.html" 
 
             # 跳脫 commit 訊息
@@ -168,16 +145,19 @@ jobs:
             # 跳脫作者名稱
             ESCAPED_AUTHOR_NAME=$(escape_markdownv2 "${{ github.event.head_commit.author.name }}")
 
+            # 獲取提交日期並格式化
+            COMMIT_DATE=$(date -d "${{ github.event.head_commit.timestamp }}" "+%Y-%m-%d %H:%M") # 格式化為 YYYY-MM-DD HH:MM
+            ESCAPED_COMMIT_DATE=$(escape_markdownv2 "$COMMIT_DATE")
+
             # 組裝 Telegram 訊息 (MarkdownV2 格式)
-        
             MESSAGE="*📢 New push to GitHub*\n" # GitHub 推播通知，粗體
             MESSAGE+="*${ESCAPED_TITLE}*\n" # 文章標題，粗體
             MESSAGE+="\`\`\`${ESCAPED_COMMIT_MESSAGE}\`\`\`\n" # 提交訊息內容，等寬字體
             MESSAGE+="[\>\>點此閱讀文章](${ARTICLE_URL})\n" # 文章連結，`>` 符號跳脫
+            MESSAGE+="${ESCAPED_COMMIT_DATE}\n" # 完成日期
             MESSAGE+="by \`${ESCAPED_AUTHOR_NAME}\`" # 作者名稱，等寬字體
 
             # 發送 Telegram 訊息
-            # 將訊息內容傳遞給 curl，並指定 parse_mode 為 MarkdownV2 和 disable_web_page_preview
             curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
               -H "Content-Type: application/json" \
               -d "{
@@ -187,4 +167,61 @@ jobs:
                 \"disable_web_page_preview\": true
               }"
             echo "Telegram notification sent for $file_path with title: $TITLE"
-          done
+
+
+      - name: Send Telegram notification (Other Changes) # 步驟 3B: 發送其他變更的 Telegram 通知
+        # 只有當 'change-type' 步驟判斷為非部落格文章更新時才執行
+        if: steps.change-type.outputs.IS_BLOG_POST == 'false'
+        run: |
+          # 從 GitHub Secrets 中取得 Telegram Bot Token 和 Chat ID
+          TELEGRAM_BOT_TOKEN="${{ secrets.TELEGRAM_BOT_TOKEN }}"
+          TELEGRAM_CHAT_ID="${{ secrets.TELEGRAM_CHAT_ID }}"
+          
+          # 獲取提交訊息和作者名稱
+          COMMIT_MESSAGE="${{ github.event.head_commit.message }}"
+          AUTHOR_NAME="${{ github.event.head_commit.author.name }}"
+
+          # 函式：對字串進行 MarkdownV2 特殊字元跳脫
+          escape_markdownv2() {
+            local text="$1"
+            text=$(echo "$text" | sed 's/\\/\\\\/g')
+            text=$(echo "$text" | sed 's/\([_*\(\)~`>#\+\-=\|\{\}\.!]\)/\\\1/g')
+            text=$(echo "$text" | sed 's/\./\\./g') 
+            text=$(echo "$text" | sed 's/\[/\\[/g')
+            text=$(echo "$text" | sed 's/\]/\\]/g')
+            text=$(echo "$text" | sed 's/<support@github\.com>/\\<support@github\\.com\\>/g')
+            echo "$text"
+          }
+
+          # 判斷是否顯示 "優化參數"
+          DISPLAY_MESSAGE=""
+          if [ -z "$COMMIT_MESSAGE" ]; then
+            DISPLAY_MESSAGE="優化參數"
+          else
+            DISPLAY_MESSAGE="$COMMIT_MESSAGE"
+          fi
+
+          # 跳脫提交訊息和作者名稱
+          ESCAPED_DISPLAY_MESSAGE=$(escape_markdownv2 "$DISPLAY_MESSAGE")
+          ESCAPED_AUTHOR_NAME=$(escape_markdownv2 "$AUTHOR_NAME")
+
+          # 獲取提交日期並格式化
+          COMMIT_DATE=$(date -d "${{ github.event.head_commit.timestamp }}" "+%Y-%m-%d %H:%M") # 格式化為 YYYY-MM-DD HH:MM
+          ESCAPED_COMMIT_DATE=$(escape_markdownv2 "$COMMIT_DATE")
+
+          # 組裝 Telegram 訊息 (MarkdownV2 格式)
+          MESSAGE="*🛠️ 新的提交修復*\n" # 新的提交修復，粗體
+          MESSAGE+="\`\`\`${ESCAPED_DISPLAY_MESSAGE}\`\`\`\n" # 提交訊息內容，等寬字體
+          MESSAGE+="${ESCAPED_COMMIT_DATE}\n" # 完成日期
+          MESSAGE+="by \`${ESCAPED_AUTHOR_NAME}\`" # 作者名稱，等寬字體
+
+          # 發送 Telegram 訊息
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"chat_id\": \"${{ secrets.TELEGRAM_CHAT_ID }}\",
+              \"text\": \"$(echo "${MESSAGE}" | sed 's/"/\\"/g' | sed ':a;N;$!ba;s/\n/\\n/g')\",
+              \"parse_mode\": \"MarkdownV2\",
+              \"disable_web_page_preview\": true
+            }"
+          echo "Telegram notification sent for other changes."
