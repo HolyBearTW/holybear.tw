@@ -1,6 +1,6 @@
 permissions:
   contents: write
-  actions: read # 需要讀取 workflow 狀態的權限
+  actions: read
 
 name: 部署 VitePress 靜態網站到 GitHub Pages
 
@@ -99,35 +99,82 @@ jobs:
           folder: .vitepress/dist
           clean: true
           
-      # --- ▼▼▼ 以下為此檔案中唯一新增的步驟 ▼▼▼ ---
-      
-      - name: 偵測新文章並上傳列表
-        id: new-files
+      # --- 偵測新文章並通知 Telegram ---
+      - name: 偵測新文章
+        id: detect-new-files
         run: |
           TARGET_DIR="blog/"
           CURRENT_SHA="${{ github.sha }}"
           LAST_COMMIT_SHA=$(git rev-parse "${{ github.event.before }}" 2>/dev/null || git rev-parse "${CURRENT_SHA}~1" 2>/dev/null || echo "")
           OUTPUT_FILE="new_post_files.txt"
-          
           DETECTED_FILES=""
-          # 處理首次推送或強制推送
           if [ -z "$LAST_COMMIT_SHA" ] || [ "${{ github.event.before }}" = "0000000000000000000000000000000000000000" ]; then
             DETECTED_FILES=$(git diff --name-only --diff-filter=A "${CURRENT_SHA}~1" "${CURRENT_SHA}" -- "$TARGET_DIR")
           else
             DETECTED_FILES=$(git diff --name-only --diff-filter=A "${LAST_COMMIT_SHA}" "${CURRENT_SHA}" -- "$TARGET_DIR")
           fi
-          
-          # 將找到的檔案寫入輸出檔
           echo "$DETECTED_FILES" | grep . > "$OUTPUT_FILE" || true
-          
           if [ -s "$OUTPUT_FILE" ]; then
             echo "偵測到新文章，列表已儲存至 $OUTPUT_FILE"
+            echo "has_new_files=true" >> $GITHUB_ENV
           else
             echo "沒有偵測到新文章"
+            echo "has_new_files=false" >> $GITHUB_ENV
           fi
 
-      - name: 上傳新文章列表產物
-        uses: actions/upload-artifact@v4
-        with:
-          name: new-post-files
-          path: new_post_files.txt
+      - name: 處理並發送 Telegram 通知
+        if: env.has_new_files == 'true'
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          set -e
+          NEW_POST_FILES=$(cat new_post_files.txt)
+          if [ -z "$NEW_POST_FILES" ]; then
+            echo "文章列表為空，中止執行。"
+            exit 0
+          fi
+          BASE_URL="https://holybear.me"
+          escape_markdownv2() {
+            printf "%s" "$1" | sed -e 's/[\\_*\[\]()~`>#+\-=|{}.!]/\\&/g'
+          }
+          for file_path in $NEW_POST_FILES; do
+            echo "Processing file: $file_path"
+            file_content=$(cat "$file_path")
+            TITLE=$(echo "$file_content" | awk -F': ' '/^title:/ {print $2; exit}')
+            if [ -z "$TITLE" ]; then
+              TITLE=$(echo "$file_content" | awk -F'# ' '/^# / {print $2; exit}')
+            fi
+            [ -z "$TITLE" ] && TITLE="無標題文章"
+            CATEGORY=""
+            CATEGORY=$(echo "$file_content" | grep -A 1 -iE '^\s*category:' | grep -E '^\s*-\s*' | head -n1 | sed -E 's/^\s*-\s*(.*)/\1/')
+            [ -z "$CATEGORY" ] && CATEGORY=$(echo "$file_content" | grep -iE '^\s*category:\s*\[.*\]' | sed -E 's/.*\[\s*([^, ]*).*/\1/')
+            [ -z "$CATEGORY" ] && CATEGORY=$(echo "$file_content" | grep -iE '^\s*category:\s*[^-\[]+' | head -n1 | sed -E 's/^\s*category:\s*//')
+            CATEGORY=$(echo "$CATEGORY" | sed -E 's/^[[:space:]]+|[[:space:]]+$//g' | sed -E 's/[\x27"\/]//g')
+            if [ -n "$CATEGORY" ]; then
+              TITLE="【${CATEGORY}】${TITLE}"
+            fi
+            ARTICLE_SLUG=$(echo "$file_path" | sed -E 's|^blog/(.*)\.md$|\1|')
+            ARTICLE_URL="${BASE_URL}/blog/${ARTICLE_SLUG}"
+            COMMIT_MESSAGE=$(git log -1 --pretty=%B)
+            AUTHOR_NAME=$(git log -1 --pretty=%an)
+            ESCAPED_TITLE=$(escape_markdownv2 "$TITLE")
+            ESCAPED_COMMIT_MESSAGE=$(escape_markdownv2 "$COMMIT_MESSAGE")
+            ESCAPED_AUTHOR_NAME=$(escape_markdownv2 "$AUTHOR_NAME")
+            MESSAGE=$'*📢 New push to GitHub*\n'
+            MESSAGE+=$'*'"${ESCAPED_TITLE}"$'*\n'
+            MESSAGE+=$'```commit\n'"${ESCAPED_COMMIT_MESSAGE}"$'\n```'
+            MESSAGE+=$'[➡️ 點此閱讀文章]('"${ARTICLE_URL}"$')\n'
+            MESSAGE+='by `'"${ESCAPED_AUTHOR_NAME}"'`'
+            RESPONSE=$(curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+              --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
+              --data-urlencode "text=${MESSAGE}" \
+              --data-urlencode "parse_mode=MarkdownV2" \
+              --data-urlencode "disable_web_page_preview=true")
+            if echo "$RESPONSE" | grep -q '"ok":true'; then
+              echo "✅ Telegram notification sent successfully for: $file_path"
+            else
+              echo "❌ Failed to send Telegram notification for: $file_path"
+              echo "Telegram API Response: $RESPONSE"
+            fi
+          done
