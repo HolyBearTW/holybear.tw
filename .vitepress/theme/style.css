@@ -113,27 +113,41 @@
   align-items: center !important;
   position: relative !important;
   overflow: visible !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
 }
+
+/* 修正 .image-src 被絕對定位且縮小的問題，讓圖片自適應且光暈能顯示 */
 .VPHomeHero .VPImage.image-src,
-.VPHomeHero .image .VPImage.image-src,
-.VPHomeHero .image-src,
-.VPHomeHero .image .image-src,
-img.VPImage.image-src,
 .VPHomeHero img.image-src {
-  box-shadow: 0 0 120px 40px #00ffee, 0 0 240px 80px #ffef8a !important;
+  box-shadow: 0 0 64px 24px #00ffee, 0 0 128px 40px #ffef8a !important;
   border-radius: 30px !important;
   clip-path: inset(0px round 30px) !important;
-  aspect-ratio: 1/1 !important;
+  aspect-ratio: 1 / 1 !important;
   object-fit: cover !important;
   position: relative !important;
   z-index: 1 !important;
-  width: 192px !important;
-  height: 192px !important;
-  max-width: 100% !important;
-  max-height: 100% !important;
-  left: 0 !important;
-  top: 0 !important;
+  max-width: 256px !important;
+  max-height: 256px !important;
+  width: 100% !important;
+  height: auto !important;
+  left: auto !important;
+  top: auto !important;
   transform: none !important;
+  background: transparent !important;
+}
+
+/* 保險：去除舊有針對 .image-src 的絕對定位與縮小 */
+[data-v-8a17128e] .image-src {
+  position: static !important;
+  top: auto !important;
+  left: auto !important;
+  transform: none !important;
+  width: 100% !important;
+  height: auto !important;
+  max-width: 256px !important;
+  max-height: 256px !important;
+  object-fit: cover !important;
 }
 
 body {
