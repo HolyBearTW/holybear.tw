@@ -4,9 +4,9 @@ name: Notify New Blog Post to Telegram # 工作流程名稱
 on:
   push:
     branches:
-      - main # 監控 main 分支
+      - main
     paths:
-      - 'blog/**' # 監控 'blog/' 目錄下的任何檔案變動
+      - 'blog/**'
 
 jobs:
   notify_new_post:
@@ -16,49 +16,43 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # 獲取所有歷史紀錄，以便 git diff 能正確判斷
+          fetch-depth: 0
 
       - name: Get new files in target directory
         id: get-new-files
         run: |
           TARGET_DIR="blog/"
-          # 使用 git diff 安全地找出所有本次 commit 新增的 .md 檔案 (A=Added)
           NEW_FILES=$(git diff --name-only --diff-filter=A HEAD~1 HEAD -- "$TARGET_DIR" | grep '\.md$')
-          
-          # 將找到的檔案列表（可能有多行）設定為 GitHub Actions 的輸出
           echo "new_files<<EOF" >> "$GITHUB_OUTPUT"
           echo "${NEW_FILES}" >> "$GITHUB_OUTPUT"
           echo "EOF" >> "$GITHUB_OUTPUT"
 
       - name: Process and send Telegram notification
-        # 只有當上一步驟 'get-new-files' 有找到檔案時才執行
         if: steps.get-new-files.outputs.new_files != ''
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           NEW_POST_FILES: ${{ steps.get-new-files.outputs.new_files }}
         run: |
-          # 【重要設定】您的網站基礎網址
+          set -e
+
           BASE_URL="https://holybear.me"
 
           # 函式：對字串進行 MarkdownV2 特殊字元跳脫
-          # ▼▼▼ 確認這是包含 {} 的最完整版本 ▼▼▼
           escape_markdownv2() {
             local text="$1"
-            # 處理官方列表中的所有保留字元: _ * [ ] ( ) ~ ` > # + - = | { } . !
-            echo "$text" | sed 's/\([_*\[\]()~`>#+\-=|{}.!]\)/\\\1/g'
+            printf "%s" "$text" | sed -e 's/[\\_*\[\]()~`>#+\-=|{}.!]/\\&/g'
           }
 
-          # 使用 while read 迴圈安全地處理每一個檔案路徑
           echo "${NEW_POST_FILES}" | while IFS= read -r file_path; do
             if [ -z "$file_path" ]; then
               continue
             fi
-            
+
             echo "Processing file: $file_path"
 
             file_content=$(tr -d '\r' < "$file_path")
-            
+
             TITLE=$(echo "$file_content" | awk -F': ' '/^title:/ {print $2; exit}')
             if [ -z "$TITLE" ]; then
               TITLE=$(echo "$file_content" | awk -F'# ' '/^# / {print $2; exit}')
@@ -68,23 +62,21 @@ jobs:
             fi
 
             ESCAPED_TITLE=$(escape_markdownv2 "$TITLE")
-            
+
             ARTICLE_SLUG=$(echo "$file_path" | sed -E 's|^blog/(.*)\.md$|\1|')
             ARTICLE_URL="${BASE_URL}/${ARTICLE_SLUG}"
-            
+
             COMMIT_MESSAGE=$(git log -1 --pretty=%B)
             ESCAPED_COMMIT_MESSAGE=$(escape_markdownv2 "$COMMIT_MESSAGE")
             AUTHOR_NAME=$(git log -1 --pretty=%an)
             ESCAPED_AUTHOR_NAME=$(escape_markdownv2 "$AUTHOR_NAME")
-            
-            # 使用 $'...' 引號以正確處理 \n 換行
-            MESSAGE=$'*📢 New push to GitHub*\n'
-            MESSAGE+=$'*${ESCAPED_TITLE}*\n'
-            MESSAGE+=$'\`\`\`${ESCAPED_COMMIT_MESSAGE}\`\`\`\n'
-            MESSAGE+=$'[➡️ 點此閱讀文章](${ARTICLE_URL})\n'
-            MESSAGE+=by\ \`$ESCAPED_AUTHOR_NAME\`
 
-            # 發送 Telegram 訊息
+            MESSAGE="*📢 New push to GitHub*\n"
+            MESSAGE+="*${ESCAPED_TITLE}*\n"
+            MESSAGE+="\`\`\`${ESCAPED_COMMIT_MESSAGE}\`\`\`\n"
+            MESSAGE+="[➡️ 點此閱讀文章](${ARTICLE_URL})\n"
+            MESSAGE+="by \`${ESCAPED_AUTHOR_NAME}\`"
+
             RESPONSE=$(curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
               --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
               --data-urlencode "text=${MESSAGE}" \
