@@ -1,13 +1,4 @@
-/**
- * Customize default theme styling by overriding CSS variables:
- * https://github.com/vuejs/vitepress/blob/main/src/client/theme-default/styles/vars.css
- */
-
-/**
- * Colors
- * -------------------------------------------------------------------------- */
-
- :root {
+:root {
   --vp-c-brand: #00FFEE;
   --vp-c-brand-light: #33FFFF;
   --vp-c-brand-lighter: #66FFFF;
@@ -16,10 +7,6 @@
   --vp-c-brand-darker: #0099BB;
   --vp-c-brand-dimm: rgba(100, 108, 255, 0.08);
 }
-
-/**
- * Component: Button
- * -------------------------------------------------------------------------- */
 
 :root {
   --vp-button-brand-border: var(--vp-c-brand-light);
@@ -33,22 +20,14 @@
   --vp-button-brand-active-bg: var(--vp-button-brand-bg);
 }
 
-/**
- * Component: Home
- * -------------------------------------------------------------------------- */
-
 :root {
   --vp-home-hero-name-color: transparent;
   --vp-home-hero-name-background: -webkit-linear-gradient(
     120deg,
     #00FFEE 30%,
-    #ADD8E6 /* 淺藍色 */
+    #ADD8E6
   );
 }
-
-/**
- * Component: Custom Block
- * -------------------------------------------------------------------------- */
 
 :root {
   --vp-custom-block-tip-border: var(--vp-c-brand);
@@ -62,21 +41,17 @@
   --vp-custom-block-tip-bg: var(--vp-c-brand-dimm);
 }
 
-/**
- * Component: Algolia
- * -------------------------------------------------------------------------- */
-
 .DocSearch {
   --docsearch-primary-color: var(--vp-c-brand) !important;
 }
 
 :root .image-src {
-  width: 100%; /* 讓寬度撐滿容器 */
-  height: auto; /* 高度根據比例自動調整 */
-  object-fit: cover; /* 嘗試改用 cover */
+  width: 100%;
+  height: auto;
+  object-fit: cover;
   border-radius: 30px;
   clip-path: inset(0px round 30px);
-  aspect-ratio: 1/1; /* 強制維持 1:1 的正方形比例 */
+  aspect-ratio: 1/1;
 }
 
 @media (min-width: 640px) {
@@ -87,6 +62,32 @@
     border-radius: 30px;
     clip-path: inset(0px round 30px);
   }
+}
+
+/* Navbar logo 圓角 */
+.VPImage.logo {
+  border-radius: 30px !important;
+  aspect-ratio: 1/1;
+  object-fit: cover;
+  clip-path: inset(0px round 30px);
+}
+
+/* 首頁 hero 大標題漸層發光 */
+.VPHomeHero .name.clip {
+  background: linear-gradient(135deg, #00FFEE 30%, #66ffff 70%, #ffef8a 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 2px 32px #00ffee90) drop-shadow(0 0px 8px #ffef8a66);
+}
+
+/* 首頁 hero 主圖發光 */
+.VPHomeHero .image-src {
+  box-shadow: 0 0 40px 10px #00ffee99, 0 0 128px 20px #ffef8a33;
+  border-radius: 30px;
+  clip-path: inset(0px round 30px);
+  aspect-ratio: 1/1;
+  object-fit: cover;
 }
 
 body {
