@@ -108,9 +108,10 @@
   filter: drop-shadow(0 2px 32px #00ffee88) drop-shadow(0 0px 8px #00ffee44);
 }
 
-/* 首頁 hero 主圖發光 */
-.VPHomeHero .image-src {
-  box-shadow: 0 0 40px 10px #00ffee99, 0 0 128px 20px #ffef8a33;
+/* 首頁 hero 主圖發光（大logo）*/
+.VPHomeHero .image-src,
+.VPHomeHero .image .image-src {
+  box-shadow: 0 0 40px 10px #00ffeecc, 0 0 128px 20px #ffef8a66 !important;
   border-radius: 30px;
   clip-path: inset(0px round 30px);
   aspect-ratio: 1/1;
