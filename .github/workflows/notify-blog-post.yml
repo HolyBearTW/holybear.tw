@@ -7,6 +7,7 @@ on:
       - main
     paths:
       - 'blog/**'
+      - 'blog/**/*'
 
 jobs:
   notify_new_post:
@@ -19,59 +20,84 @@ jobs:
           fetch-depth: 0
 
       - name: Get new files in target directory
-        id: get-new-files
+        id: new-files
         run: |
           TARGET_DIR="blog/"
-          NEW_FILES=$(git diff --name-only --diff-filter=A HEAD~1 HEAD -- "$TARGET_DIR" | grep '\.md$')
-          echo "new_files<<EOF" >> "$GITHUB_OUTPUT"
-          echo "${NEW_FILES}" >> "$GITHUB_OUTPUT"
-          echo "EOF" >> "$GITHUB_OUTPUT"
+          CURRENT_SHA="${{ github.sha }}"
+          LAST_COMMIT_SHA=$(git rev-parse "${CURRENT_SHA}~1" 2>/dev/null || echo "")
+          DETECTED_FILES=""
+          if [ -z "$LAST_COMMIT_SHA" ]; then
+            find "$TARGET_DIR" -type f -print0 | xargs -0 -r -n 1 echo >> temp_new_files.txt
+            DETECTED_FILES=$(cat temp_new_files.txt)
+          else
+            git diff --name-only --diff-filter=A "${LAST_COMMIT_SHA}" "${CURRENT_SHA}" -- "$TARGET_DIR" -z | xargs -0 -r -n 1 echo >> temp_new_files.txt
+            DETECTED_FILES=$(cat temp_new_files.txt)
+          fi
+          NEW_POST_FILES=""
+          for file in $DETECTED_FILES; do
+            if [[ "$file" == "$TARGET_DIR"* ]]; then
+              NEW_POST_FILES="$NEW_POST_FILES $file"
+            fi
+          done
+          echo "Detected NEW files in ${TARGET_DIR} directory: $NEW_POST_FILES"
+          echo "NEW_POST_FILES=${NEW_POST_FILES}" >> "$GITHUB_OUTPUT"
 
       - name: Process and send Telegram notification
-        if: steps.get-new-files.outputs.new_files != ''
+        if: steps.new-files.outputs.NEW_POST_FILES != ''
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          NEW_POST_FILES: ${{ steps.get-new-files.outputs.new_files }}
         run: |
           set -e
-
+          TELEGRAM_BOT_TOKEN="${TELEGRAM_BOT_TOKEN}"
+          TELEGRAM_CHAT_ID="${TELEGRAM_CHAT_ID}"
+          NEW_POST_FILES="${{ steps.new-files.outputs.NEW_POST_FILES }}"
           BASE_URL="https://holybear.me"
 
-          # 函式：對字串進行 MarkdownV2 特殊字元跳脫
+          # MarkdownV2 escape function
           escape_markdownv2() {
-            local text="$1"
-            printf "%s" "$text" | sed -e 's/[\\_*\[\]()~`>#+\-=|{}.!]/\\&/g'
+            printf "%s" "$1" | sed -e 's/[\\_*\[\]()~`>#+\-=|{}.!]/\\&/g'
           }
 
-          echo "${NEW_POST_FILES}" | while IFS= read -r file_path; do
-            if [ -z "$file_path" ]; then
-              continue
-            fi
-
+          for file_path in $NEW_POST_FILES; do
             echo "Processing file: $file_path"
+            file_content=$(cat "$file_path")
 
-            file_content=$(tr -d '\r' < "$file_path")
-
+            # Extract title (frontmatter or first # header)
             TITLE=$(echo "$file_content" | awk -F': ' '/^title:/ {print $2; exit}')
             if [ -z "$TITLE" ]; then
               TITLE=$(echo "$file_content" | awk -F'# ' '/^# / {print $2; exit}')
             fi
-            if [ -z "$TITLE" ]; then
-              TITLE="無標題文章"
+            [ -z "$TITLE" ] && TITLE="無標題文章"
+
+            # Extract category (YAML list, array, or single value)
+            CATEGORY=""
+            CATEGORY=$(echo "$file_content" | grep -A 1 -iE '^\s*category:' | grep -E '^\s*-\s*' | head -n1 | sed -E 's/^\s*-\s*(.*)/\1/')
+            [ -z "$CATEGORY" ] && CATEGORY=$(echo "$file_content" | grep -iE '^\s*category:\s*\[.*\]' | sed -E 's/.*\[\s*([^, ]*).*/\1/')
+            [ -z "$CATEGORY" ] && CATEGORY=$(echo "$file_content" | grep -iE '^\s*category:\s*[^-\[]+' | head -n1 | sed -E 's/^\s*category:\s*//')
+            CATEGORY=$(echo "$CATEGORY" | sed -E 's/^[[:space:]]+|[[:space:]]+$//g')
+            CATEGORY=$(echo "$CATEGORY" | sed -E 's/[\x27"\/]//g')
+
+            # Prefix title with category if present
+            if [ -n "$CATEGORY" ]; then
+              TITLE="【${CATEGORY}】${TITLE}"
             fi
 
-            ESCAPED_TITLE=$(escape_markdownv2 "$TITLE")
-
+            # Generate article link
             ARTICLE_SLUG=$(echo "$file_path" | sed -E 's|^blog/(.*)\.md$|\1|')
-            ARTICLE_URL="${BASE_URL}/${ARTICLE_SLUG}"
+            ARTICLE_URL="${BASE_URL}/blog/${ARTICLE_SLUG}.html"
 
+            # Commit message and author
             COMMIT_MESSAGE=$(git log -1 --pretty=%B)
-            ESCAPED_COMMIT_MESSAGE=$(escape_markdownv2 "$COMMIT_MESSAGE")
             AUTHOR_NAME=$(git log -1 --pretty=%an)
+
+            # MarkdownV2 escaped fields
+            ESCAPED_TITLE=$(escape_markdownv2 "$TITLE")
+            ESCAPED_COMMIT_MESSAGE=$(escape_markdownv2 "$COMMIT_MESSAGE")
             ESCAPED_AUTHOR_NAME=$(escape_markdownv2 "$AUTHOR_NAME")
 
-            MESSAGE="*📢 New push to GitHub*\n"
+            # Compose message using $'...' for correct newlines
+            MESSAGE=$'*📢 New push to GitHub*\n'
             MESSAGE+="*${ESCAPED_TITLE}*\n"
             MESSAGE+="\`\`\`${ESCAPED_COMMIT_MESSAGE}\`\`\`\n"
             MESSAGE+="[➡️ 點此閱讀文章](${ARTICLE_URL})\n"
