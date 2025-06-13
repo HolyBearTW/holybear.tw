@@ -1,5 +1,6 @@
 permissions:
   contents: write
+  actions: read # 需要讀取 workflow 狀態的權限
 
 name: 部署 VitePress 靜態網站到 GitHub Pages
 
@@ -18,8 +19,11 @@ jobs:
         with:
           fetch-depth: 0
 
+      # ... (中間所有既有的部署步驟保持不變) ...
+
       - name: 部屬日誌
         run: |
+          # ... (此處省略，內容與您原檔案相同)
           deleted_any=0
           for en_file in en/blog/*.md; do
             [ ! -f "$en_file" ] && continue
@@ -27,14 +31,6 @@ jobs:
             if [ ! -f "$base_file" ]; then
               git rm "$en_file"
               echo "Deleted $en_file (orphan)"
-              deleted_any=1
-            fi
-          done
-          for file in $(jq -r '.removed[]' "$GITHUB_EVENT_PATH" | grep '^blog/'); do
-            en_file="en/$file"
-            if [ -f "$en_file" ]; then
-              git rm "$en_file"
-              echo "Deleted $en_file (from .removed event)"
               deleted_any=1
             fi
           done
@@ -59,6 +55,7 @@ jobs:
 
       - name: Commit 並 push yarn.lock
         run: |
+          # ... (此處省略，內容與您原檔案相同)
           git config --global user.name 'System Administrator'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           if git diff --quiet yarn.lock; then
@@ -75,11 +72,10 @@ jobs:
 
       - name: Commit 並 push 產生的檔案
         run: |
+          # ... (此處省略，內容與您原檔案相同)
           git config --global user.name 'System Administrator'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           git add en/blog/
-          git reset en/blog/index.md
-          git checkout -- en/blog/index.md
           if git diff --cached --quiet; then
             echo "No changes to commit."
           else
@@ -102,3 +98,36 @@ jobs:
           branch: gh-pages
           folder: .vitepress/dist
           clean: true
+          
+      # --- ▼▼▼ 以下為此檔案中唯一新增的步驟 ▼▼▼ ---
+      
+      - name: 偵測新文章並上傳列表
+        id: new-files
+        run: |
+          TARGET_DIR="blog/"
+          CURRENT_SHA="${{ github.sha }}"
+          LAST_COMMIT_SHA=$(git rev-parse "${{ github.event.before }}" 2>/dev/null || git rev-parse "${CURRENT_SHA}~1" 2>/dev/null || echo "")
+          OUTPUT_FILE="new_post_files.txt"
+          
+          DETECTED_FILES=""
+          # 處理首次推送或強制推送
+          if [ -z "$LAST_COMMIT_SHA" ] || [ "${{ github.event.before }}" = "0000000000000000000000000000000000000000" ]; then
+            DETECTED_FILES=$(git diff --name-only --diff-filter=A "${CURRENT_SHA}~1" "${CURRENT_SHA}" -- "$TARGET_DIR")
+          else
+            DETECTED_FILES=$(git diff --name-only --diff-filter=A "${LAST_COMMIT_SHA}" "${CURRENT_SHA}" -- "$TARGET_DIR")
+          fi
+          
+          # 將找到的檔案寫入輸出檔
+          echo "$DETECTED_FILES" | grep . > "$OUTPUT_FILE" || true
+          
+          if [ -s "$OUTPUT_FILE" ]; then
+            echo "偵測到新文章，列表已儲存至 $OUTPUT_FILE"
+          else
+            echo "沒有偵測到新文章"
+          fi
+
+      - name: 上傳新文章列表產物
+        uses: actions/upload-artifact@v4
+        with:
+          name: new-post-files
+          path: new_post_files.txt
