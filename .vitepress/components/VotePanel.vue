@@ -1,15 +1,19 @@
 <template>
-  <div class="vote-panel" v-if="hydrated && voteState.value">
-    <button
-      @click="handleVote('up')"
-      :disabled="voteState.value.loading.value"
-      :class="{ active: userVote === 'up' }"
-    >👍 推 ({{ voteState.value.up.value }})</button>
-    <button
-      @click="handleVote('down')"
-      :disabled="voteState.value.loading.value"
-      :class="{ active: userVote === 'down' }"
-    >👎 噓 ({{ voteState.value.down.value }})</button>
+  <div>
+    <div>hydrated: {{ hydrated ? 'yes' : 'no' }}</div>
+    <div>voteState: {{ voteState && voteState.value ? 'ok' : 'not ready' }}</div>
+    <div v-if="hydrated && voteState.value" class="vote-panel">
+      <button
+        @click="handleVote('up')"
+        :disabled="voteState.value.loading.value"
+        :class="{ active: userVote === 'up' }"
+      >👍 推 ({{ voteState.value.up.value }})</button>
+      <button
+        @click="handleVote('down')"
+        :disabled="voteState.value.loading.value"
+        :class="{ active: userVote === 'down' }"
+      >👎 噓 ({{ voteState.value.down.value }})</button>
+    </div>
   </div>
 </template>
 
@@ -26,10 +30,12 @@ const userVote = ref(null)
 const hydrated = ref(false)
 
 function setupVote(id) {
+  console.log('setupVote called with id:', id)
   voteState.value = useVote(id)
 }
 
 onMounted(() => {
+  console.log('articleId.value in onMounted:', articleId.value)
   setupVote(articleId.value)
   userVote.value = localStorage.getItem('vote_' + articleId.value) || null
   hydrated.value = true
