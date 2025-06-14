@@ -1,7 +1,7 @@
 <script setup>
 import Theme from 'vitepress/theme'
 import { useData, useRoute } from 'vitepress'
-import { computed } from 'vue'
+import { computed, onMounted, watch } from 'vue'
 import GiscusComments from '../components/GiscusComments.vue'
 import VotePanel from '../components/VotePanel.vue'
 import ViewCounter from '../components/ViewCounter.vue'
@@ -9,18 +9,30 @@ import ViewCounter from '../components/ViewCounter.vue'
 const { frontmatter, page } = useData()
 const route = useRoute()
 
+// ===== 內容動畫觸發 =====
+function triggerContentAnimation() {
+  setTimeout(() => {
+    const el = document.querySelector('.vp-doc')
+    if (el) {
+      el.classList.remove('slide-in')
+      void el.offsetWidth
+      el.classList.add('slide-in')
+    }
+  }, 0)
+}
+onMounted(triggerContentAnimation)
+watch(() => route.path, triggerContentAnimation)
+// ===== END =====
+
 const isHomePage = computed(() =>
   page.value && (page.value.path === '/' || page.value.path === '/index.html')
 )
-
 const currentTitle = computed(() =>
   frontmatter.value ? (frontmatter.value.title || '無標題文章') : 'frontmatter.value is UNDEFINED'
 )
-
 const currentSlug = computed(() =>
   frontmatter.value?.slug || page.value?.path || frontmatter.value?.title || 'unknown'
 )
-
 const currentDisplayDate = computed(() => {
   if (frontmatter.value?.date) {
     const date = new Date(frontmatter.value.date)
@@ -69,13 +81,8 @@ const currentDisplayDate = computed(() => {
         <div class="blog-post-date-divider"></div>
       </div>
     </template>
-    <!-- 用 transition 包住 doc slot，內容 key 跟 route.path 綁定 -->
     <template #doc>
-      <transition name="doc-fade-slide" mode="out-in">
-        <div :key="route.path">
-          <slot name="doc" />
-        </div>
-      </transition>
+      <slot name="doc" />
     </template>
     <template #doc-after>
       <ClientOnly>
@@ -185,16 +192,17 @@ section.VPSidebarItem.level-0 {
   padding-bottom: 4px !important;
   padding-top: 0 !important;
 }
-/* 內容動畫（可依需求自訂動畫效果） */
-.doc-fade-slide-enter-active, .doc-fade-slide-leave-active {
-  transition: opacity 0.6s cubic-bezier(.4,0,.2,1), transform 0.6s cubic-bezier(.4,0,.2,1);
+.VPDoc .vp-doc.slide-in {
+  animation: contentSlideIn 0.8s cubic-bezier(.4,0,.2,1);
 }
-.doc-fade-slide-enter-from, .doc-fade-slide-leave-to {
-  opacity: 0;
-  transform: translateY(30px);
-}
-.doc-fade-slide-enter-to, .doc-fade-slide-leave-from {
-  opacity: 1;
-  transform: translateY(0);
+@keyframes contentSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 </style>
