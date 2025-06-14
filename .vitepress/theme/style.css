@@ -8,13 +8,13 @@
  * -------------------------------------------------------------------------- */
 
 :root {
-  --vp-c-brand: #00FFEE;
-  --vp-c-brand-light: #33FFFF;
-  --vp-c-brand-lighter: #66FFFF;
-  --vp-c-brand-lightest: #99FFFF;
-  --vp-c-brand-dark: #00CCEE;
-  --vp-c-brand-darker: #0099BB;
-  --vp-c-brand-dimm: rgba(100, 108, 255, 0.08);
+    --vp-c-brand: #00FFEE;
+    --vp-c-brand-light: #33FFFF;
+    --vp-c-brand-lighter: #66FFFF;
+    --vp-c-brand-lightest: #99FFFF;
+    --vp-c-brand-dark: #00CCEE;
+    --vp-c-brand-darker: #0099BB;
+    --vp-c-brand-dimm: rgba(100, 108, 255, 0.08);
 }
 
 /**
@@ -22,15 +22,15 @@
  * -------------------------------------------------------------------------- */
 
 :root {
-  --vp-button-brand-border: var(--vp-c-brand-light);
-  --vp-button-brand-text: black;
-  --vp-button-brand-bg: var(--vp-c-brand);
-  --vp-button-brand-hover-border: var(--vp-c-brand-light);
-  --vp-button-brand-hover-text: black;
-  --vp-button-brand-hover-bg: var(--vp-c-brand-light);
-  --vp-button-brand-active-border: var(--vp-c-brand-light);
-  --vp-button-brand-active-text: black;
-  --vp-button-brand-active-bg: var(--vp-button-brand-bg);
+    --vp-button-brand-border: var(--vp-c-brand-light);
+    --vp-button-brand-text: black;
+    --vp-button-brand-bg: var(--vp-c-brand);
+    --vp-button-brand-hover-border: var(--vp-c-brand-light);
+    --vp-button-brand-hover-text: black;
+    --vp-button-brand-hover-bg: var(--vp-c-brand-light);
+    --vp-button-brand-active-border: var(--vp-c-brand-light);
+    --vp-button-brand-active-text: black;
+    --vp-button-brand-active-bg: var(--vp-button-brand-bg);
 }
 
 /**
@@ -38,12 +38,9 @@
  * -------------------------------------------------------------------------- */
 
 :root {
-  --vp-home-hero-name-color: transparent;
-  --vp-home-hero-name-background: -webkit-linear-gradient(
-    120deg,
-    #00FFEE 30%,
-    #ADD8E6 /* 淺藍色 */
-  );
+    --vp-home-hero-name-color: transparent;
+    --vp-home-hero-name-background: -webkit-linear-gradient( 120deg, #00FFEE 30%, #ADD8E6 /* 淺藍色 */
+    );
 }
 
 /**
@@ -51,15 +48,15 @@
  * -------------------------------------------------------------------------- */
 
 :root {
-  --vp-custom-block-tip-border: var(--vp-c-brand);
-  --vp-custom-block-tip-text: var(--vp-c-brand-darker);
-  --vp-custom-block-tip-bg: var(--vp-c-brand-dimm);
+    --vp-custom-block-tip-border: var(--vp-c-brand);
+    --vp-custom-block-tip-text: var(--vp-c-brand-darker);
+    --vp-custom-block-tip-bg: var(--vp-c-brand-dimm);
 }
 
 .dark {
-  --vp-custom-block-tip-border: var(--vp-c-brand);
-  --vp-custom-block-tip-text: var(--vp-c-brand-lightest);
-  --vp-custom-block-tip-bg: var(--vp-c-brand-dimm);
+    --vp-custom-block-tip-border: var(--vp-c-brand);
+    --vp-custom-block-tip-text: var(--vp-c-brand-lightest);
+    --vp-custom-block-tip-bg: var(--vp-c-brand-dimm);
 }
 
 /**
@@ -67,89 +64,195 @@
  * -------------------------------------------------------------------------- */
 
 .DocSearch {
-  --docsearch-primary-color: var(--vp-c-brand) !important;
+    --docsearch-primary-color: var(--vp-c-brand) !important;
 }
 
-/* Hero 區塊大圖（首頁主圖） */
+/* Hero 區塊大圖（首頁主圖）基礎尺寸設定 */
 :root .image-src {
-  width: 100%;
-  height: auto;
-  object-fit: cover;
-  border-radius: 30px;
-  clip-path: inset(0px round 30px);
-  aspect-ratio: 1/1;
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+    border-radius: 30px;
+    aspect-ratio: 1/1;
 }
 
 @media (min-width: 640px) {
-  :root .image-src {
-    max-width: 238px;
-    min-height: auto;
-    object-fit: cover;
-    border-radius: 30px;
-    clip-path: inset(0px round 30px);
-  }
+    :root .image-src {
+        max-width: 238px;
+        min-height: auto;
+        object-fit: cover;
+        border-radius: 30px;
+    }
 }
 
-/* Navbar logo 圓角&發光 */
+/* Navbar logo 圓角&發光（全局，僅首頁 hero 建議有光暈，選單需覆蓋） */
 .VPImage.logo {
-  border-radius: 30px !important;
-  aspect-ratio: 1/1;
-  object-fit: cover;
-  clip-path: inset(0px round 30px);
-  box-shadow: 0 0 32px 6px #00ffee99, 0 0 16px 2px #00ffee44;
+    border-radius: 30px !important; /* 圓角矩形，跟首頁主圖一致 */
+    aspect-ratio: 1/1;
+    object-fit: cover;
+    background: transparent;
+    box-shadow: none !important;
+    filter: none !important;
 }
 
 /* ====== 首頁大標題&主圖發光特效 ====== */
 
-/* 首頁大標題漸層＋發光（保留你的漸層） */
+/* 首頁大標題漸層＋發光 */
 .VPHomeHero .name.clip {
-  filter: drop-shadow(0 2px 32px #00ffee88) drop-shadow(0 0px 8px #00ffee44);
+    filter: drop-shadow(0 2px 32px #00ffee88) drop-shadow(0 0px 8px #00ffee44);
 }
 
-/* --- 首頁 hero 主圖（大logo）發光與裁切修正 --- */
+/* --- Hero 主圖最佳做法（不使用 clip-path，只用 border-radius，發光絕不被裁）--- */
+/* 結構可直接用 VitePress 預設 <img class="VPImage image-src"> */
+
 .VPHomeHero .image-container {
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
-  position: relative !important;
-  overflow: visible !important;
-  min-width: 0 !important;
-  min-height: 0 !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    position: relative !important;
+    overflow: visible !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
 }
 
-/* 修正 .image-src 被絕對定位且縮小的問題，讓圖片自適應且光暈能顯示 */
+/* 首頁 hero 主圖（大logo）發光＋圓角 */
 .VPHomeHero .VPImage.image-src,
 .VPHomeHero img.image-src {
-  box-shadow: 0 0 64px 24px #00ffee, 0 0 128px 40px #ffef8a !important;
-  border-radius: 30px !important;
-  clip-path: inset(0px round 30px) !important;
-  aspect-ratio: 1 / 1 !important;
-  object-fit: cover !important;
-  position: relative !important;
-  z-index: 1 !important;
-  max-width: 256px !important;
-  max-height: 256px !important;
-  width: 100% !important;
-  height: auto !important;
-  left: auto !important;
-  top: auto !important;
-  transform: none !important;
-  background: transparent !important;
+    filter: drop-shadow(0 0 80px #00ffee) drop-shadow(0 0 200px #ffef8a);
+    border-radius: 30px !important;
+    aspect-ratio: 1 / 1 !important;
+    object-fit: cover !important;
+    position: relative !important;
+    z-index: 1 !important;
+    max-width: 256px !important;
+    max-height: 256px !important;
+    width: 100% !important;
+    height: auto !important;
+    left: auto !important;
+    top: auto !important;
+    transform: none !important;
+    background: transparent !important;
 }
 
 /* 保險：去除舊有針對 .image-src 的絕對定位與縮小 */
 [data-v-8a17128e] .image-src {
-  position: static !important;
-  top: auto !important;
-  left: auto !important;
-  transform: none !important;
-  width: 100% !important;
-  height: auto !important;
-  max-width: 256px !important;
-  max-height: 256px !important;
-  object-fit: cover !important;
+    position: static !important;
+    top: auto !important;
+    left: auto !important;
+    transform: none !important;
+    width: 100% !important;
+    height: auto !important;
+    max-width: 256px !important;
+    max-height: 256px !important;
+    object-fit: cover !important;
+}
+
+/* 1. 解除所有選單 logo 外層到 img 的圓形裁切 */
+.VPNavBarTitleLogo,
+.VPNavBarTitle-logo,
+.VPNavBarTitle > span,
+.VPNavBarTitle > div,
+.VPNavBarTitle {
+    border-radius: 6px !important;
+    overflow: visible !important;
+    background: transparent !important;
+}
+
+    /* 2. 圖片本身也要設同樣的圓角 */
+    .VPNavBarTitleLogo img,
+    .VPNavBarTitle-logo img,
+    .VPNavBarTitle img,
+    .VPNavBarTitle .VPImage.logo {
+        border-radius: 6px !important;
+        aspect-ratio: 1/1 !important;
+        object-fit: cover !important;
+        display: block !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        filter: none !important;
+    }
+
+/* 響應式，手機時主圖為正方形且自動加大，標題不重疊 & 保持電腦字級 */
+@media (max-width: 640px) {
+    .VPHomeHero {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+        .VPHomeHero .container {
+            width: 100%;
+            padding-top: 0 !important;
+            margin-top: 0 !important;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .VPHomeHero .image-container {
+            margin-bottom: 24px !important;
+            width: 100%;
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
+            position: relative !important;
+            overflow: visible !important;
+        }
+
+        .VPHomeHero .VPImage.image-src,
+        .VPHomeHero img.image-src {
+            display: block;
+            margin: 0 auto;
+            width: 90vw !important;
+            max-width: 240px !important;
+            min-width: 120px !important;
+            height: 90vw !important;
+            max-height: 240px !important;
+            min-height: 120px !important;
+            border-radius: 24px !important;
+            aspect-ratio: 1/1 !important;
+            object-fit: cover !important;
+        }
+
+        .VPHomeHero .main {
+            margin-top: 0 !important;
+            padding-top: 0 !important;
+            width: 100%;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .VPHomeHero .name,
+        .VPHomeHero .text {
+            margin-top: 12px !important;
+            display: block;
+            text-align: center;
+            width: 100%;
+            word-break: break-word;
+            /* 讓手機字跟桌機一樣大，不縮小 */
+            font-size: 2.4rem !important;
+            font-weight: 700 !important;
+            line-height: 1.2 !important;
+        }
+
+        .VPHomeHero .desc {
+            font-size: 1.2rem !important;
+            font-weight: 400 !important;
+            line-height: 1.4 !important;
+        }
+        /* 保證按鈕區塊也不會擠到主圖 */
+        .VPHomeHero .actions {
+            margin-top: 18px !important;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
 }
 
 body {
-  font-family: MiSans;
+    font-family: MiSans;
 }
