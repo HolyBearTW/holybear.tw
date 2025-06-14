@@ -1,5 +1,5 @@
 import { defineConfig } from 'vitepress'
-import locales from './locales' 
+import locales from './locales'
 import gitMetaPlugin from './git-meta.js'
 import { execSync } from 'child_process'
 import sidebar from './sidebar.generated' // <<--- 自動產生 sidebar
@@ -46,52 +46,12 @@ export default defineConfig({
         lastUpdated: {
             text: '最後更新',
             formatOptions: {
-            dateStyle: 'short',
-            timeStyle: 'short',
-            timeZone: 'Asia/Taipei'
+                dateStyle: 'short',
+                timeStyle: 'short',
+                timeZone: 'Asia/Taipei'
             }
         },
-    search: {
-      provider: 'local',
-      options: {
-        miniSearch: {
-          options: {
-            fields: ['title', 'text', 'titles'],
-            storeFields: ['title', 'text', 'titles'],
-            searchOptions: {
-              combineWith: 'AND',
-              fuzzy: 0.2,
-              prefix: true,
-              boost: { title: 4, text: 2, titles: 1 }
-            }
-          },
-          searchOptions: {
-            combineWith: 'AND',
-            fuzzy: 0.2,
-            prefix: true
-          }
-        },
-        // 自定義內容處理器
-        _render(src, env, md) {
-          const html = md.render(src, env)
-          
-          // 如果頁面有標籤或分類，將它們添加到內容中
-          if (env.frontmatter?.tag || env.frontmatter?.category) {
-            const tags = env.frontmatter.tag || []
-            const categories = env.frontmatter.category || []
-            
-            const searchableContent = [
-              ...tags.map(tag => `標籤: ${tag}`),
-              ...categories.map(cat => `分類: ${cat}`)
-            ].join(' ')
-            
-            return html + `<div style="display: none;">${searchableContent}</div>`
-          }
-          
-          return html
-        }
-      }
-    },
+        // 官方搜尋已移除，這裡沒有 search 欄位
         footer: {
             message: 'AGPL-3.0 Licensed',
             copyright: 'Copyright © 2025 聖小熊 & HolyBear'
@@ -100,7 +60,6 @@ export default defineConfig({
             { icon: 'github', link: 'https://github.com/HolyBearTW' }
         ]
     },
-  },
     extendsPage(page) {
         const branch = getCurrentBranch()
         if (
@@ -153,35 +112,5 @@ export default defineConfig({
             // 其它有 image 的文章
             page.frontmatter.head.push(['meta', { property: 'og:image', content: page.frontmatter.image }])
         }
-    },
-      enhanceApp({ app, router, siteData }) {
-    // 確保在客戶端執行
-    // 這樣可以避免在服務端渲染時出現錯誤
-
-    if (typeof window !== 'undefined') {
-      
-      // 目錄動畫函數 - 只處理目錄項目，不包含標題
-      const addOutlineAnimation = () => {
-        setTimeout(() => {
-          // 只為目錄項目添加點擊動畫
-          const outlineLinks = document.querySelectorAll('.VPDocAsideOutline .outline-link')
-          outlineLinks.forEach(link => {
-            link.addEventListener('click', function() {
-              this.style.transform = 'scale(0.98)'
-              setTimeout(() => {
-                this.style.transform = ''
-              }, 100)
-            })
-          })
-        }, 500)
-      }
-
-      // 初次載入
-      addOutlineAnimation()
-      
-      // 路由變化時重新綁定
-      router.onAfterRouteChanged = addOutlineAnimation
     }
-  
-  },
-)
+})
