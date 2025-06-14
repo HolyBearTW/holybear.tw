@@ -112,5 +112,19 @@ export default defineConfig({
             // 其它有 image 的文章
             page.frontmatter.head.push(['meta', { property: 'og:image', content: page.frontmatter.image }])
         }
+    },
+    enhanceApp({ app, router, siteData }) {
+        if (typeof window !== 'undefined') {
+            const animateContent = () => {
+                const content = document.querySelector('.VPDoc .vp-doc')
+                if (content) {
+                    content.classList.remove('slide-in')
+                    void content.offsetWidth
+                    content.classList.add('slide-in')
+                }
+            }
+            animateContent()
+            router.onAfterRouteChanged = animateContent
+        }
     }
 })
