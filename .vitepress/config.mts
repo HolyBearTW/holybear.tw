@@ -112,26 +112,5 @@ export default defineConfig({
             // 其它有 image 的文章
             page.frontmatter.head.push(['meta', { property: 'og:image', content: page.frontmatter.image }])
         }
-    },
-    enhanceApp({ app, router, siteData }) {
-        if (typeof window !== 'undefined') {
-            const animateContent = () => {
-                const content = document.querySelector('.VPDoc .vp-doc')
-                if (content) {
-                    content.classList.remove('slide-in')
-                    // 強制重排，確保動畫能正確觸發
-                    void content.offsetWidth
-                    content.classList.add('slide-in')
-                }
-            }
-            // 路由切換時觸發
-            router.onAfterRouteChanged = animateContent
-            // 首次進入頁面也要觸發
-            if (document.readyState === 'complete' || document.readyState === 'interactive') {
-                setTimeout(animateContent, 0)
-            } else {
-                window.addEventListener('DOMContentLoaded', animateContent)
-            }
-        }
     }
 })
