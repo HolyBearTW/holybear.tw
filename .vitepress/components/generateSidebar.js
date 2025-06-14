@@ -5,7 +5,17 @@ const matter = require('gray-matter')
 const BLOG_DIR = path.resolve(__dirname, '../../blog')
 const SIDEBAR_FILE = path.resolve(__dirname, '../sidebar.generated.ts')
 
-// 遍歷所有 md 檔
+// yyyy-MM-dd 格式
+function toDateStr(input) {
+    if (!input) return '1970-01-01'
+    if (typeof input === 'string' && /^\d{4}-\d{2}-\d{2}/.test(input)) return input.slice(0, 10)
+    try {
+        const d = new Date(input)
+        if (!isNaN(d)) return d.toISOString().slice(0, 10)
+    } catch { }
+    return '1970-01-01'
+}
+
 function walk(dir) {
     const entries = fs.readdirSync(dir, { withFileTypes: true })
     let files = []
@@ -25,54 +35,49 @@ function toSidebar(files) {
     const postItems = []
 
     for (const file of files) {
-        const rel = path.relative(BLOG_DIR, file)
-        const link = '/blog/' + rel.replace(/\\/g, '/').replace(/\.md$/, '')
+        const rel = path.relative(BLOG_DIR, file).replace(/\\/g, '/')
+        const link = '/blog/' + rel.replace(/\.md$/, '')
         const rawContent = fs.readFileSync(file, 'utf8')
         let title = null, listdate = null
 
         try {
             const fm = matter(rawContent)
             title = fm.data.title
-            listdate = fm.data.listdate
+            listdate = fm.data.listdate || fm.data.listDate
         } catch { }
 
-        // fallback: 檔名
-        if (!title) title = decodeURIComponent(link.split('/').pop() || 'blog')
-
-        // index.md 處理
         if (rel.toLowerCase() === 'index.md') {
-            indexItem = {
-                text: '文章列表',
-                link
-            }
+            indexItem = { text: '文章列表', link }
         } else {
-            // fallback: listdate 用 filename
+            if (!title) title = decodeURIComponent(link.split('/').pop() || 'blog')
             if (!listdate) {
-                // 例如 fallback 成 2025-06-13
                 const fname = path.basename(file, '.md')
                 if (/^\d{4}-\d{2}-\d{2}/.test(fname)) {
                     listdate = fname.slice(0, 10)
                 } else {
-                    // fallback 用檔案 mtime
                     listdate = fs.statSync(file).mtime.toISOString().slice(0, 10)
                 }
             }
             postItems.push({
                 text: title,
                 link,
-                listdate
+                listdate: toDateStr(listdate)
             })
         }
     }
 
-    // 按 listdate desc 排序
+    // 新到舊
     postItems.sort((a, b) => b.listdate.localeCompare(a.listdate))
 
-    // 最終 sidebar：index、分隔線、文章
-    const sidebar = []
-    if (indexItem) sidebar.push(indexItem)
-    sidebar.push({ text: '-', link: undefined }) // 分隔線
-    sidebar.push(...postItems.map(({ text, link }) => ({ text, link })))
+    // 最上面加 divider，最下面 index 前再加 divider
+    const sidebar = [
+        { type: 'divider' },
+        ...postItems.map(({ text, link }) => ({ text, link })),
+    ]
+    if (indexItem) {
+        sidebar.push({ type: 'divider' })
+        sidebar.push(indexItem)
+    }
     return sidebar
 }
 
