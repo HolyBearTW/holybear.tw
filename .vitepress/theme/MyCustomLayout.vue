@@ -169,11 +169,6 @@ const currentDisplayDate = computed(() => {
 <!-- 這裡是全域 CSS，直接作用於 sidebar，務必不要加 scoped！ -->
 <style>
 /* ==== VitePress Sidebar 分組間距適中（有分隔線＋一點點間距）==== */
-.group[data-v-a84b7c21] {
-  padding-top: 0 !important;
-  margin-top: 0 !important;
-  margin-bottom: 0 !important;
-}
 .group + .group[data-v-a84b7c21] {
   border-top: 1px solid var(--vp-c-divider) !important;
   padding-top: 8px !important;
@@ -182,9 +177,5 @@ const currentDisplayDate = computed(() => {
 section.VPSidebarItem.level-0 {
   padding-bottom: 4px !important;
   padding-top: 0 !important;
-}
-.items[data-v-6b36a2fd] {
-  margin: 0 !important;
-  padding: 0 !important;
 }
 </style>
