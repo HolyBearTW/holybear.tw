@@ -176,11 +176,12 @@ const currentDisplayDate = computed(() => {
 }
 .group + .group[data-v-a84b7c21] {
   border-top: 1px solid var(--vp-c-divider) !important;
-  padding-top: 6px !important;   /* 這裡就是分組間的留白，建議 4px~8px */
+  padding-top: 8px !important;
+  margin-top: 8px !important;
 }
 section.VPSidebarItem.level-0 {
-  padding-bottom: 0 !important;
-  padding-top: 6px !important;
+  padding-bottom: 4px !important;
+  padding-top: 0 !important;
 }
 .items[data-v-6b36a2fd] {
   margin: 0 !important;
