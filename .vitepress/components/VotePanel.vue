@@ -1,23 +1,30 @@
 <template>
-  <div class="vote-panel" v-if="hydrated && voteState.value && voteState.value.up && voteState.value.down">
-    <button
-      @click="handleVote('up')"
-      :disabled="voteState.value.loading.value"
-      :class="{ active: userVote.value === 'up' }"
-    >
-      👍 推
-      <span v-if="!voteState.value.loading.value">({{ voteState.value.up.value }})</span>
-      <span v-else>...</span>
-    </button>
-    <button
-      @click="handleVote('down')"
-      :disabled="voteState.value.loading.value"
-      :class="{ active: userVote.value === 'down' }"
-    >
-      👎 噓
-      <span v-if="!voteState.value.loading.value">({{ voteState.value.down.value }})</span>
-      <span v-else>...</span>
-    </button>
+  <div>
+    <div>hydrated: {{ hydrated ? 'yes' : 'no' }}</div>
+    <div>voteState: {{ voteState && voteState.value ? 'ok' : 'not ready' }}</div>
+    <div>voteState.value.up: {{ voteState?.value?.up }}</div>
+    <div>voteState.value.down: {{ voteState?.value?.down }}</div>
+    <div>userVote: {{ userVote }}</div>
+    <div class="vote-panel" v-if="hydrated && voteState.value && voteState.value.up && voteState.value.down">
+      <button
+        @click="handleVote('up')"
+        :disabled="voteState.value.loading.value"
+        :class="{ active: userVote.value === 'up' }"
+      >
+        👍 推
+        <span v-if="!voteState.value.loading.value">({{ voteState.value.up.value }})</span>
+        <span v-else>...</span>
+      </button>
+      <button
+        @click="handleVote('down')"
+        :disabled="voteState.value.loading.value"
+        :class="{ active: userVote.value === 'down' }"
+      >
+        👎 噓
+        <span v-if="!voteState.value.loading.value">({{ voteState.value.down.value }})</span>
+        <span v-else>...</span>
+      </button>
+    </div>
   </div>
 </template>
 
