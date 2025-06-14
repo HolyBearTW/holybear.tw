@@ -47,7 +47,6 @@ function toSidebar(files) {
         } catch { }
 
         if (rel.toLowerCase() === 'index.md') {
-            postItems.push({ text: '---' });
             indexItem = { text: '回文章列表', link }
         } else {
             if (!title) title = decodeURIComponent(link.split('/').pop() || 'blog')
@@ -71,14 +70,14 @@ function toSidebar(files) {
     postItems.sort((a, b) => b.listdate.localeCompare(a.listdate))
     const latest10 = postItems.slice(0, 10)
 
-    // 最上面加 divider，中間空一行，底下 index
+    // 用 section 分組，分組上層不加任何 text/link，只有 items
     const sidebar = [
-        { type: 'divider' },
-        ...latest10.map(({ text, link }) => ({ text, link })),
-    ]
-    if (indexItem) {
-        sidebar.push(indexItem)
-    }
+        {
+            items: latest10.map(({ text, link }) => ({ text, link }))
+        },
+        indexItem ? { items: [ indexItem ] } : null
+    ].filter(Boolean)
+
     return sidebar
 }
 
