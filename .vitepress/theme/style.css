@@ -250,10 +250,6 @@
             flex-wrap: wrap;
             gap: 10px;
         }
-        /* vitepress 側邊欄 */
-        .VPDocAside .VPSidebarGroup {
-        margin-bottom: 8px !important; /* 原本可能是 24px，可自行調整 */
-        }
 }
 
 body {
