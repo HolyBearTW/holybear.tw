@@ -180,7 +180,7 @@ const currentDisplayDate = computed(() => {
 }
 section.VPSidebarItem.level-0 {
   padding-bottom: 0 !important;
-  padding-top: 6 !important;
+  padding-top: 6px !important;
 }
 .items[data-v-6b36a2fd] {
   margin: 0 !important;
