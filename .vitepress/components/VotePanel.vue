@@ -1,5 +1,5 @@
 <template>
-  <div class="vote-panel" v-if="hydrated">
+  <div class="vote-panel" v-if="hydrated && voteState.value && voteState.value.up && voteState.value.down">
     <button
       @click="handleVote('up')"
       :disabled="voteState.value.loading.value"
@@ -26,32 +26,28 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useVote } from './useVote'
 import { useData } from 'vitepress'
 
-// 取得目前文章的 articleId
 const { page } = useData()
 const articleId = computed(() => page.value.relativePath.replaceAll('/', '__'))
 
-// voteState 用 ref 包住（裡面才有 up/down/loading）
-const voteState = ref(useVote(articleId.value))
-// userVote 也用 ref，保證 template 可 reactivity
-const userVote = ref(localStorage.getItem('vote_' + articleId.value) || null)
+const voteState = ref(null)
+const userVote = ref(null)
 const hydrated = ref(false)
 
-// 切換文章時，voteState 重新取得、userVote 重新設定、票數重新 fetch
+onMounted(async () => {
+  voteState.value = useVote(articleId.value)
+  userVote.value = localStorage.getItem('vote_' + articleId.value) || null
+  hydrated.value = true
+  await voteState.value.fetchVotes()
+})
+
 watch(articleId, async (newId) => {
   voteState.value = useVote(newId)
   userVote.value = localStorage.getItem('vote_' + newId) || null
   await voteState.value.fetchVotes()
 })
 
-// 首次載入
-onMounted(async () => {
-  hydrated.value = true
-  await voteState.value.fetchVotes()
-})
-
-// 投票行為
 async function handleVote(type) {
-  if (voteState.value.loading.value) return
+  if (!voteState.value || voteState.value.loading.value) return
   if (userVote.value === type) {
     await voteState.value.unvote(type)
     userVote.value = null
