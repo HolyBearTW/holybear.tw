@@ -255,3 +255,92 @@
 body {
     font-family: MiSans;
 }
+
+/**
+ * Component: On this page隨滑鼠縮放效果2
+ * -------------------------------------------------------------------------- */
+ /* 移除 "On this page" 標題的縮放效果，只保留懸停效果 */
+
+/* 移除 "On this page" 標題的所有視覺效果 */
+.VPDocAsideOutline .VPDocAsideOutlineTitle,
+.VPDocAsideOutline .outline-title,
+[aria-label="Table of contents"] {
+  /* 移除所有懸停和點擊效果 */
+  cursor: default;
+  /* 不要添加 padding、margin、border-radius 避免產生方框 */
+}
+
+/* 完全移除標題的懸停效果 */
+.VPDocAsideOutline .VPDocAsideOutlineTitle:hover,
+.VPDocAsideOutline .outline-title:hover,
+[aria-label="Table of contents"]:hover {
+  /* 移除所有懸停效果 */
+}
+
+/* 只為目錄項目添加動畫效果 */
+.VPDocAsideOutline .outline-link {
+  transition: all 0.2s ease-out;
+  opacity: 0.8;
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 4px 8px;
+  margin: -4px -8px;
+  position: relative;
+}
+
+/* 為目錄項目添加懸停效果 */
+.VPDocAsideOutline .outline-link:hover {
+  opacity: 1;
+  transform: translateX(2px);
+  color: var(--vp-c-brand-1);
+  background-color: var(--vp-c-bg-soft);
+}
+/* 點擊時的動畫效果 */
+.VPDocAsideOutline .outline-link:active {
+  transform: scale(0.98);
+  transition: all 0.1s ease-out;
+}
+
+/* 確保滾動指示器正確對齊 */
+.VPDocAsideOutline .outline-marker {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 修正整個目錄容器的對齊 */
+.VPDocAsideOutline {
+  /* 確保目錄容器沒有額外的偏移 */
+}
+
+/* 確保目錄項目的滾動同步正確 */
+.VPDocAsideOutline .outline-items {
+  /* 移除可能影響滾動同步的樣式 */
+  overflow: visible;
+}
+
+/**
+ * Component: 文章內平滑動畫曲線
+ * -------------------------------------------------------------------------- */
+html {
+  scroll-behavior: smooth;
+}
+
+/* 文章內容滾動時的視差效果 */
+.VPDoc .vp-doc {
+  animation: contentSlideIn 0.8s ease-out;
+}
+
+@keyframes contentSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 滾動時的慣性效果 */
+.VPDoc .vp-doc * {
+  will-change: transform;
+}
