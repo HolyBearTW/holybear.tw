@@ -41,6 +41,18 @@ export default defineConfig({
   },
   themeConfig: {
     logo: '/logo.png',
+    // ⬇⬇⬇ 新增 sidebar 設定 ⬇⬇⬇
+    sidebar: [
+      {
+        text: '部落格文章',
+        items: [
+          { text: '首頁', link: '/' },
+          { text: '技術筆記', link: '/tech-note' },
+          // 這裡可以加更多文章
+        ]
+      }
+    ],
+    // ⬆⬆⬆ 新增 sidebar 設定 ⬆⬆⬆
     footer: {
       message: 'AGPL-3.0 Licensed',
       copyright: 'Copyright © 2025 聖小熊 & HolyBear'
