@@ -80,8 +80,13 @@ export default defineConfig({
       page.frontmatter.head.push(['meta', { property: 'og:title', content: "HolyBear's Secret Base" }])
       page.frontmatter.head.push(['meta', { property: 'og:description', content: "HolyBear's personal site, featuring HyperOS modules, tech notes, and Android customization & open-source sharing." }])
       page.frontmatter.head.push(['meta', { property: 'og:image', content: page.frontmatter.image || 'https://holybear.me/logo.png' }])
-    } else if (page.relativePath === 'index.md') {
-      // 中文首頁
+    } else if (
+      page.relativePath === 'index.md' ||
+      page.relativePath === '/index.md' ||
+      page.relativePath === 'index/index.md' ||
+      page.relativePath === '/index/index.md'
+    ) {
+      // 中文首頁（根目錄或 /index 皆適用）
       page.frontmatter.head.push(['title', {}, '聖小熊的秘密基地'])
       page.frontmatter.head.push(['meta', { property: 'og:title', content: '聖小熊的秘密基地' }])
       page.frontmatter.head.push(['meta', { property: 'og:description', content: '聖小熊的 HyperOS 模組與技術筆記分享網站。' }])
