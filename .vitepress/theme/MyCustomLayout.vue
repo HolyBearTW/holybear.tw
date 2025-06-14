@@ -166,7 +166,15 @@ const currentDisplayDate = computed(() => {
   margin-bottom: 1.5rem;
 }
 /* vitepress 側邊欄 */
-.VPDocAside .VPSidebarGroup {
-margin-bottom: 8px !important; /* 原本可能是 24px，可自行調整 */
+/* 精準減少 VitePress sidebar 分組之間留白 */
+.VPSidebar .group + .group {
+  margin-top: 8px !important;
+}
+.VPSidebar .VPSidebarItem.level-0 {
+  margin-bottom: 0 !important;
+}
+.VPSidebar .items {
+  margin-bottom: 0 !important;
+  margin-top: 0 !important;
 }
 </style>
