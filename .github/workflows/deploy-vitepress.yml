@@ -40,6 +40,15 @@ jobs:
           else
             echo "No en/blog files to delete."
           fi
+          
+      - name: 設定 Node.js 與快取
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'yarn'
+
+      - name: 安裝相依套件
+        run: yarn install
 
       - name: 產生 sidebar.generated.ts
         run: node .vitepress/components/generateSidebar.cjs
@@ -56,15 +65,6 @@ jobs:
             git pull --rebase origin main
             git push
           fi
-
-      - name: 設定 Node.js 與快取
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'yarn'
-
-      - name: 安裝相依套件
-        run: yarn install
 
       - name: Commit 並 push yarn.lock
         run: |
