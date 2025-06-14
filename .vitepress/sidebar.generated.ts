@@ -4,6 +4,9 @@ export default [
     "type": "divider"
   },
   {
+    "text": "---"
+  },
+  {
     "text": "鋼索上的日子：一個年輕人的自由渴望",
     "link": "/blog/2025-06-13"
   },
@@ -31,7 +34,6 @@ export default [
     "text": "如何輕鬆地在VitePress寫部落格？",
     "link": "/blog/2025-05-25"
   },
-  {},
   {
     "text": "回文章列表",
     "link": "/blog/index"
