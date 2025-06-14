@@ -1,12 +1,13 @@
 <script setup>
 import Theme from 'vitepress/theme'
-import { useData } from 'vitepress'
+import { useData, useRoute } from 'vitepress'
 import { computed } from 'vue'
 import GiscusComments from '../components/GiscusComments.vue'
 import VotePanel from '../components/VotePanel.vue'
 import ViewCounter from '../components/ViewCounter.vue'
 
 const { frontmatter, page } = useData()
+const route = useRoute()
 
 const isHomePage = computed(() =>
   page.value && (page.value.path === '/' || page.value.path === '/index.html')
@@ -68,6 +69,14 @@ const currentDisplayDate = computed(() => {
         <div class="blog-post-date-divider"></div>
       </div>
     </template>
+    <!-- 用 transition 包住 doc slot，內容 key 跟 route.path 綁定 -->
+    <template #doc>
+      <transition name="doc-fade-slide" mode="out-in">
+        <div :key="route.path">
+          <slot name="doc" />
+        </div>
+      </transition>
+    </template>
     <template #doc-after>
       <ClientOnly>
         <VotePanel />
@@ -77,7 +86,6 @@ const currentDisplayDate = computed(() => {
   </Theme.Layout>
 </template>
 
-<!-- 下面這段是內容區 header 樣式，只會作用在頁面內容，不會影響 sidebar -->
 <style scoped>
 :deep(.vp-doc h1:first-of-type) { display: none !important; }
 .blog-post-header-injected {
@@ -166,7 +174,6 @@ const currentDisplayDate = computed(() => {
 }
 </style>
 
-<!-- 這裡是全域 CSS，直接作用於 sidebar，務必不要加 scoped！ -->
 <style>
 /* ==== VitePress Sidebar 分組間距適中（有分隔線＋一點點間距）==== */
 .group + .group[data-v-a84b7c21] {
@@ -177,5 +184,17 @@ const currentDisplayDate = computed(() => {
 section.VPSidebarItem.level-0 {
   padding-bottom: 4px !important;
   padding-top: 0 !important;
+}
+/* 內容動畫（可依需求自訂動畫效果） */
+.doc-fade-slide-enter-active, .doc-fade-slide-leave-active {
+  transition: opacity 0.6s cubic-bezier(.4,0,.2,1), transform 0.6s cubic-bezier(.4,0,.2,1);
+}
+.doc-fade-slide-enter-from, .doc-fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(30px);
+}
+.doc-fade-slide-enter-to, .doc-fade-slide-leave-from {
+  opacity: 1;
+  transform: translateY(0);
 }
 </style>
