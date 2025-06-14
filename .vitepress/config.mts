@@ -1,8 +1,8 @@
 import { defineConfig } from 'vitepress'
-import { getSidebar } from 'vitepress-plugin-auto-sidebar'
 import locales from './locales'
 import gitMetaPlugin from './git-meta.js'
 import { execSync } from 'child_process'
+import sidebar from './sidebar.generated' // <<--- 自動產生 sidebar
 
 function getCurrentBranch() {
     try {
@@ -42,19 +42,7 @@ export default defineConfig({
     },
     themeConfig: {
         logo: '/logo.png',
-        sidebar: getSidebar({
-            contentRoot: 'blog',
-            sortBy: 'lastUpdated',
-            exclude: ['../*', '/bin', '/X11', '**/node_modules/**'],
-            transform(items) {
-                return items.map(item => ({
-                    ...item,
-                    text: item.lastUpdated
-                        ? `${item.text}（${item.lastUpdated.slice(0, 10)}）`
-                        : item.text
-                }))
-            }
-        }),
+        sidebar, // <<--- 這裡改為自動產生的 sidebar
         lastUpdated: {
             text: '最後更新',
             formatOptions: {
