@@ -9,20 +9,20 @@ import ViewCounter from '../components/ViewCounter.vue'
 const { frontmatter, page } = useData()
 const route = useRoute()
 
-// ===== 內容動畫觸發 =====
 function triggerContentAnimation() {
   setTimeout(() => {
-    const el = document.querySelector('.vp-doc')
-    if (el) {
-      el.classList.remove('slide-in')
-      void el.offsetWidth
-      el.classList.add('slide-in')
-    }
-  }, 0)
+    requestAnimationFrame(() => {
+      const el = document.querySelector('.vp-doc')
+      if (el) {
+        el.classList.remove('slide-in')
+        void el.offsetWidth
+        el.classList.add('slide-in')
+      }
+    })
+  }, 80)
 }
 onMounted(triggerContentAnimation)
 watch(() => route.path, triggerContentAnimation)
-// ===== END =====
 
 const isHomePage = computed(() =>
   page.value && (page.value.path === '/' || page.value.path === '/index.html')
@@ -39,7 +39,7 @@ const currentDisplayDate = computed(() => {
     const twDate = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }))
     const yyyy = twDate.getFullYear()
     const mm = String(twDate.getMonth() + 1).padStart(2, '0')
-    const dd = String(twDate.getDate()).padStart(2, '0')
+    const dd = String(twDate.getDate() + 1).padStart(2, '0')
     const hh = String(twDate.getHours()).padStart(2, '0')
     const min = String(twDate.getMinutes()).padStart(2, '0')
     return `${yyyy}-${mm}-${dd} ${hh}:${min}`
@@ -93,105 +93,7 @@ const currentDisplayDate = computed(() => {
   </Theme.Layout>
 </template>
 
-<style scoped>
-:deep(.vp-doc h1:first-of-type) { display: none !important; }
-.blog-post-header-injected {
-  position: relative;
-  width: 100%;
-  padding-left: var(--vp-content-padding);
-  padding-right: var(--vp-content-padding);
-  padding-top: 0;
-  padding-bottom: 0;
-  margin-bottom: 0;
-  box-sizing: border-box;
-  background-color: var(--vp-c-bg);
-  z-index: 1;
-}
-:deep(.vp-doc) { padding-top: 0 !important; margin-top: 0 !important; }
-:deep(.vp-doc > p:first-of-type) { margin-top: 0; }
-@media (max-width: 768px) {
-  .blog-post-header-injected {
-    padding-left: var(--vp-content-padding);
-    padding-right: var(--vp-content-padding);
-    padding-top: 0;
-    padding-bottom: 0;
-    margin-bottom: 0;
-  }
-  :deep(.vp-doc) { padding-top: 0 !important; margin-top: 0 !important; }
-  :deep(.vp-doc > p:first-of-type) { margin-top: 0; }
-}
-.blog-post-title {
-  font-size: 2rem;
-  line-height: 1.2;
-  margin-top: 0;
-  margin-bottom: 0.5rem;
-  color: var(--vp-c-text-1);
-}
-.blog-post-meta-row {
-  margin-bottom: 0.5rem;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5em;
-}
-.category {
-  display: inline-block;
-  background: #00FFEE;
-  color: #000;
-  border-radius: 3px;
-  padding: 0 0.5em;
-  font-size: 0.85em;
-}
-.tag {
-  display: inline-block;
-  background: #e3f2fd;
-  color: #2077c7;
-  border-radius: 3px;
-  padding: 0 0.5em;
-  font-size: 0.85em;
-}
-.blog-post-date-in-content {
-  color: var(--vp-c-text-2);
-  font-size: 0.85rem;
-  margin-top: 0;
-  margin-bottom: 0.2rem;
-}
-.blog-post-date-divider {
-  border-bottom: 1px dashed var(--vp-c-divider);
-  margin-bottom: 0.5rem;
-}
-:deep(.vp-doc p),
-:deep(.vp-doc ul),
-:deep(.vp-doc ol),
-:deep(.vp-doc img),
-:deep(.vp-doc table),
-:deep(.vp-doc blockquote),
-:deep(.vp-doc pre),
-:deep(.vp-doc .custom-block),
-:deep(.vp-doc h2),
-:deep(.vp-doc h3),
-:deep(.vp-doc h4),
-:deep(.vp-doc h5),
-:deep(.vp-doc h6) {
-  margin-top: 1rem;
-  margin-bottom: 1rem;
-}
-:deep(.vp-doc div[class*="language-"]) {
-  margin-top: 1.5rem;
-  margin-bottom: 1.5rem;
-}
-</style>
-
 <style>
-/* ==== VitePress Sidebar 分組間距適中（有分隔線＋一點點間距）==== */
-.group + .group[data-v-a84b7c21] {
-  border-top: 1px solid var(--vp-c-divider) !important;
-  padding-top: 8px !important;
-  margin-top: 8px !important;
-}
-section.VPSidebarItem.level-0 {
-  padding-bottom: 4px !important;
-  padding-top: 0 !important;
-}
 .VPDoc .vp-doc.slide-in {
   animation: contentSlideIn 0.8s cubic-bezier(.4,0,.2,1);
 }
