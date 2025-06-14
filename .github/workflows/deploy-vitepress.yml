@@ -42,7 +42,7 @@ jobs:
           fi
 
       - name: 產生 sidebar.generated.ts
-        run: node .vitepress/components/generateSidebar.js
+        run: node .vitepress/components/generateSidebar.cjs
 
       - name: Commit 並 push sidebar.generated.ts（如有變更）
         run: |
