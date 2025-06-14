@@ -31,11 +31,9 @@ export default [
     "text": "如何輕鬆地在VitePress寫部落格？",
     "link": "/blog/2025-05-25"
   },
+  {},
   {
-    "type": "divider"
-  },
-  {
-    "text": "文章列表",
+    "text": "回文章列表",
     "link": "/blog/index"
   }
 ]
