@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitepress'
+import { getSidebar } from 'vitepress-plugin-auto-sidebar'
 import locales from './locales'
 import gitMetaPlugin from './git-meta.js'
 import { execSync } from 'child_process'
@@ -41,18 +42,48 @@ export default defineConfig({
   },
   themeConfig: {
     logo: '/logo.png',
-    // ⬇⬇⬇ 新增 sidebar 設定 ⬇⬇⬇
-    sidebar: [
-      {
-        text: '部落格文章',
-        items: [
-          { text: '首頁', link: '/' },
-          { text: '技術筆記', link: '/tech-note' },
-          // 這裡可以加更多文章
-        ]
+    // ⬇ 自動產生 blog 側邊欄，並加上最後更新日期
+    sidebar: getSidebar({
+      contentRoot: 'blog',
+      sortBy: 'lastUpdated',
+      transform(items) {
+        return items.map(item => ({
+          ...item,
+          text: item.lastUpdated
+            ? `${item.text}（${item.lastUpdated.slice(0, 10)}）`
+            : item.text
+        }))
       }
-    ],
-    // ⬆⬆⬆ 新增 sidebar 設定 ⬆⬆⬆
+    }),
+    // 內文底部自動顯示最後更新（官方）
+    lastUpdated: {
+      text: '最後更新',
+      formatOptions: {
+        dateStyle: 'short',
+        timeZone: 'Asia/Taipei'
+      }
+    },
+    // 搜尋（官方 local provider）
+    search: {
+      provider: 'local',
+      options: {
+        translations: {
+          button: {
+            buttonText: '搜尋',
+            buttonAriaLabel: '搜尋'
+          },
+          modal: {
+            noResultsText: '找不到結果',
+            resetButtonTitle: '清除搜尋條件',
+            footer: {
+              selectText: '選擇',
+              navigateText: '切換',
+              closeText: '關閉'
+            }
+          }
+        }
+      }
+    },
     footer: {
       message: 'AGPL-3.0 Licensed',
       copyright: 'Copyright © 2025 聖小熊 & HolyBear'
@@ -76,6 +107,12 @@ export default defineConfig({
         const [author, date] = log.split(',')
         if (!page.frontmatter.author) page.frontmatter.author = author
         if (!page.frontmatter.date) page.frontmatter.date = date
+
+        // 取得最後 commit 時間，供 sidebar 用
+        const lastUpdated = execSync(
+          `git log -1 --format=%cI -- "${page.filePath}"`
+        ).toString().trim()
+        page.frontmatter.lastUpdated = lastUpdated
       } catch (e) {
         // 無 git 資訊略過
       }
