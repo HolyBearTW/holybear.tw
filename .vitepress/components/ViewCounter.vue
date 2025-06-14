@@ -23,7 +23,7 @@
 </style>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { incrementAndGetViews } from './view-count'
 
 const props = defineProps({ slug: String })
@@ -41,15 +41,15 @@ function markCounted(slug) {
   }
 }
 
-onMounted(async () => {
-  if (props.slug) {
+async function fetchViews(slug) {
+  if (slug) {
     try {
-      if (!hasCounted(props.slug)) {
-        views.value = await incrementAndGetViews(props.slug)
-        markCounted(props.slug)
+      if (!hasCounted(slug)) {
+        views.value = await incrementAndGetViews(slug)
+        markCounted(slug)
       } else {
         // 只讀取，不加1
-        views.value = await incrementAndGetViews(props.slug, { onlyRead: true })
+        views.value = await incrementAndGetViews(slug, { onlyRead: true })
       }
     } catch (e) {
       views.value = '錯誤'
@@ -58,6 +58,16 @@ onMounted(async () => {
   } else {
     views.value = '無slug'
     console.warn('[ViewCounter] slug 為空')
+  }
+}
+
+onMounted(() => {
+  fetchViews(props.slug)
+})
+
+watch(() => props.slug, (newSlug, oldSlug) => {
+  if (newSlug && newSlug !== oldSlug) {
+    fetchViews(newSlug)
   }
 })
 </script>
