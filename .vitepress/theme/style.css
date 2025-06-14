@@ -324,8 +324,8 @@ html {
   scroll-behavior: smooth;
 }
 
-/* 路由切換動畫：只給 .slide-in 時才動畫（搭配 JS，請勿給 .vp-doc 本身 animation） */
-.VPDoc .vp-doc.slide-in {
+/* 文章內容滾動時的視差效果 */
+.VPDoc .vp-doc {
   animation: contentSlideIn 0.8s ease-out;
 }
 
