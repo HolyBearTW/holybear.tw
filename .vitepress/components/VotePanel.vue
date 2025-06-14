@@ -1,15 +1,15 @@
 <template>
-  <div class="vote-panel" v-if="hydrated && voteState">
+  <div class="vote-panel" v-if="hydrated && voteState.value">
     <button
       @click="handleVote('up')"
-      :disabled="voteState.loading.value"
+      :disabled="voteState.value.loading.value"
       :class="{ active: userVote === 'up' }"
-    >👍 推 ({{ voteState.up.value }})</button>
+    >👍 推 ({{ voteState.value.up.value }})</button>
     <button
       @click="handleVote('down')"
-      :disabled="voteState.loading.value"
+      :disabled="voteState.value.loading.value"
       :class="{ active: userVote === 'down' }"
-    >👎 噓 ({{ voteState.down.value }})</button>
+    >👎 噓 ({{ voteState.value.down.value }})</button>
   </div>
 </template>
 
