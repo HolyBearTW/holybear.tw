@@ -166,15 +166,11 @@ const currentDisplayDate = computed(() => {
   margin-bottom: 1.5rem;
 }
 /* vitepress 側邊欄 */
-/* 精準減少 VitePress sidebar 分組之間留白 */
-.VPSidebar .group + .group {
-  margin-top: 8px !important;
+.group[data-v-a84b7c21] {
+  padding-top: 2px !important;
 }
-.VPSidebar .VPSidebarItem.level-0 {
-  margin-bottom: 0 !important;
-}
-.VPSidebar .items {
-  margin-bottom: 0 !important;
-  margin-top: 0 !important;
+.group + .group[data-v-a84b7c21] {
+  padding-top: 2px !important;
+  border-top: 1px solid var(--vp-c-divider) !important;
 }
 </style>
