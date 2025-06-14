@@ -79,6 +79,23 @@ export default defineConfig({
             { icon: 'github', link: 'https://github.com/HolyBearTW' }
         ]
     },
+  // 使用 transformPageData 來擴展搜尋內容
+  transformPageData(pageData) {
+    // 將標籤和分類添加到頁面內容中，使其可被搜尋
+    if (pageData.frontmatter?.tag || pageData.frontmatter?.category) {
+      const tags = pageData.frontmatter.tag || []
+      const categories = pageData.frontmatter.category || []
+      
+      // 將標籤和分類作為隱藏內容添加到頁面
+      const searchableContent = [
+        ...tags.map(tag => `標籤: ${tag}`),
+        ...categories.map(cat => `分類: ${cat}`)
+      ].join(' ')
+      
+      // 將可搜尋內容添加到頁面描述中
+      pageData.description = (pageData.description || '') + ' ' + searchableContent
+    }
+  },
     extendsPage(page) {
         const branch = getCurrentBranch()
         if (
