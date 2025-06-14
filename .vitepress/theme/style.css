@@ -324,7 +324,7 @@ html {
   scroll-behavior: smooth;
 }
 
-/* 文章內容滾動時的視差效果（用於 SPA 路由切換動畫，需配合 JS 動態加 class） */
+/* 路由切換動畫：只給 .slide-in 時才動畫（搭配 JS，請勿給 .vp-doc 本身 animation） */
 .VPDoc .vp-doc.slide-in {
   animation: contentSlideIn 0.8s ease-out;
 }
