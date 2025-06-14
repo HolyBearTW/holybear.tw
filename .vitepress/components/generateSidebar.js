@@ -1,11 +1,11 @@
 const fs = require('fs')
 const path = require('path')
+const matter = require('gray-matter')
 
-// 修正為你的 blog 目錄（專案根目錄下 blog）
 const BLOG_DIR = path.resolve(__dirname, '../../blog')
-// 輸出 .vitepress/sidebar.generated.ts（在專案根目錄下 .vitepress）
 const SIDEBAR_FILE = path.resolve(__dirname, '../sidebar.generated.ts')
 
+// 取得所有 markdown 檔案
 function walk(dir) {
   const entries = fs.readdirSync(dir, { withFileTypes: true })
   let files = []
@@ -15,8 +15,7 @@ function walk(dir) {
       files = files.concat(walk(full))
     } else if (
       entry.isFile() &&
-      entry.name.endsWith('.md') &&
-      entry.name.toLowerCase() !== 'readme.md'
+      entry.name.endsWith('.md')
     ) {
       files.push(full)
     }
@@ -24,18 +23,48 @@ function walk(dir) {
   return files
 }
 
+// 取得 sidebar 項目
 function toSidebar(files) {
-  // /blog/xxx/yyy.md → /blog/xxx/yyy
-  return files
-    .map(f => {
-      const rel = path.relative(BLOG_DIR, f)
-      return '/blog/' + rel.replace(/\\/g, '/').replace(/\.md$/, '')
-    })
-    .sort()
-    .map(link => ({
-      text: decodeURIComponent(link.split('/').pop() || 'blog'),
-      link
-    }))
+  // 先找 index.md
+  let indexItem = null
+  const postItems = []
+
+  for (const file of files) {
+    const rel = path.relative(BLOG_DIR, file)
+    const link = '/blog/' + rel.replace(/\\/g, '/').replace(/\.md$/, '')
+    const rawContent = fs.readFileSync(file, 'utf8')
+    let title = null
+    try {
+      const fm = matter(rawContent)
+      title = fm.data.title
+    } catch {
+      //
+    }
+    // fallback: 檔名
+    if (!title) title = decodeURIComponent(link.split('/').pop() || 'blog')
+
+    if (rel.toLowerCase() === 'index.md') {
+      indexItem = {
+        text: '文章列表',
+        link
+      }
+    } else {
+      postItems.push({
+        text: title,
+        link
+      })
+    }
+  }
+
+  // 排序（可依需求自訂）
+  postItems.sort((a, b) => a.text.localeCompare(b.text, 'zh-Hant'))
+
+  // 組合 sidebar：列表、分隔線、文章
+  const sidebar = []
+  if (indexItem) sidebar.push(indexItem)
+  sidebar.push({ text: '-', link: undefined }) // 分隔線
+  sidebar.push(...postItems)
+  return sidebar
 }
 
 function main() {
@@ -46,9 +75,7 @@ function main() {
   const files = walk(BLOG_DIR)
   const sidebar = toSidebar(files)
   const code = `// 本檔案由 generateSidebar.js 自動產生
-export default [
-  ${sidebar.map(item => JSON.stringify(item)).join(',\n  ')}
-]
+export default ${JSON.stringify(sidebar, null, 2)}
 `
   fs.writeFileSync(SIDEBAR_FILE, code)
   console.log('sidebar 已產生:', SIDEBAR_FILE)
