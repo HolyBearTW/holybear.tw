@@ -8,8 +8,17 @@ export default defineConfig({
     nav: nav(),
 
     docFooter: {
-      prev: '上一頁',
-      next: '下一頁'
+      prev: '上一篇',
+      next: '下一篇'
+    },
+
+    lastUpdated: {
+      text: '最後更新',
+      formatOptions: {
+        dateStyle: 'medium',    // 你可以調成 'long' 或 'full'，可選 short/medium/long/full
+        timeStyle: 'short',     // 改成 'medium' 或 'long' 會顯示到秒
+        hour12: false           // 24小時制
+      }
     },
 
     darkModeSwitchLabel: '深色模式',
