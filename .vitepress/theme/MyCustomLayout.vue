@@ -77,6 +77,7 @@ const currentDisplayDate = computed(() => {
   </Theme.Layout>
 </template>
 
+<!-- 下面這段是內容區 header 樣式，只會作用在頁面內容，不會影響 sidebar -->
 <style scoped>
 :deep(.vp-doc h1:first-of-type) { display: none !important; }
 .blog-post-header-injected {
@@ -162,5 +163,27 @@ const currentDisplayDate = computed(() => {
 :deep(.vp-doc div[class*="language-"]) {
   margin-top: 1.5rem;
   margin-bottom: 1.5rem;
+}
+</style>
+
+<!-- 這裡是全域 CSS，直接作用於 sidebar，務必不要加 scoped！ -->
+<style>
+/* ==== VitePress Sidebar 分組間距最完整解決方案 ==== */
+.group[data-v-a84b7c21] {
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+.group + .group[data-v-a84b7c21] {
+  border-top: none !important;
+  padding-top: 0 !important;
+}
+section.VPSidebarItem.level-0 {
+  padding-bottom: 0 !important;
+  padding-top: 0 !important;
+}
+.items[data-v-6b36a2fd] {
+  margin: 0 !important;
+  padding: 0 !important;
 }
 </style>
