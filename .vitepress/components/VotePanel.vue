@@ -14,27 +14,44 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useVote } from './useVote'
 import { useData } from 'vitepress'
-import { computed } from 'vue'
 
 const { page } = useData()
 const articleId = computed(() => page.value.relativePath.replaceAll('/', '__'))
-const { up, down, vote, unvote, loading, fetchVotes } = useVote(articleId.value)
+
+const up = ref(0)
+const down = ref(0)
+const loading = ref(false)
+let vote = async () => {}
+let unvote = async () => {}
+let fetchVotes = async () => {}
 
 const userVote = ref(null)
 const hydrated = ref(false)
 
+function setupVote(id) {
+  const voteHook = useVote(id)
+  up.value = voteHook.up.value
+  down.value = voteHook.down.value
+  loading.value = voteHook.loading.value
+  vote = voteHook.vote
+  unvote = voteHook.unvote
+  fetchVotes = voteHook.fetchVotes
+}
+
 onMounted(() => {
+  setupVote(articleId.value)
   userVote.value = localStorage.getItem('vote_' + articleId.value) || null
   hydrated.value = true
+  fetchVotes()
 })
 
-watch(articleId, () => {
-  if (hydrated.value) {
-    userVote.value = localStorage.getItem('vote_' + articleId.value) || null
-  }
+watch(articleId, (newId) => {
+  setupVote(newId)
+  userVote.value = localStorage.getItem('vote_' + newId) || null
+  fetchVotes()
 })
 
 async function handleVote(type) {
