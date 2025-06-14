@@ -1,15 +1,15 @@
 <template>
-  <div class="vote-panel" v-if="hydrated">
+  <div class="vote-panel" v-if="hydrated && voteState">
     <button
       @click="handleVote('up')"
-      :disabled="loading"
+      :disabled="voteState.loading.value"
       :class="{ active: userVote === 'up' }"
-    >👍 推 ({{ up }})</button>
+    >👍 推 ({{ voteState.up.value }})</button>
     <button
       @click="handleVote('down')"
-      :disabled="loading"
+      :disabled="voteState.loading.value"
       :class="{ active: userVote === 'down' }"
-    >👎 噓 ({{ down }})</button>
+    >👎 噓 ({{ voteState.down.value }})</button>
   </div>
 </template>
 
@@ -21,54 +21,42 @@ import { useData } from 'vitepress'
 const { page } = useData()
 const articleId = computed(() => page.value.relativePath.replaceAll('/', '__'))
 
-const up = ref(0)
-const down = ref(0)
-const loading = ref(false)
-let vote = async () => {}
-let unvote = async () => {}
-let fetchVotes = async () => {}
-
+const voteState = ref(null)
 const userVote = ref(null)
 const hydrated = ref(false)
 
 function setupVote(id) {
-  const voteHook = useVote(id)
-  up.value = voteHook.up.value
-  down.value = voteHook.down.value
-  loading.value = voteHook.loading.value
-  vote = voteHook.vote
-  unvote = voteHook.unvote
-  fetchVotes = voteHook.fetchVotes
+  voteState.value = useVote(id)
 }
 
 onMounted(() => {
   setupVote(articleId.value)
   userVote.value = localStorage.getItem('vote_' + articleId.value) || null
   hydrated.value = true
-  fetchVotes()
+  voteState.value.fetchVotes()
 })
 
 watch(articleId, (newId) => {
   setupVote(newId)
   userVote.value = localStorage.getItem('vote_' + newId) || null
-  fetchVotes()
+  voteState.value.fetchVotes()
 })
 
 async function handleVote(type) {
-  if (loading.value) return
+  if (voteState.value.loading.value) return
   if (userVote.value === type) {
-    await unvote(type)
+    await voteState.value.unvote(type)
     userVote.value = null
     localStorage.removeItem('vote_' + articleId.value)
   } else {
     if (userVote.value) {
-      await unvote(userVote.value)
+      await voteState.value.unvote(userVote.value)
     }
-    await vote(type)
+    await voteState.value.vote(type)
     userVote.value = type
     localStorage.setItem('vote_' + articleId.value, type)
   }
-  await fetchVotes()
+  await voteState.value.fetchVotes()
 }
 </script>
 
