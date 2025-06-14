@@ -21,20 +21,39 @@ import { computed } from 'vue'
 
 const { page } = useData()
 const articleId = computed(() => page.value.relativePath.replaceAll('/', '__'))
-const { up, down, vote, unvote, loading, fetchVotes } = useVote(articleId.value)
+
+// 這裡包一層 ref
+let up = ref(0)
+let down = ref(0)
+let loading = ref(true)
+let vote = null
+let unvote = null
+let fetchVotes = null
 
 const userVote = ref(null)
 const hydrated = ref(false)
 
-onMounted(() => {
-  userVote.value = localStorage.getItem('vote_' + articleId.value) || null
-  hydrated.value = true
+function setupVoteForId(id) {
+  const voteObj = useVote(id)
+  up = voteObj.up
+  down = voteObj.down
+  loading = voteObj.loading
+  vote = voteObj.vote
+  unvote = voteObj.unvote
+  fetchVotes = voteObj.fetchVotes
+}
+
+watch(articleId, (newId) => {
+  setupVoteForId(newId)
+  if (hydrated.value) {
+    userVote.value = localStorage.getItem('vote_' + newId) || null
+  }
 })
 
-watch(articleId, () => {
-  if (hydrated.value) {
-    userVote.value = localStorage.getItem('vote_' + articleId.value) || null
-  }
+onMounted(() => {
+  setupVoteForId(articleId.value)
+  userVote.value = localStorage.getItem('vote_' + articleId.value) || null
+  hydrated.value = true
 })
 
 async function handleVote(type) {
