@@ -168,19 +168,19 @@ const currentDisplayDate = computed(() => {
 
 <!-- 這裡是全域 CSS，直接作用於 sidebar，務必不要加 scoped！ -->
 <style>
-/* ==== VitePress Sidebar 分組間距最完整解決方案 ==== */
+/* ==== VitePress Sidebar 分組間距適中（有分隔線＋一點點間距）==== */
 .group[data-v-a84b7c21] {
   padding-top: 0 !important;
   margin-top: 0 !important;
   margin-bottom: 0 !important;
 }
 .group + .group[data-v-a84b7c21] {
-  border-top: none !important;
-  padding-top: 0 !important;
+  border-top: 1px solid var(--vp-c-divider) !important;
+  padding-top: 6px !important;   /* 這裡就是分組間的留白，建議 4px~8px */
 }
 section.VPSidebarItem.level-0 {
   padding-bottom: 0 !important;
-  padding-top: 0 !important;
+  padding-top: 6 !important;
 }
 .items[data-v-6b36a2fd] {
   margin: 0 !important;
