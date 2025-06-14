@@ -51,26 +51,47 @@ export default defineConfig({
             timeZone: 'Asia/Taipei'
             }
         },
-        search: {
-            provider: 'local',
-            options: {
-                translations: {
-                    button: {
-                        buttonText: '搜尋',
-                        buttonAriaLabel: '搜尋'
-                    },
-                    modal: {
-                        noResultsText: '找不到結果',
-                        resetButtonTitle: '清除搜尋條件',
-                        footer: {
-                            selectText: '選擇',
-                            navigateText: '切換',
-                            closeText: '關閉'
-                        }
-                    }
-                }
+    search: {
+      provider: 'local',
+      options: {
+        miniSearch: {
+          options: {
+            fields: ['title', 'text', 'titles'],
+            storeFields: ['title', 'text', 'titles'],
+            searchOptions: {
+              combineWith: 'AND',
+              fuzzy: 0.2,
+              prefix: true,
+              boost: { title: 4, text: 2, titles: 1 }
             }
+          },
+          searchOptions: {
+            combineWith: 'AND',
+            fuzzy: 0.2,
+            prefix: true
+          }
         },
+        // 自定義內容處理器
+        _render(src, env, md) {
+          const html = md.render(src, env)
+          
+          // 如果頁面有標籤或分類，將它們添加到內容中
+          if (env.frontmatter?.tag || env.frontmatter?.category) {
+            const tags = env.frontmatter.tag || []
+            const categories = env.frontmatter.category || []
+            
+            const searchableContent = [
+              ...tags.map(tag => `標籤: ${tag}`),
+              ...categories.map(cat => `分類: ${cat}`)
+            ].join(' ')
+            
+            return html + `<div style="display: none;">${searchableContent}</div>`
+          }
+          
+          return html
+        }
+      }
+    },
         footer: {
             message: 'AGPL-3.0 Licensed',
             copyright: 'Copyright © 2025 聖小熊 & HolyBear'
@@ -79,22 +100,6 @@ export default defineConfig({
             { icon: 'github', link: 'https://github.com/HolyBearTW' }
         ]
     },
-  // 使用 transformPageData 來擴展搜尋內容
-  transformPageData(pageData) {
-    // 將標籤和分類添加到頁面內容中，使其可被搜尋
-    if (pageData.frontmatter?.tag || pageData.frontmatter?.category) {
-      const tags = pageData.frontmatter.tag || []
-      const categories = pageData.frontmatter.category || []
-      
-      // 將標籤和分類作為隱藏內容添加到頁面
-      const searchableContent = [
-        ...tags.map(tag => `標籤: ${tag}`),
-        ...categories.map(cat => `分類: ${cat}`)
-      ].join(' ')
-      
-      // 將可搜尋內容添加到頁面描述中
-      pageData.description = (pageData.description || '') + ' ' + searchableContent
-    }
   },
     extendsPage(page) {
         const branch = getCurrentBranch()
