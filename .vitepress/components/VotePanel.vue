@@ -1,22 +1,3 @@
-<template>
-  <div>
-    <div>hydrated: {{ hydrated ? 'yes' : 'no' }}</div>
-    <div>voteState: {{ voteState && voteState.value ? 'ok' : 'not ready' }}</div>
-    <div v-if="hydrated && voteState.value" class="vote-panel">
-      <button
-        @click="handleVote('up')"
-        :disabled="voteState.value.loading.value"
-        :class="{ active: userVote === 'up' }"
-      >👍 推 ({{ voteState.value.up.value }})</button>
-      <button
-        @click="handleVote('down')"
-        :disabled="voteState.value.loading.value"
-        :class="{ active: userVote === 'down' }"
-      >👎 噓 ({{ voteState.value.down.value }})</button>
-    </div>
-  </div>
-</template>
-
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import { useVote } from './useVote'
@@ -25,46 +6,53 @@ import { useData } from 'vitepress'
 const { page } = useData()
 const articleId = computed(() => page.value.relativePath.replaceAll('/', '__'))
 
-const voteState = ref(null)
-const userVote = ref(null)
+let voteState = useVote(articleId.value)
+const userVote = ref(localStorage.getItem('vote_' + articleId.value) || null)
 const hydrated = ref(false)
 
-function setupVote(id) {
-  console.log('setupVote called with id:', id)
-  voteState.value = useVote(id)
-}
-
-onMounted(() => {
-  console.log('articleId.value in onMounted:', articleId.value)
-  setupVote(articleId.value)
-  userVote.value = localStorage.getItem('vote_' + articleId.value) || null
-  hydrated.value = true
-  voteState.value.fetchVotes()
+watch(articleId, (newId) => {
+  voteState = useVote(newId)
+  userVote.value = localStorage.getItem('vote_' + newId) || null
+  voteState.fetchVotes()
 })
 
-watch(articleId, (newId) => {
-  setupVote(newId)
-  userVote.value = localStorage.getItem('vote_' + newId) || null
-  voteState.value.fetchVotes()
+onMounted(() => {
+  hydrated.value = true
+  voteState.fetchVotes()
 })
 
 async function handleVote(type) {
-  if (voteState.value.loading.value) return
+  if (voteState.loading.value) return
   if (userVote.value === type) {
-    await voteState.value.unvote(type)
+    await voteState.unvote(type)
     userVote.value = null
     localStorage.removeItem('vote_' + articleId.value)
   } else {
     if (userVote.value) {
-      await voteState.value.unvote(userVote.value)
+      await voteState.unvote(userVote.value)
     }
-    await voteState.value.vote(type)
+    await voteState.vote(type)
     userVote.value = type
     localStorage.setItem('vote_' + articleId.value, type)
   }
-  await voteState.value.fetchVotes()
+  await voteState.fetchVotes()
 }
 </script>
+
+<template>
+  <div class="vote-panel" v-if="hydrated">
+    <button
+      @click="handleVote('up')"
+      :disabled="voteState.loading.value"
+      :class="{ active: userVote === 'up' }"
+    >👍 推 ({{ voteState.up.value }})</button>
+    <button
+      @click="handleVote('down')"
+      :disabled="voteState.loading.value"
+      :class="{ active: userVote === 'down' }"
+    >👎 噓 ({{ voteState.down.value }})</button>
+  </div>
+</template>
 
 <style scoped>
 .vote-panel {
