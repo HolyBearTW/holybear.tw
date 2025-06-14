@@ -21,39 +21,20 @@ import { computed } from 'vue'
 
 const { page } = useData()
 const articleId = computed(() => page.value.relativePath.replaceAll('/', '__'))
-
-// 這裡包一層 ref
-let up = ref(0)
-let down = ref(0)
-let loading = ref(true)
-let vote = null
-let unvote = null
-let fetchVotes = null
+const { up, down, vote, unvote, loading, fetchVotes } = useVote(articleId.value)
 
 const userVote = ref(null)
 const hydrated = ref(false)
 
-function setupVoteForId(id) {
-  const voteObj = useVote(id)
-  up = voteObj.up
-  down = voteObj.down
-  loading = voteObj.loading
-  vote = voteObj.vote
-  unvote = voteObj.unvote
-  fetchVotes = voteObj.fetchVotes
-}
-
-watch(articleId, (newId) => {
-  setupVoteForId(newId)
-  if (hydrated.value) {
-    userVote.value = localStorage.getItem('vote_' + newId) || null
-  }
-})
-
 onMounted(() => {
-  setupVoteForId(articleId.value)
   userVote.value = localStorage.getItem('vote_' + articleId.value) || null
   hydrated.value = true
+})
+
+watch(articleId, () => {
+  if (hydrated.value) {
+    userVote.value = localStorage.getItem('vote_' + articleId.value) || null
+  }
 })
 
 async function handleVote(type) {
