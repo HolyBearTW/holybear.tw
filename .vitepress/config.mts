@@ -46,8 +46,9 @@ export default defineConfig({
         lastUpdated: {
             text: '最後更新',
             formatOptions: {
-                dateStyle: 'short',
-                timeZone: 'Asia/Taipei'
+            dateStyle: 'short',
+            timeStyle: 'short',
+            timeZone: 'Asia/Taipei'
             }
         },
         search: {
