@@ -47,6 +47,7 @@ function toSidebar(files) {
         } catch { }
 
         if (rel.toLowerCase() === 'index.md') {
+            postItems.push({ text: '---' });
             indexItem = { text: '回文章列表', link }
         } else {
             if (!title) title = decodeURIComponent(link.split('/').pop() || 'blog')
@@ -76,7 +77,6 @@ function toSidebar(files) {
         ...latest10.map(({ text, link }) => ({ text, link })),
     ]
     if (indexItem) {
-        sidebar.push({}) // 插入一行空白
         sidebar.push(indexItem)
     }
     return sidebar
