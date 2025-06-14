@@ -45,6 +45,8 @@ export default defineConfig({
         sidebar: getSidebar({
             contentRoot: 'blog', // 只掃 blog 目錄，避免掃到系統目錄
             sortBy: 'lastUpdated',
+            // 若有支援 exclude，可以加上：
+            // exclude: ['../*', '/bin', '/X11', '**/node_modules/**'],
             transform(items) {
                 return items.map(item => ({
                     ...item,
