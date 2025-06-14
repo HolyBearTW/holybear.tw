@@ -1,10 +1,10 @@
 <template>
   <div>
     <div>hydrated: {{ hydrated ? 'yes' : 'no' }}</div>
-    <div>voteState: {{ voteState && voteState.value ? 'ok' : 'not ready' }}</div>
-    <div>voteState.value.up: {{ voteState?.value?.up }}</div>
-    <div>voteState.value.down: {{ voteState?.value?.down }}</div>
-    <div>userVote: {{ userVote }}</div>
+    <div>voteState: {{ voteState.value ? 'ok' : 'not ready' }}</div>
+    <div>voteState.value.up: {{ voteState.value?.up }}</div>
+    <div>voteState.value.down: {{ voteState.value?.down }}</div>
+    <div>userVote: {{ userVote.value }}</div>
     <div class="vote-panel" v-if="hydrated && voteState.value && voteState.value.up && voteState.value.down">
       <button
         @click="handleVote('up')"
@@ -34,12 +34,14 @@ import { useVote } from './useVote'
 import { useData } from 'vitepress'
 
 const { page } = useData()
+// 每次都要重新計算 articleId
 const articleId = computed(() => page.value.relativePath.replaceAll('/', '__'))
 
 const voteState = ref(null)
 const userVote = ref(null)
 const hydrated = ref(false)
 
+// 保證 onMounted 一進來就設 voteState 和 userVote
 onMounted(async () => {
   voteState.value = useVote(articleId.value)
   userVote.value = localStorage.getItem('vote_' + articleId.value) || null
@@ -47,6 +49,7 @@ onMounted(async () => {
   await voteState.value.fetchVotes()
 })
 
+// 切換文章也要設 voteState 和 userVote
 watch(articleId, async (newId) => {
   voteState.value = useVote(newId)
   userVote.value = localStorage.getItem('vote_' + newId) || null
