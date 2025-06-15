@@ -397,15 +397,20 @@ html {
   transition: transform 0.1s;
 }
 
+/* 直接把所有 DocSearch-Hit-source 的字換成「搜尋結果」，保留原色 */
 .DocSearch-Hit-source {
-  font-size: inherit; /* 保持原本字體大小 */
-  color: transparent;
+  color: transparent !important;
   position: relative;
 }
 .DocSearch-Hit-source::after {
   content: "搜尋結果";
+  color: inherit;
+  position: absolute;
+  left: 0; top: 0; width: 100%;
+  pointer-events: none;
 }
 
+/* 文章由下往上的動畫 */
 @keyframes fadeInUp {
   from {
     opacity: 0;
