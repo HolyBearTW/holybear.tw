@@ -324,12 +324,80 @@ html {
   scroll-behavior: smooth;
 }
 
-/* 文章內容滾動時的視差效果 */
-.VPDoc .vp-doc {
-  animation: contentSlideIn 0.8s ease-out;
+/* 滾動時的慣性效果 */
+.VPDoc .vp-doc * {
+  will-change: transform;
 }
 
-@keyframes contentSlideIn {
+/* 強制讓 outline link 支援 transform 動畫（重點：inline-block） */
+.VPDocAsideOutline .outline-link {
+  display: inline-block;
+  transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 點擊時縮放動畫 */
+.VPDocAsideOutline .outline-link:active {
+  transform: scale(0.98);
+}
+
+/* 左側 sidebar 文章項目的動態效果 */
+.VPSidebar .text {
+  display: inline-block;
+  transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s;
+  opacity: 0.8;
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 4px 8px;
+  margin: -4px -8px;
+  position: relative;
+}
+.VPSidebar .text:hover {
+  opacity: 1;
+  transform: translateX(2px);
+  color: var(--vp-c-brand-1);
+  background-color: var(--vp-c-bg-soft);
+}
+.VPSidebar .text:active {
+  transform: scale(0.98);
+  transition: transform 0.1s;
+}
+
+/* 強制讓 outline link 支援 transform 動畫（重點：inline-block） */
+.VPDocAsideOutline .outline-link {
+  display: inline-block;
+  transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 點擊時縮放動畫 */
+.VPDocAsideOutline .outline-link:active {
+  transform: scale(0.98);
+}
+
+/* 左側 sidebar 文章項目的動態效果，只保留動畫和區塊感，不覆蓋間距 */
+.VPSidebar .text {
+  display: inline-block;
+  transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s;
+  opacity: 0.8;
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 8px 8px; /* 上下 8px，左右 8px，可依需求調整 */
+  position: relative;
+  /* 不要設 margin 讓它回到預設 */
+  /* line-height: 1.7;  // 如果還想再高，可加這一行 */
+}
+
+.VPSidebar .text:hover {
+  opacity: 1;
+  transform: translateX(2px);
+  color: var(--vp-c-brand-1);
+  background-color: var(--vp-c-bg-soft);
+}
+.VPSidebar .text:active {
+  transform: scale(0.98);
+  transition: transform 0.1s;
+}
+
+@keyframes fadeInUp {
   from {
     opacity: 0;
     transform: translateY(30px);
@@ -339,8 +407,6 @@ html {
     transform: translateY(0);
   }
 }
-
-/* 滾動時的慣性效果 */
-.VPDoc .vp-doc * {
-  will-change: transform;
+.vp-doc.fade-in-up {
+  animation: fadeInUp 0.6s cubic-bezier(0.4,0,0.2,1);
 }
