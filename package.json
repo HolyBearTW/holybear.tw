@@ -11,7 +11,7 @@
     "@algolia/client-search": "^4.9.1",
     "firebase": "^11.9.1",
     "gray-matter": "^4.0.3",
-    "search-insights": "^1"
+    "search-insights": "^2"
   },
   "scripts": {
     "dev": "vitepress dev",
