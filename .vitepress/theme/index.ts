@@ -19,16 +19,34 @@ export default {
         }
       }
 
+      // === DocSearch-Hit-source 文字自動取代 ===
+      function replaceDocSearchHitSource() {
+        document.querySelectorAll('.DocSearch-Hit-source').forEach(el => {
+          if (el.textContent === "Documentation") {
+            el.textContent = "搜尋結果";
+          }
+        });
+      }
+
       // 初次進站
-      window.addEventListener('DOMContentLoaded', replayIfChanged);
+      window.addEventListener('DOMContentLoaded', () => {
+        replayIfChanged();
+        replaceDocSearchHitSource();
+      });
 
       // SPA 切換（VitePress 1.x/0.x）
       window.addEventListener('vitepress:pageview', () => {
-        setTimeout(replayIfChanged, 30);
+        setTimeout(() => {
+          replayIfChanged();
+          replaceDocSearchHitSource();
+        }, 30);
       });
 
-      // 極端主題 fallback，每 200ms 比對一次內容（只要內容一變就動動畫）
-      setInterval(replayIfChanged, 200);
+      // 極端主題 fallback，每 200ms 比對一次內容（只要內容一變就動動畫＋補丁取代）
+      setInterval(() => {
+        replayIfChanged();
+        replaceDocSearchHitSource();
+      }, 200);
     }
   }
 }
