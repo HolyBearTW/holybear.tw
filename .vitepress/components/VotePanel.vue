@@ -14,27 +14,34 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, computed } from 'vue'
 import { useVote } from './useVote'
 import { useData } from 'vitepress'
-import { computed } from 'vue'
 
+// 1. 讓 articleId 是 computed，直接傳給 useVote（支援 reactive）
 const { page } = useData()
 const articleId = computed(() => page.value.relativePath.replaceAll('/', '__'))
-const { up, down, vote, unvote, loading, fetchVotes } = useVote(articleId.value)
+
+// 2. 讓 useVote 吃 ref/computed
+const { up, down, vote, unvote, loading, fetchVotes } = useVote(articleId)
 
 const userVote = ref(null)
 const hydrated = ref(false)
 
-onMounted(() => {
+function refreshUserVote() {
   userVote.value = localStorage.getItem('vote_' + articleId.value) || null
+}
+
+onMounted(async () => {
+  refreshUserVote()
   hydrated.value = true
+  await fetchVotes()
 })
 
-watch(articleId, () => {
-  if (hydrated.value) {
-    userVote.value = localStorage.getItem('vote_' + articleId.value) || null
-  }
+// 3. 監聽 id 變動時，主動重抓 userVote 與票數
+watch(articleId, async () => {
+  refreshUserVote()
+  await fetchVotes()
 })
 
 async function handleVote(type) {
