@@ -59,11 +59,14 @@ export default defineConfig({
       { icon: 'github', link: 'https://github.com/HolyBearTW' }
     ]
   },
-  // === 官方 Local Search 配置開始 ===
+  // 👇 search 寫在這裡（和 themeConfig、locales 平行）
   search: {
-    provider: 'local',
+    provider: 'algolia',
     options: {
-      placeholder: '搜尋本站',
+      appId: '5HHMMAZBPG',
+      apiKey: 'f7fbf2c65da0d43f1540496b9ae6f3c6',
+      indexName: 'holybear',
+      placeholder: '搜尋文件',
       translations: {
         button: {
           buttonText: '搜尋',
@@ -87,14 +90,13 @@ export default defineConfig({
           footer: {
             selectText: '選擇',
             navigateText: '切換',
-            closeText: '關閉'
+            closeText: '關閉',
+            searchByText: '搜尋提供者：'
           }
         }
       }
     }
   },
-  // === 官方 Local Search 配置結束 ===
-
   extendsPage(page) {
     const branch = getCurrentBranch()
     if (
