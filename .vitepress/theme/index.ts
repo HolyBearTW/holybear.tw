@@ -11,8 +11,10 @@ export default {
         const doc = document.querySelector('.vp-doc');
         if (!doc) return;
         const current = doc.innerHTML;
-        if (lastContent !== current) {
-          // 這裡可以加動畫或其他效果
+        if (current !== lastContent) {
+          doc.classList.remove('fade-in-up');
+          void doc.offsetWidth;
+          doc.classList.add('fade-in-up');
           lastContent = current;
         }
       }
