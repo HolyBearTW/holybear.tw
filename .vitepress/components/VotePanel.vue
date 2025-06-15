@@ -67,6 +67,7 @@ async function handleVote(type) {
   margin: 2rem 0 1.5rem 0;
   display: flex;
   gap: 1rem;
+  justify-content: center; /* 按鈕置中 */
 }
 button {
   font-size: 1.1rem;
