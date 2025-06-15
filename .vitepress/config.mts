@@ -159,23 +159,4 @@ export default defineConfig({
             page.frontmatter.head.push(['meta', { property: 'og:image', content: page.frontmatter.image }])
         }
     },
-    enhanceApp({ app, router, siteData }) {
-        if (typeof window !== 'undefined') {
-            const addOutlineAnimation = () => {
-                setTimeout(() => {
-                    const outlineLinks = document.querySelectorAll('.VPDocAsideOutline .outline-link')
-                    outlineLinks.forEach(link => {
-                        link.addEventListener('click', function() {
-                            this.style.transform = 'scale(0.98)'
-                            setTimeout(() => {
-                                this.style.transform = ''
-                            }, 100)
-                        })
-                    })
-                }, 500)
-            }
-            addOutlineAnimation()
-            router.onAfterRouteChanged = addOutlineAnimation
-        }
-    },
 })
