@@ -93,8 +93,7 @@ export default defineConfig({
                             suggestedQueryText: '你可以嘗試查詢',
                             reportMissingResultsText: '認為應該有結果？',
                             reportMissingResultsLinkText: '點此回報'
-                        },
-                        documentationScreenText: '搜尋結果'
+                        }
                     }
                 }
             }
