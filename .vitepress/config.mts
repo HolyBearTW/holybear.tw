@@ -54,9 +54,9 @@ export default defineConfig({
         search: {
             provider: 'algolia',
             options: {
-                appId: '你的ALGOLIA_APP_ID',
-                apiKey: '你的ALGOLIA_API_KEY',
-                indexName: '你的ALGOLIA_INDEX_NAME',
+                appId: '5HHMMAZBPG',
+                apiKey: 'f7fbf2c65da0d43f1540496b9ae6f3c6',
+                indexName: 'holybear',
                 placeholder: '搜尋文件',
                 translations: {
                     button: {
