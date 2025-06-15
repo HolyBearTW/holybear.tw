@@ -2,7 +2,7 @@ import { defineConfig } from 'vitepress'
 import locales from './locales' 
 import gitMetaPlugin from './git-meta.js'
 import { execSync } from 'child_process'
-import sidebar from './sidebar.generated' // <<--- 自動產生 sidebar
+import sidebar from './sidebar.generated'
 
 function getCurrentBranch() {
     try {
@@ -42,7 +42,7 @@ export default defineConfig({
     },
     themeConfig: {
         logo: '/logo.png',
-        sidebar, // <<--- 這裡改為自動產生的 sidebar
+        sidebar,
         lastUpdated: {
             text: '最後更新',
             formatOptions: {
@@ -54,9 +54,9 @@ export default defineConfig({
         search: {
             provider: 'algolia',
             options: {
-                appId: '5HHMMAZBPG', // <<--- 請填入你自己的 appId
-                apiKey: 'f7fbf2c65da0d43f1540496b9ae6f3c6', // <<--- 請填入你自己的 apiKey
-                indexName: 'holybear', // <<--- 請填入你自己的 indexName
+                appId: '你的ALGOLIA_APP_ID',
+                apiKey: '你的ALGOLIA_API_KEY',
+                indexName: '你的ALGOLIA_INDEX_NAME',
                 placeholder: '搜尋文件',
                 translations: {
                     button: {
@@ -70,10 +70,23 @@ export default defineConfig({
                             cancelButtonText: '取消',
                             cancelButtonAriaLabel: '取消'
                         },
+                        startScreen: {
+                            recentSearchesTitle: '最近搜尋',
+                            noRecentSearchesText: '沒有最近搜尋',
+                            saveRecentSearchButtonTitle: '儲存到最近搜尋',
+                            removeRecentSearchButtonTitle: '從最近搜尋中移除',
+                            favoriteSearchesTitle: '收藏',
+                            removeFavoriteSearchButtonTitle: '從收藏中移除'
+                        },
+                        errorScreen: {
+                            titleText: '無法取得結果',
+                            helpText: '請檢查你的網路連線'
+                        },
                         footer: {
                             selectText: '選擇',
                             navigateText: '切換',
-                            closeText: '關閉'
+                            closeText: '關閉',
+                            searchByText: '搜尋服務提供者：'
                         },
                         noResultsScreen: {
                             noResultsText: '找不到結果',
@@ -92,23 +105,6 @@ export default defineConfig({
         socialLinks: [
             { icon: 'github', link: 'https://github.com/HolyBearTW' }
         ]
-    },
-    // 使用 transformPageData 來擴展搜尋內容
-    transformPageData(pageData) {
-        // 將標籤和分類添加到頁面內容中，使其可被搜尋
-        if (pageData.frontmatter?.tag || pageData.frontmatter?.category) {
-            const tags = pageData.frontmatter.tag || []
-            const categories = pageData.frontmatter.category || []
-            
-            // 將標籤和分類作為隱藏內容添加到頁面
-            const searchableContent = [
-                ...tags.map(tag => `標籤: ${tag}`),
-                ...categories.map(cat => `分類: ${cat}`)
-            ].join(' ')
-            
-            // 將可搜尋內容添加到頁面描述中
-            pageData.description = (pageData.description || '') + ' ' + searchableContent
-        }
     },
     extendsPage(page) {
         const branch = getCurrentBranch()
@@ -164,15 +160,9 @@ export default defineConfig({
         }
     },
     enhanceApp({ app, router, siteData }) {
-        // 確保在客戶端執行
-        // 這樣可以避免在服務端渲染時出現錯誤
-
         if (typeof window !== 'undefined') {
-            
-            // 目錄動畫函數 - 只處理目錄項目，不包含標題
             const addOutlineAnimation = () => {
                 setTimeout(() => {
-                    // 只為目錄項目添加點擊動畫
                     const outlineLinks = document.querySelectorAll('.VPDocAsideOutline .outline-link')
                     outlineLinks.forEach(link => {
                         link.addEventListener('click', function() {
@@ -184,11 +174,7 @@ export default defineConfig({
                     })
                 }, 500)
             }
-
-            // 初次載入
             addOutlineAnimation()
-            
-            // 路由變化時重新綁定
             router.onAfterRouteChanged = addOutlineAnimation
         }
     },
