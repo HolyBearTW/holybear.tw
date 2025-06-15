@@ -397,6 +397,15 @@ html {
   transition: transform 0.1s;
 }
 
+.DocSearch-Hit-source {
+  font-size: inherit; /* 保持原本字體大小 */
+  color: transparent;
+  position: relative;
+}
+.DocSearch-Hit-source::after {
+  content: "搜尋結果";
+}
+
 @keyframes fadeInUp {
   from {
     opacity: 0;
