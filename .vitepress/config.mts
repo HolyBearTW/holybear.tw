@@ -66,45 +66,41 @@ export default defineConfig({
     // https://vitepress.dev/guide/search#algolia
     // 只需要在 config.mts 裡加上以下 search 屬性
     // 並且需到 Algolia DocSearch Dashboard 申請 apiKey & indexName
-    search: {
-        provider: 'algolia',
-        options: {
-            appId: '5HHMMAZBPG', // 從 Algolia DocSearch Dashboard 取得
-            apiKey: 'f7fbf2c65da0d43f1540496b9ae6f3c6', // 從 Algolia DocSearch Dashboard 取得
-            indexName: 'holybear', // 從 Algolia DocSearch Dashboard 取得
-            // 可選擇性添加更多 DocSearch v3 options
-            // 例如 placeholder, translations, searchParameters, etc.
-            placeholder: '搜尋文件',
-            translations: {
-                button: {
-                    buttonText: '搜尋',
-                    buttonAriaLabel: '搜尋'
-                },
-                modal: {
-                    searchBox: {
-                        resetButtonTitle: '清除查詢',
-                        resetButtonAriaLabel: '清除查詢',
-                        cancelButtonText: '取消',
-                        cancelButtonAriaLabel: '取消'
-                    },
-                    startScreen: {
-                        recentSearchesTitle: '最近搜尋',
-                        noRecentSearchesText: '沒有最近搜尋'
-                    },
-                    errorScreen: {
-                        titleText: '無法取得結果',
-                        helpText: '你可能需要檢查網路連線'
-                    },
-                    footer: {
-                        selectText: '選擇',
-                        navigateText: '切換',
-                        closeText: '關閉',
-                        searchByText: '搜尋提供者：'
-                    }
-                }
-            }
+  search: {
+    provider: 'local',
+    options: {
+      // 可選：自訂 placeholder
+      placeholder: '搜尋本站',
+      translations: {
+        button: {
+          buttonText: '搜尋',
+          buttonAriaLabel: '搜尋'
+        },
+        modal: {
+          searchBox: {
+            resetButtonTitle: '清除查詢',
+            resetButtonAriaLabel: '清除查詢',
+            cancelButtonText: '取消',
+            cancelButtonAriaLabel: '取消'
+          },
+          startScreen: {
+            recentSearchesTitle: '最近搜尋',
+            noRecentSearchesText: '沒有最近搜尋'
+          },
+          errorScreen: {
+            titleText: '無法取得結果',
+            helpText: '你可能需要檢查網路連線'
+          },
+          footer: {
+            selectText: '選擇',
+            navigateText: '切換',
+            closeText: '關閉'
+          }
         }
-    },
+      }
+    }
+  }
+})
     // === Algolia DocSearch v3 配置結束 ===
     extendsPage(page) {
         const branch = getCurrentBranch()
