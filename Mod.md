@@ -33,7 +33,7 @@ layout_type: custom_header
 
 ## 協作者
 
-- 玄哥 [[Telegram]](https://t.me/tims33)
+- 玄哥 [[GitHub]](https://github.com/Tim0320) [[Telegram]](https://t.me/tims33)
 - 酪梨 [[GitHub]](https://github.com/ying0930) [[Telegram]](https://t.me/tavricccc)
 - Jack [[GitHub]](https://github.com/Jackboy001) [[Telegram]](https://t.me/Jackboy001)
 - LeoHsiehTW [[GitHub]](https://github.com/leohsiehtw) [[Telegram]](https://t.me/LeoHsiehTW)
