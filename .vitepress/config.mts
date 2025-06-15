@@ -46,26 +46,40 @@ export default defineConfig({
         lastUpdated: {
             text: '最後更新',
             formatOptions: {
-            dateStyle: 'short',
-            timeStyle: 'short',
-            timeZone: 'Asia/Taipei'
+                dateStyle: 'short',
+                timeStyle: 'short',
+                timeZone: 'Asia/Taipei'
             }
         },
         search: {
-            provider: 'local',
+            provider: 'algolia',
             options: {
+                appId: '5HHMMAZBPG', // <<--- 請填入你自己的 appId
+                apiKey: 'f7fbf2c65da0d43f1540496b9ae6f3c6', // <<--- 請填入你自己的 apiKey
+                indexName: 'holybear', // <<--- 請填入你自己的 indexName
+                placeholder: '搜尋文件',
                 translations: {
                     button: {
                         buttonText: '搜尋',
                         buttonAriaLabel: '搜尋'
                     },
                     modal: {
-                        noResultsText: '找不到結果',
-                        resetButtonTitle: '清除搜尋條件',
+                        searchBox: {
+                            resetButtonTitle: '清除搜尋條件',
+                            resetButtonAriaLabel: '清除搜尋條件',
+                            cancelButtonText: '取消',
+                            cancelButtonAriaLabel: '取消'
+                        },
                         footer: {
                             selectText: '選擇',
                             navigateText: '切換',
                             closeText: '關閉'
+                        },
+                        noResultsScreen: {
+                            noResultsText: '找不到結果',
+                            suggestedQueryText: '你可以嘗試查詢',
+                            reportMissingResultsText: '認為應該有結果？',
+                            reportMissingResultsLinkText: '點此回報'
                         }
                     }
                 }
@@ -79,23 +93,23 @@ export default defineConfig({
             { icon: 'github', link: 'https://github.com/HolyBearTW' }
         ]
     },
-  // 使用 transformPageData 來擴展搜尋內容
-  transformPageData(pageData) {
-    // 將標籤和分類添加到頁面內容中，使其可被搜尋
-    if (pageData.frontmatter?.tag || pageData.frontmatter?.category) {
-      const tags = pageData.frontmatter.tag || []
-      const categories = pageData.frontmatter.category || []
-      
-      // 將標籤和分類作為隱藏內容添加到頁面
-      const searchableContent = [
-        ...tags.map(tag => `標籤: ${tag}`),
-        ...categories.map(cat => `分類: ${cat}`)
-      ].join(' ')
-      
-      // 將可搜尋內容添加到頁面描述中
-      pageData.description = (pageData.description || '') + ' ' + searchableContent
-    }
-  },
+    // 使用 transformPageData 來擴展搜尋內容
+    transformPageData(pageData) {
+        // 將標籤和分類添加到頁面內容中，使其可被搜尋
+        if (pageData.frontmatter?.tag || pageData.frontmatter?.category) {
+            const tags = pageData.frontmatter.tag || []
+            const categories = pageData.frontmatter.category || []
+            
+            // 將標籤和分類作為隱藏內容添加到頁面
+            const searchableContent = [
+                ...tags.map(tag => `標籤: ${tag}`),
+                ...categories.map(cat => `分類: ${cat}`)
+            ].join(' ')
+            
+            // 將可搜尋內容添加到頁面描述中
+            pageData.description = (pageData.description || '') + ' ' + searchableContent
+        }
+    },
     extendsPage(page) {
         const branch = getCurrentBranch()
         if (
@@ -149,34 +163,33 @@ export default defineConfig({
             page.frontmatter.head.push(['meta', { property: 'og:image', content: page.frontmatter.image }])
         }
     },
-      enhanceApp({ app, router, siteData }) {
-    // 確保在客戶端執行
-    // 這樣可以避免在服務端渲染時出現錯誤
+    enhanceApp({ app, router, siteData }) {
+        // 確保在客戶端執行
+        // 這樣可以避免在服務端渲染時出現錯誤
 
-    if (typeof window !== 'undefined') {
-      
-      // 目錄動畫函數 - 只處理目錄項目，不包含標題
-      const addOutlineAnimation = () => {
-        setTimeout(() => {
-          // 只為目錄項目添加點擊動畫
-          const outlineLinks = document.querySelectorAll('.VPDocAsideOutline .outline-link')
-          outlineLinks.forEach(link => {
-            link.addEventListener('click', function() {
-              this.style.transform = 'scale(0.98)'
-              setTimeout(() => {
-                this.style.transform = ''
-              }, 100)
-            })
-          })
-        }, 500)
-      }
+        if (typeof window !== 'undefined') {
+            
+            // 目錄動畫函數 - 只處理目錄項目，不包含標題
+            const addOutlineAnimation = () => {
+                setTimeout(() => {
+                    // 只為目錄項目添加點擊動畫
+                    const outlineLinks = document.querySelectorAll('.VPDocAsideOutline .outline-link')
+                    outlineLinks.forEach(link => {
+                        link.addEventListener('click', function() {
+                            this.style.transform = 'scale(0.98)'
+                            setTimeout(() => {
+                                this.style.transform = ''
+                            }, 100)
+                        })
+                    })
+                }, 500)
+            }
 
-      // 初次載入
-      addOutlineAnimation()
-      
-      // 路由變化時重新綁定
-      router.onAfterRouteChanged = addOutlineAnimation
-    }
-  
-  },
+            // 初次載入
+            addOutlineAnimation()
+            
+            // 路由變化時重新綁定
+            router.onAfterRouteChanged = addOutlineAnimation
+        }
+    },
 })
