@@ -8,11 +8,16 @@
     "vue": "^3.5.16"
   },
   "dependencies": {
+    "@algolia/autocomplete-js": "^1.19.2",
     "@algolia/client-search": "^5.27.0",
     "@docsearch/js": "3",
+    "algoliasearch": "^5.27.0",
     "firebase": "^11.9.1",
     "gray-matter": "^4.0.3",
-    "search-insights": "^2"
+    "instantsearch.js": "^4.79.0",
+    "react-instantsearch": "^7.16.0",
+    "search-insights": "^2",
+    "vue-instantsearch": "^4.21.0"
   },
   "scripts": {
     "dev": "vitepress dev",
