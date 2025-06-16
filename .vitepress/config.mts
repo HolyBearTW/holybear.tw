@@ -55,7 +55,7 @@ export default defineConfig({
             provider: 'algolia',
             options: {
                 appId: '5HHMMAZBPG',
-                apiKey: '5f6c12ea0a82e71f4c13be147e8308dd',
+                apiKey: 'a39c1a5f28b4df6c35f69ab60c93135f',
                 indexName: 'holybear',
                 placeholder: '搜尋文章',
                 translations: {
