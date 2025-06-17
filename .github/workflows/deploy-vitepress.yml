@@ -80,23 +80,44 @@ jobs:
           fi
 
       - name: 檢查、產生並遞交英文 Blog 遞補檔案
+        shell: /usr/bin/bash -e {0}
         run: |
-          # --- 階段 1: 檢查人為編輯 ---
+          # --- 階段 1: 找出在這次 PUSH 中被變更的英文檔案，並檢查作者 ---
           human_edit_found=false
-          if [ -d "en/blog" ] && [ "$(ls -A en/blog/*.md 2>/dev/null)" ]; then
-            for file in en/blog/*.md; do
-              human_authors=$(git log --follow --pretty=format:"%an" -- "$file" | grep -v -E "\[bot\]|System Administrator")
+          
+          # 設定要比較的 commit 範圍
+          # 處理新分支 push 時 before 為 0000... 的情況
+          if [ "${{ github.event.before }}" = "0000000000000000000000000000000000000000" ]; then
+            COMMIT_RANGE="${{ github.sha }}~1..${{ github.sha }}"
+            echo "偵測到新分支推送，檢查範圍為最後一個 commit。"
+          else
+            COMMIT_RANGE="${{ github.event.before }}..${{ github.sha }}"
+            echo "檢查範圍為 ${{ github.event.before }}..${{ github.sha }}"
+          fi
+
+          # 只找出在 commit 範圍內被變更的 en/blog/ 檔案
+          changed_files=$(git diff --name-only $COMMIT_RANGE -- en/blog/)
+          
+          if [ -z "$changed_files" ]; then
+            echo "在這次推送中，沒有 en/blog/ 的檔案被變更。"
+          else
+            echo "在這次推送中，偵測到以下 en/blog/ 檔案變更："
+            echo "$changed_files"
+            for file in $changed_files; do
+              # 檢查這個檔案在這次變動中的作者
+              human_authors=$(git log $COMMIT_RANGE --pretty=format:"%an" -- "$file" | grep -v -E "\[bot\]|System Administrator")
               if [ -n "$human_authors" ]; then
-                echo "偵測到檔案 '$file' 有人為編輯紀錄，作者: $(echo $human_authors | head -n1)"
+                first_human_author=$(echo "$human_authors" | head -n 1)
+                echo "偵測到檔案 '$file' 在此次推送中有人為編輯，作者: $first_human_author"
                 human_edit_found=true
-                break
+                break # 找到一個就足以中止流程
               fi
             done
           fi
 
           if [ "$human_edit_found" = true ]; then
             echo "偵測到人為編輯，因此跳過產生與遞交遞補檔案的完整流程。"
-            exit 0 # 正常結束此步驟，不執行後續命令
+            exit 0
           fi
           
           # --- 階段 2: 產生遞補檔案 (僅在未偵測到人為編輯時執行) ---
