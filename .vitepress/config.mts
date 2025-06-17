@@ -12,32 +12,6 @@ function getCurrentBranch() {
     }
 }
 
-transformSearchClient: (searchClient) => {
-  return {
-    ...searchClient,
-    search(requests) {
-      // 取得目前語言代碼
-      const currentLang =
-        typeof window !== 'undefined' &&
-        window.navigator.language.startsWith('en')
-          ? 'en-US'
-          : 'zh_TW'
-
-      return searchClient.search(
-        requests.map((request) => ({
-          ...request,
-          params: {
-            ...request.params,
-            // 精準使用 lang 進行 facetFilters 篩選
-            facetFilters: [`lang:${currentLang}`]
-          }
-        }))
-      )
-    }
-  }
-}
-
-
 export default defineConfig({
     ignoreDeadLinks: true,
     title: '聖小熊的秘密基地',
