@@ -58,31 +58,6 @@ export default defineConfig({
                 apiKey: 'f7fbf2c65da0d43f1540496b9ae6f3c6',
                 indexName: 'holybear',
                 placeholder: '搜尋文章',
-                transformSearchClient: (searchClient) => {
-                  return {
-                    ...searchClient,
-                    search(requests) {
-                      // 根據目前網址判斷語言
-                      const currentLang =
-                        typeof window !== 'undefined' &&
-                        window.location.pathname.startsWith('/en/')
-                          ? 'en' // 英文頁面
-                          : 'zh' // 其他預設為中文
-        
-                      // 修改搜尋請求，加上 facetFilters 限制語言
-                      return searchClient.search(
-                        requests.map((request) => ({
-                          ...request,
-                          params: {
-                            ...request.params,
-                            // ✅ 使用 facetFilters 過濾 lang 欄位（比 filters 更安全）
-                            facetFilters: [`lang:${currentLang}`]
-                          }
-                        }))
-                      )
-                    }
-                  }
-                },
                 translations: {
                     button: {
                         buttonText: '搜尋',
