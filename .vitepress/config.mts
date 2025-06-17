@@ -58,6 +58,26 @@ export default defineConfig({
                 apiKey: 'f7fbf2c65da0d43f1540496b9ae6f3c6',
                 indexName: 'holybear',
                 placeholder: '搜尋文章',
+        transformSearchClient: (searchClient) => {
+          return {
+            ...searchClient,
+            search(requests) {
+              const currentLang = typeof window !== 'undefined' && window.location.pathname.startsWith('/en/')
+                ? 'en'
+                : 'zh'
+
+              return searchClient.search(
+                requests.map((request) => ({
+                  ...request,
+                  params: {
+                    ...request.params,
+                    filters: `lang:${currentLang}`
+                  }
+                }))
+              )
+            }
+          }
+        },
                 translations: {
                     button: {
                         buttonText: '搜尋',
