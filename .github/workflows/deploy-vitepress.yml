@@ -79,46 +79,42 @@ jobs:
             git push || git push --force
           fi
 
-      - name: 保護、產生、還原並遞交英文 Blog 檔案
+      - name: 備份、產生、還原並遞交英文 Blog 檔案
         shell: /usr/bin/bash -e {0}
         run: |
-          # --- 階段 1: 保護已有人工編輯的英文檔案 ---
-          PROTECTED_DIR="tmp_protected_en_files"
-          mkdir -p "$PROTECTED_DIR"
-          echo "=> 階段 1: 檢查並保護已有人工編輯的英文文章..."
+          # --- 階段 1: 備份所有已存在的英文檔案 ---
+          BACKUP_DIR="tmp_existing_en_files"
+          mkdir -p "$BACKUP_DIR"
+          echo "=> 階段 1: 備份所有已存在的英文文章..."
           
-          if [ -d "en/blog" ]; then
-            for file in en/blog/*.md; do
-              [ -f "$file" ] || continue
-              # 檢查檔案的完整歷史紀錄中是否包含非機器人作者
-              human_authors=$(git log --follow --pretty=format:"%an" -- "$file" | grep -v -E "\[bot\]|System Administrator")
-              
-              if [ -n "$human_authors" ]; then
-                echo "    - 保護檔案: $file (因偵測到人工編輯紀錄)"
-                mv "$file" "$PROTECTED_DIR/"
-              fi
-            done
+          # 檢查 en/blog 目錄是否存在且有檔案
+          if [ -d "en/blog" ] && [ -n "$(ls -A en/blog/*.md 2>/dev/null)" ]; then
+            echo "    - 發現已存在的檔案，正在移至暫存區以避免被覆蓋..."
+            mv en/blog/*.md "$BACKUP_DIR/"
           else
-            echo "    - en/blog/ 目錄不存在，跳過保護程序。"
+            echo "    - en/blog/ 目錄為空或不存在，無需備份。"
           fi
 
           # --- 階段 2: 產生遞補檔案 ---
           echo "=> 階段 2: 執行遞補檔案產生程序 (yarn gen-en-blog)..."
+          # 此指令會為所有中文文章產生對應的英文檔案。
+          # 對於已存在的文章，這裡建立的空白檔稍後會被備份覆蓋。
+          # 對於新文章，這裡會成功建立新的遞補檔。
           yarn gen-en-blog
           echo "    - 產生程序完成。"
 
-          # --- 階段 3: 還原受保護的檔案 ---
-          echo "=> 階段 3: 還原受保護的人工編輯檔案..."
+          # --- 階段 3: 還原備份的檔案 ---
+          echo "=> 階段 3: 還原先前已存在的英文檔案..."
           # 檢查備份目錄是否為空
-          if [ -n "$(ls -A $PROTECTED_DIR 2>/dev/null)" ]; then
-            # 將備份的檔案移回原位，覆蓋掉產生器產生的空白檔
-            mv -f "$PROTECTED_DIR"/* en/blog/
-            echo "    - 已還原受保護的檔案。"
+          if [ -n "$(ls -A $BACKUP_DIR 2>/dev/null)" ]; then
+            # 將備份的檔案移回原位，這會覆蓋掉產生器可能建立的同名空白檔，以保留原始版本。
+            mv -f "$BACKUP_DIR"/* en/blog/
+            echo "    - 已還原備份的檔案。"
           else
             echo "    - 沒有需要還原的檔案。"
           fi
           # 清理暫存目錄
-          rm -rf "$PROTECTED_DIR"
+          rm -rf "$BACKUP_DIR"
           
           # --- 階段 4: Commit 並 Push 變更 ---
           echo "=> 階段 4: 檢查是否有新檔案需要提交..."
