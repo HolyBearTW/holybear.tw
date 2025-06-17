@@ -79,65 +79,61 @@ jobs:
             git push || git push --force
           fi
 
-      - name: 檢查、產生並遞交英文 Blog 遞補檔案
+      - name: 保護、產生、還原並遞交英文 Blog 檔案
         shell: /usr/bin/bash -e {0}
         run: |
-          # --- 階段 1: 找出在這次 PUSH 中被變更的英文檔案，並檢查作者 ---
-          human_edit_found=false
+          # --- 階段 1: 保護已有人工編輯的英文檔案 ---
+          PROTECTED_DIR="tmp_protected_en_files"
+          mkdir -p "$PROTECTED_DIR"
+          echo "=> 階段 1: 檢查並保護已有人工編輯的英文文章..."
           
-          # 設定要比較的 commit 範圍
-          # 處理新分支 push 時 before 為 0000... 的情況
-          if [ "${{ github.event.before }}" = "0000000000000000000000000000000000000000" ]; then
-            COMMIT_RANGE="${{ github.sha }}~1..${{ github.sha }}"
-            echo "偵測到新分支推送，檢查範圍為最後一個 commit。"
-          else
-            COMMIT_RANGE="${{ github.event.before }}..${{ github.sha }}"
-            echo "檢查範圍為 ${{ github.event.before }}..${{ github.sha }}"
-          fi
-
-          # 只找出在 commit 範圍內被變更的 en/blog/ 檔案
-          changed_files=$(git diff --name-only $COMMIT_RANGE -- en/blog/)
-          
-          if [ -z "$changed_files" ]; then
-            echo "在這次推送中，沒有 en/blog/ 的檔案被變更。"
-          else
-            echo "在這次推送中，偵測到以下 en/blog/ 檔案變更："
-            echo "$changed_files"
-            for file in $changed_files; do
-              # 檢查這個檔案在這次變動中的作者
-              human_authors=$(git log $COMMIT_RANGE --pretty=format:"%an" -- "$file" | grep -v -E "\[bot\]|System Administrator")
+          if [ -d "en/blog" ]; then
+            for file in en/blog/*.md; do
+              [ -f "$file" ] || continue
+              # 檢查檔案的完整歷史紀錄中是否包含非機器人作者
+              human_authors=$(git log --follow --pretty=format:"%an" -- "$file" | grep -v -E "\[bot\]|System Administrator")
+              
               if [ -n "$human_authors" ]; then
-                first_human_author=$(echo "$human_authors" | head -n 1)
-                echo "偵測到檔案 '$file' 在此次推送中有人為編輯，作者: $first_human_author"
-                human_edit_found=true
-                break # 找到一個就足以中止流程
+                echo "    - 保護檔案: $file (因偵測到人工編輯紀錄)"
+                mv "$file" "$PROTECTED_DIR/"
               fi
             done
+          else
+            echo "    - en/blog/ 目錄不存在，跳過保護程序。"
           fi
 
-          if [ "$human_edit_found" = true ]; then
-            echo "偵測到人為編輯，因此跳過產生與遞交遞補檔案的完整流程。"
-            exit 0
-          fi
-          
-          # --- 階段 2: 產生遞補檔案 (僅在未偵測到人為編輯時執行) ---
-          echo "未偵測到人為編輯，開始產生英文 Blog 遞補檔案..."
+          # --- 階段 2: 產生遞補檔案 ---
+          echo "=> 階段 2: 執行遞補檔案產生程序 (yarn gen-en-blog)..."
           yarn gen-en-blog
+          echo "    - 產生程序完成。"
 
-          # --- 階段 3: Commit 並 Push 產生的檔案 (僅在有新檔案產生時執行) ---
-          echo "檢查是否有新產生的檔案需要遞交..."
+          # --- 階段 3: 還原受保護的檔案 ---
+          echo "=> 階段 3: 還原受保護的人工編輯檔案..."
+          # 檢查備份目錄是否為空
+          if [ -n "$(ls -A $PROTECTED_DIR 2>/dev/null)" ]; then
+            # 將備份的檔案移回原位，覆蓋掉產生器產生的空白檔
+            mv -f "$PROTECTED_DIR"/* en/blog/
+            echo "    - 已還原受保護的檔案。"
+          else
+            echo "    - 沒有需要還原的檔案。"
+          fi
+          # 清理暫存目錄
+          rm -rf "$PROTECTED_DIR"
+          
+          # --- 階段 4: Commit 並 Push 變更 ---
+          echo "=> 階段 4: 檢查是否有新檔案需要提交..."
           git config --global user.name 'System Administrator'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           git add en/blog/
 
           if git diff --cached --quiet; then
-            echo "沒有由 auto-generator 產生的新變更需要提交。"
+            echo "    - 沒有新產生的遞補檔案需要提交。"
           else
-            echo "偵測到新產生的檔案，正在準備提交..."
+            echo "    - 偵測到新產生的遞補檔案，正在提交..."
             git commit -m "chore: auto-generate en blog placeholders"
             git pull --rebase origin main
             git push --set-upstream origin main || git push
-            echo "新產生的檔案已成功提交。"
+            echo "    - 新檔案已成功提交。"
           fi
 
       - name: 清除 Vite/VitePress 快取
