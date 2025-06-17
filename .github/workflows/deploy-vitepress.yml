@@ -79,20 +79,44 @@ jobs:
             git push || git push --force
           fi
 
-      - name: 產生英文 Blog 遞補檔案
-        run: yarn gen-en-blog
-
-      - name: Commit 並 push 產生的檔案
+      - name: 檢查、產生並遞交英文 Blog 遞補檔案
         run: |
+          # --- 階段 1: 檢查人為編輯 ---
+          human_edit_found=false
+          if [ -d "en/blog" ] && [ "$(ls -A en/blog/*.md 2>/dev/null)" ]; then
+            for file in en/blog/*.md; do
+              human_authors=$(git log --follow --pretty=format:"%an" -- "$file" | grep -v -E "\[bot\]|System Administrator")
+              if [ -n "$human_authors" ]; then
+                echo "偵測到檔案 '$file' 有人為編輯紀錄，作者: $(echo $human_authors | head -n1)"
+                human_edit_found=true
+                break
+              fi
+            done
+          fi
+
+          if [ "$human_edit_found" = true ]; then
+            echo "偵測到人為編輯，因此跳過產生與遞交遞補檔案的完整流程。"
+            exit 0 # 正常結束此步驟，不執行後續命令
+          fi
+          
+          # --- 階段 2: 產生遞補檔案 (僅在未偵測到人為編輯時執行) ---
+          echo "未偵測到人為編輯，開始產生英文 Blog 遞補檔案..."
+          yarn gen-en-blog
+
+          # --- 階段 3: Commit 並 Push 產生的檔案 (僅在有新檔案產生時執行) ---
+          echo "檢查是否有新產生的檔案需要遞交..."
           git config --global user.name 'System Administrator'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           git add en/blog/
+
           if git diff --cached --quiet; then
-            echo "No changes to commit."
+            echo "沒有由 auto-generator 產生的新變更需要提交。"
           else
+            echo "偵測到新產生的檔案，正在準備提交..."
             git commit -m "chore: auto-generate en blog placeholders"
             git pull --rebase origin main
             git push --set-upstream origin main || git push
+            echo "新產生的檔案已成功提交。"
           fi
 
       - name: 清除 Vite/VitePress 快取
