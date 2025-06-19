@@ -60,7 +60,12 @@ export default createContentLoader('en/blog/**/*.md', {
           excerpt: summary,
         };
       })
-      .filter(post => !!post && typeof post.url === 'string' && !!post.url)
+      .filter(post =>
+        !!post &&
+        typeof post.url === 'string' &&
+        !!post.url &&
+        !post.title.includes('Blog Not Supported in English')
+      )
       .sort((a, b) => {
         return new Date(b.date).getTime() - new Date(a.date).getTime();
       });
