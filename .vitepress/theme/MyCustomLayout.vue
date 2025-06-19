@@ -1,5 +1,6 @@
 <script setup>
 import Theme from 'vitepress/theme'
+import { Footer } from 'vitepress/theme'
 import { useData } from 'vitepress'
 import { computed } from 'vue'
 import GiscusComments from '../components/GiscusComments.vue'
@@ -73,6 +74,9 @@ const currentDisplayDate = computed(() => {
         <VotePanel />
         <GiscusComments />
       </ClientOnly>
+    </template>
+    <template #layout-bottom>
+      <Footer />
     </template>
   </Theme.Layout>
 </template>
