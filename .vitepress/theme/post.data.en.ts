@@ -11,7 +11,7 @@ function extractDate(frontmatter) {
   );
 }
 
-export default createContentLoader('blog/**/*.md', {
+export default createContentLoader('en/blog/**/*.md', {
   excerpt: true,
   transform(raw) {
     return raw
@@ -25,7 +25,7 @@ export default createContentLoader('blog/**/*.md', {
       })
       .map(({ url, frontmatter, content, excerpt }) => {
         frontmatter = frontmatter && typeof frontmatter === 'object' ? frontmatter : {};
-        const title = frontmatter.title || '無標題文章';
+        const title = frontmatter.title || 'No title post';
         const date = extractDate(frontmatter);
         let imageUrl = frontmatter.image;
         if (!imageUrl && content) {
