@@ -17,8 +17,20 @@ export default defineConfig({
     ignoreDeadLinks: true,
     title: '聖小熊的秘密基地', // fallback
     base: '/',
-    // 這裡加上 locales: locales.locales
-    locales: locales.locales,
+    locales: {
+        root: {
+            label: '繁體中文',
+            lang: 'zh-TW',
+            title: '聖小熊的秘密基地',
+            description: '聖小熊的個人網站，收錄 HyperOS 模組、技術筆記與開發心得，專注於 Android 客製化與開源創作分享。'
+        },
+        en: {
+            label: 'English',
+            lang: 'en',
+            title: "HolyBear's Secret Base",
+            description: "HolyBear's personal site, featuring HyperOS modules, tech notes, and Android customization & open-source sharing."
+        }
+    },
     srcExclude: ['README.md'],
     head: [
         ['meta', { name: 'theme-color', content: '#00FFEE' }],
@@ -105,11 +117,25 @@ export default defineConfig({
         },
         footer: {
             message: 'AGPL-3.0 Licensed',
-            copyright: 'Copyright © 2025 HolyBear'
+            copyright: 'Copyright © 2025 聖小熊'
         },
         socialLinks: [
             { icon: 'github', link: 'https://github.com/HolyBearTW' }
-        ]
+        ],
+        locales: {
+            root: {
+                footer: {
+                    message: 'AGPL-3.0 Licensed',
+                    copyright: 'Copyright © 2025 聖小熊'
+                }
+            },
+            en: {
+                footer: {
+                    message: 'AGPL-3.0 Licensed',
+                    copyright: 'Copyright © 2025 HolyBear'
+                }
+            }
+        }
     },
     extendsPage(page) {
         const branch = getCurrentBranch()
