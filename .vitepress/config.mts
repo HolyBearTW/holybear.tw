@@ -1,8 +1,9 @@
 import { defineConfig } from 'vitepress'
-import locales from './locales' 
+import locales from './locales'
 import gitMetaPlugin from './git-meta.js'
 import { execSync } from 'child_process'
 import sidebar from './sidebar.generated'
+import sidebarEn from './sidebar.generated.en'
 
 function getCurrentBranch() {
     try {
@@ -42,7 +43,11 @@ export default defineConfig({
     },
     themeConfig: {
         logo: '/logo.png',
-        sidebar,
+        // 這裡設定多語 sidebar
+        sidebar: {
+            '/blog/': sidebar,
+            '/en/blog/': sidebarEn
+        },
         lastUpdated: {
             text: '最後更新',
             formatOptions: {
