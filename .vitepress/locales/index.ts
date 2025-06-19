@@ -1,8 +1,7 @@
-import { defineConfig } from 'vitepress'
 import zh_TW from './zh_TW'
 import en from './en'
 
-export default defineConfig({
+export default {
   locales: {
     root: {
       label: '繁體中文',
@@ -21,4 +20,4 @@ export default defineConfig({
       base: '/en/'
     }
   }
-})
+}
