@@ -6,7 +6,7 @@ description: 聖小熊的部落格文章列表
 
 <script setup>
 import { ref, computed } from 'vue'
-import { data as allPosts } from '../.vitepress/theme/posts.data.ts'
+import { data as allPosts } from '../../.vitepress/theme/posts.data.ts'
 
 const postsWithDate = allPosts.filter(Boolean)
 
