@@ -1,12 +1,12 @@
 ---
 layout: home
-title: Blog Posts
-description: List of blog posts by HolyBear
+title: 部落格文章
+description: 聖小熊的部落格文章列表
 ---
 
 <script setup>
 import { ref, computed } from 'vue'
-import { data as allPosts } from '../.vitepress/theme/en/blog.data.ts' // Changed path to en/blog
+import { data as allPosts } from '../.vitepress/theme/posts.data.ts'
 
 const postsWithDate = allPosts.filter(Boolean)
 
@@ -65,14 +65,17 @@ const pageNumbers = computed(() => {
             <h2 class="post-title">{{ post.title }}</h2>
           </div>
           <p class="post-date">
-            Published on: {{ formatDateExactlyLikePostPage(post.date) }} </p>
+            發布日期：{{ formatDateExactlyLikePostPage(post.date) }}
+          </p>
           <div v-if="post.excerpt" class="post-excerpt" v-html="post.excerpt"></div>
-          <span class="read-more">Read More &gt;</span> </div>
+          <span class="read-more">繼續閱讀 &gt;</span>
+        </div>
       </a>
     </div>
   </div>
   <div class="pagination" v-if="totalPages > 1">
-    <button class="pagination-button" :disabled="currentPage === 1" @click="goToPage(currentPage - 1)">Previous</button> <button
+    <button class="pagination-button" :disabled="currentPage === 1" @click="goToPage(currentPage - 1)">上一頁</button>
+    <button
       v-for="page in pageNumbers"
       :key="page"
       class="pagination-button"
@@ -80,7 +83,8 @@ const pageNumbers = computed(() => {
       @click="goToPage(page)">
       {{ page }}
     </button>
-    <button class="pagination-button" :disabled="currentPage === totalPages" @click="goToPage(currentPage + 1)">Next</button> </div>
+    <button class="pagination-button" :disabled="currentPage === totalPages" @click="goToPage(currentPage + 1)">下一頁</button>
+  </div>
 </div>
 
 <style scoped>
@@ -96,7 +100,7 @@ const pageNumbers = computed(() => {
 }
 .post-item {
   border-bottom: 1px dashed var(--vp-c-divider);
-  padding: 0.7rem 0;
+  padding: 0.7rem 0;      /* 上下間隔一致 */
   margin: 0;
 }
 .blog-articles-grid > .post-item:last-child {
@@ -107,7 +111,7 @@ const pageNumbers = computed(() => {
   align-items: center;
   min-height: 122px;
   height: auto;
-  padding: 0 1rem;
+  padding: 0 1rem;        /* 僅左右內距 */
   border-radius: 8px;
   text-decoration: none;
   color: inherit;
@@ -245,15 +249,16 @@ const pageNumbers = computed(() => {
 
 @media (max-width: 767px) {
   .post-item {
-    padding: 0.2rem 0;
+    padding: 0.2rem 0;   /* 上下間距可以再小一點 */
+    /* 不要設定height或min-height，讓內容自適應 */
   }
   .post-item-link {
-    min-height: unset;
+    min-height: unset;   /* 移除 min-height 限制 */
     padding: 0.2rem 0.5rem;
   }
   .post-thumbnail-wrapper {
-    width: 110px;
-    height: 90px;
+    width: 110px;        /* 控制左邊區塊不要過寬 */
+    height: 90px;        /* 高度可以稍微大一點，讓圖片更顯眼 */
     margin-right: 0.7rem;
     flex-shrink: 0;
     display: flex;
