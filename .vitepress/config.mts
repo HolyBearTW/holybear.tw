@@ -116,7 +116,7 @@ export default defineConfig({
         },
         footer: {
             message: 'AGPL-3.0 Licensed',
-            copyright: 'Copyright © 2025 聖小熊'
+            copyright: 'Copyright © 2025 HolyBear'
         },
         socialLinks: [
             { icon: 'github', link: 'https://github.com/HolyBearTW' }
