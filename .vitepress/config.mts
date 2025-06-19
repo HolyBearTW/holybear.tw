@@ -1,9 +1,8 @@
 import { defineConfig } from 'vitepress'
-import locales from './locales'
+import locales from './locales' 
 import gitMetaPlugin from './git-meta.js'
 import { execSync } from 'child_process'
 import sidebar from './sidebar.generated'
-import sidebarEn from './sidebar.generated.en'
 
 function getCurrentBranch() {
     try {
@@ -15,22 +14,9 @@ function getCurrentBranch() {
 
 export default defineConfig({
     ignoreDeadLinks: true,
-    title: '聖小熊的秘密基地', // fallback
+    title: '聖小熊的秘密基地',
     base: '/',
-    locales: {
-        root: {
-            label: '繁體中文',
-            lang: 'zh-TW',
-            title: '聖小熊的秘密基地',
-            description: '聖小熊的個人網站，收錄 HyperOS 模組、技術筆記與開發心得，專注於 Android 客製化與開源創作分享。'
-        },
-        en: {
-            label: 'English',
-            lang: 'en',
-            title: "HolyBear's Secret Base",
-            description: "HolyBear's personal site, featuring HyperOS modules, tech notes, and Android customization & open-source sharing."
-        }
-    },
+    locales: locales.locales,
     srcExclude: ['README.md'],
     head: [
         ['meta', { name: 'theme-color', content: '#00FFEE' }],
@@ -56,10 +42,7 @@ export default defineConfig({
     },
     themeConfig: {
         logo: '/logo.png',
-        sidebar: {
-            '/blog/': sidebar,
-            '/en/blog/': sidebarEn
-        },
+        sidebar,
         lastUpdated: {
             text: '最後更新',
             formatOptions: {
@@ -117,25 +100,11 @@ export default defineConfig({
         },
         footer: {
             message: 'AGPL-3.0 Licensed',
-            copyright: 'Copyright © 2025 聖小熊'
+            copyright: 'Copyright © 2025 聖小熊 & HolyBear'
         },
         socialLinks: [
             { icon: 'github', link: 'https://github.com/HolyBearTW' }
-        ],
-        locales: {
-            root: {
-                footer: {
-                    message: 'AGPL-3.0 Licensed',
-                    copyright: 'Copyright © 2025 聖小熊'
-                }
-            },
-            en: {
-                footer: {
-                    message: 'AGPL-3.0 Licensed',
-                    copyright: 'Copyright © 2025 HolyBear'
-                }
-            }
-        }
+        ]
     },
     extendsPage(page) {
         const branch = getCurrentBranch()
@@ -189,5 +158,5 @@ export default defineConfig({
             // 其它有 image 的文章
             page.frontmatter.head.push(['meta', { property: 'og:image', content: page.frontmatter.image }])
         }
-    }
+    },
 })
