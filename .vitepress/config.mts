@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitepress'
+import locales from './locales'
 import gitMetaPlugin from './git-meta.js'
 import { execSync } from 'child_process'
 import sidebar from './sidebar.generated'
