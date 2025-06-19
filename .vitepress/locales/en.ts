@@ -1,18 +1,23 @@
 import { defineConfig } from 'vitepress'
+import sidebarEn from '../sidebar.generated.en'
 
 export default defineConfig({
   lang: 'en',
-  title: "HolyBear's Secret Base",
-  description: "This is HolyBear's personal website.",
-
+  description: "HolyBear's personal site, featuring HyperOS modules, tech notes, and Android customization & open-source sharing.",
   themeConfig: {
-    nav: nav(),
-
+    nav: [
+      { text: 'Blog', link: '/blog' },
+      { text: 'Portfolio', link: '/Mod' },
+      { text: 'Telegram', link: 'https://t.me/HolyBearTW' },
+      { text: 'Donate', link: 'https://paypal.me/holybear0610' }
+    ],
+    sidebar: {
+      '/en/blog/': sidebarEn
+    },
     docFooter: {
       prev: 'Previous',
       next: 'Next'
     },
-
     lastUpdated: {
       text: 'Last updated',
       formatOptions: {
@@ -21,26 +26,19 @@ export default defineConfig({
         hour12: false
       }
     },
-
     darkModeSwitchLabel: 'Dark mode',
     returnToTopLabel: 'Return to top',
-
     outline: {
       label: 'Outline'
     },
-
     editLink: {
       pattern: 'https://github.com/HolyBearTW/holybear.me/edit/main/:path',
       text: 'Edit this page on GitHub'
     },
-
-    // 新增英文 footer
     footer: {
       message: 'AGPL-3.0 Licensed',
       copyright: 'Copyright © 2025 HolyBear'
     },
-
-    // 新增搜尋提示（如果有用 algolia）
     search: {
       provider: 'algolia',
       options: {
@@ -90,12 +88,3 @@ export default defineConfig({
     }
   }
 })
-
-function nav() {
-  return [
-    { text: 'Blog', link: '/blog' },
-    { text: 'Portfolio', link: '/Mod' },
-    { text: 'Telegram', link: 'https://t.me/HolyBearTW' },
-    { text: 'Donate', link: 'https://paypal.me/holybear0610' },
-  ]
-}
