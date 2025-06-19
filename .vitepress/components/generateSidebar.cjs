@@ -47,6 +47,9 @@ function toSidebar(files, baseDir) {
             listdate = fm.data.listdate || fm.data.listDate
         } catch { }
 
+        // 這裡過濾掉 placeholder
+        if (title && title.includes('Blog Not Supported in English')) continue
+
         if (rel.toLowerCase() === 'index.md') {
             indexItem = { text: linkPrefix === '/en/blog/' ? 'Back to blog list' : '回文章列表', link }
         } else {
