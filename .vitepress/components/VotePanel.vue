@@ -4,12 +4,12 @@
       @click="handleVote('up')"
       :disabled="loading"
       :class="{ active: userVote === 'up' }"
-    >👍 推 ({{ up }})</button>
+    >{{ upLabel }} ({{ up }})</button>
     <button
       @click="handleVote('down')"
       :disabled="loading"
       :class="{ active: userVote === 'down' }"
-    >👎 噓 ({{ down }})</button>
+    >{{ downLabel }} ({{ down }})</button>
   </div>
 </template>
 
@@ -18,15 +18,24 @@ import { ref, watch, onMounted, computed } from 'vue'
 import { useVote } from './useVote'
 import { useData } from 'vitepress'
 
-// 1. 讓 articleId 是 computed，直接傳給 useVote（支援 reactive）
-const { page } = useData()
+const { page, site } = useData()
 const articleId = computed(() => page.value.relativePath.replaceAll('/', '__'))
 
-// 2. 讓 useVote 吃 ref/computed
 const { up, down, vote, unvote, loading, fetchVotes } = useVote(articleId)
 
 const userVote = ref(null)
 const hydrated = ref(false)
+
+// 取得當前語系
+const lang = computed(() => site.value.lang)
+
+// 不同語言的按鈕文字
+const upLabel = computed(() =>
+  lang.value.startsWith('en') ? '👍 Like' : '👍 推'
+)
+const downLabel = computed(() =>
+  lang.value.startsWith('en') ? '👎 Dislike' : '👎 噓'
+)
 
 function refreshUserVote() {
   userVote.value = localStorage.getItem('vote_' + articleId.value) || null
@@ -38,7 +47,6 @@ onMounted(async () => {
   await fetchVotes()
 })
 
-// 3. 監聽 id 變動時，主動重抓 userVote 與票數
 watch(articleId, async () => {
   refreshUserVote()
   await fetchVotes()
