@@ -1,9 +1,9 @@
 import { defineConfig } from 'vitepress'
 import locales from './locales'
-import sidebar from './sidebar.generated'
-import sidebarEn from './sidebar.generated.en'
 import gitMetaPlugin from './git-meta.js'
 import { execSync } from 'child_process'
+import sidebar from './sidebar.generated'
+import sidebarEn from './sidebar.generated.en'
 
 function getCurrentBranch() {
   try {
@@ -121,7 +121,7 @@ export default defineConfig({
         },
         footer: {
           message: 'AGPL-3.0 Licensed',
-          copyright: 'Copyright © 2025 聖小熊'
+          copyright: 'Copyright © 2025 聖小熊 & HolyBear'
         },
         socialLinks: [
           { icon: 'github', link: 'https://github.com/HolyBearTW' }
@@ -210,6 +210,7 @@ export default defineConfig({
         if (!page.frontmatter.author) page.frontmatter.author = author
         if (!page.frontmatter.date) page.frontmatter.date = date
 
+        // 取得最後 commit 時間，供 sidebar 用
         const lastUpdated = execSync(
           `git log -1 --format=%cI -- "${page.filePath}"`
         ).toString().trim()
@@ -236,12 +237,13 @@ export default defineConfig({
       page.relativePath === 'index/index.md' ||
       page.relativePath === '/index/index.md'
     ) {
-      // 中文首頁
+      // 中文首頁（根目錄或 /index 皆適用）
       page.frontmatter.head.push(['title', {}, '聖小熊的秘密基地'])
       page.frontmatter.head.push(['meta', { property: 'og:title', content: '聖小熊的秘密基地' }])
       page.frontmatter.head.push(['meta', { property: 'og:description', content: '聖小熊的 HyperOS 模組與技術筆記分享網站。' }])
       page.frontmatter.head.push(['meta', { property: 'og:image', content: page.frontmatter.image || 'https://holybear.me/logo.png' }])
     } else if (page.frontmatter.image) {
+      // 其它有 image 的文章
       page.frontmatter.head.push(['meta', { property: 'og:image', content: page.frontmatter.image }])
     }
   }
