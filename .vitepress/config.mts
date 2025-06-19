@@ -58,10 +58,10 @@ export default defineConfig({
       root: {
         logo: '/logo.png',
         nav: [
-          { text: '部落格', link: '/blog/' },
+          { text: '日誌', link: '/blog/' },
           { text: '作品集', link: '/Mod' },
           { text: 'Telegram', link: 'https://t.me/HolyBearTW' },
-          { text: '贊助我', link: 'https://paypal.me/holybear0610' },
+          { text: '贊助', link: 'https://paypal.me/holybear0610' },
         ],
         sidebar: {
           '/blog/': sidebar
