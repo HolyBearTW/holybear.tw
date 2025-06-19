@@ -1,9 +1,8 @@
 import { defineConfig } from 'vitepress'
-import locales from './locales'
-import gitMetaPlugin from './git-meta.js'
-import { execSync } from 'child_process'
 import sidebar from './sidebar.generated'
 import sidebarEn from './sidebar.generated.en'
+import gitMetaPlugin from './git-meta.js'
+import { execSync } from 'child_process'
 
 function getCurrentBranch() {
     try {
@@ -22,13 +21,15 @@ export default defineConfig({
             label: '繁體中文',
             lang: 'zh-TW',
             title: '聖小熊的秘密基地',
-            description: '聖小熊的個人網站，收錄 HyperOS 模組、技術筆記與開發心得，專注於 Android 客製化與開源創作分享。'
+            description: '聖小熊的個人網站，收錄 HyperOS 模組、技術筆記與開發心得，專注於 Android 客製化與開源創作分享。',
+            base: '/'
         },
         en: {
             label: 'English',
             lang: 'en',
             title: "HolyBear's Secret Base",
-            description: "HolyBear's personal site, featuring HyperOS modules, tech notes, and Android customization & open-source sharing."
+            description: "HolyBear's personal site, featuring HyperOS modules, tech notes, and Android customization & open-source sharing.",
+            base: '/en/'
         }
     },
     srcExclude: ['README.md'],
@@ -55,88 +56,91 @@ export default defineConfig({
         plugins: [gitMetaPlugin()]
     },
     themeConfig: {
-        logo: '/logo.png',
-        sidebar: {
-            '/blog/': sidebar,
-            '/en/blog/': sidebarEn
-        },
-        lastUpdated: {
-            text: '最後更新',
-            formatOptions: {
-                dateStyle: 'short',
-                timeStyle: 'short',
-                timeZone: 'Asia/Taipei'
-            }
-        },
-        search: {
-            provider: 'algolia',
-            options: {
-                appId: '5HHMMAZBPG',
-                apiKey: 'f7fbf2c65da0d43f1540496b9ae6f3c6',
-                indexName: 'holybear',
-                placeholder: '搜尋文章',
-                translations: {
-                    button: {
-                        buttonText: '搜尋',
-                        buttonAriaLabel: '搜尋'
-                    },
-                    modal: {
-                        searchBox: {
-                            resetButtonTitle: '清除搜尋條件',
-                            resetButtonAriaLabel: '清除搜尋條件',
-                            cancelButtonText: '取消',
-                            cancelButtonAriaLabel: '取消'
-                        },
-                        startScreen: {
-                            recentSearchesTitle: '最近搜尋',
-                            noRecentSearchesText: '沒有最近搜尋',
-                            saveRecentSearchButtonTitle: '儲存到最近搜尋',
-                            removeRecentSearchButtonTitle: '從最近搜尋中移除',
-                            favoriteSearchesTitle: '收藏',
-                            removeFavoriteSearchButtonTitle: '從收藏中移除'
-                        },
-                        errorScreen: {
-                            titleText: '無法取得結果',
-                            helpText: '請檢查你的網路連線'
-                        },
-                        footer: {
-                            selectText: '選擇',
-                            navigateText: '切換',
-                            closeText: '關閉',
-                            searchByText: '搜尋服務提供者：'
-                        },
-                        noResultsScreen: {
-                            noResultsText: '找不到結果',
-                            suggestedQueryText: '你可以嘗試查詢',
-                            reportMissingResultsText: '認為應該有結果？',
-                            reportMissingResultsLinkText: '點此回報'
-                        }
-                    }
-                }
-            }
-        },
-        footer: {
-            message: 'AGPL-3.0 Licensed',
-            copyright: 'Copyright © 2025 聖小熊'
-        },
-        socialLinks: [
-            { icon: 'github', link: 'https://github.com/HolyBearTW' }
-        ],
         locales: {
             root: {
-                footer: {
-                    message: 'AGPL-3.0 Licensed',
-                    copyright: 'Copyright © 2025 聖小熊'
-                }
-            },
-            en: {
-                footer: {
-                    message: 'AGPL-3.0 Licensed',
-                    copyright: 'Copyright © 2025 HolyBear'
+                logo: '/logo.png',
+                sidebar: {
+                    '/blog/': sidebar
+                },
+                lastUpdated: {
+                    text: '最後更新',
+                    formatOptions: {
+                        dateStyle: 'short',
+                        timeStyle: 'short',
+                        timeZone: 'Asia/Taipei'
+                    }
                 },
                 search: {
                     provider: 'algolia',
                     options: {
+                        appId: '5HHMMAZBPG',
+                        apiKey: 'f7fbf2c65da0d43f1540496b9ae6f3c6',
+                        indexName: 'holybear',
+                        placeholder: '搜尋文章',
+                        translations: {
+                            button: {
+                                buttonText: '搜尋',
+                                buttonAriaLabel: '搜尋'
+                            },
+                            modal: {
+                                searchBox: {
+                                    resetButtonTitle: '清除搜尋條件',
+                                    resetButtonAriaLabel: '清除搜尋條件',
+                                    cancelButtonText: '取消',
+                                    cancelButtonAriaLabel: '取消'
+                                },
+                                startScreen: {
+                                    recentSearchesTitle: '最近搜尋',
+                                    noRecentSearchesText: '沒有最近搜尋',
+                                    saveRecentSearchButtonTitle: '儲存到最近搜尋',
+                                    removeRecentSearchButtonTitle: '從最近搜尋中移除',
+                                    favoriteSearchesTitle: '收藏',
+                                    removeFavoriteSearchButtonTitle: '從收藏中移除'
+                                },
+                                errorScreen: {
+                                    titleText: '無法取得結果',
+                                    helpText: '請檢查你的網路連線'
+                                },
+                                footer: {
+                                    selectText: '選擇',
+                                    navigateText: '切換',
+                                    closeText: '關閉',
+                                    searchByText: '搜尋服務提供者：'
+                                },
+                                noResultsScreen: {
+                                    noResultsText: '找不到結果',
+                                    suggestedQueryText: '你可以嘗試查詢',
+                                    reportMissingResultsText: '認為應該有結果？',
+                                    reportMissingResultsLinkText: '點此回報'
+                                }
+                            }
+                        }
+                    }
+                },
+                footer: {
+                    message: 'AGPL-3.0 Licensed',
+                    copyright: 'Copyright © 2025 聖小熊'
+                },
+                socialLinks: [
+                    { icon: 'github', link: 'https://github.com/HolyBearTW' }
+                ]
+            },
+            en: {
+                logo: '/logo.png',
+                sidebar: {
+                    '/blog/': sidebarEn
+                },
+                lastUpdated: {
+                    text: 'Last updated',
+                    formatOptions: {
+                        dateStyle: 'short',
+                        timeStyle: 'short',
+                        timeZone: 'Asia/Taipei'
+                    }
+                },
+                search: {
+                    options: {
+                        // 不重複 key，只覆蓋必要的部分
                         placeholder: 'Search articles',
                         translations: {
                             button: {
@@ -177,7 +181,14 @@ export default defineConfig({
                             }
                         }
                     }
-                }
+                },
+                footer: {
+                    message: 'AGPL-3.0 Licensed',
+                    copyright: 'Copyright © 2025 HolyBear'
+                },
+                socialLinks: [
+                    { icon: 'github', link: 'https://github.com/HolyBearTW' }
+                ]
             }
         }
     },
