@@ -1,7 +1,6 @@
-import { defineConfig } from 'vitepress'
 import sidebar from '../sidebar.generated'
 
-export default defineConfig({
+export default {
   lang: 'zh-TW',
   description: '聖小熊的個人網站，收錄 HyperOS 模組、技術筆記與開發心得，專注於 Android 客製化與開源創作分享。',
   themeConfig: {
@@ -94,4 +93,4 @@ export default defineConfig({
       }
     }
   }
-})
+}
