@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitepress'
+import locales from './locales'
 import sidebar from './sidebar.generated'
 import sidebarEn from './sidebar.generated.en'
 import gitMetaPlugin from './git-meta.js'
@@ -19,16 +20,16 @@ export default defineConfig({
     locales: {
         root: {
             label: '繁體中文',
-            lang: 'zh-TW',
+            lang: locales.locales.root.lang,
             title: '聖小熊的秘密基地',
-            description: '聖小熊的個人網站，收錄 HyperOS 模組、技術筆記與開發心得，專注於 Android 客製化與開源創作分享。',
+            description: locales.locales.root.description,
             base: '/'
         },
         en: {
             label: 'English',
-            lang: 'en',
+            lang: locales.locales.en.lang,
             title: "HolyBear's Secret Base",
-            description: "HolyBear's personal site, featuring HyperOS modules, tech notes, and Android customization & open-source sharing.",
+            description: locales.locales.en.description,
             base: '/en/'
         }
     },
@@ -58,6 +59,7 @@ export default defineConfig({
     themeConfig: {
         locales: {
             root: {
+                ...locales.locales.root.themeConfig,
                 logo: '/logo.png',
                 sidebar: {
                     '/blog/': sidebar
@@ -126,6 +128,7 @@ export default defineConfig({
                 ]
             },
             en: {
+                ...locales.locales.en.themeConfig,
                 logo: '/logo.png',
                 sidebar: {
                     '/blog/': sidebarEn
@@ -140,7 +143,7 @@ export default defineConfig({
                 },
                 search: {
                     options: {
-                        // 不重複 key，只覆蓋必要的部分
+                        // 只覆蓋必要的部分
                         placeholder: 'Search articles',
                         translations: {
                             button: {
