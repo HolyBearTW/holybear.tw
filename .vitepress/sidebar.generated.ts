@@ -1,4 +1,4 @@
-// 本檔案由 generateSidebar.js 自動產生
+// 本檔案由 generateSidebar.cjs 自動產生
 export default [
   {
     "items": [
