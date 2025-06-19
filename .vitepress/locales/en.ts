@@ -1,13 +1,12 @@
-import { defineConfig } from 'vitepress'
 import sidebarEn from '../sidebar.generated.en'
 
-export default defineConfig({
+export default {
   lang: 'en',
   description: "HolyBear's personal site, featuring HyperOS modules, tech notes, and Android customization & open-source sharing.",
   themeConfig: {
     nav: [
-      { text: 'Blog', link: '/blog' },
-      { text: 'Portfolio', link: '/Mod' },
+      { text: 'Blog', link: '/en/blog/' },
+      { text: 'Portfolio', link: '/en/Mod/' },
       { text: 'Telegram', link: 'https://t.me/HolyBearTW' },
       { text: 'Donate', link: 'https://paypal.me/holybear0610' }
     ],
@@ -87,4 +86,4 @@ export default defineConfig({
       }
     }
   }
-})
+}
