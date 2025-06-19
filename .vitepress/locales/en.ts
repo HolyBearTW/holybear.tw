@@ -13,6 +13,12 @@ export default {
     sidebar: {
       '/en/blog/': sidebarEn
     },
+    sidebarMenuLabel: 'Sidebar',
+    returnToTopLabel: 'Return to top',
+    darkModeSwitchLabel: 'Dark mode',
+    outline: {
+      label: 'Outline'
+    },
     docFooter: {
       prev: 'Previous',
       next: 'Next'
@@ -25,11 +31,6 @@ export default {
         hour12: false
       }
     },
-    darkModeSwitchLabel: 'Dark mode',
-    returnToTopLabel: 'Return to top',
-    outline: {
-      label: 'Outline'
-    },
     editLink: {
       pattern: 'https://github.com/HolyBearTW/holybear.me/edit/main/:path',
       text: 'Edit this page on GitHub'
@@ -38,12 +39,15 @@ export default {
       message: 'AGPL-3.0 Licensed',
       copyright: 'Copyright © 2025 HolyBear'
     },
+    notFound: {
+      title: '404 - Page Not Found',
+      quote: "Looks like you're lost?",
+      linkLabel: 'Back to Home',
+      linkText: 'Return Home'
+    },
     search: {
       provider: 'algolia',
       options: {
-        appId: '5HHMMAZBPG',
-        apiKey: 'f7fbf2c65da0d43f1540496b9ae6f3c6',
-        indexName: 'holybear',
         placeholder: 'Search articles',
         translations: {
           button: {
