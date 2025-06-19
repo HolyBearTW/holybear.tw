@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "@algolia/autocomplete-js": "^1.19.2",
-    "@algolia/client-search": "^5.27.0",
+    "@algolia/client-search": "^5.29.0",
     "@docsearch/js": "3",
     "algoliasearch": "^5.28.0",
     "firebase": "^11.9.1",
