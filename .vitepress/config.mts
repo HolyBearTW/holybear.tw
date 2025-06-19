@@ -5,257 +5,174 @@ import sidebar from './sidebar.generated'
 import sidebarEn from './sidebar.generated.en'
 
 function getCurrentBranch() {
-  try {
-    return execSync('git rev-parse --abbrev-ref HEAD').toString().trim()
-  } catch (e) {
-    return ''
-  }
+    try {
+        return execSync('git rev-parse --abbrev-ref HEAD').toString().trim()
+    } catch (e) {
+        return ''
+    }
 }
 
 export default defineConfig({
-  ignoreDeadLinks: true,
-  title: '聖小熊的秘密基地',
-  base: '/',
-  locales: {
-    root: {
-      label: '繁體中文',
-      lang: 'zh-TW',
-      title: '聖小熊的秘密基地',
-      description: '聖小熊的個人網站，收錄 HyperOS 模組、技術筆記與開發心得，專注於 Android 客製化與開源創作分享。'
-    },
-    en: {
-      label: 'English',
-      lang: 'en',
-      title: "HolyBear's Secret Base",
-      description: "HolyBear's personal site, featuring HyperOS modules, tech notes, and Android customization & open-source sharing."
-    }
-  },
-  srcExclude: ['README.md'],
-  head: [
-    ['meta', { name: 'theme-color', content: '#00FFEE' }],
-    ['link', { rel: 'icon', href: '/favicon.ico' }],
-    ['link', { rel: 'apple-touch-icon', href: '/favicon.ico' }],
-    ['link', {
-      rel: 'stylesheet',
-      href: 'https://font.sec.miui.com/font/css?family=MiSans:200,300,400,450,500,600,650,700:Chinese_Simplify,Latin&display=swap'
-    }],
-    ['link', {
-      rel: 'stylesheet',
-      href: 'https://font.sec.miui.com/font/css?family=MiSans:200,300,400,450,500,600,650,700:Chinese_Traditional,Latin&display=swap'
-    }],
-    ['meta', { name: 'description', content: '聖小熊的個人網站，收錄 HyperOS 模組、技術筆記與開發心得，專注於 Android 客製化與開源創作分享。' }],
-    ['meta', { name: 'keywords', content: '聖小熊, HolyBear, HyperOS, 模組, Mod, MIUI, Android, GitHub, 技術部落格, Blog' }],
-    ['meta', { name: 'author', content: '聖小熊' }],
-    ['meta', { property: 'og:type', content: 'website' }],
-    ['meta', { property: 'og:url', content: 'https://holybear.me' }],
-    ['meta', { name: 'twitter:card', content: 'summary_large_image' }]
-  ],
-  vite: {
-    plugins: [gitMetaPlugin()]
-  },
-  themeConfig: {
+    ignoreDeadLinks: true,
+    title: '聖小熊的秘密基地', // fallback
+    base: '/',
     locales: {
-      root: {
+        root: {
+            label: '繁體中文',
+            lang: 'zh-TW',
+            title: '聖小熊的秘密基地',
+            description: '聖小熊的個人網站，收錄 HyperOS 模組、技術筆記與開發心得，專注於 Android 客製化與開源創作分享。'
+        },
+        en: {
+            label: 'English',
+            lang: 'en',
+            title: "HolyBear's Secret Base",
+            description: "HolyBear's personal site, featuring HyperOS modules, tech notes, and Android customization & open-source sharing."
+        }
+    },
+    srcExclude: ['README.md'],
+    head: [
+        ['meta', { name: 'theme-color', content: '#00FFEE' }],
+        ['link', { rel: 'icon', href: '/favicon.ico' }],
+        ['link', { rel: 'apple-touch-icon', href: '/favicon.ico' }],
+        ['link', {
+            rel: 'stylesheet',
+            href: 'https://font.sec.miui.com/font/css?family=MiSans:200,300,400,450,500,600,650,700:Chinese_Simplify,Latin&display=swap'
+        }],
+        ['link', {
+            rel: 'stylesheet',
+            href: 'https://font.sec.miui.com/font/css?family=MiSans:200,300,400,450,500,600,650,700:Chinese_Traditional,Latin&display=swap'
+        }],
+        ['meta', { name: 'description', content: '聖小熊的個人網站，收錄 HyperOS 模組、技術筆記與開發心得，專注於 Android 客製化與開源創作分享。' }],
+        ['meta', { name: 'keywords', content: '聖小熊, HolyBear, HyperOS, 模組, Mod, MIUI, Android, GitHub, 技術部落格, Blog' }],
+        ['meta', { name: 'author', content: '聖小熊' }],
+        ['meta', { property: 'og:type', content: 'website' }],
+        ['meta', { property: 'og:url', content: 'https://holybear.me' }],
+        ['meta', { name: 'twitter:card', content: 'summary_large_image' }]
+    ],
+    vite: {
+        plugins: [gitMetaPlugin()]
+    },
+    themeConfig: {
         logo: '/logo.png',
-        nav: [
-          { text: '日誌', link: '/blog/' },
-          { text: '作品集', link: '/Mod' },
-          { text: 'Telegram', link: 'https://t.me/HolyBearTW' },
-          { text: '贊助', link: 'https://paypal.me/holybear0610' },
-        ],
         sidebar: {
-          '/blog/': sidebar
+            '/blog/': sidebar,
+            '/en/blog/': sidebarEn
         },
         lastUpdated: {
-          text: '最後更新',
-          formatOptions: {
-            dateStyle: 'short',
-            timeStyle: 'short',
-            timeZone: 'Asia/Taipei'
-          }
+            text: '最後更新',
+            formatOptions: {
+                dateStyle: 'short',
+                timeStyle: 'short',
+                timeZone: 'Asia/Taipei'
+            }
         },
         search: {
-          provider: 'algolia',
-          options: {
-            appId: '5HHMMAZBPG',
-            apiKey: 'f7fbf2c65da0d43f1540496b9ae6f3c6',
-            indexName: 'holybear',
-            placeholder: '搜尋文章',
-            translations: {
-              button: {
-                buttonText: '搜尋',
-                buttonAriaLabel: '搜尋'
-              },
-              modal: {
-                searchBox: {
-                  resetButtonTitle: '清除搜尋條件',
-                  resetButtonAriaLabel: '清除搜尋條件',
-                  cancelButtonText: '取消',
-                  cancelButtonAriaLabel: '取消'
-                },
-                startScreen: {
-                  recentSearchesTitle: '最近搜尋',
-                  noRecentSearchesText: '沒有最近搜尋',
-                  saveRecentSearchButtonTitle: '儲存到最近搜尋',
-                  removeRecentSearchButtonTitle: '從最近搜尋中移除',
-                  favoriteSearchesTitle: '收藏',
-                  removeFavoriteSearchButtonTitle: '從收藏中移除'
-                },
-                errorScreen: {
-                  titleText: '無法取得結果',
-                  helpText: '請檢查你的網路連線'
-                },
-                footer: {
-                  selectText: '選擇',
-                  navigateText: '切換',
-                  closeText: '關閉',
-                  searchByText: '搜尋服務提供者：'
-                },
-                noResultsScreen: {
-                  noResultsText: '找不到結果',
-                  suggestedQueryText: '你可以嘗試查詢',
-                  reportMissingResultsText: '認為應該有結果？',
-                  reportMissingResultsLinkText: '點此回報'
+            provider: 'algolia',
+            options: {
+                appId: '5HHMMAZBPG',
+                apiKey: 'f7fbf2c65da0d43f1540496b9ae6f3c6',
+                indexName: 'holybear',
+                placeholder: '搜尋文章',
+                translations: {
+                    button: {
+                        buttonText: '搜尋',
+                        buttonAriaLabel: '搜尋'
+                    },
+                    modal: {
+                        searchBox: {
+                            resetButtonTitle: '清除搜尋條件',
+                            resetButtonAriaLabel: '清除搜尋條件',
+                            cancelButtonText: '取消',
+                            cancelButtonAriaLabel: '取消'
+                        },
+                        startScreen: {
+                            recentSearchesTitle: '最近搜尋',
+                            noRecentSearchesText: '沒有最近搜尋',
+                            saveRecentSearchButtonTitle: '儲存到最近搜尋',
+                            removeRecentSearchButtonTitle: '從最近搜尋中移除',
+                            favoriteSearchesTitle: '收藏',
+                            removeFavoriteSearchButtonTitle: '從收藏中移除'
+                        },
+                        errorScreen: {
+                            titleText: '無法取得結果',
+                            helpText: '請檢查你的網路連線'
+                        },
+                        footer: {
+                            selectText: '選擇',
+                            navigateText: '切換',
+                            closeText: '關閉',
+                            searchByText: '搜尋服務提供者：'
+                        },
+                        noResultsScreen: {
+                            noResultsText: '找不到結果',
+                            suggestedQueryText: '你可以嘗試查詢',
+                            reportMissingResultsText: '認為應該有結果？',
+                            reportMissingResultsLinkText: '點此回報'
+                        }
+                    }
                 }
-              }
             }
-          }
         },
         footer: {
-          message: 'AGPL-3.0 Licensed',
-          copyright: 'Copyright © 2025 聖小熊'
+            message: 'AGPL-3.0 Licensed',
+            copyright: 'Copyright © 2025 聖小熊'
         },
         socialLinks: [
-          { icon: 'github', link: 'https://github.com/HolyBearTW' }
+            { icon: 'github', link: 'https://github.com/HolyBearTW' }
         ]
-      },
-      en: {
-        logo: '/logo.png',
-        nav: [
-          { text: 'Blog', link: '/en/blog/' },
-          { text: 'Portfolio', link: '/en/Mod' },
-          { text: 'Telegram', link: 'https://t.me/HolyBearTW' },
-          { text: 'Donate', link: 'https://paypal.me/holybear0610' },
-        ],
-        sidebar: {
-          '/en/blog/': sidebarEn
-        },
-        lastUpdated: {
-          text: 'Last updated',
-          formatOptions: {
-            dateStyle: 'short',
-            timeStyle: 'short',
-            timeZone: 'Asia/Taipei'
-          }
-        },
-        search: {
-          provider: 'algolia',
-          options: {
-            appId: '5HHMMAZBPG',
-            apiKey: 'f7fbf2c65da0d43f1540496b9ae6f3c6',
-            indexName: 'holybear',
-            placeholder: 'Search articles',
-            translations: {
-              button: {
-                buttonText: 'Search',
-                buttonAriaLabel: 'Search'
-              },
-              modal: {
-                searchBox: {
-                  resetButtonTitle: 'Clear search',
-                  resetButtonAriaLabel: 'Clear search',
-                  cancelButtonText: 'Cancel',
-                  cancelButtonAriaLabel: 'Cancel'
-                },
-                startScreen: {
-                  recentSearchesTitle: 'Recent Searches',
-                  noRecentSearchesText: 'No recent searches',
-                  saveRecentSearchButtonTitle: 'Save to recent searches',
-                  removeRecentSearchButtonTitle: 'Remove from recent searches',
-                  favoriteSearchesTitle: 'Favorites',
-                  removeFavoriteSearchButtonTitle: 'Remove from favorites'
-                },
-                errorScreen: {
-                  titleText: 'Failed to fetch results',
-                  helpText: 'Please check your network connection'
-                },
-                footer: {
-                  selectText: 'Select',
-                  navigateText: 'Navigate',
-                  closeText: 'Close',
-                  searchByText: 'Search by:'
-                },
-                noResultsScreen: {
-                  noResultsText: 'No results found',
-                  suggestedQueryText: 'You can try searching for',
-                  reportMissingResultsText: 'Think there should be results?',
-                  reportMissingResultsLinkText: 'Let us know'
-                }
-              }
+    },
+    extendsPage(page) {
+        const branch = getCurrentBranch()
+        if (
+            (branch === 'main' || branch === 'master') &&
+            page.filePath &&
+            page.filePath.endsWith('.md') &&
+            !page.filePath.replaceAll('\\', '/').includes('/en/blog/')
+        ) {
+            try {
+                const log = execSync(
+                    `git log --diff-filter=A --follow --format=%aN,%aI -- "${page.filePath}" | tail -1`
+                ).toString().trim()
+                const [author, date] = log.split(',')
+                if (!page.frontmatter.author) page.frontmatter.author = author
+                if (!page.frontmatter.date) page.frontmatter.date = date
+
+                // 取得最後 commit 時間，供 sidebar 用
+                const lastUpdated = execSync(
+                    `git log -1 --format=%cI -- "${page.filePath}"`
+                ).toString().trim()
+                page.frontmatter.lastUpdated = lastUpdated
+            } catch (e) {
+                // 無 git 資訊略過
             }
-          }
-        },
-        footer: {
-          message: 'AGPL-3.0 Licensed',
-          copyright: 'Copyright © 2025 HolyBear'
-        },
-        socialLinks: [
-          { icon: 'github', link: 'https://github.com/HolyBearTW' }
-        ]
-      }
+        }
+
+        // 判斷是否是英文頁面（en/開頭）
+        const isEN = page.relativePath.startsWith('en/')
+
+        if (!page.frontmatter.head) page.frontmatter.head = []
+
+        if (isEN) {
+            // 英文頁面
+            page.frontmatter.head.push(['title', {}, "HolyBear's Secret Base"])
+            page.frontmatter.head.push(['meta', { property: 'og:title', content: "HolyBear's Secret Base" }])
+            page.frontmatter.head.push(['meta', { property: 'og:description', content: "HolyBear's personal site, featuring HyperOS modules, tech notes, and Android customization & open-source sharing." }])
+            page.frontmatter.head.push(['meta', { property: 'og:image', content: page.frontmatter.image || 'https://holybear.me/logo.png' }])
+        } else if (
+            page.relativePath === 'index.md' ||
+            page.relativePath === '/index.md' ||
+            page.relativePath === 'index/index.md' ||
+            page.relativePath === '/index/index.md'
+        ) {
+            // 中文首頁（根目錄或 /index 皆適用）
+            page.frontmatter.head.push(['title', {}, '聖小熊的秘密基地'])
+            page.frontmatter.head.push(['meta', { property: 'og:title', content: '聖小熊的秘密基地' }])
+            page.frontmatter.head.push(['meta', { property: 'og:description', content: '聖小熊的 HyperOS 模組與技術筆記分享網站。' }])
+            page.frontmatter.head.push(['meta', { property: 'og:image', content: page.frontmatter.image || 'https://holybear.me/logo.png' }])
+        } else if (page.frontmatter.image) {
+            // 其它有 image 的文章
+            page.frontmatter.head.push(['meta', { property: 'og:image', content: page.frontmatter.image }])
+        }
     }
-  },
-  extendsPage(page) {
-    const branch = getCurrentBranch()
-    if (
-      (branch === 'main' || branch === 'master') &&
-      page.filePath &&
-      page.filePath.endsWith('.md') &&
-      !page.filePath.replaceAll('\\', '/').includes('/en/blog/')
-    ) {
-      try {
-        const log = execSync(
-          `git log --diff-filter=A --follow --format=%aN,%aI -- "${page.filePath}" | tail -1`
-        ).toString().trim()
-        const [author, date] = log.split(',')
-        if (!page.frontmatter.author) page.frontmatter.author = author
-        if (!page.frontmatter.date) page.frontmatter.date = date
-
-        // 取得最後 commit 時間，供 sidebar 用
-        const lastUpdated = execSync(
-          `git log -1 --format=%cI -- "${page.filePath}"`
-        ).toString().trim()
-        page.frontmatter.lastUpdated = lastUpdated
-      } catch (e) {
-        // 無 git 資訊略過
-      }
-    }
-
-    // 判斷是否是英文頁面（en/開頭）
-    const isEN = page.relativePath.startsWith('en/')
-
-    if (!page.frontmatter.head) page.frontmatter.head = []
-
-    if (isEN) {
-      // 英文頁面
-      page.frontmatter.head.push(['title', {}, "HolyBear's Secret Base"])
-      page.frontmatter.head.push(['meta', { property: 'og:title', content: "HolyBear's Secret Base" }])
-      page.frontmatter.head.push(['meta', { property: 'og:description', content: "HolyBear's personal site, featuring HyperOS modules, tech notes, and Android customization & open-source sharing." }])
-      page.frontmatter.head.push(['meta', { property: 'og:image', content: page.frontmatter.image || 'https://holybear.me/logo.png' }])
-    } else if (
-      page.relativePath === 'index.md' ||
-      page.relativePath === '/index.md' ||
-      page.relativePath === 'index/index.md' ||
-      page.relativePath === '/index/index.md'
-    ) {
-      // 中文首頁（根目錄或 /index 皆適用）
-      page.frontmatter.head.push(['title', {}, '聖小熊的秘密基地'])
-      page.frontmatter.head.push(['meta', { property: 'og:title', content: '聖小熊的秘密基地' }])
-      page.frontmatter.head.push(['meta', { property: 'og:description', content: '聖小熊的 HyperOS 模組與技術筆記分享網站。' }])
-      page.frontmatter.head.push(['meta', { property: 'og:image', content: page.frontmatter.image || 'https://holybear.me/logo.png' }])
-    } else if (page.frontmatter.image) {
-      // 其它有 image 的文章
-      page.frontmatter.head.push(['meta', { property: 'og:image', content: page.frontmatter.image }])
-    }
-  }
 })
