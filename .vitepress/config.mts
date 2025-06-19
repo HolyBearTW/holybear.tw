@@ -1,5 +1,5 @@
 import { defineConfig } from 'vitepress'
-import locales from './locales' 
+import locales from './locales'
 import gitMetaPlugin from './git-meta.js'
 import { execSync } from 'child_process'
 import sidebar from './sidebar.generated'
@@ -43,68 +43,19 @@ export default defineConfig({
     themeConfig: {
         logo: '/logo.png',
         sidebar,
-        lastUpdated: {
-            text: '最後更新',
-            formatOptions: {
-                dateStyle: 'short',
-                timeStyle: 'short',
-                timeZone: 'Asia/Taipei'
-            }
-        },
+        socialLinks: [
+            { icon: 'github', link: 'https://github.com/HolyBearTW' }
+        ],
         search: {
             provider: 'algolia',
             options: {
                 appId: '5HHMMAZBPG',
                 apiKey: 'f7fbf2c65da0d43f1540496b9ae6f3c6',
-                indexName: 'holybear',
-                placeholder: '搜尋文章',
-                translations: {
-                    button: {
-                        buttonText: '搜尋',
-                        buttonAriaLabel: '搜尋'
-                    },
-                    modal: {
-                        searchBox: {
-                            resetButtonTitle: '清除搜尋條件',
-                            resetButtonAriaLabel: '清除搜尋條件',
-                            cancelButtonText: '取消',
-                            cancelButtonAriaLabel: '取消'
-                        },
-                        startScreen: {
-                            recentSearchesTitle: '最近搜尋',
-                            noRecentSearchesText: '沒有最近搜尋',
-                            saveRecentSearchButtonTitle: '儲存到最近搜尋',
-                            removeRecentSearchButtonTitle: '從最近搜尋中移除',
-                            favoriteSearchesTitle: '收藏',
-                            removeFavoriteSearchButtonTitle: '從收藏中移除'
-                        },
-                        errorScreen: {
-                            titleText: '無法取得結果',
-                            helpText: '請檢查你的網路連線'
-                        },
-                        footer: {
-                            selectText: '選擇',
-                            navigateText: '切換',
-                            closeText: '關閉',
-                            searchByText: '搜尋服務提供者：'
-                        },
-                        noResultsScreen: {
-                            noResultsText: '找不到結果',
-                            suggestedQueryText: '你可以嘗試查詢',
-                            reportMissingResultsText: '認為應該有結果？',
-                            reportMissingResultsLinkText: '點此回報'
-                        }
-                    }
-                }
+                indexName: 'holybear'
+                // 語系相關請寫在 locales/*.ts
             }
-        },
-        footer: {
-            message: 'AGPL-3.0 Licensed',
-            copyright: 'Copyright © 2025 聖小熊 & HolyBear'
-        },
-        socialLinks: [
-            { icon: 'github', link: 'https://github.com/HolyBearTW' }
-        ]
+        }
+        // 其它全語系共通設定可加在這，例如 outline、editLink 等
     },
     extendsPage(page) {
         const branch = getCurrentBranch()
