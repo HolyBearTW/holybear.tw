@@ -6,7 +6,7 @@ description: List of blog posts by Saint Little Bear
 
 <script setup>
 import { ref, computed } from 'vue'
-import { data as allPosts } from '../../.vitepress/theme/post.data.en.ts'
+import { data as allPosts } from '../../.vitepress/theme/en/post.data.ts'
 
 const postsWithDate = allPosts.filter(Boolean)
 
