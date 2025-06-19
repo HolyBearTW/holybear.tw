@@ -2,9 +2,6 @@ const fs = require('fs')
 const path = require('path')
 const matter = require('gray-matter')
 
-const BLOG_DIR = path.resolve(__dirname, '../../blog')
-const SIDEBAR_FILE = path.resolve(__dirname, '../sidebar.generated.ts')
-
 // yyyy-MM-dd 格式
 function toDateStr(input) {
     if (!input) return '1970-01-01'
@@ -30,13 +27,17 @@ function walk(dir) {
     return files
 }
 
-function toSidebar(files) {
+function toSidebar(files, baseDir) {
     let indexItem = null
     const postItems = []
 
     for (const file of files) {
-        const rel = path.relative(BLOG_DIR, file).replace(/\\/g, '/')
-        const link = '/blog/' + rel.replace(/\.md$/, '')
+        const rel = path.relative(baseDir, file).replace(/\\/g, '/')
+        // 決定 link prefix
+        let linkPrefix = '/blog/'
+        if (baseDir.endsWith('en/blog')) linkPrefix = '/en/blog/'
+
+        const link = linkPrefix + rel.replace(/\.md$/, '')
         const rawContent = fs.readFileSync(file, 'utf8')
         let title = null, listdate = null
 
@@ -47,7 +48,7 @@ function toSidebar(files) {
         } catch { }
 
         if (rel.toLowerCase() === 'index.md') {
-            indexItem = { text: '回文章列表', link }
+            indexItem = { text: linkPrefix === '/en/blog/' ? 'Back to blog list' : '回文章列表', link }
         } else {
             if (!title) title = decodeURIComponent(link.split('/').pop() || 'blog')
             if (!listdate) {
@@ -81,18 +82,30 @@ function toSidebar(files) {
     return sidebar
 }
 
-function main() {
-    if (!fs.existsSync(BLOG_DIR)) {
-        console.error('請確認 blog 目錄存在')
-        process.exit(1)
+function generateSidebarForBlog(blogDir, sidebarFile) {
+    if (!fs.existsSync(blogDir)) {
+        console.error('請確認 blog 目錄存在:', blogDir)
+        return
     }
-    const files = walk(BLOG_DIR)
-    const sidebar = toSidebar(files)
-    const code = `// 本檔案由 generateSidebar.js 自動產生
+    const files = walk(blogDir)
+    const sidebar = toSidebar(files, blogDir)
+    const code = `// 本檔案由 generateSidebar.cjs 自動產生
 export default ${JSON.stringify(sidebar, null, 2)}
 `
-    fs.writeFileSync(SIDEBAR_FILE, code)
-    console.log('sidebar 已產生:', SIDEBAR_FILE)
+    fs.writeFileSync(sidebarFile, code)
+    console.log('sidebar 已產生:', sidebarFile)
+}
+
+function main() {
+    // 中文 blog
+    const BLOG_DIR = path.resolve(__dirname, '../../blog')
+    const SIDEBAR_FILE = path.resolve(__dirname, '../sidebar.generated.ts')
+    generateSidebarForBlog(BLOG_DIR, SIDEBAR_FILE)
+
+    // 英文 blog
+    const EN_BLOG_DIR = path.resolve(__dirname, '../../en/blog')
+    const EN_SIDEBAR_FILE = path.resolve(__dirname, '../sidebar.generated.en.ts')
+    generateSidebarForBlog(EN_BLOG_DIR, EN_SIDEBAR_FILE)
 }
 
 main()
