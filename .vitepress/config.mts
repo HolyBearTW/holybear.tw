@@ -133,6 +133,50 @@ export default defineConfig({
                 footer: {
                     message: 'AGPL-3.0 Licensed',
                     copyright: 'Copyright © 2025 HolyBear'
+                },
+                search: {
+                    provider: 'algolia',
+                    options: {
+                        placeholder: 'Search articles',
+                        translations: {
+                            button: {
+                                buttonText: 'Search',
+                                buttonAriaLabel: 'Search'
+                            },
+                            modal: {
+                                searchBox: {
+                                    resetButtonTitle: 'Clear search',
+                                    resetButtonAriaLabel: 'Clear search',
+                                    cancelButtonText: 'Cancel',
+                                    cancelButtonAriaLabel: 'Cancel'
+                                },
+                                startScreen: {
+                                    recentSearchesTitle: 'Recent Searches',
+                                    noRecentSearchesText: 'No recent searches',
+                                    saveRecentSearchButtonTitle: 'Save to recent searches',
+                                    removeRecentSearchButtonTitle: 'Remove from recent searches',
+                                    favoriteSearchesTitle: 'Favorites',
+                                    removeFavoriteSearchButtonTitle: 'Remove from favorites'
+                                },
+                                errorScreen: {
+                                    titleText: 'Failed to fetch results',
+                                    helpText: 'Please check your network connection'
+                                },
+                                footer: {
+                                    selectText: 'Select',
+                                    navigateText: 'Navigate',
+                                    closeText: 'Close',
+                                    searchByText: 'Search by:'
+                                },
+                                noResultsScreen: {
+                                    noResultsText: 'No results found',
+                                    suggestedQueryText: 'You can try searching for',
+                                    reportMissingResultsText: 'Think there should be results?',
+                                    reportMissingResultsLinkText: 'Let us know'
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
