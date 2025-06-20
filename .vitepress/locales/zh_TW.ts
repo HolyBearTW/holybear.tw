@@ -36,7 +36,7 @@ export default {
       text: '在 GitHub 中編輯此頁'
     },
     footer: {
-      message: '以 AGPL-3.0 授權',
+      message: 'AGPL-3.0 Licensed',
       copyright: 'Copyright © 2025 聖小熊'
     },
     notFound: {
@@ -48,6 +48,9 @@ export default {
     search: {
       provider: 'algolia',
       options: {
+        appId: '5HHMMAZBPG',
+        apiKey: 'f7fbf2c65da0d43f1540496b9ae6f3c6',
+        indexName: 'holybear',
         placeholder: '搜尋文章',
         translations: {
           button: {
