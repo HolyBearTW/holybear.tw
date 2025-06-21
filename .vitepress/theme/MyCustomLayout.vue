@@ -12,6 +12,10 @@ const isHomePage = computed(() =>
   page.value && (page.value.path === '/' || page.value.path === '/index.html')
 )
 
+const isEnglish = computed(() =>
+  page.value?.path?.startsWith('/en/')
+)
+
 const currentTitle = computed(() =>
   frontmatter.value ? (frontmatter.value.title || '無標題文章') : 'frontmatter.value is UNDEFINED'
 )
@@ -56,7 +60,9 @@ const currentDisplayDate = computed(() => {
           >{{ t }}</span>
         </div>
         <p class="blog-post-date-in-content">
-          <template v-if="frontmatter.author">作者：{{ frontmatter.author }}</template>
+          <template v-if="frontmatter.author">
+            {{ isEnglish ? 'Author: ' : '作者：' }}{{ frontmatter.author }}
+          </template>
           <template v-if="frontmatter.author && currentDisplayDate">｜</template>
           <template v-if="currentDisplayDate">{{ currentDisplayDate }}</template>
           <span style="float:right;">
