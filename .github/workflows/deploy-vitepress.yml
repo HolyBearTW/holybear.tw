@@ -53,7 +53,7 @@ jobs:
       - name: 產生 authors.json 與 sidebar.generated.ts，並有變更時 commit & push
         run: |
           # 產生作者清單
-          node .vitepress/components/generate-authors.js
+          node .vitepress/components/generateAuthors.cjs
           # 產生側邊欄
           node .vitepress/components/generateSidebar.cjs
 
