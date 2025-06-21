@@ -1,12 +1,12 @@
 <script setup>
 import Theme from 'vitepress/theme'
 import { useData } from 'vitepress'
-import { computed, ref, onMounted } from 'vue'
+import { computed, ref, onMounted, watch } from 'vue'
 import GiscusComments from '../components/GiscusComments.vue'
 import VotePanel from '../components/VotePanel.vue'
 import ViewCounter from '../components/ViewCounter.vue'
 
-// ====== 你的原有資料相關 ======
+// ====== 原有資料相關 ======
 const { frontmatter, page, locale, lang } = useData()
 
 const isHomePage = computed(() =>
@@ -56,15 +56,55 @@ const currentIndex = ref(Math.floor(Math.random() * musicList.length))
 const currentSrc = ref(musicList[currentIndex.value].src)
 const currentMusicTitle = ref(musicList[currentIndex.value].title)
 
+const volume = ref(0.6) // 預設音量
+const VOLUME_KEY = 'holybear-bgm-volume'
+const PLAYING_KEY = 'holybear-bgm-playing'
+
+// 初始化音量和播放狀態
+onMounted(() => {
+    // 讀 localStorage 音量
+    const savedVolume = localStorage.getItem(VOLUME_KEY)
+    if (savedVolume !== null) {
+        volume.value = parseFloat(savedVolume)
+    }
+    // 讀 localStorage 播放狀態
+    const savedPlaying = localStorage.getItem(PLAYING_KEY)
+    if (savedPlaying === 'true') {
+        // 只要用戶點擊過頁面才自動播放，避免瀏覽器自動播放限制
+        document.body.addEventListener(
+            'click',
+            () => { playMusic() },
+            { once: true }
+        )
+    } else {
+        playing.value = false
+    }
+    // 套用音量
+    if (bgm.value) {
+        bgm.value.volume = volume.value
+    }
+})
+
+// 音量變動時觸發
+function onVolumeChange(val) {
+    if (bgm.value) bgm.value.volume = val
+    localStorage.setItem(VOLUME_KEY, val)
+}
+watch(volume, onVolumeChange)
+
+// 切歌、播放、暫停
 function playMusic() {
     if (!bgm.value) return
+    bgm.value.volume = volume.value
     bgm.value.play()
     playing.value = true
+    localStorage.setItem(PLAYING_KEY, 'true')
 }
 function pauseMusic() {
     if (!bgm.value) return
     bgm.value.pause()
     playing.value = false
+    localStorage.setItem(PLAYING_KEY, 'false')
 }
 function toggleBgm() {
     if (playing.value) pauseMusic()
@@ -80,13 +120,6 @@ function nextRandom() {
     currentMusicTitle.value = musicList[next].title
     setTimeout(playMusic, 150)
 }
-onMounted(() => {
-    document.body.addEventListener(
-        'click',
-        () => { if (!playing.value) playMusic() },
-        { once: true }
-    )
-})
 </script>
 
 <template>
@@ -97,6 +130,19 @@ onMounted(() => {
         </button>
         <span style="margin:0 6px;">🎵 {{ currentMusicTitle }}</span>
         <button @click="nextRandom">⏭ 下一首</button>
+        <!-- 只剩左側一個動態 emoji -->
+        <span style="margin-left:8px;">
+            <template v-if="volume === 0">🔇</template>
+            <template v-else-if="volume < 0.33">🔈</template>
+            <template v-else-if="volume < 0.7">🔉</template>
+            <template v-else>🔊</template>
+        </span>
+        <input type="range"
+               min="0" max="1" step="0.01"
+               v-model.number="volume"
+               style="width:70px;vertical-align:middle;margin:0 5px;"
+               :title="`音量：${Math.round(volume*100)}%`"
+        />
         <audio ref="bgm" :src="currentSrc" @ended="nextRandom" preload="auto"></audio>
     </div>
     <Theme.Layout>
