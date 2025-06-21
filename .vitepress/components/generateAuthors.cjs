@@ -24,29 +24,39 @@ function getAllMarkdownFiles(dir, arr = []) {
   return arr;
 }
 
+// 這個 function 控制「跳過」哪些文章
+function shouldSkip(data) {
+  return (
+    (typeof data.title === 'string' && data.title.includes('Blog Not Supported in English')) ||
+    (typeof data.description === 'string' && data.description.includes('Blog Not Supported in English'))
+  );
+}
+
 for (const { dir, urlPrefix } of ROOTS) {
   getAllMarkdownFiles(dir).forEach((mdPath) => {
     try {
-      // 1. 讀 frontmatter author
       const content = fs.readFileSync(mdPath, 'utf8');
       const { data } = matter(content);
+
+      // 跳過 placeholder 文章
+      if (shouldSkip(data)) return;
+
       let author = data.author;
 
-      // 2. 沒有 frontmatter author，就用 git log 作者
       if (!author) {
         const relativePath = path.relative(process.cwd(), mdPath);
-        const authors = execSync(
-          `git log --diff-filter=A --format="%an" -- "${relativePath}"`
-        ).toString().trim().split('\n');
-        author = authors[authors.length - 1] || '';
+        try {
+          const authors = execSync(
+            `git log --diff-filter=A --format="%an" -- "${relativePath}"`
+          ).toString().trim().split('\n');
+          author = authors[authors.length - 1] || '';
+        } catch {}
       }
 
-      // 3. 都沒有，就根據語言給預設值
       if (!author) {
         author = urlPrefix === '/en/blog/' ? 'System Administrator' : '系統管理員';
       }
 
-      // 4. 對應 VitePress URL（不含.md）
       const url =
         urlPrefix +
         path
@@ -54,19 +64,22 @@ for (const { dir, urlPrefix } of ROOTS) {
           .replace(/\\/g, '/')
           .replace(/\.md$/, '');
 
-      // === 這裡加 log: ===
-      console.log(`產生作者對應：url=${url}，author=${author}，md檔=${mdPath}`);
-
       authorMap[url] = author;
     } catch (e) {
-      // 你也可以印出錯誤
-      // console.error(`處理 ${mdPath} 時發生錯誤:`, e);
+      // 靜默失敗
     }
   });
 }
 
-fs.writeFileSync(
-  path.join(__dirname, '../theme/authors.json'),
-  JSON.stringify(authorMap, null, 2)
-);
-console.log('authors.json generated');
+// 只有有變動才寫入 authors.json
+const targetFile = path.join(__dirname, '../theme/authors.json');
+let needWrite = true;
+if (fs.existsSync(targetFile)) {
+  const prev = fs.readFileSync(targetFile, 'utf8');
+  const prevObj = JSON.stringify(JSON.parse(prev));
+  const nextObj = JSON.stringify(authorMap, null, 2);
+  if (prevObj === nextObj) needWrite = false;
+}
+if (needWrite) {
+  fs.writeFileSync(targetFile, JSON.stringify(authorMap, null, 2));
+}
