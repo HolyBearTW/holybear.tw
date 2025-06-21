@@ -278,5 +278,16 @@ const pageNumbers = computed(() => {
     font-size: 0.92rem;
     -webkit-line-clamp: 2;
   }
+  .post-title-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.15em;
+  }
+  .post-title {
+    white-space: normal;
+    word-break: break-word;
+    margin-top: 0.1em;
+    margin-bottom: 0.2em !important;
+  }
 }
 </style>
