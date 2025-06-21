@@ -65,7 +65,7 @@ const pageNumbers = computed(() => {
             <h2 class="post-title">{{ post.title }}</h2>
           </div>
           <p class="post-meta">
-  Author: {{ post.author }}｜{{ formatDateExactlyLikePostPage(post.date) }}
+  by {{ post.author }}｜{{ formatDateExactlyLikePostPage(post.date) }}
 </p>
           <div v-if="post.excerpt" class="post-excerpt" v-html="post.excerpt"></div>
           <span class="read-more">Read More &gt;</span> </div>
