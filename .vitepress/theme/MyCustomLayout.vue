@@ -18,10 +18,12 @@ const isEnglish = computed(() =>
   (page?.value?.path?.startsWith('/en/'))
 )
 
-const authorPrefix = computed(() => isEnglish.value ? 'Author: ' : '作者：')
+const authorPrefix = computed(() => isEnglish.value ? 'by ' : '作者：')
 
 const currentTitle = computed(() =>
-  frontmatter.value ? (frontmatter.value.title || '無標題文章') : 'frontmatter.value is UNDEFINED'
+  frontmatter.value
+    ? (frontmatter.value.title || (isEnglish.value ? 'Unknown post title' : '無標題文章'))
+    : (isEnglish.value ? 'Unknown post data' : '文章元素未定義')
 )
 
 const currentSlug = computed(() =>
