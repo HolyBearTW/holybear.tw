@@ -6,8 +6,7 @@ import GiscusComments from '../components/GiscusComments.vue'
 import VotePanel from '../components/VotePanel.vue'
 import ViewCounter from '../components/ViewCounter.vue'
 
-const { frontmatter, page } = useData()
-const { frontmatter, locale } = useData()
+const { frontmatter, page, locale } = useData()
 
 const isHomePage = computed(() =>
   page.value && (page.value.path === '/' || page.value.path === '/index.html')
