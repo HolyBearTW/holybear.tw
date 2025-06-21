@@ -6,7 +6,6 @@ import GiscusComments from '../components/GiscusComments.vue'
 import VotePanel from '../components/VotePanel.vue'
 import ViewCounter from '../components/ViewCounter.vue'
 
-// ====== 原有資料相關 ======
 const { frontmatter, page, locale, lang } = useData()
 
 const isHomePage = computed(() =>
@@ -48,7 +47,7 @@ const currentDisplayDate = computed(() => {
 // ====== 音樂播放器區塊 ======
 const musicList = [
     { src: '/music/MapleStory_VictoriaCupDay.mp3', title: '楓之谷 - 維多利亞盃' },
-    // 可再加更多歌曲
+    // ... 可再加更多歌曲
 ]
 const bgm = ref(null)
 const playing = ref(false)
@@ -56,12 +55,22 @@ const currentIndex = ref(Math.floor(Math.random() * musicList.length))
 const currentSrc = ref(musicList[currentIndex.value].src)
 const currentMusicTitle = ref(musicList[currentIndex.value].title)
 
-const volume = ref(0.6) // 預設音量
+const volume = ref(0.6)
 const VOLUME_KEY = 'holybear-bgm-volume'
 const PLAYING_KEY = 'holybear-bgm-playing'
+const DESKTOP_OPEN_KEY = 'holybear-bgm-desktop-open'
 
-// 初始化音量和播放狀態
+const isMobile = ref(false)
+const mobilePlayerOpen = ref(false)
+const desktopPlayerOpen = ref(true)
+
+function checkMobile() {
+    isMobile.value = window.innerWidth <= 640
+}
 onMounted(() => {
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+
     // 讀 localStorage 音量
     const savedVolume = localStorage.getItem(VOLUME_KEY)
     if (savedVolume !== null) {
@@ -70,7 +79,6 @@ onMounted(() => {
     // 讀 localStorage 播放狀態
     const savedPlaying = localStorage.getItem(PLAYING_KEY)
     if (savedPlaying === 'true') {
-        // 只要用戶點擊過頁面才自動播放，避免瀏覽器自動播放限制
         document.body.addEventListener(
             'click',
             () => { playMusic() },
@@ -79,20 +87,23 @@ onMounted(() => {
     } else {
         playing.value = false
     }
+    // 讀 localStorage 桌機收合狀態
+    const savedDesktopOpen = localStorage.getItem(DESKTOP_OPEN_KEY)
+    if (savedDesktopOpen !== null) {
+        desktopPlayerOpen.value = savedDesktopOpen === 'true'
+    }
     // 套用音量
     if (bgm.value) {
         bgm.value.volume = volume.value
     }
 })
 
-// 音量變動時觸發
 function onVolumeChange(val) {
     if (bgm.value) bgm.value.volume = val
     localStorage.setItem(VOLUME_KEY, val)
 }
 watch(volume, onVolumeChange)
 
-// 切歌、播放、暫停
 function playMusic() {
     if (!bgm.value) return
     bgm.value.volume = volume.value
@@ -120,17 +131,47 @@ function nextRandom() {
     currentMusicTitle.value = musicList[next].title
     setTimeout(playMusic, 150)
 }
+function toggleMobilePlayer() {
+    mobilePlayerOpen.value = !mobilePlayerOpen.value
+}
+function toggleDesktopPlayer() {
+    desktopPlayerOpen.value = !desktopPlayerOpen.value
+    localStorage.setItem(DESKTOP_OPEN_KEY, desktopPlayerOpen.value)
+}
 </script>
 
 <template>
-    <!-- 🎵 音樂播放器放在 Theme.Layout 外，確保不會被吃掉 -->
-    <div v-if="!isHomePage" class="my-bgm-player">
-        <button @click="toggleBgm">
+    <!-- audio 標籤永遠存在，這樣收合時音樂不會中斷！ -->
+    <audio ref="bgm" :src="currentSrc" @ended="nextRandom" preload="auto"></audio>
+
+    <!-- 手機浮動按鈕 -->
+    <div
+        v-if="!isHomePage && isMobile"
+        class="my-bgm-mobile-fab"
+        :class="{ open: mobilePlayerOpen }"
+        @click="toggleMobilePlayer"
+        aria-label="展開音樂播放器"
+    >
+        <template v-if="!mobilePlayerOpen">
+            <span>
+                <template v-if="volume === 0">🔇</template>
+                <template v-else-if="volume < 0.33">🔈</template>
+                <template v-else-if="volume < 0.7">🔉</template>
+                <template v-else>🔊</template>
+            </span>
+        </template>
+    </div>
+    <!-- 手機展開播放器 -->
+    <div
+        v-if="!isHomePage && isMobile && mobilePlayerOpen"
+        class="my-bgm-player my-bgm-player-mobile"
+        @click.stop
+    >
+        <button @click.stop="toggleBgm">
             {{ playing ? "⏸ 暫停" : "▶️ 播放" }}
         </button>
         <span style="margin:0 6px;">🎵 {{ currentMusicTitle }}</span>
-        <button @click="nextRandom">⏭ 下一首</button>
-        <!-- 只剩左側一個動態 emoji -->
+        <button @click.stop="nextRandom">⏭ 下一首</button>
         <span style="margin-left:8px;">
             <template v-if="volume === 0">🔇</template>
             <template v-else-if="volume < 0.33">🔈</template>
@@ -142,8 +183,50 @@ function nextRandom() {
                v-model.number="volume"
                style="width:70px;vertical-align:middle;margin:0 5px;"
                :title="`音量：${Math.round(volume*100)}%`"
+               @click.stop
         />
-        <audio ref="bgm" :src="currentSrc" @ended="nextRandom" preload="auto"></audio>
+        <button
+            class="my-bgm-close"
+            @click.stop="mobilePlayerOpen = false"
+            aria-label="收合播放器"
+            style="margin-left:6px;"
+        >✖️</button>
+    </div>
+    <!-- 桌機版播放器（可記憶收合） -->
+    <div v-if="!isHomePage && !isMobile">
+        <div v-if="desktopPlayerOpen" class="my-bgm-player">
+            <button @click="toggleBgm">
+                {{ playing ? "⏸ 暫停" : "▶️ 播放" }}
+            </button>
+            <span style="margin:0 6px;">🎵 {{ currentMusicTitle }}</span>
+            <button @click="nextRandom">⏭ 下一首</button>
+            <span style="margin-left:8px;">
+                <template v-if="volume === 0">🔇</template>
+                <template v-else-if="volume < 0.33">🔈</template>
+                <template v-else-if="volume < 0.7">🔉</template>
+                <template v-else>🔊</template>
+            </span>
+            <input type="range"
+                   min="0" max="1" step="0.01"
+                   v-model.number="volume"
+                   style="width:70px;vertical-align:middle;margin:0 5px;"
+                   :title="`音量：${Math.round(volume*100)}%`"
+            />
+            <button
+                class="my-bgm-close"
+                @click="toggleDesktopPlayer"
+                aria-label="收合播放器"
+                style="margin-left:6px;"
+            >➖</button>
+        </div>
+        <div
+            v-else
+            class="my-bgm-desktop-fab"
+            @click="toggleDesktopPlayer"
+            aria-label="展開播放器"
+        >
+            <span>🎵</span>
+        </div>
     </div>
     <Theme.Layout>
         <!-- ===== 你的現有內容 ===== -->
@@ -186,7 +269,8 @@ function nextRandom() {
 </template>
 
 <style scoped>
-.my-bgm-player {
+.my-bgm-player,
+.my-bgm-player-mobile {
     position: fixed;
     bottom: 24px;
     right: 24px;
@@ -201,8 +285,31 @@ function nextRandom() {
     display: flex;
     align-items: center;
     gap: 0.5em;
+    transition: box-shadow .2s, transform .2s;
 }
-.my-bgm-player button {
+.my-bgm-player-mobile {
+    width: 95vw;
+    left: 2.5vw;
+    right: 2.5vw;
+    min-width: 0;
+    max-width: 99vw;
+    font-size: 1em;
+    padding: 10px 8px 10px 8px;
+    justify-content: flex-start;
+}
+.my-bgm-close {
+    background: transparent;
+    border: none;
+    font-size: 1.2em;
+    color: var(--vp-c-text-2);
+    cursor: pointer;
+    transition: color .2s;
+}
+.my-bgm-close:hover {
+    color: var(--vp-c-text-1);
+}
+.my-bgm-player button,
+.my-bgm-player-mobile button {
     color: var(--vp-c-text-1);
     background: transparent;
     border: none;
@@ -212,15 +319,53 @@ function nextRandom() {
     border-radius: 4px;
     transition: background 0.2s;
 }
-.my-bgm-player button:hover {
+.my-bgm-player button:hover,
+.my-bgm-player-mobile button:hover {
     background: var(--vp-c-text-2, #eee);
 }
-.my-bgm-player span {
+.my-bgm-player span,
+.my-bgm-player-mobile span {
     font-weight: bold;
+}
+.my-bgm-mobile-fab,
+.my-bgm-desktop-fab {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 10000;
+    width: 48px;
+    height: 48px;
+    background: var(--vp-c-bg);
+    color: var(--vp-c-text-1);
+    border-radius: 50%;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2em;
+    cursor: pointer;
+    user-select: none;
+    border: 1px solid var(--vp-c-divider);
+    transition: box-shadow .2s, transform .2s;
+}
+.my-bgm-mobile-fab:active,
+.my-bgm-desktop-fab:active {
+    box-shadow: 0 2px 16px rgba(0,0,0,0.24);
+    transform: scale(0.97);
+}
+.my-bgm-mobile-fab.open {
+    display: none;
+}
+@media (max-width: 640px) {
+    .my-bgm-player {
+        display: none !important;
+    }
+    .my-bgm-desktop-fab {
+        display: none !important;
+    }
 }
 </style>
 
-<!-- 你的其他 CSS 保持不變 -->
 <style scoped>
     :deep(.vp-doc h1:first-of-type) {
         display: none !important;
@@ -336,13 +481,11 @@ function nextRandom() {
 </style>
 
 <style>
-    /* ==== VitePress Sidebar 分組間距適中（有分隔線＋一點點間距）==== */
     .group + .group[data-v-a84b7c21] {
         border-top: 1px solid var(--vp-c-divider) !important;
         padding-top: 8px !important;
         margin-top: 8px !important;
     }
-
     section.VPSidebarItem.level-0 {
         padding-bottom: 4px !important;
         padding-top: 0 !important;
