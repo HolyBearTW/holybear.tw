@@ -13,7 +13,7 @@ const isHomePage = computed(() =>
 )
 
 const isEnglish = computed(() =>
-  (locale?.value === 'en') || (page?.value?.path?.startsWith('/en/'))
+  (locale?.value === 'en') || (page?.value?.path?.startsWith('/en/blog'))
 )
 
 const currentTitle = computed(() =>
