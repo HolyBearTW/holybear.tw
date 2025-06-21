@@ -9,6 +9,7 @@ const ROOTS = [
 ];
 
 const authorMap = {};
+const logAddAuthors = []; // for logging
 
 function getAllMarkdownFiles(dir, arr = []) {
   if (!fs.existsSync(dir)) return arr;
@@ -24,11 +25,12 @@ function getAllMarkdownFiles(dir, arr = []) {
   return arr;
 }
 
-// 這個 function 控制「跳過」哪些文章
-function shouldSkip(data) {
+function shouldSkip({ title, description }, url) {
+  // 跳過 placeholder 或 index 頁
   return (
-    (typeof data.title === 'string' && data.title.includes('Blog Not Supported in English')) ||
-    (typeof data.description === 'string' && data.description.includes('Blog Not Supported in English'))
+    (typeof title === 'string' && title.includes('Blog Not Supported in English')) ||
+    (typeof description === 'string' && description.includes('Blog Not Supported in English')) ||
+    url.endsWith('/index')
   );
 }
 
@@ -38,8 +40,15 @@ for (const { dir, urlPrefix } of ROOTS) {
       const content = fs.readFileSync(mdPath, 'utf8');
       const { data } = matter(content);
 
-      // 跳過 placeholder 文章
-      if (shouldSkip(data)) return;
+      const url =
+        urlPrefix +
+        path
+          .relative(dir, mdPath)
+          .replace(/\\/g, '/')
+          .replace(/\.md$/, '');
+
+      // 跳過 placeholder 文章與 index
+      if (shouldSkip(data, url)) return;
 
       let author = data.author;
 
@@ -57,14 +66,8 @@ for (const { dir, urlPrefix } of ROOTS) {
         author = urlPrefix === '/en/blog/' ? 'System Administrator' : '系統管理員';
       }
 
-      const url =
-        urlPrefix +
-        path
-          .relative(dir, mdPath)
-          .replace(/\\/g, '/')
-          .replace(/\.md$/, '');
-
       authorMap[url] = author;
+      logAddAuthors.push({ url, author, mdPath });
     } catch (e) {
       // 靜默失敗
     }
@@ -74,12 +77,34 @@ for (const { dir, urlPrefix } of ROOTS) {
 // 只有有變動才寫入 authors.json
 const targetFile = path.join(__dirname, '../theme/authors.json');
 let needWrite = true;
+let addedLogs = [];
 if (fs.existsSync(targetFile)) {
   const prev = fs.readFileSync(targetFile, 'utf8');
-  const prevObj = JSON.stringify(JSON.parse(prev));
-  const nextObj = JSON.stringify(authorMap, null, 2);
-  if (prevObj === nextObj) needWrite = false;
+  const prevObj = JSON.parse(prev);
+  const nextObj = authorMap;
+
+  // 收集新加的 key（不在舊檔中）
+  const newKeys = Object.keys(nextObj).filter(url => !(url in prevObj));
+  // 新增的文章才 log
+  addedLogs = logAddAuthors.filter(item => newKeys.includes(item.url));
+
+  // 比較內容
+  const prevStr = JSON.stringify(prevObj, null, 2);
+  const nextStr = JSON.stringify(nextObj, null, 2);
+  if (prevStr === nextStr) needWrite = false;
+} else {
+  // 完全新產生，全部 log
+  addedLogs = logAddAuthors;
 }
+
 if (needWrite) {
   fs.writeFileSync(targetFile, JSON.stringify(authorMap, null, 2));
+  if (addedLogs.length > 0) {
+    console.log(`本次成功提交 ${addedLogs.length} 筆：`);
+    addedLogs.forEach(item => {
+      console.log(`${item.mdPath.replace(process.cwd()+'/', '')} 文章作者：${item.author}`);
+    });
+  }
+} else {
+  console.log('沒有自動產生檔案變更，無需提交');
 }
