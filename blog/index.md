@@ -1,5 +1,4 @@
 ---
-layout: home
 title: 部落格文章
 description: 聖小熊的部落格文章列表
 ---
