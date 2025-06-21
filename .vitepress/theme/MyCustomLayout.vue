@@ -61,7 +61,7 @@ const currentDisplayDate = computed(() => {
         </div>
         <p class="blog-post-date-in-content">
           <template v-if="frontmatter.author">
-            {{ isEnglish ? 'Author: ' : '作者：' }}{{ frontmatter.author }}
+            {{ isEnglish ? 'Author: ' : 'Author: ' }}{{ frontmatter.author }}
           </template>
           <template v-if="frontmatter.author && currentDisplayDate">｜</template>
           <template v-if="currentDisplayDate">{{ currentDisplayDate }}</template>
