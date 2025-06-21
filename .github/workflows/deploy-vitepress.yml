@@ -50,22 +50,21 @@ jobs:
       - name: 安裝相依套件
         run: yarn install
 
-      - name: 產生 authors.json 與 sidebar.generated.ts，並有變更時 commit & push
-        run: |
-          # 產生作者清單
-          node .vitepress/components/generateAuthors.cjs
-          # 產生側邊欄
-          node .vitepress/components/generateSidebar.cjs
+      - name: 產生作者清單
+        run: node .vitepress/components/generateAuthors.cjs
 
+      - name: 產生側邊欄
+        run: node .vitepress/components/generateSidebar.cjs
+
+      - name: commit & push（如有變更）
+        run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          # 一次加入所有自動產生的檔案
           git add .vitepress/theme/authors.json .vitepress/sidebar.generated.ts .vitepress/sidebar.generated.en.ts
-
           if git diff --cached --quiet; then
             echo "沒有自動產生檔案變更，無需提交"
           else
-            git commit -m "chore: 自動產生側邊欄與作者清單"
+            git commit -m "chore: 自動產生作者清單與側邊欄"
             git pull --rebase origin main
             git push
           fi
