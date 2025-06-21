@@ -13,7 +13,7 @@ export default {
     sidebar: {
       '/blog/': sidebar
     },
-    sidebarMenuLabel: '側邊欄選單',
+    sidebarMenuLabel: '日誌列表',
     returnToTopLabel: '回到頂部',
     darkModeSwitchLabel: '深色模式',
     outline: {
