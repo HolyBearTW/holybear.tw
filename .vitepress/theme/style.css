@@ -7,7 +7,12 @@
 body {
   cursor: url('/MapleStory_cursor.png'), auto;
 }
-a, button, [role="button"], .btn {
+a, button, [role="button"], .btn,
+.VPSidebar .text,
+.VPSidebarItem .text,
+.VPSidebarLink,
+.VPSidebar .VPSidebarItem .link,
+.VPSidebar .VPSidebarItem .text {
   cursor: url('/MapleStory_cursor.png'), auto !important;
 }
 
