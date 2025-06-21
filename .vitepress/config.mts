@@ -14,6 +14,7 @@ function getCurrentBranch() {
 
 export default defineConfig({
     ignoreDeadLinks: true,
+    appearance: 'dark',
     title: '聖小熊的秘密基地',
     base: '/',
     locales: locales.locales,
