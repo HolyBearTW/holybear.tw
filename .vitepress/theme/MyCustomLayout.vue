@@ -12,7 +12,9 @@ const isHomePage = computed(() =>
   page.value && (page.value.path === '/' || page.value.path === '/index.html')
 )
 
-const isEnglish = computed(() => (locale?.value ?? '') === 'en')
+const isEnglish = computed(() =>
+  locale.value === 'en' || page.value?.path?.startsWith('/en/')
+)
 
 const currentTitle = computed(() =>
   frontmatter.value ? (frontmatter.value.title || '無標題文章') : 'frontmatter.value is UNDEFINED'
