@@ -40,7 +40,7 @@ export default {
       copyright: 'Copyright © 2025 聖小熊'
     },
     notFound: {
-      title: '404 - 找不到頁面',
+      title: '找不到頁面',
       quote: '你是不是迷路了？',
       linkLabel: '回到首頁',
       linkText: '返回首頁'
@@ -48,9 +48,6 @@ export default {
     search: {
       provider: 'algolia',
       options: {
-        appId: '5HHMMAZBPG',
-        apiKey: 'f7fbf2c65da0d43f1540496b9ae6f3c6',
-        indexName: 'holybear',
         placeholder: '搜尋文章',
         translations: {
           button: {
