@@ -6,15 +6,19 @@ import GiscusComments from '../components/GiscusComments.vue'
 import VotePanel from '../components/VotePanel.vue'
 import ViewCounter from '../components/ViewCounter.vue'
 
-const { frontmatter, page, locale } = useData()
+const { frontmatter, page, locale, lang } = useData()
 
 const isHomePage = computed(() =>
   page.value && (page.value.path === '/' || page.value.path === '/index.html')
 )
 
 const isEnglish = computed(() =>
-  (locale?.value === 'en') || (page?.value?.path?.startsWith('/en/blog'))
+  (lang?.value?.startsWith('en')) ||
+  (locale?.value === 'en') ||
+  (page?.value?.path?.startsWith('/en/'))
 )
+
+const authorPrefix = computed(() => isEnglish.value ? 'Author: ' : '作者：')
 
 const currentTitle = computed(() =>
   frontmatter.value ? (frontmatter.value.title || '無標題文章') : 'frontmatter.value is UNDEFINED'
@@ -60,9 +64,7 @@ const currentDisplayDate = computed(() => {
           >{{ t }}</span>
         </div>
         <p class="blog-post-date-in-content">
-          <template v-if="frontmatter.author">
-            {{ isEnglish ? 'Author: ' : 'Author: ' }}{{ frontmatter.author }}
-          </template>
+          <span v-if="frontmatter.author">{{ authorPrefix }}{{ frontmatter.author }}</span>
           <template v-if="frontmatter.author && currentDisplayDate">｜</template>
           <template v-if="currentDisplayDate">{{ currentDisplayDate }}</template>
           <span style="float:right;">
