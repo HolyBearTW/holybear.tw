@@ -13,7 +13,7 @@ export default {
     sidebar: {
       '/en/blog/': sidebarEn
     },
-    sidebarMenuLabel: 'Sidebar',
+    sidebarMenuLabel: 'Blog List',
     returnToTopLabel: 'Return to top',
     darkModeSwitchLabel: 'Dark mode',
     outline: {
