@@ -3,6 +3,14 @@
  * https://github.com/vuejs/vitepress/blob/main/src/client/theme-default/styles/vars.css
  */
 
+/* 網站游標 */
+body {
+  cursor: url('/MapleStory_cursor.png'), auto;
+}
+a, button, [role="button"], .btn {
+  cursor: url('/MapleStory_cursor.png'), auto !important;
+}
+
 /**
  * Colors
  * -------------------------------------------------------------------------- */
@@ -410,9 +418,4 @@ html {
 }
 .vp-doc.fade-in-up {
   animation: fadeInUp 0.6s cubic-bezier(0.4,0,0.2,1);
-}
-
-/* 網站游標 */
-body {
-  cursor: url('/MapleStory_cursor.png'), auto;
 }
