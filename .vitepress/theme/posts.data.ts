@@ -1,4 +1,5 @@
 import { createContentLoader } from 'vitepress';
+import authors from './authors.json';
 const DEFAULT_IMAGE = '/blog_no_image.svg';
 
 function extractDate(frontmatter) {
@@ -9,6 +10,14 @@ function extractDate(frontmatter) {
     frontmatter.publishDate ||
     ''
   );
+}
+
+// 改良版 normalizeUrl：把 .html、/index.html、/ 都正規化成 authors.json 的 key
+function normalizeUrl(url) {
+  if (url.endsWith('/index.html')) return url.replace(/\/index\.html$/, '');
+  if (url.endsWith('.html')) return url.replace(/\.html$/, '');
+  if (url.endsWith('/')) return url.slice(0, -1);
+  return url;
 }
 
 export default createContentLoader('blog/**/*.md', {
@@ -46,6 +55,10 @@ export default createContentLoader('blog/**/*.md', {
           summary = lines.find(line => line && !line.startsWith('#') && !line.startsWith('![') && !line.startsWith('>')) || '';
         }
 
+        // 用正規化過的 url 查作者
+        const normalizedUrl = normalizeUrl(url);
+        const author = authors[normalizedUrl] || '未知作者';
+
         return {
           url,
           frontmatter,
@@ -58,6 +71,7 @@ export default createContentLoader('blog/**/*.md', {
           image: imageUrl,
           summary,
           excerpt: summary,
+          author,
         };
       })
       .filter(post => !!post && typeof post.url === 'string' && !!post.url)

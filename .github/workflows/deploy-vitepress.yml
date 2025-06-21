@@ -50,18 +50,22 @@ jobs:
       - name: 安裝相依套件
         run: yarn install
 
-      - name: 產生 sidebar.generated.ts
-        run: node .vitepress/components/generateSidebar.cjs
-
-      - name: Commit 並 push sidebar.generated.ts（如有變更）
+      - name: 產生 authors.json 與 sidebar.generated.ts，並有變更時 commit & push
         run: |
+          # 產生作者清單
+          node .vitepress/components/generate-authors.js
+          # 產生側邊欄
+          node .vitepress/components/generateSidebar.cjs
+
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add .vitepress/sidebar.generated.ts .vitepress/sidebar.generated.en.ts
+          # 一次加入所有自動產生的檔案
+          git add .vitepress/theme/authors.json .vitepress/sidebar.generated.ts .vitepress/sidebar.generated.en.ts
+
           if git diff --cached --quiet; then
-            echo "沒有側邊欄變更，無需提交"
+            echo "沒有自動產生檔案變更，無需提交"
           else
-            git commit -m "chore: 自動產生側邊欄數據"
+            git commit -m "chore: 自動產生側邊欄與作者清單"
             git pull --rebase origin main
             git push
           fi

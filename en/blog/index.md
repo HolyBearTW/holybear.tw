@@ -64,8 +64,9 @@ const pageNumbers = computed(() => {
             >{{ c }}</span>
             <h2 class="post-title">{{ post.title }}</h2>
           </div>
-          <p class="post-date">
-            Published on: {{ formatDateExactlyLikePostPage(post.date) }} </p>
+          <p class="post-meta">
+  Author: {{ post.author }}｜{{ formatDateExactlyLikePostPage(post.date) }}
+</p>
           <div v-if="post.excerpt" class="post-excerpt" v-html="post.excerpt"></div>
           <span class="read-more">Read More &gt;</span> </div>
       </a>
@@ -178,7 +179,7 @@ const pageNumbers = computed(() => {
   display: inline;
   vertical-align: middle;
 }
-.post-date {
+.post-meta {
   color: var(--vp-c-text-2);
   font-size: 0.85rem;
   margin-top: 0 !important;

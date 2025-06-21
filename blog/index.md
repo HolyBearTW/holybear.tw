@@ -64,9 +64,9 @@ const pageNumbers = computed(() => {
             >{{ c }}</span>
             <h2 class="post-title">{{ post.title }}</h2>
           </div>
-          <p class="post-date">
-            發布日期：{{ formatDateExactlyLikePostPage(post.date) }}
-          </p>
+          <p class="post-meta">
+  作者：{{ post.author }}｜{{ formatDateExactlyLikePostPage(post.date) }}
+</p>
           <div v-if="post.excerpt" class="post-excerpt" v-html="post.excerpt"></div>
           <span class="read-more">繼續閱讀 &gt;</span>
         </div>
@@ -100,7 +100,7 @@ const pageNumbers = computed(() => {
 }
 .post-item {
   border-bottom: 1px dashed var(--vp-c-divider);
-  padding: 0.7rem 0;      /* 上下間隔一致 */
+  padding: 0.7rem 0;
   margin: 0;
 }
 .blog-articles-grid > .post-item:last-child {
@@ -111,7 +111,7 @@ const pageNumbers = computed(() => {
   align-items: center;
   min-height: 122px;
   height: auto;
-  padding: 0 1rem;        /* 僅左右內距 */
+  padding: 0 1rem;
   border-radius: 8px;
   text-decoration: none;
   color: inherit;
@@ -182,11 +182,18 @@ const pageNumbers = computed(() => {
   display: inline;
   vertical-align: middle;
 }
-.post-date {
+.post-meta {
   color: var(--vp-c-text-2);
   font-size: 0.85rem;
   margin-top: 0 !important;
   margin-bottom: 0.2rem !important;
+  line-height: 1.2;
+  padding: 0;
+}
+.post-author {
+  color: var(--vp-c-text-2);
+  font-size: 0.85rem;
+  margin: 0 0 0.2rem 0;
   line-height: 1.2;
   padding: 0;
 }
@@ -249,16 +256,15 @@ const pageNumbers = computed(() => {
 
 @media (max-width: 767px) {
   .post-item {
-    padding: 0.2rem 0;   /* 上下間距可以再小一點 */
-    /* 不要設定height或min-height，讓內容自適應 */
+    padding: 0.2rem 0;
   }
   .post-item-link {
-    min-height: unset;   /* 移除 min-height 限制 */
+    min-height: unset;
     padding: 0.2rem 0.5rem;
   }
   .post-thumbnail-wrapper {
-    width: 110px;        /* 控制左邊區塊不要過寬 */
-    height: 90px;        /* 高度可以稍微大一點，讓圖片更顯眼 */
+    width: 110px;
+    height: 90px;
     margin-right: 0.7rem;
     flex-shrink: 0;
     display: flex;
