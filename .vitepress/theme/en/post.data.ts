@@ -1,5 +1,5 @@
 import { createContentLoader } from 'vitepress';
-import authors from '../theme/authors.json'; // 根據你的實際路徑
+import authors from '../authors.json'; // 注意：根據你的實際檔案結構
 
 const DEFAULT_IMAGE = '/blog_no_image.svg';
 
@@ -13,7 +13,7 @@ function extractDate(frontmatter) {
   );
 }
 
-// 跟中文 loader 一樣的 normalizeUrl
+// 跟中文 loader 一樣，正規化 url，讓查作者時 key 能對齊 authors.json
 function normalizeUrl(url) {
   if (url.endsWith('/index.html')) return url.replace(/\/index\.html$/, '');
   if (url.endsWith('.html')) return url.replace(/\.html$/, '');
@@ -48,7 +48,7 @@ export default createContentLoader('en/blog/**/*.md', {
         }
         if (!imageUrl) imageUrl = DEFAULT_IMAGE;
 
-        // description 永遠優先
+        // 讓 description 永遠優先
         let summary = (frontmatter.description || '').trim();
         if (!summary && excerpt) summary = excerpt.trim();
         if (!summary && content) {
@@ -56,7 +56,7 @@ export default createContentLoader('en/blog/**/*.md', {
           summary = lines.find(line => line && !line.startsWith('#') && !line.startsWith('![') && !line.startsWith('>')) || '';
         }
 
-        // 用正規化過的 url 查作者
+        // 用正規化 url 查找作者
         const normalizedUrl = normalizeUrl(url);
         const author = authors[normalizedUrl] || 'Unknown';
 
