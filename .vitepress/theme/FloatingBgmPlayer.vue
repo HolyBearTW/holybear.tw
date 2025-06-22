@@ -27,6 +27,8 @@ let volumeAdjustTimeout = null
 /* --- LocalStorage Keys --- */
 const VOLUME_KEY = 'holybear-bgm-volume'
 const PLAYING_KEY = 'holybear-bgm-playing'
+const MOBILE_OPEN_KEY = 'holybear-bgm-mobile-open'
+const DESKTOP_OPEN_KEY = 'holybear-bgm-desktop-open'
 
 /* --- Computed 屬性 --- */
 const currentSrc = computed(() => musicList[currentIndex.value].src)
@@ -47,6 +49,16 @@ onMounted(() => {
     const savedPlaying = localStorage.getItem(PLAYING_KEY)
     if (savedPlaying === 'true') {
         document.body.addEventListener('click', () => { playMusic() }, { once: true })
+    }
+
+    // 讀取收合狀態
+    const savedMobileOpen = localStorage.getItem(MOBILE_OPEN_KEY)
+    if (savedMobileOpen !== null) {
+        mobilePlayerOpen.value = savedMobileOpen === 'true'
+    }
+    const savedDesktopOpen = localStorage.getItem(DESKTOP_OPEN_KEY)
+    if (savedDesktopOpen !== null) {
+        desktopPlayerOpen.value = savedDesktopOpen === 'true'
     }
 
     if (bgm.value) {
@@ -70,6 +82,14 @@ watch(volume, (newVolume) => {
     if (bgm.value) bgm.value.volume = newVolume
     localStorage.setItem(VOLUME_KEY, newVolume.toString())
     if (newVolume > 0) volumeBeforeMute.value = newVolume
+})
+
+// 記憶播放器開合狀態
+watch(mobilePlayerOpen, (val) => {
+    localStorage.setItem(MOBILE_OPEN_KEY, val ? 'true' : 'false')
+})
+watch(desktopPlayerOpen, (val) => {
+    localStorage.setItem(DESKTOP_OPEN_KEY, val ? 'true' : 'false')
 })
 
 /* --- 主要功能分組 --- */
@@ -307,7 +327,6 @@ function flashVolumePercentage() {
 </template>
 
 <style scoped>
-/* ========== START: icon & 音量控制 ========== */
 .music-icon {
     color: #9ad;
     font-size: 1.2em;
@@ -390,7 +409,6 @@ function flashVolumePercentage() {
     right: 10px;
 }
 
-/* ========== 桌機專用 ========== */
 .my-bgm-player-desktop {
     width: auto;
     min-width: 480px;
@@ -428,7 +446,6 @@ function flashVolumePercentage() {
     margin-left: 8px;
 }
 
-/* ========== 手機專用 ========== */
 .my-bgm-player-mobile {
     width: calc(100vw - 32px);
     max-width: 380px;
@@ -468,7 +485,6 @@ function flashVolumePercentage() {
     padding-top: 2px;
 }
 
-/* ========== FAB、主播放器 ========== */
 .my-bgm-fab {
     position: fixed;
     bottom: 24px;
@@ -511,7 +527,6 @@ function flashVolumePercentage() {
     box-sizing: border-box;
 }
 
-/* ========== 按鈕群組 ========== */
 button, button:focus, button:focus-visible,
 .my-bgm-play-btn:focus, .my-bgm-play-btn:focus-visible,
 .my-bgm-prev-next-btn:focus, .my-bgm-prev-next-btn:focus-visible,
@@ -597,7 +612,6 @@ button, button:focus, button:focus-visible,
     color: #1976d2;
 }
 
-/* ========== 跑馬燈歌名標題 ========== */
 .marquee-container {
     flex: 1 1 0;
     min-width: 0;
@@ -619,7 +633,6 @@ button, button:focus, button:focus-visible,
     100% { transform: translateX(-100%); }
 }
 
-/* ========== 播放列表 ========== */
 .playlist-overlay {
     position: fixed;
     top: 0;
@@ -689,7 +702,6 @@ button, button:focus, button:focus-visible,
     color: var(--vp-c-brand, #1976d2);
 }
 
-/* ========== 進度條/時間 ========== */
 .progress-bar-row {
     display: flex;
     align-items: center;
