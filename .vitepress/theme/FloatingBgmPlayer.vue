@@ -30,7 +30,6 @@ const VOLUME_KEY = 'holybear-bgm-volume'
 const PLAYING_KEY = 'holybear-bgm-playing'
 const MOBILE_OPEN_KEY = 'holybear-bgm-mobile-open'
 const DESKTOP_OPEN_KEY = 'holybear-bgm-desktop-open'
-const INDEX_KEY = 'holybear-bgm-index'
 
 /* --- Refs & 狀態 --- */
 const bgm = ref(null)
@@ -38,7 +37,7 @@ const playerContainer = ref(null)
 const playing = ref(false)
 const volume = ref(0.6)
 const volumeBeforeMute = ref(0.6)
-const currentIndex = ref(0) // 這裡預設 0，會在 onMounted 設定正確數值
+const currentIndex = ref(0) // 預設 0，重整也是 0
 const currentTime = ref(0)
 const duration = ref(0)
 const isSeeking = ref(false)
@@ -65,21 +64,10 @@ onMounted(() => {
         volume.value = parseFloat(savedVolume)
         if (volume.value > 0) volumeBeforeMute.value = volume.value
     }
-
     const savedPlaying = localStorage.getItem(PLAYING_KEY)
     if (savedPlaying === 'true') {
         document.body.addEventListener('click', () => { playMusic() }, { once: true })
     }
-
-    // 讀取 currentIndex
-    const savedIndex = localStorage.getItem(INDEX_KEY)
-    if (savedIndex !== null && !isNaN(+savedIndex) && +savedIndex < musicList.length && +savedIndex >= 0) {
-        currentIndex.value = +savedIndex
-    } else {
-        currentIndex.value = Math.floor(Math.random() * musicList.length)
-    }
-
-    // 讀取收合狀態
     const savedMobileOpen = localStorage.getItem(MOBILE_OPEN_KEY)
     if (savedMobileOpen !== null) {
         mobilePlayerOpen.value = savedMobileOpen === 'true'
@@ -88,11 +76,11 @@ onMounted(() => {
     if (savedDesktopOpen !== null) {
         desktopPlayerOpen.value = savedDesktopOpen === 'true'
     }
-
     if (bgm.value) {
         bgm.value.volume = volume.value
         bgm.value.addEventListener('timeupdate', updateProgress)
         bgm.value.addEventListener('loadedmetadata', onLoadedMetadata)
+        // 初始化時 audio 的 src 會自動對應 currentSrc (第 0 首)
     }
 })
 
@@ -105,26 +93,18 @@ onUnmounted(() => {
     }
 })
 
-/* --- Watchers --- */
 watch(volume, (newVolume) => {
     if (bgm.value) bgm.value.volume = newVolume
     localStorage.setItem(VOLUME_KEY, newVolume.toString())
     if (newVolume > 0) volumeBeforeMute.value = newVolume
 })
-// 記憶播放器開合狀態
 watch(mobilePlayerOpen, (val) => {
     localStorage.setItem(MOBILE_OPEN_KEY, val ? 'true' : 'false')
 })
 watch(desktopPlayerOpen, (val) => {
     localStorage.setItem(DESKTOP_OPEN_KEY, val ? 'true' : 'false')
 })
-// 記憶 currentIndex
-watch(currentIndex, (val) => {
-    localStorage.setItem(INDEX_KEY, val.toString())
-})
 
-/* --- 主要功能分組 --- */
-// 音樂播放控制
 function playMusic() {
     if (!bgm.value) return
     bgm.value.volume = volume.value
@@ -166,7 +146,6 @@ async function selectAndPlaySong(index, options = {}) {
     }
 }
 
-// 進度條控制
 function onLoadedMetadata(e) { duration.value = e.target.duration }
 function updateProgress(e) { if (!isSeeking.value) currentTime.value = e.target.currentTime }
 function startSeek() { isSeeking.value = true }
@@ -179,7 +158,6 @@ function formatTime(seconds) {
     return `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`
 }
 
-// 音量與 UI 控制
 function resize() { isMobile.value = window.innerWidth <= 640 }
 function togglePlaylist() { isPlaylistVisible.value = !isPlaylistVisible.value }
 function toggleVolumeSlider() { isVolumeSliderVisible.value = !isVolumeSliderVisible.value }
@@ -188,7 +166,6 @@ function handleClickOutside(event) {
         isVolumeSliderVisible.value = false
     }
 }
-
 function toggleMute() {
     if (volume.value > 0) {
         volume.value = 0
@@ -197,7 +174,6 @@ function toggleMute() {
     }
     flashVolumePercentage()
 }
-
 function flashVolumePercentage() {
     isAdjustingVolume.value = true
     if (volumeAdjustTimeout) clearTimeout(volumeAdjustTimeout)
@@ -357,6 +333,36 @@ function flashVolumePercentage() {
 </template>
 
 <style scoped>
+body {
+  cursor: url('/MapleStory_cursor.png'), auto;
+}
+a, button, [role="button"], .btn,
+.VPSidebar .text,
+.VPSidebarItem .text,
+.VPSidebarLink,
+.VPSidebar .VPSidebarItem .link,
+.VPSidebar .VPSidebarItem .text,
+.my-bgm-fab,
+.my-bgm-player,
+.my-bgm-player *,
+.my-bgm-player button,
+.my-bgm-player input[type="range"],
+.my-bgm-close,
+.my-bgm-prev-next-btn,
+.my-bgm-play-btn,
+.control-btn,
+.volume-icon,
+.playlist-overlay,
+.playlist-modal,
+.playlist-header,
+.playlist-item,
+.playlist-item *,
+.main-controls,
+.marquee-container,
+.music-title-text {
+  cursor: url('/MapleStory_cursor.png'), auto !important;
+}
+
 .music-icon {
     color: #9ad;
     font-size: 1.2em;
@@ -364,16 +370,13 @@ function flashVolumePercentage() {
     margin-right: 6px;
     flex-shrink: 0;
 }
-
 .volume-icon {
     font-size: 1.2em;
     cursor: pointer;
 }
-
 .volume-control-container {
     position: relative;
 }
-
 .volume-popup-shared {
     position: absolute;
     background: rgba(40, 40, 40, 0.75);
@@ -387,11 +390,9 @@ function flashVolumePercentage() {
     gap: 8px;
     padding: 8px 12px;
 }
-
 .volume-popup-shared .volume-icon {
     color: #fff;
 }
-
 .volume-slider-horizontal {
     -webkit-appearance: none;
     appearance: none;
@@ -400,7 +401,6 @@ function flashVolumePercentage() {
     background: rgba(255,255,255,0.3);
     border-radius: 2px;
 }
-
 .volume-slider-horizontal::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
@@ -409,7 +409,6 @@ function flashVolumePercentage() {
     background: #fff;
     border-radius: 50%;
 }
-
 .volume-percentage-display-local {
     position: absolute;
     bottom: 100%;
@@ -425,27 +424,23 @@ function flashVolumePercentage() {
     pointer-events: none;
     white-space: nowrap;
 }
-
 .volume-popup-desktop {
     top: 50%;
     right: calc(100% + 8px);
     transform: translateY(-50%);
     width: 200px;
 }
-
 .volume-popup-mobile {
     bottom: 58px;
     left: 10px;
     right: 10px;
 }
-
 .my-bgm-player-desktop {
     width: auto;
     min-width: 480px;
     max-width: 550px;
     gap: 12px;
 }
-
 .desktop-main-section {
     flex-grow: 1;
     display: flex;
@@ -453,29 +448,23 @@ function flashVolumePercentage() {
     min-width: 0;
     gap: 8px;
 }
-
 .desktop-title-row {
     cursor: pointer;
     display: flex;
     align-items: center;
 }
-
 .desktop-title-row .music-title-text {
     animation-duration: 12s;
 }
-
 .my-bgm-player-desktop .main-controls {
     gap: 4px;
 }
-
 .my-bgm-player-desktop .my-bgm-prev-next-btn {
     margin: 0;
 }
-
 .my-bgm-player-desktop .volume-control-container {
     margin-left: 8px;
 }
-
 .my-bgm-player-mobile {
     width: calc(100vw - 32px);
     max-width: 380px;
@@ -484,37 +473,30 @@ function flashVolumePercentage() {
     padding: 10px 12px;
     position: relative;
 }
-
 .my-bgm-mobile-row {
     display: flex;
     align-items: center;
     width: 100%;
     padding: 2px 0;
 }
-
 .title-row {
     justify-content: space-between;
     margin-bottom: 2px;
 }
-
 .title-row .music-title-text {
     font-size: 0.9em;
 }
-
 .title-row .my-bgm-close {
     flex-shrink: 0;
     margin-left: 8px;
 }
-
 .progress-bar-row {
     padding-bottom: 6px;
 }
-
 .main-controls-row {
     justify-content: space-between;
     padding-top: 2px;
 }
-
 .my-bgm-fab {
     position: fixed;
     bottom: 24px;
@@ -535,12 +517,10 @@ function flashVolumePercentage() {
     border: 1px solid var(--vp-c-divider, #eee);
     transition: box-shadow .2s, transform .2s;
 }
-
 .my-bgm-fab:active {
     box-shadow: 0 2px 16px rgba(0,0,0,0.24);
     transform: scale(0.97);
 }
-
 .my-bgm-player {
     position: fixed;
     bottom: 24px;
@@ -556,7 +536,6 @@ function flashVolumePercentage() {
     padding: 10px 14px;
     box-sizing: border-box;
 }
-
 button, button:focus, button:focus-visible,
 .my-bgm-play-btn:focus, .my-bgm-play-btn:focus-visible,
 .my-bgm-prev-next-btn:focus, .my-bgm-prev-next-btn:focus-visible,
@@ -565,7 +544,6 @@ button, button:focus, button:focus-visible,
     box-shadow: none !important;
     padding: 0;
 }
-
 .my-bgm-play-btn {
     background: linear-gradient(145deg, #e3f2fd 60%, #b6c8e6 100%);
     color: #1565c0;
@@ -582,14 +560,12 @@ button, button:focus, button:focus-visible,
     transition: box-shadow .2s, background .2s, color .2s;
     flex-shrink: 0;
 }
-
 .my-bgm-play-btn:hover,
 .my-bgm-play-btn:focus {
     box-shadow: 0 4px 14px #64b5f6aa;
     background: linear-gradient(145deg, #bbdefb 60%, #90caf9 100%);
     color: #0d47a1;
 }
-
 .my-bgm-prev-next-btn {
     font-size: 1.3em;
     line-height: 1;
@@ -599,12 +575,10 @@ button, button:focus, button:focus-visible,
     padding: 4px 8px;
     transition: background .2s, color .2s;
 }
-
 .my-bgm-prev-next-btn:hover {
     background: #e3f2fd;
     color: #1976d2;
 }
-
 .my-bgm-close {
     font-size: 1.2em;
     color: var(--vp-c-text-2, #888);
@@ -614,17 +588,14 @@ button, button:focus, button:focus-visible,
     border: none;
     cursor: pointer;
 }
-
 .my-bgm-close:hover {
     color: var(--vp-c-text-1, #222);
 }
-
 .main-controls {
     display: flex;
     align-items: center;
     gap: 8px;
 }
-
 .control-btn {
     font-size: 1.2em;
     color: #666;
@@ -636,19 +607,16 @@ button, button:focus, button:focus-visible,
     border-radius: 50%;
     transition: background .2s, color .2s;
 }
-
 .control-btn:hover {
     background: #e3f2fd;
     color: #1976d2;
 }
-
 .marquee-container {
     flex: 1 1 0;
     min-width: 0;
     overflow: hidden;
     white-space: nowrap;
 }
-
 .music-title-text {
     font-weight: bold;
     font-size: 1em;
@@ -657,12 +625,10 @@ button, button:focus, button:focus-visible,
     animation: marquee 10s linear infinite;
     animation-play-state: running;
 }
-
 @keyframes marquee {
     0% { transform: translateX(0); }
     100% { transform: translateX(-100%); }
 }
-
 .playlist-overlay {
     position: fixed;
     top: 0;
@@ -675,7 +641,6 @@ button, button:focus, button:focus-visible,
     align-items: center;
     justify-content: center;
 }
-
 .playlist-modal {
     background: var(--vp-c-bg, #fff);
     border-radius: 12px;
@@ -687,7 +652,6 @@ button, button:focus, button:focus-visible,
     overflow: hidden;
     box-shadow: 0 5px 20px rgba(0,0,0,0.3);
 }
-
 .playlist-header {
     display: flex;
     justify-content: space-between;
@@ -695,11 +659,9 @@ button, button:focus, button:focus-visible,
     padding: 12px 16px;
     border-bottom: 1px solid var(--vp-c-divider, #eee);
 }
-
 .song-title-in-list {
     font-weight: 500;
 }
-
 .playlist-item {
     display: flex;
     justify-content: space-between;
@@ -709,43 +671,35 @@ button, button:focus, button:focus-visible,
     cursor: pointer;
     transition: background-color 0.2s;
 }
-
 .playlist-item:last-child {
     border-bottom: none;
 }
-
 .playlist-item:hover {
     background-color: var(--vp-c-bg-soft, #f5f5f5);
 }
-
 .playlist-item.is-playing {
     background-color: var(--vp-c-brand-light, #e3f2fd);
 }
-
 .playlist-item.is-playing .song-title-in-list {
     font-weight: bold;
     color: var(--vp-c-brand, #1976d2);
 }
-
 .playing-indicator {
     font-size: 0.8em;
     color: var(--vp-c-brand, #1976d2);
 }
-
 .progress-bar-row {
     display: flex;
     align-items: center;
     width: 100%;
     gap: 10px;
 }
-
 .time-display {
     font-size: 0.8em;
     color: #888;
     flex-shrink: 0;
     font-family: 'Courier New', Courier, monospace;
 }
-
 .progress-bar {
     -webkit-appearance: none;
     appearance: none;
@@ -755,7 +709,6 @@ button, button:focus, button:focus-visible,
     border-radius: 2px;
     outline: none;
 }
-
 .progress-bar::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
