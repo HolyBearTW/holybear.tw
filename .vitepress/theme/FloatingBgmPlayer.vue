@@ -21,8 +21,8 @@ import { ref, watch, onMounted, onUnmounted, computed, nextTick } from 'vue'
         { src: '/music/MapleStory_TowerOfGoddess.mp3', title: '楓之谷 - 女神之塔' },
         { src: '/music/MapleStory_VictoriaCupDay.mp3', title: '楓之谷 - 維多利亞盃' },
         { src: '/music/MapleStory_NLCtown.mp3', title: '楓之谷 - 新葉城' },
-        { src: '/music/MapleStory_AnEternalBreath.mp3', title: '楓之谷 - 到時間的另一邊' }
-        { src: '/music/MapleStory_old_title.mp3', title: '楓之谷 - 懷舊登入音樂' },
+        { src: '/music/MapleStory_AnEternalBreath.mp3', title: '楓之谷 - 到時間的另一邊' },
+        { src: '/music/MapleStory_old_title.mp3', title: '楓之谷 - 懷舊登入音樂' }
     ]
 
 /* --- Refs & 狀態 --- */
