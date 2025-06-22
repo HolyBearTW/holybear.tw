@@ -12,7 +12,25 @@ a, button, [role="button"], .btn,
 .VPSidebarItem .text,
 .VPSidebarLink,
 .VPSidebar .VPSidebarItem .link,
-.VPSidebar .VPSidebarItem .text {
+.VPSidebar .VPSidebarItem .text,
+.my-bgm-fab,
+.my-bgm-player,
+.my-bgm-player *,
+.my-bgm-player button,
+.my-bgm-player input[type="range"],
+.my-bgm-close,
+.my-bgm-prev-next-btn,
+.my-bgm-play-btn,
+.control-btn,
+.volume-icon,
+.playlist-overlay,
+.playlist-modal,
+.playlist-header,
+.playlist-item,
+.playlist-item *,
+.main-controls,
+.marquee-container,
+.music-title-text {
   cursor: url('/MapleStory_cursor.png'), auto !important;
 }
 
