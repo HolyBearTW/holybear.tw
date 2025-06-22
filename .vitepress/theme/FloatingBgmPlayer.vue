@@ -215,19 +215,19 @@ function flashVolumePercentage() {
     <div v-if="isPlaylistVisible" class="playlist-overlay" @click="togglePlaylist">
         <div class="playlist-modal" @click.stop>
             <div class="playlist-header">
-                <h3>播放列表</h3>
+                <h3>播放清單</h3>
                 <button @click="togglePlaylist" class="my-bgm-close">✖️</button>
             </div>
             <ul class="playlist-items">
                 <li
-                    v-for="(song, index) in musicList"
-                    :key="song.src"
-                    :class="{ 'is-playing': index === currentIndex }"
-                    @click="selectAndPlaySong(index)"
-                >
-                    <span class="song-title-in-list">{{ song.title }}</span>
-                    <span v-if="index === currentIndex" class="playing-indicator">正在播放...</span>
-                </li>
+    v-for="(song, index) in musicList"
+    :key="song.src"
+    :class="['playlist-item', { 'is-playing': index === currentIndex }]"
+    @click="selectAndPlaySong(index)"
+>
+    <span class="song-title-in-list">{{ song.title }}</span>
+    <span v-if="index === currentIndex" class="playing-indicator">正在播放...</span>
+</li>
             </ul>
         </div>
     </div>
@@ -289,7 +289,7 @@ function flashVolumePercentage() {
                 </button>
                 <button @click.stop="nextSong" title="下一首" class="my-bgm-prev-next-btn">⏭</button>
             </div>
-            <button class="control-btn" @click.stop="togglePlaylist" title="播放列表">🎶</button>
+            <button class="control-btn" @click.stop="togglePlaylist" title="播放清單">🎶</button>
         </div>
     </div>
 
@@ -300,7 +300,7 @@ function flashVolumePercentage() {
         </button>
         <button @click.stop="nextSong" title="下一首" class="my-bgm-prev-next-btn">⏭</button>
         <div class="desktop-main-section">
-            <div class="desktop-title-row" @click="togglePlaylist" title="點此打開播放列表">
+            <div class="desktop-title-row" @click="togglePlaylist" title="點此打開播放清單">
                 <span class="music-icon">🎵</span>
                 <div class="marquee-container"><span class="music-title-text">{{ currentMusicTitle }}</span></div>
             </div>
@@ -622,24 +622,30 @@ button, button:focus, button:focus-visible,
     position: fixed;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
+    width: 100vw;
+    height: 100vh;
     background-color: rgba(0,0,0,0.6);
     z-index: 10001;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
+    padding-top: 7vh;
+    box-sizing: border-box;
 }
 .playlist-modal {
     background: var(--vp-c-bg, #fff);
     border-radius: 12px;
-    width: 90%;
+    width: 90vw;
     max-width: 400px;
+    min-width: 260px;
     max-height: 70vh;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow: auto;
     box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+    padding: 0 12px 12px 12px;
+    box-sizing: border-box;
+    margin-bottom: 3vh;
 }
 .playlist-header {
     display: flex;
@@ -648,34 +654,65 @@ button, button:focus, button:focus-visible,
     padding: 12px 16px;
     border-bottom: 1px solid var(--vp-c-divider, #eee);
 }
-.song-title-in-list {
-    font-weight: 500;
+.playlist-items {
+    padding: 0;
+    margin: 0;
+    list-style: none;
 }
 .playlist-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 16px;
+    padding: 12px 18px;
     border-bottom: 1px solid var(--vp-c-divider, #eee);
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition:
+        background-color 0.24s,
+        transform 0.18s cubic-bezier(.4,1.2,.4,1),
+        box-shadow 0.18s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    box-sizing: border-box;
+    border-radius: 7px;
+    margin: 4px 0;
+}
+.playlist-item:hover {
+    background-color: var(--vp-c-bg-soft, #eaf6ff);
+    transform: scale(1.045);
+    box-shadow: 0 2px 10px #7ec6ff20;
+    z-index: 2;
+}
+.playlist-item:active {
+    transform: scale(0.97);
+    background-color: #bde5ff;
+    transition: transform 0.08s, background-color 0.08s;
+}
+.playlist-item.is-playing {
+    background: linear-gradient(90deg, #b6e3ff 0%, #e3f2fd 100%);
+    color: #1976d2 !important;
+    font-weight: bold;
+    box-shadow: 0 0 0 2.5px #4cc3fd99;
+    transform: scale(1.045);
+    z-index: 3;
+}
+.playlist-item.is-playing .song-title-in-list {
+    color: #1565c0;
+    font-weight: bolder;
 }
 .playlist-item:last-child {
     border-bottom: none;
 }
-.playlist-item:hover {
-    background-color: var(--vp-c-bg-soft, #f5f5f5);
-}
-.playlist-item.is-playing {
-    background-color: var(--vp-c-brand-light, #e3f2fd);
-}
-.playlist-item.is-playing .song-title-in-list {
-    font-weight: bold;
-    color: var(--vp-c-brand, #1976d2);
+
+.song-title-in-list {
+    font-weight: 500;
 }
 .playing-indicator {
     font-size: 0.8em;
-    color: var(--vp-c-brand, #1976d2);
+    color: #e91e63 !important;
+}
+.song-title-in-list {
+    font-weight: 500;
 }
 .progress-bar-row {
     display: flex;
