@@ -30,6 +30,7 @@ const VOLUME_KEY = 'holybear-bgm-volume'
 const PLAYING_KEY = 'holybear-bgm-playing'
 const MOBILE_OPEN_KEY = 'holybear-bgm-mobile-open'
 const DESKTOP_OPEN_KEY = 'holybear-bgm-desktop-open'
+const INDEX_KEY = 'holybear-bgm-index'
 
 /* --- Refs & 狀態 --- */
 const bgm = ref(null)
@@ -37,7 +38,7 @@ const playerContainer = ref(null)
 const playing = ref(false)
 const volume = ref(0.6)
 const volumeBeforeMute = ref(0.6)
-const currentIndex = ref(0) // 預設 0，重整也是 0
+const currentIndex = ref(0) // 預設 0，會在 onMounted 時修正
 const currentTime = ref(0)
 const duration = ref(0)
 const isSeeking = ref(false)
@@ -68,6 +69,20 @@ onMounted(() => {
     if (savedPlaying === 'true') {
         document.body.addEventListener('click', () => { playMusic() }, { once: true })
     }
+
+    // 讀取上次播放到第幾首
+    const savedIndex = localStorage.getItem(INDEX_KEY)
+    if (
+        savedIndex !== null &&
+        !isNaN(+savedIndex) &&
+        +savedIndex >= 0 &&
+        +savedIndex < musicList.length
+    ) {
+        currentIndex.value = +savedIndex
+    } else {
+        currentIndex.value = 0
+    }
+
     const savedMobileOpen = localStorage.getItem(MOBILE_OPEN_KEY)
     if (savedMobileOpen !== null) {
         mobilePlayerOpen.value = savedMobileOpen === 'true'
@@ -80,7 +95,6 @@ onMounted(() => {
         bgm.value.volume = volume.value
         bgm.value.addEventListener('timeupdate', updateProgress)
         bgm.value.addEventListener('loadedmetadata', onLoadedMetadata)
-        // 初始化時 audio 的 src 會自動對應 currentSrc (第 0 首)
     }
 })
 
@@ -103,6 +117,9 @@ watch(mobilePlayerOpen, (val) => {
 })
 watch(desktopPlayerOpen, (val) => {
     localStorage.setItem(DESKTOP_OPEN_KEY, val ? 'true' : 'false')
+})
+watch(currentIndex, (val) => {
+    localStorage.setItem(INDEX_KEY, val.toString())
 })
 
 function playMusic() {
@@ -333,35 +350,6 @@ function flashVolumePercentage() {
 </template>
 
 <style scoped>
-body {
-  cursor: url('/MapleStory_cursor.png'), auto;
-}
-a, button, [role="button"], .btn,
-.VPSidebar .text,
-.VPSidebarItem .text,
-.VPSidebarLink,
-.VPSidebar .VPSidebarItem .link,
-.VPSidebar .VPSidebarItem .text,
-.my-bgm-fab,
-.my-bgm-player,
-.my-bgm-player *,
-.my-bgm-player button,
-.my-bgm-player input[type="range"],
-.my-bgm-close,
-.my-bgm-prev-next-btn,
-.my-bgm-play-btn,
-.control-btn,
-.volume-icon,
-.playlist-overlay,
-.playlist-modal,
-.playlist-header,
-.playlist-item,
-.playlist-item *,
-.main-controls,
-.marquee-container,
-.music-title-text {
-  cursor: url('/MapleStory_cursor.png'), auto !important;
-}
 
 .music-icon {
     color: #9ad;
