@@ -1,29 +1,36 @@
 <script setup>
 import { ref, watch, onMounted, onUnmounted, computed, nextTick } from 'vue'
 
-    /* --- 音樂清單 --- */
-    const musicList = [
-        { src: '/music/MapleStoryM_TheGuardianOfTheStars.mp3', title: '楓之谷M - 星之守護者' },
-        { src: '/music/MapleStory_MissingYou.mp3', title: '楓之谷 - 魔法森林樹洞' },
-        { src: '/music/MapleStory_WhereStarsRest.mp3', title: '楓之谷 - 賽拉斯' },
-        { src: '/music/MapleStory_ComeWithMe.mp3', title: '楓之谷 - 天空之塔' },
-        { src: '/music/MapleStory_18th_Event.mp3', title: '楓之谷 - 綻放森林' },
-        { src: '/music/MapleStory_AdventureIsland.mp3', title: '楓之谷 - 冒險島' },
-        { src: '/music/MapleStory_Fantasia.mp3', title: '楓之谷 - 玩偶之家' },
-        { src: '/music/MapleStory_Kamuna.mp3', title: '楓之谷 - 卡姆那' },
-        { src: '/music/MapleStory_mapleLIVE.mp3', title: '楓之谷 -  LIVE' },
-        { src: '/music/MapleStory_NeoTokyo_Bergamot.mp3', title: '未來東京 - 東京秋葉原 2102年' },
-        { src: '/music/MapleStory_NeoTokyo_DunasRaid.mp3', title: '未來東京 - 台場 2100年' },
-        { src: '/music/MapleStory_NeoTokyo_Office.mp3', title: '未來東京 - 秋葉原司令室 2012年' },
-        { src: '/music/MapleStory_NeoTokyo_Park.mp3', title: '未來東京 - 東京公園 2095年' },
-        { src: '/music/MapleStory_NeoTokyo_Tokyosky.mp3', title: '未來東京 - 東京上空 2102年' },
-        { src: '/music/MapleStory_NeoTokyo_Rockbongi.mp3', title: '未來東京 - 澀谷 2102年' },
-        { src: '/music/MapleStory_TowerOfGoddess.mp3', title: '楓之谷 - 女神之塔' },
-        { src: '/music/MapleStory_VictoriaCupDay.mp3', title: '楓之谷 - 維多利亞盃' },
-        { src: '/music/MapleStory_NLCtown.mp3', title: '楓之谷 - 新葉城' },
-        { src: '/music/MapleStory_AnEternalBreath.mp3', title: '楓之谷 - 到時間的另一邊' },
-        { src: '/music/MapleStory_old_title.mp3', title: '楓之谷 - 懷舊登入音樂' }
-    ]
+/* --- 音樂清單 --- */
+const musicList = [
+    { src: '/music/MapleStoryM_TheGuardianOfTheStars.mp3', title: '楓之谷M - 星之守護者' },
+    { src: '/music/MapleStory_MissingYou.mp3', title: '楓之谷 - 魔法森林樹洞' },
+    { src: '/music/MapleStory_WhereStarsRest.mp3', title: '楓之谷 - 賽拉斯' },
+    { src: '/music/MapleStory_ComeWithMe.mp3', title: '楓之谷 - 天空之塔' },
+    { src: '/music/MapleStory_18th_Event.mp3', title: '楓之谷 - 綻放森林' },
+    { src: '/music/MapleStory_AdventureIsland.mp3', title: '楓之谷 - 冒險島' },
+    { src: '/music/MapleStory_Fantasia.mp3', title: '楓之谷 - 玩偶之家' },
+    { src: '/music/MapleStory_Kamuna.mp3', title: '楓之谷 - 卡姆那' },
+    { src: '/music/MapleStory_mapleLIVE.mp3', title: '楓之谷 -  LIVE' },
+    { src: '/music/MapleStory_NeoTokyo_Bergamot.mp3', title: '未來東京 - 東京秋葉原 2102年' },
+    { src: '/music/MapleStory_NeoTokyo_DunasRaid.mp3', title: '未來東京 - 台場 2100年' },
+    { src: '/music/MapleStory_NeoTokyo_Office.mp3', title: '未來東京 - 秋葉原司令室 2012年' },
+    { src: '/music/MapleStory_NeoTokyo_Park.mp3', title: '未來東京 - 東京公園 2095年' },
+    { src: '/music/MapleStory_NeoTokyo_Tokyosky.mp3', title: '未來東京 - 東京上空 2102年' },
+    { src: '/music/MapleStory_NeoTokyo_Rockbongi.mp3', title: '未來東京 - 澀谷 2102年' },
+    { src: '/music/MapleStory_TowerOfGoddess.mp3', title: '楓之谷 - 女神之塔' },
+    { src: '/music/MapleStory_VictoriaCupDay.mp3', title: '楓之谷 - 維多利亞盃' },
+    { src: '/music/MapleStory_NLCtown.mp3', title: '楓之谷 - 新葉城' },
+    { src: '/music/MapleStory_AnEternalBreath.mp3', title: '楓之谷 - 到時間的另一邊' },
+    { src: '/music/MapleStory_old_title.mp3', title: '楓之谷 - 懷舊登入音樂' }
+]
+
+/* --- LocalStorage Keys --- */
+const VOLUME_KEY = 'holybear-bgm-volume'
+const PLAYING_KEY = 'holybear-bgm-playing'
+const MOBILE_OPEN_KEY = 'holybear-bgm-mobile-open'
+const DESKTOP_OPEN_KEY = 'holybear-bgm-desktop-open'
+const INDEX_KEY = 'holybear-bgm-index'
 
 /* --- Refs & 狀態 --- */
 const bgm = ref(null)
@@ -31,7 +38,7 @@ const playerContainer = ref(null)
 const playing = ref(false)
 const volume = ref(0.6)
 const volumeBeforeMute = ref(0.6)
-const currentIndex = ref(Math.floor(Math.random() * musicList.length))
+const currentIndex = ref(0) // 這裡預設 0，會在 onMounted 設定正確數值
 const currentTime = ref(0)
 const duration = ref(0)
 const isSeeking = ref(false)
@@ -42,12 +49,6 @@ const isVolumeSliderVisible = ref(false)
 const isPlaylistVisible = ref(false)
 const isAdjustingVolume = ref(false)
 let volumeAdjustTimeout = null
-
-/* --- LocalStorage Keys --- */
-const VOLUME_KEY = 'holybear-bgm-volume'
-const PLAYING_KEY = 'holybear-bgm-playing'
-const MOBILE_OPEN_KEY = 'holybear-bgm-mobile-open'
-const DESKTOP_OPEN_KEY = 'holybear-bgm-desktop-open'
 
 /* --- Computed 屬性 --- */
 const currentSrc = computed(() => musicList[currentIndex.value].src)
@@ -68,6 +69,14 @@ onMounted(() => {
     const savedPlaying = localStorage.getItem(PLAYING_KEY)
     if (savedPlaying === 'true') {
         document.body.addEventListener('click', () => { playMusic() }, { once: true })
+    }
+
+    // 讀取 currentIndex
+    const savedIndex = localStorage.getItem(INDEX_KEY)
+    if (savedIndex !== null && !isNaN(+savedIndex) && +savedIndex < musicList.length && +savedIndex >= 0) {
+        currentIndex.value = +savedIndex
+    } else {
+        currentIndex.value = Math.floor(Math.random() * musicList.length)
     }
 
     // 讀取收合狀態
@@ -102,13 +111,16 @@ watch(volume, (newVolume) => {
     localStorage.setItem(VOLUME_KEY, newVolume.toString())
     if (newVolume > 0) volumeBeforeMute.value = newVolume
 })
-
 // 記憶播放器開合狀態
 watch(mobilePlayerOpen, (val) => {
     localStorage.setItem(MOBILE_OPEN_KEY, val ? 'true' : 'false')
 })
 watch(desktopPlayerOpen, (val) => {
     localStorage.setItem(DESKTOP_OPEN_KEY, val ? 'true' : 'false')
+})
+// 記憶 currentIndex
+watch(currentIndex, (val) => {
+    localStorage.setItem(INDEX_KEY, val.toString())
 })
 
 /* --- 主要功能分組 --- */
@@ -150,7 +162,6 @@ async function selectAndPlaySong(index, options = {}) {
     await nextTick()
     if (bgm.value) {
         currentTime.value = 0
-        // duration.value = 0;  // 這一行已移除
         playMusic()
     }
 }
