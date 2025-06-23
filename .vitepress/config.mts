@@ -39,7 +39,7 @@ export default defineConfig({
         ['meta', { property: 'og:image', content: 'https://holybear.me/logo.png' }],
         ['meta', { property: 'og:type', content: 'website' }],
         ['meta', { property: 'og:url', content: 'https://holybear.me' }],
-        ['meta', { name: 'twitter:card', content: 'summary_large_image' }]
+        ['meta', { name: 'twitter:card', content: 'summary' }]
     ],
     vite: {
         plugins: [gitMetaPlugin()]
