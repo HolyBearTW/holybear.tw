@@ -87,7 +87,6 @@ const pageNumbers = computed(() => {
   </div>
 </div>
 
-
 <style scoped>
 .blog-home {
   max-width: 960px;
