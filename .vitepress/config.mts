@@ -36,7 +36,7 @@ export default defineConfig({
         ['meta', { name: 'author', content: '聖小熊' }],
         // 下方的 OG 標籤會作為預設值，在 transformHead 中被讀取和覆蓋
         ['meta', { property: 'og:title', content: '聖小熊的秘密基地' }],
-        ['meta', { property: 'og:image', content: 'https://holybear.me/og-default.png' }],
+        ['meta', { property: 'og:image', content: 'https://holybear.me/logo.png' }],
         ['meta', { property: 'og:type', content: 'website' }],
         ['meta', { property: 'og:url', content: 'https://holybear.me' }],
         ['meta', { name: 'twitter:card', content: 'summary' }]
