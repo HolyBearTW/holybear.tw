@@ -16,6 +16,8 @@ export default {
     sidebarMenuLabel: '日誌列表',
     returnToTopLabel: '回到頂部',
     darkModeSwitchLabel: '深色模式',
+    lightModeSwitchTitle: '切換至淺色模式',
+    darkModeSwitchTitle: '切換至深色模式',
     outline: {
       label: '目錄'
     },
