@@ -40,7 +40,7 @@ jobs:
           else
             echo "No en/blog files to delete."
           fi
-          
+
       - name: 設定 Node.js 與快取
         uses: actions/setup-node@v4
         with:
@@ -55,18 +55,6 @@ jobs:
 
       - name: 產生側邊欄
         run: node .vitepress/components/generateSidebar.cjs
-
-      - name: commit & push（如有變更）
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add .vitepress/theme/authors.json .vitepress/sidebar.generated.ts .vitepress/sidebar.generated.en.ts
-          if git diff --cached --quiet; then
-            echo "沒有自動產生檔案變更，無需提交"
-          else
-            git pull --rebase origin main
-            git push
-          fi
 
       - name: Commit 並 push yarn.lock
         run: |
@@ -88,7 +76,7 @@ jobs:
           BACKUP_DIR="tmp_existing_en_files"
           mkdir -p "$BACKUP_DIR"
           echo "=> 階段 1: 備份所有已存在的英文文章..."
-          
+
           # 檢查 en/blog 目錄是否存在且有檔案
           if [ -d "en/blog" ] && [ -n "$(ls -A en/blog/*.md 2>/dev/null)" ]; then
             echo "    - 發現已存在的檔案，正在移至暫存區以避免被覆蓋..."
@@ -99,25 +87,19 @@ jobs:
 
           # --- 階段 2: 產生遞補檔案 ---
           echo "=> 階段 2: 執行遞補檔案產生程序 (yarn gen-en-blog)..."
-          # 此指令會為所有中文文章產生對應的英文檔案。
-          # 對於已存在的文章，這裡建立的空白檔稍後會被備份覆蓋。
-          # 對於新文章，這裡會成功建立新的遞補檔。
           yarn gen-en-blog
           echo "    - 產生程序完成。"
 
           # --- 階段 3: 還原備份的檔案 ---
           echo "=> 階段 3: 還原先前已存在的英文檔案..."
-          # 檢查備份目錄是否為空
           if [ -n "$(ls -A $BACKUP_DIR 2>/dev/null)" ]; then
-            # 將備份的檔案移回原位，這會覆蓋掉產生器可能建立的同名空白檔，以保留原始版本。
             mv -f "$BACKUP_DIR"/* en/blog/
             echo "    - 已還原備份的檔案。"
           else
             echo "    - 沒有需要還原的檔案。"
           fi
-          # 清理暫存目錄
           rm -rf "$BACKUP_DIR"
-          
+
           # --- 階段 4: Commit 並 Push 變更 ---
           echo "=> 階段 4: 檢查是否有新檔案需要提交..."
           git config --global user.name 'System Administrator'
@@ -148,8 +130,7 @@ jobs:
           branch: gh-pages
           folder: .vitepress/dist
           clean: true
-          
-      # --- 偵測新文章並通知 Telegram ---
+
       - name: 偵測新文章
         id: detect-new-files
         run: |
@@ -177,6 +158,7 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          ORIGINAL_COMMIT: ${{ github.sha }}
         run: |
           set -e
           NEW_POST_FILES=$(cat new_post_files.txt)
@@ -206,8 +188,9 @@ jobs:
             fi
             ARTICLE_SLUG=$(echo "$file_path" | sed -E 's|^blog/(.*)\.md$|\1|')
             ARTICLE_URL="${BASE_URL}/blog/${ARTICLE_SLUG}"
-            COMMIT_MESSAGE=$(git log -1 --pretty=%B)
-            AUTHOR_NAME=$(git log -1 --pretty=%an)
+            # 使用 ORIGINAL_COMMIT 取得正確的 commit 資訊
+            COMMIT_MESSAGE=$(git log -1 --pretty=%B "$ORIGINAL_COMMIT")
+            AUTHOR_NAME=$(git log -1 --pretty=%an "$ORIGINAL_COMMIT")
             ESCAPED_TITLE=$(escape_markdownv2 "$TITLE")
             ESCAPED_COMMIT_MESSAGE=$(escape_markdownv2 "$COMMIT_MESSAGE")
             ESCAPED_AUTHOR_NAME=$(escape_markdownv2 "$AUTHOR_NAME")
