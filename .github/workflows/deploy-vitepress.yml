@@ -171,6 +171,7 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          ORIGINAL_COMMIT: ${{ github.sha }}
         run: |
           set -e
           NEW_POST_FILES=$(cat new_post_files.txt)
@@ -200,8 +201,8 @@ jobs:
             fi
             ARTICLE_SLUG=$(echo "$file_path" | sed -E 's|^blog/(.*)\.md$|\1|')
             ARTICLE_URL="${BASE_URL}/blog/${ARTICLE_SLUG}"
-            COMMIT_MESSAGE=$(git log -1 --pretty=%B)
-            AUTHOR_NAME=$(git log -1 --pretty=%an)
+            COMMIT_MESSAGE=$(git log -1 --pretty=%B "$ORIGINAL_COMMIT")
+            AUTHOR_NAME=$(git log -1 --pretty=%an "$ORIGINAL_COMMIT")
             ESCAPED_TITLE=$(escape_markdownv2 "$TITLE")
             ESCAPED_COMMIT_MESSAGE=$(escape_markdownv2 "$COMMIT_MESSAGE")
             ESCAPED_AUTHOR_NAME=$(escape_markdownv2 "$AUTHOR_NAME")
@@ -220,3 +221,4 @@ jobs:
               echo "❌ 無法發送 Telegram 通知：$file_path"
               echo "Telegram API 回應：$RESPONSE"
             fi
+            done
