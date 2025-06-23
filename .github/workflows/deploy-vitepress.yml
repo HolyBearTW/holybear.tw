@@ -64,7 +64,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "沒有自動產生檔案變更，無需提交"
           else
-            git commit -m "chore: 自動產生作者清單與側邊欄"
             git pull --rebase origin main
             git push
           fi
@@ -215,17 +214,16 @@ jobs:
             MESSAGE=$'*📢 New push to GitHub*\n'
             MESSAGE+=$'*'"${ESCAPED_TITLE}"$'*\n'
             MESSAGE+=$'```commit\n'"${ESCAPED_COMMIT_MESSAGE}"$'\n```'
-            MESSAGE+=$'[➡️ 點此閱讀文章]('"${ARTICLE_URL}"$')\n'
+            MESSAGE+=$'➡️ [點此閱讀文章]('"${ARTICLE_URL}"$')\n'
             MESSAGE+='by `'"${ESCAPED_AUTHOR_NAME}"'`'
             RESPONSE=$(curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
               --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
               --data-urlencode "text=${MESSAGE}" \
-              --data-urlencode "parse_mode=MarkdownV2" \
-              --data-urlencode "disable_web_page_preview=false")
+              --data-urlencode "parse_mode=MarkdownV2")
             if echo "$RESPONSE" | grep -q '"ok":true'; then
-              echo "✅ Telegram notification sent successfully for: $file_path"
+              echo "✅ Telegram 通知已成功發送：$file_path"
             else
-              echo "❌ Failed to send Telegram notification for: $file_path"
-              echo "Telegram API Response: $RESPONSE"
+              echo "❌ 無法發送 Telegram 通知：$file_path"
+              echo "Telegram API 回應：$RESPONSE"
             fi
           done
