@@ -7,6 +7,14 @@ export default [
         "link": "/blog/test/2025-06-23-test1"
       },
       {
+        "text": "測試自動通知",
+        "link": "/blog/test/2025-06-23-test2"
+      },
+      {
+        "text": "測試自動通知",
+        "link": "/blog/test/2025-06-23-test3"
+      },
+      {
         "text": "鋼索上的日子：一個年輕人的自由渴望",
         "link": "/blog/2025-06-13"
       },

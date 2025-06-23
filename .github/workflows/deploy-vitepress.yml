@@ -56,6 +56,19 @@ jobs:
       - name: 產生側邊欄
         run: node .vitepress/components/generateSidebar.cjs
 
+      - name: amend sidebar 進最新 commit（如有變更）
+        run: |
+          git config --global user.name "${{ github.actor }}"
+          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+          git add .vitepress/sidebar.generated.ts .vitepress/sidebar.generated.en.ts .vitepress/theme/authors.json
+          if git diff --cached --quiet; then
+            echo "沒有 sidebar 或 authors 變更，無需 amend"
+          else
+            git commit --amend --no-edit
+            git push --force-with-lease
+            echo "已 amend sidebar / authors 進原本 commit"
+          fi
+
       - name: Commit 並 push yarn.lock
         run: |
           git config --global user.name 'System Administrator'
@@ -158,7 +171,6 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          ORIGINAL_COMMIT: ${{ github.sha }}
         run: |
           set -e
           NEW_POST_FILES=$(cat new_post_files.txt)
@@ -188,9 +200,8 @@ jobs:
             fi
             ARTICLE_SLUG=$(echo "$file_path" | sed -E 's|^blog/(.*)\.md$|\1|')
             ARTICLE_URL="${BASE_URL}/blog/${ARTICLE_SLUG}"
-            # 使用 ORIGINAL_COMMIT 取得正確的 commit 資訊
-            COMMIT_MESSAGE=$(git log -1 --pretty=%B "$ORIGINAL_COMMIT")
-            AUTHOR_NAME=$(git log -1 --pretty=%an "$ORIGINAL_COMMIT")
+            COMMIT_MESSAGE=$(git log -1 --pretty=%B)
+            AUTHOR_NAME=$(git log -1 --pretty=%an)
             ESCAPED_TITLE=$(escape_markdownv2 "$TITLE")
             ESCAPED_COMMIT_MESSAGE=$(escape_markdownv2 "$COMMIT_MESSAGE")
             ESCAPED_AUTHOR_NAME=$(escape_markdownv2 "$AUTHOR_NAME")
@@ -209,4 +220,3 @@ jobs:
               echo "❌ 無法發送 Telegram 通知：$file_path"
               echo "Telegram API 回應：$RESPONSE"
             fi
-          done
