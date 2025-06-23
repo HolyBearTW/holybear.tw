@@ -20,7 +20,6 @@ export default defineConfig({
     locales: locales.locales,
     srcExclude: ['README.md'],
     head: [
-        // 這些是網站的預設 <head> 標籤，會作為 OG 標籤的 fallback
         ['meta', { name: 'theme-color', content: '#00FFEE' }],
         ['link', { rel: 'icon', href: '/favicon.ico' }],
         ['link', { rel: 'apple-touch-icon', href: '/favicon.ico' }],
@@ -35,8 +34,9 @@ export default defineConfig({
         ['meta', { name: 'description', content: '聖小熊的個人網站，收錄 HyperOS 模組、技術筆記與開發心得，專注於 Android 客製化與開源創作分享。' }],
         ['meta', { name: 'keywords', content: '聖小熊, HolyBear, HyperOS, 模組, Mod, MIUI, Android, GitHub, 技術部落格, Blog' }],
         ['meta', { name: 'author', content: '聖小熊' }],
+        // 下方的 OG 標籤會作為預設值，在 transformHead 中被讀取和覆蓋
         ['meta', { property: 'og:title', content: '聖小熊的秘密基地' }],
-        ['meta', { property: 'og:image', content: 'https://holybear.me/logo.png' }],
+        ['meta', { property: 'og:image', content: 'https://holybear.me/og-default.png' }],
         ['meta', { property: 'og:type', content: 'website' }],
         ['meta', { property: 'og:url', content: 'https://holybear.me' }],
         ['meta', { name: 'twitter:card', content: 'summary' }]
@@ -45,21 +45,41 @@ export default defineConfig({
         plugins: [gitMetaPlugin()]
     },
 
-    // 處理 og:type
-    transformHead(pageData) {
-        const { relativePath } = pageData;
-        if (
-            relativePath && 
-            (relativePath.startsWith('blog/') ||
-             relativePath.startsWith('en/blog/') ||
-             relativePath === 'Mod.md')
-        ) {
-            let head = pageData.head || [];
-            head = head.filter(tag => !(tag[1] && tag[1].property === 'og:type'));
-            head.push(['meta', { property: 'og:type', content: 'article' }]);
-            return head;
-        }
+    // ✨ START: 整合所有 OG 標籤的最終邏輯 ✨
+    transformHead({ pageData, head }) {
+        const { frontmatter, relativePath } = pageData;
+
+        if (!relativePath) return;
+
+        // --- 1. 取得預設值和頁面專屬值 ---
+        const siteUrl = 'https://holybear.me';
+        // 從全域 head (已傳入) 中找到預設值，而不是寫死
+        const defaultTitle = head.find(tag => tag[1]?.property === 'og:title')?.[1].content || '';
+        const defaultDesc = head.find(tag => tag[1]?.name === 'description')?.[1].content || '';
+        const defaultImage = head.find(tag => tag[1]?.property === 'og:image')?.[1].content || '';
+
+        const pageTitle = frontmatter.title || defaultTitle;
+        const pageDescription = frontmatter.description || defaultDesc;
+        const pageImage = frontmatter.image ?
+            (frontmatter.image.startsWith('http') ? frontmatter.image : `${siteUrl}${frontmatter.image}`) :
+            defaultImage;
+
+        // --- 2. 決定 OG Type ---
+        const isArticle = relativePath.startsWith('blog/') || relativePath.startsWith('en/blog/') || relativePath === 'Mod.md';
+        const pageType = isArticle ? 'article' : 'website';
+
+        // --- 3. 移除 head 中所有舊的 OG 標籤，確保乾淨 ---
+        const cleanHead = head.filter(tag => !(tag[1]?.property?.startsWith('og:')));
+
+        // --- 4. 加入全新的、正確的 OG 標籤 ---
+        cleanHead.push(['meta', { property: 'og:title', content: pageTitle }]);
+        cleanHead.push(['meta', { property: 'og:description', content: pageDescription }]);
+        cleanHead.push(['meta', { property: 'og:image', content: pageImage }]);
+        cleanHead.push(['meta', { property: 'og:type', content: pageType }]);
+
+        return cleanHead;
     },
+    // ✨ END: 整合所有 OG 標籤的最終邏輯 ✨
 
     themeConfig: {
         logo: '/logo.png',
@@ -77,9 +97,8 @@ export default defineConfig({
         }
     },
 
-    // ✨ START: 全新重寫的 extendsPage 函數 ✨
-    extendsPage(page) {
-        // --- 1. 處理 Git 相關的中繼資料 ---
+    // extendsPage 現在只專注於處理 Git 相關資訊，保持乾淨
+    extendsPage(page) {
         const branch = getCurrentBranch();
         if (
             (branch === 'main' || branch === 'master') &&
@@ -99,37 +118,5 @@ export default defineConfig({
                 // 無 git 資訊則略過
             }
         }
-
-        // --- 2. 統一處理 Open Graph (OG) 標籤 ---
-        if (!page.frontmatter.head) page.frontmatter.head = [];
-
-        // 定義網站預設值
-        const siteUrl = 'https://holybear.me';
-        const siteTitle = '聖小熊的秘密基地';
-        const siteDescription = '聖小熊的個人網站，收錄 HyperOS 模組、技術筆記與開發心得，專注於 Android 客製化與開源創作分享。';
-        const defaultOgImage = `${siteUrl}/logo.png`;
-
-        // 從 frontmatter 取得頁面專屬資訊，若無則使用網站預設值
-        const pageTitle = page.frontmatter.title || siteTitle;
-        const pageDescription = page.frontmatter.description || siteDescription;
-        const pageImage = page.frontmatter.image ?
-            (page.frontmatter.image.startsWith('http') ? page.frontmatter.image : `${siteUrl}${page.frontmatter.image}`) :
-            defaultOgImage;
-        
-        // 移除重複的舊 OG 標籤，確保乾淨
-        page.frontmatter.head = page.frontmatter.head.filter(tag => {
-            if (tag[1] && tag[1].property) {
-                return !['og:title', 'og:description', 'og:image'].includes(tag[1].property);
-            }
-            return true;
-        });
-        
-        // 加入新的、正確的 OG 標籤
-        page.frontmatter.head.push(
-            ['meta', { property: 'og:title', content: pageTitle }],
-            ['meta', { property: 'og:description', content: pageDescription }],
-            ['meta', { property: 'og:image', content: pageImage }]
-        );
-    },
-    // ✨ END: 全新重寫的 extendsPage 函數 ✨
+    }
 })
