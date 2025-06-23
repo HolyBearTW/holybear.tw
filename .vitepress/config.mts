@@ -20,6 +20,7 @@ export default defineConfig({
     locales: locales.locales,
     srcExclude: ['README.md'],
     head: [
+        // 這些是網站的預設 <head> 標籤，會作為 OG 標籤的 fallback
         ['meta', { name: 'theme-color', content: '#00FFEE' }],
         ['link', { rel: 'icon', href: '/favicon.ico' }],
         ['link', { rel: 'apple-touch-icon', href: '/favicon.ico' }],
@@ -44,9 +45,9 @@ export default defineConfig({
         plugins: [gitMetaPlugin()]
     },
 
+    // 處理 og:type
     transformHead(pageData) {
         const { relativePath } = pageData;
-    
         if (
             relativePath && 
             (relativePath.startsWith('blog/') ||
@@ -72,13 +73,14 @@ export default defineConfig({
                 appId: '5HHMMAZBPG',
                 apiKey: 'f7fbf2c65da0d43f1540496b9ae6f3c6',
                 indexName: 'holybear'
-                // 語系相關請寫在 locales/*.ts
             }
         }
-        // 其它全語系共通設定可加在這，例如 outline、editLink 等
     },
-    extendsPage(page) {
-        const branch = getCurrentBranch()
+
+    // ✨ START: 全新重寫的 extendsPage 函數 ✨
+    extendsPage(page) {
+        // --- 1. 處理 Git 相關的中繼資料 ---
+        const branch = getCurrentBranch();
         if (
             (branch === 'main' || branch === 'master') &&
             page.filePath &&
@@ -86,48 +88,48 @@ export default defineConfig({
             !page.filePath.replaceAll('\\', '/').includes('/en/blog/')
         ) {
             try {
-                const log = execSync(
-                    `git log --diff-filter=A --follow --format=%aN,%aI -- "${page.filePath}" | tail -1`
-                ).toString().trim()
-                const [author, date] = log.split(',')
-                if (!page.frontmatter.author) page.frontmatter.author = author
-                if (!page.frontmatter.date) page.frontmatter.date = date
+                const log = execSync(`git log --diff-filter=A --follow --format=%aN,%aI -- "${page.filePath}" | tail -1`).toString().trim();
+                const [author, date] = log.split(',');
+                if (!page.frontmatter.author) page.frontmatter.author = author;
+                if (!page.frontmatter.date) page.frontmatter.date = date;
 
-                // 取得最後 commit 時間，供 sidebar 用
-                const lastUpdated = execSync(
-                    `git log -1 --format=%cI -- "${page.filePath}"`
-                ).toString().trim()
-                page.frontmatter.lastUpdated = lastUpdated
+                const lastUpdated = execSync(`git log -1 --format=%cI -- "${page.filePath}"`).toString().trim();
+                page.frontmatter.lastUpdated = lastUpdated;
             } catch (e) {
-                // 無 git 資訊略過
+                // 無 git 資訊則略過
             }
         }
 
-        // 判斷是否是英文頁面（en/開頭）
-        const isEN = page.relativePath.startsWith('en/')
+        // --- 2. 統一處理 Open Graph (OG) 標籤 ---
+        if (!page.frontmatter.head) page.frontmatter.head = [];
 
-        if (!page.frontmatter.head) page.frontmatter.head = []
+        // 定義網站預設值
+        const siteUrl = 'https://holybear.me';
+        const siteTitle = '聖小熊的秘密基地';
+        const siteDescription = '聖小熊的個人網站，收錄 HyperOS 模組、技術筆記與開發心得，專注於 Android 客製化與開源創作分享。';
+        const defaultOgImage = `${siteUrl}/logo.png`;
 
-        if (isEN) {
-            // 英文頁面
-            page.frontmatter.head.push(['title', {}, "HolyBear's Secret Base"])
-            page.frontmatter.head.push(['meta', { property: 'og:title', content: "HolyBear's Secret Base" }])
-            page.frontmatter.head.push(['meta', { property: 'og:description', content: "HolyBear's personal site, featuring HyperOS modules, tech notes, and Android customization & open-source sharing." }])
-            page.frontmatter.head.push(['meta', { property: 'og:image', content: page.frontmatter.image || 'https://holybear.me/logo.png' }])
-        } else if (
-            page.relativePath === 'index.md' ||
-            page.relativePath === '/index.md' ||
-            page.relativePath === 'index/index.md' ||
-            page.relativePath === '/index/index.md'
-        ) {
-            // 中文首頁（根目錄或 /index 皆適用）
-            page.frontmatter.head.push(['title', {}, '聖小熊的秘密基地'])
-            page.frontmatter.head.push(['meta', { property: 'og:title', content: '聖小熊的秘密基地' }])
-            page.frontmatter.head.push(['meta', { property: 'og:description', content: '聖小熊的 HyperOS 模組與技術筆記分享網站。' }])
-            page.frontmatter.head.push(['meta', { property: 'og:image', content: page.frontmatter.image || 'https://holybear.me/logo.png' }])
-        } else if (page.frontmatter.image) {
-            // 其它有 image 的文章
-            page.frontmatter.head.push(['meta', { property: 'og:image', content: page.frontmatter.image }])
-        }
+        // 從 frontmatter 取得頁面專屬資訊，若無則使用網站預設值
+        const pageTitle = page.frontmatter.title || siteTitle;
+        const pageDescription = page.frontmatter.description || siteDescription;
+        const pageImage = page.frontmatter.image ?
+            (page.frontmatter.image.startsWith('http') ? page.frontmatter.image : `${siteUrl}${page.frontmatter.image}`) :
+            defaultOgImage;
+        
+        // 移除重複的舊 OG 標籤，確保乾淨
+        page.frontmatter.head = page.frontmatter.head.filter(tag => {
+            if (tag[1] && tag[1].property) {
+                return !['og:title', 'og:description', 'og:image'].includes(tag[1].property);
+            }
+            return true;
+        });
+        
+        // 加入新的、正確的 OG 標籤
+        page.frontmatter.head.push(
+            ['meta', { property: 'og:title', content: pageTitle }],
+            ['meta', { property: 'og:description', content: pageDescription }],
+            ['meta', { property: 'og:image', content: pageImage }]
+        );
     },
+    // ✨ END: 全新重寫的 extendsPage 函數 ✨
 })
