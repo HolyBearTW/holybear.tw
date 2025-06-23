@@ -45,16 +45,18 @@ export default defineConfig({
     },
 
     transformHead(pageData) {
-        const { relativePath } = pageData
+        const { relativePath } = pageData;
+    
         if (
-            relativePath.startsWith('blog/') ||
-            relativePath.startsWith('en/blog/') ||
-            relativePath === 'Mod.md'
+            relativePath && 
+            (relativePath.startsWith('blog/') ||
+             relativePath.startsWith('en/blog/') ||
+             relativePath === 'Mod.md')
         ) {
-            let head = pageData.head || []
-            head = head.filter(tag => !(tag[1] && tag[1].property === 'og:type'))
-            head.push(['meta', { property: 'og:type', content: 'article' }])
-            return head
+            let head = pageData.head || [];
+            head = head.filter(tag => !(tag[1] && tag[1].property === 'og:type'));
+            head.push(['meta', { property: 'og:type', content: 'article' }]);
+            return head;
         }
     },
 
