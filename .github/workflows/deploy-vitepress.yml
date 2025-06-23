@@ -149,14 +149,27 @@ jobs:
         run: |
           TARGET_DIR="blog/"
           CURRENT_SHA="${{ github.sha }}"
-          LAST_COMMIT_SHA=$(git rev-parse "${{ github.event.before }}" 2>/dev/null || git rev-parse "${CURRENT_SHA}~1" 2>/dev/null || echo "")
+
+          # 嘗試用 github.event.before，如果不存在則 fallback 用 CURRENT_SHA~1 再 fallback 空字串
+          if [ -n "${{ github.event.before }}" ] && git cat-file -e "${{ github.event.before }}" 2>/dev/null; then
+            LAST_COMMIT_SHA="${{ github.event.before }}"
+          elif git cat-file -e "${CURRENT_SHA}~1" 2>/dev/null; then
+            LAST_COMMIT_SHA="$(git rev-parse "${CURRENT_SHA}~1")"
+          else
+            LAST_COMMIT_SHA=""
+          fi
+
           OUTPUT_FILE="new_post_files.txt"
           DETECTED_FILES=""
-          if [ -z "$LAST_COMMIT_SHA" ] || [ "${{ github.event.before }}" = "0000000000000000000000000000000000000000" ]; then
-            DETECTED_FILES=$(git diff --name-only --diff-filter=A "${CURRENT_SHA}~1" "${CURRENT_SHA}" -- "$TARGET_DIR")
+
+          # 修正 diff 比較邏輯，避免空 SHA 與不存在 SHA 導致出錯
+          if [ -z "$LAST_COMMIT_SHA" ] || [ "$LAST_COMMIT_SHA" = "0000000000000000000000000000000000000000" ]; then
+            # fallback: 只比對 HEAD 新增檔案
+            DETECTED_FILES=$(git diff --name-only --diff-filter=A "${CURRENT_SHA}" -- "$TARGET_DIR")
           else
             DETECTED_FILES=$(git diff --name-only --diff-filter=A "${LAST_COMMIT_SHA}" "${CURRENT_SHA}" -- "$TARGET_DIR")
           fi
+
           echo "$DETECTED_FILES" | grep . > "$OUTPUT_FILE" || true
           if [ -s "$OUTPUT_FILE" ]; then
             echo "偵測到新文章，列表已儲存至 $OUTPUT_FILE"
