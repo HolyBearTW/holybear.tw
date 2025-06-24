@@ -219,25 +219,25 @@ jobs:
             ARTICLE_URL="${BASE_URL}/blog/${ARTICLE_SLUG}"
     
             # ✨ START: 新增的等待檢查邏輯 ✨
-            echo "等待 URL 生效：${ARTICLE_URL}"
+            echo "等待日誌網址生效：${ARTICLE_URL}"
             timeout=180 # 最長等待 180 秒 (3 分鐘)
-            interval=15 # 每 15 秒檢查一次
+            interval=20 # 每 20 秒檢查一次
             elapsed=0
             while [ $elapsed -lt $timeout ]; do
             # 使用 curl 檢查 HTTP 狀態碼
             response_code=$(curl -s -o /dev/null -w "%{http_code}" "${ARTICLE_URL}")
             if [ "$response_code" -eq 200 ]; then
-              echo "✅ 網址已上線！"
+              echo "✅ 日誌已上線！"
             break
             fi
-              echo "URL 尚未生效 (HTTP ${response_code})，等待 ${interval} 秒…"
+              echo "日誌網址尚未生效 (HTTP ${response_code})，等待 ${interval} 秒…"
             sleep $interval
             elapsed=$((elapsed + interval))
             done
 
             # 如果超時後網址仍然無法訪問，則跳過此檔案的通知
             if [ $elapsed -ge $timeout ]; then
-              echo "❌ 等待 URL 生效已逾時，跳過以下通知：$file_path"
+              echo "❌ 等待日誌網址生效已逾時，跳過以下通知：$file_path"
             continue # 繼續處理下一個檔案
             fi
             # ✨ END: 新增的等待檢查邏輯 ✨
