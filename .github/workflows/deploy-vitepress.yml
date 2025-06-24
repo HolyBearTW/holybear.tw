@@ -242,8 +242,8 @@ jobs:
             fi
             # ✨ END: 新增的等待檢查邏輯 ✨
 
-            COMMIT_MESSAGE=$(git log -1 --pretty=%B)
-            AUTHOR_NAME=$(git log -1 --pretty=%an)
+            COMMIT_MESSAGE=$(git log -1 --pretty=%B "$ORIGINAL_COMMIT")
+            AUTHOR_NAME=$(git log -1 --pretty=%an "$ORIGINAL_COMMIT")
             ESCAPED_TITLE=$(escape_markdownv2 "$TITLE")
             ESCAPED_COMMIT_MESSAGE=$(escape_markdownv2 "$COMMIT_MESSAGE")
             ESCAPED_AUTHOR_NAME=$(escape_markdownv2 "$AUTHOR_NAME")
