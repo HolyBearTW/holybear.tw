@@ -6,6 +6,7 @@ const musicList = [
     { src: '/music/MapleStoryM_TheGuardianOfTheStars.mp3', title: '楓之谷M - 星之守護者' },
     { src: '/music/MapleStory_MissingYou.mp3', title: '楓之谷 - 魔法森林樹洞' },
     { src: '/music/MapleStory_WhereStarsRest.mp3', title: '楓之谷 - 賽拉斯' },
+    { src: '/music/MapleStory_WhaleBelly.mp3', title: '楓之谷 - 星星被吞噬的深海' },
     { src: '/music/MapleStory_Suu2phase.mp3', title: '楓之谷 - 決戰史烏' },
     { src: '/music/MapleStory_18th_Event.mp3', title: '楓之谷 - 綻放森林' },
     { src: '/music/MapleStory_AdventureIsland.mp3', title: '楓之谷 - 冒險島' },
