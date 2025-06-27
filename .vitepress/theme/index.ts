@@ -27,7 +27,7 @@ export default {
         })
       }
 
-      // 通用右側 outline hover 事件
+      // 右側目錄 hover 行為
       let hoverTimer = null
       function handleMouseEnter(e) {
         if (hoverTimer) clearTimeout(hoverTimer)
@@ -45,8 +45,7 @@ export default {
         if (hoverTimer) clearTimeout(hoverTimer)
       }
       function setupOutlineHoverScroll() {
-        // 這邊選所有右側 outline 的 a[href^="#"]
-        document.querySelectorAll('aside nav a[href^="#"]').forEach(link => {
+        document.querySelectorAll('.outline-link').forEach(link => {
           link.removeEventListener('mouseenter', handleMouseEnter)
           link.removeEventListener('mouseleave', handleMouseLeave)
           link.addEventListener('mouseenter', handleMouseEnter)
@@ -54,11 +53,11 @@ export default {
         })
       }
 
-      // observer 監控 aside（右側 outline）
+      // observer 監控 outline 容器（只監控右側 outline 的 nav 區塊即可）
       function observeOutline() {
-        const aside = document.querySelector('aside')
+        const aside = document.querySelector('.VPDocAsideOutline') || document.querySelector('aside')
         if (!aside) return
-        setupOutlineHoverScroll()
+        setupOutlineHoverScroll() // 初次掛
         const observer = new MutationObserver(() => {
           setupOutlineHoverScroll()
         })
@@ -70,7 +69,6 @@ export default {
         replaceDocSearchHitSource()
         observeOutline()
       })
-
       window.addEventListener('vitepress:pageview', () => {
         setTimeout(() => {
           replayIfChanged()
@@ -78,7 +76,6 @@ export default {
           observeOutline()
         }, 30)
       })
-
       setInterval(() => {
         replayIfChanged()
         replaceDocSearchHitSource()
