@@ -64,6 +64,7 @@ export default {
 
         // 初始掛載
         bindEvents();
+
         // 監控 DOM 變化（例如切換頁面）
         const observer = new MutationObserver(() => {
           bindEvents();
@@ -71,12 +72,28 @@ export default {
         observer.observe(document.body, { childList: true, subtree: true });
       }
 
-      // 頁面載入時執行
+      // 初次進站
       window.addEventListener('DOMContentLoaded', () => {
         replayIfChanged();
         replaceDocSearchHitSource();
         setupOutlineHoverScroll();
       });
+
+      // SPA 切換（VitePress 1.x/0.x）
+      window.addEventListener('vitepress:pageview', () => {
+        setTimeout(() => {
+          replayIfChanged();
+          replaceDocSearchHitSource();
+          setupOutlineHoverScroll();
+        }, 30);
+      });
+
+      // 極端主題 fallback，每 200ms 比對一次內容（只要內容一變就動動畫＋補丁取代）
+      setInterval(() => {
+        replayIfChanged();
+        replaceDocSearchHitSource();
+        // 這個不用一直呼叫 setupOutlineHoverScroll，否則會一直新增 observer
+      }, 200);
     }
   }
 }
