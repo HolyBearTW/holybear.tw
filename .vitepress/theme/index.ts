@@ -1,89 +1,82 @@
-import DefaultTheme from 'vitepress/theme'
-import { onMounted } from 'vue'
+import MyCustomLayout from './MyCustomLayout.vue'
 import './style.css'
 
-// === fade-in-up 動畫效果 ===
-let lastContent = ''
-function replayIfChanged() {
-  const doc = document.querySelector('.vp-doc')
-  if (!doc) return
-  const current = doc.innerHTML
-  if (current !== lastContent) {
-    doc.classList.remove('fade-in-up')
-    // 強制 reflow
-    void (doc as HTMLElement).offsetWidth
-    doc.classList.add('fade-in-up')
-    lastContent = current
-  }
-}
+export default {
+  Layout: MyCustomLayout,
+  enhanceApp() {
+    if (typeof window !== 'undefined') {
+      let lastContent = null;
 
-// === DocSearch-Hit-source 文字自動取代 ===
-function replaceDocSearchHitSource() {
-  document.querySelectorAll('.DocSearch-Hit-source').forEach(el => {
-    if (el.textContent === "Documentation") {
-      el.textContent = "搜尋結果"
-    }
-  })
-}
-
-// === 右側目錄 hover 自動滾動到錨點 ===
-function setupOutlineHoverScroll() {
-  // debounce 避免快速滑過不停跳動
-  let timer: ReturnType<typeof setTimeout> | null = null
-
-  // 每次掛載時都重新掛事件，避免 SPA 切換文章時失效
-  function bindEvents() {
-    // 先移除舊的監聽
-    document.querySelectorAll('.VPDocAsideOutline .outline-link').forEach(link => {
-      link.removeEventListener('mouseenter', handleMouseEnter as EventListener)
-      link.removeEventListener('mouseleave', handleMouseLeave as EventListener)
-    })
-    // 再掛上新的
-    document.querySelectorAll('.VPDocAsideOutline .outline-link').forEach(link => {
-      link.addEventListener('mouseenter', handleMouseEnter as EventListener)
-      link.addEventListener('mouseleave', handleMouseLeave as EventListener)
-    })
-  }
-
-  function handleMouseEnter(this: Element) {
-    if (timer) clearTimeout(timer)
-    timer = setTimeout(() => {
-      const href = (this as HTMLAnchorElement).getAttribute('href')
-      if (href && href.startsWith('#')) {
-        const target = document.querySelector(href)
-        if (target) {
-          target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      function replayIfChanged() {
+        const doc = document.querySelector('.vp-doc');
+        if (!doc) return;
+        const current = doc.innerHTML;
+        if (current !== lastContent) {
+          doc.classList.remove('fade-in-up');
+          void doc.offsetWidth;
+          doc.classList.add('fade-in-up');
+          lastContent = current;
         }
       }
-    }, 120)
-  }
 
-  function handleMouseLeave() {
-    if (timer) clearTimeout(timer)
-  }
+      // === DocSearch-Hit-source 文字自動取代 ===
+      function replaceDocSearchHitSource() {
+        document.querySelectorAll('.DocSearch-Hit-source').forEach(el => {
+          if (el.textContent === "Documentation") {
+            el.textContent = "搜尋結果";
+          }
+        });
+      }
 
-  // 初始掛載
-  bindEvents()
-  // 每次路由切換或 DOM 更新後再掛一次
-  const observer = new MutationObserver(() => {
-    bindEvents()
-  })
-  observer.observe(document.body, { childList: true, subtree: true })
-}
+      // === 右側目錄 hover 自動滾動到錨點 ===
+      function setupOutlineHoverScroll() {
+        let timer = null;
 
-export default {
-  ...DefaultTheme,
-  enhanceApp({ app, router, siteData }) {
-    // 你可以根據需要在這裡擴展
-  },
-  setup() {
-    onMounted(() => {
-      // fade-in 動畫
-      replayIfChanged()
-      // 搜尋結果字串替換
-      replaceDocSearchHitSource()
-      // 右側目錄 hover 滾動
-      setupOutlineHoverScroll()
-    })
+        function handleMouseEnter(e) {
+          if (timer) clearTimeout(timer);
+          timer = setTimeout(() => {
+            const href = e.currentTarget.getAttribute('href');
+            if (href && href.startsWith('#')) {
+              const target = document.querySelector(href);
+              if (target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }
+            }
+          }, 120);
+        }
+
+        function handleMouseLeave() {
+          if (timer) clearTimeout(timer);
+        }
+
+        function bindEvents() {
+          // 先解除舊的監聽，避免重複
+          document.querySelectorAll('.VPDocAsideOutline .outline-link').forEach(link => {
+            link.removeEventListener('mouseenter', handleMouseEnter);
+            link.removeEventListener('mouseleave', handleMouseLeave);
+          });
+          // 重新綁定
+          document.querySelectorAll('.VPDocAsideOutline .outline-link').forEach(link => {
+            link.addEventListener('mouseenter', handleMouseEnter);
+            link.addEventListener('mouseleave', handleMouseLeave);
+          });
+        }
+
+        // 初始掛載
+        bindEvents();
+        // 監控 DOM 變化（例如切換頁面）
+        const observer = new MutationObserver(() => {
+          bindEvents();
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+      }
+
+      // 頁面載入時執行
+      window.addEventListener('DOMContentLoaded', () => {
+        replayIfChanged();
+        replaceDocSearchHitSource();
+        setupOutlineHoverScroll();
+      });
+    }
   }
 }
