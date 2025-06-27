@@ -6,6 +6,7 @@ export default {
   enhanceApp() {
     if (typeof window !== 'undefined') {
       let lastContent = null;
+      let hoverTimer = null;
 
       function replayIfChanged() {
         const doc = document.querySelector('.vp-doc');
@@ -27,14 +28,13 @@ export default {
         });
       }
 
-      // 右側目錄 hover scroll 事件代理
-      let hoverTimer = null;
-      function hoverDelegate(e) {
+      // --- 這裡是最終穩定版 ---
+      function globalHoverDelegate(e) {
         const link = e.target.closest('.outline-link');
         if (
           link &&
           link instanceof HTMLElement &&
-          link.matches('.outline-link') // 保險
+          link.matches('.outline-link')
         ) {
           if (hoverTimer) clearTimeout(hoverTimer);
           hoverTimer = setTimeout(() => {
@@ -49,25 +49,23 @@ export default {
         }
       }
 
-      // 永遠只對 .VPDocAsideOutline 掛事件代理
-      function setupOutlineHoverScroll() {
-        const asideOutline = document.querySelector('.VPDocAsideOutline');
-        if (!asideOutline) return;
-        asideOutline.removeEventListener('mouseover', hoverDelegate);
-        asideOutline.addEventListener('mouseover', hoverDelegate);
+      // 只 setup 一次，全域代理
+      function setupGlobalOutlineHoverScroll() {
+        document.removeEventListener('mouseover', globalHoverDelegate);
+        document.addEventListener('mouseover', globalHoverDelegate);
       }
 
       window.addEventListener('DOMContentLoaded', () => {
         replayIfChanged();
         replaceDocSearchHitSource();
-        setupOutlineHoverScroll();
+        setupGlobalOutlineHoverScroll();
       });
       window.addEventListener('vitepress:pageview', () => {
         setTimeout(() => {
           replayIfChanged();
           replaceDocSearchHitSource();
-          setupOutlineHoverScroll();
-        }, 80); // 保險一點
+          setupGlobalOutlineHoverScroll();
+        }, 80);
       });
       setInterval(() => {
         replayIfChanged();
