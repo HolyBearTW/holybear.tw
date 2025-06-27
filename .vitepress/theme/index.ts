@@ -27,16 +27,21 @@ export default {
         })
       }
 
-      // 右側目錄 hover 行為
+      // --- 右側目錄 hover ---
       let hoverTimer = null
       function handleMouseEnter(e) {
         if (hoverTimer) clearTimeout(hoverTimer)
         hoverTimer = setTimeout(() => {
-          const href = e.currentTarget.getAttribute('href')
-          if (href && href.startsWith('#')) {
-            const target = document.querySelector(href)
-            if (target) {
-              target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+          // 型別檢查，僅作用於 <a>
+          const target = e.currentTarget
+          if (target && target.tagName === 'A') {
+            const href = target.getAttribute('href')
+            // 只滾動錨點
+            if (href && href.startsWith('#')) {
+              const anchor = document.querySelector(href)
+              if (anchor) {
+                anchor.scrollIntoView({ behavior: 'smooth', block: 'start' })
+              }
             }
           }
         }, 120)
@@ -53,32 +58,23 @@ export default {
         })
       }
 
-      // observer 監控 outline 容器（只監控右側 outline 的 nav 區塊即可）
-      function observeOutline() {
-        const aside = document.querySelector('.VPDocAsideOutline') || document.querySelector('aside')
-        if (!aside) return
-        setupOutlineHoverScroll() // 初次掛
-        const observer = new MutationObserver(() => {
-          setupOutlineHoverScroll()
-        })
-        observer.observe(aside, { childList: true, subtree: true })
-      }
-
+      // 初始化/切頁時都補一次
       window.addEventListener('DOMContentLoaded', () => {
         replayIfChanged()
         replaceDocSearchHitSource()
-        observeOutline()
+        setupOutlineHoverScroll()
       })
       window.addEventListener('vitepress:pageview', () => {
         setTimeout(() => {
           replayIfChanged()
           replaceDocSearchHitSource()
-          observeOutline()
+          setupOutlineHoverScroll()
         }, 30)
       })
       setInterval(() => {
         replayIfChanged()
         replaceDocSearchHitSource()
+        // 不要 setupOutlineHoverScroll
       }, 200)
     }
   }
