@@ -6,7 +6,6 @@ export default {
   enhanceApp() {
     if (typeof window !== 'undefined') {
       let lastContent = null;
-      let asideObs = null;
 
       function replayIfChanged() {
         const doc = document.querySelector('.vp-doc');
@@ -28,10 +27,15 @@ export default {
         });
       }
 
+      // 右側目錄 hover scroll 事件代理
       let hoverTimer = null;
       function hoverDelegate(e) {
         const link = e.target.closest('.outline-link');
-        if (link && link instanceof HTMLElement) {
+        if (
+          link &&
+          link instanceof HTMLElement &&
+          link.matches('.outline-link') // 保險
+        ) {
           if (hoverTimer) clearTimeout(hoverTimer);
           hoverTimer = setTimeout(() => {
             const href = link.getAttribute('href');
@@ -45,37 +49,25 @@ export default {
         }
       }
 
-      // 只要 aside outline 內容變動就補事件代理
-      function observeOutline() {
-        // 先清掉舊 observer
-        if (asideObs) asideObs.disconnect();
-        // 找到 outline 容器
-        const outlineNav = document.querySelector('.VPDocAsideOutline');
-        if (!outlineNav) return;
-        // 先移除舊事件
-        outlineNav.removeEventListener('mouseover', hoverDelegate);
-        // 掛事件代理
-        outlineNav.addEventListener('mouseover', hoverDelegate);
-
-        // observer 監控內容變動，ul/li/a生成時自動補事件
-        asideObs = new MutationObserver(() => {
-          outlineNav.removeEventListener('mouseover', hoverDelegate);
-          outlineNav.addEventListener('mouseover', hoverDelegate);
-        });
-        asideObs.observe(outlineNav, { childList: true, subtree: true });
+      // 永遠只對 .VPDocAsideOutline 掛事件代理
+      function setupOutlineHoverScroll() {
+        const asideOutline = document.querySelector('.VPDocAsideOutline');
+        if (!asideOutline) return;
+        asideOutline.removeEventListener('mouseover', hoverDelegate);
+        asideOutline.addEventListener('mouseover', hoverDelegate);
       }
 
       window.addEventListener('DOMContentLoaded', () => {
         replayIfChanged();
         replaceDocSearchHitSource();
-        observeOutline();
+        setupOutlineHoverScroll();
       });
       window.addEventListener('vitepress:pageview', () => {
         setTimeout(() => {
           replayIfChanged();
           replaceDocSearchHitSource();
-          observeOutline();
-        }, 80);
+          setupOutlineHoverScroll();
+        }, 80); // 保險一點
       });
       setInterval(() => {
         replayIfChanged();
