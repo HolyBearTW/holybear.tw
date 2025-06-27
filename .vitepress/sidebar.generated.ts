@@ -3,14 +3,6 @@ export default [
   {
     "items": [
       {
-        "text": "2025-06-27-test6",
-        "link": "/blog/2025-06-27-test6"
-      },
-      {
-        "text": "2025-06-27-test7",
-        "link": "/blog/2025-06-27-test7"
-      },
-      {
         "text": "鋼索上的日子：一個年輕人的自由渴望",
         "link": "/blog/2025-06-13"
       },
