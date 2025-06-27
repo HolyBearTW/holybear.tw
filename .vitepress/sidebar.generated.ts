@@ -3,6 +3,10 @@ export default [
   {
     "items": [
       {
+        "text": "測試上傳影片 & GitHub Actions",
+        "link": "/blog/2025-06-27-test9"
+      },
+      {
         "text": "鋼索上的日子：一個年輕人的自由渴望",
         "link": "/blog/2025-06-13"
       },
