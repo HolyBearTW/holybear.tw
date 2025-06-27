@@ -30,46 +30,30 @@ export default {
 
       // === 右側目錄 hover 自動滾動到錨點 ===
       function setupOutlineHoverScroll() {
-        let timer = null;
-
-        function handleMouseEnter(e) {
-          if (timer) clearTimeout(timer);
-          timer = setTimeout(() => {
-            const href = e.currentTarget.getAttribute('href');
-            if (href && href.startsWith('#')) {
-              const target = document.querySelector(href);
-              if (target) {
-                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              }
-            }
-          }, 120);
-        }
-
-        function handleMouseLeave() {
-          if (timer) clearTimeout(timer);
-        }
-
-        function bindEvents() {
-          // 先解除舊的監聽，避免重複
-          document.querySelectorAll('.VPDocAsideOutline .outline-link').forEach(link => {
-            link.removeEventListener('mouseenter', handleMouseEnter);
-            link.removeEventListener('mouseleave', handleMouseLeave);
-          });
-          // 重新綁定
-          document.querySelectorAll('.VPDocAsideOutline .outline-link').forEach(link => {
-            link.addEventListener('mouseenter', handleMouseEnter);
-            link.addEventListener('mouseleave', handleMouseLeave);
-          });
-        }
-
-        // 初始掛載
-        bindEvents();
-
-        // 監控 DOM 變化（例如切換頁面）
-        const observer = new MutationObserver(() => {
-          bindEvents();
+        document.querySelectorAll('.VPDocAsideOutline .outline-link').forEach(link => {
+          // 先移除之前的監聽，避免重複
+          link.removeEventListener('mouseenter', handleMouseEnter);
+          link.removeEventListener('mouseleave', handleMouseLeave);
+          // 再加上新的
+          link.addEventListener('mouseenter', handleMouseEnter);
+          link.addEventListener('mouseleave', handleMouseLeave);
         });
-        observer.observe(document.body, { childList: true, subtree: true });
+      }
+      let timer = null;
+      function handleMouseEnter(e) {
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(() => {
+          const href = e.currentTarget.getAttribute('href');
+          if (href && href.startsWith('#')) {
+            const target = document.querySelector(href);
+            if (target) {
+              target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          }
+        }, 120);
+      }
+      function handleMouseLeave() {
+        if (timer) clearTimeout(timer);
       }
 
       // 初次進站
@@ -84,7 +68,7 @@ export default {
         setTimeout(() => {
           replayIfChanged();
           replaceDocSearchHitSource();
-          setupOutlineHoverScroll();
+          setupOutlineHoverScroll(); // <<=== 新增這裡
         }, 30);
       });
 
@@ -92,7 +76,7 @@ export default {
       setInterval(() => {
         replayIfChanged();
         replaceDocSearchHitSource();
-        // 這個不用一直呼叫 setupOutlineHoverScroll，否則會一直新增 observer
+        // 這裡不要呼叫 setupOutlineHoverScroll，否則會不斷重複掛事件！
       }, 200);
     }
   }
