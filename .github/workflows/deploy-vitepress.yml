@@ -136,11 +136,12 @@ jobs:
       - name: 建置 VitePress 網站
         run: yarn run build
 
-      # ★★★ 這一段是關鍵！★★★
       - name: 部署前還原 git user 設定
         run: |
           git config --global --unset user.name || true
           git config --global --unset user.email || true
+          git config --unset user.name || true
+          git config --unset user.email || true
 
       - name: 部署到 GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
@@ -149,6 +150,8 @@ jobs:
           branch: gh-pages
           folder: .vitepress/dist
           clean: true
+          commit-author-name: github-actions[bot]
+          commit-author-email: 41898282+github-actions[bot]@users.noreply.github.com
 
       # 部署之後的步驟，不會動 git config
       - name: 偵測新文章
