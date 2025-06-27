@@ -136,6 +136,11 @@ jobs:
       - name: 建置 VitePress 網站
         run: yarn run build
 
+      - name: 還原 git user 設定
+        run: |
+          git config --global --unset user.name || true
+          git config --global --unset user.email || true
+
       - name: 部署到 GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
