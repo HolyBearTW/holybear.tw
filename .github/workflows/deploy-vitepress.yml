@@ -150,8 +150,8 @@ jobs:
           branch: gh-pages
           folder: .vitepress/dist
           clean: true
-          commit-author-name: github-actions[bot]
-          commit-author-email: 41898282+github-actions[bot]@users.noreply.github.com
+          git-config-name: github-actions[bot]
+          git-config-email: 41898282+github-actions[bot]@users.noreply.github.com
 
       # 部署之後的步驟，不會動 git config
       - name: 偵測新文章
