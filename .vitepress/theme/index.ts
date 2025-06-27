@@ -27,7 +27,7 @@ export default {
         })
       }
 
-      // 右側目錄 hover
+      // 通用右側 outline hover 事件
       let hoverTimer = null
       function handleMouseEnter(e) {
         if (hoverTimer) clearTimeout(hoverTimer)
@@ -45,7 +45,8 @@ export default {
         if (hoverTimer) clearTimeout(hoverTimer)
       }
       function setupOutlineHoverScroll() {
-        document.querySelectorAll('.VPDocAsideOutline .outline-link').forEach(link => {
+        // 這邊選所有右側 outline 的 a[href^="#"]
+        document.querySelectorAll('aside nav a[href^="#"]').forEach(link => {
           link.removeEventListener('mouseenter', handleMouseEnter)
           link.removeEventListener('mouseleave', handleMouseLeave)
           link.addEventListener('mouseenter', handleMouseEnter)
@@ -53,11 +54,10 @@ export default {
         })
       }
 
-      // 用 observer 監控右側 outline DOM，有變化就掛事件
+      // observer 監控 aside（右側 outline）
       function observeOutline() {
-        const aside = document.querySelector('.VPDocAsideOutline')
+        const aside = document.querySelector('aside')
         if (!aside) return
-        // 初次也掛一次
         setupOutlineHoverScroll()
         const observer = new MutationObserver(() => {
           setupOutlineHoverScroll()
@@ -82,7 +82,6 @@ export default {
       setInterval(() => {
         replayIfChanged()
         replaceDocSearchHitSource()
-        // 不要呼叫 observeOutline 也不要呼叫 setupOutlineHoverScroll
       }, 200)
     }
   }
