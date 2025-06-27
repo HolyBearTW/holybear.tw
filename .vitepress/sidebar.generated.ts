@@ -4,6 +4,10 @@ export default [
     "items": [
       {
         "text": "測試上傳影片 & GitHub Actions",
+        "link": "/blog/test-250627-5"
+      },
+      {
+        "text": "測試上傳影片 & GitHub Actions",
         "link": "/blog/test-25627-4"
       },
       {
