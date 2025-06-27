@@ -1,6 +1,8 @@
 permissions:
   contents: write
   actions: read
+  pages: write      # 新增，讓 workflow 能部署到 Pages
+  id-token: write   # 新增，讓 deploy-pages 能用 OIDC
 
 name: 部署 VitePress 靜態網站到 GitHub Pages
 
@@ -13,33 +15,15 @@ on:
 jobs:
   full-pipeline:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
     steps:
       - name: 遷出程式碼
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: 部屬日誌
-        run: |
-          deleted_any=0
-          for en_file in en/blog/*.md; do
-            [ ! -f "$en_file" ] && continue
-            base_file="blog/$(basename "$en_file")"
-            if [ ! -f "$base_file" ]; then
-              git rm "$en_file"
-              echo "Deleted $en_file (orphan)"
-              deleted_any=1
-            fi
-          done
-          if [ $deleted_any -eq 1 ]; then
-            git config --global user.name 'System Administrator'
-            git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-            git commit -am "chore: sync delete en/blog files"
-            git pull --rebase origin main
-            git push || git push --force
-          else
-            echo "No en/blog files to delete."
-          fi
 
       - name: 設定 Node.js 與快取
         uses: actions/setup-node@v4
@@ -136,24 +120,19 @@ jobs:
       - name: 建置 VitePress 網站
         run: yarn run build
 
-      - name: 部署前還原 git user 設定
-        run: |
-          git config --global --unset user.name || true
-          git config --global --unset user.email || true
-          git config --unset user.name || true
-          git config --unset user.email || true
+      - name: 設定 GitHub Pages
+        uses: actions/configure-pages@v5
 
-      - name: 部署到 GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@v4
+      - name: 上傳靜態產物到 Pages Artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: gh-pages
-          folder: .vitepress/dist
-          clean: true
-          git-config-name: github-actions[bot]
-          git-config-email: 41898282+github-actions[bot]@users.noreply.github.com
+          path: .vitepress/dist
 
-      # 部署之後的步驟，不會動 git config
+      - name: 正式部署到 GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      # 之後的偵測新文章、Telegram 通知步驟全部可以照原本邏輯不變
       - name: 偵測新文章
         id: detect-new-files
         run: |
