@@ -25,7 +25,21 @@ jobs:
         with:
           fetch-depth: 0
 
+      # --- 新增：檢查 blog/en/blog/docs 是否有變動 ---
+      - name: 檢查內容是否有變動
+        id: detect-content-changed
+        run: |
+          CHANGED=0
+          # 比對有無 blog/, en/blog/, docs/ 相關變更
+          if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -E '^(blog/|en/blog/|docs/)' ; then
+            CHANGED=1
+          fi
+          echo "has_changed=$([[ $CHANGED -eq 1 ]] && echo true || echo false)" >> $GITHUB_OUTPUT
+
+      # --- 下方步驟都加上條件判斷 ---
+
       - name: 部屬日誌
+        if: steps.detect-content-changed.outputs.has_changed == 'true'
         run: |
           deleted_any=0
           for en_file in en/blog/*.md; do
@@ -57,15 +71,19 @@ jobs:
         run: yarn install
 
       - name: 產生作者清單
+        if: steps.detect-content-changed.outputs.has_changed == 'true'
         run: node .vitepress/components/generateAuthors.cjs
 
       - name: 產生側邊欄
+        if: steps.detect-content-changed.outputs.has_changed == 'true'
         run: node .vitepress/components/generateSidebar.cjs
 
       - name: 產生 sitemap.xml
+        if: steps.detect-content-changed.outputs.has_changed == 'true'
         run: node .vitepress/components/generateSitemap.cjs
 
       - name: amend sidebar 進最新 commit（如有變更）
+        if: steps.detect-content-changed.outputs.has_changed == 'true'
         run: |
           git config --global user.name "${{ github.actor }}"
           git config --global user.email "${{ github.actor }}@users.noreply.github.com"
@@ -79,6 +97,7 @@ jobs:
           fi
 
       - name: Commit 並 push yarn.lock
+        if: steps.detect-content-changed.outputs.has_changed == 'true'
         run: |
           git config --global user.name 'System Administrator'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
@@ -92,6 +111,7 @@ jobs:
           fi
 
       - name: 備份、產生、還原並遞交英文 Blog 檔案
+        if: steps.detect-content-changed.outputs.has_changed == 'true'
         shell: /usr/bin/bash -e {0}
         run: |
           # --- 階段 1: 備份所有已存在的英文檔案 ---
@@ -99,7 +119,6 @@ jobs:
           mkdir -p "$BACKUP_DIR"
           echo "=> 階段 1: 備份所有已存在的英文文章..."
 
-          # 檢查 en/blog 目錄是否存在且有檔案
           if [ -d "en/blog" ] && [ -n "$(ls -A en/blog/*.md 2>/dev/null)" ]; then
             echo "    - 發現已存在的檔案，正在移至暫存區以避免被覆蓋..."
             mv en/blog/*.md "$BACKUP_DIR/"
@@ -107,12 +126,10 @@ jobs:
             echo "    - en/blog/ 目錄為空或不存在，無需備份。"
           fi
 
-          # --- 階段 2: 產生遞補檔案 ---
           echo "=> 階段 2: 執行遞補檔案產生程序 (yarn gen-en-blog)..."
           yarn gen-en-blog
           echo "    - 產生程序完成。"
 
-          # --- 階段 3: 還原備份的檔案 ---
           echo "=> 階段 3: 還原先前已存在的英文檔案..."
           if [ -n "$(ls -A $BACKUP_DIR 2>/dev/null)" ]; then
             mv -f "$BACKUP_DIR"/* en/blog/
@@ -122,7 +139,6 @@ jobs:
           fi
           rm -rf "$BACKUP_DIR"
 
-          # --- 階段 4: Commit 並 Push 變更 ---
           echo "=> 階段 4: 檢查是否有新檔案需要提交..."
           git config --global user.name 'System Administrator'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
@@ -138,6 +154,7 @@ jobs:
             echo "    - 新檔案已成功提交。"
           fi
 
+      # 下面這些步驟建議還是 always run（就是內容沒動時仍可 build/部署/偵測新文/發通知）
       - name: 清除 Vite/VitePress 快取
         run: |
           rm -rf .vitepress/.cache .vitepress/dist .vite node_modules/.vite
@@ -157,7 +174,7 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
-      # 之後的偵測新文章、Telegram 通知步驟全部可以照原本邏輯不變
+      # 新文章偵測 & Telegram 通知照原本邏輯即可
       - name: 偵測新文章
         id: detect-new-files
         run: |
