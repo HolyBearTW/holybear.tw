@@ -27,20 +27,11 @@ export default {
         })
       }
 
-      // === 右側目錄 hover 自動滾動到錨點，且支援 SPA 切頁 ===
-      function setupOutlineHoverScroll() {
-        // 先移除過去所有監聽，避免重複
-        document.querySelectorAll('.VPDocAsideOutline .outline-link').forEach(link => {
-          link.removeEventListener('mouseenter', handleMouseEnter)
-          link.removeEventListener('mouseleave', handleMouseLeave)
-          link.addEventListener('mouseenter', handleMouseEnter)
-          link.addEventListener('mouseleave', handleMouseLeave)
-        })
-      }
-      let timer = null
+      // 右側目錄 hover
+      let hoverTimer = null
       function handleMouseEnter(e) {
-        if (timer) clearTimeout(timer)
-        timer = setTimeout(() => {
+        if (hoverTimer) clearTimeout(hoverTimer)
+        hoverTimer = setTimeout(() => {
           const href = e.currentTarget.getAttribute('href')
           if (href && href.startsWith('#')) {
             const target = document.querySelector(href)
@@ -51,34 +42,47 @@ export default {
         }, 120)
       }
       function handleMouseLeave() {
-        if (timer) clearTimeout(timer)
+        if (hoverTimer) clearTimeout(hoverTimer)
+      }
+      function setupOutlineHoverScroll() {
+        document.querySelectorAll('.VPDocAsideOutline .outline-link').forEach(link => {
+          link.removeEventListener('mouseenter', handleMouseEnter)
+          link.removeEventListener('mouseleave', handleMouseLeave)
+          link.addEventListener('mouseenter', handleMouseEnter)
+          link.addEventListener('mouseleave', handleMouseLeave)
+        })
       }
 
-      // 監控 DOM，有 outline-link 變動就重新掛事件
-      const observer = new MutationObserver(() => {
+      // 用 observer 監控右側 outline DOM，有變化就掛事件
+      function observeOutline() {
+        const aside = document.querySelector('.VPDocAsideOutline')
+        if (!aside) return
+        // 初次也掛一次
         setupOutlineHoverScroll()
-      })
+        const observer = new MutationObserver(() => {
+          setupOutlineHoverScroll()
+        })
+        observer.observe(aside, { childList: true, subtree: true })
+      }
+
       window.addEventListener('DOMContentLoaded', () => {
         replayIfChanged()
         replaceDocSearchHitSource()
-        setupOutlineHoverScroll()
-        observer.observe(document.body, { childList: true, subtree: true })
+        observeOutline()
       })
 
-      // SPA 切換（VitePress 1.x/0.x）
       window.addEventListener('vitepress:pageview', () => {
         setTimeout(() => {
           replayIfChanged()
           replaceDocSearchHitSource()
-          setupOutlineHoverScroll()
+          observeOutline()
         }, 30)
       })
 
-      // 極端主題 fallback，每 200ms 比對一次內容（只要內容一變就動動畫＋補丁取代）
       setInterval(() => {
         replayIfChanged()
         replaceDocSearchHitSource()
-        // 不要 setupOutlineHoverScroll，否則會掛爆事件
+        // 不要呼叫 observeOutline 也不要呼叫 setupOutlineHoverScroll
       }, 200)
     }
   }
