@@ -27,38 +27,31 @@ export default {
         })
       }
 
-      // --- 右側目錄 hover ---
-      let hoverTimer = null
-      function handleMouseEnter(e) {
-        if (hoverTimer) clearTimeout(hoverTimer)
-        hoverTimer = setTimeout(() => {
-          // 型別檢查，僅作用於 <a>
-          const target = e.currentTarget
-          if (target && target.tagName === 'A') {
-            const href = target.getAttribute('href')
-            // 只滾動錨點
+      // 事件代理方式
+      function setupOutlineHoverScroll() {
+        const aside = document.querySelector('.VPDocAsideOutline') || document.querySelector('aside');
+        if (!aside) return;
+        aside.removeEventListener('mouseover', hoverDelegate);
+        aside.addEventListener('mouseover', hoverDelegate);
+      }
+      let hoverTimer = null;
+      function hoverDelegate(e) {
+        const link = e.target.closest('.outline-link');
+        if (link && link instanceof HTMLElement) {
+          if (hoverTimer) clearTimeout(hoverTimer);
+          hoverTimer = setTimeout(() => {
+            const href = link.getAttribute('href');
             if (href && href.startsWith('#')) {
-              const anchor = document.querySelector(href)
+              const anchor = document.querySelector(href);
+              console.log('hover scroll to', href, anchor);
               if (anchor) {
-                anchor.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                anchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
               }
             }
-          }
-        }, 120)
-      }
-      function handleMouseLeave() {
-        if (hoverTimer) clearTimeout(hoverTimer)
-      }
-      function setupOutlineHoverScroll() {
-        document.querySelectorAll('.outline-link').forEach(link => {
-          link.removeEventListener('mouseenter', handleMouseEnter)
-          link.removeEventListener('mouseleave', handleMouseLeave)
-          link.addEventListener('mouseenter', handleMouseEnter)
-          link.addEventListener('mouseleave', handleMouseLeave)
-        })
+          }, 120);
+        }
       }
 
-      // 初始化/切頁時都補一次
       window.addEventListener('DOMContentLoaded', () => {
         replayIfChanged()
         replaceDocSearchHitSource()
@@ -74,7 +67,6 @@ export default {
       setInterval(() => {
         replayIfChanged()
         replaceDocSearchHitSource()
-        // 不要 setupOutlineHoverScroll
       }, 200)
     }
   }
