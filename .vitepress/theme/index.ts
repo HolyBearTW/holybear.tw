@@ -6,7 +6,6 @@ export default {
   enhanceApp() {
     if (typeof window !== 'undefined') {
       let lastContent = null
-      let lastAside = null
 
       function replayIfChanged() {
         const doc = document.querySelector('.vp-doc')
@@ -28,19 +27,7 @@ export default {
         })
       }
 
-      // 事件代理方式，支援 aside DOM 被換掉
-      function setupOutlineHoverScroll() {
-        const aside = document.querySelector('.VPDocAsideOutline') || document.querySelector('aside');
-        if (!aside) return;
-        // 如果 aside 換了，移除舊的事件代理
-        if (lastAside && lastAside !== aside) {
-          lastAside.removeEventListener('mouseover', hoverDelegate);
-        }
-        aside.removeEventListener('mouseover', hoverDelegate);
-        aside.addEventListener('mouseover', hoverDelegate);
-        lastAside = aside;
-      }
-
+      // 右側目錄 hover scroll 事件代理
       let hoverTimer = null;
       function hoverDelegate(e) {
         const link = e.target.closest('.outline-link');
@@ -50,7 +37,6 @@ export default {
             const href = link.getAttribute('href');
             if (href && href.startsWith('#')) {
               const anchor = document.querySelector(href);
-              // console.log('hover scroll to', href, anchor);
               if (anchor) {
                 anchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
               }
@@ -59,28 +45,44 @@ export default {
         }
       }
 
-      // 用 MutationObserver 監控 aside 變動（進階，防止 SPA 切頁 DOM 換掉後事件失效）
-      function observeAside() {
+      // 用 MutationObserver 保證事件永遠掛在最新 aside
+      let asideObs = null
+      function observeAsideAndBind() {
+        // 先拔掉所有舊 aside 的事件
+        document.querySelectorAll('.VPDocAsideOutline, aside').forEach(aside => {
+          aside.removeEventListener('mouseover', hoverDelegate)
+        })
+        // 幫現有 aside 補事件
+        const aside = document.querySelector('.VPDocAsideOutline') || document.querySelector('aside');
+        if (aside) aside.addEventListener('mouseover', hoverDelegate);
+
+        // observer 本身只需啟動一次
+        if (asideObs) asideObs.disconnect();
         const main = document.querySelector('main');
-        if (!main) return;
-        const obs = new MutationObserver(() => {
-          setupOutlineHoverScroll();
-        });
-        obs.observe(main, { childList: true, subtree: true });
+        if (main) {
+          asideObs = new MutationObserver(() => {
+            // aside DOM 變動時重新掛事件
+            document.querySelectorAll('.VPDocAsideOutline, aside').forEach(aside => {
+              aside.removeEventListener('mouseover', hoverDelegate)
+            })
+            const aside = document.querySelector('.VPDocAsideOutline') || document.querySelector('aside');
+            if (aside) aside.addEventListener('mouseover', hoverDelegate);
+          });
+          asideObs.observe(main, { childList: true, subtree: true });
+        }
       }
 
       window.addEventListener('DOMContentLoaded', () => {
         replayIfChanged()
         replaceDocSearchHitSource()
-        setupOutlineHoverScroll()
-        observeAside()
+        observeAsideAndBind()
       })
       window.addEventListener('vitepress:pageview', () => {
         setTimeout(() => {
           replayIfChanged()
           replaceDocSearchHitSource()
-          setupOutlineHoverScroll()
-        }, 50)
+          observeAsideAndBind()
+        }, 30)
       })
       setInterval(() => {
         replayIfChanged()
