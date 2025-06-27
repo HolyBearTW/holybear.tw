@@ -19,115 +19,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: 部屬日誌
-        run: |
-          deleted_any=0
-          for en_file in en/blog/*.md; do
-            [ ! -f "$en_file" ] && continue
-            base_file="blog/$(basename "$en_file")"
-            if [ ! -f "$base_file" ]; then
-              git rm "$en_file"
-              echo "Deleted $en_file (orphan)"
-              deleted_any=1
-            fi
-          done
-          if [ $deleted_any -eq 1 ]; then
-            git config --global user.name 'System Administrator'
-            git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-            git commit -am "chore: sync delete en/blog files"
-            git pull --rebase origin main
-            git push || git push --force
-          else
-            echo "No en/blog files to delete."
-          fi
-
-      - name: 設定 Node.js 與快取
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'yarn'
-
-      - name: 安裝相依套件
-        run: yarn install
-
-      - name: 產生作者清單
-        run: node .vitepress/components/generateAuthors.cjs
-
-      - name: 產生側邊欄
-        run: node .vitepress/components/generateSidebar.cjs
-
-      - name: amend sidebar 進最新 commit（如有變更）
-        run: |
-          git config --global user.name "${{ github.actor }}"
-          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
-          git add .vitepress/sidebar.generated.ts .vitepress/sidebar.generated.en.ts .vitepress/theme/authors.json
-          if git diff --cached --quiet; then
-            echo "沒有 sidebar 或 authors 變更，無需 amend"
-          else
-            git commit --amend --no-edit
-            git push --force-with-lease
-            echo "已 amend sidebar / authors 進原本 commit"
-          fi
-
-      - name: Commit 並 push yarn.lock
-        run: |
-          git config --global user.name 'System Administrator'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          if git diff --quiet yarn.lock; then
-            echo "No changes to yarn.lock."
-          else
-            git add yarn.lock
-            git commit -m "chore: update yarn.lock [bot]"
-            git pull --rebase origin main
-            git push || git push --force
-          fi
-
-      - name: 備份、產生、還原並遞交英文 Blog 檔案
-        shell: /usr/bin/bash -e {0}
-        run: |
-          # --- 階段 1: 備份所有已存在的英文檔案 ---
-          BACKUP_DIR="tmp_existing_en_files"
-          mkdir -p "$BACKUP_DIR"
-          echo "=> 階段 1: 備份所有已存在的英文文章..."
-
-          # 檢查 en/blog 目錄是否存在且有檔案
-          if [ -d "en/blog" ] && [ -n "$(ls -A en/blog/*.md 2>/dev/null)" ]; then
-            echo "    - 發現已存在的檔案，正在移至暫存區以避免被覆蓋..."
-            mv en/blog/*.md "$BACKUP_DIR/"
-          else
-            echo "    - en/blog/ 目錄為空或不存在，無需備份。"
-          fi
-
-          # --- 階段 2: 產生遞補檔案 ---
-          echo "=> 階段 2: 執行遞補檔案產生程序 (yarn gen-en-blog)..."
-          yarn gen-en-blog
-          echo "    - 產生程序完成。"
-
-          # --- 階段 3: 還原備份的檔案 ---
-          echo "=> 階段 3: 還原先前已存在的英文檔案..."
-          if [ -n "$(ls -A $BACKUP_DIR 2>/dev/null)" ]; then
-            mv -f "$BACKUP_DIR"/* en/blog/
-            echo "    - 已還原備份的檔案。"
-          else
-            echo "    - 沒有需要還原的檔案。"
-          fi
-          rm -rf "$BACKUP_DIR"
-
-          # --- 階段 4: Commit 並 Push 變更 ---
-          echo "=> 階段 4: 檢查是否有新檔案需要提交..."
-          git config --global user.name 'System Administrator'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git add en/blog/
-
-          if git diff --cached --quiet; then
-            echo "    - 沒有新產生的遞補檔案需要提交。"
-          else
-            echo "    - 偵測到新產生的遞補檔案，正在提交..."
-            git commit -m "chore: auto-generate en blog placeholders"
-            git pull --rebase origin main
-            git push --set-upstream origin main || git push
-            echo "    - 新檔案已成功提交。"
-          fi
+      # ...（前面 git config 步驟不用動）
 
       - name: 清除 Vite/VitePress 快取
         run: |
@@ -136,7 +28,8 @@ jobs:
       - name: 建置 VitePress 網站
         run: yarn run build
 
-      - name: 還原 git user 設定
+      # ★ 這步驟要緊貼在 deploy action 前，且之後不要有任何 step 動 git config
+      - name: 部署前還原 git 使用者設定
         run: |
           git config --global --unset user.name || true
           git config --global --unset user.email || true
@@ -149,6 +42,7 @@ jobs:
           folder: .vitepress/dist
           clean: true
 
+      # ★★★ 下面這些 step 建議都放在 deploy action 之後，且不要動 git config
       - name: 偵測新文章
         id: detect-new-files
         run: |
