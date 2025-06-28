@@ -3,7 +3,7 @@
 layout: home
 
 hero:
-  name: "Holybear's Blog"
+  name: "HolyBear's Blog"
   text: "My Personal Website"
   tagline: "Also a personal collection of HyperOS Mod's works"
   image:
