@@ -128,6 +128,12 @@ a, button, [role="button"], .btn,
 
 /* ====== 首頁大標題&主圖發光特效 ====== */
 
+/* 強制大標題不換行 */
+.VPHomeHero .heading .name,
+.VPHomeHero .heading .text {
+  white-space: nowrap;
+}
+
 /* 首頁大標題漸層＋發光 */
 .VPHomeHero .name.clip {
     filter: drop-shadow(0 2px 32px #00ffee88) drop-shadow(0 0px 8px #00ffee44);
