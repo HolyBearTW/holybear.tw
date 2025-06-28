@@ -131,7 +131,8 @@ a, button, [role="button"], .btn,
 /* 強制大標題不換行 */
 .VPHomeHero .heading .name,
 .VPHomeHero .heading .text {
-  white-space: nowrap;
+    white-space: nowrap;
+    line-height: normal;
 }
 
 /* 首頁大標題漸層＋發光 */

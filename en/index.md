@@ -3,8 +3,8 @@
 layout: home
 
 hero:
-  name: "HolyBear's Secret Base"
-  text: "This is HolyBear's personal website"
+  name: "Holybear's Blog"
+  text: "My Personal Website"
   tagline: "Also a personal collection of HyperOS Mod's works"
   image:
     src: /logo.png
