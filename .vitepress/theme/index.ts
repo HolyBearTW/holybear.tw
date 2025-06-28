@@ -22,6 +22,16 @@ export default {
             window.addEventListener('vitepress:pageview', updateBlogClass);
             // 監聽前進/返回
             window.addEventListener('popstate', updateBlogClass);
+            // MutationObserver 監聽內容區變動
+            const targetNode = document.querySelector('.VPSidebar') || document.getElementById('app');
+            if (targetNode) {
+                let debounceTimer = null;
+                const observer = new MutationObserver(() => {
+                    clearTimeout(debounceTimer);
+                    debounceTimer = setTimeout(updateBlogClass, 100);
+                });
+                observer.observe(targetNode, { childList: true, subtree: true });
+            }
 
             // --- 原本的功能 ---
             let lastContent = null;
