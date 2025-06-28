@@ -11,19 +11,20 @@ export default {
         return /^\/(en\/)?blog\/(?!index\.html$)[^/]+\.html(?:[?#].*)?$/.test(path);
       }
       function updateBlogClass() {
-        document.body.classList.remove('is-blog-page');
-        if (isBlogPage(window.location.pathname)) {
+        const shouldBeBlog = isBlogPage(window.location.pathname);
+        const hasClass = document.body.classList.contains('is-blog-page');
+        if (shouldBeBlog && !hasClass) {
           document.body.classList.add('is-blog-page');
+        } else if (!shouldBeBlog && hasClass) {
+          document.body.classList.remove('is-blog-page');
         }
       }
       // 首次進站
-      updateBlogClass();
+      window.addEventListener('DOMContentLoaded', updateBlogClass);
       // 監聽 VitePress 路由切換
       window.addEventListener('vitepress:pageview', updateBlogClass);
       // 監聽前進/返回
       window.addEventListener('popstate', updateBlogClass);
-      // 保險：每 300ms 強制同步一次
-      setInterval(updateBlogClass, 300);
 
       // --- 原本的功能 ---
       let lastContent = null;

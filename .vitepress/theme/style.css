@@ -413,26 +413,56 @@ html {
 
 /* 左側 sidebar 文章項目的動態效果，只保留動畫和區塊感，不覆蓋間距 */
 .VPSidebar .text {
-  display: inline-block;
-  transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s;
-  opacity: 0.8;
-  cursor: pointer;
-  border-radius: 4px;
-  padding: 8px 8px; /* 上下 8px，左右 8px，可依需求調整 */
-  position: relative;
-  /* 不要設 margin 讓它回到預設 */
-  /* line-height: 1.7;  // 如果還想再高，可加這一行 */
+    display: inline-block;
+    transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s;
+    opacity: 0.8;
+    cursor: pointer;
+    border-radius: 4px;
+    padding: 8px 8px;
+    position: relative;
+    /* 不要設 margin 讓它回到預設 */
+    /* line-height: 1.7;  // 如果還想再高，可加這一行 */
 }
 
-.VPSidebar .text:hover {
-  opacity: 1;
-  transform: translateX(2px);
-  color: var(--vp-c-brand-1);
-  background-color: var(--vp-c-bg-soft);
+    .VPSidebar .text:hover {
+        opacity: 1;
+        transform: translateX(2px);
+        color: var(--vp-c-brand-1);
+        background-color: var(--vp-c-bg-soft);
+    }
+
+    .VPSidebar .text:active {
+        transform: scale(0.98);
+        transition: transform 0.1s;
+    }
+
+.VPSidebarItem .link,
+.VPSidebarItem a[href] {
+    transition: transform 0.2s ease-in-out;
+    transform-origin: center;
+    display: inline-block;
 }
-.VPSidebar .text:active {
-  transform: scale(0.98);
-  transition: transform 0.1s;
+
+    .VPSidebarItem .link:hover,
+    .VPSidebarItem a[href]:hover {
+        transform: scale(1.08);
+    }
+
+    .VPSidebarItem .link:active,
+    .VPSidebarItem a[href]:active {
+        transform: scale(0.95);
+    }
+
+.VPSidebarItem > .text:not([href]),
+.VPSidebarGroup > .title,
+.VPSidebarItem.group > .text {
+    transform: none !important;
+    transition: none !important;
+}
+
+.VPSidebarItem .indicator {
+    transition: opacity 0.5s ease-in-out !important;
+    transform: none !important;
 }
 
 /* 文章由下往上的動畫 */

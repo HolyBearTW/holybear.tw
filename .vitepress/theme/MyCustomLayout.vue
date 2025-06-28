@@ -268,6 +268,7 @@
     }
 </style>
 
+/* 側邊欄間距 */
 <style>
     .group + .group[data-v-a84b7c21] {
         border-top: 1px solid var(--vp-c-divider) !important;
@@ -276,7 +277,7 @@
     }
 
     section.VPSidebarItem.level-0 {
-        padding-bottom: 4px !important;
+        padding-bottom: 10px !important;
         padding-top: 0 !important;
     }
 </style>
