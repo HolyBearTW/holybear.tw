@@ -277,7 +277,7 @@
     }
 
     section.VPSidebarItem.level-0 {
-        padding-bottom: 10px !important;
+        padding-bottom: 8px !important;
         padding-top: 0 !important;
     }
 </style>
