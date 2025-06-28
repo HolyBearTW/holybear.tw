@@ -544,23 +544,21 @@ html {
     }
 }
 
-/* 導覽列 */
-/* 導覽列「內容區」流體居中 + padding */
+  /* 導覽列 */
+  /* 導覽列「內容區」流體居中 + padding */
   :root {
     --main-width: 1200px;
     --main-padding: 24px;
   }
-
    body:not(.is-blog-page) .VPNavBar {
-    padding-left: max(0px, calc(50vw - var(--main-width) / 2));
+    padding-left: calc(max(0px, calc(50vw - var(--main-width) / 2)) - 25px);
     padding-right: max(0px, calc(50vw - var(--main-width) / 2));
-   }
-
+  }
     body:not(.is-blog-page) .VPNavBar .container,
     body:not(.is-blog-page) .vp-doc.container,
     body:not(.is-blog-page) .VPContent .container {
-        width: var(--main-width);
-        max-width: none;
+        max-width: var(--main-width);
+        width: 100%;
         margin: 0 auto;
         padding-left: var(--main-padding);
         padding-right: var(--main-padding);
