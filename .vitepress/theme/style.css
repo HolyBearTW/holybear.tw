@@ -543,3 +543,47 @@ html {
         box-shadow: none !important;
     }
 }
+
+/* 導覽列 */
+/* 導覽列「內容區」流體居中 + padding */
+  :root {
+    --main-width: 1200px;
+    --main-padding: 24px;
+  }
+
+   body:not(.is-blog-page) .VPNavBar {
+    padding-left: max(0px, calc(50vw - var(--main-width) / 2));
+    padding-right: max(0px, calc(50vw - var(--main-width) / 2));
+   }
+
+    body:not(.is-blog-page) .VPNavBar .container,
+    body:not(.is-blog-page) .vp-doc.container,
+    body:not(.is-blog-page) .VPContent .container {
+        width: var(--main-width);
+        max-width: none;
+        margin: 0 auto;
+        padding-left: var(--main-padding);
+        padding-right: var(--main-padding);
+        box-sizing: border-box;
+    }
+
+    /* 右側按鈕齊主內容右邊 */
+    body:not(.is-blog-page) .VPNavBar .nav-actions {
+        position: absolute;
+        top: 0;
+        right: calc(max(0px, calc(50vw - var(--main-width) / 2)) + var(--main-padding));
+    }
+
+    /* 首頁與列表頁（非 is-blog-page）導覽列下方黑線 */
+    body:not(.is-blog-page) .divider,
+    body:not(.is-blog-page) .divider-line {
+    position: relative !important;
+    left: 50% !important;
+    right: 50% !important;
+    width: 100vw !important;
+    max-width: none !important;
+    margin-left: -50vw !important;
+    margin-right: -50vw !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+    }
