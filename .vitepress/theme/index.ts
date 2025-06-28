@@ -5,6 +5,27 @@ export default {
   Layout: MyCustomLayout,
   enhanceApp() {
     if (typeof window !== 'undefined') {
+      // --- is-blog-page 控制 ---
+      function isBlogPage(path) {
+        // 根據你的文章網址格式調整這個正則！
+        return /^\/(en\/)?blog\/(?!index\.html$)[^/]+\.html(?:[?#].*)?$/.test(path);
+      }
+      function updateBlogClass() {
+        document.body.classList.remove('is-blog-page');
+        if (isBlogPage(window.location.pathname)) {
+          document.body.classList.add('is-blog-page');
+        }
+      }
+      // 首次進站
+      updateBlogClass();
+      // 監聽 VitePress 路由切換
+      window.addEventListener('vitepress:pageview', updateBlogClass);
+      // 監聽前進/返回
+      window.addEventListener('popstate', updateBlogClass);
+      // 保險：每 300ms 強制同步一次
+      setInterval(updateBlogClass, 300);
+
+      // --- 原本的功能 ---
       let lastContent = null;
       let hoverTimer = null;
 
