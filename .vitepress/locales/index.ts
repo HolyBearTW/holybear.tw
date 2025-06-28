@@ -13,7 +13,7 @@ export default {
     en: {
       label: 'English',
       lang: en.lang,
-      title: "Holybear's Blog",
+      title: "HolyBear's Blog",
       description: en.description,
       themeConfig: en.themeConfig,
     }
