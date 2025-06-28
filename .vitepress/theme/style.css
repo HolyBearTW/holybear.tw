@@ -442,3 +442,104 @@ html {
 .vp-doc.fade-in-up {
   animation: fadeInUp 0.6s cubic-bezier(0.4,0,0.2,1);
 }
+
+
+/* 1. 搜尋按鈕的基本樣式設定，針對全局，並包含所有背景/邊框/陰影移除的設定 */
+ .DocSearch-Button {
+    /* 移除邊框、外框和陰影 */
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    /* 背景透明與模糊 */
+    background-color: transparent !important;
+    backdrop-filter: blur(30px) !important; /* 模糊效果，你可以調整模糊程度 */
+}
+
+/* 搜尋按鈕的寬度(暫時註解) */
+/*
+.DocSearch-Button {
+    width: 150px; 
+    padding-left: 20px;
+    padding-right: 20px;
+    border-radius: 8px;
+    font-size: 1rem;
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    z-index: 100; 
+    box-sizing: border-box; 
+}
+*/
+
+    /* 確保搜尋按鈕懸停和聚焦時也維持無邊框，並可選擇性加入半透明背景 */
+    .DocSearch-Button:hover,
+    .DocSearch-Button:focus {
+        border: none !important;
+        outline: none !important;
+        box-shadow: none !important;
+        background-color: rgba(255, 255, 255, 0.1) !important; /* 懸停時可選擇性加入半透明背景 */
+    }
+
+/* 確保搜尋按鈕的內部元素（圖示、Placeholder 文字）顏色適當 */
+.DocSearch-Button-Container .DocSearch-Search-Icon,
+.DocSearch-Button-Placeholder {
+    color: var(--vp-c-text-1) !important; /* 使用 VitePress 預設的文字顏色變數 */
+}
+
+
+/* 2. 針對 Ctrl+K 提示的 <kbd> 元素，移除其背景、邊框和陰影 */
+.DocSearch-Button-Keys .DocSearch-Button-Key {
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+    color: var(--vp-c-text-1) !important; /* 確保文字顏色清晰 */
+}
+
+/* 3. 針對 Ctrl+K 提示裡面的 SVG 圖標，確保它的描邊顏色不是黑色 */
+.DocSearch-Button-Key svg {
+    stroke: var(--vp-c-text-1) !important; /* 將 SVG 描邊顏色設為文字顏色 */
+}
+
+
+/* 4. 確保包裹搜尋按鈕的容器有足夠的空間，並讓它能推動內容（導覽列的搜尋區塊） */
+/* .VPNavBarSearch 是 DocSearch-Button 的父層容器 */
+.VPNavBarSearch {
+    flex-grow: 1; /* 讓這個搜尋區塊盡可能地佔滿導覽列的可用空間 */
+    display: flex; /* 讓它成為 Flex 容器 */
+    justify-content: flex-end; /* 將按鈕推到最右邊 */
+    align-items: center; /* 垂直置中 */
+}
+
+/* 5. 針對文章內頁（有側邊欄時），強制搜尋按鈕靠右對齊 */
+/* 這裡的選取器 .VPDoc 和 .VPContent 是確保只在文章內頁生效 */
+.VPDoc .VPNavBarSearch,
+.VPContent .VPNavBarSearch {
+    justify-content: flex-end !important;
+}
+
+
+/* 6. 小螢幕時的調整 (側邊欄會收起來) */
+@media (max-width: 960px) { /* VitePress 側邊欄收合的斷點通常是 960px */
+    .VPNavBarSearch {
+        flex-grow: 0;
+        justify-content: flex-end;
+        align-items: center;
+    }
+    .DocSearch-Button {
+        width: auto;
+        margin-left: auto;
+        position: static;
+        top: auto;
+        left: auto;
+        transform: none;
+        backdrop-filter: blur(0px) !important; /* 模糊效果，你可以調整模糊程度 */
+    }
+    .DocSearch-Button:hover,
+    .DocSearch-Button:focus {
+        background-color: transparent !important; /* 強制在小螢幕 hover 時背景也透明 */
+        border: none !important;
+        outline: none !important;
+        box-shadow: none !important;
+    }
+}
