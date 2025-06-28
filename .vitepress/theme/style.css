@@ -557,43 +557,51 @@ html {
     --main-padding: 24px;
     }
 
-    /* 桌面版 */
-    body:not(.is-blog-page) .VPNavBar {
+/* 手機/平板時覆蓋變小 */
+@media (max-width: 768px) {
+    :root {
+        --main-padding: 0px;
+    }
+}
+
+/* 桌面版(>1200px) */
+@media (min-width: 1201px) {
+  body:not(.is-blog-page) .VPNavBar {
     padding-left: calc(max(0px, calc(50vw - var(--main-width) / 2)) - 25px);
     padding-right: max(0px, calc(50vw - var(--main-width) / 2));
-    }
+  }
+  body:not(.is-blog-page) .VPNavBar .container {
+    width: var(--main-width) !important;
+    max-width: none !important;
+    margin: 0 auto;
+    padding-left: var(--main-padding);
+    padding-right: var(--main-padding);
+    box-sizing: border-box;
+  }
+  body:not(.is-blog-page) .VPNavBar .nav-actions {
+    position: absolute;
+    top: 0;
+    right: calc(max(0px, calc(50vw - var(--main-width) / 2)) + var(--main-padding));
+  }
+}
 
-    body:not(.is-blog-page) .VPNavBar .container,
+/* 手機/平板 (<=1200px) */
+@media (max-width: 1200px) {
+    body:not(.is-blog-page) .VPNavBar {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
     body:not(.is-blog-page) .vp-doc.container,
     body:not(.is-blog-page) .VPContent .container {
-        width: var(--main-width);
-        max-width: none;
-        margin: 0 auto;
-        padding-left: var(--main-padding);
-        padding-right: var(--main-padding);
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        margin: 0;
+        padding-left: 12px;
+        padding-right: 12px;
         box-sizing: border-box;
     }
-
-    body:not(.is-blog-page) .VPNavBar .nav-actions {
-        position: absolute;
-        top: 0;
-        right: calc(max(0px, calc(50vw - var(--main-width) / 2)) + var(--main-padding));
-    }
-
-    /* 手機/平板：自適應寬度與 padding，右側按鈕直接貼齊 padding */
-    @media (max-width: 1200px) {
-    body:not(.is-blog-page) .VPNavBar {
-        padding-left: 0;
-        padding-right: 0;
-    }
-        body:not(.is-blog-page) .VPNavBar .container,
-        body:not(.is-blog-page) .vp-doc.container,
-        body:not(.is-blog-page) .VPContent .container {
-         width: 100%;
-         max-width: 100vw;
-         min-width: 0;
-        }
-    }
+}
 
     /* 首頁與列表頁（非 is-blog-page）導覽列下方黑線 */
     body:not(.is-blog-page) .divider,
