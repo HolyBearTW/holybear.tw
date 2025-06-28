@@ -520,7 +520,7 @@ html {
 
 
 /* 6. 小螢幕時的調整 (側邊欄會收起來) */
-@media (max-width: 960px) { /* VitePress 側邊欄收合的斷點通常是 960px */
+@media (max-width: 768px) {
     .VPNavBarSearch {
         flex-grow: 0;
         justify-content: flex-end;
