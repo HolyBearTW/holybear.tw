@@ -41,7 +41,7 @@
     })
 
     /* === ENTRANCE ANIMATION START === */
-    const showIntro = ref(true)
+    const showIntro = ref(false)
     const STORAGE_KEY = 'intro-video-last-played'
     const HOUR = 60 * 60 * 1000
 
@@ -54,6 +54,8 @@
         const lastPlayed = parseInt(localStorage.getItem(STORAGE_KEY) || '0', 10)
         if (Date.now() - lastPlayed < HOUR) {
             showIntro.value = false
+        } else {
+            showIntro.value = true
         }
     })
     /* === ENTRANCE ANIMATION END === */
@@ -268,8 +270,8 @@
     }
 </style>
 
-/* 側邊欄間距 */
 <style>
+    /* 側邊欄間距 */
     .group + .group[data-v-a84b7c21] {
         border-top: 1px solid var(--vp-c-divider) !important;
         padding-top: 8px !important;
