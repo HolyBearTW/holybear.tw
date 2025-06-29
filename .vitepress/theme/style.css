@@ -8,7 +8,7 @@ body {
   cursor: url('/MapleStory_cursor.png'), auto;
 }
 a, button, [role="button"], .btn,
-,
+.VPSidebar .text,
 .VPSidebarItem .text,
 .VPSidebarLink,
 .VPSidebar .VPSidebarItem .link,
@@ -379,7 +379,6 @@ html {
 }
 
 /* 左側 sidebar 文章項目的動態效果 */
-
 .VPSidebar .text {
   display: inline-block;
   transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s;
@@ -390,15 +389,13 @@ html {
   margin: -4px -8px;
   position: relative;
 }
-
 .VPSidebar .text:hover {
   opacity: 1;
   transform: translateX(2px);
   color: var(--vp-c-brand-1);
   background-color: var(--vp-c-bg-soft);
 }
-
-:active {
+.VPSidebar .text:active {
   transform: scale(0.98);
   transition: transform 0.1s;
 }
@@ -415,7 +412,7 @@ html {
 }
 
 /* 左側 sidebar 文章項目的動態效果，只保留動畫和區塊感，不覆蓋間距 */
- {
+.VPSidebar .text {
     display: inline-block;
     transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s;
     opacity: 0.8;
@@ -427,14 +424,14 @@ html {
     /* line-height: 1.7;  // 如果還想再高，可加這一行 */
 }
 
-    :hover {
+    .VPSidebar .text:hover {
         opacity: 1;
         transform: translateX(2px);
         color: var(--vp-c-brand-1);
         background-color: var(--vp-c-bg-soft);
     }
 
-    :active {
+    .VPSidebar .text:active {
         transform: scale(0.98);
         transition: transform 0.1s;
     }
