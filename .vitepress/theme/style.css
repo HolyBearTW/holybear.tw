@@ -395,6 +395,7 @@ html {
   opacity: 1;
   transform: translateX(2px);
   color: var(--vp-c-brand-1);
+  background-color: var(--vp-c-bg-soft);
 }
 
 :active {
