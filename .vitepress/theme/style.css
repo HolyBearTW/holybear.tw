@@ -379,6 +379,7 @@ html {
 }
 
 /* 左側 sidebar 文章項目的動態效果 */
+/* 禁用動態效果修復不必要的錯誤
 .VPSidebar .text {
   display: inline-block;
   transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s;
@@ -389,6 +390,7 @@ html {
   margin: -4px -8px;
   position: relative;
 }
+*/
 .VPSidebar .text:hover {
   opacity: 1;
   transform: translateX(2px);
