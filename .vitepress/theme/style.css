@@ -379,7 +379,7 @@ html {
 }
 
 /* 左側 sidebar 文章項目的動態效果 */
-/* 禁用動態效果修復不必要的錯誤
+
 .VPSidebar .text {
   display: inline-block;
   transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s;
@@ -395,9 +395,8 @@ html {
   opacity: 1;
   transform: translateX(2px);
   color: var(--vp-c-brand-1);
-  background-color: var(--vp-c-bg-soft);
 }
-*/
+
 :active {
   transform: scale(0.98);
   transition: transform 0.1s;
