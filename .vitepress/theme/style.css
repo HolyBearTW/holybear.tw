@@ -295,9 +295,8 @@ body {
 }
 
 /**
- * Component: On this page隨滑鼠縮放效果2
+ * Component: On this page 右側目錄隨滑鼠縮放效果
  * -------------------------------------------------------------------------- */
- /* 移除 "On this page" 標題的縮放效果，只保留懸停效果 */
 
 /* 移除 "On this page" 標題的所有視覺效果 */
 .VPDocAsideOutline .VPDocAsideOutlineTitle,
@@ -379,78 +378,21 @@ html {
 }
 
 /* 左側 sidebar 文章項目的動態效果 */
-.VPSidebar .text {
-  display: inline-block;
-  transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s;
-  opacity: 0.8;
-  cursor: pointer;
-  border-radius: 4px;
-  padding: 4px 8px;
-  margin: -4px -8px;
-  position: relative;
-}
-.VPSidebar .text:hover {
-  opacity: 1;
-  transform: translateX(2px);
-  color: var(--vp-c-brand-1);
-  background-color: var(--vp-c-bg-soft);
-}
-.VPSidebar .text:active {
-  transform: scale(0.98);
-  transition: transform 0.1s;
-}
-
-/* 強制讓 outline link 支援 transform 動畫（重點：inline-block） */
-.VPDocAsideOutline .outline-link {
-  display: inline-block;
-  transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* 點擊時縮放動畫 */
-.VPDocAsideOutline .outline-link:active {
-  transform: scale(0.98);
-}
-
-/* 左側 sidebar 文章項目的動態效果，只保留動畫和區塊感，不覆蓋間距 */
-.VPSidebar .text {
-    display: inline-block;
-    transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s;
-    opacity: 0.8;
-    cursor: pointer;
-    border-radius: 4px;
-    padding: 8px 8px;
-    position: relative;
-    /* 不要設 margin 讓它回到預設 */
-    /* line-height: 1.7;  // 如果還想再高，可加這一行 */
-}
-
-    .VPSidebar .text:hover {
-        opacity: 1;
-        transform: translateX(2px);
-        color: var(--vp-c-brand-1);
-        background-color: var(--vp-c-bg-soft);
-    }
-
-    .VPSidebar .text:active {
-        transform: scale(0.98);
-        transition: transform 0.1s;
-    }
-
 .VPSidebarItem .link,
 .VPSidebarItem a[href] {
-    transition: transform 0.2s ease-in-out;
-    transform-origin: center;
-    display: inline-block;
+    transition: transform 0.2s ease-in-out !important;
+    transform-origin: center !important;
+    display: inline-block !important;
 }
-
-    .VPSidebarItem .link:hover,
-    .VPSidebarItem a[href]:hover {
-        transform: scale(1.08);
-    }
 
     .VPSidebarItem .link:active,
     .VPSidebarItem a[href]:active {
-        transform: scale(0.95);
+        transform: scale(0.95) !important;
+    }
+
+    .VPSidebarItem .link:hover,
+    .VPSidebarItem a[href]:hover {
+        transform: scale(1.05) !important;
     }
 
 .VPSidebarItem > .text:not([href]),
