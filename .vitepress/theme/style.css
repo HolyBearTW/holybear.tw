@@ -577,6 +577,7 @@ html {
 }
 
     /* 首頁與列表頁（非 is-blog-page）導覽列下方黑線 */
+    /*
     body:not(.is-blog-page) .divider,
     body:not(.is-blog-page) .divider-line {
     position: relative !important;
@@ -589,3 +590,16 @@ html {
     padding: 0 !important;
     box-sizing: border-box !important;
     }
+    */
+    /* 首頁與列表頁（非 is-blog-page）導覽列下方黑線（刪除） */
+    body:not(.is-blog-page) .divider,
+    body:not(.is-blog-page) .divider-line {
+    display: none !important;
+    }
+
+.VPMenu {
+    /* 基本樣式可照你原本需求，再加上這幾行即可 */
+    background: rgba(35, 35, 35, 0.7) !important; /* 半透明背景，讓模糊看得出來 */
+    backdrop-filter: blur(30px) !important; /* 高斯模糊，數值可調 */
+    -webkit-backdrop-filter: blur(30px) !important; /* Safari 支援 */
+}
