@@ -5,35 +5,23 @@ export default {
     Layout: MyCustomLayout,
     enhanceApp() {
         if (typeof window !== 'undefined') {
-            // --- is-blog-page 控制 ---
             function isBlogPage(path) {
-                // 根據你的文章網址格式調整這個正則！
                 return /^\/(en\/)?blog\/(?!index\.html$)[^/]+\.html(?:[?#].*)?$/.test(path);
             }
-            function updateBlogClass() {
-                document.body.classList.remove('is-blog-page');
+            function forceBlogClass() {
+                // 保留原有 class，確保最多只有一個 is-blog-page
+                const cls = document.body.className.split(' ').filter(c => c && c !== 'is-blog-page');
                 if (isBlogPage(window.location.pathname)) {
-                    document.body.classList.add('is-blog-page');
+                    cls.push('is-blog-page');
                 }
+                document.body.className = cls.join(' ');
             }
             // 首次進站
-            updateBlogClass();
-            // 監聽 VitePress 路由切換
-            window.addEventListener('vitepress:pageview', updateBlogClass);
-            // 監聽前進/返回
-            window.addEventListener('popstate', updateBlogClass);
-            // MutationObserver 監聽內容區變動
-            const targetNode = document.querySelector('.VPSidebar') || document.getElementById('app');
-            if (targetNode) {
-                let debounceTimer = null;
-                const observer = new MutationObserver(() => {
-                    clearTimeout(debounceTimer);
-                    debounceTimer = setTimeout(updateBlogClass, 100);
-                });
-                observer.observe(targetNode, { childList: true, subtree: true });
-            }
+            forceBlogClass();
+            // 輪詢，每 200ms 強制同步一次
+            setInterval(forceBlogClass, 200);
 
-            // --- 原本的功能 ---
+            // --- 其餘原本功能 ---
             let lastContent = null;
             let hoverTimer = null;
 
@@ -57,7 +45,6 @@ export default {
                 });
             }
 
-            // --- 這裡是最終穩定版 ---
             function globalHoverDelegate(e) {
                 const link = e.target.closest('.outline-link');
                 if (
@@ -78,7 +65,6 @@ export default {
                 }
             }
 
-            // 只 setup 一次，全域代理
             function setupGlobalOutlineHoverScroll() {
                 document.removeEventListener('mouseover', globalHoverDelegate);
                 document.addEventListener('mouseover', globalHoverDelegate);
