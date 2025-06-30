@@ -423,6 +423,7 @@ margin-right: 0;
     font-size: 0.92rem;
     -webkit-line-clamp: 2;
   }
+}
 </style>
 
 <style>
