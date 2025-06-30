@@ -106,7 +106,7 @@ const pageNumbers = computed(() => {
 
 <style scoped>
 .blog-home {
-  max-width: 960px;
+  max-width: 767px;
   margin: 0 auto;
   padding: 2rem 0;
 }
@@ -207,7 +207,7 @@ margin-right: 0;
   background: var(--vp-c-brand-dark);
   color: #000;
 }
-@media (max-width: 900px) {
+@media (max-width: 767px) {
   .blog-header-row {
     flex-direction: column;
     align-items: stretch;
