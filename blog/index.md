@@ -430,8 +430,5 @@ main,
   border-top: none !important;
   box-shadow: none !important;
   outline: none !important;
-  margin-top: 0 !important;
-  padding-top: 0 !important;
-  background: inherit !important;
 }
 </style>
