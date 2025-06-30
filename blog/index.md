@@ -115,7 +115,6 @@ const pageNumbers = computed(() => {
   align-items: baseline; /* 維持此設定，讓「日誌」和「作者群」文字基線對齊 */
   justify-content: space-between;
   gap: 2rem;
-  padding-bottom: 0.1rem; /* 大幅減少底部內距，讓內容更貼近虛線 */
   border-bottom: 1px dashed var(--vp-c-divider, #e5e5e5);
   margin-bottom: 1.3rem;
   flex-wrap: wrap;
