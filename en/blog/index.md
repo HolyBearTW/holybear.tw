@@ -8,6 +8,22 @@ description: List of blog posts by Saint Little Bear
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { data as allPosts } from '../../.vitepress/theme/en/post.data.ts'
 
+// Define authors array with login, display name, and GitHub link
+const authors = [
+  { name: 'HolyBear', login: 'HolyBearTW', url: 'https://github.com/HolyBearTW' },
+  { name: 'Xuan', login: 'Tim0320', url: 'https://github.com/Tim0320' },
+  { name: 'Avocado', login: 'ying0930', url: 'https://github.com/ying0930' },
+  { name: 'Jack', login: 'Jackboy001', url: 'https://github.com/Jackboy001' },
+  { name: 'Leo', login: 'leohsiehtw', url: 'https://github.com/leohsiehtw' },
+]
+
+// Find author meta by post.author
+function getAuthorMeta(authorName) {
+  return authors.find(a => a.name === authorName) ||
+         authors.find(a => a.login === authorName) ||
+         { name: authorName, login: '', url: '' }
+}
+
 const postsWithDate = allPosts.filter(Boolean)
 
 function formatDateExactlyLikePostPage(dateString) {
@@ -46,11 +62,6 @@ const pageNumbers = computed(() => {
   return pages
 })
 
-/**
- * Dynamically adjust VitePress content padding-top
- * Only removes padding-top on the blog home, restores on other pages.
- * Solves header offset/locale/screen size issues.
- */
 function fixVpContentPadding() {
   const content = document.querySelector('.VPContent .content-container')
   if (!content) return
@@ -78,11 +89,20 @@ onBeforeUnmount(() => {
     </h2>
     <div class="blog-authors">
       <strong>Authors:</strong>
-      <a href="https://github.com/HolyBearTW" target="_blank" rel="noopener">HolyBear</a>
-      <a href="https://github.com/Tim0320" target="_blank" rel="noopener">Xuan</a>
-      <a href="https://github.com/ying0930" target="_blank" rel="noopener">Avocado</a>
-      <a href="https://github.com/Jackboy001" target="_blank" rel="noopener">Jack</a>
-      <a href="https://github.com/leohsiehtw" target="_blank" rel="noopener">Leo</a>
+      <span
+        v-for="author in authors"
+        :key="author.login"
+        class="author-link"
+      >
+        <a :href="author.url" target="_blank" rel="noopener">
+          <img
+            :src="`https://github.com/${author.login}.png`"
+            :alt="author.name"
+            class="author-avatar"
+          />
+          {{ author.name }}
+        </a>
+      </span>
     </div>
     <a
       class="new-post-btn"
@@ -91,6 +111,7 @@ onBeforeUnmount(() => {
       rel="noopener"
     >➕ New Post</a>
   </div>
+
   <div class="blog-articles-grid">
     <div v-for="post in paginatedPosts" :key="post.url" class="post-item">
       <a :href="post.url" class="post-item-link">
@@ -108,7 +129,21 @@ onBeforeUnmount(() => {
             <h2 class="post-title">{{ post.title }}</h2>
           </div>
           <p class="post-meta">
-            by {{ post.author }}｜{{ formatDateExactlyLikePostPage(post.date) }}
+            <span class="author-inline">
+              <img
+                v-if="getAuthorMeta(post.author).login"
+                class="author-avatar"
+                :src="`https://github.com/${getAuthorMeta(post.author).login}.png`"
+                :alt="getAuthorMeta(post.author).name"
+              />
+              <a
+                v-if="getAuthorMeta(post.author).url"
+                :href="getAuthorMeta(post.author).url"
+                target="_blank"
+                rel="noopener"
+                class="author-link-name"
+              >{{ getAuthorMeta(post.author).name }}</a><span v-else>{{ post.author }}</span><span class="author-date">｜{{ formatDateExactlyLikePostPage(post.date) }}</span>
+            </span>
           </p>
           <div v-if="post.excerpt" class="post-excerpt" v-html="post.excerpt"></div>
           <span class="read-more">Read More &gt;</span>
@@ -116,6 +151,7 @@ onBeforeUnmount(() => {
       </a>
     </div>
   </div>
+
   <div class="pagination" v-if="totalPages > 1">
     <button class="pagination-button" :disabled="currentPage === 1" @click="goToPage(currentPage - 1)">Previous</button>
     <button
@@ -131,28 +167,22 @@ onBeforeUnmount(() => {
 </div>
 
 <style scoped>
-/* ========== Blog Home main container ========== */
 .blog-home {
   max-width: 1050px;
   margin-left: auto;
   margin-right: auto;
   padding-bottom: 2rem;
 }
-
-/* ========== Blog Header Row (title/authors/button line) ========== */
-/* Default: row (desktop/tablet), only column on small screens */
 .blog-header-row {
-  display: flex;                    /* Use flex layout */
-  align-items: flex-end;            /* Align items to the bottom */
-  justify-content: space-between;   /* Space between columns */
-  gap: 4rem;                        /* Gap between columns */
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 4rem;
   border-bottom: 1px dashed var(--vp-c-divider, #e5e5e5);
   margin-bottom: 0.5rem;
-  flex-wrap: nowrap;                /* Never wrap on desktop/tablet */
+  flex-wrap: nowrap;
   flex-direction: row;
 }
-
-/* ========== Blog Title ========== */
 .blog-title {
   font-size: 2.5rem;
   font-weight: 900;
@@ -168,20 +198,36 @@ onBeforeUnmount(() => {
 .blog-title svg {
   margin-bottom: 2px;
 }
-
-/* ========== Authors ========== */
+/* Authors horizontal layout + avatar, responsive wrap */
 .blog-authors {
   color: var(--vp-c-text-2, #444);
   font-size: 1.12rem;
   display: flex;
   align-items: baseline;
-  gap: 1.1em;
+  gap: 0.3em;
   flex-wrap: wrap;
   min-width: 0;
   margin-bottom: 0;
+  position: relative;
+  align-items: center;
 }
 .blog-authors strong {
   margin-right: 0.5em;
+}
+.author-link {
+  position: relative;
+  display: inline-block;
+}
+.author-avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  margin-right: 0.22em;
+  vertical-align: middle;
+  box-shadow: 0 2px 8px #0001;
+  border: 1px solid #ddd;
+  background: #fff;
+  object-fit: cover;
 }
 .blog-authors a {
   color: var(--vp-c-brand-1, #00b8b8);
@@ -190,14 +236,13 @@ onBeforeUnmount(() => {
   font-size: 1.07em;
   margin-left: 0.18em;
   margin-right: 0.18em;
-  padding-bottom: 2px;
   line-height: 1.6;
+  display: inline-flex;
+  align-items: center;
 }
 .blog-authors a:hover {
   text-decoration: underline;
 }
-
-/* ========== New Post Button ========== */
 .new-post-btn {
   background: var(--vp-c-brand);
   color: #000;
@@ -215,8 +260,6 @@ onBeforeUnmount(() => {
   background: var(--vp-c-brand-dark);
   color: #000;
 }
-
-/* ========== Blog articles grid ========== */
 .blog-articles-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -306,6 +349,45 @@ onBeforeUnmount(() => {
   display: inline;
   vertical-align: middle;
 }
+.author-inline {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+  font-size: inherit;
+  line-height: 1;
+}
+.post-meta-author .author-avatar {
+  width: 21px;
+  height: 21px;
+  border-radius: 50%;
+  margin-right: 0.12em;
+  vertical-align: middle;
+  box-shadow: 0 2px 8px #0001;
+  border: 1px solid #ddd;
+  background: #fff;
+  object-fit: cover;
+  display: inline-block;
+}
+.author-link-name {
+  color: var(--vp-c-brand-1, #00b8b8);
+  text-decoration: none;
+  font-weight: 600;
+  line-height: 1;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 0;
+  padding-right: 0;
+}
+.author-link-name:hover {
+  text-decoration: underline;
+}
+.author-date {
+  font-size: 0.98em;
+  color: var(--vp-c-text-2);
+  margin-left: 0;
+  position: relative;
+  top: 0.5px;
+}
 .post-meta {
   color: var(--vp-c-text-2);
   font-size: 0.85rem;
@@ -313,6 +395,7 @@ onBeforeUnmount(() => {
   margin-bottom: 0.2rem !important;
   line-height: 1.2;
   padding: 0;
+  display: block;
 }
 .post-excerpt {
   color: var(--vp-c-text-2);
@@ -337,8 +420,6 @@ onBeforeUnmount(() => {
 .read-more:hover {
   text-decoration: underline;
 }
-
-/* ========== Pagination buttons ========== */
 .pagination {
   display: flex;
   justify-content: center;
@@ -367,9 +448,7 @@ onBeforeUnmount(() => {
   opacity: 0.6;
   cursor: not-allowed;
 }
-
-/* ========== Responsive: Only column on screens <= 781px ========== */
-@media (max-width: 941px) {
+@media (max-width: 1001px) {
   .blog-header-row {
     flex-direction: column;
     align-items: stretch;
@@ -382,19 +461,37 @@ onBeforeUnmount(() => {
     margin-top: 0.7rem;
     font-size: 1rem;
   }
-  .blog-authors {
-    font-size: 0.99rem;
-    gap: 0.6em;
-    justify-content: center;
-    text-align: center;
-  }
   .blog-title {
     margin-bottom: 0.5rem;
     margin-right: 0;
   }
+  .blog-authors {
+    justify-content: center;
+    gap: 0.7em 0.3em;
+    margin-bottom: 0.5em;
+    text-align: center;
+  }
+  .author-link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0.2em 0.1em;
+    min-width: 60px;
+  }
+  .author-avatar {
+    width: 35px;
+    height: 35px;
+    margin: 0 0 2px 0;
+  }
+  .blog-authors a {
+    font-size: 1em;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
 }
-
-/* ========== Article list compress for mobile ========== */
 @media (max-width: 767px) {
   .post-item {
     padding: 0.2rem 0;
@@ -444,7 +541,6 @@ onBeforeUnmount(() => {
 </style>
 
 <style>
-/* Remove VitePress default content divider and extra spacing (if any) */
 .vp-doc h2 {
   border-top: none !important;
   padding-top: 0 !important;
@@ -460,6 +556,5 @@ main,
   border-top: none !important;
   box-shadow: none !important;
   outline: none !important;
-  /* Don't set padding-top/margin-top here; let the script handle header offset */
 }
 </style>

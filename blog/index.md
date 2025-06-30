@@ -8,6 +8,22 @@ description: 聖小熊的部落格文章列表
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { data as allPosts } from '../.vitepress/theme/posts.data.ts'
 
+// 定義作者陣列，包含 login、中文顯示名稱、GitHub 連結
+const authors = [
+  { name: '聖小熊', login: 'HolyBearTW', url: 'https://github.com/HolyBearTW' },
+  { name: '玄哥', login: 'Tim0320', url: 'https://github.com/Tim0320' },
+  { name: '酪梨', login: 'ying0930', url: 'https://github.com/ying0930' },
+  { name: 'Jack', login: 'Jackboy001', url: 'https://github.com/Jackboy001' },
+  { name: 'Leo', login: 'leohsiehtw', url: 'https://github.com/leohsiehtw' },
+]
+
+// 根據 post.author 找到對應的作者物件
+function getAuthorMeta(authorName) {
+  return authors.find(a => a.name === authorName) ||
+         authors.find(a => a.login === authorName) ||
+         { name: authorName, login: '', url: '' }
+}
+
 const postsWithDate = allPosts.filter(Boolean)
 
 function formatDateExactlyLikePostPage(dateString) {
@@ -46,15 +62,9 @@ const pageNumbers = computed(() => {
   return pages
 })
 
-/**
- * 動態調整 VitePress 內容 padding-top
- * 僅在 blog 首頁時移除 padding-top，切換到其他頁會自動還原。
- * 解決 header 高度不同、語系切換、平板/桌面間距問題。
- */
 function fixVpContentPadding() {
   const content = document.querySelector('.VPContent .content-container')
   if (!content) return
-  // Blog 首頁才移除 padding
   if (document.querySelector('.blog-home')) {
     content.style.paddingTop = '0'
   } else {
@@ -79,11 +89,20 @@ onBeforeUnmount(() => {
     </h2>
     <div class="blog-authors">
       <strong>作者群：</strong>
-      <a href="https://github.com/HolyBearTW" target="_blank" rel="noopener">聖小熊</a>
-      <a href="https://github.com/Tim0320" target="_blank" rel="noopener">玄哥</a>
-      <a href="https://github.com/ying0930" target="_blank" rel="noopener">酪梨</a>
-      <a href="https://github.com/Jackboy001" target="_blank" rel="noopener">Jack</a>
-      <a href="https://github.com/leohsiehtw" target="_blank" rel="noopener">Leo</a>
+      <span
+        v-for="author in authors"
+        :key="author.login"
+        class="author-link"
+      >
+        <a :href="author.url" target="_blank" rel="noopener">
+          <img
+            :src="`https://github.com/${author.login}.png`"
+            :alt="author.name"
+            class="author-avatar"
+          />
+          {{ author.name }}
+        </a>
+      </span>
     </div>
     <a
       class="new-post-btn"
@@ -110,7 +129,21 @@ onBeforeUnmount(() => {
             <h2 class="post-title">{{ post.title }}</h2>
           </div>
           <p class="post-meta">
-            作者：{{ post.author }}｜{{ formatDateExactlyLikePostPage(post.date) }}
+            <span class="author-inline">
+              <img
+                v-if="getAuthorMeta(post.author).login"
+                class="author-avatar"
+                :src="`https://github.com/${getAuthorMeta(post.author).login}.png`"
+                :alt="getAuthorMeta(post.author).name"
+              />
+              <a
+                v-if="getAuthorMeta(post.author).url"
+                :href="getAuthorMeta(post.author).url"
+                target="_blank"
+                rel="noopener"
+                class="author-link-name"
+              >{{ getAuthorMeta(post.author).name }}</a><span v-else>{{ post.author }}</span><span class="author-date">｜{{ formatDateExactlyLikePostPage(post.date) }}</span>
+            </span>
           </p>
           <div v-if="post.excerpt" class="post-excerpt" v-html="post.excerpt"></div>
           <span class="read-more">繼續閱讀 &gt;</span>
@@ -134,29 +167,22 @@ onBeforeUnmount(() => {
 </div>
 
 <style scoped>
-/* ========== Blog Home 外層主容器 ========== */
-/* 設定最大寬度並置中，底部預留空間 */
 .blog-home {
   max-width: 1050px;
   margin-left: auto;
   margin-right: auto;
   padding-bottom: 2rem;
 }
-
-/* ========== Blog Header Row（標題那行） ========== */
-/* 預設 row（桌機、平板都用），只在 600px 以下才切 column */
 .blog-header-row {
-  display: flex;                    /* 使用 flex 排版 */
-  align-items: flex-end;            /* 讓元素底部對齊 */
-  justify-content: space-between;   /* 左右分散排列 */
-  gap: 4rem;                        /* 元素之間空隙 */
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 4rem;
   border-bottom: 1px dashed var(--vp-c-divider, #e5e5e5);
   margin-bottom: 0.5rem;
-  flex-wrap: nowrap; /* 關鍵：不允許自動換行 */
-  flex-direction: row;              /* 預設橫向排列（桌機和平板都是 row） */
+  flex-wrap: nowrap;
+  flex-direction: row;
 }
-
-/* ========== Blog Title 樣式 ========== */
 .blog-title {
   font-size: 2.5rem;
   font-weight: 900;
@@ -172,20 +198,36 @@ onBeforeUnmount(() => {
 .blog-title svg {
   margin-bottom: 2px;
 }
-
-/* ========== 作者群樣式 ========== */
+/* 作者群：橫向排列＋頭像（響應式下會自動換行） */
 .blog-authors {
   color: var(--vp-c-text-2, #444);
   font-size: 1.12rem;
   display: flex;
   align-items: baseline;
-  gap: 1.1em;
+  gap: 0.3em;
   flex-wrap: wrap;
   min-width: 0;
   margin-bottom: 0;
+  position: relative;
+  align-items: center;
 }
 .blog-authors strong {
   margin-right: 0.5em;
+}
+.author-link {
+  position: relative;
+  display: inline-block;
+}
+.author-avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  margin-right: 0.22em;
+  vertical-align: middle;
+  box-shadow: 0 2px 8px #0001;
+  border: 1px solid #ddd;
+  background: #fff;
+  object-fit: cover;
 }
 .blog-authors a {
   color: var(--vp-c-brand-1, #00b8b8);
@@ -194,14 +236,13 @@ onBeforeUnmount(() => {
   font-size: 1.07em;
   margin-left: 0.18em;
   margin-right: 0.18em;
-  padding-bottom: 2px;
   line-height: 1.6;
+  display: inline-flex;
+  align-items: center;
 }
 .blog-authors a:hover {
   text-decoration: underline;
 }
-
-/* ========== 新增文章按鈕 ========== */
 .new-post-btn {
   background: var(--vp-c-brand);
   color: #000;
@@ -219,8 +260,6 @@ onBeforeUnmount(() => {
   background: var(--vp-c-brand-dark);
   color: #000;
 }
-
-/* ========== 文章列表樣式 ========== */
 .blog-articles-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -310,6 +349,45 @@ onBeforeUnmount(() => {
   display: inline;
   vertical-align: middle;
 }
+.author-inline {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+  font-size: inherit;
+  line-height: 1;
+}
+.post-meta-author .author-avatar {
+  width: 21px;
+  height: 21px;
+  border-radius: 50%;
+  margin-right: 0.12em;
+  vertical-align: middle;
+  box-shadow: 0 2px 8px #0001;
+  border: 1px solid #ddd;
+  background: #fff;
+  object-fit: cover;
+  display: inline-block;
+}
+.author-link-name {
+  color: var(--vp-c-brand-1, #00b8b8);
+  text-decoration: none;
+  font-weight: 600;
+  line-height: 1;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 0;
+  padding-right: 0;
+}
+.author-link-name:hover {
+  text-decoration: underline;
+}
+.author-date {
+  font-size: 0.98em;
+  color: var(--vp-c-text-2);
+  margin-left: 0;
+  position: relative;
+  top: 0.5px;
+}
 .post-meta {
   color: var(--vp-c-text-2);
   font-size: 0.85rem;
@@ -317,13 +395,7 @@ onBeforeUnmount(() => {
   margin-bottom: 0.2rem !important;
   line-height: 1.2;
   padding: 0;
-}
-.post-author {
-  color: var(--vp-c-text-2);
-  font-size: 0.85rem;
-  margin: 0 0 0.2rem 0;
-  line-height: 1.2;
-  padding: 0;
+  display: block;
 }
 .post-excerpt {
   color: var(--vp-c-text-2);
@@ -348,8 +420,6 @@ onBeforeUnmount(() => {
 .read-more:hover {
   text-decoration: underline;
 }
-
-/* ========== 分頁按鈕樣式 ========== */
 .pagination {
   display: flex;
   justify-content: center;
@@ -378,14 +448,12 @@ onBeforeUnmount(() => {
   opacity: 0.6;
   cursor: not-allowed;
 }
-
-/* ========== 響應式：只有 781px 以下才切 column ========== */
-@media (max-width: 781px) {
+@media (max-width: 1001px) {
   .blog-header-row {
-    flex-direction: column;   /* 直向排列 */
+    flex-direction: column;
     align-items: stretch;
     gap: 0.7rem;
-    flex-wrap: wrap;          /* 允許換行（此時其實沒差） */
+    flex-wrap: wrap;
   }
   .new-post-btn {
     width: 100%;
@@ -393,33 +461,37 @@ onBeforeUnmount(() => {
     margin-top: 0.7rem;
     font-size: 1rem;
   }
-  .blog-authors {
-    font-size: 0.99rem;
-    gap: 0.6em;
-    justify-content: center;
-    text-align: center;
-  }
   .blog-title {
     margin-bottom: 0.5rem;
     margin-right: 0;
   }
-}
-
-/* 平板區間為了避免內容太擠，可以縮小作者區字體或讓內容橫向捲動 */
-@media (max-width: 900px) and (min-width: 782px) {
   .blog-authors {
-    font-size: 1.0rem;
-    min-width: 0;
-    overflow-x: auto;
-    white-space: nowrap;
+    justify-content: center;
+    gap: 0.7em 0.3em;
+    margin-bottom: 0.5em;
+    text-align: center;
   }
-  .new-post-btn {
-    font-size: 0.95rem;
-    padding: 0.25em 0.7em;
+  .author-link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0.2em 0.1em;
+    min-width: 60px;
+  }
+  .author-avatar {
+    width: 35px;
+    height: 35px;
+    margin: 0 0 2px 0;
+  }
+  .blog-authors a {
+    font-size: 1em;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
 }
-
-/* ========== 文章列表手機版壓縮 ========== */
 @media (max-width: 767px) {
   .post-item {
     padding: 0.2rem 0;
@@ -432,6 +504,10 @@ onBeforeUnmount(() => {
     width: 110px;
     height: 90px;
     margin-right: 0.7rem;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   .post-thumbnail {
     width: 100%;
@@ -450,17 +526,26 @@ onBeforeUnmount(() => {
     font-size: 0.92rem;
     -webkit-line-clamp: 2;
   }
+  .post-title-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.15em;
+  }
+  .post-title {
+    white-space: normal;
+    word-break: break-word;
+    margin-top: 0.1em;
+    margin-bottom: 0.2em !important;
+  }
 }
 </style>
 
 <style>
-/* ========== 可選：去除 VitePress 預設內容分隔線與多餘間距 ========== */
 .vp-doc h2 {
   border-top: none !important;
   padding-top: 0 !important;
   margin-top: 32px !important;
 }
-/* 不要動 main/.VPContent 的 padding-top（由 script 控制），只消分隔線 */
 main,
 .VPContent,
 .VPContent .content-container,
@@ -471,6 +556,5 @@ main,
   border-top: none !important;
   box-shadow: none !important;
   outline: none !important;
-  /* 不要設定 padding-top/margin-top，交給主題自動處理 header offset */
 }
 </style>
