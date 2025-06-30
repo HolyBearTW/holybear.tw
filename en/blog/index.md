@@ -467,7 +467,7 @@ onBeforeUnmount(() => {
   }
   .blog-authors {
     justify-content: center;
-    gap: 0.7em 0.3em;
+    gap: 0.7em 0.7em; /* 橫向間距更明顯 */
     margin-bottom: 0.5em;
     text-align: center;
   }
@@ -475,16 +475,16 @@ onBeforeUnmount(() => {
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin: 0.2em 0.1em;
-    min-width: 60px;
+    margin: 0.2em 0.35em; /* 左右間距，補gap效果 */
+    min-width: 52px;
   }
   .author-avatar {
-    width: 35px;
-    height: 35px;
+    width: 26px;
+    height: 26px;
     margin: 0 0 2px 0;
   }
   .blog-authors a {
-    font-size: 1em;
+    font-size: 0.93em;
     margin: 0;
     padding: 0;
     display: flex;
