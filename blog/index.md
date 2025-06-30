@@ -110,7 +110,7 @@ const pageNumbers = computed(() => {
   margin: 0 auto;
   padding: 32px 0 2rem 0 !important;
 }
-@media (max-width: 900px) {
+@media (max-width: 767px) {
   main,
   .VPContent,
   .vp-doc,
@@ -133,7 +133,7 @@ const pageNumbers = computed(() => {
   margin-bottom: 1.3rem;
   flex-wrap: wrap;
 }
-@media (max-width: 900px) {
+@media (max-width: 767px) {
 .blog-header-row {
 flex-direction: column;
 align-items: stretch;
@@ -389,6 +389,40 @@ margin-right: 0;
   opacity: 0.6;
   cursor: not-allowed;
 }
+@media (max-width: 767px) {
+  .post-item {
+    padding: 0.2rem 0;
+  }
+  .post-item-link {
+    min-height: unset;
+    padding: 0.2rem 0.5rem;
+  }
+  .post-thumbnail-wrapper {
+    width: 110px;
+    height: 90px;
+    margin-right: 0.7rem;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .post-thumbnail {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+  }
+  .post-info {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .post-title, .post-info .post-title {
+    font-size: 1.05rem;
+  }
+  .post-excerpt {
+    font-size: 0.92rem;
+    -webkit-line-clamp: 2;
+  }
 </style>
 
 <style>
