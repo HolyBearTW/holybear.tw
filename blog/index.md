@@ -131,6 +131,7 @@ const pageNumbers = computed(() => {
     padding-top: 0 !important;
     margin-top: 0 !important;
   }
+}
 @media (max-width: 767px) {
 .blog-header-row {
 flex-direction: column;
