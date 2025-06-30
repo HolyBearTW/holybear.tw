@@ -93,9 +93,7 @@
                 </div>
                 <p class="blog-post-date-in-content">
                     <span v-if="frontmatter.author">{{ authorPrefix }}{{ frontmatter.author }}</span>
-                    <template v-if="frontmatter.author && currentDisplayDate">
-                        ｜
-                    </template>
+                    <template v-if="frontmatter.author && currentDisplayDate">｜</template>
                     <template v-if="currentDisplayDate">
                         {{ currentDisplayDate }}
                     </template>
