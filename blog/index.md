@@ -120,6 +120,18 @@ const pageNumbers = computed(() => {
   flex-wrap: wrap;
 }
 @media (max-width: 767px) {
+  main,
+  .VPContent,
+  .vp-doc,
+  .VPContent .content-container,
+  .blog-home,
+  .blog-title,
+  .blog-header-row,
+  h1, h2 {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+  }
+@media (max-width: 767px) {
 .blog-header-row {
 flex-direction: column;
 align-items: stretch;
@@ -430,5 +442,7 @@ main,
   border-top: none !important;
   box-shadow: none !important;
   outline: none !important;
+  padding-top: 0 !important;
+  margin-top: 0 !important;
 }
 </style>
