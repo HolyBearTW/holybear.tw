@@ -108,20 +108,7 @@ const pageNumbers = computed(() => {
 .blog-home {
   max-width: 960px;
   margin: 0 auto;
-  padding: 32px 0 2rem 0 !important;
-}
-@media (max-width: 767px) {
-  main,
-  .VPContent,
-  .vp-doc,
-  .VPContent .content-container,
-  .blog-home,
-  .blog-title,
-  .blog-header-row,
-  h1, h2 {
-    padding-top: 0 !important;
-    margin-top: 0 !important;
-  }
+  padding: 2rem 0;
 }
 .blog-header-row {
   display: flex;
