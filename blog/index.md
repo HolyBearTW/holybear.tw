@@ -5,7 +5,7 @@ description: 聖小熊的部落格文章列表
 ---
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { data as allPosts } from '../.vitepress/theme/posts.data.ts'
 
 const postsWithDate = allPosts.filter(Boolean)
@@ -45,11 +45,38 @@ const pageNumbers = computed(() => {
   }
   return pages
 })
+
+/**
+ * 動態調整 VitePress 內容 padding-top
+ * 僅在 blog 首頁時移除 padding-top，切換到其他頁會自動還原。
+ * 解決 header 高度不同、語系切換、平板/桌面間距問題。
+ */
+function fixVpContentPadding() {
+  const content = document.querySelector('.VPContent .content-container')
+  if (!content) return
+  // Blog 首頁才移除 padding
+  if (document.querySelector('.blog-home')) {
+    content.style.paddingTop = '0'
+  } else {
+    content.style.paddingTop = ''
+  }
+}
+
+onMounted(() => {
+  fixVpContentPadding()
+  window.addEventListener('vitepress:afterRouteChanged', fixVpContentPadding)
+})
+onBeforeUnmount(() => {
+  window.removeEventListener('vitepress:afterRouteChanged', fixVpContentPadding)
+})
 </script>
 
 <div class="blog-home">
   <div class="blog-header-row">
-    <h2 class="blog-title">日誌</h2>
+    <h2 class="blog-title">
+      <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-book-open"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+      <span>日誌</span>
+    </h2>
     <div class="blog-authors">
       <strong>作者群：</strong>
       <a href="https://github.com/HolyBearTW" target="_blank" rel="noopener">聖小熊</a>
@@ -65,6 +92,7 @@ const pageNumbers = computed(() => {
       rel="noopener"
     >➕ 新增文章</a>
   </div>
+
   <div class="blog-articles-grid">
     <div v-for="post in paginatedPosts" :key="post.url" class="post-item">
       <a :href="post.url" class="post-item-link">
@@ -90,6 +118,7 @@ const pageNumbers = computed(() => {
       </a>
     </div>
   </div>
+
   <div class="pagination" v-if="totalPages > 1">
     <button class="pagination-button" :disabled="currentPage === 1" @click="goToPage(currentPage - 1)">上一頁</button>
     <button
@@ -105,74 +134,55 @@ const pageNumbers = computed(() => {
 </div>
 
 <style scoped>
+/* ========== Blog Home 外層主容器 ========== */
+/* 設定最大寬度並置中，底部預留空間 */
 .blog-home {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem 0;
+  max-width: 1050px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-bottom: 2rem;
 }
+
+/* ========== Blog Header Row（標題那行） ========== */
+/* 預設 row（桌機、平板都用），只在 600px 以下才切 column */
 .blog-header-row {
-  display: flex;
-  align-items: baseline; /* 維持此設定，讓「日誌」和「作者群」文字基線對齊 */
-  justify-content: space-between;
-  gap: 2rem;
+  display: flex;                    /* 使用 flex 排版 */
+  align-items: flex-end;            /* 讓元素底部對齊 */
+  justify-content: space-between;   /* 左右分散排列 */
+  gap: 4rem;                        /* 元素之間空隙 */
   border-bottom: 1px dashed var(--vp-c-divider, #e5e5e5);
-  margin-bottom: 1.3rem;
-  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+  flex-wrap: nowrap; /* 關鍵：不允許自動換行 */
+  flex-direction: row;              /* 預設橫向排列（桌機和平板都是 row） */
 }
-@media (max-width: 767px) {
-  main,
-  .VPContent,
-  .vp-doc,
-  .VPContent .content-container,
-  .blog-home,
-  .blog-title,
-  .blog-header-row,
-  h1, h2 {
-    padding-top: 0 !important;
-    margin-top: 0 !important;
-  }
-}
-@media (max-width: 767px) {
-.blog-header-row {
-flex-direction: column;
-align-items: stretch;
-gap: 0.7rem;
-}
-.new-post-btn {
-width: 100%;
-text-align: center;
-margin-top: 0.7rem;
-font-size: 1rem;
-}
-.blog-authors {
-font-size: 0.99rem;
-gap: 0.6em;
-justify-content: center; /* 在手機版將作者群置中 /
-text-align: center; / 確保作者群內部的文字也置中 */
-}
-.blog-title {
-margin-bottom: 0.5rem;
-margin-right: 0;
-}
-}
+
+/* ========== Blog Title 樣式 ========== */
 .blog-title {
   font-size: 2.5rem;
   font-weight: 900;
   letter-spacing: 0.03em;
   margin: 0 1.2rem 0 0;
-  line-height: 1.12;
+  line-height: 0.7;
   color: var(--vp-c-text-1);
   flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
 }
+.blog-title svg {
+  margin-bottom: 2px;
+}
+
+/* ========== 作者群樣式 ========== */
 .blog-authors {
   color: var(--vp-c-text-2, #444);
   font-size: 1.12rem;
   display: flex;
-  align-items: baseline; /* 讓作者群內部元素也基線對齊 */
+  align-items: baseline;
   gap: 1.1em;
   flex-wrap: wrap;
   min-width: 0;
-  margin-bottom: 0; /* 移除之前為對齊做的微調 */
+  margin-bottom: 0;
 }
 .blog-authors strong {
   margin-right: 0.5em;
@@ -190,44 +200,27 @@ margin-right: 0;
 .blog-authors a:hover {
   text-decoration: underline;
 }
+
+/* ========== 新增文章按鈕 ========== */
 .new-post-btn {
-  background: var(--vp-c-brand); /* 預設背景色: #00FFEE */
-  color: #000; /* 預設文字顏色: 黑色 */
+  background: var(--vp-c-brand);
+  color: #000;
   font-weight: 600;
   padding: 0.32em 0.8em;
-  border-radius: 5px;
+  border-radius: 10px;
   text-decoration: none;
   font-size: 0.95rem;
-  /* 將 color 也加入 transition，讓文字顏色變化更平滑 */
   transition: background 0.15s, color 0.15s;
   box-shadow: 0 2px 8px 0 #0001;
   white-space: nowrap;
+  margin-bottom: 0.5rem;
 }
 .new-post-btn:hover {
   background: var(--vp-c-brand-dark);
   color: #000;
 }
-@media (max-width: 767px) {
-  .blog-header-row {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.7rem;
-  }
-  .new-post-btn {
-    width: 100%;
-    text-align: center;
-    margin-top: 0.7rem;
-    font-size: 1rem;
-  }
-  .blog-authors {
-    font-size: 0.99rem;
-    gap: 0.6em;
-  }
-  .blog-title {
-    margin-bottom: 0.5rem;
-    margin-right: 0;
-  }
-}
+
+/* ========== 文章列表樣式 ========== */
 .blog-articles-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -355,6 +348,8 @@ margin-right: 0;
 .read-more:hover {
   text-decoration: underline;
 }
+
+/* ========== 分頁按鈕樣式 ========== */
 .pagination {
   display: flex;
   justify-content: center;
@@ -373,21 +368,58 @@ margin-right: 0;
   transition: background-color 0.2s, border-color 0.2s, color 0.2s;
   font-size: 0.95rem;
 }
-.pagination-button:hover:not(:disabled) {
-  background-color: var(--vp-c-brand-1);
-  color: var(--vp-c-white);
-  border-color: var(--vp-c-brand-1);
-}
+.pagination-button:hover:not(:disabled),
 .pagination-button.active {
   background-color: var(--vp-c-brand-1);
   color: var(--vp-c-white);
   border-color: var(--vp-c-brand-1);
-  cursor: default;
 }
 .pagination-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+/* ========== 響應式：只有 781px 以下才切 column ========== */
+@media (max-width: 781px) {
+  .blog-header-row {
+    flex-direction: column;   /* 直向排列 */
+    align-items: stretch;
+    gap: 0.7rem;
+    flex-wrap: wrap;          /* 允許換行（此時其實沒差） */
+  }
+  .new-post-btn {
+    width: 100%;
+    text-align: center;
+    margin-top: 0.7rem;
+    font-size: 1rem;
+  }
+  .blog-authors {
+    font-size: 0.99rem;
+    gap: 0.6em;
+    justify-content: center;
+    text-align: center;
+  }
+  .blog-title {
+    margin-bottom: 0.5rem;
+    margin-right: 0;
+  }
+}
+
+/* 平板區間為了避免內容太擠，可以縮小作者區字體或讓內容橫向捲動 */
+@media (max-width: 900px) and (min-width: 782px) {
+  .blog-authors {
+    font-size: 1.0rem;
+    min-width: 0;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  .new-post-btn {
+    font-size: 0.95rem;
+    padding: 0.25em 0.7em;
+  }
+}
+
+/* ========== 文章列表手機版壓縮 ========== */
 @media (max-width: 767px) {
   .post-item {
     padding: 0.2rem 0;
@@ -400,10 +432,6 @@ margin-right: 0;
     width: 110px;
     height: 90px;
     margin-right: 0.7rem;
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
   }
   .post-thumbnail {
     width: 100%;
@@ -426,13 +454,13 @@ margin-right: 0;
 </style>
 
 <style>
-/* 完全消除 .vp-doc h2 標題的上方分隔線 */
+/* ========== 可選：去除 VitePress 預設內容分隔線與多餘間距 ========== */
 .vp-doc h2 {
   border-top: none !important;
   padding-top: 0 !important;
   margin-top: 32px !important;
 }
-/* 若內容主體還有 box-shadow/border-top 分隔線，也一併消除 */
+/* 不要動 main/.VPContent 的 padding-top（由 script 控制），只消分隔線 */
 main,
 .VPContent,
 .VPContent .content-container,
@@ -443,7 +471,6 @@ main,
   border-top: none !important;
   box-shadow: none !important;
   outline: none !important;
-  padding-top: 0 !important;
-  margin-top: 0 !important;
+  /* 不要設定 padding-top/margin-top，交給主題自動處理 header offset */
 }
 </style>
