@@ -56,7 +56,7 @@ const pageNumbers = computed(() => {
       <a href="https://github.com/Tim0320" target="_blank" rel="noopener">玄哥</a>
       <a href="https://github.com/ying0930" target="_blank" rel="noopener">酪梨</a>
       <a href="https://github.com/Jackboy001" target="_blank" rel="noopener">Jack</a>
-      <a href="https://github.com/leohsiehtw" target="_blank" rel="noopener">LeoHsiehTW</a>
+      <a href="https://github.com/leohsiehtw" target="_blank" rel="noopener">Leo</a>
     </div>
     <a
       class="new-post-btn"
