@@ -363,6 +363,8 @@ onBeforeUnmount(() => {
   height: 21px;
   margin: 0 2px 0 0;
   border-radius: 50%;
+  border: 1px solid #ddd;
+  background: #fff;
   vertical-align: middle; /* 確保它與行內內容垂直對齊 */
 }
 .post-meta-author .author-avatar {
