@@ -355,12 +355,14 @@ onBeforeUnmount(() => {
   vertical-align: middle;
   font-size: inherit;
   line-height: 1;
-  margin: 0 0 1px 0;
+}
+.post-author {
+  margin-top: 1px;
 }
 .post-author-avatar {
   width: 21px;
   height: 21px;
-  margin: 0 2px 1px 0;
+  margin: 0 2px 0 0;
   border-radius: 50%;
 }
 .post-meta-author .author-avatar {
