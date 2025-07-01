@@ -5,8 +5,15 @@ description: 聖小熊的部落格文章列表
 ---
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, onUnmounted } from 'vue'
 import { data as allPosts } from '../.vitepress/theme/posts.data.ts'
+
+onMounted(() => {
+  document.body.classList.add('blog-index-page')
+})
+onUnmounted(() => {
+  document.body.classList.remove('blog-index-page')
+})
 
 // 定義作者陣列，包含 login、中文顯示名稱、GitHub 連結
 const authors = [
@@ -572,18 +579,18 @@ onBeforeUnmount(() => {
 }
 </style>
 
-<style scoped>
-.vp-doc h2 {
+<style>
+body.blog-index-page .vp-doc h2 {
   border-top: none !important;
   padding-top: 0 !important;
   margin-top: 32px !important;
 }
-main,
-.VPContent,
-.VPContent .content-container,
-.VPDoc .content-container,
-[class*="VPContent"],
-[class*="content-container"] {
+body.blog-index-page main,
+body.blog-index-page .VPContent,
+body.blog-index-page .VPContent .content-container,
+body.blog-index-page .VPDoc .content-container,
+body.blog-index-page [class*="VPContent"],
+body.blog-index-page [class*="content-container"] {
   border-top: none !important;
   box-shadow: none !important;
   outline: none !important;
