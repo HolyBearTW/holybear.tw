@@ -12,7 +12,7 @@
     "@algolia/client-search": "^5.27.0",
     "@docsearch/js": "3",
     "algoliasearch": "^5.29.0",
-    "firebase": "^11.9.1",
+    "firebase": "^11.10.0",
     "gray-matter": "^4.0.3",
     "instantsearch.js": "^4.79.0",
     "react-instantsearch": "^7.16.0",
