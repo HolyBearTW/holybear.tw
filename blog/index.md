@@ -356,6 +356,12 @@ onBeforeUnmount(() => {
   font-size: inherit;
   line-height: 1;
 }
+.post-author-avatar {
+  width: 21px;
+  height: 21px;
+  margin: 0 2px 0 0;
+  border-radius: 50%;
+}
 .post-meta-author .author-avatar {
   width: 21px;
   height: 21px;
@@ -368,6 +374,7 @@ onBeforeUnmount(() => {
   object-fit: cover;
   display: inline-block;
 }
+
 .author-link-name {
   color: var(--vp-c-brand-1, #00b8b8);
   text-decoration: none;
@@ -534,11 +541,6 @@ onBeforeUnmount(() => {
     word-break: break-word;
     margin-top: 0.1em;
     margin-bottom: 0.2em !important;
-  }
-  .post-author-avatar {
-    width: 21px;
-    height: 21px;
-    margin: 0 2px 0 0;
   }
 }
 </style>
