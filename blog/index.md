@@ -448,7 +448,7 @@ onBeforeUnmount(() => {
   opacity: 0.6;
   cursor: not-allowed;
 }
-@media (max-width: 1001px) {
+@media (max-width: 767px) {
   .blog-header-row {
     flex-direction: column;
     align-items: stretch;
