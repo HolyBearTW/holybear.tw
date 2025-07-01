@@ -101,7 +101,8 @@ a, button, [role="button"], .btn,
 /**
  * Component: Copy
  * -------------------------------------------------------------------------- */
-html[lang^="zh-TW"] {
+
+:lang(zh) {
     --vp-code-copy-copied-text-content: "複製完成！";
 }
 
