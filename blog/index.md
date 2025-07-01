@@ -374,7 +374,6 @@ onBeforeUnmount(() => {
   object-fit: cover;
   display: inline-block;
 }
-
 .author-link-name {
   color: var(--vp-c-brand-1, #00b8b8);
   text-decoration: none;
@@ -486,7 +485,6 @@ onBeforeUnmount(() => {
   .author-avatar {
     width: 35px;
     height: 35px;
-    margin: 0 0 2px 0;
   }
   .blog-authors a {
     font-size: 0.93em;
