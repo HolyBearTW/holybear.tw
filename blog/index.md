@@ -182,6 +182,7 @@ onBeforeUnmount(() => {
   margin-bottom: 0.5rem;
   flex-wrap: nowrap;
   flex-direction: row;
+  position: unset; 
 }
 .blog-title {
   font-size: 2.5rem;
@@ -255,6 +256,7 @@ onBeforeUnmount(() => {
   box-shadow: 0 2px 8px 0 #0001;
   white-space: nowrap;
   margin-bottom: 0.5rem;
+  flex-shrink: 0; /* 防止按鈕被壓縮 */
 }
 .new-post-btn:hover {
   background: var(--vp-c-brand-dark);
@@ -361,8 +363,7 @@ onBeforeUnmount(() => {
   height: 21px;
   margin: 0 2px 0 0;
   border-radius: 50%;
-  position: relative; /* 配合 top 屬性 */
-  top: 1px; /* 嘗試下移 1px */
+  vertical-align: middle; /* 確保它與行內內容垂直對齊 */
 }
 .post-meta-author .author-avatar {
   width: 21px;
@@ -380,13 +381,11 @@ onBeforeUnmount(() => {
   color: var(--vp-c-brand-1, #00b8b8);
   text-decoration: none;
   font-weight: 600;
-  line-height: 1;
-  display: inline-block;
-  vertical-align: middle;
+  line-height: 1; /* 這裡的 line-height 也要設為 1 */
+  display: inline-block; /* 保持 inline-block */
+  vertical-align: middle; /* 確保它與圖片和日期垂直對齊 */
   margin-right: 0;
   padding-right: 0;
-  position: relative; /* 配合 top 屬性 */
-  top: 1px; /* 嘗試下移 1px */
 }
 .author-link-name:hover {
   text-decoration: underline;
@@ -395,23 +394,28 @@ onBeforeUnmount(() => {
   font-size: 0.98em;
   color: var(--vp-c-text-2);
   margin-left: 0;
-  position: relative;
-  top: 0.5px;
+  vertical-align: middle; /* 確保它與圖片和連結垂直對齊 */
 }
 .post-meta {
   color: var(--vp-c-text-2);
   font-size: 0.85rem;
-  margin-top: 0 !important;
-  margin-bottom: 0.2rem;
-  padding: 0;
-  display: block;
+  margin: 0 !important; /* 合併 margin-top 和 margin-bottom */
+  padding: 0 !important;
+  line-height: 1 !important; /* 確保行高緊密 */
+  overflow: hidden; /* 防止內容溢出 */
+  /* 新增的 flex 屬性 */
+  display: flex; /* <--- 讓它成為 flex 容器 */
+  align-items: center; /* <--- 讓所有內容垂直置中對齊 */
+  height: 28px; /* <--- 嘗試給一個固定高度，例如 28px-32px，確保能容納圖片和文字 */
+  /* min-height: 28px; */ /* 如果不喜歡固定高度，可以用 min-height */
 }
 .post-excerpt {
   color: var(--vp-c-text-2);
   line-height: 1.5;
   font-size: 0.95rem;
-  margin-bottom: 0.2rem;
-  margin-top: 0 !important;
+  margin-top: 0 !important;     /* 確保上方沒有間距 */
+  margin-bottom: 0 !important; /* 確保下方沒有間距 */
+  padding: 0 !important;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -423,7 +427,7 @@ onBeforeUnmount(() => {
   color: var(--vp-c-brand-1);
   font-weight: 500;
   font-size: 0.9rem;
-  margin-top: 0.15rem;
+  margin-top: 0 !important; /* 如果要它更緊密 */
   margin-bottom: 0;
 }
 .read-more:hover {
@@ -457,45 +461,76 @@ onBeforeUnmount(() => {
   opacity: 0.6;
   cursor: not-allowed;
 }
-@media (max-width: 767px) {
+@media (max-width: 889px) {
   .blog-header-row {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.7rem;
-    flex-wrap: wrap;
+    display: flex;
+    flex-direction: row; 
+    flex-wrap: wrap;     
+    align-items: center; 
+    justify-content: space-between; 
+    
+    /* 調整間距，清除所有可能導致間距的屬性 */
+    border-bottom: 1px dashed var(--vp-c-divider, #e5e5e5); /* 保留邊線 */
+    margin-bottom: 0 !important; /* 清除外部底部間距 */
+    padding-top: 0.5rem !important; /* 確保有足夠的內部頂部空間 */
+    padding-bottom: 0.2rem !important; /* 精確控制底部邊線與作者群的間距 */
+    gap: 0 !important; /* 清除所有 flex item 之間的 gap */
   }
-  .new-post-btn {
-    width: 100%;
-    text-align: center;
-    margin-top: 0.7rem;
-    font-size: 1rem;
-  }
+
   .blog-title {
-    margin-bottom: 0.5rem;
-    margin-right: 0;
+    margin: 0 !important; /* 強制清除所有 margin */
+    flex-shrink: 0; 
+    order: 0; 
   }
+
+  .new-post-btn {
+    width: auto; 
+    margin: 0 !important; /* 強制清除所有 margin */
+    font-size: 0.95rem; 
+    order: 1; 
+    flex-shrink: 0; 
+  }
+
   .blog-authors {
-    justify-content: center;
-    gap: 0.25em 0.25em; /* 橫向間距 */
+    width: 100%; /* 強制作者群換到下一行並佔滿寬度 */
+    margin-top: 0 !important; /* **關鍵：作者群上邊距強制設為 0** */
+    margin-bottom: 0 !important; /* 強制清除底部間距 */
+    justify-content: center; /* 讓作者群內容置中 */
+    
+    /* 作者群的內部排版，保持您要的效果 */
+    display: flex; 
+    flex-direction: row; 
+    align-items: center; 
+    flex-wrap: wrap; 
+    gap: 0.25em 0.25em; /* 保持作者頭像間的間距 */
     text-align: center;
+    order: 2; /* 確保作者群在日誌標題和新增按鈕之後 */
+  }
+  .blog-authors strong {
+    white-space: nowrap; /* 避免「作者群：」換行 */
+    margin-right: 0.25em !important; /* 確保作者群文字與頭像間距合理 */
   }
   .author-link {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin: 0.25em 0.25em; /* 左右間距 */
+    display: flex; 
+    flex-direction: column; /* 讓頭像和名字垂直排列 */
+    align-items: center; 
+    margin: 0.05em 0.25em !important; /* **再次微調垂直間距，使其更小或為 0** */
   }
   .author-avatar {
-    width: 35px;
-    height: 35px;
+    width: 32px; 
+    height: 32px;
+    margin-right: 0 !important; /* 強制移除右側間距 */
   }
   .blog-authors a {
-    font-size: 0.93em;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    font-size: 0.9em; 
+    margin: 0 !important;
+    padding: 0 !important;
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+  }
+  .blog-articles-grid {
+  padding-top: 0.5rem; /* 增加標題上方間距 */
   }
 }
 @media (max-width: 767px) {
@@ -545,7 +580,6 @@ main,
 .VPContent,
 .VPContent .content-container,
 .VPDoc .content-container,
-.vp-doc .content-container,
 [class*="VPContent"],
 [class*="content-container"] {
   border-top: none !important;
