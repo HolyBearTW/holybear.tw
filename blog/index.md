@@ -132,7 +132,7 @@ onBeforeUnmount(() => {
             <span class="author-inline">
               <img
                 v-if="getAuthorMeta(post.author).login"
-                class="author-avatar"
+                class="post-author-avatar"
                 :src="`https://github.com/${getAuthorMeta(post.author).login}.png`"
                 :alt="getAuthorMeta(post.author).name"
               />
@@ -467,14 +467,14 @@ onBeforeUnmount(() => {
   }
   .blog-authors {
     justify-content: center;
-    gap: 0.25em 0.25em; /* 橫向間距 */
+    gap: 0.1em 0.25em; /* 橫向間距 */
     text-align: center;
   }
   .author-link {
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin: 0.25em 0.25em; /* 左右間距 */
+    margin: 0.1em 0.25em; /* 左右間距 */
   }
   .author-avatar {
     width: 35px;
@@ -534,6 +534,11 @@ onBeforeUnmount(() => {
     word-break: break-word;
     margin-top: 0.1em;
     margin-bottom: 0.2em !important;
+  }
+  .post-author-avatar {
+    width: 15px;
+    height: 15px;
+    margin: 0 0 2px 0;
   }
 }
 </style>
