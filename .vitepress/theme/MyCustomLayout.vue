@@ -17,7 +17,6 @@
         (locale?.value === 'en') ||
         (page?.value?.path?.startsWith('/en/'))
     )
-    const authorPrefix = computed(() => isEnglish.value ? 'by ' : '作者：')
     const currentTitle = computed(() =>
         frontmatter.value
             ? (frontmatter.value.title || (isEnglish.value ? 'Unknown post title' : '無標題文章'))
@@ -26,6 +25,39 @@
     const currentSlug = computed(() =>
         frontmatter.value?.slug || page.value?.path || frontmatter.value?.title || 'unknown'
     )
+
+    // 作者資訊陣列
+    const authors = [
+        { name: '聖小熊', login: 'HolyBearTW', url: 'https://github.com/HolyBearTW' },
+        { name: '玄哥', login: 'Tim0320', url: 'https://github.com/Tim0320' },
+        { name: '酪梨', login: 'ying0930', url: 'https://github.com/ying0930' },
+        { name: 'Jack', login: 'Jackboy001', url: 'https://github.com/Jackboy001' },
+        { name: 'Leo', login: 'leohsiehtw', url: 'https://github.com/leohsiehtw' },
+    ]
+    // 根據 frontmatter.author 找到對應的作者物件
+    function getAuthorMeta(authorName) {
+        return (
+            authors.find(a => a.name === authorName) ||
+            authors.find(a => a.login === authorName) ||
+            { name: authorName, login: '', url: '' }
+        )
+    }
+
+    // 本地預設作者
+    const currentAuthor = computed(() =>
+        frontmatter.value?.author || '未知作者'
+    )
+    const currentAuthorMeta = computed(() => getAuthorMeta(currentAuthor.value))
+
+    const currentAuthorAvatar = computed(() =>
+        currentAuthorMeta.value.login
+            ? `https://github.com/${currentAuthorMeta.value.login}.png`
+            : '/logo.png'
+    )
+    const currentAuthorUrl = computed(() =>
+        currentAuthorMeta.value.url || 'https://holybear.me/'
+    )
+
     const currentDisplayDate = computed(() => {
         if (frontmatter.value?.date) {
             const date = new Date(frontmatter.value.date)
@@ -37,7 +69,7 @@
             const min = String(twDate.getMinutes()).padStart(2, '0')
             return `${yyyy}-${mm}-${dd} ${hh}:${min}`
         }
-        return ''
+        return isEnglish.value ? 'Unknown date' : '未知日期'
     })
 
     /* === ENTRANCE ANIMATION START === */
@@ -75,7 +107,6 @@
         <button @click="hideIntro" class="skip-btn">Skip</button>
     </div>
     <!-- === ENTRANCE ANIMATION END === -->
-    <!-- 進場動畫結束才顯示播放器和主內容 -->
     <FloatingBgmPlayer v-if="!showIntro" />
 
     <Theme.Layout v-show="!showIntro">
@@ -84,20 +115,17 @@
                 <h1 class="blog-post-title">{{ currentTitle }}</h1>
                 <div v-if="(frontmatter.category && frontmatter.category.length) || (frontmatter.tag && frontmatter.tag.length)"
                      class="blog-post-meta-row">
-                    <span v-for="c in frontmatter.category"
-                          :key="'cat-' + c"
-                          class="category">{{ c }}</span>
-                    <span v-for="t in frontmatter.tag"
-                          :key="'tag-' + t"
-                          class="tag">{{ t }}</span>
+                    <span v-for="c in frontmatter.category" :key="'cat-' + c" class="category">{{ c }}</span>
+                    <span v-for="t in frontmatter.tag" :key="'tag-' + t" class="tag">{{ t }}</span>
                 </div>
                 <p class="blog-post-date-in-content">
-                    <span v-if="frontmatter.author">{{ authorPrefix }}{{ frontmatter.author }}</span>
-                    <template v-if="frontmatter.author && currentDisplayDate">｜</template>
-                    <template v-if="currentDisplayDate">
-                        {{ currentDisplayDate }}
-                    </template>
-                    <span style="float:right;">
+                    <span class="blog-post-date-main">
+                        <span class="author-inline">
+                            <img class="post-author-avatar" :src="currentAuthorAvatar" :alt="currentAuthorMeta.name" />
+                            <a :href="currentAuthorUrl" target="_blank" rel="noopener" class="author-link-name">{{ currentAuthorMeta.name }}</a><span v-if="currentDisplayDate">｜{{ currentDisplayDate }}</span>
+                        </span>
+                    </span>
+                    <span class="blog-post-date-right">
                         <ClientOnly>
                             <ViewCounter :slug="currentSlug" />
                         </ClientOnly>
@@ -238,7 +266,57 @@
         font-size: 0.85rem;
         margin-top: 0;
         margin-bottom: 0.2rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5em;
     }
+
+    .blog-post-date-main {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3em;
+    }
+
+    .blog-post-date-right {
+        display: inline-flex;
+        align-items: center;
+        margin-left: 1em;
+    }
+
+    .author-inline {
+        display: flex;
+        align-items: center;
+        gap: 0;
+    }
+
+    .post-author-avatar {
+        width: 22px;
+        height: 22px;
+        margin: 0 2px 0 0;
+        border-radius: 50%;
+        vertical-align: middle;
+        box-shadow: 0 2px 8px #0001;
+        border: 1px solid #ddd;
+        background: #fff;
+        object-fit: cover;
+        display: inline-block;
+    }
+
+    .author-link-name {
+        color: var(--vp-c-brand-1, #00b8b8);
+        text-decoration: none;
+        font-weight: normal;
+        line-height: 1;
+        display: inline-block;
+        vertical-align: middle;
+        margin-right: 0;
+        padding-right: 0;
+    }
+
+        .author-link-name:hover {
+            text-decoration: underline;
+        }
 
     .blog-post-date-divider {
         border-bottom: 1px dashed var(--vp-c-divider);
@@ -269,7 +347,6 @@
 </style>
 
 <style>
-    /* 側邊欄間距 */
     .group + .group[data-v-a84b7c21] {
         border-top: 1px solid var(--vp-c-divider) !important;
         padding-top: 8px !important;
