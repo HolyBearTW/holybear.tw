@@ -98,6 +98,13 @@ a, button, [role="button"], .btn,
     --docsearch-primary-color: var(--vp-c-brand) !important;
 }
 
+/**
+ * Component: Copy
+ * -------------------------------------------------------------------------- */
+html[lang^="zh-TW"] {
+    --vp-code-copy-copied-text-content: "複製完成！";
+}
+
 /* Hero 區塊大圖（首頁主圖）基礎尺寸設定 */
 :root .image-src {
     width: 100%;
