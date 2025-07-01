@@ -356,14 +356,13 @@ onBeforeUnmount(() => {
   font-size: inherit;
   line-height: 1;
 }
-.post-author {
-  margin-top: 1px;
-}
 .post-author-avatar {
   width: 21px;
   height: 21px;
   margin: 0 2px 0 0;
   border-radius: 50%;
+  position: relative; /* 配合 top 屬性 */
+  top: 1px; /* 嘗試下移 1px */
 }
 .post-meta-author .author-avatar {
   width: 21px;
@@ -386,6 +385,8 @@ onBeforeUnmount(() => {
   vertical-align: middle;
   margin-right: 0;
   padding-right: 0;
+  position: relative; /* 配合 top 屬性 */
+  top: 1px; /* 嘗試下移 1px */
 }
 .author-link-name:hover {
   text-decoration: underline;
