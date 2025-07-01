@@ -467,14 +467,14 @@ onBeforeUnmount(() => {
   }
   .blog-authors {
     justify-content: center;
-    gap: 0.1em 0.25em; /* 橫向間距 */
+    gap: 0.25em 0.25em; /* 橫向間距 */
     text-align: center;
   }
   .author-link {
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin: 0.1em 0.25em; /* 左右間距 */
+    margin: 0.25em 0.25em; /* 左右間距 */
   }
   .author-avatar {
     width: 35px;
@@ -536,9 +536,10 @@ onBeforeUnmount(() => {
     margin-bottom: 0.2em !important;
   }
   .post-author-avatar {
-    width: 15px;
-    height: 15px;
-    margin: 0 0 2px 0;
+    width: 21px;
+    height: 21px;
+    margin: 0 2px 0 0;
+    border-radius: 50%;
   }
 }
 </style>
