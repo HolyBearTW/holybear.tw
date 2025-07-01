@@ -582,6 +582,17 @@ onBeforeUnmount(() => {
     margin-bottom: 0.2em !important;
   }
 }
+  @media (max-width: 500px) {
+  .blog-authors a {
+    font-size: 10px;
+  }
+  .blog-authors {
+    gap: 0.3em 0.3em; /* <--- 這個是控制手機版作者頭像/名字區塊之間的間距 */
+  }
+  .author-link {
+    margin: 0.3em 0.3em !important; /* <--- 這個也是控制手機版作者頭像/名字區塊之間的間距 */
+  }
+}
 </style>
 
 <style>
