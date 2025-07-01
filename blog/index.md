@@ -572,7 +572,7 @@ onBeforeUnmount(() => {
 }
 </style>
 
-<style>
+<style scoped>
 .vp-doc h2 {
   border-top: none !important;
   padding-top: 0 !important;
