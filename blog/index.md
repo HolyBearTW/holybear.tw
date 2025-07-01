@@ -467,7 +467,7 @@ onBeforeUnmount(() => {
   }
   .blog-authors {
     justify-content: center;
-    gap: 0.7em 0.7em; /* 橫向間距更明顯 */
+    gap: 0.7em 0.1em; /* 橫向間距 */
     margin-bottom: 0.5em;
     text-align: center;
   }
@@ -475,8 +475,7 @@ onBeforeUnmount(() => {
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin: 0.2em 0.35em; /* 左右間距，補gap效果 */
-    min-width: 52px;
+    margin: 0.2em 0.1em; /* 左右間距 */
   }
   .author-avatar {
     width: 26px;
