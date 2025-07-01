@@ -402,8 +402,7 @@ onBeforeUnmount(() => {
   color: var(--vp-c-text-2);
   font-size: 0.85rem;
   margin-top: 0 !important;
-  margin-bottom: 0.2rem !important;
-  line-height: 1.2;
+  margin-bottom: 0.2rem;
   padding: 0;
   display: block;
 }
@@ -412,7 +411,7 @@ onBeforeUnmount(() => {
   line-height: 1.5;
   font-size: 0.95rem;
   margin-bottom: 0.2rem;
-  margin-top: 0.13rem;
+  margin-top: 0 !important;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
