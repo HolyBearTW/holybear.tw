@@ -6,7 +6,7 @@ export default {
   themeConfig: {
     nav: [
       { text: 'Blog', link: '/en/blog/' },
-      { text: 'Portfolio', link: '/en/Mod/' },
+      { text: 'Portfolio', link: '/en/Mod' },
       { text: 'Telegram', link: 'https://t.me/HolyBearTW' },
       { text: 'Donate', link: 'https://paypal.me/holybear0610' }
     ],
