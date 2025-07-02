@@ -12,7 +12,7 @@ hero:
   actions:
     - theme: brand
       text: Blog
-      link: en/blog
+      link: en/blog/
     - theme: alt
       text: Portfolio
       link: en/Mod

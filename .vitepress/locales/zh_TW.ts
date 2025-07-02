@@ -5,7 +5,7 @@ export default {
   description: '聖小熊的個人網站，收錄 HyperOS 模組、技術筆記與開發心得，專注於 Android 客製化與開源創作分享。',
   themeConfig: {
     nav: [
-      { text: '日誌', link: '/blog' },
+      { text: '日誌', link: '/blog/' },
       { text: '作品集', link: '/Mod' },
       { text: 'Telegram', link: 'https://t.me/HolyBearTW' },
       { text: '贊助', link: 'https://paypal.me/holybear0610' }
