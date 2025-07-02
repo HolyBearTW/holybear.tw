@@ -1,23 +1,19 @@
 ---
 layout: home
 title: Blog Posts
-description: List of blog posts by HolyBear
+description: List of blog posts
 ---
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, onUnmounted } from 'vue'
 import { data as allPosts } from '../../.vitepress/theme/en/post.data.ts'
 
-// 嘗試將 classList 操作延遲到 DOM 更新週期結束後
 onMounted(() => {
-  nextTick(() => {
-    document.body.classList.add('blog-index-page')
-  })
+  document.body.classList.add('blog-index-page')
 })
+
 onUnmounted(() => {
-  nextTick(() => { // 確保在元件銷毀前移除，也使用 nextTick
-    document.body.classList.remove('blog-index-page')
-  })
+  document.body.classList.remove('blog-index-page')
 })
 
 // Define authors array with login, display name, and GitHub link
