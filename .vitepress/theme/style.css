@@ -5,7 +5,7 @@
 
 /* 網站游標 */
 body {
-  cursor: url('/MapleStory_cursor.png'), auto;
+    cursor: url('/MapleStory_cursor_new.png'), auto;
 }
 a, button, [role="button"], .btn,
 .VPSidebar .text,
@@ -31,7 +31,7 @@ a, button, [role="button"], .btn,
 .main-controls,
 .marquee-container,
 .music-title-text {
-    cursor: url('/MapleStory_cursor_new.ani'), auto !important;
+    cursor: url('/MapleStory_cursor_new.png'), auto !important;
 }
 
 /**
