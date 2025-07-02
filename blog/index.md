@@ -495,6 +495,7 @@ onBeforeUnmount(() => {
   .new-post-btn {
     width: auto; 
     margin: 0 !important; /* 強制清除所有 margin */
+    margin-top: -2px !important;
     font-size: 0.95rem; 
     order: 1; 
     flex-shrink: 0; 
