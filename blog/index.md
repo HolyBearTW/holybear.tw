@@ -583,7 +583,7 @@ onBeforeUnmount(() => {
 body.blog-index-page .vp-doc h2 {
   border-top: none !important;
   padding-top: 0 !important;
-  margin-top: 32px !important;
+  margin-top: 0 !important;
 }
 body.blog-index-page main,
 body.blog-index-page .VPContent,
