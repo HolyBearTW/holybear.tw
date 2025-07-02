@@ -493,12 +493,29 @@ onBeforeUnmount(() => {
   }
 
   .new-post-btn {
-    width: auto; 
-    margin: 0 !important; /* 強制清除所有 margin */
-    margin-top: -2px !important;
-    font-size: 0.95rem; 
-    order: 1; 
-    flex-shrink: 0; 
+    background: var(--vp-c-brand);
+    color: #000;
+    font-weight: 600;
+    padding: 0.32em 0.8em;
+    border-radius: 10px;
+    text-decoration: none;
+    font-size: 0.95rem;
+    transition: background 0.15s, color 0.15s;
+    box-shadow: 0 2px 8px 0 #0001;
+    white-space: nowrap;
+    flex-shrink: 0;
+    
+    /* 核心調整：Flexbox 顯示與內部對齊 */
+    display: inline-flex;  /* 讓按鈕本身成為一個 inline 的 Flex 容器 */
+    align-items: center;   /* 按鈕內部的 '+' 和文字垂直置中對齊 */
+    justify-content: center; /* 按鈕內部的 '+' 和文字水平置中對齊 */
+
+    /* 清除外部 margin 並進行像素級微調 */
+    margin: 0 !important; /* 清除所有方向的 margin */
+    position: relative;    /* 啟用 top/bottom/left/right 屬性 */
+    top: -6px;             /* 嘗試往上移動 */
+
+    order: 1; /* 保持 flex 順序 */
   }
 
   .blog-authors {
@@ -518,7 +535,7 @@ onBeforeUnmount(() => {
   }
   .blog-authors strong {
     white-space: nowrap; /* 避免「作者群：」換行 */
-    margin-right: 0.25em !important; /* 確保作者群文字與頭像間距合理 */
+    margin-right: 0 !important; /* 確保作者群文字與頭像間距合理 */
   }
   .author-link {
     display: flex; 
@@ -530,9 +547,10 @@ onBeforeUnmount(() => {
     width: 32px; 
     height: 32px;
     margin-right: 0 !important; /* 強制移除右側間距 */
+    margin-bottom: 3px !important; /* 作者上下間距 */
   }
   .blog-authors a {
-    font-size: 0.9em; 
+    font-size: 16px; 
     margin: 0 !important;
     padding: 0 !important;
     display: flex; 
