@@ -7,7 +7,12 @@
 body {
     cursor: url('/MapleStory_cursor_new.png'), auto;
 }
-a, button, [role="button"], .btn,
+a:hover,
+button:hover {
+    cursor: url('/MapleStory_cursor_hand.png'), pointer !important;
+}
+[role="button"],
+.btn,
 .VPSidebar .text,
 .VPSidebarItem .text,
 .VPSidebarLink,
@@ -16,7 +21,6 @@ a, button, [role="button"], .btn,
 .my-bgm-fab,
 .my-bgm-player,
 .my-bgm-player *,
-.my-bgm-player button,
 .my-bgm-player input[type="range"],
 .my-bgm-close,
 .my-bgm-prev-next-btn,
