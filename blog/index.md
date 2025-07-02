@@ -5,14 +5,19 @@ description: 聖小熊的部落格文章列表
 ---
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, onUnmounted, nextTick } from 'vue'
 import { data as allPosts } from '../.vitepress/theme/posts.data.ts'
 
+// 嘗試將 classList 操作延遲到 DOM 更新週期結束後
 onMounted(() => {
-  document.body.classList.add('blog-index-page')
+  nextTick(() => {
+    document.body.classList.add('blog-index-page')
+  })
 })
 onUnmounted(() => {
-  document.body.classList.remove('blog-index-page')
+  nextTick(() => { // 確保在元件銷毀前移除，也使用 nextTick
+    document.body.classList.remove('blog-index-page')
+  })
 })
 
 // 定義作者陣列，包含 login、中文顯示名稱、GitHub 連結

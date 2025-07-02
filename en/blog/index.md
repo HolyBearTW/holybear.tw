@@ -5,7 +5,7 @@ description: List of blog posts by HolyBear
 ---
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, onUnmounted, nextTick } from 'vue'
 import { data as allPosts } from '../../.vitepress/theme/en/post.data.ts'
 
 // 嘗試將 classList 操作延遲到 DOM 更新週期結束後
