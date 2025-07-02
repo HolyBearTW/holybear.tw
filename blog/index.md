@@ -475,7 +475,7 @@ onBeforeUnmount(() => {
     display: flex;
     flex-direction: row; 
     flex-wrap: wrap;     
-    align-items: flex-end; 
+    align-items: baseline; 
     justify-content: space-between; 
     
     /* 調整間距，清除所有可能導致間距的屬性 */
