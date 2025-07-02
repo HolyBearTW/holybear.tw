@@ -31,7 +31,7 @@ a, button, [role="button"], .btn,
 .main-controls,
 .marquee-container,
 .music-title-text {
-  cursor: url('/MapleStory_cursor.png'), auto !important;
+    cursor: url('/MapleStory_cursor_new.ani'), auto !important;
 }
 
 /**
