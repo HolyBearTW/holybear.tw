@@ -12,7 +12,7 @@ hero:
   actions:
     - theme: brand
       text: 日誌
-      link: /blog
+      link: /blog/
     - theme: alt
       text: 作品集
       link: /Mod
