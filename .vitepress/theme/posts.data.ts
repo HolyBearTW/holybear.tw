@@ -1,34 +1,43 @@
-// .vitepress/theme/posts.data.ts
-
 import { createContentLoader } from 'vitepress';
-import authors from './authors.json';
-import fs from 'node:fs';
+import authors from './authors.json'; // 確保這個路徑正確
 
 const DEFAULT_IMAGE = '/blog_no_image.svg';
 
+/**
+ * 從 frontmatter 提取日期
+ * @param {object} frontmatter
+ * @returns {string}
+ */
 function extractDate(frontmatter) {
     return (
         frontmatter.listDate ||
         frontmatter.date ||
         frontmatter.created ||
+        frontmatter.publishDate ||
         ''
     );
 }
 
+/**
+ * 正規化 URL，移除常見的尾部字串和副檔名
+ * @param {string} url
+ * @returns {string}
+ */
 function normalizeUrl(url) {
-    if (!url) return '';
+    // 如果是索引頁面 URL，直接返回其目錄形式
     if (url === '/blog/' || url === '/en/blog/') {
         return url;
     }
     if (url.endsWith('/index.html')) {
-        return url.replace(/\/index\.html$/, '');
+        return url.replace(/\/index\.html$/, ''); // 例如 /blog/index.html -> /blog
     }
     if (url.endsWith('.html')) {
-        return url.replace(/\.html$/, '');
+        return url.replace(/\.html$/, ''); // 例如 /blog/post.html -> /blog/post
     }
-    if (url.endsWith('.md')) {
-        return url.replace(/\.md$/, '');
+    if (url.endsWith('.md')) { // <-- 新增：處理 .md 結尾的 URL
+        return url.replace(/\.md$/, ''); // 例如 /blog/post.md -> /blog/post
     }
+    // 移除尾部斜線，除非是根目錄 "/"
     if (url.endsWith('/') && url !== '/') {
         return url.slice(0, -1);
     }
@@ -39,51 +48,50 @@ function normalizeUrl(url) {
 export default createContentLoader('blog/**/*.md', {
     excerpt: true,
     transform(raw) {
-        const transformedPosts = raw
+        // console.log('--- Raw Data URLs from createContentLoader ---'); // 除錯用，可視情況啟用
+        // raw.forEach(item => {
+        //   console.log('Raw Item URL:', item.url, 'Frontmatter:', item.frontmatter);
+        // });
+        // console.log('-------------------------------------------');
+
+        return raw
             .filter(({ url }) => {
+                // 排除部落格列表頁本身，確保不會將其視為單篇文章
                 const isBlogIndexPage =
                     url === '/blog/' ||
                     url === '/blog/index.html' ||
                     url === '/en/blog/' ||
                     url === '/en/blog/index.html';
+
+                // 新增：排除任何以 .md 結尾的非預期 URL，特別是 /blog.md
                 const isUnexpectedMdUrl = url.endsWith('.md') && !url.startsWith('/blog/') && !url.startsWith('/en/blog/');
+
+                // console.log(`Filtering: ${url}, isBlogIndexPage: ${isBlogIndexPage}, isUnexpectedMdUrl: ${isUnexpectedMdUrl}`); // 除錯用
 
                 return !isBlogIndexPage && !isUnexpectedMdUrl;
             })
-            .map(({ url, frontmatter, content, excerpt, filePath }) => {
+            .map(({ url, frontmatter, content, excerpt }) => {
                 frontmatter = frontmatter && typeof frontmatter === 'object' ? frontmatter : {};
                 const title = frontmatter.title || '無標題文章';
-
-                let articleDate = extractDate(frontmatter);
-                if (!articleDate && filePath) {
-                    try {
-                        const stats = fs.statSync(filePath);
-                        articleDate = stats.birthtime.toISOString();
-                    } catch (e) {
-                        articleDate = '未知日期';
-                    }
-                }
-
-                // ✨ 關鍵修正：確保 author 在 posts.data.ts 層次就已經被修剪並確定預設值 ✨
-                let author = frontmatter.author;
-                if (!author || typeof author !== 'string' || author.trim() === '') {
-                    author = '未知作者'; // 確保 author 永遠是一個非空的標準字串
-                } else {
-                    author = author.trim(); // 移除任何前後空白字元
-                }
-
+                const date = extractDate(frontmatter);
                 let imageUrl = frontmatter.image;
+
+                // 嘗試從內容中提取第一張圖片
                 if (!imageUrl && content) {
                     const markdownImageRegex = /!\[.*?\]\((.*?)\)/;
                     let match = content.match(markdownImageRegex);
                     if (match && match[1]) imageUrl = match[1];
                 }
 
+                // 處理圖片路徑相對路徑
                 if (imageUrl && !imageUrl.startsWith('/') && !imageUrl.startsWith('http')) {
+                    // 假設圖片在文章所在目錄的相對路徑，需要根據實際情況調整
+                    // 這裡簡化處理為假設圖片在根目錄下，您可能需要更複雜的邏輯來處理相對路徑
                     imageUrl = `/${imageUrl}`;
                 }
                 if (!imageUrl) imageUrl = DEFAULT_IMAGE;
 
+                // 讓 description 永遠優先，否則使用 excerpt 或內容第一行
                 let summary = (frontmatter.description || '').trim();
                 if (!summary && excerpt) summary = excerpt.trim();
                 if (!summary && content) {
@@ -92,38 +100,30 @@ export default createContentLoader('blog/**/*.md', {
                 }
 
                 const normalizedUrl = normalizeUrl(url);
-                const finalUrl = normalizedUrl || '/invalid-post-url';
+                const author = authors[normalizedUrl] || '未知作者';
 
-                // ✨ 這裡的 authorFromLookup 將會使用已經被處理過的 `author` 值 ✨
-                const authorFromLookup = authors[normalizedUrl] || author;
+                // console.log('Processed Post:', { url, normalizedUrl, author, title }); // 除錯用
 
-
+                // 最終回傳的物件，確保 url 是經過正規化且正確的
                 return {
-                    url: finalUrl,
+                    url: normalizedUrl, // <-- 關鍵：確保這裡使用的是正規化後的 URL
                     frontmatter,
                     title,
-                    date: articleDate,
-                    tags: Array.isArray(frontmatter.tags) ? frontmatter.tags : (Array.isArray(frontmatter.tag) ? frontmatter.tag : []),
+                    date,
+                    tags: Array.isArray(frontmatter.tags)
+                        ? frontmatter.tags
+                        : (Array.isArray(frontmatter.tag) ? frontmatter.tag : []),
                     category: Array.isArray(frontmatter.category) ? frontmatter.category : [],
                     image: imageUrl,
                     summary,
                     excerpt: summary,
-                    author: authorFromLookup, // `author` 已經是確定值
+                    author,
                 };
+            })
+            // 最終過濾：確保所有回傳的 post 都有一個有效且不是空字串的 url
+            .filter(post => !!post && typeof post.url === 'string' && post.url.trim() !== '')
+            .sort((a, b) => {
+                return new Date(b.date).getTime() - new Date(a.date).getTime();
             });
-
-        const finalFilteredPosts = transformedPosts.filter(post => {
-            return true;
-        });
-
-        const sortedPosts = finalFilteredPosts.sort((a, b) => {
-            const dateA = new Date(a.date);
-            const dateB = new Date(b.date);
-            const timeA = isNaN(dateA.getTime()) ? -Infinity : dateA.getTime();
-            const timeB = isNaN(dateB.getTime()) ? -Infinity : dateB.getTime();
-            return timeB - timeA;
-        });
-
-        return sortedPosts;
     },
 });
