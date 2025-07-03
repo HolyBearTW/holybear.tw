@@ -19,7 +19,7 @@ onUnmounted(() => {
 // 定義作者陣列，包含 login、中文顯示名稱、GitHub 連結
 const authors = [
   { name: '聖小熊', login: 'HolyBearTW', url: 'https://github.com/HolyBearTW' },
-  { name: '玄哥', login: 'Tim0320', url: 'https://github.com::Tim0320' },
+  { name: '玄哥', login: 'Tim0320', url: 'https://github.com/Tim0320' },
   { name: '酪梨', login: 'ying0930', url: 'https://github.com/ying0930' },
   { name: 'Jack', login: 'Jackboy001', url: 'https://github.com/Jackboy001' },
   { name: 'Leo', login: 'leohsiehtw', url: 'https://github.com/leohsiehtw' },
