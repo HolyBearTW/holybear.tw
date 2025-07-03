@@ -19,35 +19,42 @@ onUnmounted(() => {
 // 定義作者陣列，包含 login、中文顯示名稱、GitHub 連結
 const authors = [
   { name: '聖小熊', login: 'HolyBearTW', url: 'https://github.com/HolyBearTW' },
-  { name: '玄哥', login: 'Tim0320', url: 'https://github.com/Tim0320' },
+  { name: '玄哥', login: 'Tim0320', url: 'https://github.com/Tim0320' }, // 確保這裡已經修正過
   { name: '酪梨', login: 'ying0930', url: 'https://github.com/ying0930' },
   { name: 'Jack', login: 'Jackboy001', url: 'https://github.com/Jackboy001' },
   { name: 'Leo', login: 'leohsiehtw', url: 'https://github.com/leohsiehtw' },
 ]
 
-// 確保 getAuthorMeta 返回的 login 和 url 永遠有效
+// ✨ 關鍵修正：確保 getAuthorMeta 返回的 login 和 url 永遠有效且經過修剪 ✨
 function getAuthorMeta(authorName) {
-  const foundAuthor = authors.find(a => a.name === authorName) ||
-                      authors.find(a => a.login === authorName);
+  // 將傳入的 authorName 也進行標準化處理
+  const normalizedAuthorName = (authorName && typeof authorName === 'string') ? authorName.trim() : '';
+
+  const foundAuthor = authors.find(a => a.name === normalizedAuthorName) ||
+                      authors.find(a => a.login === normalizedAuthorName);
 
   if (foundAuthor) {
     return {
       name: foundAuthor.name,
-      login: foundAuthor.login && foundAuthor.login.trim() !== '' ? foundAuthor.login : 'default',
-      url: foundAuthor.url && foundAuthor.url.trim() !== '' ? foundAuthor.url : '#',
+      // 確保 login 永遠是一個非空字串，並修剪空白
+      login: (foundAuthor.login && foundAuthor.login.trim() !== '') ? foundAuthor.login.trim() : 'default',
+      // 確保 url 永遠是一個有效的 URL，並修剪空白，如果為空則用 #
+      url: (foundAuthor.url && foundAuthor.url.trim() !== '') ? foundAuthor.url.trim() : '#',
     };
   } else {
+    // 如果作者名稱在 authors 陣列中完全找不到，也提供安全的預設值
     return {
-      name: authorName && authorName.trim() !== '' ? authorName : '未知作者',
-      login: 'default', // 如果找不到作者，提供一個預設的 login，避免圖片 src 錯誤
-      url: '#' // 如果找不到作者，提供一個預設的 URL
+      name: normalizedAuthorName || '未知作者', // 使用處理過的 authorName
+      login: 'default', // 預設的 GitHub login 用於頭像
+      url: '#' // 預設的連結
     };
   }
 }
+// ✨ END: 關鍵修正 - 確保 getAuthorMeta 返回的 login 和 url 永遠有效 ✨
 
 const postsWithDate = allPosts.filter(Boolean)
 
-// 日期格式化函式 (保持不變，但暫時不使用在顯示上)
+// 日期格式化函式 (保持之前已做的修正)
 function formatDateExactlyLikePostPage(dateString) {
   if (!dateString || dateString === '未知日期') {
     return dateString || '';
@@ -179,8 +186,8 @@ onBeforeUnmount(() => {
                 target="_blank"
                 rel="noopener"
                 class="author-link-name"
-              >{{ getAuthorMeta(post.author).name }}</a><span v-else>{{ post.author }}</span>
-              </span>
+              >{{ getAuthorMeta(post.author).name }}</a><span v-else>{{ post.author }}</span><span class="author-date">｜{{ formatDateExactlyLikePostPage(post.date) }}</span>
+            </span>
           </p>
           <div v-if="post.excerpt" class="post-excerpt" v-html="post.excerpt"></div>
           <span class="read-more">繼續閱讀 &gt;</span>
