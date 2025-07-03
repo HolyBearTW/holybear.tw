@@ -1,35 +1,22 @@
 // .vitepress/theme/posts.data.ts
 
 import { createContentLoader } from 'vitepress';
-import authors from './authors.json'; // 確保這個路徑正確
-import fs from 'node:fs'; // 引入 fs 模組來讀取檔案資訊
+import authors from './authors.json';
+import fs from 'node:fs';
 
 const DEFAULT_IMAGE = '/blog_no_image.svg';
 
-/**
- * 從 frontmatter 提取日期
- * @param {object} frontmatter
- * @returns {string}
- */
 function extractDate(frontmatter) {
     return (
         frontmatter.listDate ||
         frontmatter.date ||
         frontmatter.created ||
-        '' // 移除 publishDate，確保一致性
+        ''
     );
 }
 
-/**
- * 正規化 URL，移除常見的尾部字串和副檔名
- * 確保返回的 URL 始終是有效且非空的
- * @param {string} url
- * @returns {string}
- */
 function normalizeUrl(url) {
-    if (!url) return ''; // 如果傳入的 URL 本身就是空的，直接返回空字串
-
-    // 如果是索引頁面 URL，直接返回其目錄形式
+    if (!url) return '';
     if (url === '/blog/' || url === '/en/blog/') {
         return url;
     }
@@ -39,22 +26,22 @@ function normalizeUrl(url) {
     if (url.endsWith('.html')) {
         return url.replace(/\.html$/, '');
     }
-    if (url.endsWith('.md')) { // 處理 .md 結尾的 URL
+    if (url.endsWith('.md')) {
         return url.replace(/\.md$/, '');
     }
-    // 移除尾部斜線，除非是根目錄 "/"
     if (url.endsWith('/') && url !== '/') {
         return url.slice(0, -1);
     }
-
     return url;
 }
-
 
 export default createContentLoader('blog/**/*.md', {
     excerpt: true,
     transform(raw) {
-        return raw
+        // ✨ 新增：明確的偵錯日誌開頭 ✨
+        console.log('--- START posts.data.ts Transform Debug ---');
+
+        const transformedPosts = raw
             .filter(({ url }) => {
                 const isBlogIndexPage =
                     url === '/blog/' ||
@@ -62,7 +49,6 @@ export default createContentLoader('blog/**/*.md', {
                     url === '/en/blog/' ||
                     url === '/en/blog/index.html';
                 const isUnexpectedMdUrl = url.endsWith('.md') && !url.startsWith('/blog/') && !url.startsWith('/en/blog/');
-
                 return !isBlogIndexPage && !isUnexpectedMdUrl;
             })
             .map(({ url, frontmatter, content, excerpt, filePath }) => {
@@ -70,20 +56,19 @@ export default createContentLoader('blog/**/*.md', {
                 const title = frontmatter.title || '無標題文章';
 
                 let articleDate = extractDate(frontmatter);
-
                 if (!articleDate && filePath) {
                     try {
                         const stats = fs.statSync(filePath);
-                        articleDate = stats.birthtime.toISOString(); // 或 stats.mtime.toISOString()
+                        articleDate = stats.birthtime.toISOString();
                     } catch (e) {
                         console.warn(`[posts.data.ts] Failed to get file stats for ${filePath}:`, e.message);
-                        articleDate = '未知日期'; // 將日期設定為 '未知日期'
+                        articleDate = '未知日期';
                     }
                 }
 
                 let author = frontmatter.author;
                 if (!author) {
-                    author = '未知作者'; // 預設作者
+                    author = '未知作者';
                 }
 
                 let imageUrl = frontmatter.image;
@@ -92,7 +77,6 @@ export default createContentLoader('blog/**/*.md', {
                     let match = content.match(markdownImageRegex);
                     if (match && match[1]) imageUrl = match[1];
                 }
-
                 if (imageUrl && !imageUrl.startsWith('/') && !imageUrl.startsWith('http')) {
                     imageUrl = `/${imageUrl}`;
                 }
@@ -110,34 +94,49 @@ export default createContentLoader('blog/**/*.md', {
 
                 const authorFromLookup = authors[normalizedUrl] || author;
 
+                // ✨ 關鍵除錯點：打印每一篇文章的 URL 和其他相關資訊 ✨
+                console.log(`--- Processing Post: "${title}" ---`);
+                console.log(`  Original filePath: ${filePath}`);
+                console.log(`  Processed URL: "${url}"`); // 這是原始的 VitePress 生成的 URL
+                console.log(`  Normalized URL (to be used): "${normalizedUrl}"`); // 這是經過 normalizeUrl 處理的 URL
+                console.log(`  Final URL (after fallback): "${finalUrl}"`); // 這是最終用於 post.url 的值
+                console.log(`  Final Date: "${articleDate}"`);
+                console.log(`  Final Author: "${authorFromLookup}"`);
+                console.log('------------------------------------');
 
                 return {
                     url: finalUrl,
                     frontmatter,
                     title,
-                    date: articleDate, // 使用處理後的日期
-                    tags: Array.isArray(frontmatter.tags)
-                        ? frontmatter.tags
-                        : (Array.isArray(frontmatter.tag) ? frontmatter.tag : []),
+                    date: articleDate,
+                    tags: Array.isArray(frontmatter.tags) ? frontmatter.tags : (Array.isArray(frontmatter.tag) ? frontmatter.tag : []),
                     category: Array.isArray(frontmatter.category) ? frontmatter.category : [],
                     image: imageUrl,
                     summary,
                     excerpt: summary,
                     author: authorFromLookup,
                 };
-            })
-            .filter(post => !!post && typeof post.url === 'string' && post.url.trim() !== '')
-            .sort((a, b) => {
-                // ✨ 關鍵修正：在排序前安全處理日期 ✨
-                // 將 '未知日期' 的項目移到列表的最後面，或者給予一個極小的日期值
-                const dateA = a.date === '未知日期' ? new Date('0001-01-01T00:00:00Z') : new Date(a.date);
-                const dateB = b.date === '未知日期' ? new Date('0001-01-01T00:00:00Z') : new Date(b.date);
-
-                // 確保解析後的日期是有效的
-                const timeA = isNaN(dateA.getTime()) ? -Infinity : dateA.getTime();
-                const timeB = isNaN(dateB.getTime()) ? -Infinity : dateB.getTime();
-
-                return timeB - timeA;
             });
+
+        // ✨ 關鍵偵錯點：檢查最終過濾後的 URL 有效性並打印錯誤 ✨
+        const finalFilteredPosts = transformedPosts.filter(post => {
+            if (!post || typeof post.url !== 'string' || post.url.trim() === '') {
+                console.error(`ERROR: Post with title "${post?.title || 'Unknown Title'}" has an INVALID/EMPTY URL: "${post?.url}". This is a CRITICAL ERROR and might cause "Invalid URL" TypeError.`);
+                return false;
+            }
+            return true;
+        });
+
+        // 排序邏輯 (保持不變)
+        const sortedPosts = finalFilteredPosts.sort((a, b) => {
+            const dateA = new Date(a.date);
+            const dateB = new Date(b.date);
+            const timeA = isNaN(dateA.getTime()) ? -Infinity : dateA.getTime();
+            const timeB = isNaN(dateB.getTime()) ? -Infinity : dateB.getTime();
+            return timeB - timeA;
+        });
+
+        console.log('--- END posts.data.ts Transform Debug ---');
+        return sortedPosts;
     },
 });

@@ -19,7 +19,7 @@ onUnmounted(() => {
 // 定義作者陣列，包含 login、中文顯示名稱、GitHub 連結
 const authors = [
   { name: '聖小熊', login: 'HolyBearTW', url: 'https://github.com/HolyBearTW' },
-  { name: '玄哥', login: 'Tim0320', url: 'https://github.com/Tim0320' },
+  { name: '玄哥', login: 'Tim0320', url: 'https://github.com::Tim0320' },
   { name: '酪梨', login: 'ying0930', url: 'https://github.com/ying0930' },
   { name: 'Jack', login: 'Jackboy001', url: 'https://github.com/Jackboy001' },
   { name: 'Leo', login: 'leohsiehtw', url: 'https://github.com/leohsiehtw' },
@@ -34,30 +34,23 @@ function getAuthorMeta(authorName) {
 
 const postsWithDate = allPosts.filter(Boolean)
 
-// 確保日期格式化的一致性
+// 保持日期格式化函式不變 (包含您之前嘗試的台灣時區修正)
 function formatDateExactlyLikePostPage(dateString) {
   if (dateString) {
-    // 1. 確保日期字串被正確解析為 Date 物件。
-    //    如果 dateString 已經是 ISO 格式 (例如 YYYY-MM-DDTHH:mm:ssZ)，可以直接用。
-    //    如果只有 YYYY-MM-DD，JS 預設會以本地時區的午夜解析。為了保險起見，
-    //    這裡強制加上 'T00:00:00'，並確保沒有額外的時區偏移來避免雙重轉換。
     const date = new Date(dateString.includes('T') ? dateString : `${dateString}T00:00:00`);
 
     if (isNaN(date.getTime())) {
       console.warn(`[formatDate] Invalid dateString: ${dateString}. Falling back.`);
-      return dateString; // 無效日期，直接回傳原始字串
+      return dateString;
     }
 
-    // 2. 使用 Intl.DateTimeFormat 強制以台灣時區 (Asia/Taipei) 格式化日期。
-    //    這樣在伺服器建置時和客戶端瀏覽器中，格式化結果都會一致。
     const formatter = new Intl.DateTimeFormat('zh-TW', {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
-      timeZone: 'Asia/Taipei' // 顯示指定台灣時區
+      timeZone: 'Asia/Taipei'
     });
 
-    // 3. 從格式化結果中提取年、月、日，並組合成 YYYY-MM-DD 格式
     const parts = formatter.formatToParts(date);
     const yyyy = parts.find(p => p.type === 'year').value;
     const mm = parts.find(p => p.type === 'month').value;
@@ -158,23 +151,6 @@ onBeforeUnmount(() => {
             >{{ c }}</span>
             <h2 class="post-title">{{ post.title }}</h2>
           </div>
-          <p class="post-meta">
-            <span class="author-inline">
-              <img
-                v-if="getAuthorMeta(post.author).login"
-                class="post-author-avatar"
-                :src="`https://github.com/${getAuthorMeta(post.author).login}.png`"
-                :alt="getAuthorMeta(post.author).name"
-              />
-              <a
-                v-if="getAuthorMeta(post.author).url"
-                :href="getAuthorMeta(post.author).url"
-                target="_blank"
-                rel="noopener"
-                class="author-link-name"
-              >{{ getAuthorMeta(post.author).name }}</a><span v-else>{{ post.author }}</span><span class="author-date">｜{{ formatDateExactlyLikePostPage(post.date) }}</span>
-            </span>
-          </p>
           <div v-if="post.excerpt" class="post-excerpt" v-html="post.excerpt"></div>
           <span class="read-more">繼續閱讀 &gt;</span>
         </div>
@@ -212,7 +188,7 @@ onBeforeUnmount(() => {
   margin-bottom: 0.5rem;
   flex-wrap: nowrap;
   flex-direction: row;
-  position: unset; 
+  position: unset;
 }
 .blog-title {
   font-size: 2.5rem;
@@ -496,11 +472,11 @@ onBeforeUnmount(() => {
 @media (max-width: 889px) {
   .blog-header-row {
     display: flex;
-    flex-direction: row; 
-    flex-wrap: wrap;     
-    align-items: baseline; 
-    justify-content: space-between; 
-    
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+
     /* 調整間距，清除所有可能導致間距的屬性 */
     border-bottom: 1px dashed var(--vp-c-divider, #e5e5e5); /* 保留邊線 */
     margin-bottom: 0 !important; /* 清除外部底部間距 */
@@ -511,8 +487,8 @@ onBeforeUnmount(() => {
 
   .blog-title {
     margin: 0 !important; /* 強制清除所有 margin */
-    flex-shrink: 0; 
-    order: 0; 
+    flex-shrink: 0;
+    order: 0;
   }
 
   .new-post-btn {
@@ -527,7 +503,7 @@ onBeforeUnmount(() => {
     box-shadow: 0 2px 8px 0 #0001;
     white-space: nowrap;
     flex-shrink: 0;
-    
+
     /* 核心調整：Flexbox 顯示與內部對齊 */
     display: inline-flex;  /* 讓按鈕本身成為一個 inline 的 Flex 容器 */
     align-items: center;   /* 按鈕內部的 '+' 和文字垂直置中對齊 */
@@ -546,12 +522,12 @@ onBeforeUnmount(() => {
     margin-top: 0 !important; /* **關鍵：作者群上邊距強制設為 0** */
     margin-bottom: 0 !important; /* 強制清除底部間距 */
     justify-content: center; /* 讓作者群內容置中 */
-    
+
     /* 作者群的內部排版，保持您要的效果 */
-    display: flex; 
-    flex-direction: row; 
-    align-items: center; 
-    flex-wrap: wrap; 
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
     gap: 0.25em 0.25em; /* 保持作者頭像間的間距 */
     text-align: center;
     order: 2; /* 確保作者群在日誌標題和新增按鈕之後 */
@@ -561,27 +537,27 @@ onBeforeUnmount(() => {
     margin-right: 0 !important; /* 確保作者群文字與頭像間距合理 */
   }
   .author-link {
-    display: flex; 
+    display: flex;
     flex-direction: column; /* 讓頭像和名字垂直排列 */
-    align-items: center; 
+    align-items: center;
     margin: 0.05em 0.25em !important; /* **再次微調垂直間距，使其更小或為 0** */
   }
   .author-avatar {
-    width: 32px; 
+    width: 32px;
     height: 32px;
     margin-right: 0 !important; /* 強制移除右側間距 */
     margin-bottom: 3px !important; /* 作者上下間距 */
   }
   .blog-authors a {
-    font-size: 16px; 
+    font-size: 16px;
     margin: 0 !important;
     padding: 0 !important;
-    display: flex; 
-    flex-direction: column; 
-    align-items: center; 
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
   .blog-articles-grid {
-  padding-top: 0.5rem; /* 增加標題上方間距 */
+    padding-top: 0.5rem; /* 增加標題上方間距 */
   }
 }
 @media (max-width: 767px) {
