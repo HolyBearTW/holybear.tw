@@ -25,40 +25,54 @@ const authors = [
   { name: 'Leo', login: 'leohsiehtw', url: 'https://github.com/leohsiehtw' },
 ]
 
-// 根據 post.author 找到對應的作者物件
+// 確保 getAuthorMeta 返回的 login 和 url 永遠有效
 function getAuthorMeta(authorName) {
-  return authors.find(a => a.name === authorName) ||
-         authors.find(a => a.login === authorName) ||
-         { name: authorName, login: '', url: '' }
+  const foundAuthor = authors.find(a => a.name === authorName) ||
+                      authors.find(a => a.login === authorName);
+
+  if (foundAuthor) {
+    return {
+      name: foundAuthor.name,
+      login: foundAuthor.login && foundAuthor.login.trim() !== '' ? foundAuthor.login : 'default',
+      url: foundAuthor.url && foundAuthor.url.trim() !== '' ? foundAuthor.url : '#',
+    };
+  } else {
+    return {
+      name: authorName && authorName.trim() !== '' ? authorName : '未知作者',
+      login: 'default', // 如果找不到作者，提供一個預設的 login，避免圖片 src 錯誤
+      url: '#' // 如果找不到作者，提供一個預設的 URL
+    };
+  }
 }
 
 const postsWithDate = allPosts.filter(Boolean)
 
-// 保持日期格式化函式不變 (包含您之前嘗試的台灣時區修正)
+// 日期格式化函式 (保持不變，但暫時不使用在顯示上)
 function formatDateExactlyLikePostPage(dateString) {
-  if (dateString) {
-    const date = new Date(dateString.includes('T') ? dateString : `${dateString}T00:00:00`);
-
-    if (isNaN(date.getTime())) {
-      console.warn(`[formatDate] Invalid dateString: ${dateString}. Falling back.`);
-      return dateString;
-    }
-
-    const formatter = new Intl.DateTimeFormat('zh-TW', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      timeZone: 'Asia/Taipei'
-    });
-
-    const parts = formatter.formatToParts(date);
-    const yyyy = parts.find(p => p.type === 'year').value;
-    const mm = parts.find(p => p.type === 'month').value;
-    const dd = parts.find(p => p.type === 'day').value;
-
-    return `${yyyy}-${mm}-${dd}`;
+  if (!dateString || dateString === '未知日期') {
+    return dateString || '';
   }
-  return '';
+  const isParsableDate = dateString.includes('T') || /^\d{4}-\d{2}-\d{2}$/.test(dateString);
+  if (!isParsableDate) {
+    console.warn(`[formatDate] Unexpected dateString format: ${dateString}. Returning as-is.`);
+    return dateString;
+  }
+  const date = new Date(dateString.includes('T') ? dateString : `${dateString}T00:00:00`);
+  if (isNaN(date.getTime())) {
+    console.warn(`[formatDate] Invalid date object created from: ${dateString}. Falling back.`);
+    return dateString;
+  }
+  const formatter = new Intl.DateTimeFormat('zh-TW', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    timeZone: 'Asia/Taipei'
+  });
+  const parts = formatter.formatToParts(date);
+  const year = parts.find(p => p.type === 'year').value;
+  const month = parts.find(p => p.type === 'month').value;
+  const day = parts.find(p => p.type === 'day').value;
+  return `${year}-${month}-${day}`;
 }
 
 const postsPerPage = 10
@@ -137,7 +151,7 @@ onBeforeUnmount(() => {
 
   <div class="blog-articles-grid">
     <div v-for="post in paginatedPosts" :key="post.url" class="post-item">
-      <a :href="post.url" class="post-item-link">
+      <a v-if="post.url && typeof post.url === 'string' && post.url.trim() !== ''" :href="post.url" class="post-item-link">
         <div class="post-thumbnail-wrapper">
           <img :src="post.image" :alt="post.title" class="post-thumbnail" />
         </div>
@@ -151,10 +165,45 @@ onBeforeUnmount(() => {
             >{{ c }}</span>
             <h2 class="post-title">{{ post.title }}</h2>
           </div>
+          <p class="post-meta">
+            <span class="author-inline">
+              <img
+                v-if="getAuthorMeta(post.author).login"
+                class="post-author-avatar"
+                :src="`https://github.com/${getAuthorMeta(post.author).login}.png`"
+                :alt="getAuthorMeta(post.author).name"
+              />
+              <a
+                v-if="getAuthorMeta(post.author).url"
+                :href="getAuthorMeta(post.author).url"
+                target="_blank"
+                rel="noopener"
+                class="author-link-name"
+              >{{ getAuthorMeta(post.author).name }}</a><span v-else>{{ post.author }}</span>
+              </span>
+          </p>
           <div v-if="post.excerpt" class="post-excerpt" v-html="post.excerpt"></div>
           <span class="read-more">繼續閱讀 &gt;</span>
         </div>
       </a>
+      <div v-else class="post-item-error">
+        <div class="post-thumbnail-wrapper">
+          <img :src="post.image" :alt="post.title" class="post-thumbnail" />
+        </div>
+        <div class="post-info">
+          <div class="post-title-row">
+            <span
+              v-if="post.category && post.category.length"
+              class="category"
+              v-for="c in post.category"
+              :key="'cat-' + c"
+            >{{ c }}</span>
+            <h2 class="post-title">錯誤: {{ post.title || '無標題' }} (無效連結)</h2>
+          </div>
+          <div v-if="post.excerpt" class="post-excerpt" v-html="post.excerpt"></div>
+          <p style="color: red;">此文章連結無效，請檢查來源資料。</p>
+        </div>
+      </div>
     </div>
   </div>
 
