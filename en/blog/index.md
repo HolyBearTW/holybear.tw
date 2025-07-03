@@ -34,16 +34,38 @@ function getAuthorMeta(authorName) {
 
 const postsWithDate = allPosts.filter(Boolean)
 
+// 確保日期格式化的一致性
 function formatDateExactlyLikePostPage(dateString) {
   if (dateString) {
-    const date = new Date(dateString)
-    if (isNaN(date.getTime())) return dateString // fallback
-    const yyyy = date.getFullYear()
-    const mm = String(date.getMonth() + 1).padStart(2, '0')
-    const dd = String(date.getDate()).padStart(2, '0')
-    return `${yyyy}-${mm}-${dd}`
+    // 1. 確保日期字串被正確解析為 Date 物件。
+    //    如果 dateString 已經是 ISO 格式 (例如 YYYY-MM-DDTHH:mm:ssZ)，可以直接用。
+    //    如果只有 YYYY-MM-DD，JS 預設會以本地時區的午夜解析。為了保險起見，
+    //    這裡強制加上 'T00:00:00'，並確保沒有額外的時區偏移來避免雙重轉換。
+    const date = new Date(dateString.includes('T') ? dateString : `${dateString}T00:00:00`);
+
+    if (isNaN(date.getTime())) {
+      console.warn(`[formatDate] Invalid dateString: ${dateString}. Falling back.`);
+      return dateString; // 無效日期，直接回傳原始字串
+    }
+
+    // 2. 使用 Intl.DateTimeFormat 強制以台灣時區 (Asia/Taipei) 格式化日期。
+    //    這樣在伺服器建置時和客戶端瀏覽器中，格式化結果都會一致。
+    const formatter = new Intl.DateTimeFormat('zh-TW', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      timeZone: 'Asia/Taipei' // 顯示指定台灣時區
+    });
+
+    // 3. 從格式化結果中提取年、月、日，並組合成 YYYY-MM-DD 格式
+    const parts = formatter.formatToParts(date);
+    const yyyy = parts.find(p => p.type === 'year').value;
+    const mm = parts.find(p => p.type === 'month').value;
+    const dd = parts.find(p => p.type === 'day').value;
+
+    return `${yyyy}-${mm}-${dd}`;
   }
-  return ''
+  return '';
 }
 
 const postsPerPage = 10
