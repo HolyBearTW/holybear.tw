@@ -2,7 +2,7 @@
 
 import { createContentLoader } from 'vitepress';
 import authors from './authors.json'; // 確保這個路徑正確
-// import fs from 'node:fs'; // 暫時不引入 fs，因為您不想動其他地方，但如果日期需要自動讀取檔案系統，則必須引入
+import fs from 'node:fs'; // 引入 fs 模組來讀取檔案資訊
 
 const DEFAULT_IMAGE = '/blog_no_image.svg';
 
@@ -16,8 +16,7 @@ function extractDate(frontmatter) {
         frontmatter.listDate ||
         frontmatter.date ||
         frontmatter.created ||
-        // frontmatter.publishDate || // publishDate 可能是您的自訂屬性
-        ''
+        '' // 移除 publishDate，確保一致性
     );
 }
 
@@ -28,28 +27,26 @@ function extractDate(frontmatter) {
  * @returns {string}
  */
 function normalizeUrl(url) {
-    if (!url) return ''; // <-- 重要：如果傳入的 URL 本身就是空的，直接返回空字串
+    if (!url) return ''; // 如果傳入的 URL 本身就是空的，直接返回空字串
 
     // 如果是索引頁面 URL，直接返回其目錄形式
     if (url === '/blog/' || url === '/en/blog/') {
         return url;
     }
     if (url.endsWith('/index.html')) {
-        return url.replace(/\/index\.html$/, ''); // 例如 /blog/index.html -> /blog
+        return url.replace(/\/index\.html$/, '');
     }
     if (url.endsWith('.html')) {
-        return url.replace(/\.html$/, ''); // 例如 /blog/post.html -> /blog/post
+        return url.replace(/\.html$/, '');
     }
     if (url.endsWith('.md')) { // 處理 .md 結尾的 URL
-        return url.replace(/\.md$/, ''); // 例如 /blog/post.md -> /blog/post
+        return url.replace(/\.md$/, '');
     }
     // 移除尾部斜線，除非是根目錄 "/"
     if (url.endsWith('/') && url !== '/') {
         return url.slice(0, -1);
     }
 
-    // 最終檢查：如果經過處理後，URL 仍然不像是有效的路徑，可以考慮返回空字串或特定錯誤 URL
-    // 這裡我們信任 VitePress 提供的原始 URL 基礎是相對有效的，主要處理後綴
     return url;
 }
 
@@ -59,34 +56,34 @@ export default createContentLoader('blog/**/*.md', {
     transform(raw) {
         return raw
             .filter(({ url }) => {
-                // 排除部落格列表頁本身
                 const isBlogIndexPage =
                     url === '/blog/' ||
                     url === '/blog/index.html' ||
                     url === '/en/blog/' ||
                     url === '/en/blog/index.html';
-
-                // 排除任何以 .md 結尾的非預期 URL
                 const isUnexpectedMdUrl = url.endsWith('.md') && !url.startsWith('/blog/') && !url.startsWith('/en/blog/');
 
                 return !isBlogIndexPage && !isUnexpectedMdUrl;
             })
-            .map(({ url, frontmatter, content, excerpt, filePath }) => { // 確保 filePath 被解構
+            .map(({ url, frontmatter, content, excerpt, filePath }) => {
                 frontmatter = frontmatter && typeof frontmatter === 'object' ? frontmatter : {};
                 const title = frontmatter.title || '無標題文章';
 
-                // 處理日期：優先從 frontmatter 讀取，否則給予一個確定性的預設值
-                let date = extractDate(frontmatter);
-                // 如果 frontmatter 沒給日期，使用一個統一的預設日期，以防 Invalid Date 錯誤
-                if (!date) {
-                    // 如果您不想手動或自動從文件系統讀取，這是一個確定性的 fallback
-                    date = '2000-01-01'; // 使用一個絕對不會錯的日期字串
+                let articleDate = extractDate(frontmatter);
+
+                if (!articleDate && filePath) {
+                    try {
+                        const stats = fs.statSync(filePath);
+                        articleDate = stats.birthtime.toISOString(); // 或 stats.mtime.toISOString()
+                    } catch (e) {
+                        console.warn(`[posts.data.ts] Failed to get file stats for ${filePath}:`, e.message);
+                        articleDate = '未知日期'; // 將日期設定為 '未知日期'
+                    }
                 }
 
-                // 處理作者：優先從 frontmatter 讀取，否則給予一個確定性的預設值
                 let author = frontmatter.author;
                 if (!author) {
-                    author = '聖小熊'; // 您的預設作者
+                    author = '未知作者'; // 預設作者
                 }
 
                 let imageUrl = frontmatter.image;
@@ -108,20 +105,17 @@ export default createContentLoader('blog/**/*.md', {
                     summary = lines.find(line => line && !line.startsWith('#') && !line.startsWith('![') && !line.startsWith('>')) || '';
                 }
 
-                const normalizedUrl = normalizeUrl(url); // 經過正規化的 URL
-
-                // 如果 normalizedUrl 在此階段變成了空字串，給予一個安全值，防止後續錯誤
-                // 這個值必須是一個能被 new URL() 解析的有效字串，即使它不是真實的頁面
-                const finalUrl = normalizedUrl || '/invalid-post-url'; // <-- 關鍵修正：提供安全 fallback URL
+                const normalizedUrl = normalizeUrl(url);
+                const finalUrl = normalizedUrl || '/invalid-post-url'; // 提供安全 fallback URL
 
                 const authorFromLookup = authors[normalizedUrl] || author;
 
 
                 return {
-                    url: finalUrl, // <-- 確保這裡使用的 URL 永遠有效
+                    url: finalUrl,
                     frontmatter,
                     title,
-                    date, // 使用處理後的日期
+                    date: articleDate, // 使用處理後的日期
                     tags: Array.isArray(frontmatter.tags)
                         ? frontmatter.tags
                         : (Array.isArray(frontmatter.tag) ? frontmatter.tag : []),
@@ -129,15 +123,21 @@ export default createContentLoader('blog/**/*.md', {
                     image: imageUrl,
                     summary,
                     excerpt: summary,
-                    author: authorFromLookup, // 使用處理後的作者
+                    author: authorFromLookup,
                 };
             })
-            // 最終過濾：確保所有回傳的 post 都有一個有效且不是空字串的 url
-            // 這裡由於我們在 map 階段已經提供了 fallback，所以這個過濾器應該會通過所有項目
             .filter(post => !!post && typeof post.url === 'string' && post.url.trim() !== '')
             .sort((a, b) => {
-                // 確保日期是可比較的格式
-                return new Date(b.date).getTime() - new Date(a.date).getTime();
+                // ✨ 關鍵修正：在排序前安全處理日期 ✨
+                // 將 '未知日期' 的項目移到列表的最後面，或者給予一個極小的日期值
+                const dateA = a.date === '未知日期' ? new Date('0001-01-01T00:00:00Z') : new Date(a.date);
+                const dateB = b.date === '未知日期' ? new Date('0001-01-01T00:00:00Z') : new Date(b.date);
+
+                // 確保解析後的日期是有效的
+                const timeA = isNaN(dateA.getTime()) ? -Infinity : dateA.getTime();
+                const timeB = isNaN(dateB.getTime()) ? -Infinity : dateB.getTime();
+
+                return timeB - timeA;
             });
     },
 });
