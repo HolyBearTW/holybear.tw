@@ -159,21 +159,9 @@ onBeforeUnmount(() => {
             <h2 class="post-title">{{ post.title }}</h2>
           </div>
           <p class="post-meta">
-            <span class="author-inline">
-              <img
-                v-if="getAuthorMeta(post.author).login"
-                class="post-author-avatar"
-                :src="`https://github.com/${getAuthorMeta(post.author).login}.png`"
-                :alt="getAuthorMeta(post.author).name"
-              />
-              <a
-                v-if="getAuthorMeta(post.author).url"
-                :href="getAuthorMeta(post.author).url"
-                target="_blank"
-                rel="noopener"
-                class="author-link-name"
-              >{{ getAuthorMeta(post.author).name }}</a><span v-else>{{ post.author }}</span><span class="author-date">｜{{ formatDateExactlyLikePostPage(post.date) }}</span>
-            </span>
+<span class="author-inline">
+  <span>{{ getAuthorMeta(post.author).name || post.author }}</span><span class="author-date">｜{{ formatDateExactlyLikePostPage(post.date) }}</span>
+</span>
           </p>
           <div v-if="post.excerpt" class="post-excerpt" v-html="post.excerpt"></div>
           <span class="read-more">繼續閱讀 &gt;</span>
