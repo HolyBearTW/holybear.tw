@@ -12,10 +12,10 @@ hero:
   actions:
     - theme: brand
       text: Blog
-      link: /blog/
+      link: /en/blog/
     - theme: alt
       text: Portfolio
-      link: en/Mod
+      link: /en/Mod
     - theme: alt
       text: Telegram
       link: https://t.me/HolyBearTW
