@@ -27,57 +27,42 @@ const authors = [
 
 // 根據 post.author 找到對應的作者物件
 function getAuthorMeta(authorName) {
-  if (!authorName) {
-    return { name: '未知作者', login: '', url: '' };
-  }
   return authors.find(a => a.name === authorName) ||
          authors.find(a => a.login === authorName) ||
          { name: authorName, login: '', url: '' }
 }
-
-// ==================== 新增的資料驗證邏輯 ====================
-// 這段程式碼會在 build 期間執行，幫助你找出有問題的文章資料
-if (typeof process !== 'undefined' && process.env.NODE_ENV !== 'development') {
-  console.log('[資料驗證] 開始檢查文章作者資料...');
-  allPosts.forEach(post => {
-    if (!post || !post.url) return; // 略過無效的文章項目
-
-    // 檢查1：文章是否缺少 author 欄位
-    if (!post.author) {
-      console.warn(`[資料驗證] 警告：文章 "${post.title}" (${post.url}) 缺少 'author' 欄位。`);
-    } else {
-      // 檢查2：author 是否能在 authors 陣列中找到
-      const authorMeta = getAuthorMeta(post.author);
-      // 因為頭像是根據 login 欄位顯示的，所以我們檢查 login 是否為空
-      if (!authorMeta.login) {
-        console.warn(`[資料驗證] 警告：文章 "${post.title}" (${post.url}) 的作者 "${post.author}" 在作者清單中找不到對應資料，無法顯示頭像。`);
-      }
-    }
-  });
-  console.log('[資料驗證] 檢查完畢。');
-}
-// =================================================================
 
 const postsWithDate = allPosts.filter(Boolean)
 
 // 確保日期格式化的一致性
 function formatDateExactlyLikePostPage(dateString) {
   if (dateString) {
+    // 1. 確保日期字串被正確解析為 Date 物件。
+    //    如果 dateString 已經是 ISO 格式 (例如 YYYY-MM-DDTHH:mm:ssZ)，可以直接用。
+    //    如果只有 YYYY-MM-DD，JS 預設會以本地時區的午夜解析。為了保險起見，
+    //    這裡強制加上 'T00:00:00'，並確保沒有額外的時區偏移來避免雙重轉換。
     const date = new Date(dateString.includes('T') ? dateString : `${dateString}T00:00:00`);
+
     if (isNaN(date.getTime())) {
       console.warn(`[formatDate] Invalid dateString: ${dateString}. Falling back.`);
-      return dateString;
+      return dateString; // 無效日期，直接回傳原始字串
     }
+
+    // 2. 使用 Intl.DateTimeFormat 強制以台灣時區 (Asia/Taipei) 格式化日期。
+    //    這樣在伺服器建置時和客戶端瀏覽器中，格式化結果都會一致。
     const formatter = new Intl.DateTimeFormat('zh-TW', {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
-      timeZone: 'Asia/Taipei'
+      timeZone: 'Asia/Taipei' // 顯示指定台灣時區
     });
+
+    // 3. 從格式化結果中提取年、月、日，並組合成 YYYY-MM-DD 格式
     const parts = formatter.formatToParts(date);
     const yyyy = parts.find(p => p.type === 'year').value;
     const mm = parts.find(p => p.type === 'month').value;
     const dd = parts.find(p => p.type === 'day').value;
+
     return `${yyyy}-${mm}-${dd}`;
   }
   return '';
@@ -173,6 +158,7 @@ onBeforeUnmount(() => {
             >{{ c }}</span>
             <h2 class="post-title">{{ post.title }}</h2>
           </div>
+          <ClientOnly>
           <p class="post-meta">
             <span class="author-inline">
               <img
@@ -187,11 +173,10 @@ onBeforeUnmount(() => {
                 target="_blank"
                 rel="noopener"
                 class="author-link-name"
-              >{{ getAuthorMeta(post.author).name }}</a>
-              <span v-else>{{ post.author || '未知作者' }}</span>
-              <span class="author-date">｜{{ formatDateExactlyLikePostPage(post.date) }}</span>
+              >{{ getAuthorMeta(post.author).name }}</a><span v-else>{{ post.author }}</span><span class="author-date">｜{{ formatDateExactlyLikePostPage(post.date) }}</span>
             </span>
           </p>
+          </ClientOnly>
           <div v-if="post.excerpt" class="post-excerpt" v-html="post.excerpt"></div>
           <span class="read-more">繼續閱讀 &gt;</span>
         </div>
@@ -462,7 +447,7 @@ onBeforeUnmount(() => {
   color: var(--vp-c-text-2);
   line-height: 1.5;
   font-size: 0.95rem;
-  margin-top: 0 !important;      /* 確保上方沒有間距 */
+  margin-top: 0 !important;     /* 確保上方沒有間距 */
   margin-bottom: 0 !important; /* 確保下方沒有間距 */
   padding: 0 !important;
   display: -webkit-box;
@@ -517,7 +502,7 @@ onBeforeUnmount(() => {
     flex-wrap: wrap;     
     align-items: baseline; 
     justify-content: space-between; 
-   
+    
     /* 調整間距，清除所有可能導致間距的屬性 */
     border-bottom: 1px dashed var(--vp-c-divider, #e5e5e5); /* 保留邊線 */
     margin-bottom: 0 !important; /* 清除外部底部間距 */
@@ -544,7 +529,7 @@ onBeforeUnmount(() => {
     box-shadow: 0 2px 8px 0 #0001;
     white-space: nowrap;
     flex-shrink: 0;
-   
+    
     /* 核心調整：Flexbox 顯示與內部對齊 */
     display: inline-flex;  /* 讓按鈕本身成為一個 inline 的 Flex 容器 */
     align-items: center;   /* 按鈕內部的 '+' 和文字垂直置中對齊 */
@@ -552,8 +537,8 @@ onBeforeUnmount(() => {
 
     /* 清除外部 margin 並進行像素級微調 */
     margin: 0 !important; /* 清除所有方向的 margin */
-    position: relative;   /* 啟用 top/bottom/left/right 屬性 */
-    top: -6px;            /* 嘗試往上移動 */
+    position: relative;    /* 啟用 top/bottom/left/right 屬性 */
+    top: -6px;             /* 嘗試往上移動 */
 
     order: 1; /* 保持 flex 順序 */
   }
@@ -563,7 +548,7 @@ onBeforeUnmount(() => {
     margin-top: 0 !important; /* **關鍵：作者群上邊距強制設為 0** */
     margin-bottom: 0 !important; /* 強制清除底部間距 */
     justify-content: center; /* 讓作者群內容置中 */
-   
+    
     /* 作者群的內部排版，保持您要的效果 */
     display: flex; 
     flex-direction: row; 

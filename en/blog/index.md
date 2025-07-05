@@ -158,6 +158,7 @@ onBeforeUnmount(() => {
             >{{ c }}</span>
             <h2 class="post-title">{{ post.title }}</h2>
           </div>
+          <ClientOnly>
           <p class="post-meta">
             <span class="author-inline">
               <img
@@ -175,6 +176,7 @@ onBeforeUnmount(() => {
               >{{ getAuthorMeta(post.author).name }}</a><span v-else>{{ post.author }}</span><span class="author-date">｜{{ formatDateExactlyLikePostPage(post.date) }}</span>
             </span>
           </p>
+          </ClientOnly>
           <div v-if="post.excerpt" class="post-excerpt" v-html="post.excerpt"></div>
           <span class="read-more">Read More &gt;</span>
         </div>
