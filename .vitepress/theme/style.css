@@ -622,3 +622,6 @@ html {
     padding-top: 5px !important;
     margin-top: 5px !important;
     }
+    .vp-doc > div > h2:first-child .header-anchor {
+    margin-top: -20px;
+    }
