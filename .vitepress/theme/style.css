@@ -420,6 +420,10 @@ html {
 }
 
 /* 文章由下往上的動畫 */
+.post-item,
+.VPDoc .vp-doc * {
+    animation: fadeInUp 0.6s ease !important;
+}
 @keyframes fadeInUp {
     from {
         opacity: 0;
@@ -431,11 +435,6 @@ html {
         transform: translateY(0);
     }
 }
-
-.vp-doc.fade-in-up {
-    animation: fadeInUp 0.6s cubic-bezier(0.4,0,0.2,1);
-}
-
 
 /* 1. 搜尋按鈕的基本樣式設定，針對全局，並包含所有背景/邊框/陰影移除的設定 */
  .DocSearch-Button {
