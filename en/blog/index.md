@@ -5,8 +5,13 @@ description: List of blog posts
 ---
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount, onUnmounted } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { useAuthors } from '../../.vitepress/components/useAuthors.js'
 import { data as allPosts } from '../../.vitepress/theme/en/post.data.ts'
+import PostMeta from '../../.vitepress/theme/PostMeta.vue'
+
+// 呼叫 Composable，獲取共用的作者資料和語系狀態
+const { authorsData, isEnglish } = useAuthors()
 
 onMounted(() => {
   document.body.classList.add('blog-index-page')
@@ -16,57 +21,18 @@ onUnmounted(() => {
   document.body.classList.remove('blog-index-page')
 })
 
-// Define authors array with login, display name, and GitHub link
-const authors = [
-  { name: 'HolyBear', login: 'HolyBearTW', url: 'https://github.com/HolyBearTW' },
-  { name: 'Xuan', login: 'Tim0320', url: 'https://github.com/Tim0320' },
-  { name: 'Avocado', login: 'ying0930', url: 'https://github.com/ying0930' },
-  { name: 'Jack', login: 'Jackboy001', url: 'https://github.com/Jackboy001' },
-  { name: 'Leo', login: 'leohsiehtw', url: 'https://github.com/leohsiehtw' },
-]
-
-// Find author meta by post.author
-function getAuthorMeta(authorName) {
-  return authors.find(a => a.name === authorName) ||
-         authors.find(a => a.login === authorName) ||
-         { name: authorName, login: '', url: '' }
-}
+const displayAuthors = computed(() => {
+  return Object.keys(authorsData).map(login => {
+    const author = authorsData[login];
+    return {
+      login: login,
+      url: author.url,
+      name: isEnglish.value && author.name_en ? author.name_en : author.name
+    }
+  })
+})
 
 const postsWithDate = allPosts.filter(Boolean)
-
-// 確保日期格式化的一致性
-function formatDateExactlyLikePostPage(dateString) {
-  if (dateString) {
-    // 1. 確保日期字串被正確解析為 Date 物件。
-    //    如果 dateString 已經是 ISO 格式 (例如 YYYY-MM-DDTHH:mm:ssZ)，可以直接用。
-    //    如果只有 YYYY-MM-DD，JS 預設會以本地時區的午夜解析。為了保險起見，
-    //    這裡強制加上 'T00:00:00'，並確保沒有額外的時區偏移來避免雙重轉換。
-    const date = new Date(dateString.includes('T') ? dateString : `${dateString}T00:00:00`);
-
-    if (isNaN(date.getTime())) {
-      console.warn(`[formatDate] Invalid dateString: ${dateString}. Falling back.`);
-      return dateString; // 無效日期，直接回傳原始字串
-    }
-
-    // 2. 使用 Intl.DateTimeFormat 強制以台灣時區 (Asia/Taipei) 格式化日期。
-    //    這樣在伺服器建置時和客戶端瀏覽器中，格式化結果都會一致。
-    const formatter = new Intl.DateTimeFormat('zh-TW', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      timeZone: 'Asia/Taipei' // 顯示指定台灣時區
-    });
-
-    // 3. 從格式化結果中提取年、月、日，並組合成 YYYY-MM-DD 格式
-    const parts = formatter.formatToParts(date);
-    const yyyy = parts.find(p => p.type === 'year').value;
-    const mm = parts.find(p => p.type === 'month').value;
-    const dd = parts.find(p => p.type === 'day').value;
-
-    return `${yyyy}-${mm}-${dd}`;
-  }
-  return '';
-}
 
 const postsPerPage = 10
 const currentPage = ref(1)
@@ -104,10 +70,6 @@ function fixVpContentPadding() {
 
 onMounted(() => {
   fixVpContentPadding()
-  window.addEventListener('vitepress:afterRouteChanged', fixVpContentPadding)
-})
-onBeforeUnmount(() => {
-  window.removeEventListener('vitepress:afterRouteChanged', fixVpContentPadding)
 })
 </script>
 
@@ -115,12 +77,12 @@ onBeforeUnmount(() => {
   <div class="blog-header-row">
     <h2 class="blog-title">
       <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-book-open"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
-      <span>Blog</span>
+      <span>{{ isEnglish ? 'Blog' : '日誌' }}</span>
     </h2>
     <div class="blog-authors">
-      <strong>Authors:</strong>
+      <strong>{{ isEnglish ? 'Authors:' : '作者群：' }}</strong>
       <span
-        v-for="author in authors"
+        v-for="author in displayAuthors"
         :key="author.login"
         class="author-link"
       >
@@ -139,7 +101,7 @@ onBeforeUnmount(() => {
       href="https://github.com/HolyBearTW/holybear.me/new/main/blog"
       target="_blank"
       rel="noopener"
-    >➕ New Post</a>
+    >➕ {{ isEnglish ? 'New Post' : '新增文章' }}</a>
   </div>
 
   <div class="blog-articles-grid">
@@ -158,34 +120,16 @@ onBeforeUnmount(() => {
             >{{ c }}</span>
             <h2 class="post-title">{{ post.title }}</h2>
           </div>
-          <ClientOnly>
-          <p class="post-meta">
-            <span class="author-inline">
-              <img
-                v-if="getAuthorMeta(post.author).login"
-                class="post-author-avatar"
-                :src="`https://github.com/${getAuthorMeta(post.author).login}.png`"
-                :alt="getAuthorMeta(post.author).name"
-              />
-              <a
-                v-if="getAuthorMeta(post.author).url"
-                :href="getAuthorMeta(post.author).url"
-                target="_blank"
-                rel="noopener"
-                class="author-link-name"
-              >{{ getAuthorMeta(post.author).name }}</a><span v-else>{{ post.author }}</span><span class="author-date">｜{{ formatDateExactlyLikePostPage(post.date) }}</span>
-            </span>
-          </p>
-          </ClientOnly>
+          <PostMeta :post="post" />
           <div v-if="post.excerpt" class="post-excerpt" v-html="post.excerpt"></div>
-          <span class="read-more">Read More &gt;</span>
+          <span class="read-more">{{ isEnglish ? 'Read More' : '繼續閱讀' }} &gt;</span>
         </div>
       </a>
     </div>
   </div>
 
   <div class="pagination" v-if="totalPages > 1">
-    <button class="pagination-button" :disabled="currentPage === 1" @click="goToPage(currentPage - 1)">Previous</button>
+    <button class="pagination-button" :disabled="currentPage === 1" @click="goToPage(currentPage - 1)">{{ isEnglish ? 'Prev' : '上一頁' }}</button>
     <button
       v-for="page in pageNumbers"
       :key="page"
@@ -194,7 +138,7 @@ onBeforeUnmount(() => {
       @click="goToPage(page)">
       {{ page }}
     </button>
-    <button class="pagination-button" :disabled="currentPage === totalPages" @click="goToPage(currentPage + 1)">Next</button>
+    <button class="pagination-button" :disabled="currentPage === totalPages" @click="goToPage(currentPage + 1)">{{ isEnglish ? 'Next' : '下一頁' }}</button>
   </div>
 </div>
 
