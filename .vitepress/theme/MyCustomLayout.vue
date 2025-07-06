@@ -2,6 +2,7 @@
     import Theme from 'vitepress/theme'
     import { useData } from 'vitepress'
     import { computed, ref, onMounted } from 'vue'
+    import { useAuthors } from '../components/useAuthors.js'
     import FloatingBgmPlayer from './FloatingBgmPlayer.vue'
     import GiscusComments from '../components/GiscusComments.vue'
     import VotePanel from '../components/VotePanel.vue'
@@ -12,11 +13,7 @@
     const isHomePage = computed(() =>
         page.value && (page.value.path === '/' || page.value.path === '/index.html')
     )
-    const isEnglish = computed(() =>
-        (lang?.value?.startsWith('en')) ||
-        (locale?.value === 'en') ||
-        (page?.value?.path?.startsWith('/en/'))
-    )
+
     const currentTitle = computed(() =>
         frontmatter.value
             ? (frontmatter.value.title || (isEnglish.value ? 'Unknown post title' : '無標題文章'))
@@ -27,21 +24,7 @@
     )
 
     // 作者資訊陣列
-    const authors = [
-        { name: '聖小熊', login: 'HolyBearTW', url: 'https://github.com/HolyBearTW' },
-        { name: '玄哥', login: 'Tim0320', url: 'https://github.com/Tim0320' },
-        { name: '酪梨', login: 'ying0930', url: 'https://github.com/ying0930' },
-        { name: 'Jack', login: 'Jackboy001', url: 'https://github.com/Jackboy001' },
-        { name: 'Leo', login: 'leohsiehtw', url: 'https://github.com/leohsiehtw' },
-    ]
-    // 根據 frontmatter.author 找到對應的作者物件
-    function getAuthorMeta(authorName) {
-        return (
-            authors.find(a => a.name === authorName) ||
-            authors.find(a => a.login === authorName) ||
-            { name: authorName, login: '', url: '' }
-        )
-    }
+    const { getAuthorMeta, isEnglish } = useAuthors()
 
     // 本地預設作者
     const currentAuthor = computed(() =>
