@@ -616,3 +616,9 @@ html {
     background: rgba(35, 35, 35, 0.7) !important; /* 深色模式 */
     }
 
+    /* 針對 VitePress 文章頁面中，主要內容區塊裡的第一個 h2 標題 */
+    .vp-doc > div > h2:first-child {
+    border-top: none !important;
+    padding-top: 5px !important;
+    margin-top: 5px !important;
+    }
