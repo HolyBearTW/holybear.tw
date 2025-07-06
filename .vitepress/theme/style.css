@@ -617,7 +617,3 @@ html {
     background: rgba(35, 35, 35, 0.7) !important; /* 深色模式 */
     }
 
-body.is-blog-page .fade-in-up {
-    animation: none !important;
-}
-
