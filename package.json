@@ -15,7 +15,7 @@
     "firebase": "^11.10.0",
     "gray-matter": "^4.0.3",
     "instantsearch.js": "^4.79.0",
-    "react-instantsearch": "^7.16.0",
+    "react-instantsearch": "^7.16.1",
     "search-insights": "^2",
     "vue-instantsearch": "^4.21.0"
   },
