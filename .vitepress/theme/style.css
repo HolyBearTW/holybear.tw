@@ -416,6 +416,9 @@ html {
 }
 
 /* 文章由下往上的動畫 */
+.main,
+.items,
+.box,
 .post-item,
 .VPDoc .vp-doc * {
     animation: fadeInUp 0.6s ease !important;
