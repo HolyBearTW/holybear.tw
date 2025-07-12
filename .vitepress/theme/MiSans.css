@@ -1,0 +1,99 @@
+/**
+ * Customize default theme styling by overriding CSS variables:
+ * https://github.com/vuejs/vitepress/blob/main/src/client/theme-default/styles/vars.css
+ */
+
+/* MiSans-Thin */
+@font-face {
+    font-family: 'MiSans';
+    src: url('/fonts/MiSans-Thin.woff2') format('woff2'), url('/fonts/MiSans-Thin.woff') format('woff');
+    font-weight: 100; /* Thin 通常對應 100 或 200 */
+    font-style: normal;
+    font-display: swap;
+}
+
+/* MiSans-Light */
+@font-face {
+    font-family: 'MiSans';
+    src: url('/fonts/MiSans-Light.woff2') format('woff2'), url('/fonts/MiSans-Light.woff') format('woff');
+    font-weight: 300; /* Light 通常對應 300 */
+    font-style: normal;
+    font-display: swap;
+}
+
+/* MiSans-Normal 或 MiSans-Regular (截圖裡有 Normal 和 Regular，通常選一個作為 400) */
+@font-face {
+    font-family: 'MiSans';
+    src: url('/fonts/MiSans-Normal.woff2') format('woff2'), url('/fonts/MiSans-Normal.woff') format('woff');
+    font-weight: 400; /* Normal/Regular 通常對應 400 */
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face { /* 如果 Regular 和 Normal 是兩個不同的字體，則都定義 */
+    font-family: 'MiSans';
+    src: url('/fonts/MiSans-Regular.woff2') format('woff2'), url('/fonts/MiSans-Regular.woff') format('woff');
+    font-weight: 400; /* 這裡假設 Regular 也是 400，如果設計上不同請調整 */
+    font-style: normal;
+    font-display: swap;
+}
+
+/* MiSans-Medium */
+@font-face {
+    font-family: 'MiSans';
+    src: url('/fonts/MiSans-Medium.woff2') format('woff2'), url('/fonts/MiSans-Medium.woff') format('woff');
+    font-weight: 500; /* Medium 通常對應 500 */
+    font-style: normal;
+    font-display: swap;
+}
+
+/* MiSans-Semibold */
+@font-face {
+    font-family: 'MiSans';
+    src: url('/fonts/MiSans-Semibold.woff2') format('woff2'), url('/fonts/MiSans-Semibold.woff') format('woff');
+    font-weight: 600; /* Semibold 通常對應 600 */
+    font-style: normal;
+    font-display: swap;
+}
+
+/* MiSans-Demibold (如果 Semibold 和 Demibold 是不同的字重，則都定義，並給予不同權重) */
+@font-face {
+    font-family: 'MiSans';
+    src: url('/fonts/MiSans-Demibold.woff2') format('woff2'), url('/fonts/MiSans-Demibold.woff') format('woff');
+    font-weight: 600; /* 這裡假設 Demibold 和 Semibold 都接近 600，依設計調整 */
+    font-style: normal;
+    font-display: swap;
+}
+
+/* MiSans-Bold */
+@font-face {
+    font-family: 'MiSans';
+    src: url('/fonts/MiSans-Bold.woff2') format('woff2'), url('/fonts/MiSans-Bold.woff') format('woff');
+    font-weight: 700; /* Bold 通常對應 700 */
+    font-style: normal;
+    font-display: swap;
+}
+
+/* MiSans-ExtraLight */
+@font-face {
+    font-family: 'MiSans';
+    src: url('/fonts/MiSans-ExtraLight.woff2') format('woff2'), url('/fonts/MiSans-ExtraLight.woff') format('woff');
+    font-weight: 200; /* ExtraLight 通常對應 200 */
+    font-style: normal;
+    font-display: swap;
+}
+
+/* MiSans-Heavy */
+@font-face {
+    font-family: 'MiSans';
+    src: url('/fonts/MiSans-Heavy.woff2') format('woff2'), url('/fonts/MiSans-Heavy.woff') format('woff');
+    font-weight: 900; /* Heavy 通常對應 900 */
+    font-style: normal;
+    font-display: swap;
+}
+
+
+/* 最後，確保您的元素有指定使用 MiSans 字體 */
+body {
+    font-family: 'MiSans', sans-serif;
+}
