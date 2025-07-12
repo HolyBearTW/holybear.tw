@@ -26,11 +26,7 @@ export default defineConfig({
         ['link', { rel: 'apple-touch-icon', href: '/favicon.ico' }],
         ['link', {
             rel: 'stylesheet',
-            href: 'https://font.sec.miui.com/font/css?family=MiSans:200,300,400,450,500,600,650,700:Chinese_Simplify,Latin&display=swap'
-        }],
-        ['link', {
-            rel: 'stylesheet',
-            href: 'https://font.sec.miui.com/font/css?family=MiSans:200,300,400,450,500,600,650,700:Chinese_Traditional,Latin&display=swap'
+            href: '.vitepress/theme/MiSans.css'
         }],
         ['meta', { name: 'description', content: '聖小熊的個人網站，收錄 HyperOS 模組、技術筆記與開發心得，專注於 Android 客製化與開源創作分享。' }],
         ['meta', { name: 'keywords', content: '聖小熊, HolyBear, HyperOS, 模組, Mod, MIUI, Android, GitHub, 技術部落格, Blog' }],
