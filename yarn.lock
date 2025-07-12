@@ -775,10 +775,10 @@
     protobufjs "^7.2.5"
     yargs "^17.7.2"
 
-"@iconify-json/simple-icons@^1.2.40":
-  version "1.2.41"
-  resolved "https://registry.yarnpkg.com/@iconify-json/simple-icons/-/simple-icons-1.2.41.tgz#5c8d3e6b8f2275cc7979a183a0dd6477f7772271"
-  integrity sha512-4tt29cKzNsxvt6rjAOVhEgpZV0L8jleTDTMdtvIJjF14Afp9aH8peuwGYyX35l6idfFwuzbvjSVfVyVjJtfmYA==
+"@iconify-json/simple-icons@^1.2.42":
+  version "1.2.42"
+  resolved "https://registry.yarnpkg.com/@iconify-json/simple-icons/-/simple-icons-1.2.42.tgz#5f0017d1057a3bae04c4fcc16f4c95d286fe2327"
+  integrity sha512-G/EED0hUV1wMNUsWaFdQYLibm6SO7rP2GZP1+CvhszB5WAFYYibD3zoWp3X96xSIWpYQFvccvE17ewpd0Q1hWQ==
   dependencies:
     "@iconify/types" "*"
 
@@ -1187,7 +1187,7 @@
   resolved "https://registry.yarnpkg.com/@vue/shared/-/shared-3.5.17.tgz#e8b3a41f0be76499882a89e8ed40d86a70fa4b70"
   integrity sha512-CabR+UN630VnsJO/jHWYBC1YVXyMq94KKp6iF5MQgZJs5I8cmjw6oVMO1oDbtBkENSHSSn/UadWlW/OAgdmKrg==
 
-"@vueuse/core@13.5.0", "@vueuse/core@^13.4.0":
+"@vueuse/core@13.5.0", "@vueuse/core@^13.5.0":
   version "13.5.0"
   resolved "https://registry.yarnpkg.com/@vueuse/core/-/core-13.5.0.tgz#1136d3db088945d7b7a2397170737d5a3e557b36"
   integrity sha512-wV7z0eUpifKmvmN78UBZX8T7lMW53Nrk6JP5+6hbzrB9+cJ3jr//hUlhl9TZO/03bUkMK6gGkQpqOPWoabr72g==
@@ -1196,7 +1196,7 @@
     "@vueuse/metadata" "13.5.0"
     "@vueuse/shared" "13.5.0"
 
-"@vueuse/integrations@^13.4.0":
+"@vueuse/integrations@^13.5.0":
   version "13.5.0"
   resolved "https://registry.yarnpkg.com/@vueuse/integrations/-/integrations-13.5.0.tgz#5a5802bfcd757e84878bedb734d2d30d080ce0c2"
   integrity sha512-7RACJySnlpl0MkSzxbtadioNGSX4TL5/Wl2cUy4nDq/XkeHwPYvVM880HJUSiap/FXhVEup9VKTM9y/n5UspAw==
@@ -2012,10 +2012,10 @@ vfile@^6.0.0:
     "@types/unist" "^3.0.0"
     vfile-message "^4.0.0"
 
-vite@^7.0.0:
-  version "7.0.0"
-  resolved "https://registry.yarnpkg.com/vite/-/vite-7.0.0.tgz#5675bb4c956dd9da932583628e7758ab09fe761f"
-  integrity sha512-ixXJB1YRgDIw2OszKQS9WxGHKwLdCsbQNkpJN171udl6szi/rIySHL6/Os3s2+oE4P/FLD4dxg4mD7Wust+u5g==
+vite@^7.0.3:
+  version "7.0.3"
+  resolved "https://registry.yarnpkg.com/vite/-/vite-7.0.3.tgz#3bf15e1a6d054960406a70fa1052043938b39c5a"
+  integrity sha512-y2L5oJZF7bj4c0jgGYgBNSdIu+5HF+m68rn2cQXFbGoShdhV1phX9rbnxy9YXj82aS8MMsCLAAFkRxZeWdldrQ==
   dependencies:
     esbuild "^0.25.0"
     fdir "^6.4.6"
@@ -2033,27 +2033,27 @@ vitepress-plugin-auto-sidebar@^1.3.5:
   dependencies:
     front-matter "^4.0.2"
 
-vitepress@^2.0.0-alpha.7:
-  version "2.0.0-alpha.7"
-  resolved "https://registry.yarnpkg.com/vitepress/-/vitepress-2.0.0-alpha.7.tgz#0825f37eebf6c89335f21ddac4c848d9ac67baa7"
-  integrity sha512-75xXvCWymnSgA7BFt1BmiXnusl4aeV4sM6DpIo9sf2OvkNER3cMLWN6xqZrLGu3SNaQccfS5u3ikCqAnA4p70w==
+vitepress@^2.0.0-alpha.8:
+  version "2.0.0-alpha.8"
+  resolved "https://registry.yarnpkg.com/vitepress/-/vitepress-2.0.0-alpha.8.tgz#c4589375831907ff45615dfbf96888908b28882c"
+  integrity sha512-4LJZ7c/b68ch69gh6WaQgQGqkha/KxCFlSN7vCyIjxW7WbdI+pWe110+nnxXpvN43OH/3EoYNEPkV28z0WPSYA==
   dependencies:
     "@docsearch/css" "^3.9.0"
     "@docsearch/js" "^3.9.0"
-    "@iconify-json/simple-icons" "^1.2.40"
+    "@iconify-json/simple-icons" "^1.2.42"
     "@shikijs/core" "^3.7.0"
     "@shikijs/transformers" "^3.7.0"
     "@shikijs/types" "^3.7.0"
     "@vitejs/plugin-vue" "^6.0.0"
     "@vue/devtools-api" "^7.7.7"
     "@vue/shared" "^3.5.17"
-    "@vueuse/core" "^13.4.0"
-    "@vueuse/integrations" "^13.4.0"
+    "@vueuse/core" "^13.5.0"
+    "@vueuse/integrations" "^13.5.0"
     focus-trap "^7.6.5"
     mark.js "8.11.1"
     minisearch "^7.1.2"
     shiki "^3.7.0"
-    vite "^7.0.0"
+    vite "^7.0.3"
     vue "^3.5.17"
 
 vue-instantsearch@^4.21.0:
