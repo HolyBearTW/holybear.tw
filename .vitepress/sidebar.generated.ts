@@ -3,6 +3,10 @@ export default [
   {
     "items": [
       {
+        "text": "衝動購物？才怪！Switch 2 開箱給你看看有多香！🤤",
+        "link": "/blog/2025-07-18"
+      },
+      {
         "text": "颱風假咧？！😤 暴風圈是裝飾品膩？！",
         "link": "/blog/2025-07-06-typhoon"
       },
