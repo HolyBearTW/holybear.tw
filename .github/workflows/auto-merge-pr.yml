@@ -7,10 +7,14 @@ on:
 jobs:
   auto_merge:
     runs-on: ubuntu-latest
-    # 新增的條件：確保 PR 不是草稿，並且 PR 的作者是 dependabot[bot]
     if: github.event.pull_request.draft == false && github.event.pull_request.user.login == 'dependabot[bot]'
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Set up Git
         run: |
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
@@ -23,6 +27,5 @@ jobs:
           PR_NUMBER=${{ github.event.pull_request.number }}
           echo "Attempting to merge Dependabot PR #$PR_NUMBER"
 
-          # 使用 GitHub CLI (gh) 執行合併
           gh pr merge $PR_NUMBER --squash --delete-branch
           echo "Dependabot PR #$PR_NUMBER merged successfully (or attempted)."
