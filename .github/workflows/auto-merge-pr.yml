@@ -1,0 +1,35 @@
+name: Conditional Auto-Merge for Dependabot
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  auto_merge:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false && github.event.pull_request.user.login == 'dependabot[bot]'
+    
+    permissions:
+      pull-requests: write
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Git
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+
+      - name: Merge Dependabot Pull Request
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          echo "Attempting to merge Dependabot PR #$PR_NUMBER"
+
+          gh pr merge $PR_NUMBER --squash --delete-branch
+          echo "Dependabot PR #$PR_NUMBER merged successfully (or attempted)."

@@ -6,7 +6,7 @@ export default {
     enhanceApp() {
         if (typeof window !== 'undefined') {
             function isBlogPage(path) {
-                return /^\/(en\/)?blog\/(?!index\.html$)[^/]+\.html(?:[?#].*)?$/.test(path);
+                return /^\/(en\/)?blog\/(?!index$)[^/]+(?:\.html)?(?:[?#].*)?$/.test(path);
             }
             function forceBlogClass() {
                 // 保留原有 class，確保最多只有一個 is-blog-page
