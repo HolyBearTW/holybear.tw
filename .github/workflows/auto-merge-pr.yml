@@ -24,6 +24,5 @@ jobs:
           echo "Attempting to merge Dependabot PR #$PR_NUMBER"
 
           # 使用 GitHub CLI (gh) 執行合併
-          # 這裡繼續使用 --squash 保持歷史整潔
-          gh pr merge $PR_NUMBER --squash --delete-branch-on-merge
+          gh pr merge $PR_NUMBER --squash --delete-branch
           echo "Dependabot PR #$PR_NUMBER merged successfully (or attempted)."
