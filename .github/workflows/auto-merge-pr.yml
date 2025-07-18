@@ -2,12 +2,16 @@ name: Conditional Auto-Merge for Dependabot
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened] # 當 PR 被開啟、有新的提交、或重新打開時觸發
+    types: [opened, synchronize, reopened]
 
 jobs:
   auto_merge:
     runs-on: ubuntu-latest
     if: github.event.pull_request.draft == false && github.event.pull_request.user.login == 'dependabot[bot]'
+    
+    permissions:
+      pull-requests: write
+      contents: write
 
     steps:
       - name: Checkout code
@@ -22,7 +26,7 @@ jobs:
 
       - name: Merge Dependabot Pull Request
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # GitHub 提供的預設 Token
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           PR_NUMBER=${{ github.event.pull_request.number }}
           echo "Attempting to merge Dependabot PR #$PR_NUMBER"
