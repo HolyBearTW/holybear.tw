@@ -8,7 +8,7 @@ jobs:
   auto_merge:
     runs-on: ubuntu-latest
     # 新增的條件：確保 PR 不是草稿，並且 PR 的作者是 dependabot[bot]
-    if: github.event.pull_request.draft == false && github.actor == 'dependabot[bot]'
+    if: github.event.pull_request.draft == false && github.event.pull_request.user.login == 'dependabot[bot]'
 
     steps:
       - name: Set up Git
