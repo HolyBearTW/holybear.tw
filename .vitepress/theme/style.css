@@ -256,18 +256,6 @@ html.dark .VPHero .name {
 
 
 /* --- Hero 主圖最佳做法（不使用 clip-path，只用 border-radius，發光絕不被裁）--- */
-/* 結構可直接用 VitePress 預設 <img class="VPImage image-src"> */
-
-.VPHomeHero .image-container {
-    display: flex !important;
-    justify-content: center !important;
-    align-items: center !important;
-    position: relative !important;
-    overflow: visible !important;
-    min-width: 0 !important;
-    min-height: 0 !important;
-}
-
 
 
 /* 保險：去除舊有針對 .image-src 的絕對定位與縮小 */
