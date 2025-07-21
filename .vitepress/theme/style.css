@@ -259,18 +259,6 @@ html.dark .VPHero .name {
 /* --- Hero 主圖最佳做法（不使用 clip-path，只用 border-radius，發光絕不被裁）--- */
 
 
-/* 保險：去除舊有針對 .image-src 的絕對定位與縮小 */
-[data-v-8a17128e] .image-src {
-    position: static !important;
-    top: auto !important;
-    left: auto !important;
-    transform: none !important;
-    width: 100% !important;
-    height: auto !important;
-    max-width: 256px !important;
-    max-height: 256px !important;
-    object-fit: cover !important;
-}
 
 /* 1. 解除所有選單 logo 外層到 img 的圓形裁切 */
 .VPNavBarTitleLogo,
