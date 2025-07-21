@@ -113,6 +113,8 @@ html.dark .VPHero .name {
   background-image: var(--vp-home-hero-image-background-image);
   background-size: 400% 400%;
   animation: gradientRotate 5s ease infinite;
+  position: relative;
+  z-index: 9999;
 }
 
 /* 同步的發光動畫關鍵幀 - 跟隨漸變顏色和旋轉方向 */
