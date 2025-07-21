@@ -294,7 +294,7 @@ html.dark .VPHero .name {
         }
 
         .VPHomeHero .image-container {
-            margin-bottom: 24px !important;
+            margin-bottom: 3px !important;
             width: 100%;
             display: flex !important;
             justify-content: center !important;
@@ -307,12 +307,12 @@ html.dark .VPHero .name {
         .VPHomeHero img.image-src {
             display: block;
             margin: 0 auto;
-            width: 90vw !important;
-            max-width: 240px !important;
-            min-width: 120px !important;
-            height: 90vw !important;
-            max-height: 240px !important;
-            min-height: 120px !important;
+            width: 80vw !important; /* 從 90vw 改為 80vw */
+            max-width: 200px !important; /* 從 240px 改為 200px，這是約 80% 的 240px */
+            min-width: 100px !important; /* 略微調整最小寬度，防止 80vw 在小螢幕下過小 */
+            height: 80vw !important; /* 從 90vw 改為 80vw */
+            max-height: 200px !important; /* 從 240px 改為 200px */
+            min-height: 100px !important; /* 略微調整最小高度 */
             border-radius: 24px !important;
             aspect-ratio: 1/1 !important;
             object-fit: cover !important;
