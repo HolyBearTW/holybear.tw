@@ -278,23 +278,8 @@ html.dark .VPHero .name {
 
 /* 響應式，手機時主圖為正方形且自動加大，標題不重疊 & 保持電腦字級 */
 @media (max-width: 640px) {
-    .VPHomeHero {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
-
-        .VPHomeHero .container {
-            width: 100%;
-            padding-top: 0 !important;
-            margin-top: 0 !important;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
         .VPHomeHero .image-container {
-            margin-bottom: 3px !important;
+            margin-bottom: 5px !important;
             width: 100%;
             display: flex !important;
             justify-content: center !important;
@@ -307,52 +292,15 @@ html.dark .VPHero .name {
         .VPHomeHero img.image-src {
             display: block;
             margin: 0 auto;
-            width: 80vw !important; /* 從 90vw 改為 80vw */
-            max-width: 200px !important; /* 從 240px 改為 200px，這是約 80% 的 240px */
-            min-width: 100px !important; /* 略微調整最小寬度，防止 80vw 在小螢幕下過小 */
-            height: 80vw !important; /* 從 90vw 改為 80vw */
-            max-height: 200px !important; /* 從 240px 改為 200px */
-            min-height: 100px !important; /* 略微調整最小高度 */
+            width: 80vw !important;
+            max-width: 200px !important;
+            min-width: 100px !important;
+            height: 80vw !important;
+            max-height: 200px !important;
+            min-height: 100px !important;
             border-radius: 24px !important;
             aspect-ratio: 1/1 !important;
             object-fit: cover !important;
-        }
-
-        .VPHomeHero .main {
-            margin-top: 0 !important;
-            padding-top: 0 !important;
-            width: 100%;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .VPHomeHero .name,
-        .VPHomeHero .text {
-            margin-top: 12px !important;
-            display: block;
-            text-align: center;
-            width: 100%;
-            word-break: break-word;
-            font-size: 2.0rem !important;
-            font-weight: 700 !important;
-            line-height: 1.2 !important;
-        }
-
-        .VPHomeHero .desc {
-            font-size: 1.2rem !important;
-            font-weight: 400 !important;
-            line-height: 1.4 !important;
-        }
-        /* 保證按鈕區塊也不會擠到主圖 */
-        .VPHomeHero .actions {
-            margin-top: 18px !important;
-            width: 100%;
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 10px;
         }
 }
 
