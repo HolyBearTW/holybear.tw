@@ -73,23 +73,22 @@ button:hover {
  * -------------------------------------------------------------------------- */
 
 :root {
-    --vp-home-hero-name-color: transparent;
-    --vp-home-hero-name-background: -webkit-linear-gradient(
+  --vp-home-hero-name-color: transparent;
+  --vp-home-hero-name-background: -webkit-linear-gradient(
     120deg,
-    #41D1FF 0%,
-    #BD34FE 25%,
-    #9E5CFF 50%,
-    #8F70FF 75%,
-    #7F83FF 100%
-
-    );
-    --vp-home-hero-image-background-image: linear-gradient(
+    #C1836C 0%,      /* 貓咪深橘棕 */
+    #F7E1C4 20%,     /* 貓咪淺米色 */
+    #8F70FF 40%,     /* 亮黃綠 (新的橋樑色，更鮮明、科技感) */
+    #00FFEE 60%,     /* 您的主色 (亮點) */
+    #33FFFF 100%     /* 主色淺版 (延伸光澤) */
+  );
+  --vp-home-hero-image-background-image: linear-gradient(
     -45deg,
-    #41D1FF 0%,
-    #BD34FE 25%,
-    #9E5CFF 50%,
-    #8F70FF 75%,
-    #7F83FF 100%
+    #C1836C 0%,      /* 貓咪深橘棕 */
+    #F7E1C4 20%,     /* 貓咪淺米色 */
+    #8F70FF 40%,     /* 亮黃綠 (新的橋樑色，更鮮明、科技感) */
+    #00FFEE 60%,     /* 您的主色 (亮點) */
+    #33FFFF 100%     /* 主色淺版 (延伸光澤) */
   );
 }
 .VPHero .name {
@@ -172,13 +171,7 @@ html.dark .VPHero .name {
 }
 
 :root {
-    --vp-home-hero-image-filter: blur(56px);
-}
-
-@media (min-width: 960px) {
-  :root {
-    --vp-home-hero-image-filter: blur(68px);
-  }
+    --vp-home-hero-image-filter: blur(100px);
 }
 
 /**
