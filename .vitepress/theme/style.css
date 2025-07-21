@@ -74,8 +74,113 @@ button:hover {
 
 :root {
     --vp-home-hero-name-color: transparent;
-    --vp-home-hero-name-background: -webkit-linear-gradient( 120deg, #00FFEE 30%, #ADD8E6 /* 淺藍色 */
+    --vp-home-hero-name-background: -webkit-linear-gradient(
+    120deg,
+    #41D1FF 0%,
+    #BD34FE 25%,
+    #9E5CFF 50%,
+    #8F70FF 75%,
+    #7F83FF 100%
+
     );
+    --vp-home-hero-image-background-image: linear-gradient(
+    -45deg,
+    #41D1FF 0%,
+    #BD34FE 25%,
+    #9E5CFF 50%,
+    #8F70FF 75%,
+    #7F83FF 100%
+  );
+}
+.VPHero .name {
+  background: var(--vp-home-hero-name-background);
+  background-size: 400% 400%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  animation: gradientRotate 5s ease infinite;
+
+  
+}
+
+/* 深色模式下才啟用發光動畫 */
+html.dark .VPHero .name {
+  animation: gradientRotate 5s ease infinite, dynamicGlow 5s ease infinite;
+}
+
+/* 英雄區塊背景圖片的旋轉動畫 - 保持原始尺寸 */
+.VPHero .image-bg {
+  background-image: var(--vp-home-hero-image-background-image);
+  background-size: 400% 400%;
+  animation: gradientRotate 5s ease infinite;
+}
+
+/* 同步的發光動畫關鍵幀 - 跟隨漸變顏色和旋轉方向 */
+@keyframes dynamicGlow {
+  0% {
+    filter: drop-shadow(-1.6px -1.6px 8px #03141a);
+  }
+  10% {
+    filter: drop-shadow(-1.6px -1.6px 8px #4D55E0);
+  }
+  20% {
+    filter: drop-shadow(-1.2px -1.2px 8px #9901DF);
+  }
+  30% {
+    filter: drop-shadow(-0.8px -0.8px 8px #7A01E0);
+  }
+  40% {
+    filter: drop-shadow(-0.4px -0.4px 8px #5A00E0);
+  }
+  50% {
+    filter: drop-shadow(0px 0px 8px #5A00E0);
+  }
+  60% {
+    filter: drop-shadow(-0.4px -0.4px 8px #5100E6);
+  }
+  70% {
+    filter: drop-shadow(-0.8px -0.8px 8px #4800EB);
+  }
+  80% {
+    filter: drop-shadow(-1.2px -1.2px 8px #3500F5);
+  }
+  90% {
+    filter: drop-shadow(-1.6px -1.6px 8px #1B04F5);
+  }
+  100% {
+    filter: drop-shadow(-1.6px -1.6px 8px #0008F5);
+  }
+}
+
+/* 漸變旋轉動畫關鍵幀 */
+@keyframes gradientRotate {
+  0% {
+    background-position: 0% 50%;
+  }
+  25% {
+    background-position: 100% 50%;
+  }
+  50% {
+    background-position: 100% 100%;
+  }
+  75% {
+    background-position: 50% 100%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@media (min-width: 640px) {
+  :root {
+    --vp-home-hero-image-filter: blur(56px);
+  }
+}
+
+@media (min-width: 960px) {
+  :root {
+    --vp-home-hero-image-filter: blur(68px);
+  }
 }
 
 /**
@@ -148,9 +253,7 @@ button:hover {
 }
 
 /* 首頁大標題漸層＋發光 */
-.VPHomeHero .name.clip {
-    filter: drop-shadow(0 2px 32px #00ffee88) drop-shadow(0 0px 8px #00ffee44);
-}
+
 
 /* --- Hero 主圖最佳做法（不使用 clip-path，只用 border-radius，發光絕不被裁）--- */
 /* 結構可直接用 VitePress 預設 <img class="VPImage image-src"> */
@@ -165,24 +268,7 @@ button:hover {
     min-height: 0 !important;
 }
 
-/* 首頁 hero 主圖（大logo）發光＋圓角 */
-.VPHomeHero .VPImage.image-src,
-.VPHomeHero img.image-src {
-    filter: drop-shadow(0 0 80px #00ffee) drop-shadow(0 0 200px #ffef8a);
-    border-radius: 30px !important;
-    aspect-ratio: 1 / 1 !important;
-    object-fit: cover !important;
-    position: relative !important;
-    z-index: 1 !important;
-    max-width: 256px !important;
-    max-height: 256px !important;
-    width: 100% !important;
-    height: auto !important;
-    left: auto !important;
-    top: auto !important;
-    transform: none !important;
-    background: transparent !important;
-}
+
 
 /* 保險：去除舊有針對 .image-src 的絕對定位與縮小 */
 [data-v-8a17128e] .image-src {
