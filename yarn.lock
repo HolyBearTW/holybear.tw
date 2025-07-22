@@ -2074,13 +2074,13 @@ vitepress@^2.0.0-alpha.8:
     vite "^7.0.3"
     vue "^3.5.17"
 
-vue-instantsearch@^4.21.1:
-  version "4.21.1"
-  resolved "https://registry.yarnpkg.com/vue-instantsearch/-/vue-instantsearch-4.21.1.tgz#978fea855cbe526347597482056ff9f4baa4e625"
-  integrity sha512-94y1Y/xaoLwyp0Fq08/OjSDG766dmE6bHMywB8eRNvdlfzQ/co2a2/0E5GFmj6VlQk3PCHmeG4SIv+9TyyAMLw==
+vue-instantsearch@^4.21.2:
+  version "4.21.2"
+  resolved "https://registry.yarnpkg.com/vue-instantsearch/-/vue-instantsearch-4.21.2.tgz#bceeab9f3581b02c34372c7f7d291134534b51c9"
+  integrity sha512-TDSK8I/NFjHt3qRlSXKiFpkaU7UFcQ0fg5HKD4htArxqCkSLJNyoXCzBcuRiy/2u+sE1nm7Bxd1oNhLmERWO2g==
   dependencies:
     instantsearch-ui-components "0.11.2"
-    instantsearch.js "4.79.1"
+    instantsearch.js "4.79.2"
     mitt "^2.1.0"
 
 vue@^3.5.17:
