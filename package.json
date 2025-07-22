@@ -14,7 +14,7 @@
     "algoliasearch": "^5.34.0",
     "firebase": "^12.0.0",
     "gray-matter": "^4.0.3",
-    "instantsearch.js": "^4.79.0",
+    "instantsearch.js": "^4.79.2",
     "react-instantsearch": "^7.16.2",
     "search-insights": "^2",
     "vue-instantsearch": "^4.21.2"
