@@ -17,7 +17,7 @@
     "instantsearch.js": "^4.79.0",
     "react-instantsearch": "^7.16.2",
     "search-insights": "^2",
-    "vue-instantsearch": "^4.21.1"
+    "vue-instantsearch": "^4.21.2"
   },
   "scripts": {
     "dev": "vitepress dev",
