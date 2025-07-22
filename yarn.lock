@@ -1541,25 +1541,7 @@ instantsearch-ui-components@0.11.2:
   dependencies:
     "@babel/runtime" "^7.27.6"
 
-instantsearch.js@4.79.1:
-  version "4.79.1"
-  resolved "https://registry.yarnpkg.com/instantsearch.js/-/instantsearch.js-4.79.1.tgz#4545cadafbfdb9d48d8fea7750759d339ecdc292"
-  integrity sha512-wqU4d3O+LHgTk+HfJaKdrhYCQkfhZ6JXD3S/WjOf0mTNH+zM9ma6ud2QdK7ebwgSwygXLNJ8Opaln+3paoVZQw==
-  dependencies:
-    "@algolia/events" "^4.0.1"
-    "@types/dom-speech-recognition" "^0.0.1"
-    "@types/google.maps" "^3.55.12"
-    "@types/hogan.js" "^3.0.0"
-    "@types/qs" "^6.5.3"
-    algoliasearch-helper "3.26.0"
-    hogan.js "^3.0.2"
-    htm "^3.0.0"
-    instantsearch-ui-components "0.11.2"
-    preact "^10.10.0"
-    qs "^6.5.1 < 6.10"
-    search-insights "^2.17.2"
-
-instantsearch.js@4.79.2, instantsearch.js@^4.79.0:
+instantsearch.js@4.79.2, instantsearch.js@^4.79.2:
   version "4.79.2"
   resolved "https://registry.yarnpkg.com/instantsearch.js/-/instantsearch.js-4.79.2.tgz#c0b7a04134f3fa8b5047f30928c1500e81508066"
   integrity sha512-UwTsbzkb/dsNBAWiFCFlxV1vKviPSKETi5OOQbCVqpoGcHVayXDLlEqFx+WCoFJT0nxzxpNI9QmitbYH5ufoVw==
