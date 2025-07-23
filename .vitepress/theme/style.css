@@ -213,7 +213,6 @@ html.dark .VPHero .name {
     object-fit: cover;
     border-radius: 30px;
     aspect-ratio: 1/1;
-    z-index: 9999;
 }
 
 @media (min-width: 640px) {
