@@ -11,7 +11,7 @@
     "@algolia/autocomplete-js": "^1.19.2",
     "@algolia/client-search": "^5.35.0",
     "@docsearch/js": "3",
-    "algoliasearch": "^5.34.1",
+    "algoliasearch": "^5.35.0",
     "firebase": "^12.0.0",
     "gray-matter": "^4.0.3",
     "instantsearch.js": "^4.79.2",
