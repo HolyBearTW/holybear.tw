@@ -240,7 +240,7 @@ html.dark .VPHero .name {
 .VPHomeHero .heading .name,
 .VPHomeHero .heading .text {
     white-space: nowrap;
-    line-height: normal;
+    line-height: 1.25;
 }
 
 /* 首頁大標題漸層＋發光 */
