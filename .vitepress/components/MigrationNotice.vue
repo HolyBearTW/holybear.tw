@@ -1,7 +1,7 @@
 <template>
   <Teleport to="body">
     <div
-      v-if="showModal"
+      v-if="showModal && props.introFinished"
       class="migration-modal-overlay"
       @click="closeModal"
     >
@@ -79,7 +79,15 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
+
+// 接收進場動畫完成狀態
+const props = defineProps({
+  introFinished: {
+    type: Boolean,
+    default: false
+  }
+})
 
 const showModal = ref(false)
 
@@ -132,13 +140,29 @@ const closeModalForever = () => {
 }
 
 onMounted(() => {
+  // 等待進場動畫完成後再檢查是否需要顯示彈窗
+  checkAndShowModal()
+})
+
+// 監聽進場動畫狀態變化
+watch(() => props.introFinished, (finished) => {
+  if (finished) {
+    checkAndShowModal()
+  }
+})
+
+// 檢查並顯示彈窗的函數
+const checkAndShowModal = () => {
+  // 只有在進場動畫完成後才檢查
+  if (!props.introFinished) return
+  
   // 延遲一點顯示，避免影響頁面載入
   setTimeout(() => {
     if (shouldShowModal()) {
       showModal.value = true
     }
   }, 1000)
-})
+}
 </script>
 
 <style scoped>
@@ -153,7 +177,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 9999;
+  z-index: 8888;
   animation: fadeIn 0.3s ease-out;
 }
 
