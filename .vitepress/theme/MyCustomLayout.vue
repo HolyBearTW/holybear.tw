@@ -79,7 +79,7 @@
 
 <template>
     <!-- 搬家通知彈窗 -->
-    <MigrationNotice />
+    <MigrationNotice :intro-finished="!showIntro" />
     
     <!-- === ENTRANCE ANIMATION START === -->
     <div v-if="showIntro" class="intro-video-mask">
