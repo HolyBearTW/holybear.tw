@@ -4,8 +4,8 @@ import fs from 'fs'
 export default function gitMetaPlugin() {
   return {
     name: 'inject-git-meta-frontmatter',
-    enforce: 'pre',
-    async transform(src, id) {
+    enforce: 'pre' as const,
+    async transform(src: any, id: any) {
       if (!id.endsWith('.md')) return
       // 排除 /en/blog/ 目錄（處理 Windows 路徑）
       if (id.replaceAll('\\','/').includes('/en/blog/')) return src

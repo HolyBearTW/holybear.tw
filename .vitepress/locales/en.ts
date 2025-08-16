@@ -26,8 +26,8 @@ export default {
     lastUpdated: {
       text: 'Last updated',
       formatOptions: {
-        dateStyle: 'medium',
-        timeStyle: 'short',
+        dateStyle: 'medium' as const,
+        timeStyle: 'short' as const,
         hour12: false
       }
     },
@@ -46,7 +46,7 @@ export default {
       linkText: 'Return Home'
     },
     search: {
-      provider: 'algolia',
+      provider: 'algolia' as const,
         options: {
         placeholder: 'Search articles',
         translations: {
