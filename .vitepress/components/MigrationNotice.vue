@@ -87,6 +87,13 @@ const showModal = ref(false)
 const shouldShowModal = () => {
   if (typeof window === 'undefined') return false
   
+  // 設定截止日期：2025年10月1日
+  const endDate = new Date('2025-10-01')
+  const today = new Date()
+  
+  // 如果已經過了截止日期就不顯示
+  if (today >= endDate) return false
+  
   const lastShown = localStorage.getItem('migration-notice-last-shown')
   const neverShow = localStorage.getItem('migration-notice-never-show')
   
@@ -96,7 +103,6 @@ const shouldShowModal = () => {
   // 如果今天已經顯示過了就不顯示
   if (lastShown) {
     const lastShownDate = new Date(lastShown)
-    const today = new Date()
     
     // 檢查是否是同一天
     if (
