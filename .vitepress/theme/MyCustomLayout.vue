@@ -7,6 +7,7 @@
     import GiscusComments from '../components/GiscusComments.vue'
     import VotePanel from '../components/VotePanel.vue'
     import ViewCounter from '../components/ViewCounter.vue'
+    import MigrationNotice from '../components/MigrationNotice.vue'
 
     const { frontmatter, page, locale, lang } = useData()
 
@@ -77,6 +78,9 @@
 </script>
 
 <template>
+    <!-- 搬家通知彈窗 -->
+    <MigrationNotice />
+    
     <!-- === ENTRANCE ANIMATION START === -->
     <div v-if="showIntro" class="intro-video-mask">
         <video ref="introVideo"
