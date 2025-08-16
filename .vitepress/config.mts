@@ -1,6 +1,6 @@
 import { defineConfig } from 'vitepress'
 import locales from './locales'
-import gitMetaPlugin from './git-meta.js'
+import gitMetaPlugin from './git-meta'
 import { execSync } from 'child_process'
 import sidebar from './sidebar.generated'
 
@@ -107,26 +107,8 @@ export default defineConfig({
         }
     },
 
-    // extendsPage 現在只專注於處理 Git 相關資訊，保持乾淨
-    extendsPage(page) {
-        const branch = getCurrentBranch();
-        if (
-            (branch === 'main' || branch === 'master') &&
-            page.filePath &&
-            page.filePath.endsWith('.md') &&
-            !page.filePath.replaceAll('\\', '/').includes('/en/blog/')
-        ) {
-            try {
-                const log = execSync(`git log --diff-filter=A --follow --format=%aN,%aI -- "${page.filePath}" | tail -1`).toString().trim();
-                const [author, date] = log.split(',');
-                if (!page.frontmatter.author) page.frontmatter.author = author;
-                if (!page.frontmatter.date) page.frontmatter.date = date;
-
-                const lastUpdated = execSync(`git log -1 --format=%cI -- "${page.filePath}"`).toString().trim();
-                page.frontmatter.lastUpdated = lastUpdated;
-            } catch (e) {
-                // 無 git 資訊則略過
-            }
-        }
+    // buildEnd 現在只專注於處理 Git 相關資訊，保持乾淨
+    buildEnd(siteConfig) {
+        // 這裡不需要處理 Git 資訊，因為我們已經在 git-meta 插件中處理了
     }
 })

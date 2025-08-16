@@ -28,8 +28,8 @@ export default {
     lastUpdated: {
       text: '最後更新',
       formatOptions: {
-        dateStyle: 'short',
-        timeStyle: 'short',
+        dateStyle: 'short' as const,
+        timeStyle: 'short' as const,
         timeZone: 'Asia/Taipei'
       }
     },
@@ -48,7 +48,7 @@ export default {
       linkText: '返回首頁'
     },
     search: {
-      provider: 'algolia',
+      provider: 'algolia' as const,
       options: {
         placeholder: '搜尋文章',
         translations: {
