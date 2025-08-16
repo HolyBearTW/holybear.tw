@@ -38,7 +38,7 @@
             : '/logo.png'
     )
     const currentAuthorUrl = computed(() =>
-        currentAuthorMeta.value.url || 'https://holybear.me/'
+        currentAuthorMeta.value.url || 'https://holybear.tw/'
     )
 
     const currentDisplayDate = computed(() => {

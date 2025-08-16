@@ -5,7 +5,7 @@ lang: en
 
 [Chinese](/README.md) | English
 
-https://holybear.me
+https://holybear.tw
 
 This is the repository (frontend) for the official website of HolyBear's Secret Base.
 
