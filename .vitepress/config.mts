@@ -30,6 +30,7 @@ export default defineConfig({
         }],
         ['meta', { name: 'description', content: '聖小熊的個人網站，收錄 HyperOS 模組、技術筆記與開發心得，專注於 Android 客製化與開源創作分享。' }],
         ['meta', { name: 'keywords', content: '聖小熊, HolyBear, HyperOS, 模組, Mod, MIUI, Android, GitHub, 技術部落格, Blog' }],
+        ['meta', { name: 'algolia-site-verification', content: 'ED2DF0361198D428' }],
         // OG 標籤
         ['meta', { property: 'og:title', content: '聖小熊的秘密基地' }],
         ['meta', { property: 'og:description', content: '聖小熊的個人網站，收錄 HyperOS 模組、技術筆記與開發心得，專注於 Android 客製化與開源創作分享。' }],
@@ -99,9 +100,9 @@ export default defineConfig({
         search: {
             provider: 'algolia',
             options: {
-                appId: '5HHMMAZBPG',
-                apiKey: 'f7fbf2c65da0d43f1540496b9ae6f3c6',
-                indexName: 'holybear'
+                appId: 'DO73KQBN99',
+                apiKey: '1696c6834514ebc31df7160f019742fe',
+                indexName: 'holybear.tw'
             }
         }
     },
