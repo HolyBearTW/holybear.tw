@@ -33,9 +33,9 @@ export default defineConfig({
         // OG 標籤
         ['meta', { property: 'og:title', content: '聖小熊的秘密基地' }],
         ['meta', { property: 'og:description', content: '聖小熊的個人網站，收錄 HyperOS 模組、技術筆記與開發心得，專注於 Android 客製化與開源創作分享。' }],
-        ['meta', { property: 'og:image', content: 'https://holybear.me/logo.png' }],
+        ['meta', { property: 'og:image', content: 'https://holybear.tw/logo.png' }],
         ['meta', { property: 'og:type', content: 'website' }],
-        ['meta', { property: 'og:url', content: 'https://holybear.me' }],
+        ['meta', { property: 'og:url', content: 'https://holybear.tw' }],
         ['meta', { property: 'og:site_name', content: '聖小熊的秘密基地' }], // 新增 og:site_name
         ['meta', { name: 'twitter:card', content: 'summary' }],
         // WebSite 結構化資料（JSON-LD）
@@ -44,7 +44,7 @@ export default defineConfig({
               "@context": "https://schema.org",
               "@type": "WebSite",
               "name": "聖小熊的秘密基地",
-              "url": "https://holybear.me"
+              "url": "https://holybear.tw"
             }
         `]
     ],
@@ -59,7 +59,7 @@ export default defineConfig({
         if (!relativePath) return;
 
         // --- 1. 取得預設值和頁面專屬值 ---
-        const siteUrl = 'https://holybear.me';
+        const siteUrl = 'https://holybear.tw';
         // 從全域 head (已傳入) 中找到預設值，而不是寫死
         const defaultTitle = head.find(tag => tag[1]?.property === 'og:title')?.[1].content || '';
         const defaultDesc = head.find(tag => tag[1]?.name === 'description')?.[1].content || '';

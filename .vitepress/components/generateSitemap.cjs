@@ -3,7 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const BASE_URL = 'https://holybear.me';
+const BASE_URL = 'https://holybear.tw';
 
 function getAllMarkdownFiles(dir) {
   let files = [];

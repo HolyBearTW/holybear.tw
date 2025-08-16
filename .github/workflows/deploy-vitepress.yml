@@ -224,7 +224,7 @@ jobs:
             echo "文章列表為空，中止執行。"
             exit 0
             fi
-            BASE_URL="https://holybear.me"
+            BASE_URL="https://holybear.tw"
             escape_markdownv2() {
             printf "%s" "$1" | sed -e 's/[\\_*\[\]()~`>#+\-=|{}.!]/\\&/g'
             }

@@ -2,7 +2,7 @@
 
 中文 | [English](/README_en.md)
 
-https://holybear.me
+https://holybear.tw
 
 這裡是 聖小熊的秘密基地 官網的存放庫(前端)。
 
