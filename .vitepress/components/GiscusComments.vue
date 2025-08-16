@@ -34,7 +34,7 @@ function loadGiscus() {
       giscusContainer.value.innerHTML = '' // 先清空舊 iframe
       const script = document.createElement('script')
       script.src = 'https://giscus.app/client.js'
-      script.setAttribute('data-repo', 'HolyBearTW/holybear.me')
+      script.setAttribute('data-repo', 'HolyBearTW/holybear.tw')
       script.setAttribute('data-repo-id', 'R_kgDOJmguVg')
       script.setAttribute('data-category', 'General')
       script.setAttribute('data-category-id', 'DIC_kwDOJmguVs4Cqo90')

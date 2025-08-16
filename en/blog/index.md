@@ -98,7 +98,7 @@ onMounted(() => {
     </div>
     <a
       class="new-post-btn"
-      href="https://github.com/HolyBearTW/holybear.me/new/main/blog"
+      href="https://github.com/HolyBearTW/holybear.tw/new/main/blog"
       target="_blank"
       rel="noopener"
     >➕ {{ isEnglish ? 'New Post' : '新增文章' }}</a>

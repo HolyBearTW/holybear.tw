@@ -32,7 +32,7 @@ export default {
       }
     },
     editLink: {
-      pattern: 'https://github.com/HolyBearTW/holybear.me/edit/main/:path',
+      pattern: 'https://github.com/HolyBearTW/holybear.tw/edit/main/:path',
       text: 'Edit this page on GitHub'
     },
     footer: {

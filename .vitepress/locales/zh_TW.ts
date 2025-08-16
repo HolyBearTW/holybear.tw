@@ -34,7 +34,7 @@ export default {
       }
     },
     editLink: {
-      pattern: 'https://github.com/HolyBearTW/holybear.me/edit/main/:path',
+      pattern: 'https://github.com/HolyBearTW/holybear.tw/edit/main/:path',
       text: '在 GitHub 中編輯此頁'
     },
     footer: {

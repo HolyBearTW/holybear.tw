@@ -13,7 +13,7 @@ https://holybear.tw
 ### 1.克隆原始碼
 
 ```bash
-git clone https://github.com/HolyBearTW/holybear.me.git
+git clone https://github.com/HolyBearTW/holybear.tw.git
 ```
 
 ### 2. 安裝依賴

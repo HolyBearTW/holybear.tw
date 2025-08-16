@@ -16,7 +16,7 @@ This site is built with [VitePress](https://vitepress.dev). All website content 
 ### 1. Clone the Source Code
 
 ```bash
-git clone https://github.com/HolyBearTW/holybear.me.git
+git clone https://github.com/HolyBearTW/holybear.tw.git
 ```
 
 ### 2. Install Dependencies
