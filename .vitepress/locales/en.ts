@@ -56,10 +56,11 @@ export default {
           },
           modal: {
             searchBox: {
-              resetButtonTitle: 'Clear search',
-              resetButtonAriaLabel: 'Clear search',
-              cancelButtonText: 'Cancel',
-              cancelButtonAriaLabel: 'Cancel'
+              clearButtonTitle: 'Clear search',
+              clearButtonAriaLabel: 'Clear search',
+              closeButtonText: 'Cancel',
+              closeButtonAriaLabel: 'Cancel',
+              placeholderText: 'Search articles'
             },
             startScreen: {
               recentSearchesTitle: 'Recent Searches',

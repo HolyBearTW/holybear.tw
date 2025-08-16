@@ -58,10 +58,11 @@ export default {
           },
           modal: {
             searchBox: {
-              resetButtonTitle: '清除搜尋條件',
-              resetButtonAriaLabel: '清除搜尋條件',
-              cancelButtonText: '取消',
-              cancelButtonAriaLabel: '取消'
+              clearButtonTitle: '清除搜尋條件',
+              clearButtonAriaLabel: '清除搜尋條件',
+              closeButtonText: '取消',
+              closeButtonAriaLabel: '取消',
+              placeholderText: '搜尋文章'
             },
             startScreen: {
               recentSearchesTitle: '最近搜尋',
