@@ -38,26 +38,16 @@ export default defineConfig({
         ['meta', { property: 'og:type', content: 'website' }],
         ['meta', { property: 'og:url', content: 'https://holybear.tw' }],
         ['meta', { property: 'og:site_name', content: '聖小熊的秘密基地' }], // 新增 og:site_name
-        ['meta', { name: 'twitter:card', content: 'summary' }],
-        // WebSite 結構化資料（JSON-LD）
-        ['script', { type: 'application/ld+json' }, `
-            {
-              "@context": "https://schema.org",
-              "@type": "WebSite",
-              "name": "聖小熊的秘密基地",
-              "url": "https://holybear.tw"
-            }
-        `]
+        ['meta', { name: 'twitter:card', content: 'summary' }]
     ],
     vite: {
         plugins: [gitMetaPlugin()]
-    },
-
-    // ✨ START: 整合所有 OG 標籤的最終邏輯 ✨
+    },    // ✨ START: 整合所有 OG 標籤的最終邏輯 ✨
     transformHead({ pageData, head }) {
         const { frontmatter, relativePath } = pageData;
 
-        if (!relativePath) return;
+        // 即使是首頁也要處理
+        if (!relativePath) return head;
 
         // --- 1. 取得預設值和頁面專屬值 ---
         const siteUrl = 'https://holybear.tw';
@@ -72,12 +62,16 @@ export default defineConfig({
             (frontmatter.image.startsWith('http') ? frontmatter.image : `${siteUrl}${frontmatter.image}`) :
             defaultImage;
 
-        // --- 2. 決定 OG Type ---
-        const isArticle = relativePath.startsWith('blog/') || relativePath.startsWith('en/blog/') || relativePath === 'Mod.md';
+        // --- 2. 決定 OG Type 和檢查是否為首頁 ---
+        const isHomePage = relativePath === 'index.md' || relativePath === '';
+        const isArticle = relativePath.startsWith('blog/') || relativePath.startsWith('en/blog/');
         const pageType = isArticle ? 'article' : 'website';
 
-        // --- 3. 移除 head 中所有舊的 OG 標籤，確保乾淨 ---
-        const cleanHead = head.filter(tag => !(tag[1]?.property?.startsWith('og:')));
+        // --- 3. 移除 head 中所有舊的 OG 標籤和 JSON-LD 腳本，確保乾淨 ---
+        const cleanHead = head.filter(tag => 
+            !(tag[1]?.property?.startsWith('og:')) && 
+            !(tag[1]?.type === 'application/ld+json')
+        );
 
         // --- 4. 加入全新的、正確的 OG 標籤 ---
         cleanHead.push(['meta', { property: 'og:title', content: pageTitle }]);
@@ -86,6 +80,69 @@ export default defineConfig({
         cleanHead.push(['meta', { property: 'og:type', content: pageType }]);
         cleanHead.push(['meta', { property: 'og:url', content: siteUrl }]);
         cleanHead.push(['meta', { property: 'og:site_name', content: '聖小熊的秘密基地' }]); // 確保每頁都有 og:site_name
+
+        // --- 5. 根據頁面類型添加正確的 JSON-LD 結構化資料 ---
+        if (isArticle) {
+            // 文章頁面使用 Article schema
+            const articleSchema: any = {
+                "@context": "https://schema.org",
+                "@type": "Article",
+                "headline": pageTitle,
+                "description": pageDescription,
+                "image": pageImage,
+                "url": `${siteUrl}/${relativePath.replace(/\.md$/, '.html')}`,
+                "author": {
+                    "@type": "Person",
+                    "name": frontmatter.author || "聖小熊"
+                },
+                "publisher": {
+                    "@type": "Organization",
+                    "name": "聖小熊的秘密基地",
+                    "url": siteUrl
+                }
+            };
+            
+            if (frontmatter.date) {
+                articleSchema.datePublished = frontmatter.date;
+            }
+            
+            cleanHead.push(['script', { type: 'application/ld+json' }, JSON.stringify(articleSchema)]);
+        } else if (isHomePage) {
+            // 首頁使用完整的 WebSite schema 含搜尋功能
+            const websiteSchema = {
+                "@context": "https://schema.org",
+                "@type": "WebSite",
+                "name": "聖小熊的秘密基地",
+                "url": siteUrl,
+                "description": pageDescription,
+                "potentialAction": {
+                    "@type": "SearchAction",
+                    "target": {
+                        "@type": "EntryPoint",
+                        "urlTemplate": `${siteUrl}/search?q={search_term_string}`
+                    },
+                    "query-input": "required name=search_term_string"
+                }
+            };
+            
+            cleanHead.push(['script', { type: 'application/ld+json' }, JSON.stringify(websiteSchema)]);
+        } else {
+            // 一般頁面使用簡單的 WebPage schema
+            const webpageSchema = {
+                "@context": "https://schema.org",
+                "@type": "WebPage",
+                "name": pageTitle,
+                "url": `${siteUrl}/${relativePath.replace(/\.md$/, '.html')}`,
+                "description": pageDescription,
+                "isPartOf": {
+                    "@type": "WebSite",
+                    "name": "聖小熊的秘密基地",
+                    "url": siteUrl
+                }
+            };
+            
+            cleanHead.push(['script', { type: 'application/ld+json' }, JSON.stringify(webpageSchema)]);
+        }
 
         return cleanHead;
     },
