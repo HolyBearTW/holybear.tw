@@ -16,7 +16,7 @@ hero:
       link: "#recent-posts"
     - theme: alt
       text: 回到主站
-      link: https://holybear.tw
+      link: /
 ---
 
 <script setup>
