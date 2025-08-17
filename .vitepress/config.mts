@@ -26,8 +26,6 @@ export default defineConfig({
     cleanUrls: false,  // 完全禁用 clean URLs 以避免客戶端路由衝突
     head: [
         ['meta', { name: 'theme-color', content: '#00FFEE' }],
-        // 子域名檢測和客戶端路由禁用腳本
-        ['script', {}, '(function(){if(window.location.hostname==="blog.holybear.tw"){const forceDisable=function(){if(window.__VP_HASH_MAP)delete window.__VP_HASH_MAP;if(window.__VP_SITE_DATA)delete window.__VP_SITE_DATA;if(window.router)delete window.router;const noop=function(){return false;};history.pushState=noop;history.replaceState=noop;document.addEventListener("click",function(e){const link=e.target.closest("a");if(link&&link.href&&(link.getAttribute("href")?.startsWith("/")||link.href.includes("blog.holybear.tw"))){e.preventDefault();e.stopPropagation();window.location.href=link.href;}},true);window.addEventListener("popstate",function(e){e.preventDefault();e.stopImmediatePropagation();window.location.reload();},true);console.log("VitePress routing disabled for subdomain");};setInterval(forceDisable,1000);forceDisable();setTimeout(forceDisable,100);setTimeout(forceDisable,500);setTimeout(forceDisable,1000);setTimeout(forceDisable,2000);setTimeout(forceDisable,5000);window.addEventListener("load",function(){setTimeout(forceDisable,100);setTimeout(forceDisable,500);setTimeout(forceDisable,1000);});}})();'],
         // Favicon 完整配置 - 支援各種設備和搜尋引擎
         ['link', { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }],
         ['link', { rel: 'icon', type: 'image/png', sizes: '16x16', href: '/favicon.ico' }],
