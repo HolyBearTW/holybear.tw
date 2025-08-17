@@ -2,6 +2,21 @@
 layout: home
 title: 日誌
 description: 日誌列表
+
+hero:
+  name: "聖小熊的日誌"
+  text: "技術筆記與生活感悟"
+  tagline: "記錄我的學習軌跡和創作過程"
+  image:
+    src: /logo.png
+    alt: HolyBearTW Blog
+  actions:
+    - theme: brand
+      text: 最新文章
+      link: "#recent-posts"
+    - theme: alt
+      text: 回到主站
+      link: https://holybear.tw
 ---
 
 <script setup>
