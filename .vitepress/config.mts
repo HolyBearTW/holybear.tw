@@ -16,7 +16,7 @@ export default defineConfig({
     ignoreDeadLinks: true,
     appearance: 'dark',
     title: '聖小熊的秘密基地',
-    base: './',
+    base: '/',
     lang: 'zh-TW',
     locales: locales.locales,
     srcExclude: ['README.md'],
