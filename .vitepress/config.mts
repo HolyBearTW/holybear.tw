@@ -20,6 +20,8 @@ export default defineConfig({
     lang: 'zh-TW',
     locales: locales.locales,
     srcExclude: ['README.md'],
+    // 確保 SPA 路由在相對路徑下正常工作
+    cleanUrls: true,
     head: [
         ['meta', { name: 'theme-color', content: '#00FFEE' }],
         // Favicon 完整配置 - 支援各種設備和搜尋引擎
