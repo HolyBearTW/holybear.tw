@@ -21,9 +21,12 @@ export default defineConfig({
     locales: locales.locales,
     srcExclude: ['README.md'],
     // 確保 SPA 路由在相對路徑下正常工作
+    // 但在子域名模式下禁用 cleanUrls 以避免路由衝突
     cleanUrls: true,
     head: [
         ['meta', { name: 'theme-color', content: '#00FFEE' }],
+        // 子域名檢測和客戶端路由禁用腳本
+        ['script', {}, '(function(){if(window.location.hostname==="blog.holybear.tw"){const disableClientRouting=function(){if(window.__VP_HASH_MAP)delete window.__VP_HASH_MAP;if(window.__VP_SITE_DATA)delete window.__VP_SITE_DATA;const noop=function(){return false;};history.pushState=noop;history.replaceState=noop;document.addEventListener("click",function(e){const link=e.target.closest("a");if(link&&link.href&&link.getAttribute("href")?.startsWith("/")){e.preventDefault();e.stopPropagation();window.location.href=link.href;}},true);window.addEventListener("popstate",function(e){e.preventDefault();e.stopImmediatePropagation();window.location.reload();},true);};disableClientRouting();if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",disableClientRouting);}else{disableClientRouting();}window.addEventListener("load",disableClientRouting);}})();'],
         // Favicon 完整配置 - 支援各種設備和搜尋引擎
         ['link', { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }],
         ['link', { rel: 'icon', type: 'image/png', sizes: '16x16', href: '/favicon.ico' }],
