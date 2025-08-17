@@ -2,6 +2,21 @@
 layout: home
 title: Blog Posts
 description: List of blog posts
+
+hero:
+  name: "HolyBear's Blog"
+  text: "Tech Notes & Life Reflections"
+  tagline: "Documenting my learning journey and creative process"
+  image:
+    src: /logo.png
+    alt: HolyBearTW Blog
+  actions:
+    - theme: brand
+      text: Latest Posts
+      link: "#recent-posts"
+    - theme: alt
+      text: Back to Home
+      link: /en/
 ---
 
 <script setup>
