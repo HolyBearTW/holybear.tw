@@ -33,5 +33,5 @@ const xml =
   urls.map(url => `  <url><loc>${url}</loc></url>`).join('\n') +
   `\n</urlset>\n`;
 
-fs.writeFileSync('sitemap.xml', xml);
-console.log('✅ sitemap.xml 已產生');
+fs.writeFileSync('public/sitemap.xml', xml);
+console.log('✅ public/sitemap.xml 已產生');
