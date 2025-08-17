@@ -51,7 +51,12 @@ async function handleRequest(request) {
             targetUrl = `https://holybear.tw/blog/index.html${search}`;
         } else if (pathname.match(/^\/\d{4}-\d{2}-\d{2}/)) {
             // 部落格文章路徑 (例如 /2025-05-25, /2024-12-31, /2026-01-01)
-            targetUrl = `https://holybear.tw/blog${pathname}.html${search}`;
+            // 檢查是否已經有 .html 後綴
+            if (pathname.endsWith('.html')) {
+                targetUrl = `https://holybear.tw/blog${pathname}${search}`;
+            } else {
+                targetUrl = `https://holybear.tw/blog${pathname}.html${search}`;
+            }
         } else if (pathname === '/index' || pathname === '/index.html') {
             // 明確的 index 請求
             targetUrl = `https://holybear.tw/blog/index.html${search}`;
