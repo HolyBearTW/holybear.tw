@@ -27,8 +27,8 @@ export default defineConfig({
         ['link', { rel: 'icon', type: 'image/png', sizes: '16x16', href: '/favicon.ico' }],
         ['link', { rel: 'icon', type: 'image/png', sizes: '32x32', href: '/favicon.ico' }],
         ['link', { rel: 'apple-touch-icon', sizes: '180x180', href: '/favicon.ico' }],
-        ['link', { rel: 'mask-icon', href: '/favicon.ico', color: '#1a1a1a' }],
-        ['meta', { name: 'msapplication-TileColor', content: '#1a1a1a' }],
+        ['link', { rel: 'mask-icon', href: '/favicon.ico', color: '#00FFEE' }],
+        ['meta', { name: 'msapplication-TileColor', content: '#00FFEE' }],
         ['link', {
             rel: 'stylesheet',
             href: '/fonts/LINESeed.css'
