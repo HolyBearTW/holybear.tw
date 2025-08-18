@@ -20,10 +20,8 @@ export default defineConfig({
     lang: 'zh-TW',
     locales: locales.locales,
     srcExclude: ['README.md'],
-    // 確保 SPA 路由在相對路徑下正常工作
-    // 但在子域名模式下禁用 cleanUrls 以避免路由衝突
-    // 檢測是否為子域名構建（透過環境變數或其他方式）
-    cleanUrls: false,  // 完全禁用 clean URLs 以避免客戶端路由衝突
+    // 禁用 cleanUrls 以確保路由穩定性
+    cleanUrls: false,
     head: [
         ['meta', { name: 'theme-color', content: '#00FFEE' }],
         // Favicon 完整配置 - 支援各種設備和搜尋引擎
@@ -92,6 +90,48 @@ export default defineConfig({
 
         // --- 5. 根據頁面類型添加正確的 JSON-LD 結構化資料 ---
         if (isArticle) {
+            // 檢測當前語言
+            const isEnglish = relativePath.startsWith('en/') || 
+                             (frontmatter.lang && frontmatter.lang.startsWith('en'));
+            
+            // 從 authorsData 查找作者資訊
+            const authorsData = {
+                'HolyBearTW': { name: '聖小熊', name_en: 'HolyBear', url: 'https://github.com/HolyBearTW' },
+                'Tim0320': { name: '玄哥', name_en: 'Xuan', url: 'https://github.com/Tim0320' },
+                'ying0930': { name: '酪梨', name_en: 'Avocado', url: 'https://github.com/ying0930' },
+                'Jackboy001': { name: 'Jack', name_en: 'Jack', url: 'https://github.com/Jackboy001' },
+                'leohsiehtw': { name: 'Leo', name_en: 'Leo', url: 'https://github.com/leohsiehtw' }
+            };
+            
+            // 查找作者資訊
+            const getAuthorInfo = (authorIdentifier: string) => {
+                const authorLogin = Object.keys(authorsData).find(login => {
+                    const author = authorsData[login];
+                    return authorIdentifier === login || 
+                           authorIdentifier === author.name || 
+                           authorIdentifier === author.name_en;
+                });
+                
+                if (authorLogin && authorsData[authorLogin]) {
+                    const author = authorsData[authorLogin];
+                    return {
+                        "@type": "Person",
+                        "name": isEnglish && author.name_en ? author.name_en : author.name,
+                        "url": author.url
+                    };
+                }
+                
+                // 預設作者
+                return {
+                    "@type": "Person",
+                    "name": isEnglish ? "HolyBear" : "聖小熊",
+                    "url": "https://github.com/HolyBearTW"
+                };
+            };
+            
+            const authorInfo = getAuthorInfo(frontmatter.author || '聖小熊');
+            const siteName = isEnglish ? "HolyBear's Secret Base" : "聖小熊的秘密基地";
+            
             // 文章頁面使用 Article schema
             const articleSchema: any = {
                 "@context": "https://schema.org",
@@ -100,13 +140,10 @@ export default defineConfig({
                 "description": pageDescription,
                 "image": pageImage,
                 "url": `${siteUrl}/${relativePath.replace(/\.md$/, '.html')}`,
-                "author": {
-                    "@type": "Person",
-                    "name": frontmatter.author || "聖小熊"
-                },
+                "author": authorInfo,
                 "publisher": {
                     "@type": "Organization",
-                    "name": "聖小熊的秘密基地",
+                    "name": siteName,
                     "url": siteUrl
                 }
             };
@@ -117,21 +154,39 @@ export default defineConfig({
             
             cleanHead.push(['script', { type: 'application/ld+json' }, JSON.stringify(articleSchema)]);
         } else if (isHomePage) {
-            // 首頁使用完整的 WebSite schema 含搜尋功能
+            // 檢測當前語言並設定對應的作者名稱
+            const isEnglish = relativePath.startsWith('en/') || 
+                             (frontmatter.lang && frontmatter.lang.startsWith('en'));
+            
+            // 從 authorsData 獲取所有作者資訊
+            const authorsData = {
+                'HolyBearTW': { name: '聖小熊', name_en: 'HolyBear', url: 'https://github.com/HolyBearTW' },
+                'Tim0320': { name: '玄哥', name_en: 'Xuan', url: 'https://github.com/Tim0320' },
+                'ying0930': { name: '酪梨', name_en: 'Avocado', url: 'https://github.com/ying0930' },
+                'Jackboy001': { name: 'Jack', name_en: 'Jack', url: 'https://github.com/Jackboy001' },
+                'leohsiehtw': { name: 'Leo', name_en: 'Leo', url: 'https://github.com/leohsiehtw' }
+            };
+            
+            // 建立作者陣列，支援多作者
+            const authorsArray = Object.keys(authorsData).map(login => {
+                const author = authorsData[login];
+                return {
+                    "@type": "Person",
+                    "name": isEnglish && author.name_en ? author.name_en : author.name,
+                    "url": author.url
+                };
+            });
+            
+            const siteName = isEnglish ? "HolyBear's Secret Base" : "聖小熊的秘密基地";
+            
+            // 首頁使用完整的 WebSite schema
             const websiteSchema = {
                 "@context": "https://schema.org",
                 "@type": "WebSite",
-                "name": "聖小熊的秘密基地",
+                "name": siteName,
                 "url": siteUrl,
                 "description": pageDescription,
-                "potentialAction": {
-                    "@type": "SearchAction",
-                    "target": {
-                        "@type": "EntryPoint",
-                        "urlTemplate": `${siteUrl}/search?q={search_term_string}`
-                    },
-                    "query-input": "required name=search_term_string"
-                }
+                "author": authorsArray.length === 1 ? authorsArray[0] : authorsArray
             };
             
             cleanHead.push(['script', { type: 'application/ld+json' }, JSON.stringify(websiteSchema)]);

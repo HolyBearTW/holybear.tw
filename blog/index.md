@@ -541,3 +541,33 @@ body.blog-index-page [class*="content-container"] {
   outline: none !important;
 }
 </style>
+
+<style>
+/* Hero 區塊（大標題和圖片）的右對齊設定 - 桌面版 */
+@media (min-width: 1201px) {
+  body:not(.is-blog-page) .VPHomeHero {
+    padding-left: calc(max(0px, calc(50vw - var(--main-width) / 2)) - 25px);
+    padding-right: max(0px, calc(50vw - var(--main-width) / 2));
+  }
+  body:not(.is-blog-page) .VPHomeHero .container {
+    width: var(--main-width) !important;
+    max-width: none !important;
+    margin: 0 auto;
+    padding-left: var(--main-padding);
+    padding-right: var(--main-padding);
+    box-sizing: border-box;
+  }
+}
+
+/* Hero 區塊 - 手機/平板版 */
+@media (max-width: 1200px) {
+  body:not(.is-blog-page) .VPHomeHero {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+  body:not(.is-blog-page) .VPHomeHero .container {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+}
+</style>
