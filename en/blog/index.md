@@ -5,8 +5,8 @@ description: List of blog posts
 
 hero:
   name: "HolyBear's Blog"
-  text: "Tech Notes & Life Reflections"
-  tagline: "Documenting my learning journey and creative process"
+  text: "Tech & Life"
+  tagline: "Learning & Creating"
   image:
     src: /logo.png
     alt: HolyBearTW Blog
