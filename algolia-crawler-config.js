@@ -69,23 +69,23 @@ new Crawler({
           $('meta[name="description"]').attr("content") || ""
         ).trim();
 
-        // 🔥 使用原始有效的 DocSearch helper 配置
+        // 🔥 修正第一個 anchor 索引問題的 DocSearch 配置
         const records = helpers.docsearch({
           recordProps: {
-            lvl1: [".vp-doc h1", ".content h1", "h1"],
+            lvl0: { selectors: ".vp-doc h1, .content h1, h1", defaultValue: "文章" },
+            lvl1: [".vp-doc h2", ".content h2", "h2"],
+            lvl2: [".vp-doc h3", ".content h3", "h3"],
+            lvl3: [".vp-doc h4", ".content h4", "h4"],
+            lvl4: [".vp-doc h5", ".content h5", "h5"],
+            lvl5: [".vp-doc h6", ".content h6", "h6"],
             content: [".vp-doc p", ".vp-doc li", ".content p", ".content li"],
-            lvl0: { selectors: "", defaultValue: "文章" },
-            lvl2: [".vp-doc h2", ".content h2", "h2"],
-            lvl3: [".vp-doc h3", ".content h3", "h3"],
-            lvl4: [".vp-doc h4", ".content h4", "h4"],
-            lvl5: [".vp-doc h5", ".content h5", "h5"],
             // 加入 category 和 tag 支援
             category: { selector: ".category", global: true },
             tag: { selector: ".tag", global: true },
             tags: { selector: ".tag", global: true },
           },
           indexHeadings: true,
-          aggregateContent: true,
+          aggregateContent: false,
           recordVersion: "v3",
         });
 
