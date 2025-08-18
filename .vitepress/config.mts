@@ -37,9 +37,8 @@ export default defineConfig({
         ['meta', { property: 'og:type', content: 'website' }],
         ['meta', { property: 'og:url', content: 'https://holybear.tw' }],
         ['meta', { property: 'og:site_name', content: '聖小熊的秘密基地' }], // 新增 og:site_name
-        ['meta', { name: 'twitter:card', content: 'summary' }],
-
-        
+        ['meta', { name: 'twitter:card', content: 'summary' }]
+    ],
     vite: {
         plugins: [gitMetaPlugin()]
     },
