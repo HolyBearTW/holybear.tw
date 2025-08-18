@@ -57,11 +57,7 @@ export default defineConfig({
         ['meta', { property: 'og:site_name', content: '聖小熊的秘密基地' }],
         ['meta', { property: 'og:locale', content: 'zh_TW' }],
         // Twitter Card
-        ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
-        ['meta', { name: 'twitter:title', content: '聖小熊的秘密基地' }],
-        ['meta', { name: 'twitter:description', content: '聖小熊的個人網站，收錄 HyperOS 模組、技術筆記與開發心得，專注於 Android 客製化與開源創作分享。' }],
-        ['meta', { name: 'twitter:image', content: 'https://holybear.tw/logo.png' }],
-        ['meta', { name: 'twitter:image:alt', content: '聖小熊的秘密基地 Logo' }]
+        ['meta', { name: 'twitter:card', content: 'summary' }]
     ],
     vite: {
         plugins: [gitMetaPlugin()]
