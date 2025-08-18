@@ -89,6 +89,17 @@ new Crawler({
           recordVersion: "v3",
         });
 
+        // 🔥 導航元素過濾函數
+        const cleanNavigationText = (text) => {
+          if (!text || typeof text !== 'string') return text;
+          return text
+            .replace(/繁體中文\s*繁體中文\s*深色模式/g, '')
+            .replace(/English\s*English\s*Dark\s*Mode/g, '')
+            .replace(/繁體中文.*?深色模式/g, '')
+            .replace(/English.*?Dark\s*Mode/g, '')
+            .trim();
+        };
+
         // 🔥 簡化的後處理邏輯 - 回到原始有效版本
         return records.map((record) => {
           const newRecord = { ...record };
@@ -101,6 +112,29 @@ new Crawler({
             newRecord.url_without_anchor = cleanUrl(newRecord.url_without_anchor);
           }
 
+          // 🔥 過濾所有會被搜尋的文字欄位中的導航元素
+          if (newRecord.content) {
+            newRecord.content = cleanNavigationText(newRecord.content);
+          }
+          
+          // 過濾 hierarchy 相關欄位
+          if (newRecord.hierarchy) {
+            Object.keys(newRecord.hierarchy).forEach(key => {
+              if (typeof newRecord.hierarchy[key] === 'string') {
+                newRecord.hierarchy[key] = cleanNavigationText(newRecord.hierarchy[key]);
+              }
+            });
+          }
+          
+          // 過濾標題相關欄位
+          if (newRecord.hierarchy_radio) {
+            Object.keys(newRecord.hierarchy_radio).forEach(key => {
+              if (typeof newRecord.hierarchy_radio[key] === 'string') {
+                newRecord.hierarchy_radio[key] = cleanNavigationText(newRecord.hierarchy_radio[key]);
+              }
+            });
+          }
+
           // 確保 category 和 tag 資訊
           if (!newRecord.category || newRecord.category.length === 0) {
             newRecord.category = pageCategory ? [pageCategory] : [];
@@ -111,36 +145,23 @@ new Crawler({
           newRecord.tags = newRecord.tag; // 確保 tags 與 tag 同步
 
           // 添加額外屬性
-          if (postTitle) newRecord.post_title = postTitle;
+          if (postTitle) newRecord.post_title = cleanNavigationText(postTitle);
           if (postDate) newRecord.post_date = postDate;
           if (mainContent) {
-            // 🔥 過濾導航元素文字
-            let cleanMainContent = mainContent.trim()
-              .replace(/繁體中文\s*繁體中文\s*深色模式/g, '')
-              .replace(/English\s*English\s*Dark\s*Mode/g, '')
-              .replace(/繁體中文.*?深色模式/g, '')
-              .replace(/English.*?Dark\s*Mode/g, '')
-              .trim();
-            newRecord.main_content = cleanMainContent;
+            newRecord.main_content = cleanNavigationText(mainContent);
           }
-          if (pageDescription) newRecord.description = pageDescription;
+          if (pageDescription) {
+            newRecord.description = cleanNavigationText(pageDescription);
+          }
 
           // 確保 content 不為 null 或嘗試從 description 填充
           if (!newRecord.content) {
             if (pageDescription) {
-              newRecord.content = pageDescription;
+              newRecord.content = cleanNavigationText(pageDescription);
             } else {
               // 後備方案，抓取 vp-doc 或 main 內容的前 200 字
               let fallbackContent = $(".vp-doc").text().trim() || $("main").text().trim() || "";
-              
-              // 🔥 過濾導航元素文字
-              fallbackContent = fallbackContent
-                .replace(/繁體中文\s*繁體中文\s*深色模式/g, '')
-                .replace(/English\s*English\s*Dark\s*Mode/g, '')
-                .replace(/繁體中文.*?深色模式/g, '')
-                .replace(/English.*?Dark\s*Mode/g, '')
-                .trim();
-              
+              fallbackContent = cleanNavigationText(fallbackContent);
               newRecord.content = fallbackContent.substring(0, 200);
             }
           }
