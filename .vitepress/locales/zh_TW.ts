@@ -50,9 +50,6 @@ export default {
     search: {
       provider: 'algolia' as const,
       options: {
-        appId: 'DO73KQBN99',
-        apiKey: '1696c6834514ebc31df7160f019742fe',
-        indexName: 'holybear.tw',
         placeholder: '搜尋文章',
         translations: {
           button: {
@@ -65,31 +62,61 @@ export default {
               clearButtonAriaLabel: '清除搜尋條件',
               closeButtonText: '取消',
               closeButtonAriaLabel: '取消',
-              placeholderText: '搜尋文章'
+              placeholderText: '搜尋文章',
+              placeholderTextAskAi: '向 AI 提問：',
+              placeholderTextAskAiStreaming: '回答中...',
+              searchInputLabel: '搜尋',
+              backToKeywordSearchButtonText: '返回關鍵字搜尋',
+              backToKeywordSearchButtonAriaLabel: '返回關鍵字搜尋'
             },
             startScreen: {
-              recentSearchesTitle: '最近搜尋',
-              noRecentSearchesText: '沒有最近搜尋',
-              saveRecentSearchButtonTitle: '儲存到最近搜尋',
-              removeRecentSearchButtonTitle: '從最近搜尋中移除',
+              recentSearchesTitle: '搜尋歷史',
+              noRecentSearchesText: '沒有搜尋歷史',
+              saveRecentSearchButtonTitle: '儲存至搜尋歷史',
+              removeRecentSearchButtonTitle: '從搜尋歷史中移除',
               favoriteSearchesTitle: '收藏',
-              removeFavoriteSearchButtonTitle: '從收藏中移除'
+              removeFavoriteSearchButtonTitle: '從收藏中移除',
+              recentConversationsTitle: '最近的對話',
+              removeRecentConversationButtonTitle: '從歷史記錄中刪除對話'
             },
             errorScreen: {
               titleText: '無法取得結果',
-              helpText: '請檢查你的網路連線'
+              helpText: '你可能需要檢查你的網路連線'
+            },
+            noResultsScreen: {
+              noResultsText: '無法找到相關結果',
+              suggestedQueryText: '你可以嘗試查詢',
+              reportMissingResultsText: '你認為該查詢應該有結果？',
+              reportMissingResultsLinkText: '點擊回報'
+            },
+            resultsScreen: {
+              askAiPlaceholder: '向 AI 提問：'
+            },
+            askAiScreen: {
+              disclaimerText: '答案由 AI 生成，可能不準確，請自行驗證。',
+              relatedSourcesText: '相關來源',
+              thinkingText: '思考中...',
+              copyButtonText: '複製',
+              copyButtonCopiedText: '已複製！',
+              copyButtonTitle: '複製',
+              likeButtonTitle: '讚',
+              dislikeButtonTitle: '踩',
+              thanksForFeedbackText: '感謝你的回饋！',
+              preToolCallText: '搜尋中...',
+              duringToolCallText: '搜尋',
+              afterToolCallText: '已搜尋'
             },
             footer: {
               selectText: '選擇',
+              submitQuestionText: '提交問題',
+              selectKeyAriaLabel: 'Enter 鍵',
               navigateText: '切換',
+              navigateUpKeyAriaLabel: '向上箭頭',
+              navigateDownKeyAriaLabel: '向下箭頭',
               closeText: '關閉',
-              searchByText: '搜尋服務提供者：'
-            },
-            noResultsScreen: {
-              noResultsText: '找不到結果',
-              suggestedQueryText: '你可以嘗試查詢',
-              reportMissingResultsText: '認為應該有結果？',
-              reportMissingResultsLinkText: '點此回報'
+              backToSearchText: '返回搜尋',
+              closeKeyAriaLabel: 'Esc 鍵',
+              poweredByText: '搜尋提供者'
             }
           }
         }
