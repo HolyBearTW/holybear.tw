@@ -229,15 +229,7 @@ export default defineConfig({
         sidebar,
         socialLinks: [
             { icon: 'github', link: 'https://github.com/HolyBearTW' }
-        ],
-        search: {
-            provider: 'algolia',
-            options: {
-                appId: 'DO73KQBN99',
-                apiKey: '1696c6834514ebc31df7160f019742fe',
-                indexName: 'holybear.tw'
-            }
-        }
+        ]
     },
 
     // buildEnd 現在只專注於處理 Git 相關資訊，保持乾淨
