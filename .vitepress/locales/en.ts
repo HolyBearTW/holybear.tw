@@ -48,6 +48,9 @@ export default {
     search: {
       provider: 'algolia' as const,
         options: {
+        appId: 'DO73KQBN99',
+        apiKey: '1696c6834514ebc31df7160f019742fe',
+        indexName: 'holybear.tw',
         placeholder: 'Search articles',
         translations: {
           button: {
