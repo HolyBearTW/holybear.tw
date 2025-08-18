@@ -243,6 +243,17 @@ html.dark .VPHero .name {
     line-height: 1.25;
 }
 
+/* 部落格頁面 Hero 圖片縮小設定 */
+.VPHomeHero .image-container {
+    max-width: 180px !important;
+}
+
+.VPHomeHero .VPImage.image-src,
+.VPHomeHero img.image-src {
+    max-width: 180px !important;
+    max-height: 180px !important;
+}
+
 /* 首頁大標題漸層＋發光 */
 
 
