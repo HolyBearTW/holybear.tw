@@ -38,27 +38,33 @@ new Crawler({
       pathsToMatch: ["https://holybear.tw/**"],
       recordExtractor: ({ $, helpers, url }) => {
         
-        // 🔥 URL 正規化函數 - 靈活處理各種文章路徑格式
+        // 🔥 URL 正規化函數 - 確保搜尋結果有完整 URL
         const normalizeUrl = (urlStr) => {
           if (!urlStr) return '';
           
+          let normalizedPath = urlStr;
+          
           // 如果是完整 URL，提取路徑部分
-          if (urlStr.startsWith('https://holybear.tw')) {
-            urlStr = urlStr.replace('https://holybear.tw', '');
+          if (normalizedPath.startsWith('https://holybear.tw')) {
+            normalizedPath = normalizedPath.replace('https://holybear.tw', '');
           }
           
           // 確保以 / 開頭
-          if (!urlStr.startsWith('/')) {
-            urlStr = '/' + urlStr;
+          if (!normalizedPath.startsWith('/')) {
+            normalizedPath = '/' + normalizedPath;
           }
           
-          return urlStr
+          // 清理路徑
+          normalizedPath = normalizedPath
             .replace(/\.html$/, '')        // 移除 .html 後綴
             .replace(/\/index$/, '')       // 移除 /index
             .replace(/\/$/, '') || '/';    // 移除尾隨斜線，但保留根路徑
+          
+          // 返回完整 URL 供搜尋結果使用
+          return `https://holybear.tw${normalizedPath}`;
         };
 
-        // 正規化當前 URL - 確保返回相對路徑
+        // 正規化當前 URL - 確保返回完整 URL
         const normalizedUrl = normalizeUrl(url.href);
         
         // 🔥 額外的頁面過濾邏輯 - 確保不索引特定頁面
@@ -74,7 +80,7 @@ new Crawler({
           'https://holybear.tw/sitemap.xml'
         ];
         
-        if (excludeUrls.includes(url.href) || excludeUrls.includes('https://holybear.tw' + normalizedUrl)) {
+        if (excludeUrls.includes(url.href) || excludeUrls.includes(normalizedUrl)) {
           console.log(`[過濾] 頁面 ${url.href} 為排除的首頁/索引頁，已跳過索引。`);
           return [];
         }
@@ -133,7 +139,7 @@ new Crawler({
         return records.map((record) => {
           const newRecord = { ...record };
 
-          // 🔥 URL 正規化 - 確保所有 URL 都是相對路徑格式（不包含域名）
+          // 🔥 URL 正規化 - 確保所有 URL 都是完整的絕對 URL
           newRecord.url = normalizeUrl(newRecord.url || url.href);
           newRecord.url_without_anchor = normalizeUrl(
             newRecord.url_without_anchor || url.href
