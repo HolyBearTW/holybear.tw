@@ -26,11 +26,18 @@ export default defineConfig({
         ['meta', { name: 'theme-color', content: '#00FFEE' }],
         // Favicon 完整配置 - 支援各種設備和搜尋引擎
         ['link', { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }],
-        ['link', { rel: 'icon', type: 'image/png', sizes: '16x16', href: '/favicon.ico' }],
-        ['link', { rel: 'icon', type: 'image/png', sizes: '32x32', href: '/favicon.ico' }],
-        ['link', { rel: 'apple-touch-icon', sizes: '180x180', href: '/favicon.ico' }],
-        ['link', { rel: 'mask-icon', href: '/favicon.ico', color: '#00FFEE' }],
+        ['link', { rel: 'icon', type: 'image/png', sizes: '16x16', href: '/logo.png' }],
+        ['link', { rel: 'icon', type: 'image/png', sizes: '32x32', href: '/logo.png' }],
+        ['link', { rel: 'icon', type: 'image/png', sizes: '48x48', href: '/logo.png' }],
+        ['link', { rel: 'icon', type: 'image/png', sizes: '64x64', href: '/logo.png' }],
+        ['link', { rel: 'icon', type: 'image/png', sizes: '128x128', href: '/logo.png' }],
+        ['link', { rel: 'apple-touch-icon', sizes: '180x180', href: '/logo.png' }],
+        ['link', { rel: 'apple-touch-icon', sizes: '152x152', href: '/logo.png' }],
+        ['link', { rel: 'apple-touch-icon', sizes: '144x144', href: '/logo.png' }],
+        ['link', { rel: 'apple-touch-icon', sizes: '120x120', href: '/logo.png' }],
+        ['link', { rel: 'mask-icon', href: '/logo.png', color: '#00FFEE' }],
         ['meta', { name: 'msapplication-TileColor', content: '#00FFEE' }],
+        ['meta', { name: 'msapplication-TileImage', content: '/logo.png' }],
         ['link', {
             rel: 'stylesheet',
             href: '/fonts/LINESeed.css'
@@ -38,14 +45,36 @@ export default defineConfig({
         ['meta', { name: 'description', content: '聖小熊的個人網站，收錄 HyperOS 模組、技術筆記與開發心得，專注於 Android 客製化與開源創作分享。' }],
         ['meta', { name: 'keywords', content: '聖小熊, HolyBear, HyperOS, 模組, Mod, MIUI, Android, GitHub, 技術部落格, Blog' }],
         ['meta', { name: 'algolia-site-verification', content: 'ED2DF0361198D428' }],
-        // OG 標籤
+        // OG 標籤 - 加強搜尋引擎和社交媒體顯示
         ['meta', { property: 'og:title', content: '聖小熊的秘密基地' }],
         ['meta', { property: 'og:description', content: '聖小熊的個人網站，收錄 HyperOS 模組、技術筆記與開發心得，專注於 Android 客製化與開源創作分享。' }],
         ['meta', { property: 'og:image', content: 'https://holybear.tw/logo.png' }],
+        ['meta', { property: 'og:image:width', content: '1200' }],
+        ['meta', { property: 'og:image:height', content: '630' }],
+        ['meta', { property: 'og:image:alt', content: '聖小熊的秘密基地 Logo' }],
         ['meta', { property: 'og:type', content: 'website' }],
         ['meta', { property: 'og:url', content: 'https://holybear.tw' }],
-        ['meta', { property: 'og:site_name', content: '聖小熊的秘密基地' }], // 新增 og:site_name
-        ['meta', { name: 'twitter:card', content: 'summary' }]
+        ['meta', { property: 'og:site_name', content: '聖小熊的秘密基地' }],
+        ['meta', { property: 'og:locale', content: 'zh_TW' }],
+        // Twitter Card
+        ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
+        ['meta', { name: 'twitter:title', content: '聖小熊的秘密基地' }],
+        ['meta', { name: 'twitter:description', content: '聖小熊的個人網站，收錄 HyperOS 模組、技術筆記與開發心得，專注於 Android 客製化與開源創作分享。' }],
+        ['meta', { name: 'twitter:image', content: 'https://holybear.tw/logo.png' }],
+        ['meta', { name: 'twitter:image:alt', content: '聖小熊的秘密基地 Logo' }],
+        // 結構化資料 - 幫助 Google 理解網站
+        ['script', { type: 'application/ld+json' }, JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            "name": "聖小熊的秘密基地",
+            "description": "聖小熊的個人網站，收錄 HyperOS 模組、技術筆記與開發心得，專注於 Android 客製化與開源創作分享。",
+            "url": "https://holybear.tw",
+            "logo": "https://holybear.tw/logo.png",
+            "image": "https://holybear.tw/logo.png",
+            "sameAs": [
+                "https://github.com/HolyBearTW"
+            ]
+        })]
     ],
     vite: {
         plugins: [gitMetaPlugin()]
