@@ -234,7 +234,7 @@ export default defineConfig({
             provider: 'algolia',
             options: {
                 appId: 'DO73KQBN99',
-                apiKey: '1696c6834514ebc31df7160f019742fe',
+                apiKey: 'a39c1a5f28b4df6c35f69ab60c93135f',
                 indexName: 'holybear.tw'
             }
         }
