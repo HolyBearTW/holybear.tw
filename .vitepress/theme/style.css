@@ -540,6 +540,7 @@ html {
 
 /* 桌面版(>1200px) */
 @media (min-width: 1201px) {
+  /* 導航列對齊 - 只適用於非部落格頁面 */
   body:not(.is-blog-page) .VPNavBar {
     padding-left: calc(max(0px, calc(50vw - var(--main-width) / 2)) - 25px);
     padding-right: max(0px, calc(50vw - var(--main-width) / 2));
@@ -556,6 +557,20 @@ html {
     position: absolute;
     top: 0;
     right: calc(max(0px, calc(50vw - var(--main-width) / 2)) + var(--main-padding));
+  }
+  
+  /* Hero 區塊對齊 - 適用於所有頁面 */
+  .VPHomeHero {
+    padding-left: calc(max(0px, calc(50vw - var(--main-width) / 2)) + var(--main-padding)) !important;
+    padding-right: calc(max(0px, calc(50vw - var(--main-width) / 2)) + var(--main-padding)) !important;
+  }
+  .VPHomeHero .container {
+    width: var(--main-width) !important;
+    max-width: none !important;
+    margin: 0 auto;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    box-sizing: border-box;
   }
 }
 

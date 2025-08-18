@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>VitePress Hero Debug</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .debug { background: #f0f0f0; padding: 10px; margin: 10px 0; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>VitePress Hero 結構分析</h1>
+    <div class="debug">
+        <h2>預期的 VitePress Hero HTML 結構：</h2>
+        <pre>
+&lt;div class="VPHome"&gt;
+  &lt;div class="VPHomeHero VPHero"&gt;
+    &lt;div class="container"&gt;
+      &lt;div class="main"&gt;
+        &lt;div class="text"&gt;
+          &lt;h1 class="name"&gt;聖小熊的秘密基地&lt;/h1&gt;
+          &lt;p class="text"&gt;這是聖小熊的個人網站&lt;/p&gt;
+          &lt;p class="tagline"&gt;同時也是 HyperOS Mod 的個人作品集&lt;/p&gt;
+        &lt;/div&gt;
+        &lt;div class="image"&gt;
+          &lt;img src="/logo.png" alt="HolyBearTW"&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+        </pre>
+    </div>
+    
+    <div class="debug">
+        <h2>解決方案：</h2>
+        <p>1. 檢查實際的 DOM 結構是否符合我們的 CSS 選擇器</p>
+        <p>2. 使用瀏覽器開發者工具檢查元素</p>
+        <p>3. 如果結構不同，需要調整 CSS 選擇器</p>
+    </div>
+    
+    <script>
+        console.log('請在瀏覽器中打開 http://localhost:5173 並使用開發者工具檢查 Hero 區塊的實際 HTML 結構');
+        console.log('重點檢查：');
+        console.log('1. .VPHomeHero 的類名是否正確');
+        console.log('2. 文字和圖片的父容器結構');
+        console.log('3. 是否有其他的 CSS 覆蓋了我們的樣式');
+    </script>
+</body>
+</html>

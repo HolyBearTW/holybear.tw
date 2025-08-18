@@ -4,9 +4,9 @@ title: 日誌
 description: 日誌列表
 
 hero:
-  name: "聖小熊的日誌"
+  name: "聖小熊與夥伴們的日誌"
   text: "技術筆記與生活感悟"
-  tagline: "記錄我的學習軌跡和創作過程"
+  tagline: "記錄學習軌跡、創作過程與成長足跡"
   image:
     src: /logo.png
     alt: HolyBearTW Blog
