@@ -124,8 +124,8 @@ export default defineConfig({
                 // 預設作者
                 return {
                     "@type": "Person",
-                    "name": isEnglish ? "HolyBear" : "聖小熊",
-                    "url": "https://github.com/HolyBearTW"
+                    "name": isEnglish ? "holybear.tw" : "聖小熊的秘密基地",
+                    "url": "https://holybear.tw"
                 };
             };
             

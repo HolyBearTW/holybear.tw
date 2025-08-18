@@ -5,7 +5,7 @@ layout: home
 hero:
   name: "HolyBear's Blog"
   text: "My Personal Website"
-  tagline: "Also a personal collection of HyperOS Mod's works"
+  tagline: "HyperOS Mod Collection"
   image:
     src: /logo.png
     alt: HolyBearTW

@@ -22,16 +22,16 @@ export default {
             setInterval(forceBlogClass, 200);
 
             // --- 其餘原本功能 ---
-            let lastContent = null;
-            let hoverTimer = null;
+            let lastContent: string | null = null;
+            let hoverTimer: NodeJS.Timeout | null = null;
 
             function replayIfChanged() {
-                const doc = document.querySelector('.vp-doc');
+                const doc = document.querySelector('.vp-doc') as HTMLElement;
                 if (!doc) return;
                 const current = doc.innerHTML;
                 if (current !== lastContent) {
                     doc.classList.remove('fade-in-up');
-                    void doc.offsetWidth;
+                    void (doc as any).offsetWidth;
                     doc.classList.add('fade-in-up');
                     lastContent = current;
                 }
@@ -61,7 +61,7 @@ export default {
                                 anchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
                             }
                         }
-                    }, 120);
+                    }, 120) as NodeJS.Timeout;
                 }
             }
 
