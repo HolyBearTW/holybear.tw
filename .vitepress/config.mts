@@ -25,7 +25,7 @@ export default defineConfig({
     head: [
         ['meta', { name: 'theme-color', content: '#00FFEE' }],
         // Favicon 完整配置 - 支援各種設備和搜尋引擎
-        ['link', { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }],
+        ['link', { rel: 'icon', type: 'image/x-icon', href: '/logo.png' }],
         ['link', { rel: 'icon', type: 'image/png', sizes: '16x16', href: '/logo.png' }],
         ['link', { rel: 'icon', type: 'image/png', sizes: '32x32', href: '/logo.png' }],
         ['link', { rel: 'icon', type: 'image/png', sizes: '48x48', href: '/logo.png' }],
@@ -61,20 +61,7 @@ export default defineConfig({
         ['meta', { name: 'twitter:title', content: '聖小熊的秘密基地' }],
         ['meta', { name: 'twitter:description', content: '聖小熊的個人網站，收錄 HyperOS 模組、技術筆記與開發心得，專注於 Android 客製化與開源創作分享。' }],
         ['meta', { name: 'twitter:image', content: 'https://holybear.tw/logo.png' }],
-        ['meta', { name: 'twitter:image:alt', content: '聖小熊的秘密基地 Logo' }],
-        // 結構化資料 - 幫助 Google 理解網站
-        ['script', { type: 'application/ld+json' }, JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "WebSite",
-            "name": "聖小熊的秘密基地",
-            "description": "聖小熊的個人網站，收錄 HyperOS 模組、技術筆記與開發心得，專注於 Android 客製化與開源創作分享。",
-            "url": "https://holybear.tw",
-            "logo": "https://holybear.tw/logo.png",
-            "image": "https://holybear.tw/logo.png",
-            "sameAs": [
-                "https://github.com/HolyBearTW"
-            ]
-        })]
+        ['meta', { name: 'twitter:image:alt', content: '聖小熊的秘密基地 Logo' }]
     ],
     vite: {
         plugins: [gitMetaPlugin()]
