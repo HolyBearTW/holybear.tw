@@ -100,5 +100,6 @@ export default defineConfig({
     // buildEnd 現在只專注於處理 Git 相關資訊，保持乾淨
     buildEnd(siteConfig) {
         // 這裡不需要處理 Git 資訊，因為我們已經在 git-meta 插件中處理了
+        // 觸發重新部署 - 2025-08-18
     }
 })
