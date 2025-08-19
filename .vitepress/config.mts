@@ -231,7 +231,7 @@ export default defineConfig({
                 apiKey: '1696c6834514ebc31df7160f019742fe',
                 indexName: 'holybear.tw',
                 askAi: {
-                    assistantId: 'KVBOKZKDWB',
+                    assistantId: 'KYBDsKZa2aYe',
                     apiKey: process.env.OPENAI_API_KEY,
                     appId: 'DO73KQBN99',
                     indexName: 'holybear.tw'
