@@ -12,6 +12,7 @@
     "@algolia/client-search": "^5.35.0",
     "@docsearch/js": "3",
     "algoliasearch": "^5.35.0",
+    "dotenv": "^17.2.1",
     "firebase": "^12.1.0",
     "gray-matter": "^4.0.3",
     "instantsearch.js": "^4.79.2",

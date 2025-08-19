@@ -1,16 +1,10 @@
 import { defineConfig } from 'vitepress'
 import locales from './locales'
 import gitMetaPlugin from './git-meta'
-import { execSync } from 'child_process'
 import sidebar from './sidebar.generated'
+import { config } from 'dotenv'
 
-function getCurrentBranch() {
-    try {
-        return execSync('git rev-parse --abbrev-ref HEAD').toString().trim()
-    } catch (e) {
-        return ''
-    }
-}
+config()
 
 export default defineConfig({
     ignoreDeadLinks: true,
@@ -238,6 +232,7 @@ export default defineConfig({
                 indexName: 'holybear.tw',
                 askAi: {
                     assistantId: 'KVBOKZKDWB',
+                    apiKey: process.env.OPENAI_API_KEY,
                     appId: 'DO73KQBN99',
                     indexName: 'holybear.tw'
                 }
