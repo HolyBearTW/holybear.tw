@@ -2,9 +2,6 @@ import { defineConfig } from 'vitepress'
 import locales from './locales'
 import gitMetaPlugin from './git-meta'
 import sidebar from './sidebar.generated'
-import { config } from 'dotenv'
-
-config()
 
 export default defineConfig({
     ignoreDeadLinks: true,
@@ -233,9 +230,6 @@ export default defineConfig({
                 indexName: 'holybear.tw',
                 askAi: {
                     assistantId: 'KYBDsKZa2aYe',
-                    apiKey: process.env.OPENAI_API_KEY,
-                    appId: 'DO73KQBN99',
-                    indexName: 'holybear.tw'
                 }
             }
         }
