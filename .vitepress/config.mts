@@ -19,9 +19,9 @@ export default defineConfig({
     head: [
         ['meta', { name: 'theme-color', content: '#00FFEE' }],
         // Favicon 完整配置 - 支援各種設備和搜尋引擎
-        ['link', { rel: 'icon', type: 'image/x-icon', href: '/logo.png' }],
-        ['link', { rel: 'icon', type: 'image/png', sizes: '16x16', href: '/logo.png' }],
-        ['link', { rel: 'icon', type: 'image/png', sizes: '32x32', href: '/logo.png' }],
+        ['link', { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }],
+        ['link', { rel: 'icon', type: 'image/png', sizes: '16x16', href: '/favicon.png' }],
+        ['link', { rel: 'icon', type: 'image/png', sizes: '32x32', href: '/favicon.png' }],
         ['link', { rel: 'icon', type: 'image/png', sizes: '48x48', href: '/logo.png' }],
         ['link', { rel: 'icon', type: 'image/png', sizes: '64x64', href: '/logo.png' }],
         ['link', { rel: 'icon', type: 'image/png', sizes: '128x128', href: '/logo.png' }],
