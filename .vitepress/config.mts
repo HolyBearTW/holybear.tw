@@ -51,7 +51,8 @@ export default defineConfig({
         ['meta', { property: 'og:site_name', content: '聖小熊的秘密基地' }],
         ['meta', { property: 'og:locale', content: 'zh_TW' }],
         // Twitter Card
-        ['meta', { name: 'twitter:card', content: 'summary' }]
+        ['meta', { name: 'twitter:card', content: 'summary' }],
+        ['meta', { name: 'twitter:image', content: '/logo.png' }]
     ],
     vite: {
         plugins: [gitMetaPlugin()]
