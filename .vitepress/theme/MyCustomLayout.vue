@@ -89,7 +89,7 @@
                muted
                @ended="hideIntro"
                @error="hideIntro">
-            <source src="video/maple.mp4" type="video/mp4">
+            <source src="/video/maple.mp4" type="video/mp4">
         </video>
         <button @click="hideIntro" class="skip-btn">Skip</button>
     </div>
