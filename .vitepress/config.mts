@@ -229,7 +229,7 @@ export default defineConfig({
                 apiKey: '1696c6834514ebc31df7160f019742fe',
                 indexName: 'holybear.tw',
                 askAi: {
-                    assistantId: '92lljtOWgunY',
+                    assistantId: 'ZsmQH2xLw8lV',
                 }
             }
         }
