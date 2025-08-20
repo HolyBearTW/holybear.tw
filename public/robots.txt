@@ -40,4 +40,4 @@ Disallow: /
 # Custom Rule for specific file
 
 User-agent: *
-Disallow: /beanfun/GamaWWW/MapleStory/official/2020/videos/mKv.mp4
+Disallow: /video/maple.mp4
