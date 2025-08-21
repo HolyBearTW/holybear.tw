@@ -11,8 +11,8 @@ export default defineConfig({
     lang: 'zh-TW',
     locales: locales.locales,
     srcExclude: ['README.md'],
-    // 禁用 cleanUrls 以確保路由穩定性
-    cleanUrls: false,
+    // 啟用 cleanUrls，移除路由中的 .html 後綴
+    cleanUrls: true,
     head: [
         ['meta', { name: 'theme-color', content: '#00FFEE' }],
         // Favicon 完整配置 - 支援各種設備和搜尋引擎
