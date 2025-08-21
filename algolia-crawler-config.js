@@ -1,6 +1,5 @@
 new Crawler({
   appId: "DO73KQBN99",
-  apiKey: "366bffc838e72b5deeaa53539a41ec13",
   rateLimit: 8,
   startUrls: ["https://holybear.tw"],
   discoveryPatterns: ["https://holybear.tw/**"],
