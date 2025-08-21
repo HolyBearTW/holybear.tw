@@ -1,8 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://holybear.tw/Mod</loc></url>
-  <url><loc>https://holybear.tw/README</loc></url>
-  <url><loc>https://holybear.tw/README_en</loc></url>
   <url><loc>https://holybear.tw/blog/2025-05-25</loc></url>
   <url><loc>https://holybear.tw/blog/2025-05-26</loc></url>
   <url><loc>https://holybear.tw/blog/2025-06-06</loc></url>
@@ -14,8 +11,6 @@
   <url><loc>https://holybear.tw/blog/2025-07-06</loc></url>
   <url><loc>https://holybear.tw/blog/2025-07-18</loc></url>
   <url><loc>https://holybear.tw/blog/example-article</loc></url>
-  <url><loc>https://holybear.tw/blog//</loc></url>
-  <url><loc>https://holybear.tw/en/Mod</loc></url>
   <url><loc>https://holybear.tw/en/blog/2025-05-25</loc></url>
   <url><loc>https://holybear.tw/en/blog/2025-05-26</loc></url>
   <url><loc>https://holybear.tw/en/blog/2025-06-06</loc></url>
@@ -26,10 +21,7 @@
   <url><loc>https://holybear.tw/en/blog/2025-07-06-typhoon</loc></url>
   <url><loc>https://holybear.tw/en/blog/2025-07-06</loc></url>
   <url><loc>https://holybear.tw/en/blog/2025-07-18</loc></url>
-  <url><loc>https://holybear.tw/en/blog//</loc></url>
-  <url><loc>https://holybear.tw/en//</loc></url>
-  <url><loc>https://holybear.tw/favicon-design-guide</loc></url>
-  <url><loc>https://holybear.tw/index</loc></url>
-  <url><loc>https://holybear.tw/zh_TW/Mod</loc></url>
-  <url><loc>https://holybear.tw/zh_TW//</loc></url>
+  <url><loc>https://holybear.tw/en/blog/example-article</loc></url>
+  <url><loc>https://holybear.tw/en/Mod</loc></url>
+  <url><loc>https://holybear.tw/Mod</loc></url>
 </urlset>
