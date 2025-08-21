@@ -29,7 +29,7 @@ function isDirectory(filePath) {
 const allFiles = getAllMarkdownFiles('.');
 
 const urls = allFiles.map(file => {
-  const relativePath = path.relative('.', file).replace(/\\/g, '/'); // 修正正則表達式
+  const relativePath = path.relative('.', file).replace(/\\/g, '/');
   let slug = relativePath.replace(/\.md$/, '');
 
   // 如果是 index，改為根目錄
@@ -50,6 +50,13 @@ const urls = allFiles.map(file => {
 
   return `${BASE_URL}/${slug}`;
 }).filter(Boolean); // 過濾掉 null 條目
+
+// 確保首頁和英文版首頁被包含
+urls.push(`${BASE_URL}/`);
+urls.push(`${BASE_URL}/en/`);
+
+// 添加子網域 jackboy.holybear.tw
+urls.push(`https://jackboy.holybear.tw/`);
 
 const xml =
   `<?xml version="1.0" encoding="UTF-8"?>\n` +
