@@ -12,7 +12,7 @@ function getAllMarkdownFiles(dir) {
     const fullPath = path.join(dir, file);
     if (fs.statSync(fullPath).isDirectory()) {
       // 排除 node_modules 和其他不必要的資料夾
-      if (fullPath.includes('node_modules')) return;
+      if (fullPath.includes('node_modules') || fullPath.includes('public')) return;
       files = files.concat(getAllMarkdownFiles(fullPath));
     } else if (file.endsWith('.md')) {
       files.push(fullPath);
@@ -29,7 +29,7 @@ function isDirectory(filePath) {
 const allFiles = getAllMarkdownFiles('.');
 
 const urls = allFiles.map(file => {
-  const relativePath = path.relative('.', file).replace(/\\/g, '/');
+  const relativePath = path.relative('.', file).replace(/\\/g, '/'); // 修正正則表達式
   let slug = relativePath.replace(/\.md$/, '');
 
   // 如果是 index，改為根目錄
@@ -43,8 +43,13 @@ const urls = allFiles.map(file => {
     slug += '/';
   }
 
+  // 排除重複或無效的條目
+  if (slug === '' || slug === '/' || slug.endsWith('//') || slug.startsWith('zh_TW') || slug === 'index' || slug.startsWith('README')) {
+    return null;
+  }
+
   return `${BASE_URL}/${slug}`;
-});
+}).filter(Boolean); // 過濾掉 null 條目
 
 const xml =
   `<?xml version="1.0" encoding="UTF-8"?>\n` +
