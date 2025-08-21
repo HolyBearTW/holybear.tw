@@ -11,6 +11,8 @@ function getAllMarkdownFiles(dir) {
   fs.readdirSync(dir).forEach(file => {
     const fullPath = path.join(dir, file);
     if (fs.statSync(fullPath).isDirectory()) {
+      // 排除 node_modules 和其他不必要的資料夾
+      if (fullPath.includes('node_modules')) return;
       files = files.concat(getAllMarkdownFiles(fullPath));
     } else if (file.endsWith('.md')) {
       files.push(fullPath);
