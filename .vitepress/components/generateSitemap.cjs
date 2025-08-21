@@ -48,6 +48,11 @@ const urls = allFiles.map(file => {
     return null;
   }
 
+  // 過濾掉英文版中標記為 "Blog Not Supported in English" 的文章
+  if (slug.startsWith('en/blog') && fs.readFileSync(path.join('.', relativePath), 'utf-8').includes('Blog Not Supported in English')) {
+    return null;
+  }
+
   return `${BASE_URL}/${slug}`;
 }).filter(Boolean); // 過濾掉 null 條目
 
