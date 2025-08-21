@@ -212,6 +212,19 @@ export default defineConfig({
             cleanHead.push(['script', { type: 'application/ld+json' }, JSON.stringify(webpageSchema)]);
         }
 
+        // 動態生成 Canonical URL，處理資料夾和 index 頁面
+        let canonicalUrl = `${siteUrl}/${relativePath.replace(/\.md$/, '.html')}`;
+
+        // 如果是 index 頁面，將 Canonical URL 統一為對應資料夾的路徑（結尾加 /）
+        if (relativePath.endsWith('index.md')) {
+            canonicalUrl = `${siteUrl}/${relativePath.replace(/\/index\.md$/, '/')}`;
+        } else if (relativePath.endsWith('/')) {
+            // 如果是資料夾，確保 Canonical URL 結尾為 /
+            canonicalUrl = canonicalUrl.replace(/\.html$/, '/');
+        }
+
+        cleanHead.push(['link', { rel: 'canonical', href: canonicalUrl }]);
+
         return cleanHead;
     },
     // ✨ END: 整合所有 OG 標籤的最終邏輯 ✨
