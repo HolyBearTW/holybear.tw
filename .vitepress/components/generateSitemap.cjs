@@ -19,12 +19,29 @@ function getAllMarkdownFiles(dir) {
   return files;
 }
 
-// 只針對 blog/ 產生 sitemap，可根據需求擴充
-const blogFiles = getAllMarkdownFiles('blog');
+function isDirectory(filePath) {
+  return fs.existsSync(filePath) && fs.statSync(filePath).isDirectory();
+}
 
-const urls = blogFiles.map(file => {
-  const slug = file.replace(/^blog[\\/]/, '').replace(/\.md$/, '');
-  return `${BASE_URL}/blog/${slug}`;
+// 全站產生 sitemap
+const allFiles = getAllMarkdownFiles('.');
+
+const urls = allFiles.map(file => {
+  const relativePath = path.relative('.', file).replace(/\\/g, '/');
+  let slug = relativePath.replace(/\.md$/, '');
+
+  // 如果是 index，改為根目錄
+  if (slug.endsWith('/index')) {
+    slug = slug.replace(/\/index$/, '/');
+  }
+
+  // 如果是資料夾，避免被索引成 .html
+  const isDir = isDirectory(path.join('.', slug));
+  if (isDir) {
+    slug += '/';
+  }
+
+  return `${BASE_URL}/${slug}`;
 });
 
 const xml =
