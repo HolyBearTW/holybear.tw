@@ -79,18 +79,6 @@ export default {
                 replayIfChanged();
             }, 200);
 
-            // 改進 router.afterEach 的邏輯，避免使用 window.location.reload
-            if (router && typeof router.afterEach === 'function' && typeof router.addRoute === 'function') {
-                router.afterEach((to, from) => {
-                    if (to.path !== from.path) {
-                        // 更新 body 的 class
-                        forceBlogClass();
-                        // 其他需要執行的操作
-                        console.log(`Navigated from ${from.path} to ${to.path}`);
-                    }
-                });
-            }
-
             // 動態更新 canonical 與 OG 相關標籤（SPA）
             function updateCanonicalAndOg(): string {
                 const siteUrl = 'https://holybear.tw';
