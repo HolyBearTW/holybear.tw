@@ -88,7 +88,8 @@ export default defineConfig({
             const cleanHead = head.filter(tag =>
                 !(tag[0] === 'link' && tag[1]?.rel === 'canonical') &&
                 !(tag[1]?.property?.startsWith('og:')) &&
-                !(tag[1]?.type === 'application/ld+json')
+                !(tag[1]?.type === 'application/ld+json') &&
+                !(tag[1]?.name === 'x-page-image')
             );
 
             // --- 4. 加入正確的 canonical 與 OG 標籤 ---
@@ -99,6 +100,8 @@ export default defineConfig({
             cleanHead.push(['meta', { property: 'og:type', content: pageType }]);
             cleanHead.push(['meta', { property: 'og:url', content: pageUrl }]);
             cleanHead.push(['meta', { property: 'og:site_name', content: '聖小熊的秘密基地' }]);
+            // 提供給前端 SPA 更新使用
+            cleanHead.push(['meta', { name: 'x-page-image', content: pageImage }]);
 
             // --- 5. 根據頁面類型添加正確的 JSON-LD 結構化資料 ---
             if (isArticle) {

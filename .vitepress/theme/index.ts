@@ -125,11 +125,10 @@ export default {
                 }
                 ogUrl.setAttribute('content', pageUrl);
 
-                // 同步 og:title, og:description（與目前頁面的標題/描述一致）
+                // 同步 og:title, og:description
                 const docTitle = document.title || '';
                 const descEl = document.querySelector('meta[name="description"]') as HTMLMetaElement | null;
                 const docDesc = descEl?.content || '';
-
                 let ogTitle = document.querySelector('meta[property="og:title"]') as HTMLMetaElement | null;
                 if (!ogTitle) {
                     ogTitle = document.createElement('meta');
@@ -137,7 +136,6 @@ export default {
                     document.head.appendChild(ogTitle);
                 }
                 ogTitle.setAttribute('content', docTitle);
-
                 let ogDesc = document.querySelector('meta[property="og:description"]') as HTMLMetaElement | null;
                 if (!ogDesc) {
                     ogDesc = document.createElement('meta');
@@ -145,6 +143,27 @@ export default {
                     document.head.appendChild(ogDesc);
                 }
                 ogDesc.setAttribute('content', docDesc);
+
+                // 同步 og:image 與 twitter:image，優先使用 build 時注入的 x-page-image
+                const pageImageMeta = document.querySelector('meta[name="x-page-image"]') as HTMLMetaElement | null;
+                const pageImage = pageImageMeta?.content || '';
+                if (pageImage) {
+                    let ogImage = document.querySelector('meta[property="og:image"]') as HTMLMetaElement | null;
+                    if (!ogImage) {
+                        ogImage = document.createElement('meta');
+                        ogImage.setAttribute('property', 'og:image');
+                        document.head.appendChild(ogImage);
+                    }
+                    ogImage.setAttribute('content', pageImage);
+
+                    let twitterImage = document.querySelector('meta[name="twitter:image"]') as HTMLMetaElement | null;
+                    if (!twitterImage) {
+                        twitterImage = document.createElement('meta');
+                        twitterImage.setAttribute('name', 'twitter:image');
+                        document.head.appendChild(twitterImage);
+                    }
+                    twitterImage.setAttribute('content', pageImage);
+                }
             }
 
             // 初始同步一次
