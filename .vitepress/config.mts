@@ -58,31 +58,17 @@ export default defineConfig({
             const { frontmatter, relativePath } = pageData;
 
             // 即使是首頁也要處理
-            if (!relativePath) return head;
+            if (relativePath == null) return head;
 
-            // 移除 .md 和 .html 後綴，並更新 URL
-            const cleanUrl = `${siteUrl}/${relativePath`
+            // --- 常數與路徑正規化 ---
+            const siteUrl = 'https://holybear.tw';
+            const normalizedPath = ('/' + String(relativePath).replace(/\\/g, '/'))
                 .replace(/\.md$/, '')
                 .replace(/\/index$/, '/')
-                .replace(/\.html$/, '')}`;
-
-            // 更新 og:url 和 canonical URL
-            const ogUrlTag = head.find(tag => tag[1]?.property === 'og:url');
-            if (ogUrlTag) {
-                ogUrlTag[1].content = cleanUrl;
-            } else {
-                head.push(['meta', { property: 'og:url', content: cleanUrl }]);
-            }
-
-            const canonicalTag = head.find(tag => tag[0] === 'link' && tag[1]?.rel === 'canonical');
-            if (canonicalTag) {
-                canonicalTag[1].href = cleanUrl;
-            } else {
-                head.push(['link', { rel: 'canonical', href: cleanUrl }]);
-            }
+                .replace(/\.html$/, '');
+            const pageUrl = siteUrl + normalizedPath; // e.g. https://holybear.tw/blog/2025-07-06
 
             // --- 1. 取得預設值和頁面專屬值 ---
-            const siteUrl = 'https://holybear.tw';
             const defaultTitle = head.find(tag => tag[1]?.property === 'og:title')?.[1].content || '';
             const defaultDesc = head.find(tag => tag[1]?.name === 'description')?.[1].content || '';
             const defaultImage = head.find(tag => tag[1]?.property === 'og:image')?.[1].content || '';
@@ -95,22 +81,24 @@ export default defineConfig({
 
             // --- 2. 決定 OG Type 和檢查是否為首頁 ---
             const isHomePage = normalizedPath === '/' || normalizedPath === '';
-            const isArticle = normalizedPath.startsWith('blog/') || normalizedPath.startsWith('en/blog/');
+            const isArticle = normalizedPath.startsWith('/blog/') || normalizedPath.startsWith('/en/blog/');
             const pageType = isArticle ? 'article' : 'website';
 
-            // --- 3. 移除 head 中所有舊的 OG 標籤和 JSON-LD 腳本，確保乾淨 ---
+            // --- 3. 移除 head 中舊的 OG / canonical / JSON-LD，確保乾淨 ---
             const cleanHead = head.filter(tag =>
+                !(tag[0] === 'link' && tag[1]?.rel === 'canonical') &&
                 !(tag[1]?.property?.startsWith('og:')) &&
                 !(tag[1]?.type === 'application/ld+json')
             );
 
-            // --- 4. 加入全新的、正確的 OG 標籤 ---
+            // --- 4. 加入正確的 canonical 與 OG 標籤 ---
+            cleanHead.push(['link', { rel: 'canonical', href: pageUrl }]);
             cleanHead.push(['meta', { property: 'og:title', content: pageTitle }]);
             cleanHead.push(['meta', { property: 'og:description', content: pageDescription }]);
             cleanHead.push(['meta', { property: 'og:image', content: pageImage }]);
             cleanHead.push(['meta', { property: 'og:type', content: pageType }]);
-            cleanHead.push(['meta', { property: 'og:url', content: siteUrl }]);
-            cleanHead.push(['meta', { property: 'og:site_name', content: '聖小熊的秘密基地' }]); // 確保每頁都有 og:site_name
+            cleanHead.push(['meta', { property: 'og:url', content: pageUrl }]);
+            cleanHead.push(['meta', { property: 'og:site_name', content: '聖小熊的秘密基地' }]);
 
             // --- 5. 根據頁面類型添加正確的 JSON-LD 結構化資料 ---
             if (isArticle) {
@@ -163,7 +151,7 @@ export default defineConfig({
                     "headline": pageTitle,
                     "description": pageDescription,
                     "image": pageImage,
-                    "url": `${siteUrl}/${relativePath.replace(/\.md$/, '.html')}`,
+                    "url": pageUrl,
                     "author": authorInfo,
                     "publisher": {
                         "@type": "Organization",
@@ -220,7 +208,7 @@ export default defineConfig({
                     "@context": "https://schema.org",
                     "@type": "WebPage",
                     "name": pageTitle,
-                    "url": `${siteUrl}/${relativePath.replace(/\.md$/, '.html')}`,
+                    "url": pageUrl,
                     "description": pageDescription,
                     "isPartOf": {
                         "@type": "WebSite",
