@@ -216,12 +216,24 @@ export default defineConfig({
                 cleanHead.push(['script', { type: 'application/ld+json' }, JSON.stringify(webpageSchema)]);
             }
 
-            // 移除 .html 後綴並更新 URL
-            const cleanUrl = `${siteUrl}/${relativePath.replace(/\.html$/, '')}`;
+            // --- 3. 更新 og:url 和 canonical 的邏輯 ---
+            const pageUrl = `${siteUrl}${normalizedPath}`;
 
-            // 更新 og:url 和 canonical URL
-            cleanHead.push(['meta', { property: 'og:url', content: cleanUrl }]);
-            cleanHead.push(['link', { rel: 'canonical', href: cleanUrl }]);
+            // 更新 og:url
+            const ogUrlTag = head.find(tag => tag[1]?.property === 'og:url');
+            if (ogUrlTag) {
+                ogUrlTag[1].content = pageUrl;
+            } else {
+                head.push(['meta', { property: 'og:url', content: pageUrl }]);
+            }
+
+            // 更新 canonical
+            const canonicalTag = head.find(tag => tag[0] === 'link' && tag[1]?.rel === 'canonical');
+            if (canonicalTag) {
+                canonicalTag[1].href = pageUrl;
+            } else {
+                head.push(['link', { rel: 'canonical', href: pageUrl }]);
+            }
 
             return cleanHead;
     },
