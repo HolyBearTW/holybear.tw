@@ -77,11 +77,16 @@ export default {
             }, 200);
 
             // 修正強制刷新邏輯，避免無限刷新
-            router.afterEach((to, from) => {
-                if (to.path !== from.path && !to.hash) {
-                    window.location.reload();
-                }
-            });
+            // 修正 router.afterEach 的檢查邏輯，避免非 Vue Router 實例導致錯誤
+            if (router && typeof router.afterEach === 'function') {
+                router.afterEach((to, from) => {
+                    if (to.path !== from.path && !to.hash) {
+                        window.location.reload();
+                    }
+                });
+            } else {
+                console.warn('Router instance does not support afterEach.');
+            }
         }
     }
 }
