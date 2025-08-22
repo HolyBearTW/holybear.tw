@@ -70,8 +70,11 @@ export default {
                 setTimeout(() => {
                     replayIfChanged();
                     setupGlobalOutlineHoverScroll();
+                    updateCanonicalAndOg();
                 }, 80);
             });
+            // 初始也同步一次
+            updateCanonicalAndOg();
             setInterval(() => {
                 replayIfChanged();
             }, 200);
@@ -87,6 +90,46 @@ export default {
                     }
                 });
             }
+
+            // 動態更新 canonical 與 og:url，確保 SPA 導航時正確變更
+            function updateCanonicalAndOg() {
+                const siteUrl = 'https://holybear.tw';
+                const cleanPath = (path: string) => {
+                    let p = path;
+                    // 移除結尾的 /index 或 /index.html
+                    p = p.replace(/\/index(?:\.html)?$/, '/');
+                    // 移除 .html 後綴
+                    p = p.replace(/\.html$/, '');
+                    // 確保以 / 開頭
+                    if (!p.startsWith('/')) p = '/' + p;
+                    return p;
+                };
+                const pageUrl = siteUrl + cleanPath(window.location.pathname);
+
+                // 更新/建立 canonical link
+                let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+                if (!canonical) {
+                    canonical = document.createElement('link');
+                    canonical.setAttribute('rel', 'canonical');
+                    document.head.appendChild(canonical);
+                }
+                canonical.setAttribute('href', pageUrl);
+
+                // 更新/建立 og:url
+                let ogUrl = document.querySelector('meta[property="og:url"]') as HTMLMetaElement | null;
+                if (!ogUrl) {
+                    ogUrl = document.createElement('meta');
+                    ogUrl.setAttribute('property', 'og:url');
+                    document.head.appendChild(ogUrl);
+                }
+                ogUrl.setAttribute('content', pageUrl);
+            }
+
+            window.addEventListener('vitepress:pageview', () => {
+                setTimeout(() => {
+                    updateCanonicalAndOg();
+                }, 80);
+            });
         }
     }
 }
