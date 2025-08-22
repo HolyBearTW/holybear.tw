@@ -60,10 +60,26 @@ export default defineConfig({
             // 即使是首頁也要處理
             if (!relativePath) return head;
 
-            // 移除 index，確保首頁和部落格列表以 / 結尾
-            const normalizedPath = relativePath
-                .replace(/\.md$/, '') // 移除 .md 後綴
-                .replace(/\/index$/, '/'); // 將 index 替換為 /
+            // 移除 .md 和 .html 後綴，並更新 URL
+            const cleanUrl = `${siteUrl}/${relativePath`
+                .replace(/\.md$/, '')
+                .replace(/\/index$/, '/')
+                .replace(/\.html$/, '')}`;
+
+            // 更新 og:url 和 canonical URL
+            const ogUrlTag = head.find(tag => tag[1]?.property === 'og:url');
+            if (ogUrlTag) {
+                ogUrlTag[1].content = cleanUrl;
+            } else {
+                head.push(['meta', { property: 'og:url', content: cleanUrl }]);
+            }
+
+            const canonicalTag = head.find(tag => tag[0] === 'link' && tag[1]?.rel === 'canonical');
+            if (canonicalTag) {
+                canonicalTag[1].href = cleanUrl;
+            } else {
+                head.push(['link', { rel: 'canonical', href: cleanUrl }]);
+            }
 
             // --- 1. 取得預設值和頁面專屬值 ---
             const siteUrl = 'https://holybear.tw';
@@ -214,25 +230,6 @@ export default defineConfig({
                 };
 
                 cleanHead.push(['script', { type: 'application/ld+json' }, JSON.stringify(webpageSchema)]);
-            }
-
-            // --- 3. 更新 og:url 和 canonical 的邏輯 ---
-            const pageUrl = `${siteUrl}${normalizedPath}`;
-
-            // 更新 og:url
-            const ogUrlTag = head.find(tag => tag[1]?.property === 'og:url');
-            if (ogUrlTag) {
-                ogUrlTag[1].content = pageUrl;
-            } else {
-                head.push(['meta', { property: 'og:url', content: pageUrl }]);
-            }
-
-            // 更新 canonical
-            const canonicalTag = head.find(tag => tag[0] === 'link' && tag[1]?.rel === 'canonical');
-            if (canonicalTag) {
-                canonicalTag[1].href = pageUrl;
-            } else {
-                head.push(['link', { rel: 'canonical', href: pageUrl }]);
             }
 
             return cleanHead;

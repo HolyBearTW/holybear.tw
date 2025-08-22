@@ -76,12 +76,14 @@ export default {
                 replayIfChanged();
             }, 200);
 
-            // 修正強制刷新邏輯，避免無限刷新
-            // 改進 router 的檢查邏輯，避免使用字串檢查
+            // 改進 router.afterEach 的邏輯，避免使用 window.location.reload
             if (router && typeof router.afterEach === 'function' && typeof router.addRoute === 'function') {
                 router.afterEach((to, from) => {
-                    if (to.path !== from.path && !to.hash) {
-                        window.location.reload();
+                    if (to.path !== from.path) {
+                        // 更新 body 的 class
+                        forceBlogClass();
+                        // 其他需要執行的操作
+                        console.log(`Navigated from ${from.path} to ${to.path}`);
                     }
                 });
             }
