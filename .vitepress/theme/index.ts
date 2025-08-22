@@ -3,7 +3,7 @@ import './style.css'
 
 export default {
     Layout: MyCustomLayout,
-    enhanceApp() {
+    enhanceApp({ router }) {
         if (typeof window !== 'undefined') {
             function isBlogPage(path) {
                 return /^\/(en\/)?blog\/(?!index$)[^/]+(?:\.html)?(?:[?#].*)?$/.test(path);
@@ -37,14 +37,6 @@ export default {
                 }
             }
 
-            function replaceDocSearchHitSource() {
-                document.querySelectorAll('.DocSearch-Hit-source').forEach(el => {
-                    if (el.textContent === "Documentation") {
-                        el.textContent = "搜尋結果";
-                    }
-                });
-            }
-
             function globalHoverDelegate(e) {
                 const link = e.target.closest('.outline-link');
                 if (
@@ -72,20 +64,24 @@ export default {
 
             window.addEventListener('DOMContentLoaded', () => {
                 replayIfChanged();
-                replaceDocSearchHitSource();
                 setupGlobalOutlineHoverScroll();
             });
             window.addEventListener('vitepress:pageview', () => {
                 setTimeout(() => {
                     replayIfChanged();
-                    replaceDocSearchHitSource();
                     setupGlobalOutlineHoverScroll();
                 }, 80);
             });
             setInterval(() => {
                 replayIfChanged();
-                replaceDocSearchHitSource();
             }, 200);
+
+            // 強制刷新邏輯，確保路由變化後正確更新
+            router.afterEach((to, from) => {
+                if (to.path !== from.path) {
+                    window.location.reload();
+                }
+            });
         }
     }
 }
