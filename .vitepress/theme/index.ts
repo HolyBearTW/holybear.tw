@@ -92,7 +92,7 @@ export default {
             }
 
             // 動態更新 canonical 與 OG 相關標籤（SPA）
-            function updateCanonicalAndOg() {
+            function updateCanonicalAndOg(): string {
                 const siteUrl = 'https://holybear.tw';
                 const getCleanPath = (path: string) => {
                     let p = path || '/';
@@ -144,7 +144,7 @@ export default {
                 }
                 ogDesc.setAttribute('content', docDesc);
 
-                // 同步 og:image 與 twitter:image，優先使用 build 時注入的 x-page-image
+                // 同步 og:image 與 twitter:image（優先 x-page-image，無則維持現值）
                 const pageImageMeta = document.querySelector('meta[name="x-page-image"]') as HTMLMetaElement | null;
                 const pageImage = pageImageMeta?.content || '';
                 if (pageImage) {
@@ -164,10 +164,12 @@ export default {
                     }
                     twitterImage.setAttribute('content', pageImage);
                 }
+
+                return pageUrl;
             }
 
-            // 初始同步一次
-            updateCanonicalAndOg();
+            // 初始同步一次，並保存最後同步的 URL
+            let lastSyncedUrl = updateCanonicalAndOg();
 
             // 使用 VitePress Router 的 hook（若存在）
             if (router && typeof router.onAfterRouteChanged === 'function') {
@@ -176,7 +178,7 @@ export default {
                     setTimeout(() => {
                         replayIfChanged();
                         setupGlobalOutlineHoverScroll();
-                        updateCanonicalAndOg();
+                        lastSyncedUrl = updateCanonicalAndOg();
                     }, 50);
                 });
             }
@@ -186,12 +188,29 @@ export default {
                 setTimeout(() => {
                     replayIfChanged();
                     setupGlobalOutlineHoverScroll();
-                    updateCanonicalAndOg();
+                    lastSyncedUrl = updateCanonicalAndOg();
                 }, 80);
             });
 
-            // 不再使用 Vue Router 的 afterEach（VitePress router 並非 Vue Router）
-            // 先前代碼移除，避免誤用
+            // 退而求其次：定期輪詢網址是否有變，若變則強制同步 head
+            const HEAD_SYNC_INTERVAL = 1200; // ms
+            setInterval(() => {
+                const siteUrl = 'https://holybear.tw';
+                const currentPath = window.location.pathname
+                    .replace(/\/index(?:\.html)?$/, '/')
+                    .replace(/\.html$/, '');
+                const normalized = currentPath.startsWith('/') ? currentPath : '/' + currentPath;
+                const currentUrl = siteUrl + normalized;
+
+                const canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+                const ogUrl = document.querySelector('meta[property="og:url"]') as HTMLMetaElement | null;
+
+                const mismatch = !canonical || canonical.href !== currentUrl || !ogUrl || ogUrl.content !== currentUrl;
+                const urlChanged = currentUrl !== lastSyncedUrl;
+                if (urlChanged || mismatch) {
+                    lastSyncedUrl = updateCanonicalAndOg();
+                }
+            }, HEAD_SYNC_INTERVAL);
         }
     }
 }
