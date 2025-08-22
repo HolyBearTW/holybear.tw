@@ -91,11 +91,11 @@ export default {
                 });
             }
 
-            // 動態更新 canonical 與 og:url，確保 SPA 導航時正確變更
+            // 動態更新 canonical 與 OG 相關標籤（SPA）
             function updateCanonicalAndOg() {
                 const siteUrl = 'https://holybear.tw';
-                const cleanPath = (path: string) => {
-                    let p = path;
+                const getCleanPath = (path: string) => {
+                    let p = path || '/';
                     // 移除結尾的 /index 或 /index.html
                     p = p.replace(/\/index(?:\.html)?$/, '/');
                     // 移除 .html 後綴
@@ -104,18 +104,19 @@ export default {
                     if (!p.startsWith('/')) p = '/' + p;
                     return p;
                 };
-                const pageUrl = siteUrl + cleanPath(window.location.pathname);
+                const pagePath = getCleanPath(window.location.pathname);
+                const pageUrl = siteUrl + pagePath;
 
-                // 更新/建立 canonical link
+                // canonical
                 let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
                 if (!canonical) {
                     canonical = document.createElement('link');
-                    canonical.setAttribute('rel', 'canonical');
+                    canonical.rel = 'canonical';
                     document.head.appendChild(canonical);
                 }
-                canonical.setAttribute('href', pageUrl);
+                canonical.href = pageUrl;
 
-                // 更新/建立 og:url
+                // og:url
                 let ogUrl = document.querySelector('meta[property="og:url"]') as HTMLMetaElement | null;
                 if (!ogUrl) {
                     ogUrl = document.createElement('meta');
@@ -123,13 +124,55 @@ export default {
                     document.head.appendChild(ogUrl);
                 }
                 ogUrl.setAttribute('content', pageUrl);
+
+                // 同步 og:title, og:description（與目前頁面的標題/描述一致）
+                const docTitle = document.title || '';
+                const descEl = document.querySelector('meta[name="description"]') as HTMLMetaElement | null;
+                const docDesc = descEl?.content || '';
+
+                let ogTitle = document.querySelector('meta[property="og:title"]') as HTMLMetaElement | null;
+                if (!ogTitle) {
+                    ogTitle = document.createElement('meta');
+                    ogTitle.setAttribute('property', 'og:title');
+                    document.head.appendChild(ogTitle);
+                }
+                ogTitle.setAttribute('content', docTitle);
+
+                let ogDesc = document.querySelector('meta[property="og:description"]') as HTMLMetaElement | null;
+                if (!ogDesc) {
+                    ogDesc = document.createElement('meta');
+                    ogDesc.setAttribute('property', 'og:description');
+                    document.head.appendChild(ogDesc);
+                }
+                ogDesc.setAttribute('content', docDesc);
             }
 
+            // 初始同步一次
+            updateCanonicalAndOg();
+
+            // 使用 VitePress Router 的 hook（若存在）
+            if (router && typeof router.onAfterRouteChanged === 'function') {
+                router.onAfterRouteChanged(() => {
+                    // 略延後以等待內容與標題/描述更新
+                    setTimeout(() => {
+                        replayIfChanged();
+                        setupGlobalOutlineHoverScroll();
+                        updateCanonicalAndOg();
+                    }, 50);
+                });
+            }
+
+            // 仍保留頁面瀏覽事件（部分外掛會派送）
             window.addEventListener('vitepress:pageview', () => {
                 setTimeout(() => {
+                    replayIfChanged();
+                    setupGlobalOutlineHoverScroll();
                     updateCanonicalAndOg();
                 }, 80);
             });
+
+            // 不再使用 Vue Router 的 afterEach（VitePress router 並非 Vue Router）
+            // 先前代碼移除，避免誤用
         }
     }
 }
