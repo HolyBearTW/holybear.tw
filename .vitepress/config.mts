@@ -39,7 +39,7 @@ export default defineConfig({
         // OG 標籤 - 加強搜尋引擎和社交媒體顯示
         ['meta', { property: 'og:title', content: '聖小熊的秘密基地' }],
         ['meta', { property: 'og:description', content: '聖小熊的個人網站，收錄 HyperOS 模組、技術筆記與開發心得，專注於 Android 客製化與開源創作分享。' }],
-        ['meta', { property: 'og:image', content: 'https://holybear.tw/favicon.png' }],
+        ['meta', { property: 'og:image', content: 'https://holybear.tw/logo.png' }],
         ['meta', { property: 'og:image:width', content: '1200' }],
         ['meta', { property: 'og:image:height', content: '630' }],
         ['meta', { property: 'og:image:alt', content: '聖小熊的秘密基地 Logo' }],
