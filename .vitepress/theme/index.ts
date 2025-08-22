@@ -76,9 +76,9 @@ export default {
                 replayIfChanged();
             }, 200);
 
-            // 強制刷新邏輯，確保路由變化後正確更新
+            // 修正強制刷新邏輯，避免無限刷新
             router.afterEach((to, from) => {
-                if (to.path !== from.path) {
+                if (to.path !== from.path && !to.hash) {
                     window.location.reload();
                 }
             });

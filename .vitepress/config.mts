@@ -249,16 +249,10 @@ export default defineConfig({
 
     transformHtml: (_, id, { pageData }) => {
         if (id.endsWith('.html')) {
-            pageData.canonicalUrl = pageData.canonicalUrl.replace(/\.html$/, '');
-        }
-    },
-
-    // 強制刷新邏輯，確保路由變化後正確更新
-    enhanceApp({ router }) {
-        router.afterEach((to, from) => {
-            if (to.path !== from.path) {
-                window.location.reload();
+            const canonicalUrl = pageData?.frontmatter?.canonicalUrl || '';
+            if (canonicalUrl) {
+                pageData.frontmatter.canonicalUrl = canonicalUrl.replace(/\.html$/, '');
             }
-        });
+        }
     },
 })
