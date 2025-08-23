@@ -188,29 +188,31 @@ watch(currentPage, async () => {
            @error="onImgError"
            style="object-fit: contain;" />
     </div>
-    <div class="meta">
-      <div class="title">{{ post.title }}</div>
-      <div class="badges" v-if="post.category.length || post.tags.length">
-        <!-- 類別標籤（主題色） -->
-        <span v-for="c in post.category" :key="'cat-' + c" class="badge category">{{ c }}</span>
-        <!-- TAG標籤（原樣式） -->
-        <span v-for="t in post.tags" :key="'tag-' + t" class="badge tag">{{ t }}</span>
+    <ClientOnly>
+      <div class="meta">
+        <div class="title">{{ post.title }}</div>
+        <div class="badges" v-if="post.category.length || post.tags.length">
+          <!-- 類別標籤（主題色） -->
+          <span v-for="c in post.category" :key="'cat-' + c" class="badge category">{{ c }}</span>
+          <!-- TAG標籤（原樣式） -->
+          <span v-for="t in post.tags" :key="'tag-' + t" class="badge tag">{{ t }}</span>
+        </div>
+        <div class="byline">
+          <template v-if="getAuthorMeta(post.author)?.login">
+            <a class="author" :href="getAuthorMeta(post.author).url" target="_blank" rel="noopener">
+              <img class="avatar" :src="`https://github.com/${getAuthorMeta(post.author).login}.png`" :alt="getAuthorMeta(post.author).name" />
+              <span class="name">{{ getAuthorMeta(post.author).name }}</span>
+            </a>
+          </template>
+          <template v-else>
+            <span class="name">{{ post.author }}</span>
+          </template>
+          <span class="dot">•</span>
+          <time :datetime="post.date">{{ formatDate(post.date) }}</time>
+        </div>
+        <p class="desc" v-if="post.summary">{{ post.summary }}</p>
       </div>
-      <div class="byline">
-        <template v-if="getAuthorMeta(post.author)?.login">
-          <a class="author" :href="getAuthorMeta(post.author).url" target="_blank" rel="noopener">
-            <img class="avatar" :src="`https://github.com/${getAuthorMeta(post.author).login}.png`" :alt="getAuthorMeta(post.author).name" />
-            <span class="name">{{ getAuthorMeta(post.author).name }}</span>
-          </a>
-        </template>
-        <template v-else>
-          <span class="name">{{ post.author }}</span>
-        </template>
-        <span class="dot">•</span>
-        <time :datetime="post.date">{{ formatDate(post.date) }}</time>
-      </div>
-      <p class="desc" v-if="post.summary">{{ post.summary }}</p>
-    </div>
+    </ClientOnly>
   </a>
 </div>
 
