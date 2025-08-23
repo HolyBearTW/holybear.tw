@@ -33,11 +33,15 @@ function toSidebar(files, baseDir) {
 
     for (const file of files) {
         const rel = path.relative(baseDir, file).replace(/\\/g, '/')
+    // 過濾 blog_list
+    if (rel.includes('blog_list')) continue
         // 決定 link prefix
         let linkPrefix = '/blog/'
         if (baseDir.endsWith('en/blog')) linkPrefix = '/en/blog/'
 
         const link = linkPrefix + rel.replace(/\.md$/, '')
+    if (link.includes('blog_list')) continue
+
         const rawContent = fs.readFileSync(file, 'utf8')
         let title = null, listdate = null
 

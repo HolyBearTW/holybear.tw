@@ -8,15 +8,15 @@ export default [
       },
       {
         "text": "Life on a Tightrope: A Young Person's Yearning for Freedom",
-        "link": "/en/blog/2025-06-13"
+        "link": "/blog/2025-06-13"
       }
     ]
   },
   {
     "items": [
       {
-        "text": "Back to blog list",
-        "link": "/en/blog/index"
+        "text": "回文章列表",
+        "link": "/blog/index"
       }
     ]
   }

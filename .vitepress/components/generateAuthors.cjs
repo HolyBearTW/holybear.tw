@@ -26,11 +26,12 @@ function getAllMarkdownFiles(dir, arr = []) {
 }
 
 function shouldSkip({ title, description }, url) {
-  // 跳過 placeholder 或 index 頁
+  // 跳過 placeholder、index 頁、blog_list
   return (
     (typeof title === 'string' && title.includes('Blog Not Supported in English')) ||
     (typeof description === 'string' && description.includes('Blog Not Supported in English')) ||
-    url.endsWith('/index')
+    url.endsWith('/index') ||
+    url.includes('blog_list')
   );
 }
 

@@ -29,8 +29,12 @@ function isDirectory(filePath) {
 const allFiles = getAllMarkdownFiles('.');
 
 const urls = allFiles.map(file => {
+
   const relativePath = path.relative('.', file).replace(/\\/g, '/');
   let slug = relativePath.replace(/\.md$/, '');
+
+  // 過濾 blog_list
+  if (slug.includes('blog_list')) return null;
 
   // 如果是 index，改為根目錄
   if (slug.endsWith('/index')) {
