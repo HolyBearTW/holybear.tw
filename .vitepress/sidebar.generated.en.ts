@@ -3,6 +3,10 @@ export default [
   {
     "items": [
       {
+        "text": "Blog Posts",
+        "link": "/en/blog/blog_list"
+      },
+      {
         "text": "Life on a Tightrope: A Young Person's Yearning for Freedom",
         "link": "/en/blog/2025-06-13"
       }

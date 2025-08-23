@@ -1,7 +1,7 @@
 ---
 layout: home
-title: Blog Posts
-description: List of blog posts
+title: Blog
+description: HolyBear and Friends' Blog
 
 hero:
   name: "HolyBear's Blog"
@@ -12,29 +12,30 @@ hero:
     alt: HolyBearTW Blog
   actions:
     - theme: brand
-      text: Latest Posts
-      link: "#recent-posts"
+      text: Switch to Old List
+      link: "/en/blog/blog_list"
     - theme: alt
-      text: Back to Home
-      link: /en/
+      text: Jump to Bottom
+      link: "#bottom"
+    - theme: alt
+      text: Back to Main Site
+      link: "/en/"
 ---
 
-<script setup>
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+<script setup lang="ts">
 import { useAuthors } from '../../.vitepress/components/useAuthors.js'
 import { data as allPosts } from '../../.vitepress/theme/en/post.data.ts'
-import PostMeta from '../../.vitepress/theme/PostMeta.vue'
+import { onMounted, onUnmounted, nextTick, ref, computed, watch } from 'vue'
 
-// 呼叫 Composable，獲取共用的作者資料和語系狀態
-const { authorsData, isEnglish } = useAuthors()
+import { useRoute } from 'vitepress'
 
-onMounted(() => {
-  document.body.classList.add('blog-index-page')
+const route = useRoute()
+watch(() => route.path, () => {
+  if (window.location.hash) window.location.hash = ''
 })
 
-onUnmounted(() => {
-  document.body.classList.remove('blog-index-page')
-})
+// Use composable to get shared author data and language state
+const { getAuthorMeta, authorsData, isEnglish } = useAuthors()
 
 const displayAuthors = computed(() => {
   return Object.keys(authorsData).map(login => {
@@ -47,17 +48,42 @@ const displayAuthors = computed(() => {
   })
 })
 
-const postsWithDate = allPosts.filter(Boolean)
+// Format date as YYYY-MM-DD
+const formatDate = (dateString: string) => {
+  if (!dateString) return 'Unknown Date'
+  const date = new Date(dateString)
+  if (isNaN(date.getTime())) {
+    console.warn('Invalid date:', dateString)
+    return 'Unknown Date'
+  }
+  return date.toISOString().slice(0, 10)
+}
+
+const fallbackImg = '/blog_no_image.svg'
+const onImgError = (e: Event) => {
+  const img = e.target as HTMLImageElement
+  if (img && img.src !== fallbackImg) img.src = fallbackImg
+}
+
+const posts = allPosts.filter(
+  post => Boolean(post) && post.url !== '/en/blog/blog_list'
+).map(post => ({
+  ...post,
+  image: post.image || fallbackImg,
+  tags: Array.isArray(post.tags) ? post.tags : (Array.isArray(post.tag) ? post.tag : (post.tag ? [post.tag] : [])),
+  category: Array.isArray(post.category) ? post.category : (post.category ? [post.category] : [])
+}))
 
 const postsPerPage = 10
 const currentPage = ref(1)
-const totalPages = computed(() => Math.ceil(postsWithDate.length / postsPerPage))
+const totalPages = computed(() => Math.ceil(posts.length / postsPerPage))
 const paginatedPosts = computed(() => {
   const start = (currentPage.value - 1) * postsPerPage
   const end = start + postsPerPage
-  return postsWithDate.slice(start, end)
+  return posts.slice(start, end)
 })
-const goToPage = (page) => {
+
+const goToPage = (page: number) => {
   if (page >= 1 && page <= totalPages.value) {
     currentPage.value = page
     if (typeof window !== 'undefined') {
@@ -65,6 +91,7 @@ const goToPage = (page) => {
     }
   }
 }
+
 const pageNumbers = computed(() => {
   const pages = []
   for (let i = 1; i <= totalPages.value; i++) {
@@ -73,105 +100,377 @@ const pageNumbers = computed(() => {
   return pages
 })
 
-function fixVpContentPadding() {
-  const content = document.querySelector('.VPContent .content-container')
-  if (!content) return
-  if (document.querySelector('.blog-home')) {
-    content.style.paddingTop = '0'
-  } else {
-    content.style.paddingTop = ''
-  }
+const setupCardAnimations = async () => {
+  await nextTick()
+  const cards = document.querySelectorAll('.card')
+  cards.forEach((card) => {
+    const element = card as HTMLElement
+    element.classList.remove('animation-complete')
+    element.addEventListener('animationend', () => {
+      element.classList.add('animation-complete')
+      element.offsetHeight
+    }, { once: true })
+  })
 }
 
 onMounted(() => {
-  fixVpContentPadding()
+  setupCardAnimations()
+  document.body.classList.add('blog-index-page')
+})
+
+onUnmounted(() => {
+  document.body.classList.remove('blog-index-page')
+})
+
+watch(currentPage, async () => {
+  await nextTick()
+  setTimeout(setupCardAnimations, 50)
 })
 </script>
 
-<div class="blog-home">
-  <div class="blog-header-row">
-    <h2 class="blog-title">
-      <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-book-open"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
-      <span>{{ isEnglish ? 'Blog' : '日誌' }}</span>
-    </h2>
-    <div class="blog-authors">
-      <strong>{{ isEnglish ? 'Authors:' : '作者群：' }}</strong>
-      <span
-        v-for="author in displayAuthors"
-        :key="author.login"
-        class="author-link"
-      >
-        <a :href="author.url" target="_blank" rel="noopener">
-          <img
-            :src="`https://github.com/${author.login}.png`"
-            :alt="author.name"
-            class="author-avatar"
-          />
-          {{ author.name }}
-        </a>
-      </span>
-    </div>
-    <a
-      class="new-post-btn"
-      href="https://github.com/HolyBearTW/holybear.tw/new/main/blog"
-      target="_blank"
-      rel="noopener"
-    >➕ {{ isEnglish ? 'New Post' : '新增文章' }}</a>
-  </div>
-
-  <div class="blog-articles-grid">
-    <div v-for="post in paginatedPosts" :key="post.url" class="post-item">
-      <a :href="post.url" class="post-item-link">
-        <div class="post-thumbnail-wrapper">
-          <img :src="post.image" :alt="post.title" class="post-thumbnail" />
-        </div>
-        <div class="post-info">
-          <div class="post-title-row">
-            <span
-              v-if="post.category && post.category.length"
-              class="category"
-              v-for="c in post.category"
-              :key="'cat-' + c"
-            >{{ c }}</span>
-            <h2 class="post-title">{{ post.title }}</h2>
-          </div>
-          <ClientOnly>
-          <PostMeta :post="post" />
-          </ClientOnly>
-          <div v-if="post.excerpt" class="post-excerpt" v-html="post.excerpt"></div>
-          <span class="read-more">{{ isEnglish ? 'Read More' : '繼續閱讀' }} &gt;</span>
-        </div>
+<!-- Blog header row, fully synced with zh version -->
+<div class="blog-header-row">
+  <h2 class="blog-title">
+    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-book-open"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+  <span>Blog</span>
+  </h2>
+  <div class="blog-authors">
+    <strong>{{ isEnglish ? 'Authors:' : '作者群：' }}</strong>
+    <span
+      v-for="author in displayAuthors"
+      :key="author.login"
+      class="author-link"
+    >
+      <a :href="author.url" target="_blank" rel="noopener">
+        <img
+          :src="`https://github.com/${author.login}.png`"
+          :alt="author.name"
+          class="author-avatar"
+        />
+        {{ author.name }}
       </a>
-    </div>
+    </span>
   </div>
-
-  <div class="pagination" v-if="totalPages > 1">
-    <button class="pagination-button" :disabled="currentPage === 1" @click="goToPage(currentPage - 1)">{{ isEnglish ? 'Prev' : '上一頁' }}</button>
-    <button
-      v-for="page in pageNumbers"
-      :key="page"
-      class="pagination-button"
-      :class="{ active: page === currentPage }"
-      @click="goToPage(page)">
-      {{ page }}
-    </button>
-    <button class="pagination-button" :disabled="currentPage === totalPages" @click="goToPage(currentPage + 1)">{{ isEnglish ? 'Next' : '下一頁' }}</button>
-  </div>
+  <a
+    class="new-post-btn"
+    href="https://github.com/HolyBearTW/holybear.tw/new/main/blog"
+    target="_blank"
+    rel="noopener"
+  >➕ {{ isEnglish ? 'New Post' : '新增文章' }}</a>
 </div>
 
+<div class="cards">
+  <a v-for="post in paginatedPosts" :key="post.url" class="card" :href="post.url">
+    <div class="thumb">
+      <img :src="post.image"
+           :alt="post.title"
+           loading="lazy"
+           @error="onImgError"
+           style="object-fit: contain;" />
+    </div>
+    <div class="meta">
+      <div class="title">{{ post.title }}</div>
+      <div class="badges" v-if="post.category.length || post.tags.length">
+        <!-- Category badge (main color) -->
+        <span v-for="c in post.category" :key="'cat-' + c" class="badge category">{{ c }}</span>
+        <!-- TAG badge (original style) -->
+        <span v-for="t in post.tags" :key="'tag-' + t" class="badge tag">{{ t }}</span>
+      </div>
+      <div class="byline">
+        <template v-if="getAuthorMeta(post.author)?.login">
+          <a class="author" :href="getAuthorMeta(post.author).url" target="_blank" rel="noopener">
+            <img class="avatar" :src="`https://github.com/${getAuthorMeta(post.author).login}.png`" :alt="getAuthorMeta(post.author).name" />
+            <span class="name">{{ getAuthorMeta(post.author).name }}</span>
+          </a>
+        </template>
+        <template v-else>
+          <span class="name">{{ post.author }}</span>
+        </template>
+        <span class="dot">•</span>
+        <time :datetime="post.date">{{ formatDate(post.date) }}</time>
+      </div>
+      <p class="desc" v-if="post.summary">{{ post.summary }}</p>
+    </div>
+  </a>
+</div>
+
+<div class="pagination" v-if="totalPages > 1">
+  <button class="pagination-button" :disabled="currentPage === 1" @click="goToPage(currentPage - 1)">{{ isEnglish ? 'Prev' : 'Previous' }}</button>
+  <button
+    v-for="page in pageNumbers"
+    :key="page"
+    class="pagination-button"
+    :class="{ active: page === currentPage }"
+    @click="goToPage(page)">
+    {{ page }}
+  </button>
+  <button class="pagination-button" :disabled="currentPage === totalPages" @click="goToPage(currentPage + 1)">{{ isEnglish ? 'Next' : 'Next' }}</button>
+</div>
+
+<!-- Bottom anchor -->
+<div id="bottom"></div>
+
 <style scoped>
-.blog-home {
-  max-width: 1050px;
-  margin-left: auto;
-  margin-right: auto;
-  padding-bottom: 2rem;
+@media (prefers-color-scheme: light) {
+  :root body.blog-index-page .badge.tag,
+  :root body.blog-index-page .badges .badge.tag,
+  html:not(.dark) body.blog-index-page .badge.tag,
+  html:not(.dark) body.blog-index-page .badges .badge.tag,
+  body.blog-index-page .badges .badge.tag,
+  body.blog-index-page .badges > .badge.tag,
+  body.blog-index-page .card .badges > .badge.tag,
+  ::v-deep(.badge.tag) {
+    background: #4a5568;
+    color: #e2e8f0;
+    border: 1px solid #6c7293;
+  }
+}
+.card {
+  background: #F9F6F2 !important;
+  border: 1px solid #e5e2da !important;
+  color: #222 !important;
+  box-shadow: 0 2px 8px 0 rgba(0,0,0,0.04) !important;
+}
+.dark .card {
+  background: #1c1c1c !important;
+  border-color: #2a2a2a !important;
+}
+.cards { 
+  display: grid; 
+  grid-template-columns: 1fr; 
+  gap: 16px; 
+}
+@media (min-width: 720px) { 
+  .cards { 
+    gap: 20px; 
+  } 
+}
+.card {
+  display: flex; 
+  align-items: stretch; 
+  gap: 16px; 
+  padding: 16px; 
+  border-radius: 14px; 
+  border: 1px solid #2a2a2a; 
+  min-height: 144px; 
+  text-decoration: none; 
+  color: inherit; 
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 0;
+  transform: translateY(30px);
+  animation: fadeInUp 0.6s ease forwards;
+}
+@media (max-width: 719px) {
+  .card {
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    min-height: auto;
+  }
+  .card .thumb {
+    width: 100px !important;
+    height: 100px !important;
+    margin: 0 !important;
+    flex-shrink: 0;
+    align-self: center !important;
+  }
+  .card .meta {
+    width: auto !important;
+    flex: 1 !important;
+    align-self: center !important;
+  }
+  .card .title {
+    font-size: 18px !important;
+    line-height: 1.3 !important;
+    margin-bottom: 8px !important;
+  }
+  .card .badges {
+    margin-bottom: 8px !important;
+  }
+  .card .badge {
+    font-size: 11px !important;
+    padding: 4px 8px !important;
+  }
+  .card .byline {
+    font-size: 13px !important;
+  }
+  .card .byline .avatar {
+    width: 18px !important;
+    height: 18px !important;
+  }
+  .card .desc {
+    font-size: 13px !important;
+    line-height: 1.4 !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+  }
+}
+.card.animation-complete {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+.card.animation-complete:hover {
+  transform: translateY(-4px) scale(1.02) !important;
+  border-color: var(--vp-c-brand) !important;
+  box-shadow: 0 8px 25px rgba(0, 184, 184, 0.15), 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+.card.animation-complete:hover .title {
+  color: var(--vp-c-brand) !important;
+}
+@media (max-width: 719px) {
+  .card.animation-complete:hover {
+    transform: none !important;
+    border-color: #2a2a2a !important;
+    box-shadow: none !important;
+  }
+  .card.animation-complete:hover .title {
+    color: var(--vp-c-text-1) !important;
+  }
+}
+.card:nth-child(1) { animation-delay: 0.1s; }
+.card:nth-child(2) { animation-delay: 0.2s; }
+.card:nth-child(3) { animation-delay: 0.3s; }
+.card:nth-child(4) { animation-delay: 0.4s; }
+.card:nth-child(5) { animation-delay: 0.5s; }
+.card:nth-child(6) { animation-delay: 0.6s; }
+.card:nth-child(7) { animation-delay: 0.7s; }
+.card:nth-child(8) { animation-delay: 0.8s; }
+.card:nth-child(9) { animation-delay: 0.9s; }
+.card:nth-child(10) { animation-delay: 1.0s; }
+@keyframes fadeInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.card:hover:not(.animation-complete) { }
+.thumb { display: flex; width: 144px; height: 144px; overflow: hidden; border-radius: 12px; background: var(--vp-c-bg-soft); align-items: center; justify-content: center; flex-shrink: 0; }
+.thumb img { max-width: 100%; max-height: 100%; object-fit: contain; object-position: center center; display: block; }
+.meta {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+@media (max-width: 719px) {
+  .meta {
+    height: auto !important;
+    min-height: auto !important;
+    justify-content: flex-start !important;
+    padding: 8px 0;
+  }
+}
+.title {
+  display: block;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--vp-c-text-1);
+  margin-bottom: 0.5em;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+.badges {
+  margin-top: 0;
+}
+@media (max-width: 900px) {
+  .title {
+    margin-bottom: 0.8em;
+  }
+  .badges {
+    margin-top: 0.3em;
+  }
+}
+@media (max-width: 900px) {
+  .title {
+    font-size: 1.1rem;
+    max-height: 2.2em;
+  }
+}
+@media (max-width: 720px) {
+  .title {
+    font-size: 1rem;
+    line-height: 1.15;
+    max-height: 2em;
+  }
+}
+.badges { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+.badge { font-size: 13px; line-height: 1; padding: 8px 12px; border-radius: 999px; background: #2a2a2a; color: #cce; border: 1px solid #3b3b3b; }
+.badge.category { background: var(--vp-c-brand, #00b8b8); color: #000; border: 1px solid var(--vp-c-brand, #00b8b8); }
+.badge.tag {
+  background: #FAF3E3 !important;
+  color: #006064 !important;
+  border: 1px solid #00b8b8 !important;
+}
+.dark .badge.tag {
+  background: #4a5568 !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #6c7293 !important;
+}
+.byline { color: var(--vp-c-text-2); font-size: 0.9rem; display: flex; align-items: center; padding: 0 !important; line-height: 1 !important; height: 20px; gap: 4px; margin-bottom: 6px; }
+.byline .author { display: inline-flex; align-items: center; color: var(--vp-c-brand-1); text-decoration: none; font-weight: 600; gap: 4px; }
+.byline .author:hover { text-decoration: underline; }
+.byline .avatar { width: 21px; height: 21px; border-radius: 50%; border: 1px solid #ddd; background: #fff; margin-right: 0; object-fit: cover; }
+.byline .dot { opacity: .6; }
+.desc { color: var(--vp-c-text-2); font-size: 14px; line-height: 1.3; margin: 0 !important; padding: 0; }
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2rem;
+  padding: 1rem 0;
+  flex-wrap: wrap;
+}
+.pagination-button {
+  padding: 8px 12px;
+  border: 1px solid var(--vp-c-divider);
+  background: var(--vp-c-bg);
+  color: var(--vp-c-text-1);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  min-width: 40px;
+}
+@media (max-width: 719px) {
+  .pagination {
+    gap: 6px;
+    padding: 0.8rem 0;
+  }
+  .pagination-button {
+    padding: 10px 14px;
+    font-size: 16px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+.pagination-button:hover:not(:disabled),
+.pagination-button.active {
+  background: var(--vp-c-brand);
+  color: var(--vp-c-white);
+  border-color: var(--vp-c-brand);
+}
+.pagination-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.pagination-button:disabled:hover {
+  background: var(--vp-c-bg);
+  color: var(--vp-c-text-1);
+  border-color: var(--vp-c-divider);
 }
 .blog-header-row {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
   gap: 4rem;
-  border-bottom: 1px dashed var(--vp-c-divider, #e5e5e5);
   margin-bottom: 0.5rem;
   flex-wrap: nowrap;
   flex-direction: row;
@@ -192,7 +491,6 @@ onMounted(() => {
 .blog-title svg {
   margin-bottom: 2px;
 }
-/* 作者群：橫向排列＋頭像（響應式下會自動換行） */
 .blog-authors {
   color: var(--vp-c-text-2, #444);
   font-size: 1.12rem;
@@ -249,216 +547,12 @@ onMounted(() => {
   box-shadow: 0 2px 8px 0 #0001;
   white-space: nowrap;
   margin-bottom: 0.5rem;
-  flex-shrink: 0; /* 防止按鈕被壓縮 */
+  flex-shrink: 0;
 }
 .new-post-btn:hover {
   background: var(--vp-c-brand-dark);
   color: #000;
 }
-.blog-articles-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.5rem;
-  padding-top: 1rem; /* 增加上方間距，讓第一篇文章有呼吸空間 */
-}
-.post-item {
-  border-bottom: 1px dashed var(--vp-c-divider);
-  padding: 0.7rem 0;
-  margin: 0;
-}
-.blog-articles-grid > .post-item:last-child {
-  border-bottom: none;
-}
-.post-item-link {
-  display: flex;
-  align-items: center;
-  min-height: 122px;
-  height: auto;
-  padding: 0 1rem;
-  border-radius: 8px;
-  text-decoration: none;
-  color: inherit;
-  transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
-}
-.post-item-link:hover {
-  background-color: var(--vp-c-bg-soft);
-  box-shadow: 0 2px 8px 0 #0001;
-  transform: translateY(-3px);
-}
-.post-thumbnail-wrapper {
-  flex-shrink: 0;
-  width: 216px;
-  height: 122px;
-  margin-right: 1rem;
-  border-radius: 4px;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.post-thumbnail {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  display: block;
-}
-.post-info {
-  flex: 1 1 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-.post-title-row {
-  display: flex;
-  align-items: center;
-  gap: 0.4em;
-  margin-bottom: 0.2rem !important;
-  margin-top: 0 !important;
-}
-.category {
-  display: inline-block;
-  background: #00FFEE;
-  color: #000;
-  border-radius: 3px;
-  padding: 0 0.5em;
-  font-size: 0.85em;
-  margin-right: 0.15em;
-  margin-top: 0;
-  margin-bottom: 0.2rem !important;
-  line-height: 1.6;
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: visible;
-  text-overflow: unset;
-  height: auto;
-  max-width: none;
-}
-.post-title, .post-info .post-title {
-  border-top: none !important;
-  padding-top: 0;
-  margin-top: 0 !important;
-  margin-bottom: 0.2rem !important;
-  font-size: 1.3rem;
-  line-height: 1.3;
-  color: var(--vp-c-text-1);
-  font-weight: 700;
-  display: inline;
-  vertical-align: middle;
-}
-.author-inline {
-  display: inline-flex;
-  align-items: center;
-  vertical-align: middle;
-  font-size: inherit;
-  line-height: 1;
-}
-.post-author-avatar { /* 將此處的 class 名稱統一為 post-author-avatar */
-  width: 21px;
-  height: 21px;
-  margin: 0 2px 0 0;
-  border-radius: 50%;
-  border: 1px solid #ddd;
-  background: #fff;
-  vertical-align: middle; /* 確保它與行內內容垂直對齊 */
-}
-/* 移除 post-meta-author .author-avatar 因為已統一為 post-author-avatar */
-/* .post-meta-author .author-avatar {
-  width: 21px;
-  height: 21px;
-  border-radius: 50%;
-  margin-right: 0.12em;
-  vertical-align: middle;
-  box-shadow: 0 2px 8px #0001;
-  border: 1px solid #ddd;
-  background: #fff;
-  object-fit: cover;
-  display: inline-block;
-} */
-.author-link-name {
-  color: var(--vp-c-brand-1, #00b8b8);
-  text-decoration: none;
-  font-weight: 600;
-  line-height: 1; /* 這裡的 line-height 也要設為 1 */
-  display: inline-block; /* 保持 inline-block */
-  vertical-align: middle; /* 確保它與圖片和日期垂直對齊 */
-  margin-right: 0;
-  padding-right: 0;
-}
-.author-link-name:hover {
-  text-decoration: underline;
-}
-.author-date {
-  font-size: 0.98em;
-  color: var(--vp-c-text-2);
-  margin-left: 0;
-  vertical-align: middle; /* 確保它與圖片和連結垂直對齊 */
-}
-.post-meta {
-  color: var(--vp-c-text-2);
-  font-size: 0.85rem;
-  margin: 0 !important; /* 合併 margin-top 和 margin-bottom */
-  padding: 0 !important;
-  line-height: 1 !important; /* 確保行高緊密 */
-  overflow: hidden; /* 防止內容溢出 */
-  /* 新增的 flex 屬性 */
-  display: flex; /* <--- 讓它成為 flex 容器 */
-  align-items: center; /* <--- 讓所有內容垂直置中對齊 */
-  height: 28px; /* <--- 嘗試給一個固定高度，例如 28px-32px，確保能容納圖片和文字 */
-  /* min-height: 28px; */ /* 如果不喜歡固定高度，可以用 min-height */
-}
-.post-excerpt {
-  color: var(--vp-c-text-2);
-  line-height: 1.5;
-  font-size: 0.95rem;
-  margin-top: 0 !important;      /* 確保上方沒有間距 */
-  margin-bottom: 0 !important; /* 確保下方沒有間距 */
-  padding: 0 !important;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.read-more {
-  display: inline-block;
-  color: var(--vp-c-brand-1);
-  font-weight: 500;
-  font-size: 0.9rem;
-  margin-top: 0 !important; /* 如果要它更緊密 */
-  margin-bottom: 0;
-}
-.read-more:hover {
-  text-decoration: underline;
-}
-.pagination {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-top: 2rem;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-.pagination-button {
-  background-color: var(--vp-c-bg-soft);
-  color: var(--vp-c-text-1);
-  border: 1px solid var(--vp-c-divider);
-  padding: 0.6rem 1.2rem;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
-  font-size: 0.95rem;
-}
-.pagination-button:hover:not(:disabled),
-.pagination-button.active {
-  background-color: var(--vp-c-brand-1);
-  color: var(--vp-c-white);
-  border-color: var(--vp-c-brand-1);
-}
-.pagination-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
 @media (max-width: 889px) {
   .blog-header-row {
     display: flex;
@@ -466,21 +560,16 @@ onMounted(() => {
     flex-wrap: wrap;
     align-items: baseline;
     justify-content: space-between;
-
-    /* 調整間距，清除所有可能導致間距的屬性 */
-    border-bottom: 1px dashed var(--vp-c-divider, #e5e5e5); /* 保留邊線 */
-    margin-bottom: 0 !important; /* 清除外部底部間距 */
-    padding-top: 0.5rem !important; /* 確保有足夠的內部頂部空間 */
-    padding-bottom: 0.2rem !important; /* 精確控制底部邊線與作者群的間距 */
-    gap: 0 !important; /* 清除所有 flex item 之間的 gap */
+    margin-bottom: 0 !important;
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.2rem !important;
+    gap: 0 !important;
   }
-
   .blog-title {
-    margin: 0 !important; /* 強制清除所有 margin */
+    margin: 0 !important;
     flex-shrink: 0;
     order: 0;
   }
-
   .new-post-btn {
     background: var(--vp-c-brand);
     color: #000;
@@ -493,118 +582,86 @@ onMounted(() => {
     box-shadow: 0 2px 8px 0 #0001;
     white-space: nowrap;
     flex-shrink: 0;
-    
-    /* 核心調整：Flexbox 顯示與內部對齊 */
-    display: inline-flex;  /* 讓按鈕本身成為一個 inline 的 Flex 容器 */
-    align-items: center;   /* 按鈕內部的 '+' 和文字垂直置中對齊 */
-    justify-content: center; /* 按鈕內部的 '+' 和文字水平置中對齊 */
-
-    /* 清除外部 margin 並進行像素級微調 */
-    margin: 0 !important; /* 清除所有方向的 margin */
-    position: relative;    /* 啟用 top/bottom/left/right 屬性 */
-    top: -3px;             /* 嘗試往上移動 */
-
-    order: 1; /* 保持 flex 順序 */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 !important;
+    position: relative;
+    top: -6px;
+    order: 1;
   }
-
   .blog-authors {
-    width: 100%; /* 強制作者群換到下一行並佔滿寬度 */
-    margin-top: 0 !important; /* **關鍵：作者群上邊距強制設為 0** */
-    margin-bottom: 0 !important; /* 強制清除底部間距 */
-    justify-content: center; /* 讓作者群內容置中 */
-
-    /* 作者群的內部排版，保持您要的效果 */
+    width: 100%;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    justify-content: center;
     display: flex;
     flex-direction: row;
     align-items: center;
     flex-wrap: wrap;
-    gap: 0.25em 0.25em; /* 保持作者頭像間的間距 */
+    gap: 0.25em 0.25em;
     text-align: center;
-    order: 2; /* 確保作者群在日誌標題和新增按鈕之後 */
+    order: 2;
   }
   .blog-authors strong {
-    white-space: nowrap; /* 避免「作者群：」換行 */
-    margin-right: 0.25em !important; /* 確保作者群文字與頭像間距合理 */
+    white-space: nowrap;
+    margin-right: 0 !important;
   }
   .author-link {
     display: flex;
-    flex-direction: column; /* 讓頭像和名字垂直排列 */
+    flex-direction: column;
     align-items: center;
-    margin: 0.05em 0.25em !important; /* **再次微調垂直間距，使其更小或為 0** */
+    margin: 0.05em 0.25em !important;
   }
   .author-avatar {
-    width: 32px; 
+    width: 32px;
     height: 32px;
-    margin-right: 0 !important; /* 強制移除右側間距 */
-    margin-bottom: 3px !important; /* 作者上下間距 */
+    margin-right: 0 !important;
+    margin-bottom: 3px !important;
   }
   .blog-authors a {
-    font-size: 16px; 
+    font-size: 16px;
     margin: 0 !important;
     padding: 0 !important;
-    display: flex; 
-    flex-direction: column; 
-    align-items: center; 
-  }
-  .blog-articles-grid {
-    padding-top: 0.5rem; /* 增加標題上方間距 */
-  }
-}
-@media (max-width: 767px) {
-  .post-item {
-    padding: 0.2rem 0;
-  }
-  .post-item-link {
-    min-height: unset;
-    padding: 0.2rem 0.5rem;
-  }
-  .post-thumbnail-wrapper {
-    width: 110px;
-    height: 90px;
-    margin-right: 0.7rem;
-    flex-shrink: 0;
     display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .post-thumbnail {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    display: block;
-  }
-  .post-info {
-    flex: 1 1 0;
-    min-width: 0;
-  }
-  .post-title, .post-info .post-title {
-    font-size: 1.05rem;
-  }
-  .post-excerpt {
-    font-size: 0.92rem;
-    -webkit-line-clamp: 2;
-  }
-  .post-title-row {
     flex-direction: column;
-    align-items: flex-start;
-    gap: 0.15em;
-  }
-  .post-title {
-    white-space: normal;
-    word-break: break-word;
-    margin-top: 0.1em;
-    margin-bottom: 0.2em !important;
+    align-items: center;
   }
 }
-  @media (max-width: 500px) {
+@media (max-width: 719px) {
+  .pagination {
+    gap: 6px;
+    padding: 0.8rem 0;
+  }
+  .pagination-button {
+    padding: 10px 14px;
+    font-size: 16px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .meta {
+    height: auto !important;
+    min-height: auto !important;
+    justify-content: flex-start !important;
+    padding: 8px 0;
+  }
+}
+@media (max-width: 500px) {
   .blog-authors a {
     font-size: 10px;
   }
   .blog-authors {
-    gap: 0.3em 0.3em; /* <--- 這個是控制手機版作者頭像/名字區塊之間的間距 */
+    gap: 0.3em 0.3em;
   }
   .author-link {
-    margin: 0.3em 0.3em !important; /* <--- 這個也是控制手機版作者頭像/名字區塊之間的間距 */
+    margin: 0.3em 0.3em !important;
+  }
+}
+@media (max-width: 476px) {
+  .card .title {
+    font-size: 0.95rem !important;
+    line-height: 1.18 !important;
+    margin-bottom: 0.4em !important;
   }
 }
 </style>
