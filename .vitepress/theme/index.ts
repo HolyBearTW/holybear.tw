@@ -4,6 +4,8 @@ import './style.css'
 export default {
     Layout: MyCustomLayout,
     enhanceApp({ router }) {
+        if (typeof document === 'undefined') return; // SSR 階段直接跳過
+
         // 恢復 is-blog-page 判斷，只加在文章內頁
         function isBlogPage(path) {
             // 只針對 /blog/xxxx 文章頁（不是 /blog/ 或 /blog/index 或 /blog/blog_list）
