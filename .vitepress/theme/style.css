@@ -1,3 +1,15 @@
+/* medium-zoom 放大圖片與遮罩層級，確保不被側邊欄蓋住 */
+.medium-zoom-overlay {
+  z-index: 9999 !important;
+}
+.medium-zoom-image--opened {
+  z-index: 10000 !important;
+  position: relative;
+}
+/* medium-zoom 圖片游標：所有可放大的圖片都顯示手指游標 */
+.vp-doc img:not(.no-zoom) {
+  cursor: url('/MapleStory_cursor_hand.png'), pointer !important;
+}
 /**
  * Customize default theme styling by overriding CSS variables:
  * https://github.com/vuejs/vitepress/blob/main/src/client/theme-default/styles/vars.css

@@ -1,10 +1,121 @@
+
 import MyCustomLayout from './MyCustomLayout.vue'
 import './style.css'
+import mediumZoom from 'medium-zoom'
 
 export default {
     Layout: MyCustomLayout,
     enhanceApp({ router }) {
+        // 監聽 .vp-doc 動畫結束時再初始化 medium-zoom，確保動畫後 DOM 穩定
+                    // SPA 切換時，先初始化 medium-zoom，並監聽 .vp-doc DOM 變動
+                                    // 全域 body observer，僅在瀏覽器環境下執行，避免 SSR 報錯
+                                    if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+                                        (function setupGlobalZoomObserver() {
+                                            const w = window as any;
+                                            // 先移除舊 observer
+                                            if (w.__ZOOM_BODY_OBSERVER__) {
+                                                w.__ZOOM_BODY_OBSERVER__.disconnect();
+                                                w.__ZOOM_BODY_OBSERVER__ = null;
+                                            }
+                                            if (w.__ZOOM_OBSERVER__) {
+                                                w.__ZOOM_OBSERVER__.disconnect();
+                                                w.__ZOOM_OBSERVER__ = null;
+                                            }
+                                            // 強制 detach zoom
+                                            try {
+                                                if (w.__ZOOM__) w.__ZOOM__.detach();
+                                                if (w.mediumZoom) w.mediumZoom.detach && w.mediumZoom.detach();
+                                            } catch(e) {}
+                                            // 綁定 body observer
+                                            const bodyObserver = new MutationObserver(() => {
+                                                const doc = document.querySelector('.vp-doc');
+                                                if (doc && !(doc as any).__zoom_observed) {
+                                                    // 初始化 zoom
+                                                    setupMediumZoom();
+                                                    // 綁定 .vp-doc observer
+                                                    if (w.__ZOOM_OBSERVER__) {
+                                                        w.__ZOOM_OBSERVER__.disconnect();
+                                                        w.__ZOOM_OBSERVER__ = null;
+                                                    }
+                                                    const observer = new MutationObserver(() => {
+                                                        setupMediumZoom();
+                                                    });
+                                                    observer.observe(doc, { childList: true, subtree: true });
+                                                    w.__ZOOM_OBSERVER__ = observer;
+                                                    (doc as any).__zoom_observed = true;
+                                                }
+                                            });
+                                            bodyObserver.observe(document.body, { childList: true, subtree: true });
+                                            w.__ZOOM_BODY_OBSERVER__ = bodyObserver;
+                                            // 首次進入時主動觸發一次
+                                            const doc = document.querySelector('.vp-doc');
+                                            if (doc && !(doc as any).__zoom_observed) {
+                                                setupMediumZoom();
+                                                const observer = new MutationObserver(() => {
+                                                    setupMediumZoom();
+                                                });
+                                                observer.observe(doc, { childList: true, subtree: true });
+                                                w.__ZOOM_OBSERVER__ = observer;
+                                                (doc as any).__zoom_observed = true;
+                                            }
+                                        })();
+                                    }
         if (typeof document === 'undefined') return; // SSR 階段直接跳過
+
+        // medium-zoom 整合，讓所有 markdown 內圖片支援點擊放大
+        // medium-zoom 實例全域保存，確保每次都先 detach
+    let zoomInstance: ReturnType<typeof mediumZoom> | null = null;
+    function setupMediumZoom() {
+          // DEBUG: setTimeout 外先 log 一次
+          // 等待 DOM 完全更新，延長至 300ms
+          setTimeout(() => {
+              if (zoomInstance) {
+                  zoomInstance.detach();
+                  zoomInstance = null;
+              }
+              // 僅在文章頁啟用 medium-zoom，不在列表頁（含英文版）啟用
+                        const path = location.pathname;
+                        const isBlogList =
+                            /^\/blog\/?(index|blog_list)?(\.html)?$/.test(path) ||
+                            /^\/en\/blog\/?(index|blog_list)?(\.html)?$/.test(path);
+                        if (isBlogList) return;
+              const zoomImgs = document.querySelectorAll('.vp-doc img:not(.no-zoom)');
+              if (zoomImgs.length > 0) {
+                  zoomInstance = mediumZoom('.vp-doc img:not(.no-zoom)', {
+                      background: getComputedStyle(document.documentElement).getPropertyValue('color-scheme') === 'dark'
+                          ? 'rgba(0,0,0,0.85)'
+                          : 'rgba(255,255,255,0.95)',
+                      margin: 24,
+                      scrollOffset: 40
+                  });
+                  (window as any).__ZOOM__ = zoomInstance;
+              }
+          }, 500);
+    }
+        // 初始執行
+        setupMediumZoom();
+            // 進階：SPA 切換時，強制 detach 所有 medium-zoom 實例再初始化
+            window.addEventListener('vitepress:pageview', () => {
+                // 全域強制 detach（保險起見）
+                                try {
+                                    const w = window as any;
+                                    if (w.__ZOOM__) w.__ZOOM__.detach();
+                                    if (w.mediumZoom) w.mediumZoom.detach && w.mediumZoom.detach();
+                                } catch(e) {}
+                                let start = performance.now();
+                                function waitForVpDocImages() {
+                                    const imgs = document.querySelectorAll('.vp-doc img:not(.no-zoom)');
+                                    if (imgs.length > 0) {
+                                        setupMediumZoom();
+                                    } else if (performance.now() - start < 1200) {
+                                        requestAnimationFrame(waitForVpDocImages);
+                                    } else {
+                                        // 最多等 1.2 秒，沒圖片也強制初始化一次
+                                        setupMediumZoom();
+                                    }
+                                }
+                                waitForVpDocImages();
+            });
 
         // 恢復 is-blog-page 判斷，只加在文章內頁
         function isBlogPage(path) {
