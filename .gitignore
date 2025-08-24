@@ -1,10 +1,11 @@
-node_modules/
-dist/
-.vitepress/dist/
-.vitepress/cache/
-.DS_Store
-.env
-*.log
+# === 專案常用忽略規則（build 產物、暫存、環境檔等） ===
+
+# 通用 build 輸出
+dist/                # 通用 build 輸出
+
+# macOS 系統檔
+.DS_Store            # macOS 系統檔
+
 # Logs
 logs
 *.log
@@ -44,6 +45,7 @@ bower_components
 
 # Compiled binary addons (https://nodejs.org/api/addons.html)
 build/Release
+
 
 # Dependency directories
 node_modules/
@@ -104,11 +106,10 @@ dist
 # https://nextjs.org/blog/next-9-1#public-directory-support
 # public
 
-# vuepress build output
+# vuepress build output (build 產物)
 .vuepress/dist
 
-# vitepress build output
-.vitepress/dist
+
 
 # vuepress v2.x temp and cache directory
 .temp
