@@ -150,11 +150,13 @@
                 zoomInstance = null;
             }
             // 僅在文章頁啟用 medium-zoom，不在列表頁（含英文版）啟用
-            const path = location.pathname;
-            const isBlogList =
-                /^\/blog\/?(index|blog_list)?(\.html)?$/.test(path) ||
-                /^\/en\/blog\/?(index|blog_list)?(\.html)?$/.test(path);
-            if (isBlogList) return;
+            if (typeof location !== 'undefined') {
+                const path = location.pathname;
+                const isBlogList =
+                    /^\/blog\/?(index|blog_list)?(\.html)?$/.test(path) ||
+                    /^\/en\/blog\/?(index|blog_list)?(\.html)?$/.test(path);
+                if (isBlogList) return;
+            }
             const zoomImgs = document.querySelectorAll('.vp-doc img:not(.no-zoom)');
             if (zoomImgs.length > 0) {
                 zoomInstance = mediumZoom('.vp-doc img:not(.no-zoom)', {
@@ -164,34 +166,26 @@
                     margin: 24,
                     scrollOffset: 40
                 });
-                window.__ZOOM__ = zoomInstance;
+                if (typeof window !== 'undefined') {
+                    window.__ZOOM__ = zoomInstance;
+                }
             }
         }, 500);
     }
+
     // 初始執行
-    setupMediumZoom();
-    // 進階：SPA 切換時，強制 detach 所有 medium-zoom 實例再初始化
-    window.addEventListener('vitepress:pageview', () => {
-        // 全域強制 detach（保險起見）
-        try {
-            const w = window;
-            if (w.__ZOOM__) w.__ZOOM__.detach();
-            if (w.mediumZoom) w.mediumZoom.detach && w.mediumZoom.detach();
-        } catch(e) {}
-        let start = performance.now();
-        function waitForVpDocImages() {
-            const imgs = document.querySelectorAll('.vp-doc img:not(.no-zoom)');
-            if (imgs.length > 0) {
-                setupMediumZoom();
-            } else if (performance.now() - start < 1200) {
-                requestAnimationFrame(waitForVpDocImages);
-            } else {
-                // 最多等 1.2 秒，沒圖片也強制初始化一次
-                setupMediumZoom();
-            }
-        }
-        waitForVpDocImages();
-    });
+    if (typeof window !== 'undefined') {
+        setupMediumZoom();
+        // 進階：SPA 切換時，強制 detach 所有 medium-zoom 實例再初始化
+        window.addEventListener('vitepress:pageview', () => {
+            // 全域強制 detach（保險起見）
+            try {
+                const w = window;
+                if (w.__ZOOM__) w.__ZOOM__.detach();
+                if (w.mediumZoom) w.mediumZoom.detach && w.mediumZoom.detach();
+            } catch(e) {}
+        });
+    }
 </script>
 
 <template>
