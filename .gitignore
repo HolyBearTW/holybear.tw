@@ -46,7 +46,6 @@ bower_components
 # Compiled binary addons (https://nodejs.org/api/addons.html)
 build/Release
 
-
 # Dependency directories
 node_modules/
 jspm_packages/
@@ -106,12 +105,11 @@ dist
 # https://nextjs.org/blog/next-9-1#public-directory-support
 # public
 
-# vuepress build output (build 產物)
-.vuepress/dist
 
+# vitepress build output
+.vitepress/dist
 
-
-# vuepress v2.x temp and cache directory
+# vitepress v2.x temp and cache directory
 .temp
 .cache
 
