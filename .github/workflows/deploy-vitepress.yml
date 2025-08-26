@@ -205,14 +205,14 @@ jobs:
           echo "$DETECTED_FILES" | grep . > "$OUTPUT_FILE" || true
           if [ -s "$OUTPUT_FILE" ]; then
             echo "偵測到新文章，列表已儲存至 $OUTPUT_FILE"
-            echo "has_new_files=true" >> $GITHUB_ENV
+            echo "has_new_files=true" >> $GITHUB_OUTPUT
           else
             echo "沒有偵測到新文章"
-            echo "has_new_files=false" >> $GITHUB_ENV
+            echo "has_new_files=false" >> $GITHUB_OUTPUT
           fi
 
       - name: 處理並發送 Telegram 通知
-        if: env.has_new_files == 'true'
+        if: steps.detect-new-files.outputs.has_new_files == 'true'
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
