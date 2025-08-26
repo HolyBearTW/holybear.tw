@@ -17,8 +17,8 @@ hero:
       text: 作品集
       link: /Mod
     - theme: alt
-      text: Telegram
-      link: https://t.me/HolyBearTW
+      text: 短網址
+      link: https://go.holybear.tw/
 
 features:
   - title: 日誌
