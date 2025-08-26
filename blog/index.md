@@ -81,7 +81,13 @@ const posts = allPosts.filter(
   image: post.image || fallbackImg,
   tags: Array.isArray(post.tags) ? post.tags : (Array.isArray(post.tag) ? post.tag : (post.tag ? [post.tag] : [])),
   category: Array.isArray(post.category) ? post.category : (post.category ? [post.category] : [])
-}))
+})).sort((a, b) => {
+  // 依日期新到舊排序，無日期的排最後
+  if (!a.date && !b.date) return 0;
+  if (!a.date) return 1;
+  if (!b.date) return -1;
+  return b.date.localeCompare(a.date);
+});
 
 // 分頁邏輯
 const postsPerPage = 10

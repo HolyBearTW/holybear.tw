@@ -1,5 +1,24 @@
 import { createContentLoader } from 'vitepress';
-import authors from '../authors.json'; // 注意：根據你的實際檔案結構
+import authors from '../authors.json';
+import { execSync } from 'child_process';
+import path from 'path';
+function getGitFirstCommitInfo(filePath) {
+  try {
+    const authorLog = execSync(
+      `git log --diff-filter=A --follow --format="%an" -- "${filePath}"`,
+      { encoding: 'utf8' }
+    ).trim();
+    const author = authorLog.split(/\r?\n/)[0] || '';
+    const dateLog = execSync(
+      `git log --diff-filter=A --follow --format="%aI" -- "${filePath}"`,
+      { encoding: 'utf8' }
+    ).trim();
+    const date = dateLog.split(/\r?\n/)[0] || '';
+    return { author, date };
+  } catch (e) {
+    return { author: '', date: '' };
+  }
+}
 
 const DEFAULT_IMAGE = '/blog_no_image.svg';
 
@@ -33,14 +52,14 @@ export default createContentLoader('en/blog/**/*.md', {
           url === '/en/blog/index.html';
         return !isBlogIndexPage;
       })
-      .map(({ url, frontmatter, content, excerpt }) => {
+      .map(({ url, frontmatter, src, excerpt }) => {
         frontmatter = frontmatter && typeof frontmatter === 'object' ? frontmatter : {};
         const title = frontmatter.title || 'No title post';
-        const date = extractDate(frontmatter);
+        let date = extractDate(frontmatter);
         let imageUrl = frontmatter.image;
-        if (!imageUrl && content) {
+        if (!imageUrl && src) {
           const markdownImageRegex = /!\[.*?\]\((.*?)\)/;
-          let match = content.match(markdownImageRegex);
+          let match = src.match(markdownImageRegex);
           if (match && match[1]) imageUrl = match[1];
         }
         if (imageUrl && !imageUrl.startsWith('/') && !imageUrl.startsWith('http')) {
@@ -51,17 +70,27 @@ export default createContentLoader('en/blog/**/*.md', {
         // 讓 description 永遠優先
         let summary = (frontmatter.description || '').trim();
         if (!summary && excerpt) summary = excerpt.trim();
-        if (!summary && content) {
-          const lines = content.split('\n').map(line => line.trim());
+        if (!summary && src) {
+          const lines = src.split('\n').map(line => line.trim());
           summary = lines.find(line => line && !line.startsWith('#') && !line.startsWith('![') && !line.startsWith('>')) || '';
         }
 
         // 用正規化 url 查找作者
         const normalizedUrl = normalizeUrl(url);
-        const author = authors[normalizedUrl] || 'Unknown';
+        let author = authors[normalizedUrl];
+
+        // 自動補齊作者/日期（與中文版一致）
+        // 推算 md 檔案路徑
+        const rel = url.replace(/^\//, '').replace(/\/$/, '') + '.md';
+        const mdFilePath = path.join(process.cwd(), rel);
+        if (!author || !date) {
+          const gitInfo = getGitFirstCommitInfo(mdFilePath);
+          if (!author) author = gitInfo.author;
+          if (!date) date = gitInfo.date;
+        }
 
         return {
-          url,
+          url: normalizedUrl,
           frontmatter,
           title,
           date,

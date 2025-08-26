@@ -52,7 +52,13 @@ const displayAuthors = computed(() => {
 
 const postsWithDate = allPosts.filter(
   post => Boolean(post) && post.url !== '/blog/blog_list'
-)
+).sort((a, b) => {
+  // 依日期新到舊排序，無日期的排最後
+  if (!a.date && !b.date) return 0;
+  if (!a.date) return 1;
+  if (!b.date) return -1;
+  return b.date.localeCompare(a.date);
+});
 
 const postsPerPage = 10
 const currentPage = ref(1)

@@ -9,6 +9,27 @@
     import ViewCounter from '../components/ViewCounter.vue'
     import MigrationNotice from '../components/MigrationNotice.vue'
     import mediumZoom from 'medium-zoom'
+        import { data as allPosts } from './posts.data.ts'
+
+        // 只保留一份 normalizeUrl function
+        function normalizeUrl(url) {
+            if (url === '/blog/' || url === '/en/blog/') {
+                return url;
+            }
+            if (url.endsWith('/index.html')) {
+                return url.replace(/\/index\.html$/, '');
+            }
+            if (url.endsWith('.html')) {
+                return url.replace(/\.html$/, '');
+            }
+            if (url.endsWith('.md')) {
+                return url.replace(/\.md$/, '');
+            }
+            if (url.endsWith('/') && url !== '/') {
+                return url.slice(0, -1);
+            }
+            return url;
+        }
 
     const { frontmatter, page, locale, lang } = useData()
 
@@ -28,9 +49,43 @@
     // 作者資訊陣列
     const { getAuthorMeta, isEnglish } = useAuthors()
 
+    // 直接複製 normalizeUrl 函式
+
+
+    // 取得當前文章的 posts 資料（用 normalizeUrl 比對）
+    // 強化 fallback，嘗試多種 url 格式並加 debug log
+    const currentPostData = computed(() => {
+      // 優先用 page.value.path，若為空則 fallback 用 window.location.pathname
+      let url = page.value?.path
+      if (!url && typeof window !== 'undefined') {
+        url = window.location.pathname
+      }
+      url = url || ''
+      const normUrl = normalizeUrl(url)
+      // 嘗試多種格式
+      const candidates = [
+        normUrl,
+        normUrl.endsWith('/') ? normUrl.slice(0, -1) : normUrl + '/',
+        normUrl + '.html',
+        normUrl + '.md',
+        normUrl.replace(/\/index$/, ''),
+      ]
+      const found = allPosts.find(post => candidates.includes(post.url))
+      if (!found) {
+        // debug log
+        console.warn('[MyCustomLayout] 找不到文章對應', {
+          pagePath: url,
+          normUrl,
+          candidates,
+          allPostUrls: allPosts.map(p => p.url)
+        })
+      }
+      return found
+    })
+
     // 本地預設作者
     const currentAuthor = computed(() =>
-        frontmatter.value?.author || '未知作者'
+      frontmatter.value?.author || currentPostData.value?.author || '未知作者'
     )
     const currentAuthorMeta = computed(() => getAuthorMeta(currentAuthor.value))
 
@@ -53,6 +108,16 @@
             const hh = String(twDate.getHours()).padStart(2, '0')
             const min = String(twDate.getMinutes()).padStart(2, '0')
             return `${yyyy}-${mm}-${dd} ${hh}:${min}`
+        }
+        if (currentPostData.value?.date) {
+          const date = new Date(currentPostData.value.date)
+          const twDate = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }))
+          const yyyy = twDate.getFullYear()
+          const mm = String(twDate.getMonth() + 1).padStart(2, '0')
+          const dd = String(twDate.getDate()).padStart(2, '0')
+          const hh = String(twDate.getHours()).padStart(2, '0')
+          const min = String(twDate.getMinutes()).padStart(2, '0')
+          return `${yyyy}-${mm}-${dd} ${hh}:${min}`
         }
         return isEnglish.value ? 'Unknown date' : '未知日期'
     })

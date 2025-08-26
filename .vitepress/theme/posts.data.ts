@@ -22,16 +22,18 @@ function extractDate(frontmatter) {
 // 取得 git 第一個 commit 的作者與日期
 function getGitFirstCommitInfo(filePath) {
     try {
-        // 取得第一個 commit 的作者名稱與 email
-            const author = execSync(
-                `git log --diff-filter=A --follow --format="%an" -- "${filePath}" | head -1`,
-                { encoding: 'utf8' }
-            ).trim();
+        // 取得第一個 commit 的作者名稱
+        const authorLog = execSync(
+            `git log --diff-filter=A --follow --format="%an" -- "${filePath}"`,
+            { encoding: 'utf8' }
+        ).trim();
+        const author = authorLog.split(/\r?\n/)[0] || '';
         // 取得第一個 commit 的日期（ISO 格式）
-            const date = execSync(
-                `git log --diff-filter=A --follow --format="%aI" -- "${filePath}" | head -1`,
-                { encoding: 'utf8' }
-            ).trim();
+        const dateLog = execSync(
+            `git log --diff-filter=A --follow --format="%aI" -- "${filePath}"`,
+            { encoding: 'utf8' }
+        ).trim();
+        const date = dateLog.split(/\r?\n/)[0] || '';
         return { author, date };
     } catch (e) {
         return { author: '', date: '' };
