@@ -11,9 +11,6 @@ hero:
     src: /logo.png
     alt: HolyBearTW Blog
   actions:
-    - theme: brand
-      text: 切回舊版列表
-      link: "/blog/blog_list"
     - theme: alt
       text: 跳到底部
       link: "#bottom"
@@ -23,6 +20,18 @@ hero:
 ---
 
 <script setup lang="ts">
+import PostMeta from '../.vitepress/theme/PostMeta.vue'
+// hash 切換新舊版文章列表
+import { watch as vueWatch, ref as vueRef, onMounted as vueOnMounted, onUnmounted as vueOnUnmounted } from 'vue'
+
+const isOldVersion = vueRef(false)
+const toggleVersion = () => {
+  isOldVersion.value = !isOldVersion.value
+  currentPage.value = 1
+  window.scrollTo({ top: 0, behavior: 'auto' })
+  // 若要同步 hash，請取消下行註解
+  // window.location.hash = isOldVersion.value ? '#old' : ''
+}
 
 import { useAuthors } from '../.vitepress/components/useAuthors.js'
 import ArticleMeta from '../.vitepress/theme/ArticleMeta.vue'
@@ -178,15 +187,25 @@ watch(currentPage, async () => {
       </a>
     </span>
   </div>
-  <a
-    class="new-post-btn"
-    href="https://github.com/HolyBearTW/holybear.tw/new/main/blog"
-    target="_blank"
-    rel="noopener"
-  >➕ {{ isEnglish ? 'New Post' : '新增文章' }}</a>
+  <div class="blog-header-actions">
+    <a
+      @click.prevent="toggleVersion"
+      href="#"
+      class="new-post-btn switch-version-btn"
+      style="margin-right: 0.5em;"
+    >
+      {{ isOldVersion ? '切回新版列表' : '切回舊版列表' }}
+    </a>
+    <a
+      class="new-post-btn"
+      href="https://github.com/HolyBearTW/holybear.tw/new/main/blog"
+      target="_blank"
+      rel="noopener"
+    >➕ {{ isEnglish ? 'New Post' : '新增文章' }}</a>
+  </div>
 </div>
 
-<div class="cards">
+<div v-if="!isOldVersion" class="cards">
   <a v-for="post in paginatedPosts" :key="post.url" class="card" :href="post.url">
     <div class="thumb">
       <img :src="post.image"
@@ -212,6 +231,33 @@ watch(currentPage, async () => {
     </ClientOnly>
   </a>
 </div>
+<!-- 舊版文章列表區塊（與 blog_list.md 同步） -->
+<div v-else class="blog-articles-grid old-version">
+  <div v-for="post in paginatedPosts" :key="post.url" class="post-item">
+    <a :href="post.url" class="post-item-link">
+      <div class="post-thumbnail-wrapper">
+        <img :src="post.image" :alt="post.title" class="post-thumbnail" />
+      </div>
+      <div class="post-info">
+        <div class="post-title-row">
+          <span
+            v-if="post.category && post.category.length"
+            class="category"
+            v-for="c in post.category"
+            :key="'cat-' + c"
+          >{{ c }}</span>
+          <h2 class="post-title">{{ post.title }}</h2>
+        </div>
+        <ClientOnly>
+          <PostMeta :post="post" />
+        </ClientOnly>
+        <div v-if="post.excerpt" class="post-excerpt" v-html="post.excerpt"></div>
+        <span class="read-more">{{ isEnglish ? 'Read More' : '繼續閱讀' }} &gt;</span>
+      </div>
+    </a>
+  </div>
+</div>
+
 
 <div class="pagination" v-if="totalPages > 1">
   <button class="pagination-button" :disabled="currentPage === 1" @click="goToPage(currentPage - 1)">上一頁</button>
@@ -230,18 +276,42 @@ watch(currentPage, async () => {
 <div id="bottom"></div>
 
 <style scoped>
-@media (prefers-color-scheme: light) {
-  :root body.blog-index-page .badge.tag,
-  :root body.blog-index-page .badges .badge.tag,
-  html:not(.dark) body.blog-index-page .badge.tag,
-  html:not(.dark) body.blog-index-page .badges .badge.tag,
-  body.blog-index-page .badges .badge.tag,
-  body.blog-index-page .badges > .badge.tag,
-  body.blog-index-page .card .badges > .badge.tag,
-  ::v-deep(.badge.tag) {
-    background: #4a5568;
-    color: #e2e8f0;
-    border: 1px solid #6c7293;
+/* 橫向排列，標題、作者群、按鈕同層 */
+/* 橫向排列，標題、作者群、按鈕同層，底部齊平 */
+/* blog-header-row 樣式調整，讓作者群不會被擠到左側，與 blog_list.md 完全一致 */
+.blog-header-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 2.2rem;
+  margin-bottom: 0.5rem;
+  flex-wrap: nowrap;
+  flex-direction: row;
+  position: unset;
+}
+.blog-header-actions {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5em;
+  margin-bottom: 0;
+}
+/* 切換按鈕沿用 new-post-btn 樣式，僅調整 margin-right */
+.switch-version-btn {
+  margin-right: 0.5em;
+}
+/* TAG 標籤顏色統一區塊（含主色、淺色、深色） */
+/* 統一卡片下方 tag 標籤樣式（深灰底、淺灰字、深灰邊框） */
+/* 只覆蓋顏色，形狀完全繼承 .badge，確保 tag 與 category 標籤一致 */
+.badge.tag {
+  background: #4a5568 !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #6c7293 !important;
+}
+@media (prefers-color-scheme: dark) {
+  .badge.tag {
+    background: #4a5568 !important;
+    color: #e2e8f0 !important;
+    border: 1px solid #6c7293 !important;
   }
 }
 /* 淺色/深色模式卡片背景統一區塊 */
@@ -462,15 +532,33 @@ watch(currentPage, async () => {
   }
 }
 .badges { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
-.badge { font-size: 13px; line-height: 1; padding: 8px 12px; border-radius: 999px; background: #2a2a2a; color: #cce; border: 1px solid #3b3b3b; }
-.badge.category { background: var(--vp-c-brand, #00b8b8); color: #000; border: 1px solid var(--vp-c-brand, #00b8b8); }
-/* TAG 標籤顏色統一區塊（含主色、淺色、深色） */
+/* 強制所有 badge 形狀完全一致 */
+.badge,
+.badge.category,
 .badge.tag {
-  background: #FAF3E3 !important; /* 更淺的米白色 */
-  color: #006064 !important;
-  border: 1px solid #00b8b8 !important;
+  font-size: 13px !important;
+  line-height: 1 !important;
+  padding: 8px 12px !important;
+  border-radius: 999px !important;
 }
-.dark .badge.tag {
+.badge {
+  background: #2a2a2a;
+  color: #cce;
+  border: 1px solid #3b3b3b;
+}
+.badge.category {
+  background: var(--vp-c-brand, #00b8b8) !important;
+  color: #000 !important;
+  border: 1px solid var(--vp-c-brand, #00b8b8) !important;
+}
+.badge.tag {
+  background: #4a5568 !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #6c7293 !important;
+}
+/* TAG 標籤顏色統一區塊（含主色、淺色、深色） */
+/* 只覆蓋顏色，形狀完全繼承 .badge，確保 tag 與 category 標籤一致 */
+.badge.tag {
   background: #4a5568 !important;
   color: #e2e8f0 !important;
   border: 1px solid #6c7293 !important;
@@ -576,6 +664,8 @@ watch(currentPage, async () => {
   margin-bottom: 0;
   position: relative;
   align-items: center;
+  margin-left: auto;
+  transform: translateX(-0.5rem);
 }
 .blog-authors strong {
   margin-right: 0.5em;
@@ -701,6 +791,157 @@ watch(currentPage, async () => {
     display: flex;
     flex-direction: column;
     align-items: center;
+  }
+}
+</style>
+<!-- 舊版文章列表專用樣式（完全同步 blog_list.md） -->
+<style scoped>
+.blog-articles-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.5rem;
+}
+.post-item {
+  border-bottom: 1px dashed var(--vp-c-divider);
+  padding: 0.7rem 0;
+  margin: 0;
+}
+.blog-articles-grid > .post-item:last-child {
+  border-bottom: none;
+}
+.post-item-link {
+  display: flex;
+  align-items: center;
+  min-height: 122px;
+  height: auto;
+  padding: 0 1rem;
+  border-radius: 8px;
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+.post-item-link:hover {
+  background-color: var(--vp-c-bg-soft);
+  box-shadow: 0 2px 8px 0 #0001;
+  transform: translateY(-3px);
+}
+.post-thumbnail-wrapper {
+  flex-shrink: 0;
+  width: 216px;
+  height: 122px;
+  margin-right: 1rem;
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.post-thumbnail {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.post-info {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.post-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  margin-bottom: 0.2rem !important;
+  margin-top: 0 !important;
+}
+.category {
+  display: inline-block;
+  background: #00FFEE;
+  color: #000;
+  border-radius: 3px;
+  padding: 0 0.5em;
+  font-size: 0.85em;
+  margin-right: 0.15em;
+  margin-top: 0;
+  margin-bottom: 0.2rem !important;
+  line-height: 1.6;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: unset;
+  height: auto;
+  max-width: none;
+}
+.post-title, .post-info .post-title {
+  border-top: none !important;
+  padding-top: 0;
+  margin-top: 0 !important;
+  margin-bottom: 0.2rem !important;
+  font-size: 1.3rem;
+  line-height: 1.3;
+  color: var(--vp-c-text-1);
+  font-weight: 700;
+  display: inline;
+  vertical-align: middle;
+}
+.post-excerpt {
+  color: var(--vp-c-text-2);
+  line-height: 1.5;
+  font-size: 0.95rem;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  padding: 0 !important;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.read-more {
+  display: inline-block;
+  color: var(--vp-c-brand-1);
+  font-weight: 500;
+  font-size: 0.9rem;
+  margin-top: 0 !important;
+  margin-bottom: 0;
+}
+.read-more:hover {
+  text-decoration: underline;
+}
+@media (max-width: 767px) {
+  .post-item {
+    padding: 0.2rem 0;
+  }
+  .post-item-link {
+    min-height: unset;
+    padding: 0.2rem 0.5rem;
+  }
+  .post-thumbnail-wrapper {
+    width: 110px;
+    height: 90px;
+    margin-right: 0.7rem;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .post-thumbnail {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+  }
+  .post-info {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .post-title, .post-info .post-title {
+    font-size: 1.05rem;
+  }
+  .post-excerpt {
+    font-size: 0.92rem;
+    -webkit-line-clamp: 2;
   }
 }
 </style>
