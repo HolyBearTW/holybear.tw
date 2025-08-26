@@ -26,7 +26,7 @@ hero:
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useAuthors } from '../.vitepress/components/useAuthors.js'
 import { data as allPosts } from '../.vitepress/theme/posts.data.ts'
-import PostMeta from '../.vitepress/theme/PostMeta.vue'
+import ArticleMeta from '../.vitepress/theme/ArticleMeta.vue'
 
 // 呼叫 Composable，取得需要的共用資料和狀態
 const { authorsData, isEnglish } = useAuthors()
@@ -141,7 +141,7 @@ onMounted(() => {
             <h2 class="post-title">{{ post.title }}</h2>
           </div>
           <ClientOnly>
-          <PostMeta :post="post" />
+          <ArticleMeta :author="post.author" :date="post.date" />
           </ClientOnly>
           <div v-if="post.excerpt" class="post-excerpt" v-html="post.excerpt"></div>
           <span class="read-more">{{ isEnglish ? 'Read More' : '繼續閱讀' }} &gt;</span>

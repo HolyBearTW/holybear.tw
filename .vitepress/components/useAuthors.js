@@ -24,7 +24,11 @@ export function useAuthors() {
                 name: isEnglish.value && author.name_en ? author.name_en : author.name
             };
         }
-        return { name: authorIdentifier, login: '', url: '' };
+        return {
+            name: isEnglish.value ? 'Unknown author' : '未知作者',
+            login: '',
+            url: 'https://holybear.tw/'
+        };
     }
 
     return {

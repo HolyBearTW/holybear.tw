@@ -25,6 +25,7 @@ hero:
 <script setup lang="ts">
 
 import { useAuthors } from '../.vitepress/components/useAuthors.js'
+import ArticleMeta from '../.vitepress/theme/ArticleMeta.vue'
 import { data as allPosts } from '../.vitepress/theme/posts.data.ts'
 import { onMounted, onUnmounted, nextTick, ref, computed, watch } from 'vue'
 
@@ -198,17 +199,7 @@ watch(currentPage, async () => {
           <span v-for="t in post.tags" :key="'tag-' + t" class="badge tag">{{ t }}</span>
         </div>
         <div class="byline">
-          <template v-if="getAuthorMeta(post.author)?.login">
-            <a class="author" :href="getAuthorMeta(post.author).url" target="_blank" rel="noopener">
-              <img class="avatar" :src="`https://github.com/${getAuthorMeta(post.author).login}.png`" :alt="getAuthorMeta(post.author).name" />
-              <span class="name">{{ getAuthorMeta(post.author).name }}</span>
-            </a>
-          </template>
-          <template v-else>
-            <span class="name">{{ post.author }}</span>
-          </template>
-          <span class="dot">•</span>
-          <time :datetime="post.date">{{ formatDate(post.date) }}</time>
+          <ArticleMeta :author="post.author" :date="post.date" />
         </div>
         <p class="desc" v-if="post.summary">{{ post.summary }}</p>
       </div>
