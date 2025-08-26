@@ -3,6 +3,10 @@ export default [
   {
     "items": [
       {
+        "text": "從安卓再次換到iOS兩個月後，我的感受是什麼？",
+        "link": "/blog/2025-08-25"
+      },
+      {
         "text": "衝動購物？才怪！Switch 2 開箱給你看看有多香！🤤",
         "link": "/blog/2025-07-18"
       },
@@ -37,10 +41,6 @@ export default [
       {
         "text": "明明可以避免的，為什麼還是讓它發生了？",
         "link": "/blog/2025-05-26"
-      },
-      {
-        "text": "如何輕鬆地在VitePress寫部落格？",
-        "link": "/blog/2025-05-25"
       }
     ]
   },
