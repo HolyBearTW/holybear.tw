@@ -7,6 +7,7 @@ export default {
     nav: [
       { text: 'Blog', link: '/en/blog/' },
       { text: 'Portfolio', link: '/en/Mod' },
+      { text: 'Shortlink', link: 'https://go.holybear.tw/' },
       { text: 'Telegram', link: 'https://t.me/HolyBearTW' },
       { text: 'Donate', link: 'https://paypal.me/holybear0610' }
     ],

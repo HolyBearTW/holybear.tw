@@ -17,8 +17,8 @@ hero:
       text: Portfolio
       link: /en/Mod
     - theme: alt
-      text: Telegram
-      link: https://t.me/HolyBearTW
+      text: Shortlink
+      link: https://go.holybear.tw/
 
 features:
   - title: Blog

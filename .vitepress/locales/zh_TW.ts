@@ -7,6 +7,7 @@ export default {
     nav: [
       { text: '日誌', link: '/blog/' },
       { text: '作品集', link: '/Mod' },
+      { text: '短網址', link: 'https://go.holybear.tw/' },
       { text: 'Telegram', link: 'https://t.me/HolyBearTW' },
       { text: '贊助', link: 'https://paypal.me/holybear0610' }
     ],
