@@ -111,14 +111,8 @@ export default defineConfig({
                 const isEnglish = relativePath.startsWith('en/') ||
                     (frontmatter.lang && frontmatter.lang.startsWith('en'));
 
-                // 從 authorsData 查找作者資訊
-                const authorsData = {
-                    'HolyBearTW': { name: '聖小熊', name_en: 'HolyBear', url: 'https://github.com/HolyBearTW' },
-                    'Tim0320': { name: '玄哥', name_en: 'Xuan', url: 'https://github.com/Tim0320' },
-                    'ying0930': { name: '酪梨', name_en: 'Avocado', url: 'https://github.com/ying0930' },
-                    'Jackboy001': { name: 'Jack', name_en: 'Jack', url: 'https://github.com/Jackboy001' },
-                    'leohsiehtw': { name: 'Leo', name_en: 'Leo', url: 'https://github.com/leohsiehtw' }
-                };
+                // 從 authorsData 查找作者資訊（共用）
+                const authorsData = require('./authorsData.js').default;
 
                 // 查找作者資訊
                 const getAuthorInfo = (authorIdentifier: string) => {
@@ -126,7 +120,8 @@ export default defineConfig({
                         const author = authorsData[login];
                         return authorIdentifier === login ||
                             authorIdentifier === author.name ||
-                            authorIdentifier === author.name_en;
+                            authorIdentifier === author.name_en ||
+                            authorIdentifier === author.displayName;
                     });
 
                     if (authorLogin && authorsData[authorLogin]) {
@@ -175,14 +170,8 @@ export default defineConfig({
                 const isEnglish = relativePath.startsWith('en/') ||
                     (frontmatter.lang && frontmatter.lang.startsWith('en'));
 
-                // 從 authorsData 獲取所有作者資訊
-                const authorsData = {
-                    'HolyBearTW': { name: '聖小熊', name_en: 'HolyBear', url: 'https://github.com/HolyBearTW' },
-                    'Tim0320': { name: '玄哥', name_en: 'Xuan', url: 'https://github.com/Tim0320' },
-                    'ying0930': { name: '酪梨', name_en: 'Avocado', url: 'https://github.com/ying0930' },
-                    'Jackboy001': { name: 'Jack', name_en: 'Jack', url: 'https://github.com/Jackboy001' },
-                    'leohsiehtw': { name: 'Leo', name_en: 'Leo', url: 'https://github.com/leohsiehtw' }
-                };
+                // 從 authorsData 獲取所有作者資訊（共用）
+                const authorsData = require('./authorsData.js').default;
 
                 // 建立作者陣列，支援多作者
                 const authorsArray = Object.keys(authorsData).map(login => {
