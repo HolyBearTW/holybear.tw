@@ -1,6 +1,6 @@
 import { createContentLoader } from 'vitepress';
-import authors from './authors.json'; // 確保這個路徑正確
-
+import { execSync } from 'child_process';
+import path from 'path';
 const DEFAULT_IMAGE = '/blog_no_image.svg';
 
 /**
@@ -8,6 +8,7 @@ const DEFAULT_IMAGE = '/blog_no_image.svg';
  * @param {object} frontmatter
  * @returns {string}
  */
+
 function extractDate(frontmatter) {
     return (
         frontmatter.listDate ||
@@ -16,6 +17,25 @@ function extractDate(frontmatter) {
         frontmatter.publishDate ||
         ''
     );
+}
+
+// 取得 git 第一個 commit 的作者與日期
+function getGitFirstCommitInfo(filePath) {
+    try {
+        // 取得第一個 commit 的作者名稱與 email
+            const author = execSync(
+                `git log --diff-filter=A --follow --format="%an" -- "${filePath}" | head -1`,
+                { encoding: 'utf8' }
+            ).trim();
+        // 取得第一個 commit 的日期（ISO 格式）
+            const date = execSync(
+                `git log --diff-filter=A --follow --format="%aI" -- "${filePath}" | head -1`,
+                { encoding: 'utf8' }
+            ).trim();
+        return { author, date };
+    } catch (e) {
+        return { author: '', date: '' };
+    }
 }
 
 /**
@@ -48,76 +68,64 @@ function normalizeUrl(url) {
 export default createContentLoader('blog/**/*.md', {
     excerpt: true,
     transform(raw) {
-        // console.log('--- Raw Data URLs from createContentLoader ---'); // 除錯用，可視情況啟用
-        // raw.forEach(item => {
-        //   console.log('Raw Item URL:', item.url, 'Frontmatter:', item.frontmatter);
-        // });
-        // console.log('-------------------------------------------');
-
         return raw
             .filter(({ url }) => {
-                // 排除部落格列表頁本身，確保不會將其視為單篇文章
                 const isBlogIndexPage =
                     url === '/blog/' ||
                     url === '/blog/index.html' ||
                     url === '/en/blog/' ||
                     url === '/en/blog/index.html';
-
-                // 新增：排除任何以 .md 結尾的非預期 URL，特別是 /blog.md
                 const isUnexpectedMdUrl = url.endsWith('.md') && !url.startsWith('/blog/') && !url.startsWith('/en/blog/');
-
-                // console.log(`Filtering: ${url}, isBlogIndexPage: ${isBlogIndexPage}, isUnexpectedMdUrl: ${isUnexpectedMdUrl}`); // 除錯用
-
                 return !isBlogIndexPage && !isUnexpectedMdUrl;
             })
-
-            .map(({ url, frontmatter, src, excerpt }) => {
-                frontmatter = frontmatter && typeof frontmatter === 'object' ? frontmatter : {};
-                const title = frontmatter.title || '無標題文章';
-                const date = extractDate(frontmatter);
-                let imageUrl = frontmatter.image;
-
-                // 嘗試從內容中提取第一張圖片
+            .map((item) => {
+                const { url, frontmatter, src, excerpt } = item;
+                const fm = frontmatter && typeof frontmatter === 'object' ? frontmatter : {};
+                const title = fm.title || '無標題文章';
+                // 推測檔案路徑
+                // 直接用 url 推算 md 檔案路徑
+                const rel = url.replace(/^\//, '').replace(/\/$/, '') + '.md';
+                const mdFilePath = path.join(process.cwd(), rel);
+                // 自動補齊作者/日期
+                let author = fm.author;
+                let date = extractDate(fm);
+                if (!author || !date) {
+                    const gitInfo = getGitFirstCommitInfo(mdFilePath);
+                    if (!author) author = gitInfo.author;
+                    if (!date) date = gitInfo.date;
+                }
+                let imageUrl = fm.image;
                 if (!imageUrl && src) {
                     const markdownImageRegex = /!\[.*?\]\((.*?)\)/;
                     let match = src.match(markdownImageRegex);
                     if (match && match[1]) imageUrl = match[1];
                 }
-
-                // 處理圖片路徑相對路徑
                 if (imageUrl && !imageUrl.startsWith('/') && !imageUrl.startsWith('http')) {
                     imageUrl = `/${imageUrl}`;
                 }
                 if (!imageUrl) imageUrl = DEFAULT_IMAGE;
-
-                // 讓 description 永遠優先，否則使用 excerpt 或內容第一行
-                let summary = (frontmatter.description || '').trim();
+                let summary = (fm.description || '').trim();
                 if (!summary && excerpt) summary = excerpt.trim();
                 if (!summary && src) {
                     const lines = src.split('\n').map(line => line.trim());
                     summary = lines.find(line => line && !line.startsWith('#') && !line.startsWith('![') && !line.startsWith('>')) || '';
                 }
-
                 const normalizedUrl = normalizeUrl(url);
-                // 完全比照內頁，author 只取 frontmatter.author，沒有就空字串
-                const author = frontmatter.author || '';
-
                 return {
                     url: normalizedUrl,
-                    frontmatter,
+                    frontmatter: fm,
                     title,
                     date,
-                    tags: Array.isArray(frontmatter.tags)
-                        ? frontmatter.tags
-                        : (Array.isArray(frontmatter.tag) ? frontmatter.tag : []),
-                    category: Array.isArray(frontmatter.category) ? frontmatter.category : [],
+                    tags: Array.isArray(fm.tags)
+                        ? fm.tags
+                        : (Array.isArray(fm.tag) ? fm.tag : []),
+                    category: Array.isArray(fm.category) ? fm.category : [],
                     image: imageUrl,
                     summary,
                     excerpt: summary,
                     author,
                 };
             })
-            // 最終過濾：確保所有回傳的 post 都有一個有效且不是空字串的 url
             .filter(post => !!post && typeof post.url === 'string' && post.url.trim() !== '')
             .sort((a, b) => {
                 return new Date(b.date).getTime() - new Date(a.date).getTime();
