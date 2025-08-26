@@ -26,7 +26,7 @@ hero:
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useAuthors } from '../.vitepress/components/useAuthors.js'
 import { data as allPosts } from '../.vitepress/theme/posts.data.ts'
-import ArticleMeta from '../.vitepress/theme/ArticleMeta.vue'
+import PostMeta from '../.vitepress/theme/PostMeta.vue'
 
 // 呼叫 Composable，取得需要的共用資料和狀態
 const { authorsData, isEnglish } = useAuthors()
@@ -147,7 +147,7 @@ onMounted(() => {
             <h2 class="post-title">{{ post.title }}</h2>
           </div>
           <ClientOnly>
-          <ArticleMeta :author="post.author" :date="post.date" />
+            <PostMeta :post="post" />
           </ClientOnly>
           <div v-if="post.excerpt" class="post-excerpt" v-html="post.excerpt"></div>
           <span class="read-more">{{ isEnglish ? 'Read More' : '繼續閱讀' }} &gt;</span>
@@ -557,6 +557,38 @@ onMounted(() => {
   .post-excerpt {
     font-size: 0.92rem;
     -webkit-line-clamp: 2;
+  }
+}
+/* 恢復文章列表作者+日期區塊的經典橫排、緊湊小字、淡色樣式 */
+/* 恢復經典文章列表格式：分類、標題、作者+日期各自獨立一行 */
+.post-title-row.with-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1em;
+  margin-bottom: 0.1em;
+}
+.post-title-row.with-meta .category {
+  margin-bottom: 0.1em;
+}
+.post-title-row.with-meta .post-title {
+  margin-bottom: 0.1em;
+}
+.post-meta-inline {
+  font-size: 0.97em;
+  color: var(--vp-c-text-3, #888);
+  margin-top: 0.1em;
+  display: flex;
+  align-items: center;
+  gap: 0.3em;
+  line-height: 1.2;
+}
+@media (max-width: 767px) {
+  .post-title-row.with-meta {
+    gap: 0.05em;
+  }
+  .post-meta-inline {
+    font-size: 0.93em;
   }
 }
 </style>
