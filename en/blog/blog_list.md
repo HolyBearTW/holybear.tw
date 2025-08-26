@@ -27,6 +27,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useAuthors } from '../../.vitepress/components/useAuthors.js'
 import { data as allPosts } from '../../.vitepress/theme/en/post.data.ts'
 import PostMeta from '../../.vitepress/theme/PostMeta.vue'
+import ArticleMeta from '../../.vitepress/theme/ArticleMeta.vue'
 
 // 呼叫 Composable，獲取共用的作者資料和語系狀態
 const { authorsData, isEnglish } = useAuthors()
@@ -52,7 +53,13 @@ const displayAuthors = computed(() => {
 
 const postsWithDate = allPosts.filter(
   post => Boolean(post) && post.url !== '/en/blog/blog_list'
-)
+).sort((a, b) => {
+  // Sort by date, newest first, no date last
+  if (!a.date && !b.date) return 0;
+  if (!a.date) return 1;
+  if (!b.date) return -1;
+  return b.date.localeCompare(a.date);
+});
 
 const postsPerPage = 10
 const currentPage = ref(1)
@@ -141,7 +148,7 @@ onMounted(() => {
             <h2 class="post-title">{{ post.title }}</h2>
           </div>
           <ClientOnly>
-          <PostMeta :post="post" />
+            <ArticleMeta :author="post.author" :date="post.date" />
           </ClientOnly>
           <div v-if="post.excerpt" class="post-excerpt" v-html="post.excerpt"></div>
           <span class="read-more">{{ isEnglish ? 'Read More' : '繼續閱讀' }} &gt;</span>

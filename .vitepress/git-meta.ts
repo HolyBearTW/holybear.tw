@@ -18,8 +18,12 @@ export default function gitMetaPlugin() {
       let author = ''
       let datetime = ''
       try {
-        author = execSync(`git log --diff-filter=A --follow --format=%aN -- "${id}" | tail -1`).toString().trim()
-        datetime = execSync(`git log --diff-filter=A --follow --format=%aI -- "${id}" | tail -1`).toString().trim()
+        // 取得所有作者名稱，取最後一行
+        const authorLog = execSync(`git log --diff-filter=A --follow --format=%aN -- "${id}"`).toString().trim();
+        author = authorLog.split(/\r?\n/).pop() || '';
+        // 取得所有日期，取最後一行
+        const dateLog = execSync(`git log --diff-filter=A --follow --format=%aI -- "${id}"`).toString().trim();
+        datetime = dateLog.split(/\r?\n/).pop() || '';
       } catch (e) {
         return src
       }
