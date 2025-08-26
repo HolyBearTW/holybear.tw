@@ -1,5 +1,5 @@
 import { createContentLoader } from 'vitepress';
-import authors from '../authors.json';
+// 已移除 authors.json 相關依賴
 import { execSync } from 'child_process';
 import path from 'path';
 function getGitFirstCommitInfo(filePath) {
@@ -32,7 +32,7 @@ function extractDate(frontmatter) {
   );
 }
 
-// 跟中文 loader 一樣，正規化 url，讓查作者時 key 能對齊 authors.json
+// 跟中文 loader 一樣，正規化 url
 function normalizeUrl(url) {
   if (url.endsWith('/index.html')) return url.replace(/\/index\.html$/, '');
   if (url.endsWith('.html')) return url.replace(/\.html$/, '');
@@ -75,9 +75,9 @@ export default createContentLoader('en/blog/**/*.md', {
           summary = lines.find(line => line && !line.startsWith('#') && !line.startsWith('![') && !line.startsWith('>')) || '';
         }
 
-        // 用正規化 url 查找作者
-        const normalizedUrl = normalizeUrl(url);
-        let author = authors[normalizedUrl];
+  // 用正規化 url 查找作者（已移除 authors.json，直接 fallback git log）
+  const normalizedUrl = normalizeUrl(url);
+  let author = '';
 
         // 自動補齊作者/日期（與中文版一致）
         // 推算 md 檔案路徑
