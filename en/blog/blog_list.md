@@ -147,9 +147,9 @@ onMounted(() => {
             >{{ c }}</span>
             <h2 class="post-title">{{ post.title }}</h2>
           </div>
-          <ClientOnly>
-            <ArticleMeta :author="post.author" :date="post.date" />
-          </ClientOnly>
+            <ClientOnly>
+              <PostMeta :post="post" />
+            </ClientOnly>
           <div v-if="post.excerpt" class="post-excerpt" v-html="post.excerpt"></div>
           <span class="read-more">{{ isEnglish ? 'Read More' : '繼續閱讀' }} &gt;</span>
         </div>
