@@ -70,23 +70,22 @@ export default createContentLoader('blog/**/*.md', {
 
                 return !isBlogIndexPage && !isUnexpectedMdUrl;
             })
-            .map(({ url, frontmatter, content, excerpt }) => {
+
+            .map(({ url, frontmatter, src, excerpt }) => {
                 frontmatter = frontmatter && typeof frontmatter === 'object' ? frontmatter : {};
                 const title = frontmatter.title || '無標題文章';
                 const date = extractDate(frontmatter);
                 let imageUrl = frontmatter.image;
 
                 // 嘗試從內容中提取第一張圖片
-                if (!imageUrl && content) {
+                if (!imageUrl && src) {
                     const markdownImageRegex = /!\[.*?\]\((.*?)\)/;
-                    let match = content.match(markdownImageRegex);
+                    let match = src.match(markdownImageRegex);
                     if (match && match[1]) imageUrl = match[1];
                 }
 
                 // 處理圖片路徑相對路徑
                 if (imageUrl && !imageUrl.startsWith('/') && !imageUrl.startsWith('http')) {
-                    // 假設圖片在文章所在目錄的相對路徑，需要根據實際情況調整
-                    // 這裡簡化處理為假設圖片在根目錄下，您可能需要更複雜的邏輯來處理相對路徑
                     imageUrl = `/${imageUrl}`;
                 }
                 if (!imageUrl) imageUrl = DEFAULT_IMAGE;
@@ -94,19 +93,17 @@ export default createContentLoader('blog/**/*.md', {
                 // 讓 description 永遠優先，否則使用 excerpt 或內容第一行
                 let summary = (frontmatter.description || '').trim();
                 if (!summary && excerpt) summary = excerpt.trim();
-                if (!summary && content) {
-                    const lines = content.split('\n').map(line => line.trim());
+                if (!summary && src) {
+                    const lines = src.split('\n').map(line => line.trim());
                     summary = lines.find(line => line && !line.startsWith('#') && !line.startsWith('![') && !line.startsWith('>')) || '';
                 }
 
                 const normalizedUrl = normalizeUrl(url);
-                const author = authors[normalizedUrl] || '未知作者';
+                // 完全比照內頁，author 只取 frontmatter.author，沒有就空字串
+                const author = frontmatter.author || '';
 
-                // console.log('Processed Post:', { url, normalizedUrl, author, title }); // 除錯用
-
-                // 最終回傳的物件，確保 url 是經過正規化且正確的
                 return {
-                    url: normalizedUrl, // <-- 關鍵：確保這裡使用的是正規化後的 URL
+                    url: normalizedUrl,
                     frontmatter,
                     title,
                     date,
