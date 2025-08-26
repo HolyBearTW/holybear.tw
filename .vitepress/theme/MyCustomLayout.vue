@@ -220,7 +220,9 @@
                     <span class="blog-post-date-main">
                         <span class="author-inline">
                             <img class="post-author-avatar" :src="currentAuthorAvatar" :alt="currentAuthorMeta.name" />
-                            <a :href="currentAuthorUrl" target="_blank" rel="noopener" class="author-link-name">{{ currentAuthorMeta.name }}</a><span v-if="currentDisplayDate">｜{{ currentDisplayDate }}</span>
+                            <a :href="currentAuthorUrl" target="_blank" rel="noopener" class="author-link-name">{{ currentAuthorMeta.name }}</a>
+                            <span v-if="currentDisplayDate" class="dot" aria-hidden="true">•</span>
+                            <span v-if="currentDisplayDate">{{ currentDisplayDate }}</span>
                         </span>
                     </span>
                     <span class="blog-post-date-right">
@@ -385,7 +387,7 @@
     .author-inline {
         display: flex;
         align-items: center;
-        gap: 0;
+        gap: 0.2em;
     }
 
     .post-author-avatar {
@@ -420,7 +422,10 @@
         border-bottom: 1px dashed var(--vp-c-divider);
         margin-bottom: 0.5rem;
     }
-
+    .dot {
+        opacity: .6;
+        margin: 0 0.1em;
+    }
     :deep(.vp-doc p),
     :deep(.vp-doc ul),
     :deep(.vp-doc ol),
