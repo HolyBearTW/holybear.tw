@@ -70,9 +70,6 @@ jobs:
       - name: 安裝相依套件
         run: yarn install
 
-      - name: 產生作者清單
-        if: steps.detect-content-changed.outputs.has_changed == 'true'
-        run: node .vitepress/components/generateAuthors.cjs
 
       - name: 產生側邊欄
         if: steps.detect-content-changed.outputs.has_changed == 'true'
