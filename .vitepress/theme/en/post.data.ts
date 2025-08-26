@@ -77,7 +77,7 @@ export default createContentLoader('en/blog/**/*.md', {
 
   // 用正規化 url 查找作者（已移除 authors.json，直接 fallback git log）
   const normalizedUrl = normalizeUrl(url);
-  let author = '';
+  let author = frontmatter.author || '';
 
         // 自動補齊作者/日期（與中文版一致）
         // 推算 md 檔案路徑
