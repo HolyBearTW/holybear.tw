@@ -218,8 +218,8 @@
             if (typeof location !== 'undefined') {
                 const path = location.pathname;
                 const isBlogList =
-                    /^\/blog\/?(index|blog_list)?(\.html)?$/.test(path) ||
-                    /^\/en\/blog\/?(index|blog_list)?(\.html)?$/.test(path);
+                    /^\/blog\/?index(\.html)?$/.test(path) ||
+                    /^\/en\/blog\/?index(\.html)?$/.test(path);
                 if (isBlogList) return;
             }
             const zoomImgs = document.querySelectorAll('.vp-doc img:not(.no-zoom)');

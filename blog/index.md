@@ -48,7 +48,7 @@ watch(() => route.path, () => {
 // 呼叫 Composable，取得需要的共用資料和狀態
 const { getAuthorMeta, authorsData, isEnglish } = useAuthors()
 
-// 產生顯示用作者陣列（與 blog_list.md 同步）
+// 產生顯示用作者陣列
 const displayAuthors = computed(() => {
   return Object.keys(authorsData).map(login => {
     const author = authorsData[login];
@@ -84,7 +84,7 @@ const onImgError = (e: Event) => {
 
 // 使用原本的 posts 數據，而不是 import.meta.glob
 const posts = allPosts.filter(
-  post => Boolean(post) && post.url !== '/blog/blog_list'
+  post => Boolean(post)
 ).map(post => ({
   ...post,
   image: post.image || fallbackImg,
@@ -164,7 +164,7 @@ watch(currentPage, async () => {
 </script>
 
 
-<!-- 新增 blog-header-row header 區塊，與 blog_list.md 完全同步 -->
+<!-- 新增 blog-header-row header 區塊 -->
 <div class="blog-header-row" :class="{ 'with-divider': isOldVersion }">
   <h2 class="blog-title">
     <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-book-open"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
@@ -194,7 +194,7 @@ watch(currentPage, async () => {
       class="new-post-btn switch-version-btn"
       style="margin-right: 0.5em;"
     >
-      {{ isOldVersion ? '切回新版列表' : '切回舊版列表' }}
+      {{ isOldVersion ? '體驗新版列表' : '切回舊版列表' }}
     </a>
     <a
       class="new-post-btn"
@@ -231,7 +231,7 @@ watch(currentPage, async () => {
     </ClientOnly>
   </a>
 </div>
-<!-- 舊版文章列表區塊（與 blog_list.md 同步） -->
+<!-- 舊版文章列表區塊 -->
 <div v-else class="blog-articles-grid old-version">
   <div v-for="post in paginatedPosts" :key="post.url" class="post-item">
     <a :href="post.url" class="post-item-link">
@@ -278,11 +278,12 @@ watch(currentPage, async () => {
 <style scoped>
 /* 橫向排列，標題、作者群、按鈕同層 */
 /* 橫向排列，標題、作者群、按鈕同層，底部齊平 */
-/* blog-header-row 樣式調整，讓作者群不會被擠到左側，與 blog_list.md 完全一致 */
+/* blog-header-row 樣式調整，讓作者群不會被擠到左側 */
+/* blog-header-row 樣式調整，讓作者群靠左、按鈕靠右，不受按鈕字數影響 */
 .blog-header-row {
   display: flex;
   align-items: flex-end;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 2.2rem;
   margin-bottom: 0.5rem;
   flex-wrap: nowrap;
@@ -294,6 +295,7 @@ watch(currentPage, async () => {
   align-items: flex-end;
   gap: 0.5em;
   margin-bottom: 0;
+  margin-left: auto;
 }
 /* 切換按鈕沿用 new-post-btn 樣式，僅調整 margin-right */
 .switch-version-btn {
@@ -622,7 +624,7 @@ watch(currentPage, async () => {
   border-color: var(--vp-c-divider);
 }
 
-/* --- blog-header-row 樣式，與 blog_list.md 同步 --- */
+/* --- blog-header-row 樣式 --- */
 .blog-header-row {
   display: flex;
   align-items: flex-end;
@@ -713,7 +715,7 @@ watch(currentPage, async () => {
   background: var(--vp-c-brand-dark);
   color: #000;
 }
-@media (max-width: 889px) {
+@media (max-width: 1029px) {
   .blog-header-row {
     display: flex;
     flex-direction: row;
@@ -813,7 +815,7 @@ watch(currentPage, async () => {
   margin-bottom: 0.7em;
 }
 </style>
-<!-- 舊版文章列表專用樣式（完全同步 blog_list.md） -->
+<!-- 舊版文章列表專用樣式 -->
 <style scoped>
 .blog-articles-grid {
   display: grid;
