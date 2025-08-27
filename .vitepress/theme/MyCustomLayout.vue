@@ -255,10 +255,23 @@
 
 <template>
     <!-- 搬家通知彈窗 -->
-    <MigrationNotice :intro-finished="true" />
+    <MigrationNotice :intro-finished="!showIntro" />
     <!-- 進場動畫區塊與狀態已完全註解，主內容永遠顯示 -->
-    <FloatingBgmPlayer />
-    <Theme.Layout>
+    <!-- === ENTRANCE ANIMATION START (已註解，暫停顯示) ===
+    <div v-if="showIntro" class="intro-video-mask">
+        <video ref="introVideo"
+               playsinline
+               autoplay
+               muted
+               @ended="hideIntro"
+               @error="hideIntro">
+            <source src="/video/maple.mp4" type="video/mp4">
+        </video>
+        <button @click="hideIntro" class="skip-btn">Skip</button>
+    </div>
+    === ENTRANCE ANIMATION END === -->
+    <FloatingBgmPlayer v-if="!showIntro" />
+    <Theme.Layout v-show="!showIntro">
         <template #doc-before>
             <div v-if="!isHomePage" class="blog-post-header-injected">
                 <h1 class="blog-post-title">{{ currentTitle }}</h1>
