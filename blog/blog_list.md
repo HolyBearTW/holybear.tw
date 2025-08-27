@@ -23,6 +23,19 @@ hero:
 ---
 
 <script setup>
+// hash 切換新舊版文章列表
+import { watch } from 'vue'
+const isOldVersion = ref(false)
+function checkHash() {
+  isOldVersion.value = window.location.hash === '#old'
+}
+onMounted(() => {
+  checkHash()
+  window.addEventListener('hashchange', checkHash)
+})
+onUnmounted(() => {
+  window.removeEventListener('hashchange', checkHash)
+})
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useAuthors } from '../.vitepress/components/useAuthors.js'
 import { data as allPosts } from '../.vitepress/theme/posts.data.ts'
@@ -130,7 +143,7 @@ onMounted(() => {
     >➕ {{ isEnglish ? 'New Post' : '新增文章' }}</a>
   </div>
 
-  <div class="blog-articles-grid">
+  <div v-if="!isOldVersion" class="blog-articles-grid">
     <div v-for="post in paginatedPosts" :key="post.url" class="post-item">
       <a :href="post.url" class="post-item-link">
         <div class="post-thumbnail-wrapper">
@@ -155,6 +168,38 @@ onMounted(() => {
       </a>
     </div>
   </div>
+  <!-- 舊版文章列表區塊（僅示意，請根據實際舊版內容調整） -->
+  <div v-else class="blog-articles-grid old-version">
+    <div v-for="post in paginatedPosts" :key="post.url" class="post-item">
+      <a :href="post.url" class="post-item-link">
+        <div class="post-thumbnail-wrapper">
+          <img :src="post.image" :alt="post.title" class="post-thumbnail" />
+        </div>
+        <div class="post-info">
+          <div class="post-title-row">
+            <h2 class="post-title">{{ post.title }}</h2>
+            <span v-if="post.category && post.category.length" class="category" v-for="c in post.category" :key="'cat-' + c">{{ c }}</span>
+          </div>
+          <div class="post-meta-old">
+            <span>{{ post.author }}</span>
+            <span style="margin: 0 0.5em;">|</span>
+            <span>{{ post.date }}</span>
+          </div>
+          <div v-if="post.excerpt" class="post-excerpt" v-html="post.excerpt"></div>
+          <span class="read-more">{{ isEnglish ? 'Read More' : '繼續閱讀' }} &gt;</span>
+        </div>
+      </a>
+    </div>
+  </div>
+/* 舊版文章列表樣式（可依需求微調） */
+.blog-articles-grid.old-version .post-meta-old {
+  font-size: 0.93em;
+  color: #888;
+  margin: 0.1em 0 0.2em 0;
+  display: flex;
+  align-items: center;
+  gap: 0.2em;
+}
 
   <div class="pagination" v-if="totalPages > 1">
     <button class="pagination-button" :disabled="currentPage === 1" @click="goToPage(currentPage - 1)">{{ isEnglish ? 'Prev' : '上一頁' }}</button>

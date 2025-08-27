@@ -309,6 +309,39 @@
 </template>
 
 <style scoped>
+/* 文章內頁 category/tag 樣式與新版列表一致 */
+.blog-post-meta-row .category {
+    background: #e0f7fa !important;
+    color: #00796b !important;
+    border-radius: 999px !important;
+    border: 1.5px solid #00b8b8 !important;
+    padding: 8px 12px !important;
+    font-size: 13px !important;
+    line-height: 1 !important;
+}
+.dark .blog-post-meta-row .category {
+    background: #00363a !important;
+    color: #4dd0e1 !important;
+    border-radius: 999px !important;
+    border: 1.5px solid #00b8b8 !important;
+    padding: 8px 12px !important;
+    font-size: 13px !important;
+    line-height: 1 !important;
+}
+.blog-post-meta-row .tag {
+    background: #eaf4fb !important;
+    color: #2077c7 !important;
+    border-radius: 999px !important;
+    border: 1px solid #b5d0ea !important;
+    padding: 8px 12px !important;
+    font-size: 13px !important;
+    line-height: 1 !important;
+}
+.dark .blog-post-meta-row .tag {
+    background: #23263a !important;
+    color: #b5c6e0 !important;
+    border: 1px solid #3b3b3b !important;
+}
     /* === ENTRANCE ANIMATION START === */
     .intro-video-mask {
         position: fixed;
