@@ -35,6 +35,10 @@ const toggleVersion = () => {
   window.scrollTo({ top: 0, behavior: 'auto' });
   // 若要同步 hash，請取消下行註解
   // window.location.hash = isOldVersion.value ? '#old' : ''
+  // 切換新舊版時重新掛載卡片動畫
+  nextTick(() => {
+    setupCardAnimations();
+  });
 }
 
 import { useAuthors } from '../.vitepress/components/useAuthors.js'
