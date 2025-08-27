@@ -24,11 +24,15 @@ import PostMeta from '../.vitepress/theme/PostMeta.vue'
 // hash 切換新舊版文章列表
 import { watch as vueWatch, ref as vueRef, onMounted as vueOnMounted, onUnmounted as vueOnUnmounted } from 'vue'
 
-const isOldVersion = vueRef(false)
+const STORAGE_KEY = 'blogVersion';
+const isOldVersion = vueRef(false);
 const toggleVersion = () => {
-  isOldVersion.value = !isOldVersion.value
-  currentPage.value = 1
-  window.scrollTo({ top: 0, behavior: 'auto' })
+  isOldVersion.value = !isOldVersion.value;
+  // 寫入 localStorage
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(STORAGE_KEY, isOldVersion.value ? 'old' : 'new');
+  }
+  window.scrollTo({ top: 0, behavior: 'auto' });
   // 若要同步 hash，請取消下行註解
   // window.location.hash = isOldVersion.value ? '#old' : ''
 }
@@ -145,10 +149,17 @@ const setupCardAnimations = async () => {
   })
 }
 
+
 // 初始設置
 onMounted(() => {
-  setupCardAnimations()
-  document.body.classList.add('blog-index-page')
+  // 讀取 localStorage 狀態
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved === 'old') isOldVersion.value = true;
+    if (saved === 'new') isOldVersion.value = false;
+  }
+  setupCardAnimations();
+  document.body.classList.add('blog-index-page');
 })
 
 onUnmounted(() => {
