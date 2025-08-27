@@ -257,7 +257,7 @@
     <!-- 搬家通知彈窗 -->
     <MigrationNotice :intro-finished="!showIntro" />
     
-    <!-- === ENTRANCE ANIMATION START === -->
+    <!-- === ENTRANCE ANIMATION START (已註解，暫停顯示) ===
     <div v-if="showIntro" class="intro-video-mask">
         <video ref="introVideo"
                playsinline
@@ -269,7 +269,7 @@
         </video>
         <button @click="hideIntro" class="skip-btn">Skip</button>
     </div>
-    <!-- === ENTRANCE ANIMATION END === -->
+    === ENTRANCE ANIMATION END === -->
     <FloatingBgmPlayer v-if="!showIntro" />
 
     <Theme.Layout v-show="!showIntro">

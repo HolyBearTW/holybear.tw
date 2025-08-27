@@ -295,9 +295,7 @@ watch(currentPage, async () => {
   margin-bottom: 0;
   margin-left: auto;
 }
-.blog-header-row.with-divider .blog-authors {
-  transform: translateX(-0.3rem);
-}
+
 /* 切換按鈕沿用 new-post-btn 樣式，僅調整 margin-right */
 .switch-version-btn {
   margin-right: 0.1em;
@@ -678,21 +676,20 @@ watch(currentPage, async () => {
 }
 /* 作者群整體縮小字體 */
 /* 作者群整體縮小字體，並強制單行不換行，超出可橫向捲動 */
+/* 英文作者名更小 */
+
+
 .blog-authors {
-  font-size: 0.93em;
-  white-space: nowrap;
-  overflow-x: auto;
-  overflow-y: hidden;
   color: var(--vp-c-text-2, #444);
+  font-size: 1.12rem;
   display: flex;
-  align-items: center;
-  gap: 0.18em;
-  flex-wrap: nowrap;
+  align-items: baseline;
+  gap: 0.3em;
+  flex-wrap: wrap;
   min-width: 0;
   margin-bottom: 0;
   position: relative;
-  margin-left: auto;
-  transform: translateX(-0.5rem);
+  align-items: center;
 }
 .blog-authors strong {
   margin-right: 0.5em;
@@ -744,7 +741,7 @@ watch(currentPage, async () => {
   background: var(--vp-c-brand-dark);
   color: #000;
 }
-@media (max-width: 1070px) {
+@media (max-width: 1259px) {
   .blog-header-row {
     display: flex;
     flex-direction: row;
@@ -812,7 +809,7 @@ watch(currentPage, async () => {
     margin-bottom: 3px !important;
   }
   .blog-authors a {
-    font-size: 16px;
+    font-size: 12px;
     margin: 0 !important;
     padding: 0 !important;
     display: flex;
