@@ -122,25 +122,25 @@
         return isEnglish.value ? 'Unknown date' : '未知日期'
     })
 
-    /* === ENTRANCE ANIMATION START === */
-    const showIntro = ref(false)
-    const STORAGE_KEY = 'intro-video-last-played'
-    const HOUR = 60 * 60 * 1000
+    // /* === ENTRANCE ANIMATION START === */
+    // const showIntro = ref(false)
+    // const STORAGE_KEY = 'intro-video-last-played'
+    // const HOUR = 60 * 60 * 1000
 
-    function hideIntro() {
-        showIntro.value = false
-        localStorage.setItem(STORAGE_KEY, Date.now().toString())
-    }
+    // function hideIntro() {
+    //     showIntro.value = false
+    //     localStorage.setItem(STORAGE_KEY, Date.now().toString())
+    // }
 
-    onMounted(() => {
-        const lastPlayed = parseInt(localStorage.getItem(STORAGE_KEY) || '0', 10)
-        if (Date.now() - lastPlayed < HOUR) {
-            showIntro.value = false
-        } else {
-            showIntro.value = true
-        }
-    })
-    /* === ENTRANCE ANIMATION END === */
+    // onMounted(() => {
+    //     const lastPlayed = parseInt(localStorage.getItem(STORAGE_KEY) || '0', 10)
+    //     if (Date.now() - lastPlayed < HOUR) {
+    //         showIntro.value = false
+    //     } else {
+    //         showIntro.value = true
+    //     }
+    // })
+    // /* === ENTRANCE ANIMATION END === */
 
     // === medium-zoom SPA/observer 全域邏輯 ===
     // 監聽 .vp-doc 動畫結束時再初始化 medium-zoom，確保動畫後 DOM 穩定
@@ -255,24 +255,10 @@
 
 <template>
     <!-- 搬家通知彈窗 -->
-    <MigrationNotice :intro-finished="!showIntro" />
-    
-    <!-- === ENTRANCE ANIMATION START (已註解，暫停顯示) ===
-    <div v-if="showIntro" class="intro-video-mask">
-        <video ref="introVideo"
-               playsinline
-               autoplay
-               muted
-               @ended="hideIntro"
-               @error="hideIntro">
-            <source src="/video/maple.mp4" type="video/mp4">
-        </video>
-        <button @click="hideIntro" class="skip-btn">Skip</button>
-    </div>
-    === ENTRANCE ANIMATION END === -->
-    <FloatingBgmPlayer v-if="!showIntro" />
-
-    <Theme.Layout v-show="!showIntro">
+    <MigrationNotice :intro-finished="true" />
+    <!-- 進場動畫區塊與狀態已完全註解，主內容永遠顯示 -->
+    <FloatingBgmPlayer />
+    <Theme.Layout>
         <template #doc-before>
             <div v-if="!isHomePage" class="blog-post-header-injected">
                 <h1 class="blog-post-title">{{ currentTitle }}</h1>
