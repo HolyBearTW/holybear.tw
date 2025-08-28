@@ -90,14 +90,14 @@ const onImgError = (e: Event) => {
   if (img && img.src !== fallbackImg) img.src = fallbackImg
 }
 
-// 使用原本的 posts 數據，而不是 import.meta.glob
+// 只顯示 /blog/ 開頭的文章，避免英文日誌混入
 const posts = allPosts.filter(
-  post => Boolean(post)
+  post => Boolean(post) && post.url.startsWith('/blog/')
 ).map(post => ({
   ...post,
   image: post.image || fallbackImg,
   tags: Array.isArray(post.tags) ? post.tags : (Array.isArray(post.tag) ? post.tag : (post.tag ? [post.tag] : [])),
-  category: Array.isArray(post.category) ? post.category : (post.category ? [post.category] : [])
+  category: Array.isArray(post.category) ? post.category : (post.category ? [post.category] : [] )
 })).sort((a, b) => {
   // 依日期新到舊排序，無日期的排最後
   if (!a.date && !b.date) return 0;
