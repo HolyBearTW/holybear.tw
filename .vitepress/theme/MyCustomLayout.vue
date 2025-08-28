@@ -281,7 +281,13 @@
                             <span v-if="currentDisplayDate" class="dot" aria-hidden="true">•</span>
                             <span v-if="currentDisplayDate">{{ currentDisplayDate }}</span>
                         </span>
-                        <span v-else class="author-inline skeleton-meta-no-bg">載入中...</span>
+                                                <ClientOnly v-else>
+                                                    <span class="author-inline">
+                                                        <span class="post-author-avatar skeleton skeleton-avatar"></span>
+                                                        <span class="skeleton skeleton-text"></span>
+                                                        <span class="skeleton skeleton-date"></span>
+                                                    </span>
+                                                </ClientOnly>
                     </span>
                     <span class="blog-post-date-right">
                         <ClientOnly>
@@ -554,11 +560,25 @@
 </style>
 
 <style scoped>
-.skeleton-meta-no-bg {
-    color: #bbb;
-    min-width: 80px;
-    min-height: 1.2em;
+.skeleton {
+    background-color: var(--vp-c-bg-soft);
+    border-radius: 4px;
+}
+.skeleton-avatar {
+    width: 21px;
+    height: 21px;
+    border-radius: 50%;
+    margin-right: 4px;
+}
+.skeleton-text {
+    width: 60px;
+    height: 14px;
     display: inline-block;
-    padding: 0 0.5em;
+    margin-right: 8px;
+}
+.skeleton-date {
+    width: 90px;
+    height: 14px;
+    display: inline-block;
 }
 </style>
