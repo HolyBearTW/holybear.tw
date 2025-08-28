@@ -2,7 +2,7 @@
 
 import { computed } from 'vue'
 import { useData } from 'vitepress'
-import authorsData from '../authorsData.js'
+import authorsData from '../../.vitepress/authorsData.js'
 
 export function useAuthors() {
     const { lang } = useData()

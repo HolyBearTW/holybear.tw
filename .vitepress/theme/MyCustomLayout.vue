@@ -1,7 +1,8 @@
 <script setup>
     import Theme from 'vitepress/theme'
     import { useData } from 'vitepress'
-    import { computed, ref, onMounted } from 'vue'
+    import { computed, ref, onMounted, watch } from 'vue'
+    import { useRoute } from 'vitepress'
     import { useAuthors } from '../components/useAuthors.js'
     import FloatingBgmPlayer from './FloatingBgmPlayer.vue'
     import GiscusComments from '../components/GiscusComments.vue'
@@ -9,7 +10,7 @@
     import ViewCounter from '../components/ViewCounter.vue'
     import MigrationNotice from '../components/MigrationNotice.vue'
     import mediumZoom from 'medium-zoom'
-        import { data as allPosts } from './posts.data.ts'
+    import { data as allPosts } from './posts.data.ts'
 
         // 只保留一份 normalizeUrl function
         function normalizeUrl(url) {
@@ -49,46 +50,68 @@
     // 作者資訊陣列
     const { getAuthorMeta, isEnglish } = useAuthors()
 
+        // skeleton loading 至少顯示 650ms
+        const isMetaLoadingRaw = computed(() => {
+            if (!allPosts || allPosts.length === 0) return false;
+            return !isHomePage.value && !currentPostData.value;
+        });
+        const isMetaLoadingWithDelay = ref(true);
+        const route = useRoute();
+        function triggerMetaLoadingDelay() {
+            isMetaLoadingWithDelay.value = true;
+            setTimeout(() => {
+                isMetaLoadingWithDelay.value = false;
+            }, 650);
+        }
+        onMounted(() => {
+            triggerMetaLoadingDelay();
+        });
+        watch(
+            () => route.path,
+            () => {
+                triggerMetaLoadingDelay();
+            }
+        );
+        const isMetaLoading = computed(() => isMetaLoadingRaw.value || isMetaLoadingWithDelay.value);
     // 直接複製 normalizeUrl 函式
 
 
     // 取得當前文章的 posts 資料（用 normalizeUrl 比對）
     // 強化 fallback，嘗試多種 url 格式並加 debug log
-    const currentPostData = computed(() => {
-      // 優先用 page.value.path，若為空則 fallback 用 window.location.pathname
-      let url = page.value?.path
-      if (!url && typeof window !== 'undefined') {
-        url = window.location.pathname
-      }
-      url = url || ''
-      const normUrl = normalizeUrl(url)
-      // 嘗試多種格式
-      const candidates = [
-        normUrl,
-        normUrl.endsWith('/') ? normUrl.slice(0, -1) : normUrl + '/',
-        normUrl + '.html',
-        normUrl + '.md',
-        normUrl.replace(/\/index$/, ''),
-      ]
-      const found = allPosts.find(post => candidates.includes(post.url))
-      if (!found) {
-        // debug log
-        console.warn('[MyCustomLayout] 找不到文章對應', {
-          pagePath: url,
-          normUrl,
-          candidates,
-          allPostUrls: allPosts.map(p => p.url)
+        const currentPostData = computed(() => {
+            if (!allPosts || allPosts.length === 0) return null;
+            // 優先用 page.value.path，若為空則 fallback 用 window.location.pathname
+            let url = page.value?.path
+            if (!url && typeof window !== 'undefined') {
+                url = window.location.pathname
+            }
+            url = url || ''
+            const normUrl = normalizeUrl(url)
+            // 嘗試多種格式
+            const candidates = [
+                normUrl,
+                normUrl.endsWith('/') ? normUrl.slice(0, -1) : normUrl + '/',
+                normUrl + '.html',
+                normUrl + '.md',
+                normUrl.replace(/\/index$/, ''),
+            ]
+            const found = allPosts.find(post => candidates.includes(post.url))
+            if (!found) {
+                // debug log
+                console.warn('[MyCustomLayout] 找不到文章對應', {
+                    pagePath: url,
+                    normUrl,
+                    candidates,
+                    allPostUrls: allPosts.map(p => p.url)
+                })
+            }
+            return found
         })
-      }
-      return found
-    })
 
     // 本地預設作者
-    const currentAuthor = computed(() =>
-      frontmatter.value?.author || currentPostData.value?.author || '未知作者'
-    )
+    // 統一用 currentPostData 的 meta，完全 mirror 列表
+    const currentAuthor = computed(() => currentPostData.value?.author || '未知作者')
     const currentAuthorMeta = computed(() => getAuthorMeta(currentAuthor.value))
-
     const currentAuthorAvatar = computed(() =>
         currentAuthorMeta.value.login
             ? `https://github.com/${currentAuthorMeta.value.login}.png`
@@ -97,10 +120,9 @@
     const currentAuthorUrl = computed(() =>
         currentAuthorMeta.value.url || 'https://holybear.tw/'
     )
-
     const currentDisplayDate = computed(() => {
-        if (frontmatter.value?.date) {
-            const date = new Date(frontmatter.value.date)
+        if (currentPostData.value?.date) {
+            const date = new Date(currentPostData.value.date)
             const twDate = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }))
             const yyyy = twDate.getFullYear()
             const mm = String(twDate.getMonth() + 1).padStart(2, '0')
@@ -109,38 +131,28 @@
             const min = String(twDate.getMinutes()).padStart(2, '0')
             return `${yyyy}-${mm}-${dd} ${hh}:${min}`
         }
-        if (currentPostData.value?.date) {
-          const date = new Date(currentPostData.value.date)
-          const twDate = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }))
-          const yyyy = twDate.getFullYear()
-          const mm = String(twDate.getMonth() + 1).padStart(2, '0')
-          const dd = String(twDate.getDate()).padStart(2, '0')
-          const hh = String(twDate.getHours()).padStart(2, '0')
-          const min = String(twDate.getMinutes()).padStart(2, '0')
-          return `${yyyy}-${mm}-${dd} ${hh}:${min}`
-        }
         return isEnglish.value ? 'Unknown date' : '未知日期'
     })
 
-    /* === ENTRANCE ANIMATION START === */
-    const showIntro = ref(false)
-    const STORAGE_KEY = 'intro-video-last-played'
-    const HOUR = 60 * 60 * 1000
+    // /* === ENTRANCE ANIMATION START === */
+    // const showIntro = ref(false)
+    // const STORAGE_KEY = 'intro-video-last-played'
+    // const HOUR = 60 * 60 * 1000
 
-    function hideIntro() {
-        showIntro.value = false
-        localStorage.setItem(STORAGE_KEY, Date.now().toString())
-    }
+    // function hideIntro() {
+    //     showIntro.value = false
+    //     localStorage.setItem(STORAGE_KEY, Date.now().toString())
+    // }
 
-    onMounted(() => {
-        const lastPlayed = parseInt(localStorage.getItem(STORAGE_KEY) || '0', 10)
-        if (Date.now() - lastPlayed < HOUR) {
-            showIntro.value = false
-        } else {
-            showIntro.value = true
-        }
-    })
-    /* === ENTRANCE ANIMATION END === */
+    // onMounted(() => {
+    //     const lastPlayed = parseInt(localStorage.getItem(STORAGE_KEY) || '0', 10)
+    //     if (Date.now() - lastPlayed < HOUR) {
+    //         showIntro.value = false
+    //     } else {
+    //         showIntro.value = true
+    //     }
+    // })
+    // /* === ENTRANCE ANIMATION END === */
 
     // === medium-zoom SPA/observer 全域邏輯 ===
     // 監聽 .vp-doc 動畫結束時再初始化 medium-zoom，確保動畫後 DOM 穩定
@@ -218,8 +230,8 @@
             if (typeof location !== 'undefined') {
                 const path = location.pathname;
                 const isBlogList =
-                    /^\/blog\/?(index|blog_list)?(\.html)?$/.test(path) ||
-                    /^\/en\/blog\/?(index|blog_list)?(\.html)?$/.test(path);
+                    /^\/blog\/?index(\.html)?$/.test(path) ||
+                    /^\/en\/blog\/?index(\.html)?$/.test(path);
                 if (isBlogList) return;
             }
             const zoomImgs = document.querySelectorAll('.vp-doc img:not(.no-zoom)');
@@ -251,44 +263,64 @@
             } catch(e) {}
         });
     }
+
+    // 隱藏 giscus "Discussion not found" 警告（dev/prod 皆生效）
+    if (typeof window !== 'undefined') {
+        const origLog = window.console.log;
+        const origWarn = window.console.warn;
+        const origError = window.console.error;
+        function filterGiscus(args) {
+            return (
+                args[0] &&
+                typeof args[0] === 'string' &&
+                args[0].includes('giscus') &&
+                args[0].includes('Discussion not found')
+            );
+        }
+        window.console.log = function (...args) {
+            if (filterGiscus(args)) return;
+            origLog.apply(window.console, args);
+        };
+        window.console.warn = function (...args) {
+            if (filterGiscus(args)) return;
+            origWarn.apply(window.console, args);
+        };
+        window.console.error = function (...args) {
+            if (filterGiscus(args)) return;
+            origError.apply(window.console, args);
+        };
+    }
 </script>
 
 <template>
     <!-- 搬家通知彈窗 -->
-    <MigrationNotice :intro-finished="!showIntro" />
-    
-    <!-- === ENTRANCE ANIMATION START === -->
-    <div v-if="showIntro" class="intro-video-mask">
-        <video ref="introVideo"
-               playsinline
-               autoplay
-               muted
-               @ended="hideIntro"
-               @error="hideIntro">
-            <source src="/video/maple.mp4" type="video/mp4">
-        </video>
-        <button @click="hideIntro" class="skip-btn">Skip</button>
-    </div>
-    <!-- === ENTRANCE ANIMATION END === -->
-    <FloatingBgmPlayer v-if="!showIntro" />
-
-    <Theme.Layout v-show="!showIntro">
+    <MigrationNotice :intro-finished="true" />
+    <FloatingBgmPlayer />
+    <Theme.Layout>
         <template #doc-before>
             <div v-if="!isHomePage" class="blog-post-header-injected">
                 <h1 class="blog-post-title">{{ currentTitle }}</h1>
                 <div v-if="(frontmatter.category && frontmatter.category.length) || (frontmatter.tag && frontmatter.tag.length)"
                      class="blog-post-meta-row">
                     <span v-for="c in frontmatter.category" :key="'cat-' + c" class="category">{{ c }}</span>
-                    <span v-for="t in frontmatter.tag" :key="'tag-' + t" class="tag">{{ t }}</span>
+                    <span v-for="(t, i) in frontmatter.tag" :key="'tag-' + t + '-' + i" class="tag">{{ t }}</span>
                 </div>
                 <p class="blog-post-date-in-content">
                     <span class="blog-post-date-main">
-                        <span class="author-inline">
+                        <span v-if="!isMetaLoading" class="author-inline">
                             <img class="post-author-avatar" :src="currentAuthorAvatar" :alt="currentAuthorMeta.name" />
                             <a :href="currentAuthorUrl" target="_blank" rel="noopener" class="author-link-name">{{ currentAuthorMeta.name }}</a>
                             <span v-if="currentDisplayDate" class="dot" aria-hidden="true">•</span>
                             <span v-if="currentDisplayDate">{{ currentDisplayDate }}</span>
                         </span>
+                        <ClientOnly v-else>
+                            <span class="author-inline">
+                                <div class="meta-content-wrapper skeleton-wrapper">
+                                    <span class="post-author-avatar skeleton skeleton-avatar"></span>
+                                    <span class="skeleton skeleton-meta-bar"></span>
+                                </div>
+                            </span>
+                        </ClientOnly>
                     </span>
                     <span class="blog-post-date-right">
                         <ClientOnly>
@@ -309,6 +341,39 @@
 </template>
 
 <style scoped>
+/* 文章內頁 category/tag 樣式與新版列表一致 */
+.blog-post-meta-row .category {
+    background: #e0f7fa !important;
+    color: #00796b !important;
+    border-radius: 999px !important;
+    border: 1.5px solid #00b8b8 !important;
+    padding: 8px 12px !important;
+    font-size: 13px !important;
+    line-height: 1 !important;
+}
+.dark .blog-post-meta-row .category {
+    background: #00363a !important;
+    color: #4dd0e1 !important;
+    border-radius: 999px !important;
+    border: 1.5px solid #00b8b8 !important;
+    padding: 8px 12px !important;
+    font-size: 13px !important;
+    line-height: 1 !important;
+}
+.blog-post-meta-row .tag {
+    background: #eaf4fb !important;
+    color: #2077c7 !important;
+    border-radius: 999px !important;
+    border: 1px solid #b5d0ea !important;
+    padding: 8px 12px !important;
+    font-size: 13px !important;
+    line-height: 1 !important;
+}
+.dark .blog-post-meta-row .tag {
+    background: #23263a !important;
+    color: #b5c6e0 !important;
+    border: 1px solid #3b3b3b !important;
+}
     /* === ENTRANCE ANIMATION START === */
     .intro-video-mask {
         position: fixed;
@@ -456,15 +521,15 @@
     }
 
     .post-author-avatar {
-        width: 22px;
-        height: 22px;
-        margin: 0 2px 0 0;
+        width: 21px;
+        height: 21px;
         border-radius: 50%;
-        vertical-align: middle;
-        box-shadow: 0 2px 8px #0001;
         border: 1px solid #ddd;
         background: #fff;
+        margin-right: 4px;
         object-fit: cover;
+        vertical-align: middle;
+        box-shadow: 0 2px 8px #0001;
         display: inline-block;
     }
 
@@ -524,5 +589,46 @@
     section.VPSidebarItem.level-0 {
         padding-bottom: 4px !important;
         padding-top: 0 !important;
+    }
+</style>
+
+<style scoped>
+    .meta-content-wrapper, .skeleton-wrapper, .author-inline {
+        height: 28px;
+        display: flex;
+        align-items: center;
+    }
+    .post-author-avatar, .skeleton-avatar {
+        width: 21px;
+        height: 21px;
+        border-radius: 50% !important;
+        border: 1px solid #ddd;
+        background: #fff;
+        margin-right: 4px;
+        object-fit: cover;
+        vertical-align: middle;
+        box-shadow: 0 2px 8px #0001;
+        display: inline-block;
+        box-sizing: border-box;
+    }
+    .skeleton-avatar {
+        background-color: var(--vp-c-bg-soft);
+        box-shadow: none;
+        border-radius: 50% !important;
+    }
+    .skeleton {
+        background-color: var(--vp-c-bg-soft);
+        border-radius: 4px;
+    }
+    .skeleton-meta-bar {
+        width: 160px;
+        height: 14px;
+        display: inline-block;
+        margin-left: 0;
+    }
+    .blog-post-date-divider {
+        border-bottom: 1px dashed var(--vp-c-divider);
+        margin-bottom: 0.5rem;
+        margin-top: 0;
     }
 </style>

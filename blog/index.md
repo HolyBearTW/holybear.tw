@@ -24,13 +24,21 @@ import PostMeta from '../.vitepress/theme/PostMeta.vue'
 // hash 切換新舊版文章列表
 import { watch as vueWatch, ref as vueRef, onMounted as vueOnMounted, onUnmounted as vueOnUnmounted } from 'vue'
 
-const isOldVersion = vueRef(false)
+const STORAGE_KEY = 'blogVersion';
+const isOldVersion = vueRef(false);
 const toggleVersion = () => {
-  isOldVersion.value = !isOldVersion.value
-  currentPage.value = 1
-  window.scrollTo({ top: 0, behavior: 'auto' })
+  isOldVersion.value = !isOldVersion.value;
+  // 寫入 localStorage
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(STORAGE_KEY, isOldVersion.value ? 'old' : 'new');
+  }
+  window.scrollTo({ top: 0, behavior: 'auto' });
   // 若要同步 hash，請取消下行註解
   // window.location.hash = isOldVersion.value ? '#old' : ''
+  // 切換新舊版時重新掛載卡片動畫
+  nextTick(() => {
+    setupCardAnimations();
+  });
 }
 
 import { useAuthors } from '../.vitepress/components/useAuthors.js'
@@ -48,7 +56,7 @@ watch(() => route.path, () => {
 // 呼叫 Composable，取得需要的共用資料和狀態
 const { getAuthorMeta, authorsData, isEnglish } = useAuthors()
 
-// 產生顯示用作者陣列（與 blog_list.md 同步）
+// 產生顯示用作者陣列
 const displayAuthors = computed(() => {
   return Object.keys(authorsData).map(login => {
     const author = authorsData[login];
@@ -82,14 +90,14 @@ const onImgError = (e: Event) => {
   if (img && img.src !== fallbackImg) img.src = fallbackImg
 }
 
-// 使用原本的 posts 數據，而不是 import.meta.glob
+// 只顯示 /blog/ 開頭的文章，避免英文日誌混入
 const posts = allPosts.filter(
-  post => Boolean(post) && post.url !== '/blog/blog_list'
+  post => Boolean(post) && post.url.startsWith('/blog/')
 ).map(post => ({
   ...post,
   image: post.image || fallbackImg,
   tags: Array.isArray(post.tags) ? post.tags : (Array.isArray(post.tag) ? post.tag : (post.tag ? [post.tag] : [])),
-  category: Array.isArray(post.category) ? post.category : (post.category ? [post.category] : [])
+  category: Array.isArray(post.category) ? post.category : (post.category ? [post.category] : [] )
 })).sort((a, b) => {
   // 依日期新到舊排序，無日期的排最後
   if (!a.date && !b.date) return 0;
@@ -145,10 +153,17 @@ const setupCardAnimations = async () => {
   })
 }
 
+
 // 初始設置
 onMounted(() => {
-  setupCardAnimations()
-  document.body.classList.add('blog-index-page')
+  // 讀取 localStorage 狀態
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved === 'old') isOldVersion.value = true;
+    if (saved === 'new') isOldVersion.value = false;
+  }
+  setupCardAnimations();
+  document.body.classList.add('blog-index-page');
 })
 
 onUnmounted(() => {
@@ -164,8 +179,8 @@ watch(currentPage, async () => {
 </script>
 
 
-<!-- 新增 blog-header-row header 區塊，與 blog_list.md 完全同步 -->
-<div class="blog-header-row">
+<!-- 新增 blog-header-row header 區塊 -->
+<div class="blog-header-row" :class="{ 'with-divider': isOldVersion }">
   <h2 class="blog-title">
     <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-book-open"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
     <span>{{ isEnglish ? 'Logs' : '日誌' }}</span>
@@ -194,7 +209,7 @@ watch(currentPage, async () => {
       class="new-post-btn switch-version-btn"
       style="margin-right: 0.5em;"
     >
-      {{ isOldVersion ? '切回新版列表' : '切回舊版列表' }}
+      {{ isOldVersion ? '體驗新版列表' : '切回舊版列表' }}
     </a>
     <a
       class="new-post-btn"
@@ -231,7 +246,7 @@ watch(currentPage, async () => {
     </ClientOnly>
   </a>
 </div>
-<!-- 舊版文章列表區塊（與 blog_list.md 同步） -->
+<!-- 舊版文章列表區塊 -->
 <div v-else class="blog-articles-grid old-version">
   <div v-for="post in paginatedPosts" :key="post.url" class="post-item">
     <a :href="post.url" class="post-item-link">
@@ -278,11 +293,12 @@ watch(currentPage, async () => {
 <style scoped>
 /* 橫向排列，標題、作者群、按鈕同層 */
 /* 橫向排列，標題、作者群、按鈕同層，底部齊平 */
-/* blog-header-row 樣式調整，讓作者群不會被擠到左側，與 blog_list.md 完全一致 */
+/* blog-header-row 樣式調整，讓作者群不會被擠到左側 */
+/* blog-header-row 樣式調整，讓作者群靠左、按鈕靠右，不受按鈕字數影響 */
 .blog-header-row {
   display: flex;
   align-items: flex-end;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 2.2rem;
   margin-bottom: 0.5rem;
   flex-wrap: nowrap;
@@ -294,6 +310,7 @@ watch(currentPage, async () => {
   align-items: flex-end;
   gap: 0.5em;
   margin-bottom: 0;
+  margin-left: auto;
 }
 /* 切換按鈕沿用 new-post-btn 樣式，僅調整 margin-right */
 .switch-version-btn {
@@ -302,24 +319,16 @@ watch(currentPage, async () => {
 /* TAG 標籤顏色統一區塊（含主色、淺色、深色） */
 /* 統一卡片下方 tag 標籤樣式（深灰底、淺灰字、深灰邊框） */
 /* 只覆蓋顏色，形狀完全繼承 .badge，確保 tag 與 category 標籤一致 */
+/* 只保留一組，與內頁同步，確保 specificity 正確 */
 .badge.tag {
-  background: #4a5568 !important;
-  color: #e2e8f0 !important;
-  border: 1px solid #6c7293 !important;
+  background: #eaf4fb !important;
+  color: #2077c7 !important;
+  border: 1px solid #b5d0ea !important;
 }
-@media (prefers-color-scheme: dark) {
-  .badge.tag {
-    background: #4a5568 !important;
-    color: #e2e8f0 !important;
-    border: 1px solid #6c7293 !important;
-  }
-}
-/* 淺色/深色模式卡片背景統一區塊 */
-.card {
-  background: #F9F6F2 !important;
-  border: 1px solid #e5e2da !important;
-  color: #222 !important;
-  box-shadow: 0 2px 8px 0 rgba(0,0,0,0.04) !important;
+.dark .badge.tag {
+  background: #23263a !important;
+  color: #b5c6e0 !important;
+  border: 1px solid #3b3b3b !important;
 }
 .dark .card {
   background: #1c1c1c !important;
@@ -347,8 +356,9 @@ watch(currentPage, async () => {
   gap: 16px; 
   padding: 16px; 
   border-radius: 14px; 
-  /* background: #1f1f1f;  // 由 mode 控制 */
-  border: 1px solid #2a2a2a; 
+  background: #F9F6F2 !important;
+  border: 1px solid #e5e2da !important;
+  color: #222 !important;
   min-height: 144px; 
   text-decoration: none; 
   color: inherit; 
@@ -546,23 +556,26 @@ watch(currentPage, async () => {
   color: #cce;
   border: 1px solid #3b3b3b;
 }
-.badge.category {
-  background: var(--vp-c-brand, #00b8b8) !important;
-  color: #000 !important;
-  border: 1px solid var(--vp-c-brand, #00b8b8) !important;
+
+/* 強制新版 category 標籤顏色與舊版一致，且不會被覆蓋 */
+.cards .badges .badge.category {
+  background: #e0f7fa !important;
+  color: #00796b !important;
+  border: 1.5px solid #00b8b8 !important;
+  z-index: 1;
 }
-.badge.tag {
-  background: #4a5568 !important;
-  color: #e2e8f0 !important;
-  border: 1px solid #6c7293 !important;
+.dark .cards .badges .badge.category {
+  background: #00363a !important;
+  color: #4dd0e1 !important;
+  border: 1.5px solid #00b8b8 !important;
+  z-index: 1;
+}
+.badge.category {
+  /* 只保留 shape，顏色與邊框交給下方高 specificity 控制 */
 }
 /* TAG 標籤顏色統一區塊（含主色、淺色、深色） */
-/* 只覆蓋顏色，形狀完全繼承 .badge，確保 tag 與 category 標籤一致 */
-.badge.tag {
-  background: #4a5568 !important;
-  color: #e2e8f0 !important;
-  border: 1px solid #6c7293 !important;
-}
+/* 只覆蓋顏色，形狀完全繼承 .badge，確保 tag 與 category 標籤一致（與內頁同步） */
+/* 已上移，避免重複與覆蓋 */
 .byline { color: var(--vp-c-text-2); font-size: 0.9rem; display: flex; align-items: center; padding: 0 !important; line-height: 1 !important; height: 20px; gap: 4px; margin-bottom: 6px; }
 .byline .author { display: inline-flex; align-items: center; color: var(--vp-c-brand-1); text-decoration: none; font-weight: 600; gap: 4px; }
 .byline .author:hover { text-decoration: underline; }
@@ -626,7 +639,7 @@ watch(currentPage, async () => {
   border-color: var(--vp-c-divider);
 }
 
-/* --- blog-header-row 樣式，與 blog_list.md 同步 --- */
+/* --- blog-header-row 樣式 --- */
 .blog-header-row {
   display: flex;
   align-items: flex-end;
@@ -717,7 +730,7 @@ watch(currentPage, async () => {
   background: var(--vp-c-brand-dark);
   color: #000;
 }
-@media (max-width: 889px) {
+@media (max-width: 1029px) {
   .blog-header-row {
     display: flex;
     flex-direction: row;
@@ -793,8 +806,31 @@ watch(currentPage, async () => {
     align-items: center;
   }
 }
+
+/* 響應式：手機和平板下 tag/category 標籤變小（scoped 內） */
+@media (max-width: 900px) {
+  .badge.tag,
+  .badge.category {
+    font-size: 12px !important;
+    padding: 5px 9px !important;
+  }
+  .badges {
+    margin-bottom: 4px !important;
+    gap: 4px !important;
+  }
+  .title {
+    margin-bottom: 0.3em !important;
+  }
+}
+
+/* 舊版列表 blog-header-row 下方虛線分隔線 */
+.blog-header-row.with-divider {
+  border-bottom: 1.5px dashed var(--vp-c-divider, #e5e5e5);
+  padding-bottom: 0.3em;
+  margin-bottom: 0.7em;
+}
 </style>
-<!-- 舊版文章列表專用樣式（完全同步 blog_list.md） -->
+<!-- 舊版文章列表專用樣式 -->
 <style scoped>
 .blog-articles-grid {
   display: grid;
@@ -854,24 +890,6 @@ watch(currentPage, async () => {
   gap: 0.4em;
   margin-bottom: 0.2rem !important;
   margin-top: 0 !important;
-}
-.category {
-  display: inline-block;
-  background: #00FFEE;
-  color: #000;
-  border-radius: 3px;
-  padding: 0 0.5em;
-  font-size: 0.85em;
-  margin-right: 0.15em;
-  margin-top: 0;
-  margin-bottom: 0.2rem !important;
-  line-height: 1.6;
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: visible;
-  text-overflow: unset;
-  height: auto;
-  max-width: none;
 }
 .post-title, .post-info .post-title {
   border-top: none !important;
@@ -967,3 +985,58 @@ body.blog-index-page [class*="content-container"] {
   outline: none !important;
 }
 </style>
+
+<style>
+  /* 舊版列表 category 標籤 shape 與新版一致，並有淺色/深色差異 */
+body.blog-index-page .blog-articles-grid .badge.category,
+body.blog-index-page .blog-articles-grid .category {
+  display: inline-block;
+  border-radius: 8px;
+  border: 1.5px solid #00b8b8 !important;
+  padding: 4px 12px;
+  font-size: 0.95em;
+  margin-right: 0.18em;
+  margin-top: 0;
+  margin-bottom: 0.2rem !important;
+  line-height: 1.4;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: unset;
+  height: auto;
+  max-width: none;
+  box-shadow: 0 1px 2px #0001;
+  letter-spacing: 0.01em;
+  transition: background 0.15s, color 0.15s, border 0.15s;
+}
+.blog-articles-grid .category {
+  background: #e0f7fa !important;
+  color: #00796b !important;
+  border-radius: 8px;
+  border: 1.5px solid #00b8b8 !important;
+}
+.dark .blog-articles-grid .category {
+  background: #00363a !important;
+  color: #4dd0e1 !important;
+  border-radius: 8px;
+  border: 1.5px solid #00b8b8 !important;
+}
+.blog-articles-grid .badge.category {
+  background: #e0f7fa !important;
+  color: #00796b !important;
+  border: 1.5px solid #00b8b8 !important;
+}
+.dark .blog-articles-grid .badge.category {
+  background: #00363a !important;
+  color: #4dd0e1 !important;
+  border: 1.5px solid #00b8b8 !important;
+}
+/* 響應式：手機和平板下 tag/category 標籤變小 */
+@media (max-width: 900px) {
+  .badge.tag,
+  .badge.category {
+    font-size: 11px !important;
+    padding: 4px 8px !important;
+  }
+}
+  </style>
