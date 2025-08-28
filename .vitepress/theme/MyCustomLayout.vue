@@ -272,12 +272,13 @@
                 </div>
                 <p class="blog-post-date-in-content">
                     <span class="blog-post-date-main">
-                        <span class="author-inline">
+                        <span v-if="!isMetaLoading" class="author-inline">
                             <img class="post-author-avatar" :src="currentAuthorAvatar" :alt="currentAuthorMeta.name" />
                             <a :href="currentAuthorUrl" target="_blank" rel="noopener" class="author-link-name">{{ currentAuthorMeta.name }}</a>
                             <span v-if="currentDisplayDate" class="dot" aria-hidden="true">•</span>
                             <span v-if="currentDisplayDate">{{ currentDisplayDate }}</span>
                         </span>
+                        <span v-else class="author-inline skeleton-meta">載入中...</span>
                     </span>
                     <span class="blog-post-date-right">
                         <ClientOnly>
@@ -547,4 +548,22 @@
         padding-bottom: 4px !important;
         padding-top: 0 !important;
     }
+</style>
+
+<style scoped>
+.skeleton-meta {
+    color: #bbb;
+    background: #eee;
+    border-radius: 6px;
+    min-width: 80px;
+    min-height: 1.2em;
+    display: inline-block;
+    animation: skeleton-blink 1.2s infinite ease-in-out;
+    padding: 0 0.5em;
+}
+@keyframes skeleton-blink {
+    0% { opacity: 0.7; }
+    50% { opacity: 0.3; }
+    100% { opacity: 0.7; }
+}
 </style>
