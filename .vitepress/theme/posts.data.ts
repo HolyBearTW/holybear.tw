@@ -67,7 +67,7 @@ function normalizeUrl(url) {
 }
 
 
-export default createContentLoader('blog/**/*.md', {
+export default createContentLoader(['blog/**/*.md', 'en/blog/**/*.md'], {
     excerpt: true,
     transform(raw) {
         return raw
