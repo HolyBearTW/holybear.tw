@@ -132,7 +132,7 @@
     "@algolia/requester-fetch" "5.36.0"
     "@algolia/requester-node-http" "5.36.0"
 
-"@algolia/client-search@5.36.0", "@algolia/client-search@^5.35.0":
+"@algolia/client-search@5.36.0":
   version "5.36.0"
   resolved "https://registry.yarnpkg.com/@algolia/client-search/-/client-search-5.36.0.tgz#ed71d9d3e29254ac6529c7d58d3e06e5ca37b4ca"
   integrity sha512-MLx32nSeDSNxfx28IfvwfHEfeo3AYe9JgEj0rLeYtJGmt0W30K6tCNokxhWGUUKrggQTH6H1lnohWsoj2OC2bw==
