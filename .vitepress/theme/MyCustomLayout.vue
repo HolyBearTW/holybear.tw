@@ -49,42 +49,45 @@
     // 作者資訊陣列
     const { getAuthorMeta, isEnglish } = useAuthors()
 
-    const isMetaLoading = computed(() => {
-  return !isHomePage.value && !currentPostData.value
-})
+        const isMetaLoading = computed(() => {
+            // allPosts 尚未載入時，不顯示 skeleton，直接顯示內容（避免一直 loading）
+            if (!allPosts || allPosts.length === 0) return false;
+            return !isHomePage.value && !currentPostData.value;
+        })
     // 直接複製 normalizeUrl 函式
 
 
     // 取得當前文章的 posts 資料（用 normalizeUrl 比對）
     // 強化 fallback，嘗試多種 url 格式並加 debug log
-    const currentPostData = computed(() => {
-      // 優先用 page.value.path，若為空則 fallback 用 window.location.pathname
-      let url = page.value?.path
-      if (!url && typeof window !== 'undefined') {
-        url = window.location.pathname
-      }
-      url = url || ''
-      const normUrl = normalizeUrl(url)
-      // 嘗試多種格式
-      const candidates = [
-        normUrl,
-        normUrl.endsWith('/') ? normUrl.slice(0, -1) : normUrl + '/',
-        normUrl + '.html',
-        normUrl + '.md',
-        normUrl.replace(/\/index$/, ''),
-      ]
-      const found = allPosts.find(post => candidates.includes(post.url))
-      if (!found) {
-        // debug log
-        console.warn('[MyCustomLayout] 找不到文章對應', {
-          pagePath: url,
-          normUrl,
-          candidates,
-          allPostUrls: allPosts.map(p => p.url)
+        const currentPostData = computed(() => {
+            if (!allPosts || allPosts.length === 0) return null;
+            // 優先用 page.value.path，若為空則 fallback 用 window.location.pathname
+            let url = page.value?.path
+            if (!url && typeof window !== 'undefined') {
+                url = window.location.pathname
+            }
+            url = url || ''
+            const normUrl = normalizeUrl(url)
+            // 嘗試多種格式
+            const candidates = [
+                normUrl,
+                normUrl.endsWith('/') ? normUrl.slice(0, -1) : normUrl + '/',
+                normUrl + '.html',
+                normUrl + '.md',
+                normUrl.replace(/\/index$/, ''),
+            ]
+            const found = allPosts.find(post => candidates.includes(post.url))
+            if (!found) {
+                // debug log
+                console.warn('[MyCustomLayout] 找不到文章對應', {
+                    pagePath: url,
+                    normUrl,
+                    candidates,
+                    allPostUrls: allPosts.map(p => p.url)
+                })
+            }
+            return found
         })
-      }
-      return found
-    })
 
     // 本地預設作者
     // 統一用 currentPostData 的 meta，完全 mirror 列表
