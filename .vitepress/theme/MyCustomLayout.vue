@@ -84,11 +84,9 @@
     })
 
     // 本地預設作者
-    const currentAuthor = computed(() =>
-      frontmatter.value?.author || currentPostData.value?.author || '未知作者'
-    )
+    // 統一用 currentPostData 的 meta，完全 mirror 列表
+    const currentAuthor = computed(() => currentPostData.value?.author || '未知作者')
     const currentAuthorMeta = computed(() => getAuthorMeta(currentAuthor.value))
-
     const currentAuthorAvatar = computed(() =>
         currentAuthorMeta.value.login
             ? `https://github.com/${currentAuthorMeta.value.login}.png`
@@ -97,10 +95,9 @@
     const currentAuthorUrl = computed(() =>
         currentAuthorMeta.value.url || 'https://holybear.tw/'
     )
-
     const currentDisplayDate = computed(() => {
-        if (frontmatter.value?.date) {
-            const date = new Date(frontmatter.value.date)
+        if (currentPostData.value?.date) {
+            const date = new Date(currentPostData.value.date)
             const twDate = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }))
             const yyyy = twDate.getFullYear()
             const mm = String(twDate.getMonth() + 1).padStart(2, '0')
@@ -108,16 +105,6 @@
             const hh = String(twDate.getHours()).padStart(2, '0')
             const min = String(twDate.getMinutes()).padStart(2, '0')
             return `${yyyy}-${mm}-${dd} ${hh}:${min}`
-        }
-        if (currentPostData.value?.date) {
-          const date = new Date(currentPostData.value.date)
-          const twDate = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }))
-          const yyyy = twDate.getFullYear()
-          const mm = String(twDate.getMonth() + 1).padStart(2, '0')
-          const dd = String(twDate.getDate()).padStart(2, '0')
-          const hh = String(twDate.getHours()).padStart(2, '0')
-          const min = String(twDate.getMinutes()).padStart(2, '0')
-          return `${yyyy}-${mm}-${dd} ${hh}:${min}`
         }
         return isEnglish.value ? 'Unknown date' : '未知日期'
     })
