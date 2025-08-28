@@ -9,7 +9,7 @@
     import ViewCounter from '../components/ViewCounter.vue'
     import MigrationNotice from '../components/MigrationNotice.vue'
     import mediumZoom from 'medium-zoom'
-        import { data as allPosts } from './posts.data.ts'
+    import { data as allPosts } from './posts.data.ts'
 
         // 只保留一份 normalizeUrl function
         function normalizeUrl(url) {
@@ -49,6 +49,9 @@
     // 作者資訊陣列
     const { getAuthorMeta, isEnglish } = useAuthors()
 
+    const isMetaLoading = computed(() => {
+  return !isHomePage.value && !currentPostData.value
+})
     // 直接複製 normalizeUrl 函式
 
 
