@@ -1,7 +1,8 @@
 <script setup>
     import Theme from 'vitepress/theme'
     import { useData } from 'vitepress'
-    import { computed, ref, onMounted } from 'vue'
+    import { computed, ref, onMounted, watch } from 'vue'
+    import { useRoute } from 'vitepress'
     import { useAuthors } from '../components/useAuthors.js'
     import FloatingBgmPlayer from './FloatingBgmPlayer.vue'
     import GiscusComments from '../components/GiscusComments.vue'
@@ -49,11 +50,29 @@
     // 作者資訊陣列
     const { getAuthorMeta, isEnglish } = useAuthors()
 
-        const isMetaLoading = computed(() => {
-            // allPosts 尚未載入時，不顯示 skeleton，直接顯示內容（避免一直 loading）
+        // skeleton loading 至少顯示 650ms
+        const isMetaLoadingRaw = computed(() => {
             if (!allPosts || allPosts.length === 0) return false;
             return !isHomePage.value && !currentPostData.value;
-        })
+        });
+        const isMetaLoadingWithDelay = ref(true);
+        const route = useRoute();
+        function triggerMetaLoadingDelay() {
+            isMetaLoadingWithDelay.value = true;
+            setTimeout(() => {
+                isMetaLoadingWithDelay.value = false;
+            }, 650);
+        }
+        onMounted(() => {
+            triggerMetaLoadingDelay();
+        });
+        watch(
+            () => route.path,
+            () => {
+                triggerMetaLoadingDelay();
+            }
+        );
+        const isMetaLoading = computed(() => isMetaLoadingRaw.value || isMetaLoadingWithDelay.value);
     // 直接複製 normalizeUrl 函式
 
 
@@ -248,23 +267,9 @@
 
 <template>
     <!-- 搬家通知彈窗 -->
-    <MigrationNotice :intro-finished="!showIntro" />
-    <!-- 進場動畫區塊與狀態已完全註解，主內容永遠顯示 -->
-    <!-- === ENTRANCE ANIMATION START (已註解，暫停顯示) ===
-    <div v-if="showIntro" class="intro-video-mask">
-        <video ref="introVideo"
-               playsinline
-               autoplay
-               muted
-               @ended="hideIntro"
-               @error="hideIntro">
-            <source src="/video/maple.mp4" type="video/mp4">
-        </video>
-        <button @click="hideIntro" class="skip-btn">Skip</button>
-    </div>
-    === ENTRANCE ANIMATION END === -->
-    <FloatingBgmPlayer v-if="!showIntro" />
-    <Theme.Layout v-show="!showIntro">
+    <MigrationNotice intro-finished="true" />
+    <FloatingBgmPlayer />
+    <Theme.Layout>
         <template #doc-before>
             <div v-if="!isHomePage" class="blog-post-header-injected">
                 <h1 class="blog-post-title">{{ currentTitle }}</h1>
@@ -281,13 +286,14 @@
                             <span v-if="currentDisplayDate" class="dot" aria-hidden="true">•</span>
                             <span v-if="currentDisplayDate">{{ currentDisplayDate }}</span>
                         </span>
-                                                <ClientOnly v-else>
-                                                    <span class="author-inline">
-                                                        <span class="post-author-avatar skeleton skeleton-avatar"></span>
-                                                        <span class="skeleton skeleton-text"></span>
-                                                        <span class="skeleton skeleton-date"></span>
-                                                    </span>
-                                                </ClientOnly>
+                        <ClientOnly v-else>
+                            <span class="author-inline">
+                                <div class="meta-content-wrapper skeleton-wrapper">
+                                    <span class="post-author-avatar skeleton skeleton-avatar"></span>
+                                    <span class="skeleton skeleton-meta-bar"></span>
+                                </div>
+                            </span>
+                        </ClientOnly>
                     </span>
                     <span class="blog-post-date-right">
                         <ClientOnly>
@@ -488,15 +494,15 @@
     }
 
     .post-author-avatar {
-        width: 22px;
-        height: 22px;
-        margin: 0 2px 0 0;
+        width: 21px;
+        height: 21px;
         border-radius: 50%;
-        vertical-align: middle;
-        box-shadow: 0 2px 8px #0001;
         border: 1px solid #ddd;
         background: #fff;
+        margin-right: 4px;
         object-fit: cover;
+        vertical-align: middle;
+        box-shadow: 0 2px 8px #0001;
         display: inline-block;
     }
 
@@ -560,25 +566,42 @@
 </style>
 
 <style scoped>
-.skeleton {
-    background-color: var(--vp-c-bg-soft);
-    border-radius: 4px;
-}
-.skeleton-avatar {
-    width: 21px;
-    height: 21px;
-    border-radius: 50%;
-    margin-right: 4px;
-}
-.skeleton-text {
-    width: 60px;
-    height: 14px;
-    display: inline-block;
-    margin-right: 8px;
-}
-.skeleton-date {
-    width: 90px;
-    height: 14px;
-    display: inline-block;
-}
+    .meta-content-wrapper, .skeleton-wrapper, .author-inline {
+        height: 28px;
+        display: flex;
+        align-items: center;
+    }
+    .post-author-avatar, .skeleton-avatar {
+        width: 21px;
+        height: 21px;
+        border-radius: 50% !important;
+        border: 1px solid #ddd;
+        background: #fff;
+        margin-right: 4px;
+        object-fit: cover;
+        vertical-align: middle;
+        box-shadow: 0 2px 8px #0001;
+        display: inline-block;
+        box-sizing: border-box;
+    }
+    .skeleton-avatar {
+        background-color: var(--vp-c-bg-soft);
+        box-shadow: none;
+        border-radius: 50% !important;
+    }
+    .skeleton {
+        background-color: var(--vp-c-bg-soft);
+        border-radius: 4px;
+    }
+    .skeleton-meta-bar {
+        width: 160px;
+        height: 14px;
+        display: inline-block;
+        margin-left: 0;
+    }
+    .blog-post-date-divider {
+        border-bottom: 1px dashed var(--vp-c-divider);
+        margin-bottom: 0.5rem;
+        margin-top: 0;
+    }
 </style>
