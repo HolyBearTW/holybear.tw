@@ -263,11 +263,38 @@
             } catch(e) {}
         });
     }
+
+    // 隱藏 giscus "Discussion not found" 警告（dev/prod 皆生效）
+    if (typeof window !== 'undefined') {
+        const origLog = window.console.log;
+        const origWarn = window.console.warn;
+        const origError = window.console.error;
+        function filterGiscus(args) {
+            return (
+                args[0] &&
+                typeof args[0] === 'string' &&
+                args[0].includes('giscus') &&
+                args[0].includes('Discussion not found')
+            );
+        }
+        window.console.log = function (...args) {
+            if (filterGiscus(args)) return;
+            origLog.apply(window.console, args);
+        };
+        window.console.warn = function (...args) {
+            if (filterGiscus(args)) return;
+            origWarn.apply(window.console, args);
+        };
+        window.console.error = function (...args) {
+            if (filterGiscus(args)) return;
+            origError.apply(window.console, args);
+        };
+    }
 </script>
 
 <template>
     <!-- 搬家通知彈窗 -->
-    <MigrationNotice intro-finished="true" />
+    <MigrationNotice :intro-finished="true" />
     <FloatingBgmPlayer />
     <Theme.Layout>
         <template #doc-before>
@@ -276,7 +303,7 @@
                 <div v-if="(frontmatter.category && frontmatter.category.length) || (frontmatter.tag && frontmatter.tag.length)"
                      class="blog-post-meta-row">
                     <span v-for="c in frontmatter.category" :key="'cat-' + c" class="category">{{ c }}</span>
-                    <span v-for="t in frontmatter.tag" :key="'tag-' + t" class="tag">{{ t }}</span>
+                    <span v-for="(t, i) in frontmatter.tag" :key="'tag-' + t + '-' + i" class="tag">{{ t }}</span>
                 </div>
                 <p class="blog-post-date-in-content">
                     <span class="blog-post-date-main">
