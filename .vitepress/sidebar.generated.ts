@@ -3,6 +3,10 @@ export default [
   {
     "items": [
       {
+        "text": "金氏世界紀錄證書！ 我也拼進歷史啦！",
+        "link": "/blog/2025-08-30"
+      },
+      {
         "text": "日誌列表重構：舊的不能丟，新的也要有！",
         "link": "/blog/2025-08-28"
       },
@@ -37,10 +41,6 @@ export default [
       {
         "text": "今天我生日！",
         "link": "/blog/2025-06-10"
-      },
-      {
-        "text": "買到 Switch 2 啦！",
-        "link": "/blog/2025-06-06"
       }
     ]
   },
