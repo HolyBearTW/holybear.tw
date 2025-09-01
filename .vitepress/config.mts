@@ -19,6 +19,7 @@ export default defineConfig({
         ['link', { rel: 'icon', type: 'image/x-icon', href: '/favicon.png' }],
         ['link', { rel: 'icon', type: 'image/png', sizes: '48x48', href: '/favicon.png' }],
         ['link', { rel: 'icon', href: '/favicon.png' }],
+        ['link', { rel: 'shortcut icon', type: 'image/png', href: '/favicon.png' }],
         ['link', { rel: 'apple-touch-icon', sizes: '64x64', href: '/favicon.png' }],
         ['link', { rel: 'mask-icon', href: '/favicon.png', color: '#00FFEE' }],
         ['meta', { name: 'msapplication-TileColor', content: '#00FFEE' }],
@@ -27,6 +28,7 @@ export default defineConfig({
             rel: 'stylesheet',
             href: '/fonts/LINESeed.css'
         }],
+        // 網站說明與標籤
         ['meta', { name: 'description', content: '聖小熊的個人網站，收錄 HyperOS 模組、技術筆記與開發心得，專注於 Android 客製化與開源創作分享。' }],
         ['meta', { name: 'keywords', content: '聖小熊, HolyBear, HyperOS, 模組, Mod, MIUI, Android, GitHub, 技術部落格, Blog' }],
         // OG 標籤 - 加強搜尋引擎和社交媒體顯示
