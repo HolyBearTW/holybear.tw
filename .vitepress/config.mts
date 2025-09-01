@@ -16,7 +16,9 @@ export default defineConfig({
     head: [
         ['meta', { name: 'theme-color', content: '#00FFEE' }],
         // Favicon 完整配置 - 支援各種設備和搜尋引擎
+        ['link', { rel: 'icon', type: 'image/x-icon', href: '/favicon.png' }],
         ['link', { rel: 'icon', type: 'image/png', sizes: '48x48', href: '/favicon.png' }],
+        ['link', { rel: 'icon', href: '/favicon.png' }],
         ['link', { rel: 'apple-touch-icon', sizes: '64x64', href: '/favicon.png' }],
         ['link', { rel: 'mask-icon', href: '/favicon.png', color: '#00FFEE' }],
         ['meta', { name: 'msapplication-TileColor', content: '#00FFEE' }],
