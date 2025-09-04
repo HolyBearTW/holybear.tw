@@ -604,25 +604,6 @@ html {
     }
 }
 
-
-
-    /* 首頁與列表頁（非 is-blog-page）導覽列下方黑線 */
-    body:not(.is-blog-page) .divider,
-    body:not(.is-blog-page) .divider-line {
-    display: none !important;
-    /*
-    position: relative !important;
-    left: 50% !important;
-    right: 50% !important;
-    width: 100vw !important;
-    max-width: none !important;
-    margin-left: -50vw !important;
-    margin-right: -50vw !important;
-    padding: 0 !important;
-    box-sizing: border-box !important;
-    */
-    }
-
     /* 語言選單背景 */
     .VPMenu {
     background: rgba(255, 255, 255, 0.7) !important; /* 淺色模式 */
