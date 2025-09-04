@@ -614,6 +614,23 @@ html {
     background: rgba(35, 35, 35, 0.7) !important; /* 深色模式 */
     }
 
+    /* 首頁與列表頁（非 is-blog-page）導覽列下方黑線 */
+    body:not(.is-blog-page) .divider,
+    body:not(.is-blog-page) .divider-line {
+    display: none !important;
+    /*
+    position: relative !important;
+    left: 50% !important;
+    right: 50% !important;
+    width: 100vw !important;
+    max-width: none !important;
+    margin-left: -50vw !important;
+    margin-right: -50vw !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+    */
+    }
+
     /* 針對 VitePress 文章頁面中，主要內容區塊裡的第一個 h2 標題 */
     .vp-doc > div > h2:first-child {
     border-top: none !important;
