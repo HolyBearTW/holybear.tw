@@ -51,16 +51,82 @@ export default {
                     if (href && href.startsWith('#')) {
                         const anchor = document.querySelector(href);
                         if (anchor) {
-                            anchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            // 簡單的一次性滾動，計算準確位置
+                            const elementPosition = anchor.getBoundingClientRect().top;
+                            const offsetPosition = elementPosition + window.pageYOffset - 50;
+                            
+                            window.scrollTo({
+                                top: offsetPosition,
+                                behavior: 'smooth'
+                            });
                         }
                     }
                 }, 120) as NodeJS.Timeout;
             }
         }
 
+        function globalClickDelegate(e) {
+            const link = e.target.closest('.outline-link');
+            if (
+                link &&
+                link instanceof HTMLElement &&
+                link.matches('.outline-link')
+            ) {
+                // 更強力地阻止預設行為
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation(); // 阻止其他監聽器
+                
+                const href = link.getAttribute('href');
+                if (href && href.startsWith('#')) {
+                    const anchor = document.querySelector(href);
+                    if (anchor) {
+                        // 完全複製懸停時的邏輯
+                        const elementPosition = anchor.getBoundingClientRect().top;
+                        const offsetPosition = elementPosition + window.pageYOffset - 50;
+                        
+                        // 使用 setTimeout 確保在其他事件處理完後執行
+                        setTimeout(() => {
+                            window.scrollTo({
+                                top: offsetPosition,
+                                behavior: 'smooth'
+                            });
+                        }, 10);
+                        
+                        // 更新 URL，但不觸發跳轉
+                        setTimeout(() => {
+                            history.pushState(null, '', href);
+                        }, 50);
+                    }
+                }
+                return false; // 額外保險
+            }
+        }
+
         function setupGlobalOutlineHoverScroll() {
             document.removeEventListener('mouseover', globalHoverDelegate);
+            document.removeEventListener('click', globalClickDelegate);
             document.addEventListener('mouseover', globalHoverDelegate);
+            
+            // 使用更強制性的方式綁定點擊事件
+            document.addEventListener('click', globalClickDelegate, true); // 使用 capture phase
+            
+            // 額外的保險措施：直接在側邊欄綁定事件
+            setTimeout(() => {
+                const outline = document.querySelector('.VPDocAsideOutline');
+                if (outline) {
+                    outline.addEventListener('click', (e) => {
+                        if (e.target && e.target instanceof HTMLElement) {
+                            const link = e.target.closest('.outline-link');
+                            if (link && link.getAttribute('href')?.startsWith('#')) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                globalClickDelegate(e);
+                            }
+                        }
+                    }, true);
+                }
+            }, 500);
         }
 
         // --- SEO 與 head 標籤動態同步 ---
