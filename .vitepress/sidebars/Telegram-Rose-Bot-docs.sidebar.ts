@@ -7,19 +7,14 @@ export default [
     ]
   },
   {
-    text: '管理功能',
+    text: '功能彙整',
     items: [
       { text: '管理員功能 (Admin)', link: '/docs/Telegram-Rose-Bot#管理員功能-admin' },
       { text: '防止洗版 (Antiflood)', link: '/docs/Telegram-Rose-Bot#防止洗版-antiflood' },
       { text: '防止惡意灌水/炸群 (AntiRaid)', link: '/docs/Telegram-Rose-Bot#防止惡意灌水-炸群-antiraid' },
       { text: '白名單 (Approval)', link: '/docs/Telegram-Rose-Bot#白名單-approval' },
       { text: '封鎖與懲處 (Bans)', link: '/docs/Telegram-Rose-Bot#封鎖與懲處-bans' },
-      { text: '封鎖詞/黑名單 (Blocklists)', link: '/docs/Telegram-Rose-Bot#封鎖詞-黑名單-blocklists' }
-    ]
-  },
-  {
-    text: '進階功能',
-    items: [
+      { text: '封鎖詞/黑名單 (Blocklists)', link: '/docs/Telegram-Rose-Bot#封鎖詞-黑名單-blocklists' },
       { text: '真人驗證 (CAPTCHA)', link: '/docs/Telegram-Rose-Bot#真人驗證-captcha' },
       { text: '清除訊息', link: '/docs/Telegram-Rose-Bot#清除訊息' },
       { text: '遠端連線管理 (Connections)', link: '/docs/Telegram-Rose-Bot#遠端連線管理-connections' },
@@ -32,7 +27,15 @@ export default [
       { text: '隨機內容功能', link: '/docs/Telegram-Rose-Bot#隨機內容功能' },
       { text: '匯入/匯出設定 (Import/Export)', link: '/docs/Telegram-Rose-Bot#匯入-匯出設定-import-export' },
       { text: '語言設定 (Languages)', link: '/docs/Telegram-Rose-Bot#語言設定-languages' },
-      { text: '鎖定特定功能 (Locks)', link: '/docs/Telegram-Rose-Bot#鎖定特定功能-locks' }
+      { text: '鎖定特定功能 (Locks)', link: '/docs/Telegram-Rose-Bot#鎖定特定功能-locks' },
+      { text: '日誌頻道 (Log Channels)', link: '/docs/Telegram-Rose-Bot#日誌頻道-log-channels' },
+      { text: '筆記功能 (Notes)', link: '/docs/Telegram-Rose-Bot#筆記功能-notes' },
+      { text: '置頂功能 (Pin)', link: '/docs/Telegram-Rose-Bot#置頂功能-pin' },
+      { text: '大量刪除訊息 (Purges)', link: '/docs/Telegram-Rose-Bot#大量刪除訊息-purges' },
+      { text: '檢舉功能 (Reports)', link: '/docs/Telegram-Rose-Bot#檢舉功能-reports' },
+      { text: '群規 (Rules)', link: '/docs/Telegram-Rose-Bot#群規-rules' },
+      { text: '話題功能 (Topics)', link: '/docs/Telegram-Rose-Bot#話題功能-topics' },
+      { text: '警告系統 (Warnings)', link: '/docs/Telegram-Rose-Bot#警告系統-warnings' }
     ]
   },
   {
