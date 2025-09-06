@@ -213,10 +213,10 @@ watch(currentPage, async () => {
     </a>
     <a
       class="new-post-btn"
-      href="https://github.com/HolyBearTW/holybear.tw/new/main/blog"
+      href="https://github.com/HolyBearTW/holybear.tw/new/main/docs"
       target="_blank"
       rel="noopener"
-    >➕ {{ isEnglish ? 'New Post' : '新增文章' }}</a>
+    >➕ {{ isEnglish ? 'New Post' : '新增文件' }}</a>
   </div>
 </div>
 
