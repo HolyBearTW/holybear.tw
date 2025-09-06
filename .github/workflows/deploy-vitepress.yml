@@ -73,7 +73,7 @@ jobs:
 
       - name: 產生側邊欄
         if: steps.detect-content-changed.outputs.has_changed == 'true'
-        run: node .vitepress/sidebars/generateSidebar.cjs
+        run: node .vitepress/components/generateSidebar.cjs
 
       - name: 產生 sitemap.xml
         if: steps.detect-content-changed.outputs.has_changed == 'true'
