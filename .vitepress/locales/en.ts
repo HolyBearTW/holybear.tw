@@ -1,4 +1,4 @@
-import sidebarEn from '../sidebar.generated.en'
+import sidebarEn from '../sidebars/blog.sidebar.en'
 
 export default {
   lang: 'en',

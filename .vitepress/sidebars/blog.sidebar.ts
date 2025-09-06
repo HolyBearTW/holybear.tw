@@ -3,10 +3,6 @@ export default [
   {
     "items": [
       {
-        "text": "最強 Telegram 群組管理機器人 Rose：超完整繁體中文教學，從零到專家！",
-        "link": "/blog/2025-09-04"
-      },
-      {
         "text": "金氏世界紀錄證書！ 我也拼進歷史啦！",
         "link": "/blog/2025-08-30"
       },
@@ -41,6 +37,10 @@ export default [
       {
         "text": "生日禮物",
         "link": "/blog/2025-06-10-special"
+      },
+      {
+        "text": "今天我生日！",
+        "link": "/blog/2025-06-10"
       }
     ]
   },
@@ -48,7 +48,7 @@ export default [
     "items": [
       {
         "text": "回文章列表",
-        "link": "/blog/index"
+        "link": "/blog/"
       }
     ]
   }

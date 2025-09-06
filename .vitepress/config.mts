@@ -1,7 +1,8 @@
 import { defineConfig } from 'vitepress'
 import locales from './locales'
 import gitMetaPlugin from './git-meta'
-import sidebar from './sidebar.generated'
+import sidebar from './sidebars/blog.sidebar'
+import TelegramRoseBotDocsSidebar from './sidebars/Telegram-Rose-Bot-docs.sidebar.ts'
 
 export default defineConfig({
     ignoreDeadLinks: true,
@@ -210,10 +211,16 @@ export default defineConfig({
     },
     // ✨ END: 整合所有 OG 標籤的最終邏輯 ✨
 
-    themeConfig: {
+        themeConfig: {
         logo: '/logo.png',
-        sidebar,
-        socialLinks: [
+        outline: {
+            level: [2, 3], // 默認顯示 H2 和 H3 標題
+        },
+        sidebar: {
+            '/blog/': sidebar,
+            '/docs/Telegram-Rose-Bot.md': TelegramRoseBotDocsSidebar,
+        },
+                socialLinks: [
             { icon: 'github', link: 'https://github.com/HolyBearTW' }
         ],
         search: {

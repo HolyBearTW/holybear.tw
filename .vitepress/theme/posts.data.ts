@@ -67,7 +67,7 @@ function normalizeUrl(url) {
 }
 
 
-export default createContentLoader(['blog/**/*.md', 'en/blog/**/*.md', 'Mod.md', 'en/Mod.md'], {
+export default createContentLoader(['blog/**/*.md', 'en/blog/**/*.md', 'Mod.md', 'en/Mod.md', 'docs/*.md'], {
     excerpt: true,
     transform(raw) {
         return raw
@@ -76,7 +76,8 @@ export default createContentLoader(['blog/**/*.md', 'en/blog/**/*.md', 'Mod.md',
                     url === '/blog/' ||
                     url === '/blog/index.html' ||
                     url === '/en/blog/' ||
-                    url === '/en/blog/index.html';
+                    url === '/en/blog/index.html'
+                    url === '/docs/';
                 const isUnexpectedMdUrl = url.endsWith('.md') && !url.startsWith('/blog/') && !url.startsWith('/en/blog/');
                 return !isBlogIndexPage && !isUnexpectedMdUrl;
             })

@@ -1,5 +1,3 @@
-import sidebar from '../sidebar.generated'
-
 export default {
   lang: 'zh-TW',
   description: '聖小熊的個人網站，收錄 HyperOS 模組、技術筆記與開發心得，專注於 Android 客製化與開源創作分享。',
@@ -7,13 +5,10 @@ export default {
     nav: [
       { text: '日誌', link: '/blog/' },
       { text: '作品集', link: '/Mod' },
-      { text: '短網址', link: 'https://go.holybear.tw/' },
+      { text: '技術文件', link: '/docs/' },
       { text: 'Telegram', link: 'https://t.me/HolyBearTW' },
       { text: '贊助', link: 'https://paypal.me/holybear0610' }
     ],
-    sidebar: {
-      '/blog/': sidebar
-    },
     sidebarMenuLabel: '日誌列表',
     returnToTopLabel: '回到頂部',
     darkModeSwitchLabel: '深色模式',

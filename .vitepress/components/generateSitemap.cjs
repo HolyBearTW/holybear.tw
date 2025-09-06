@@ -66,6 +66,9 @@ urls.push(`${BASE_URL}/en/`);
 // 添加子網域 jackboy.holybear.tw
 urls.push(`https://jackboy.holybear.tw/`);
 
+// 確保 docs 頁面被包含
+urls.push(`${BASE_URL}/docs/`);
+
 const xml =
   `<?xml version="1.0" encoding="UTF-8"?>\n` +
   `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
