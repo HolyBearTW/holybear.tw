@@ -397,6 +397,14 @@ watch(currentPage, async () => {
     font-size: 18px !important; /* 增大標題字體 */
     line-height: 1.3 !important;
     margin-bottom: 8px !important;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-break: break-word;
+    white-space: normal;
+    max-height: 4.2em;
   }
   
   .card .badges {
