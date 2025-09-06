@@ -17,8 +17,8 @@ hero:
       text: 作品集
       link: /Mod
     - theme: alt
-      text: 短網址
-      link: https://go.holybear.tw/
+      text: 技術文件
+      link: /docs/
 
 features:
   - title: 日誌

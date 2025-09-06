@@ -73,7 +73,7 @@ jobs:
 
       - name: 產生側邊欄
         if: steps.detect-content-changed.outputs.has_changed == 'true'
-        run: node .vitepress/components/generateSidebar.cjs
+        run: node .vitepress/sidebars/generateSidebar.cjs
 
       - name: 產生 sitemap.xml
         if: steps.detect-content-changed.outputs.has_changed == 'true'
@@ -84,13 +84,13 @@ jobs:
         run: |
           git config --global user.name "${{ github.actor }}"
           git config --global user.email "${{ github.actor }}@users.noreply.github.com"
-          git add .vitepress/sidebar.generated.ts .vitepress/sidebar.generated.en.ts public/sitemap.xml
+          git add .vitepress/sidebars/blog.sidebar.ts .vitepress/sidebars/blog.sidebar.en.ts public/sitemap.xml
           if git diff --cached --quiet; then
-            echo "沒有 sidebar 或 authors 或 sitemap 變更，無需 amend"
+            echo "沒有 sidebar 或 sitemap 變更，無需 amend"
           else
             git commit --amend --no-edit
             git push --force-with-lease
-            echo "已 amend sidebar / authors / sitemap 進原本 commit"
+            echo "已 amend sidebar / sitemap 進原本 commit"
           fi
 
       - name: Commit 並 push yarn.lock

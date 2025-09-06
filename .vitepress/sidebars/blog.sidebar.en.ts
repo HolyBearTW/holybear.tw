@@ -12,7 +12,7 @@ export default [
     "items": [
       {
         "text": "Back to blog list",
-        "link": "/en/blog/index"
+        "link": "/en/blog/"
       }
     ]
   }

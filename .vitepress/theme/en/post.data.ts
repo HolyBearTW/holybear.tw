@@ -49,7 +49,8 @@ export default createContentLoader('en/blog/**/*.md', {
           url === '/blog/' ||
           url === '/blog/index.html' ||
           url === '/en/blog/' ||
-          url === '/en/blog/index.html';
+          url === '/en/blog/index.html'
+          url === '/docs/';
         return !isBlogIndexPage;
       })
       .map(({ url, frontmatter, src, excerpt }) => {

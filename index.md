@@ -17,9 +17,8 @@ hero:
       text: 作品集
       link: /Mod
     - theme: alt
-      text: 短網址
-      link: https://go.holybear.tw/
-
+      text: 技術文件
+      link: /docs/
 features:
   - title: 日誌
     details: 這裡記錄了我在學習與創作過程中的點點滴滴。從程式設計的踩坑筆記，到日常生活的觀察思考，這些日誌都是我真實的成長軌跡。希望能透過分享我的經驗，為你帶來一些啟發或共鳴。
