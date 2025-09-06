@@ -1,7 +1,7 @@
 ---
 title: 如何輕鬆地在VitePress寫部落格？
 description: 這篇教學將帶您了解如何在VitePress框架下，快速開始您的部落格寫作旅程，並分享一些實用的技巧。
-image: https://logos-world.net/wp-content/uploads/2020/11/GitHub-Logo.png
+image: https://vitejs.cn/vitepress/vitepress-logo-large.webp
 tag:
   - VitePress
   - 部落格
@@ -9,6 +9,8 @@ tag:
 category:
   - 技術分享
 ---
+
+<img src="https://static.accupass.com/eventbanner/2407140502431705502906.jpg">
 
 嗨，大家好！今天想跟大家分享，我最近是怎麼用 [VitePress](https://vitepress.dev/) 來搭建我的個人部落格。
 
@@ -74,7 +76,7 @@ Front Matter（最上面那塊用 --- 包起來的區域）一定要有，尤其
 ## 常見新手問題
 
 - **Q: Front Matter 那一塊要怎麼填？**  
-  A: 按照範本，title 跟 listDate 一定要有，其他可以照範例填寫，也可以暫時留空或刪除。
+  A: 按照範本，title 一定要有，其他可以照範例填寫，也可以暫時留空或刪除。
 
 - **Q: 文章沒出現在網站？**  
   A: 可能是格式錯誤，或是檔名、Front Matter 有誤，請再檢查一次。

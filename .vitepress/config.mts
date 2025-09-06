@@ -3,6 +3,7 @@ import locales from './locales'
 import gitMetaPlugin from './git-meta'
 import sidebar from './sidebars/blog.sidebar'
 import TelegramRoseBotDocsSidebar from './sidebars/Telegram-Rose-Bot-docs.sidebar.ts'
+import VitepressBlogDocsSidebar from './sidebars/Vitepress-Blog-docs-sidebar.ts'
 
 export default defineConfig({
     ignoreDeadLinks: true,
@@ -219,6 +220,7 @@ export default defineConfig({
         sidebar: {
             '/blog/': sidebar,
             '/docs/Telegram-Rose-Bot.md': TelegramRoseBotDocsSidebar,
+            '/docs/Vitepress-Blog.md': VitepressBlogDocsSidebar
         },
                 socialLinks: [
             { icon: 'github', link: 'https://github.com/HolyBearTW' }

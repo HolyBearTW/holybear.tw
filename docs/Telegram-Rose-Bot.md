@@ -13,6 +13,8 @@ category:
   - 教學
 ---
 
+<img src="https://gazeteyenigun.com.tr/sites/1475/uploads/2023/07/14/large/13705-1.jpg">
+
 **@MissRose_bot** (簡稱 Rose) 絕對是 Telegram 上最夯、最強大的群組管理機器人之一。它的功能超級完整、穩定性又高，但可惜一直沒有一份好懂的中文說明。別擔心！這篇文章就是要幫大家從頭到尾，把 Rose 的所有功能拆解得一清二楚，讓你輕鬆變身群組管理大師！
 
 ## 為什麼大家都推 Rose Bot？
