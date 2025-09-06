@@ -3,7 +3,7 @@ export default [
     text: '介紹 Rose Bot',
     items: [
       { text: '為什麼大家都推 Rose Bot？', link: '/docs/Telegram-Rose-Bot#為什麼大家都推-rose-bot' },
-      { text: '新手入門：把 Rose 加到你的群組', link: '/docs/Telegram-Rose-Bot#新手入門-把-rose-加到你的群組' }
+      { text: '把 Rose 加到你的群組', link: '/docs/Telegram-Rose-Bot#新手入門-把-rose-加到你的群組' }
     ]
   },
   {
