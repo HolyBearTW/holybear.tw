@@ -16,7 +16,7 @@
     "gray-matter": "^4.0.3",
     "instantsearch.js": "^4.79.2",
     "medium-zoom": "^1.1.0",
-    "react-instantsearch": "^7.16.2",
+    "react-instantsearch": "^7.16.3",
     "search-insights": "^2",
     "vue-instantsearch": "^4.21.2"
   },
