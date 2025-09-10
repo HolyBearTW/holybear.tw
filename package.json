@@ -14,7 +14,7 @@
     "dotenv": "^17.2.2",
     "firebase": "^12.2.1",
     "gray-matter": "^4.0.3",
-    "instantsearch.js": "^4.79.2",
+    "instantsearch.js": "^4.80.0",
     "medium-zoom": "^1.1.0",
     "react-instantsearch": "^7.16.3",
     "search-insights": "^2",
