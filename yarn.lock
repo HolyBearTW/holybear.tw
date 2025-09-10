@@ -1591,10 +1591,28 @@ instantsearch-ui-components@0.11.2:
   dependencies:
     "@babel/runtime" "^7.27.6"
 
-instantsearch.js@4.79.2, instantsearch.js@^4.79.2:
+instantsearch.js@4.79.2:
   version "4.79.2"
   resolved "https://registry.npmjs.org/instantsearch.js/-/instantsearch.js-4.79.2.tgz"
   integrity sha512-UwTsbzkb/dsNBAWiFCFlxV1vKviPSKETi5OOQbCVqpoGcHVayXDLlEqFx+WCoFJT0nxzxpNI9QmitbYH5ufoVw==
+  dependencies:
+    "@algolia/events" "^4.0.1"
+    "@types/dom-speech-recognition" "^0.0.1"
+    "@types/google.maps" "^3.55.12"
+    "@types/hogan.js" "^3.0.0"
+    "@types/qs" "^6.5.3"
+    algoliasearch-helper "3.26.0"
+    hogan.js "^3.0.2"
+    htm "^3.0.0"
+    instantsearch-ui-components "0.11.2"
+    preact "^10.10.0"
+    qs "^6.5.1 < 6.10"
+    search-insights "^2.17.2"
+
+instantsearch.js@4.80.0, instantsearch.js@^4.79.2:
+  version "4.80.0"
+  resolved "https://registry.yarnpkg.com/instantsearch.js/-/instantsearch.js-4.80.0.tgz#19fbae5ea01a9d06702968bff928e8183dcdecf4"
+  integrity sha512-l2HTW6+tBs2hGrby43Y7HbWayTifFFKk/ikRU5BXFpCigG6CRAYZLE1NFifAskaj3SVQiY8O8B/T6hJyeMsScA==
   dependencies:
     "@algolia/events" "^4.0.1"
     "@types/dom-speech-recognition" "^0.0.1"
@@ -2112,13 +2130,13 @@ vitepress@^2.0.0-alpha.12:
     vite "^7.1.2"
     vue "^3.5.18"
 
-vue-instantsearch@^4.21.2:
-  version "4.21.2"
-  resolved "https://registry.npmjs.org/vue-instantsearch/-/vue-instantsearch-4.21.2.tgz"
-  integrity sha512-TDSK8I/NFjHt3qRlSXKiFpkaU7UFcQ0fg5HKD4htArxqCkSLJNyoXCzBcuRiy/2u+sE1nm7Bxd1oNhLmERWO2g==
+vue-instantsearch@^4.21.3:
+  version "4.21.3"
+  resolved "https://registry.yarnpkg.com/vue-instantsearch/-/vue-instantsearch-4.21.3.tgz#694dc31f07feeddf9e0ebc315880be0fd332f424"
+  integrity sha512-WJNywbOLFFTmhVKfT5OVDgxyc07im8HB37LNyFUEWnZ7y5tJyzFTtNK4E90Fg0zrkouKBfFgFm4f583MGsqMqw==
   dependencies:
     instantsearch-ui-components "0.11.2"
-    instantsearch.js "4.79.2"
+    instantsearch.js "4.80.0"
     mitt "^2.1.0"
 
 vue@^3.5.18, vue@^3.5.21:
