@@ -18,7 +18,7 @@
     "medium-zoom": "^1.1.0",
     "react-instantsearch": "^7.16.2",
     "search-insights": "^2",
-    "vue-instantsearch": "^4.21.2"
+    "vue-instantsearch": "^4.21.3"
   },
   "scripts": {
     "dev": "vitepress dev",
