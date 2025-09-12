@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import * as OpenCC from 'opencc-js';
 
 // --- 1. 在此新增「純簡轉繁」選項 ---
@@ -31,6 +31,7 @@ const currentMode = ref(conversionOptions.value[0]);
 const inputText = ref('滑鼠和伺服器在台灣是很常見的資訊技術詞彙。');
 const outputText = ref('');
 const isStacked = ref(false);
+const isMobile = ref(false);
 
 const performConversion = () => {
   let text = inputText.value;
@@ -72,6 +73,24 @@ const copyToClipboard = (text) => {
   });
 };
 
+const clearInput = () => {
+  inputText.value = '';
+  performConversion(); // 確保清空後也更新轉換結果
+};
+
+onMounted(() => {
+  const checkMobile = () => {
+    isMobile.value = window.innerWidth <= 768;
+  };
+
+  checkMobile();
+  window.addEventListener('resize', checkMobile);
+
+  return () => {
+    window.removeEventListener('resize', checkMobile);
+  };
+});
+
 performConversion();
 </script>
 
@@ -109,7 +128,10 @@ performConversion();
         <div class="textarea-wrapper">
           <h4>原文</h4>
           <textarea v-model="inputText" @input="performConversion" rows="8"></textarea>
-          <button @click="isStacked = !isStacked" class="copy-button">切換佈局</button>
+          <div class="button-group">
+            <button @click="clearInput" class="copy-button">清空</button>
+            <button @click="isStacked = !isStacked" class="copy-button toggle-layout-button" v-show="!isMobile">切換佈局</button>
+          </div>
         </div>
         <div class="textarea-wrapper">
           <h4>轉換結果</h4>
@@ -219,6 +241,10 @@ textarea {
   box-sizing: border-box;
   background-color: var(--vp-c-bg-soft);
   color: var(--vp-c-text-1);
+  margin-bottom: 0; /* 完全移除輸入框與按鈕之間的間距 */
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: pre-wrap; /* 保留換行並自動換行 */
 }
 textarea:focus { border-color: var(--vp-c-brand); outline: none; }
 .result-box {
@@ -233,6 +259,9 @@ textarea:focus { border-color: var(--vp-c-brand); outline: none; }
   box-sizing: border-box;
   font-size: 1em;
   margin-bottom: 0.5rem; /* 增加框框與按鈕之間的小間距 */
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: pre-wrap; /* 保留換行並自動換行 */
 }
 .result-box p { margin: 0; white-space: pre-wrap; word-wrap: break-word; }
 
@@ -246,6 +275,7 @@ textarea:focus { border-color: var(--vp-c-brand); outline: none; }
   font-size: 14px;
   transition: all 0.2s ease;
   color: black;
+  margin-top: 0.5rem; /* 確保所有按鈕的間距一致 */
 }
 .copy-button:hover {
   background: var(--vp-c-bg-mute);
@@ -272,8 +302,15 @@ textarea:focus { border-color: var(--vp-c-brand); outline: none; }
   .group-title { text-align: left; width: auto; }
 }
 
+.button-group {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 0; /* 完全移除按鈕組與輸入框之間的間距 */
+}
+
 .toggle-layout-button {
-  margin-bottom: 1rem;
+  /* 移除原有樣式，統一按鈕樣式 */
   padding: 6px 14px;
   border: 1px solid var(--vp-c-divider);
   background: var(--vp-c-bg);
@@ -286,5 +323,19 @@ textarea:focus { border-color: var(--vp-c-brand); outline: none; }
 .toggle-layout-button:hover {
   background: var(--vp-c-bg-mute);
   border-color: var(--vp-c-brand-light);
+}
+.toggle-layout-button:active {
+  background: var(--vp-c-brand);
+  color: var(--vp-c-bg);
+  border-color: var(--vp-c-brand);
+}
+
+@media (prefers-color-scheme: dark) {
+  .toggle-layout-button {
+    color: var(--vp-c-text-1);
+  }
+  .toggle-layout-button:active {
+    color: var(--vp-c-bg);
+  }
 }
 </style>
