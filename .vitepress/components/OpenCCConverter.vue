@@ -96,10 +96,10 @@ performConversion();
 
 <template>
   <div class="page-container">
-    <p class="intro-text">
-      <h1>線上簡繁轉換工具</h1>
-      <p>這是一個基於 OpenCC-JS 建立的線上繁體、簡體中文轉換工具。請在下方的輸入框貼上您想轉換的文字。</p>
-    </p>
+    <h1>線上簡繁轉換工具</h1>
+    <h3 class="intro-text">
+      📝 這是一個基於 OpenCC-JS 建立的線上繁體、簡體中文轉換工具。請在下方的輸入框貼上您想轉換的文字。
+    </h3>
 
     <div class="converter-container">
       <div class="mode-selector">
@@ -151,6 +151,11 @@ performConversion();
   max-width: 1190px;
   margin: 0 auto;
   padding: 0 24px 2rem;
+}
+.intro-text {
+  color: #666666 !important;
+  margin: 16px 0px 8px !important;
+  font-weight: normal; /* 確保字體為非粗體 */
 }
 .intro-text h1 { font-size: 2.2em; font-weight: 600; margin-bottom: 1rem; }
 .intro-text p { 
