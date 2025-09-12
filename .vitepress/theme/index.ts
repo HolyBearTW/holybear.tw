@@ -1,9 +1,14 @@
-import MyCustomLayout from './MyCustomLayout.vue'
-import './style.css'
+import MyCustomLayout from './MyCustomLayout.vue';
+import './style.css';
+import OpenCCConverter from '../components/OpenCCConverter.vue';
 
 export default {
     Layout: MyCustomLayout,
-    enhanceApp({ router }) {
+    enhanceApp({ router, app }) {
+        // ✅ 就是這一行！在此註冊您的元件
+        app.component('OpenCCConverter', OpenCCConverter);
+
+        // --- 您原本的所有其他程式碼都保留 ---
         if (typeof document === 'undefined') return; // SSR 階段直接跳過
 
         // 恢復 is-blog-page 判斷，只加在文章內頁
@@ -257,4 +262,4 @@ export default {
             }
         }, HEAD_SYNC_INTERVAL);
     }
-}
+};
