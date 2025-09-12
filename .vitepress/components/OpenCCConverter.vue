@@ -64,6 +64,14 @@ const setModeAndConvert = (mode) => {
   performConversion();
 };
 
+const copyToClipboard = (text) => {
+  navigator.clipboard.writeText(text).then(() => {
+    alert('複製成功！');
+  }, () => {
+    alert('複製失敗，請手動複製。');
+  });
+};
+
 performConversion();
 </script>
 
@@ -108,7 +116,7 @@ performConversion();
           <div class="result-box">
             <p>{{ outputText }}</p>
           </div>
-          <button @click="navigator.clipboard.writeText(outputText)" class="copy-button">複製</button>
+          <button @click="copyToClipboard(outputText)" class="copy-button">複製</button>
         </div>
       </div>
     </div>

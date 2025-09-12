@@ -15,7 +15,9 @@ hero:
       text: 開始使用
       link: converter#conversion-mode
 ---
+<ClientOnly>
 <OpenCCConverter />
+</ClientOnly>
 
 <style>
    /* 針對 VitePress 文章頁面中，主要內容區塊裡的第一個 h2 標題 */
