@@ -241,7 +241,6 @@ textarea {
   box-sizing: border-box;
   background-color: var(--vp-c-bg-soft);
   color: var(--vp-c-text-1);
-  margin-bottom: 0; /* 完全移除輸入框與按鈕之間的間距 */
   word-wrap: break-word;
   overflow-wrap: break-word;
   white-space: pre-wrap; /* 保留換行並自動換行 */
@@ -275,7 +274,6 @@ textarea:focus { border-color: var(--vp-c-brand); outline: none; }
   font-size: 14px;
   transition: all 0.2s ease;
   color: black;
-  margin-top: 0.5rem; /* 確保所有按鈕的間距一致 */
 }
 .copy-button:hover {
   background: var(--vp-c-bg-mute);
