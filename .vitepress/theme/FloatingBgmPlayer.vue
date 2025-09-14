@@ -3,6 +3,9 @@ import { ref, watch, onMounted, onUnmounted, computed, nextTick } from 'vue'
 
 /* --- 音樂清單 --- */
 const musicList = [
+    { src: '/music/MapleStory_The_Lost_City_among_the_Clouds.mp3', title: '楓之谷 - 奧迪溫' },
+    { src: '/music/MapleStory_Sunshine_blurring_the_Unknown.mp3', title: '楓之谷 - 陽光灑落的實驗室' },
+    { src: '/music/MapleStory_CashShop.mp3', title: '楓之谷 - 新購物商城' },
     { src: '/music/MapleStoryM_TheGuardianOfTheStars.mp3', title: '楓之谷M - 星之守護者' },
     { src: '/music/MapleStory_MissingYou.mp3', title: '楓之谷 - 魔法森林樹洞' },
     { src: '/music/MapleStory_WhereStarsRest.mp3', title: '楓之谷 - 賽拉斯' },
