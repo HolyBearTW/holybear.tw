@@ -12,7 +12,7 @@
     "@docsearch/js": "4",
     "algoliasearch": "^5.37.0",
     "dotenv": "^17.2.2",
-    "firebase": "^12.2.1",
+    "firebase": "^12.3.0",
     "gray-matter": "^4.0.3",
     "instantsearch.js": "^4.80.0",
     "medium-zoom": "^1.1.0",
