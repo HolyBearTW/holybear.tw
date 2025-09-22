@@ -207,9 +207,9 @@
   integrity sha512-hBIwf14yLasrUcDNS7jrneM1ibFD/JFJVDjdxd1h/LUHx7eyLrS726pKHVr3cTdToNXP/7jrTbnC1MAuDHPoow==
 
 "@docsearch/js@4", "@docsearch/js@^4.0.0-beta.7":
-  version "4.0.1"
-  resolved "https://registry.yarnpkg.com/@docsearch/js/-/js-4.0.1.tgz#b89a5e7ed06a1e46c295cd37f05a6ed30dec01ca"
-  integrity sha512-xHxFULFCihnu8XxNB4QRH/H6ZtG0ThuM9aaY1FAhZXHk+aQ5uo5JG+UiDkSb6YrwItsw0+cSGzBNxyB0g3fGtQ==
+  version "4.1.0"
+  resolved "https://registry.yarnpkg.com/@docsearch/js/-/js-4.1.0.tgz#58dde549d560eea833797cabe578319a26d3a091"
+  integrity sha512-49+CzeGfOiwG85k+dDvKfOsXLd9PQACoY/FLrZfFOKmpWv166u7bAHmBLdzvxlk8nJ289UgpGf0k6GQZtC85Fg==
 
 "@esbuild/aix-ppc64@0.25.8":
   version "0.25.8"
