@@ -11,7 +11,7 @@
     "@algolia/autocomplete-js": "^1.19.4",
     "@docsearch/js": "4",
     "algoliasearch": "^5.39.0",
-    "dotenv": "^17.2.2",
+    "dotenv": "^17.2.3",
     "firebase": "^12.3.0",
     "gray-matter": "^4.0.3",
     "instantsearch.js": "^4.80.0",
