@@ -3,6 +3,10 @@ export default [
   {
     "items": [
       {
+        "text": "來蹭免費Gemini",
+        "link": "/blog/2025-10-12"
+      },
+      {
         "text": "金氏世界紀錄證書！ 我也拼進歷史啦！",
         "link": "/blog/2025-08-30"
       },
@@ -37,10 +41,6 @@ export default [
       {
         "text": "生日禮物",
         "link": "/blog/2025-06-10-special"
-      },
-      {
-        "text": "今天我生日！",
-        "link": "/blog/2025-06-10"
       }
     ]
   },
