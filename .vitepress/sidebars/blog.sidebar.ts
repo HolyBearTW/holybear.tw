@@ -3,6 +3,10 @@ export default [
   {
     "items": [
       {
+        "text": "咖波屋",
+        "link": "/blog/2025-10-12-capoo"
+      },
+      {
         "text": "來蹭免費Gemini",
         "link": "/blog/2025-10-12"
       },
@@ -37,10 +41,6 @@ export default [
       {
         "text": "台東好好玩",
         "link": "/blog/2025-06-12"
-      },
-      {
-        "text": "生日禮物",
-        "link": "/blog/2025-06-10-special"
       }
     ]
   },
