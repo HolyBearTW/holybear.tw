@@ -10,7 +10,7 @@
   "dependencies": {
     "@algolia/autocomplete-js": "^1.19.4",
     "@docsearch/js": "4",
-    "algoliasearch": "^5.40.0",
+    "algoliasearch": "^5.40.1",
     "dotenv": "^17.2.3",
     "firebase": "^12.4.0",
     "gray-matter": "^4.0.3",
