@@ -1895,6 +1895,11 @@ react-instantsearch@^7.17.0:
   resolved "https://registry.yarnpkg.com/react/-/react-19.2.0.tgz#d33dd1721698f4376ae57a54098cb47fc75d93a5"
   integrity sha512-tmbWg6W31tQLeB5cdIBOicJDJRR2KzXsV7uSK9iNfLWQ5bIZfxuPEHp7M8wiHyHnn0DD1i7w3Zmin0FtkrwoCQ==
 
+"react@>= 0.14.0":
+  version "19.2.0"
+  resolved "https://registry.yarnpkg.com/react/-/react-19.2.0.tgz#d33dd1721698f4376ae57a54098cb47fc75d93a5"
+  integrity sha512-tmbWg6W31tQLeB5cdIBOicJDJRR2KzXsV7uSK9iNfLWQ5bIZfxuPEHp7M8wiHyHnn0DD1i7w3Zmin0FtkrwoCQ==
+
 regex-recursion@^6.0.2:
   version "6.0.2"
   resolved "https://registry.npmjs.org/regex-recursion/-/regex-recursion-6.0.2.tgz"
@@ -2173,13 +2178,13 @@ vitepress@^2.0.0-alpha.12:
     vite "^7.1.2"
     vue "^3.5.18"
 
-vue-instantsearch@^4.21.3:
-  version "4.21.3"
-  resolved "https://registry.npmjs.org/vue-instantsearch/-/vue-instantsearch-4.21.3.tgz"
-  integrity sha512-WJNywbOLFFTmhVKfT5OVDgxyc07im8HB37LNyFUEWnZ7y5tJyzFTtNK4E90Fg0zrkouKBfFgFm4f583MGsqMqw==
+vue-instantsearch@^4.22.0:
+  version "4.22.0"
+  resolved "https://registry.yarnpkg.com/vue-instantsearch/-/vue-instantsearch-4.22.0.tgz#dd90fa22d25feebd788bac73395c3b9fe9c60420"
+  integrity sha512-/BUdzD+NAybC81FGzEeSuCSYobYUVgHEHI7QY0HlTzdxIHOqWlw2y152/80kGKndS0C+Yu5ifGGg+xVIcFc4Dg==
   dependencies:
-    instantsearch-ui-components "0.11.2"
-    instantsearch.js "4.80.0"
+    instantsearch-ui-components "0.12.0"
+    instantsearch.js "4.81.0"
     mitt "^2.1.0"
 
 vue@^3.5.18, vue@^3.5.22:
