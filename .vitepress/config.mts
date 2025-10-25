@@ -46,7 +46,17 @@ export default defineConfig({
         ['meta', { name: 'twitter:image', content: '/logo.png' }]
     ],
     vite: {
-        plugins: [gitMetaPlugin()]
+        plugins: [gitMetaPlugin()],
+        server: {
+            fs: {
+                // 嚴格限制可訪問的目錄
+                allow: ['.'],
+                // 明確拒絕訪問敏感目錄
+                deny: ['.env', '.env.*', '*.{pem,crt,key}', 'node_modules/**']
+            },
+            // 增加 CORS 限制
+            cors: true
+        }
     },   // ✨ START: 整合所有 OG 標籤的最終邏輯 ✨
     transformHead({ pageData, head }) {
             const { frontmatter, relativePath } = pageData;
