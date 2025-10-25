@@ -1,0 +1,1765 @@
+---
+layout: home
+title: 日誌
+description: 聖小熊與夥伴們的日誌
+
+hero:
+  name: "聖小熊與夥伴們的日誌"
+  text: "技術筆記與生活感悟"
+  tagline: "記錄學習軌跡、創作過程與成長足跡"
+  image:
+    src: /logo.png
+    alt: HolyBearTW Blog
+  actions:
+    - theme: brand
+      text: 切回舊版
+      link: /blog/
+    - theme: alt
+      text: 跳到底部
+      link: "#bottom"
+    - theme: alt
+      text: 回到主站
+      link: "/"
+---
+
+<script setup lang="ts">
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { useRoute } from 'vitepress'
+import { useAuthors } from '../.vitepress/components/useAuthors.js'
+import ArticleMeta from '../.vitepress/theme/ArticleMeta.vue'
+import PostMeta from '../.vitepress/theme/PostMeta.vue'
+import { data as allPosts } from '../.vitepress/theme/posts.data.ts'
+import { Bar } from 'vue-chartjs'
+import {
+  Chart as ChartJS,
+  Title,
+  Tooltip,
+  Legend,
+  BarElement,
+  CategoryScale,
+  LinearScale
+} from 'chart.js'
+
+ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale)
+
+
+// 狀態管理
+// 從 localStorage 讀取使用者偏好的顯示模式，預設為 grid
+const savedViewMode = (typeof localStorage !== 'undefined' && localStorage.getItem('blog-view-mode')) as 'grid' | 'list' | null
+const viewMode = ref<'grid' | 'list'>(savedViewMode || 'grid')
+
+// 監聽 viewMode 變化並保存到 localStorage，同時重新設置動畫
+watch(viewMode, async (newMode) => {
+  if (typeof localStorage !== 'undefined') {
+    localStorage.setItem('blog-view-mode', newMode)
+  }
+  // 視圖模式改變時重新設置卡片進場動畫
+  await nextTick()
+  setTimeout(setupCardAnimations, 50)
+})
+
+const selectedAuthor = ref('')
+const selectedCategory = ref('')
+const selectedTags = ref<string[]>([])
+
+// 浮動視窗狀態
+const showAuthorFilter = ref(false)
+const showCategoryFilter = ref(false)
+const showTagFilter = ref(false)
+const showAuthorStats = ref(false)
+
+// 作者統計延遲關閉
+let authorStatsTimer: NodeJS.Timeout | null = null
+
+const handleAuthorStatsEnter = () => {
+  if (authorStatsTimer) {
+    clearTimeout(authorStatsTimer)
+    authorStatsTimer = null
+  }
+  showAuthorStats.value = true
+}
+
+const handleAuthorStatsLeave = () => {
+  authorStatsTimer = setTimeout(() => {
+    showAuthorStats.value = false
+  }, 300) // 延遲 0.3 秒
+}
+
+// 點擊背景遮罩關閉作者統計
+const closeAuthorStats = () => {
+  if (authorStatsTimer) {
+    clearTimeout(authorStatsTimer)
+    authorStatsTimer = null
+  }
+  showAuthorStats.value = false
+}
+
+// 路由
+const route = useRoute()
+
+// 作者數據
+const { authorsData, isEnglish } = useAuthors()
+
+// 格式化日期
+const formatDate = (dateString: string) => {
+  if (!dateString) return '未知日期'
+  const date = new Date(dateString)
+  if (isNaN(date.getTime())) return '未知日期'
+  return date.toISOString().slice(0, 10)
+}
+
+const fallbackImg = '/blog_no_image.svg'
+
+const onImgError = (e: Event) => {
+  const img = e.target as HTMLImageElement
+  if (img && img.src !== fallbackImg) img.src = fallbackImg
+}
+
+// 原始文章數據
+const rawPosts = computed(() => allPosts.filter(
+  post => Boolean(post) && post.url.startsWith('/blog/') && post.url !== '/blog/' && post.url !== '/blog/index.html' && post.url !== '/blog/index-new' && post.url !== '/blog/index-new.html'
+).map(post => ({
+  ...post,
+  image: post.image || fallbackImg,
+  tags: Array.isArray(post.tags) ? post.tags : (Array.isArray(post.tag) ? post.tag : (post.tag ? [post.tag] : [])),
+  category: Array.isArray(post.category) ? post.category : (post.category ? [post.category] : [])
+})))
+
+// 過濾邏輯
+const filteredPosts = computed(() => {
+  let posts = [...rawPosts.value]
+
+  // 作者過濾
+  if (selectedAuthor.value) {
+    posts = posts.filter(post => post.author === selectedAuthor.value)
+  }
+
+  // 類別過濾
+  if (selectedCategory.value) {
+    posts = posts.filter(post => post.category.includes(selectedCategory.value))
+  }
+
+  // 標籤過濾（改為 OR 邏輯：只要包含任一選中標籤即可）
+  if (selectedTags.value.length > 0) {
+    posts = posts.filter(post =>
+      selectedTags.value.some(tag => post.tags.includes(tag))
+    )
+  }
+
+  // 按日期排序（最新在前）
+  return posts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+})
+
+// 計算總頁數
+const totalPages = computed(() => Math.ceil(filteredPosts.value.length / postsPerPage))
+
+// 分頁後的文章
+const pagedPosts = computed(() => {
+  const start = (currentPage.value - 1) * postsPerPage
+  const end = start + postsPerPage
+  return filteredPosts.value.slice(start, end)
+})
+
+// 分頁相關變量
+const postsPerPage = 12
+const currentPage = ref(1)
+
+// 生成頁碼數組
+const pageNumbers = computed(() => {
+  const pages = []
+  for (let i = 1; i <= totalPages.value; i++) {
+    pages.push(i)
+  }
+  return pages
+})
+
+// 翻頁函數
+const goToPage = (page: number) => {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+}
+
+// 統計數據
+const uniqueAuthors = computed(() => {
+  const authors = new Set(rawPosts.value.map(post => post.author))
+  return Array.from(authors).filter(Boolean)
+})
+
+const uniqueCategories = computed(() => {
+  const categories = new Set<string>()
+  rawPosts.value.forEach(post => {
+    post.category.forEach(cat => categories.add(cat))
+  })
+  return Array.from(categories).filter(Boolean)
+})
+
+const uniqueTags = computed(() => {
+  const tags = new Set<string>()
+  rawPosts.value.forEach(post => {
+    post.tags.forEach(tag => tags.add(tag))
+  })
+  return Array.from(tags).filter(Boolean)
+})
+
+// 切換標籤
+const toggleTag = (tag: string) => {
+  const index = selectedTags.value.indexOf(tag)
+  if (index > -1) {
+    selectedTags.value.splice(index, 1)
+  } else {
+    selectedTags.value.push(tag)
+  }
+}
+
+// 清除篩選
+const clearFilters = () => {
+  selectedAuthor.value = ''
+  selectedCategory.value = ''
+  selectedTags.value = []
+}
+
+// 關閉所有浮動視窗
+const closeAllFilters = () => {
+  showAuthorFilter.value = false
+  showCategoryFilter.value = false
+  showTagFilter.value = false
+}
+
+// 作者貢獻統計
+const authorStats = computed(() => {
+  const posts = rawPosts.value
+  const authorCounts = new Map<string, number>()
+  
+  posts.forEach(post => {
+    authorCounts.set(post.author, (authorCounts.get(post.author) || 0) + 1)
+  })
+
+  // 按貢獻數量排序
+  return Array.from(authorCounts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .map(([author, count]) => ({ author, count }))
+})
+
+// ========== 版本切換和動畫相關 ==========
+// 添加分頁樣式
+const style = document.createElement('style')
+style.textContent = `
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 2rem 0;
+}
+
+.pagination-button {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--vp-c-divider);
+  background: var(--vp-c-bg);
+  color: var(--vp-c-text-1);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.pagination-button:hover:not(:disabled) {
+  background: var(--vp-c-brand);
+  color: white;
+  border-color: var(--vp-c-brand);
+}
+
+.pagination-button.active {
+  background: var(--vp-c-brand);
+  color: white;
+  border-color: var(--vp-c-brand);
+}
+
+.pagination-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+`
+
+// 在 mounted 時添加樣式
+onMounted(() => {
+  document.head.appendChild(style)
+})
+
+// 在 unmounted 時移除樣式
+onUnmounted(() => {
+  style.remove()
+})
+
+const STORAGE_KEY = 'blog-version-preference'
+const isOldVersion = ref(false)
+
+// 設置卡片動畫
+const setupCardAnimations = () => {
+  const cards = document.querySelectorAll('.article-card')
+  cards.forEach((element: any, index) => {
+    // 移除動畫完成類以重新開始動畫
+    element.classList.remove('animation-complete')
+    
+    // 清除內聯樣式
+    element.style.cssText = ''
+    
+    // 強制觸發重排
+    void element.offsetHeight
+    
+    // 添加動畫延遲
+    element.style.setProperty('--animation-delay', `${index * 0.1}s`)
+    
+    // 監聽動畫完成事件
+    element.addEventListener('animationend', () => {
+      element.classList.add('animation-complete')
+    }, { once: true })
+  })
+}
+
+// 生命週期鉤子
+onMounted(async () => {
+  // 讀取 localStorage 狀態
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem(STORAGE_KEY)
+    if (saved === 'old') isOldVersion.value = true
+    if (saved === 'new') isOldVersion.value = false
+  }
+  document.body.classList.add('blog-index-page')
+  // 等待 DOM 完全更新後再設置動畫
+  await nextTick()
+  setTimeout(setupCardAnimations, 100)
+})
+
+onUnmounted(() => {
+  document.body.classList.remove('blog-index-page')
+})
+
+// 監聽當前頁變化，重新設置動畫
+watch(currentPage, async () => {
+  // 等待 DOM 更新完成後再設置動畫
+  await nextTick()
+  setTimeout(setupCardAnimations, 50) // 添加小延遲確保 DOM 完全更新
+})
+
+// 監聽 isOldVersion 變化並保存到 localStorage
+watch(isOldVersion, (newValue) => {
+  if (typeof window !== 'undefined') {
+    if (newValue) {
+      localStorage.setItem(STORAGE_KEY, 'old')
+    } else {
+      localStorage.setItem(STORAGE_KEY, 'new')
+    }
+  }
+})
+</script>
+
+<div class="blog-container">
+  <!-- 儀表板控制面板 - 三欄佈局 -->
+  <div class="dashboard-panel">
+    <!-- 左側：文章統計 -->
+    <div class="stats-section">
+      <div class="stat-card">
+        <div class="stat-icon articles">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+          </svg>
+        </div>
+        <div class="stat-info">
+          <div class="stat-value">{{ filteredPosts.length }}</div>
+          <div class="stat-label">篇文章</div>
+        </div>
+      </div>
+    </div>
+    <!-- 中間：作者貢獻圖表 -->
+    <div 
+      class="author-contribution-wrapper"
+      @mouseenter="handleAuthorStatsEnter"
+      @mouseleave="handleAuthorStatsLeave"
+    >
+      <!-- 原始摘要卡片（保持不動） -->
+      <div class="author-contribution-section">
+        <div class="stat-icon authors">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+        </div>
+        <div class="stat-info">
+          <div class="stat-value">{{ uniqueAuthors.length }}</div>
+          <div class="stat-label">位作者貢獻</div>
+        </div>
+      </div>
+      <!-- 背景遮罩（全螢幕） -->
+      <transition name="fade">
+        <div 
+          v-if="showAuthorStats" 
+          class="modal-backdrop"
+          @click="closeAuthorStats"
+        ></div>
+      </transition>
+      <!-- 浮動詳細資訊面板 -->
+      <transition name="scale-fade">
+        <div 
+          v-if="showAuthorStats" 
+          class="author-details-modal"
+          @mouseenter="handleAuthorStatsEnter"
+          @mouseleave="handleAuthorStatsLeave"
+          @click.stop
+        >
+          <div class="modal-header">
+            <h3 class="modal-title">📊 作者貢獻情形</h3>
+          </div>
+          <div class="modal-body">
+            <div 
+              v-for="(stat, index) in authorStats" 
+              :key="stat.author"
+              class="author-stat-row"
+              :style="{ animationDelay: `${index * 0.05}s` }"
+            >
+              <div class="author-name">{{ stat.author || 'null' }}</div>
+              <div class="author-bar-container">
+                <div 
+                  class="author-bar"
+                  :style="{ 
+                    width: `${(stat.count / authorStats[0].count) * 100}%`,
+                    backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][index % 5]
+                  }"
+                >
+                  <span class="bar-label">{{ stat.count }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </transition>
+    </div>
+    <!-- 右側：篩選按鈕組（垂直排列） -->
+    <div class="filters-section">
+      <button 
+        @click="showAuthorFilter = !showAuthorFilter; showCategoryFilter = false; showTagFilter = false"
+        :class="{ active: selectedAuthor }"
+        class="filter-btn author-btn"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+          <circle cx="9" cy="7" r="4"></circle>
+        </svg>
+        <span>作者</span>
+        <span v-if="selectedAuthor" class="filter-badge">1</span>
+      </button>
+      <button 
+        @click="showCategoryFilter = !showCategoryFilter; showAuthorFilter = false; showTagFilter = false"
+        :class="{ active: selectedCategory }"
+        class="filter-btn category-btn"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+        </svg>
+        <span>類別</span>
+        <span v-if="selectedCategory" class="filter-badge">1</span>
+      </button>
+      <button 
+        @click="showTagFilter = !showTagFilter; showAuthorFilter = false; showCategoryFilter = false"
+        :class="{ active: selectedTags.length > 0 }"
+        class="filter-btn tag-btn"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+          <line x1="7" y1="7" x2="7.01" y2="7"></line>
+        </svg>
+        <span>標籤</span>
+        <span v-if="selectedTags.length > 0" class="filter-badge">{{ selectedTags.length }}</span>
+      </button>
+      <button 
+        v-if="selectedAuthor || selectedCategory || selectedTags.length > 0"
+        @click="clearFilters"
+        class="clear-btn"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+        清除篩選
+      </button>
+    </div>
+  </div>
+
+  <!-- 作者篩選浮動視窗 -->
+  <div v-if="showAuthorFilter" class="filter-modal-overlay" @click="closeAllFilters">
+    <div class="filter-modal" @click.stop>
+      <div class="filter-modal-header">
+        <h3>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+          </svg>
+          選擇作者
+        </h3>
+        <button @click="closeAllFilters" class="close-modal-btn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="filter-modal-content">
+        <button
+          v-for="author in uniqueAuthors"
+          :key="author"
+          @click="selectedAuthor = selectedAuthor === author ? '' : author; closeAllFilters()"
+          :class="{ active: selectedAuthor === author }"
+          class="filter-option author-option"
+        >
+          {{ author }}
+          <svg v-if="selectedAuthor === author" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 類別篩選浮動視窗 -->
+  <div v-if="showCategoryFilter" class="filter-modal-overlay" @click="closeAllFilters">
+    <div class="filter-modal" @click.stop>
+      <div class="filter-modal-header">
+        <h3>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+          </svg>
+          選擇類別
+        </h3>
+        <button @click="closeAllFilters" class="close-modal-btn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="filter-modal-content">
+        <button
+          v-for="cat in uniqueCategories"
+          :key="cat"
+          @click="selectedCategory = selectedCategory === cat ? '' : cat; closeAllFilters()"
+          :class="{ active: selectedCategory === cat }"
+          class="filter-option category-option"
+        >
+          {{ cat }}
+          <svg v-if="selectedCategory === cat" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 標籤篩選浮動視窗 -->
+  <div v-if="showTagFilter" class="filter-modal-overlay" @click="closeAllFilters">
+    <div class="filter-modal" @click.stop>
+      <div class="filter-modal-header">
+        <h3>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+            <line x1="7" y1="7" x2="7.01" y2="7"></line>
+          </svg>
+          選擇標籤（可多選）
+        </h3>
+        <button @click="closeAllFilters" class="close-modal-btn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="filter-modal-subtitle">
+        選擇多個標籤時，會顯示包含任一所選標籤的文章
+      </div>
+      <div class="filter-modal-content">
+        <button
+          v-for="tag in uniqueTags"
+          :key="tag"
+          @click="toggleTag(tag)"
+          :class="{ active: selectedTags.includes(tag) }"
+          class="filter-option tag-option"
+        >
+          {{ tag }}
+          <svg v-if="selectedTags.includes(tag)" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </button>
+      </div>
+      <div class="filter-modal-footer">
+        <button @click="closeAllFilters" class="apply-filter-btn">
+          確定
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 文章列表區域 -->
+  <div class="articles-section">
+    <!-- 文章列表頭部 -->
+    <div class="articles-header">
+      <h2>文章列表</h2>
+      <div class="view-switcher">
+        <button
+          @click="viewMode = 'grid'"
+          :class="{ active: viewMode === 'grid' }"
+          class="view-icon-btn"
+          title="網格視圖"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+          </svg>
+        </button>
+        <button
+          @click="viewMode = 'list'"
+          :class="{ active: viewMode === 'list' }"
+          class="view-icon-btn"
+          title="列表視圖"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="8" y1="6" x2="21" y2="6"></line>
+            <line x1="8" y1="12" x2="21" y2="12"></line>
+            <line x1="8" y1="18" x2="21" y2="18"></line>
+            <line x1="3" y1="6" x2="3.01" y2="6"></line>
+            <line x1="3" y1="12" x2="3.01" y2="12"></line>
+            <line x1="3" y1="18" x2="3.01" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+    <!-- 文章網格/列表 -->
+    <div :class="['articles-list', viewMode]">
+      <a
+        v-for="post in pagedPosts"
+        :key="post.url"
+        :href="post.url"
+        class="article-card"
+      >
+        <div class="article-image">
+          <img :src="post.image" :alt="post.title" @error="onImgError" loading="lazy">
+        </div>
+        <div class="article-content">
+          <h3 class="article-title">{{ post.title }}</h3>
+          <div class="article-meta">
+            <span class="meta-item author">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+              {{ post.author }}
+            </span>
+            <span class="meta-item date">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+              {{ formatDate(post.date) }}
+            </span>
+          </div>
+          <p v-if="post.summary" class="article-summary">{{ post.summary }}</p>
+          <div class="article-tags">
+            <span v-for="cat in post.category" :key="cat" class="tag category">{{ cat }}</span>
+            <span v-for="tag in post.tags.slice(0, 3)" :key="tag" class="tag">{{ tag }}</span>
+          </div>
+        </div>
+      </a>
+    </div>
+    <!-- 空狀態 -->
+    <div v-if="filteredPosts.length === 0" class="empty-state">
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="8" x2="12" y2="12"></line>
+        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+      </svg>
+      <p>沒有找到符合條件的文章</p>
+    </div>
+  </div>
+  
+  <!-- 分頁控制 -->
+  <div v-if="totalPages > 1" class="pagination">
+    <button class="pagination-button" :disabled="currentPage === 1" @click="goToPage(currentPage - 1)">上一頁</button>
+    <button v-for="page in pageNumbers" :key="page" class="pagination-button" :class="{ active: page === currentPage }" @click="goToPage(page)">{{ page }}</button>
+    <button class="pagination-button" :disabled="currentPage === totalPages" @click="goToPage(currentPage + 1)">下一頁</button>
+  </div>
+</div>
+
+<style scoped>
+.blog-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+/* 儀表板控制面板 - 三欄佈局 */
+.dashboard-panel {
+  display: grid;
+  grid-template-columns: 1fr 1fr 200px;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  align-items: start;
+}
+
+/* 左側統計區域 */
+.stats-section {
+  position: relative;
+}
+
+/* 統計卡片 */
+.stat-card {
+  background: var(--vp-c-bg);
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid var(--vp-c-divider);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  height: 100%;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.stat-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.stat-icon.articles {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.stat-icon.authors {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+}
+
+.stat-info {
+  text-align: center;
+  width: 100%;
+}
+
+.stat-value {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--vp-c-text-1);
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  color: var(--vp-c-text-2);
+}
+
+/* 中間作者貢獻區域容器 */
+.author-contribution-wrapper {
+  position: relative;
+  height: 100%;
+}
+
+/* 原始摘要卡片 */
+.author-contribution-section {
+  background: var(--vp-c-bg);
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid var(--vp-c-divider);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.author-contribution-wrapper:hover .author-contribution-section {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-color: var(--vp-c-brand-1);
+}
+
+/* 全螢幕背景遮罩 */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 999;
+  cursor: pointer;
+}
+
+/* 浮動詳細資訊面板 */
+.author-details-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 600px;
+  max-width: 90vw;
+  max-height: 80vh;
+  background: var(--vp-c-bg);
+  border-radius: 16px;
+  border: 1px solid var(--vp-c-divider);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 面板標題 */
+.modal-header {
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid var(--vp-c-divider);
+  background: var(--vp-c-bg-soft);
+}
+
+.modal-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--vp-c-text-1);
+  text-align: left;
+}
+
+/* 面板內容 */
+.modal-body {
+  padding: 2rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* 作者統計行 */
+.author-stat-row {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 1.5rem;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  animation: slideInLeft 0.3s ease forwards;
+  opacity: 0;
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.author-stat-row:last-child {
+  margin-bottom: 0;
+}
+
+.author-name {
+  font-size: 1rem;
+  color: var(--vp-c-text-1);
+  font-weight: 500;
+  text-align: right;
+}
+
+/* 橫向直方圖容器 */
+.author-bar-container {
+  position: relative;
+  height: 32px;
+  background: var(--vp-c-bg-soft);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* 橫向直方圖 */
+.author-bar {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 0.75rem;
+  border-radius: 8px;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+  min-width: 40px;
+}
+
+.bar-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* 背景遮罩動畫 */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+/* 浮動面板縮放淡入動畫 */
+.scale-fade-enter-active {
+  animation: scaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.scale-fade-leave-active {
+  animation: scaleOut 0.3s cubic-bezier(0.4, 0, 1, 1);
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes scaleOut {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+}
+
+/* 淡入滑動動畫 */
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: all 0.3s ease;
+}
+
+.fade-slide-enter-from {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+/* 篩選按鈕區域 */
+.filters-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* 篩選按鈕 */
+.filter-btn {
+  padding: 0.75rem 1.25rem;
+  border: 2px solid var(--vp-c-divider);
+  background: var(--vp-c-bg-soft);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--vp-c-text-1);
+  font-weight: 500;
+  position: relative;
+}
+
+.filter-btn:hover {
+  border-color: var(--vp-c-brand);
+  color: var(--vp-c-brand);
+  background: rgba(0, 255, 238, 0.1);
+  transform: translateY(-1px);
+}
+
+.filter-btn.active {
+  border-color: var(--vp-c-brand);
+  background: rgba(0, 255, 238, 0.1);
+  color: var(--vp-c-brand);
+}
+
+/* 移除特定按鈕的自定義顏色，保持主題色一致性 */
+.filter-btn.author-btn.active,
+.filter-btn.category-btn.active,
+.filter-btn.tag-btn.active {
+  border-color: var(--vp-c-brand);
+  background: rgba(0, 255, 238, 0.1);
+  color: var(--vp-c-brand);
+}
+
+.filter-badge {
+  background: var(--vp-c-brand-1);
+  color: white;
+  border-radius: 10px;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-left: 0.25rem;
+}
+
+.clear-btn {
+  padding: 0.75rem 1.25rem;
+  border: 2px solid #ef4444;
+  background: #fee2e2;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #ef4444;
+  font-weight: 500;
+}
+
+.clear-btn:hover {
+  background: #ef4444;
+  color: white;
+  transform: translateY(-1px);
+}
+
+/* 浮動視窗 */
+.filter-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.filter-modal {
+  background: var(--vp-c-bg);
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 500px;
+  width: 90%;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.filter-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem 1.5rem 0.75rem;
+  border-bottom: 1px solid var(--vp-c-divider);
+}
+
+.filter-modal-subtitle {
+  padding: 0.75rem 1.5rem;
+  font-size: 0.875rem;
+  color: var(--vp-c-text-2);
+  border-bottom: 1px solid var(--vp-c-divider);
+  background: var(--vp-c-bg-soft);
+}
+
+.filter-modal-header h3 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--vp-c-text-1);
+}
+
+.close-modal-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  color: var(--vp-c-text-2);
+}
+
+.close-modal-btn:hover {
+  background: var(--vp-c-bg-soft);
+  color: var(--vp-c-text-1);
+}
+
+.filter-modal-content {
+  padding: 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-content: flex-start;
+}
+
+.filter-option {
+  padding: 0.625rem 1.25rem;
+  border: 2px solid var(--vp-c-divider);
+  background: var(--vp-c-bg-soft);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.875rem;
+  color: var(--vp-c-text-1);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.filter-option:hover {
+  border-color: var(--vp-c-brand);
+  color: var(--vp-c-brand);
+  background: rgba(0, 255, 238, 0.1);
+  transform: translateY(-1px);
+}
+
+.filter-option.active {
+  background: var(--vp-c-brand);
+  border-color: var(--vp-c-brand);
+  color: var(--vp-c-bg);
+}
+
+/* 統一使用主題色，移除特定選項的顏色 */
+.author-option.active,
+.category-option.active,
+.tag-option.active {
+  background: var(--vp-c-brand);
+  border-color: var(--vp-c-brand);
+  color: var(--vp-c-bg);
+}
+
+.filter-modal-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--vp-c-divider);
+}
+
+.apply-filter-btn {
+  width: 100%;
+  padding: 0.75rem;
+  background: var(--vp-c-brand);
+  color: var(--vp-c-bg);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.apply-filter-btn:hover {
+  background: #33FFFF;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 255, 238, 0.2);
+}
+
+/* 文章列表區域 */
+.articles-section {
+  margin-top: 2rem;
+}
+
+.articles-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.articles-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: var(--vp-c-text-1);
+}
+
+.view-switcher {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.view-icon-btn {
+  width: 40px;
+  height: 40px;
+  border: 2px solid #e5e2da;
+  background: #F9F6F2;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+}
+
+.view-icon-btn:hover {
+  border-color: #00b8b8;
+  background: #fff;
+  color: #00b8b8;
+}
+
+.view-icon-btn.active {
+  border-color: #00b8b8;
+  background: #00b8b8;
+  color: white;
+}
+
+.dark .view-icon-btn {
+  border-color: #2a2a2a;
+  background: #1c1c1c;
+  color: #999;
+}
+
+.dark .view-icon-btn:hover {
+  border-color: #00b8b8;
+  background: #0a0a0a;
+  color: #00b8b8;
+}
+
+.dark .view-icon-btn.active {
+  border-color: #00b8b8;
+  background: #00b8b8;
+  color: white;
+}
+
+/* 文章列表 */
+.articles-list {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.articles-list.grid {
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+}
+
+.articles-list.list {
+  grid-template-columns: 1fr;
+}
+
+.article-card {
+  background: #F9F6F2 !important;
+  border: 1px solid #e5e2da !important;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  opacity: 0;
+  transform: translateY(30px);
+  animation: fadeInUp 0.6s ease forwards;
+  animation-delay: var(--animation-delay, 0s);
+}
+
+.article-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 8px 25px rgba(0, 184, 184, 0.15), 0 4px 12px rgba(0, 0, 0, 0.3);
+  border-color: #00b8b8 !important;
+}
+
+.article-card:hover .article-title {
+  color: #00b8b8;
+}
+
+/* 動畫完成後的樣式 */
+.article-card.animation-complete {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+  transition: all 0.3s ease !important;
+}
+
+.article-card.animation-complete:hover {
+  transform: translateY(-4px) scale(1.02) !important;
+  border-color: #00b8b8 !important;
+  box-shadow: 0 8px 25px rgba(0, 184, 184, 0.15), 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
+.article-card.animation-complete:hover .article-title {
+  color: #00b8b8 !important;
+}
+
+.dark .article-card {
+  background: #1c1c1c !important;
+  border-color: #2a2a2a !important;
+}
+
+.dark .article-card:hover {
+  border-color: #00b8b8 !important;
+}
+
+.articles-list.grid .article-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.articles-list.list .article-card {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+}
+
+.article-image {
+  width: 100%;
+  height: 200px;
+  background: var(--vp-c-bg-soft);
+  overflow: hidden;
+}
+
+.articles-list.list .article-image {
+  height: 100%;
+}
+
+.article-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+/* 網格模式時裁切圖片 */
+.articles-list.grid .article-image img {
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+/* 列表模式時的圖片樣式 */
+.articles-list.list .article-image img {
+  margin-left:5%;
+  margin-top:5%;
+  width: 90%;
+  height: 90%;
+  aspect-ratio: 1 / 1;
+}
+
+.article-content {
+  padding: 1.5rem;
+  margin-left: 1rem;
+
+}
+
+.article-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 1rem 0;
+  color: var(--vp-c-text-1);
+  line-height: 1.4;
+}
+
+.article-meta {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.875rem;
+  color: var(--vp-c-text-2);
+}
+
+.meta-item svg {
+  color: var(--vp-c-text-3);
+}
+
+.article-summary {
+  color: var(--vp-c-text-2);
+  line-height: 1.6;
+  margin: 0 0 1rem 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.article-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.tag {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background: var(--vp-c-bg-soft);
+  color: var(--vp-c-text-2);
+  border: 1px solid var(--vp-c-divider);
+}
+
+.tag.category {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  color: white;
+  border: none;
+}
+
+/* 空狀態 */
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--vp-c-text-2);
+}
+
+.empty-state svg {
+  margin: 0 auto 1rem;
+  opacity: 0.3;
+}
+
+.empty-state p {
+  margin: 0;
+  font-size: 1.125rem;
+}
+
+/* 分頁樣式 */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2rem;
+  padding: 1rem 0;
+  flex-wrap: wrap;
+}
+
+.pagination-button {
+  padding: 8px 12px;
+  border: 1px solid #e5e2da;
+  background: #F9F6F2;
+  color: #333;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  min-width: 40px;
+}
+
+.pagination-button:hover:not(:disabled),
+.pagination-button.active {
+  background: #00b8b8;
+  color: white;
+  border-color: #00b8b8;
+}
+
+.pagination-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pagination-button:disabled:hover {
+  background: #F9F6F2;
+  color: #333;
+  border-color: #e5e2da;
+}
+
+/* 暗黑模式 */
+.dark .pagination-button {
+  background: #1c1c1c;
+  border-color: #2a2a2a;
+  color: #e0e0e0;
+}
+
+.dark .pagination-button:hover:not(:disabled),
+.dark .pagination-button.active {
+  background: #00b8b8;
+  color: white;
+  border-color: #00b8b8;
+}
+
+.dark .pagination-button:disabled:hover {
+  background: #1c1c1c;
+  color: #e0e0e0;
+  border-color: #2a2a2a;
+}
+
+/* 手機版分頁樣式調整 */
+@media (max-width: 768px) {
+  .pagination {
+    gap: 6px;
+    padding: 0.8rem 0;
+  }
+  
+  .pagination-button {
+    padding: 10px 14px;
+    font-size: 16px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+/* 響應式設計 */
+@media (max-width: 1200px) {
+  .dashboard-panel {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .author-contribution-section {
+    order: 1;
+  }
+
+  .stats-section {
+    order: 2;
+  }
+
+  .filters-section {
+    order: 3;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 768px) {
+  .blog-container {
+    padding: 1rem;
+  }
+
+  .stat-card {
+    padding: 1rem;
+  }
+
+  .stat-value {
+    font-size: 2rem;
+  }
+
+  .stat-icon {
+    width: 48px;
+    height: 48px;
+  }
+
+  .filters-section {
+    flex-direction: column;
+  }
+
+  .filter-btn,
+  .clear-btn {
+    padding: 0.625rem 1rem;
+    font-size: 0.8rem;
+  }
+
+  .author-stats-chart {
+    font-size: 0.9rem;
+  }
+
+  /* ===== 網格模式手機版 ===== */
+  .articles-list.grid {
+    grid-template-columns: 1fr !important;
+    gap: 1.5rem;
+  }
+
+  .articles-list.grid .article-card {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .articles-list.grid .article-image {
+    width: 100%;
+    height: 180px;
+    margin: 0;
+    padding: 0;
+  }
+
+  .articles-list.grid .article-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 0;
+    aspect-ratio: 16 / 9;
+  }
+
+  .articles-list.grid .article-content {
+    padding: 1rem !important;
+    margin: 0 !important;
+  }
+
+  .articles-list.grid .article-title {
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .articles-list.grid .article-summary {
+    display: block;
+  }
+
+  /* ===== 列表模式手機版 ===== */
+  .articles-list.list {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1rem;
+  }
+
+  .articles-list.list .article-card {
+    display: grid !important;
+    grid-template-columns: 100px 1fr !important;
+    gap: 0.75rem !important;
+    padding: 0.75rem !important;
+    align-items: start;
+  }
+
+  .articles-list.list .article-image {
+    width: 100px !important;
+    height: 100px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .articles-list.list .article-image img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover;
+    border-radius: 8px;
+    aspect-ratio: 1 / 1 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .articles-list.list .article-content {
+    padding: 0 !important;
+    margin: 0 !important;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+  }
+
+  .articles-list.list .article-title {
+    font-size: 1rem !important;
+    margin: 0 !important;
+    line-height: 1.3;
+  }
+
+  .articles-list.list .article-summary {
+    display: block !important;
+    font-size: 0.8rem !important;
+    -webkit-line-clamp: 1 !important;
+    margin: 0 !important;
+  }
+
+  .articles-list.list .article-tags {
+    display: flex !important;
+    gap: 0.3rem;
+    flex-wrap: wrap;
+    margin: 0 !important;
+  }
+
+  .articles-list.list .tag {
+    padding: 0.15rem 0.5rem !important;
+    font-size: 0.65rem !important;
+    margin: 0 !important;
+  }
+
+  .article-meta {
+    font-size: 0.75rem;
+    margin: 0 !important;
+  }
+
+  .author-stats-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    margin-top: 0;
+    max-width: 90%;
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .filter-modal {
+    max-width: 95%;
+    max-height: 80vh;
+  }
+
+  .stat-value {
+    font-size: 1.75rem;
+  }
+}
+</style>
+
+<style>
+body.blog-index-page .vp-doc h2 {
+  border-top: none !important;
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+body.blog-index-page main,
+body.blog-index-page .VPContent,
+body.blog-index-page .VPContent .content-container,
+body.blog-index-page .VPDoc .content-container,
+body.blog-index-page [class*="VPContent"],
+body.blog-index-page [class*="content-container"] {
+  border-top: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+</style>
+
+<div id="bottom"></div>
