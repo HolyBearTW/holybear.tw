@@ -244,52 +244,58 @@ const authorStats = computed(() => {
 
 // ========== 版本切換和動畫相關 ==========
 // 添加分頁樣式
-const style = document.createElement('style')
-style.textContent = `
-.pagination {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 0.5rem;
-  margin: 2rem 0;
-}
+const style = typeof document !== 'undefined' ? document.createElement('style') : null
+if (style) {
+  style.textContent = `
+    .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.5rem;
+      margin: 2rem 0;
+    }
 
-.pagination-button {
-  padding: 0.5rem 1rem;
-  border: 1px solid var(--vp-c-divider);
-  background: var(--vp-c-bg);
-  color: var(--vp-c-text-1);
-  cursor: pointer;
-  border-radius: 4px;
-  transition: all 0.2s ease;
-}
+    .pagination-button {
+      padding: 0.5rem 1rem;
+      border: 1px solid var(--vp-c-divider);
+      background: var(--vp-c-bg);
+      color: var(--vp-c-text-1);
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+    }
 
-.pagination-button:hover:not(:disabled) {
-  background: var(--vp-c-brand);
-  color: white;
-  border-color: var(--vp-c-brand);
-}
+    .pagination-button:hover:not(:disabled) {
+      background: var(--vp-c-brand);
+      color: white;
+      border-color: var(--vp-c-brand);
+    }
 
-.pagination-button.active {
-  background: var(--vp-c-brand);
-  color: white;
-  border-color: var(--vp-c-brand);
-}
+    .pagination-button.active {
+      background: var(--vp-c-brand);
+      color: white;
+      border-color: var(--vp-c-brand);
+    }
 
-.pagination-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
+    .pagination-button:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+  `
 }
-`
 
 // 在 mounted 時添加樣式
 onMounted(() => {
-  document.head.appendChild(style)
+  if (style && typeof document !== 'undefined') {
+    document.head.appendChild(style)
+  }
 })
 
 // 在 unmounted 時移除樣式
 onUnmounted(() => {
-  style.remove()
+  if (style && typeof document !== 'undefined') {
+    style.remove()
+  }
 })
 
 const STORAGE_KEY = 'blog-version-preference'
@@ -325,11 +331,12 @@ onMounted(async () => {
     const saved = localStorage.getItem(STORAGE_KEY)
     if (saved === 'old') isOldVersion.value = true
     if (saved === 'new') isOldVersion.value = false
+    
+    document.body.classList.add('blog-index-page')
+    // 等待 DOM 完全更新後再設置動畫
+    await nextTick()
+    setTimeout(setupCardAnimations, 100)
   }
-  document.body.classList.add('blog-index-page')
-  // 等待 DOM 完全更新後再設置動畫
-  await nextTick()
-  setTimeout(setupCardAnimations, 100)
 })
 
 onUnmounted(() => {
@@ -355,6 +362,7 @@ watch(isOldVersion, (newValue) => {
 })
 </script>
 
+<ClientOnly>
 <div class="blog-container">
   <!-- 儀表板控制面板 - 三欄佈局 -->
   <div class="dashboard-panel">
@@ -694,6 +702,7 @@ watch(isOldVersion, (newValue) => {
     <button class="pagination-button" :disabled="currentPage === totalPages" @click="goToPage(currentPage + 1)">下一頁</button>
   </div>
 </div>
+</ClientOnly>
 
 <style scoped>
 .blog-container {
@@ -1763,3 +1772,4 @@ body.blog-index-page [class*="content-container"] {
 </style>
 
 <div id="bottom"></div>
+</ClientOnly>
