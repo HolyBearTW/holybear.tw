@@ -243,9 +243,40 @@ const authorStats = computed(() => {
 })
 
 // ========== 版本切換和動畫相關 ==========
-// 添加分頁樣式
-const style = document.createElement('style')
-style.textContent = `
+// 宣告一個變數來持有 style 元素，但不要在這裡建立它
+let styleElement: HTMLStyleElement | null = null
+
+const STORAGE_KEY = 'blog-version-preference'
+const isOldVersion = ref(false)
+
+// 設置卡片動畫
+const setupCardAnimations = () => {
+  const cards = document.querySelectorAll('.article-card')
+  cards.forEach((element: any, index) => {
+    // 移除動畫完成類以重新開始動畫
+    element.classList.remove('animation-complete')
+    
+    // 清除內聯樣式
+    element.style.cssText = ''
+    
+    // 強制觸發重排
+    void element.offsetHeight
+    
+    // 添加動畫延遲
+    element.style.setProperty('--animation-delay', `${index * 0.1}s`)
+    
+    // 監聽動畫完成事件
+    element.addEventListener('animationend', () => {
+      element.classList.add('animation-complete')
+    }, { once: true })
+  })
+}
+
+// 生命週期鉤子
+onMounted(async () => {
+  // 在 onMounted (僅客戶端) 內部才建立和添加 style 元素
+  styleElement = document.createElement('style')
+  styleElement.textContent = `
 .pagination {
   display: flex;
   justify-content: center;
@@ -281,45 +312,8 @@ style.textContent = `
   opacity: 0.5;
 }
 `
-
-// 在 mounted 時添加樣式
-onMounted(() => {
-  document.head.appendChild(style)
-})
-
-// 在 unmounted 時移除樣式
-onUnmounted(() => {
-  style.remove()
-})
-
-const STORAGE_KEY = 'blog-version-preference'
-const isOldVersion = ref(false)
-
-// 設置卡片動畫
-const setupCardAnimations = () => {
-  const cards = document.querySelectorAll('.article-card')
-  cards.forEach((element: any, index) => {
-    // 移除動畫完成類以重新開始動畫
-    element.classList.remove('animation-complete')
-    
-    // 清除內聯樣式
-    element.style.cssText = ''
-    
-    // 強制觸發重排
-    void element.offsetHeight
-    
-    // 添加動畫延遲
-    element.style.setProperty('--animation-delay', `${index * 0.1}s`)
-    
-    // 監聽動畫完成事件
-    element.addEventListener('animationend', () => {
-      element.classList.add('animation-complete')
-    }, { once: true })
-  })
-}
-
-// 生命週期鉤子
-onMounted(async () => {
+  document.head.appendChild(styleElement)
+  
   // 讀取 localStorage 狀態
   if (typeof window !== 'undefined') {
     const saved = localStorage.getItem(STORAGE_KEY)
@@ -333,6 +327,12 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  // 移除時要檢查 styleElement 是否存在
+  if (styleElement) {
+    styleElement.remove()
+    styleElement = null // 最好也清除引用
+  }
+  
   document.body.classList.remove('blog-index-page')
 })
 
