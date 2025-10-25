@@ -93,9 +93,9 @@ const onImgError = (e: Event) => {
   if (img && img.src !== fallbackImg) img.src = fallbackImg
 }
 
-// 只顯示 /blog/ 開頭的文章，避免英文日誌混入
+// 只顯示 /blog/ 開頭的文章，避免英文日誌混入，同時排除 index-new.md
 const posts = allPosts.filter(
-  post => Boolean(post) && post.url.startsWith('/blog/')
+  post => Boolean(post) && post.url.startsWith('/blog/') && !post.url.endsWith('index-new')
 ).map(post => ({
   ...post,
   image: post.image || fallbackImg,
