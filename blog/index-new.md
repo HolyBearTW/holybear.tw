@@ -695,7 +695,7 @@ watch(isOldVersion, (newValue) => {
     <button class="pagination-button" :disabled="currentPage === totalPages" @click="goToPage(currentPage + 1)">下一頁</button>
   </div>
 </div>
-<ClientOnly>
+</ClientOnly>
 
 <style scoped>
 .blog-container {
