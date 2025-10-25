@@ -3,10 +3,6 @@ export default [
   {
     "items": [
       {
-        "text": "日誌",
-        "link": "/blog/index-new"
-      },
-      {
         "text": "咖波屋",
         "link": "/blog/2025-10-12-capoo"
       },
@@ -41,6 +37,10 @@ export default [
       {
         "text": "鋼索上的日子：一個年輕人的自由渴望",
         "link": "/blog/2025-06-13"
+      },
+      {
+        "text": "台東好好玩",
+        "link": "/blog/2025-06-12"
       }
     ]
   },

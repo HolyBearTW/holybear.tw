@@ -75,6 +75,9 @@ function toSidebar(files, baseDir) {
             const backToListText = isEnglish ? texts.en.backToList : texts.zh.backToList;
             console.log(`Setting indexItem for ${isEnglish ? 'English' : 'Chinese'}: ${backToListText}`);
             indexItem = { text: backToListText, link: link.replace(/\/index$/, '/') };
+        } else if (rel.toLowerCase() === 'index-new.md') {
+            // 跳過 index-new.md，不將它加入側邊欄
+            continue;
         } else {
             if (!title) title = decodeURIComponent(link.split('/').pop() || 'blog');
             if (!listdate) {
