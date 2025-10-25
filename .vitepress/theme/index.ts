@@ -11,10 +11,10 @@ export default {
         // --- 您原本的所有其他程式碼都保留 ---
         if (typeof document === 'undefined') return; // SSR 階段直接跳過
 
-        // 恢復 is-blog-page 判斷，只加在文章內頁
-        function isBlogPage(path) {
-            // 只針對 /blog/xxxx 文章頁（不是 /blog/ 或 /blog/index）
-            return /^\/(en\/)?(blog|docs)\/(?!index$)[^/]+(?:\.html)?(?:[?#].*)?$/.test(path);
+        // 恢復 is-blog-page 判斷，只加在文章內頁（不是首頁、index-new等列表頁）
+        function isBlogPage(path: string) {
+            // 只針對 /blog/xxxx 文章頁（不是 /blog/ 、/blog 、/blog/index、/blog/index-new等列表頁）
+            return /^\/(en\/)?blog\/(?!$|index|index-new)[\w-]+/.test(path);
         }
         function forceBlogClass() {
             // 保留原有 class，確保最多只有一個 is-blog-page
@@ -217,7 +217,6 @@ export default {
 
         // 輪詢，每 200ms 強制同步一次
         setInterval(() => {
-            forceBlogClass();
             replayIfChanged();
         }, 200);
 

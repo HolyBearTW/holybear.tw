@@ -11,6 +11,9 @@ hero:
     src: /logo.png
     alt: HolyBearTW Blog
   actions:
+    - theme: brand
+      text: 新版預覽
+      link: /blog/index-new
     - theme: alt
       text: 跳到底部
       link: "#bottom"
