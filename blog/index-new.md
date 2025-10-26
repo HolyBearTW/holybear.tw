@@ -72,6 +72,11 @@ const showAuthorStats = ref(false)
 let authorStatsTimer: NodeJS.Timeout | null = null
 
 const handleAuthorStatsEnter = () => {
+  // 只在桌面版(螢幕寬度 >= 1024px)才顯示彈窗
+  if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+    return
+  }
+  
   if (authorStatsTimer) {
     clearTimeout(authorStatsTimer)
     authorStatsTimer = null
@@ -85,20 +90,52 @@ const handleAuthorStatsLeave = () => {
   }, 300) // 延遲 0.3 秒
 }
 
-// 點擊背景遮罩關閉作者統計
-const closeAuthorStats = () => {
+// 點擊切換作者統計顯示(僅用於行動裝置)
+const handleAuthorStatsClick = () => {
+  // 只在行動裝置(螢幕寬度 < 1024px)才允許點擊切換
+  if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
+    return
+  }
+  
+  // 切換顯示狀態
+  showAuthorStats.value = !showAuthorStats.value
+  
+  // 清除任何待執行的計時器
   if (authorStatsTimer) {
     clearTimeout(authorStatsTimer)
     authorStatsTimer = null
   }
+}
+
+// 點擊背景遮罩關閉作者統計
+const closeAuthorStats = () => {
+  // 立即關閉,不受計時器影響
   showAuthorStats.value = false
+  
+  // 清除所有計時器
+  if (authorStatsTimer) {
+    clearTimeout(authorStatsTimer)
+    authorStatsTimer = null
+  }
 }
 
 // 路由
 const route = useRoute()
 
 // 作者數據
-const { authorsData, isEnglish } = useAuthors()
+const { authorsData, isEnglish, getAuthorMeta } = useAuthors()
+
+// 產生顯示用作者陣列
+const displayAuthors = computed(() => {
+  return Object.keys(authorsData).map(login => {
+    const author = authorsData[login];
+    return {
+      login: login,
+      url: author.url,
+      name: isEnglish.value && author.name_en ? author.name_en : author.name
+    }
+  })
+})
 
 // 格式化日期
 const formatDate = (dateString: string) => {
@@ -116,14 +153,25 @@ const onImgError = (e: Event) => {
 }
 
 // 原始文章數據
-const rawPosts = computed(() => allPosts.filter(
-  post => Boolean(post) && post.url.startsWith('/blog/') && post.url !== '/blog/' && post.url !== '/blog/index.html' && post.url !== '/blog/index-new' && post.url !== '/blog/index-new.html'
-).map(post => ({
-  ...post,
-  image: post.image || fallbackImg,
-  tags: Array.isArray(post.tags) ? post.tags : (Array.isArray(post.tag) ? post.tag : (post.tag ? [post.tag] : [])),
-  category: Array.isArray(post.category) ? post.category : (post.category ? [post.category] : [])
-})))
+const rawPosts = computed(() => {
+  const blogPosts = allPosts.filter(post => Boolean(post) && post.url.startsWith('/blog/'))
+  
+  return blogPosts.filter(post => {
+    // 排除 blog 首頁和索引頁面
+    const excludedUrls = [
+      '/blog/',
+      '/blog/index',
+      '/blog/index-new',
+      '/blog/blog_list'
+    ]
+    return !excludedUrls.includes(post.url)
+  }).map(post => ({
+    ...post,
+    image: post.image || fallbackImg,
+    tags: Array.isArray(post.tags) ? post.tags : (Array.isArray(post.tag) ? post.tag : (post.tag ? [post.tag] : [])),
+    category: Array.isArray(post.category) ? post.category : (post.category ? [post.category] : [])
+  }))
+})
 
 // 過濾邏輯
 const filteredPosts = computed(() => {
@@ -379,6 +427,7 @@ watch(isOldVersion, (newValue) => {
       class="author-contribution-wrapper"
       @mouseenter="handleAuthorStatsEnter"
       @mouseleave="handleAuthorStatsLeave"
+      @click="handleAuthorStatsClick"
     >
       <!-- 原始摘要卡片（保持不動） -->
       <div class="author-contribution-section">
@@ -400,7 +449,7 @@ watch(isOldVersion, (newValue) => {
         <div 
           v-if="showAuthorStats" 
           class="modal-backdrop"
-          @click="closeAuthorStats"
+          @click.stop="closeAuthorStats"
         ></div>
       </transition>
       <!-- 浮動詳細資訊面板 -->
@@ -422,7 +471,7 @@ watch(isOldVersion, (newValue) => {
               class="author-stat-row"
               :style="{ animationDelay: `${index * 0.05}s` }"
             >
-              <div class="author-name">{{ stat.author || 'null' }}</div>
+              <div class="author-name">{{ getAuthorMeta(stat.author).name }}</div>
               <div class="author-bar-container">
                 <div 
                   class="author-bar"
@@ -516,7 +565,7 @@ watch(isOldVersion, (newValue) => {
           :class="{ active: selectedAuthor === author }"
           class="filter-option author-option"
         >
-          {{ author }}
+          {{ getAuthorMeta(author).name }}
           <svg v-if="selectedAuthor === author" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
             <polyline points="20 6 9 17 4 12"></polyline>
           </svg>
@@ -657,7 +706,7 @@ watch(isOldVersion, (newValue) => {
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                 <circle cx="12" cy="7" r="4"></circle>
               </svg>
-              {{ post.author }}
+              {{ getAuthorMeta(post.author).name }}
             </span>
             <span class="meta-item date">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -707,10 +756,10 @@ watch(isOldVersion, (newValue) => {
 /* 儀表板控制面板 - 三欄佈局 */
 .dashboard-panel {
   display: grid;
-  grid-template-columns: 1fr 1fr 200px;
+  grid-template-columns: 1.5fr 1.5fr 160px;
   gap: 1.5rem;
   margin-bottom: 2rem;
-  align-items: start;
+  align-items: stretch; /* 改為 stretch 讓所有項目高度一致 */
 }
 
 /* 左側統計區域 */
@@ -727,6 +776,7 @@ watch(isOldVersion, (newValue) => {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center; /* 垂直置中 */
   gap: 1rem;
   transition: all 0.3s ease;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
@@ -793,6 +843,7 @@ watch(isOldVersion, (newValue) => {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center; /* 垂直置中 */
   gap: 1rem;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -801,7 +852,7 @@ watch(isOldVersion, (newValue) => {
 .author-contribution-wrapper:hover .author-contribution-section {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border-color: var(--vp-c-brand-1);
+  border-color: var(--vp-c-brand);
 }
 
 /* 全螢幕背景遮罩 */
@@ -983,6 +1034,9 @@ watch(isOldVersion, (newValue) => {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  align-items: stretch; /* 改為 stretch 讓所有按鈕寬度一致 */
+  justify-content: center; /* 垂直置中 */
+  height: 100%; /* 確保佔滿高度以便置中 */
 }
 
 /* 篩選按鈕 */
@@ -993,13 +1047,15 @@ watch(isOldVersion, (newValue) => {
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s ease;
-  display: flex;
+  display: flex; /* 改回 flex,讓按鈕撐滿容器 */
   align-items: center;
+  justify-content: center; /* 內容置中 */
   gap: 0.5rem;
   font-size: 0.875rem;
   color: var(--vp-c-text-1);
   font-weight: 500;
   position: relative;
+  white-space: nowrap; /* 防止文字換行 */
 }
 
 .filter-btn:hover {
@@ -1025,13 +1081,17 @@ watch(isOldVersion, (newValue) => {
 }
 
 .filter-badge {
-  background: var(--vp-c-brand-1);
+  background: var(--vp-c-brand);
   color: white;
   border-radius: 10px;
-  padding: 0.125rem 0.5rem;
-  font-size: 0.75rem;
+  padding: 0.125rem 0.4rem;
+  font-size: 0.7rem;
   font-weight: 600;
-  margin-left: 0.25rem;
+  min-width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .clear-btn {
@@ -1041,12 +1101,14 @@ watch(isOldVersion, (newValue) => {
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s ease;
-  display: flex;
+  display: flex; /* 改回 flex,讓按鈕撐滿容器 */
   align-items: center;
+  justify-content: center; /* 內容置中 */
   gap: 0.5rem;
   font-size: 0.875rem;
   color: #ef4444;
   font-weight: 500;
+  white-space: nowrap; /* 防止文字換行 */
 }
 
 .clear-btn:hover {
@@ -1288,20 +1350,6 @@ watch(isOldVersion, (newValue) => {
   color: white;
 }
 
-/* 文章列表 */
-.articles-list {
-  display: grid;
-  gap: 1.5rem;
-}
-
-.articles-list.grid {
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-}
-
-.articles-list.list {
-  grid-template-columns: 1fr;
-}
-
 .article-card {
   background: #F9F6F2 !important;
   border: 1px solid #e5e2da !important;
@@ -1356,56 +1404,117 @@ watch(isOldVersion, (newValue) => {
   border-color: #00b8b8 !important;
 }
 
+/* 文章列表基礎樣式 */
+.articles-list {
+  display: grid;
+}
+
+.articles-list.grid {
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
+}
+
+.articles-list.list {
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+/* 平板以上：列表模式間距加大 (匹配 blog/index.md) */
+@media (min-width: 720px) {
+  .articles-list.list {
+    gap: 20px;
+  }
+}
+
+.article-card {
+  background: #F9F6F2 !important;
+  border: 1px solid #e5e2da !important;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  opacity: 0;
+  transform: translateY(30px);
+  animation: fadeInUp 0.6s ease forwards;
+  animation-delay: var(--animation-delay, 0s);
+}
+
+.article-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 8px 25px rgba(0, 184, 184, 0.15), 0 4px 12px rgba(0, 0, 0, 0.3);
+  border-color: #00b8b8 !important;
+}
+
+.article-card:hover .article-title {
+  color: #00b8b8;
+}
+
+/* 動畫完成後的樣式 */
+.article-card.animation-complete {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+  transition: all 0.3s ease !important;
+}
+
+.article-card.animation-complete:hover {
+  transform: translateY(-4px) scale(1.02) !important;
+  border-color: #00b8b8 !important;
+  box-shadow: 0 8px 25px rgba(0, 184, 184, 0.15), 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
+.article-card.animation-complete:hover .article-title {
+  color: #00b8b8 !important;
+}
+
+.dark .article-card {
+  background: #1c1c1c !important;
+  border-color: #2a2a2a !important;
+}
+
+.dark .article-card:hover {
+  border-color: #00b8b8 !important;
+}
+
+/* ===== 網格模式樣式 ===== */
 .articles-list.grid .article-card {
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
-.articles-list.list .article-card {
-  display: grid;
-  grid-template-columns: 200px 1fr;
-}
-
-.article-image {
+.articles-list.grid .article-image {
   width: 100%;
   height: 200px;
   background: var(--vp-c-bg-soft);
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.articles-list.list .article-image {
-  height: 100%;
-}
-
-.article-image img {
+.articles-list.grid .article-image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center;
   border-radius: 12px;
 }
 
-/* 網格模式時裁切圖片 */
-.articles-list.grid .article-image img {
-  aspect-ratio: 16 / 9;
-  object-fit: cover;
+/* 預設圖片特殊處理：完整顯示不裁切 */
+.articles-list.grid .article-image img[src*="blog_no_image"] {
+  object-fit: contain;
 }
 
-/* 列表模式時的圖片樣式 */
-.articles-list.list .article-image img {
-  margin-left:5%;
-  margin-top:5%;
-  width: 90%;
-  height: 90%;
-  aspect-ratio: 1 / 1;
-}
-
-.article-content {
+.articles-list.grid .article-content {
   padding: 1.5rem;
   margin-left: 1rem;
-
 }
 
-.article-title {
+.articles-list.grid .article-title {
   font-size: 1.25rem;
   font-weight: 600;
   margin: 0 0 1rem 0;
@@ -1413,14 +1522,14 @@ watch(isOldVersion, (newValue) => {
   line-height: 1.4;
 }
 
-.article-meta {
+.articles-list.grid .article-meta {
   display: flex;
   gap: 1rem;
   margin-bottom: 1rem;
   flex-wrap: wrap;
 }
 
-.meta-item {
+.articles-list.grid .meta-item {
   display: flex;
   align-items: center;
   gap: 0.375rem;
@@ -1428,11 +1537,11 @@ watch(isOldVersion, (newValue) => {
   color: var(--vp-c-text-2);
 }
 
-.meta-item svg {
+.articles-list.grid .meta-item svg {
   color: var(--vp-c-text-3);
 }
 
-.article-summary {
+.articles-list.grid .article-summary {
   color: var(--vp-c-text-2);
   line-height: 1.6;
   margin: 0 0 1rem 0;
@@ -1442,13 +1551,13 @@ watch(isOldVersion, (newValue) => {
   overflow: hidden;
 }
 
-.article-tags {
+.articles-list.grid .article-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
 }
 
-.tag {
+.articles-list.grid .tag {
   padding: 0.25rem 0.75rem;
   border-radius: 12px;
   font-size: 0.75rem;
@@ -1458,10 +1567,322 @@ watch(isOldVersion, (newValue) => {
   border: 1px solid var(--vp-c-divider);
 }
 
-.tag.category {
+.articles-list.grid .tag.category {
   background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
   color: white;
   border: none;
+}
+
+/* 網格模式：手機版調整 */
+@media (max-width: 768px) {
+  .articles-list.grid {
+    grid-template-columns: 1fr !important;
+    gap: 1.5rem;
+  }
+
+  .articles-list.grid .article-card {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .articles-list.grid .article-image {
+    width: 100%;
+    height: 180px;
+    margin: 0;
+    padding: 0;
+  }
+
+  .articles-list.grid .article-content {
+    padding: 1rem !important;
+    margin: 0 !important;
+  }
+
+  .articles-list.grid .article-title {
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .articles-list.grid .article-summary {
+    font-size: 0.9rem;
+    -webkit-line-clamp: 3;
+  }
+}
+
+/* ===== 列表模式樣式 - 完全採用 blog/index.md 的卡片布局 ===== */
+.articles-list.list .article-card {
+  display: flex !important;
+  flex-direction: row !important; /* 所有尺寸都使用水平排列 */
+  align-items: center !important;
+  gap: 16px;
+  padding: 16px;
+  border-radius: 14px;
+  background: #F9F6F2 !important;
+  border: 1px solid #e5e2da !important;
+  color: #222 !important;
+  min-height: 144px;
+  text-decoration: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dark .articles-list.list .article-card {
+  background: #1c1c1c !important;
+  border-color: #2a2a2a !important;
+}
+
+.articles-list.list .article-card:hover {
+  transform: translateY(-4px) scale(1.02) !important;
+  border-color: #00b8b8 !important;
+  box-shadow: 0 8px 25px rgba(0, 184, 184, 0.15), 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
+.articles-list.list .article-card:hover .article-title {
+  color: #00b8b8 !important;
+}
+
+/* 手機版和平板：調整尺寸和間距 */
+@media (max-width: 768px) {
+  .articles-list.list .article-card {
+    align-items: center; /* 手機版改為垂直置中 */
+    gap: 12px;
+    padding: 12px;
+    min-height: auto;
+  }
+  
+  .articles-list.list .article-card:hover {
+    transform: none !important;
+    border-color: #2a2a2a !important;
+    box-shadow: none !important;
+  }
+  
+  .articles-list.list .article-card:hover .article-title {
+    color: var(--vp-c-text-1) !important;
+  }
+}
+
+/* 列表模式：article-image 變成固定大小的 thumb */
+.articles-list.list .article-image {
+  display: flex !important;
+  width: 144px !important;
+  height: 144px !important;
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--vp-c-bg-soft);
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0 !important;
+}
+
+.articles-list.list .article-image img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  object-position: center center;
+  display: block;
+}
+
+@media (max-width: 768px) {
+  .articles-list.list .article-image {
+    width: 100px !important;
+    height: 100px !important;
+    margin: 0 !important;
+    flex-shrink: 0;
+    align-self: center !important;
+  }
+}
+
+/* 列表模式：article-content 樣式調整 */
+.articles-list.list .article-content {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  min-height: 144px;
+}
+
+/* 列表模式：使用 order 調整顯示順序 (匹配 blog/index.md) */
+.articles-list.list .article-title {
+  order: 1;
+}
+
+.articles-list.list .article-tags {
+  order: 2;
+}
+
+.articles-list.list .article-meta {
+  order: 3;
+}
+
+.articles-list.list .article-summary {
+  order: 4;
+}
+
+/* 手機版和平板 article-content 調整 (完全匹配 blog/index.md 的 .meta) */
+@media (max-width: 768px) {
+  .articles-list.list .article-content {
+    height: auto !important;
+    min-height: auto !important;
+    justify-content: flex-start !important;
+    padding: 8px 0;
+  }
+}
+
+/* 列表模式：article-title 樣式調整 (完全匹配 blog/index.md 的 .title) */
+.articles-list.list .article-title {
+  display: block;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--vp-c-text-1);
+  margin-bottom: 0.5em;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  min-width: 0; /* 確保能夠正確換行 */
+}
+
+@media (max-width: 900px) {
+  .articles-list.list .article-title {
+    font-size: 1.1rem;
+    max-height: 2.2em;
+    margin-bottom: 0.8em;
+  }
+}
+
+@media (max-width: 720px) {
+  .articles-list.list .article-title {
+    font-size: 1rem;
+    line-height: 1.15;
+    max-height: 2em;
+  }
+}
+
+/* 手機版和平板：進一步調整標題間距 (匹配 blog/index.md) */
+@media (max-width: 768px) {
+  .articles-list.list .article-title {
+    font-size: 18px !important;
+    line-height: 1.3 !important;
+    margin-bottom: 8px !important;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-break: break-word;
+    white-space: normal;
+    max-height: 4.2em;
+  }
+}
+
+/* 列表模式：article-tags 樣式調整 (完全匹配 blog/index.md 的 .badges) */
+.articles-list.list .article-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+  margin-top: 0;
+}
+
+@media (max-width: 900px) {
+  .articles-list.list .article-tags {
+    margin-top: 0.3em;
+  }
+}
+
+/* 列表模式：tag 樣式調整 (完全匹配 blog/index.md 的 .badge) */
+.articles-list.list .article-tags .tag,
+.articles-list.list .article-tags .tag.category {
+  font-size: 13px !important;
+  line-height: 1 !important;
+  padding: 8px 12px !important;
+  border-radius: 999px !important;
+}
+
+/* 手機版和平板：縮小標籤尺寸 (匹配 blog/index.md) */
+@media (max-width: 768px) {
+  .articles-list.list .article-tags {
+    margin-bottom: 8px !important;
+  }
+  
+  .articles-list.list .article-tags .tag,
+  .articles-list.list .article-tags .tag.category {
+    font-size: 11px !important;
+    padding: 4px 8px !important;
+  }
+}
+
+.articles-list.list .article-tags .tag {
+  background: var(--vp-c-bg-soft);
+  color: var(--vp-c-text-2);
+  border: 1px solid var(--vp-c-divider);
+}
+
+/* category 標籤顏色 (匹配網格模式) */
+.articles-list.list .article-tags .tag.category {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%) !important;
+  color: white !important;
+  border: none !important;
+}
+
+.dark .articles-list.list .article-tags .tag.category {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%) !important;
+  color: white !important;
+  border: none !important;
+}
+
+/* 列表模式：article-meta 樣式調整 (匹配 blog/index.md 的 .byline) */
+.articles-list.list .article-meta {
+  color: var(--vp-c-text-2);
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  padding: 0 !important;
+  line-height: 1 !important;
+  height: 20px;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.articles-list.list .article-meta .meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.articles-list.list .article-meta .meta-item svg {
+  opacity: 0.6;
+}
+
+/* 手機版和平板：調整 meta 樣式 (匹配 blog/index.md) */
+@media (max-width: 768px) {
+  .articles-list.list .article-meta {
+    font-size: 13px !important;
+  }
+  
+  .articles-list.list .article-meta .meta-item svg {
+    width: 12px !important;
+    height: 12px !important;
+  }
+}
+
+/* 列表模式：article-summary 樣式調整 (完全匹配 blog/index.md 的 .desc) */
+.articles-list.list .article-summary {
+  color: var(--vp-c-text-2);
+  font-size: 14px;
+  line-height: 1.3;
+  margin: 0 !important;
+  padding: 0;
+}
+
+/* 手機版和平板：調整摘要樣式 (匹配 blog/index.md) */
+@media (max-width: 768px) {
+  .articles-list.list .article-summary {
+    font-size: 13px !important;
+    line-height: 1.4 !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+  }
 }
 
 /* 空狀態 */
@@ -1560,22 +1981,30 @@ watch(isOldVersion, (newValue) => {
 /* 響應式設計 */
 @media (max-width: 1200px) {
   .dashboard-panel {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1.5fr 1.5fr 150px;
     gap: 1rem;
   }
-
-  .author-contribution-section {
-    order: 1;
+  
+  .stat-card {
+    padding: 1rem;
   }
-
-  .stats-section {
-    order: 2;
+  
+  .stat-icon {
+    width: 48px;
+    height: 48px;
   }
-
-  .filters-section {
-    order: 3;
-    flex-direction: row;
-    flex-wrap: wrap;
+  
+  .stat-value {
+    font-size: 2rem;
+  }
+  
+  .stat-label {
+    font-size: 0.85rem;
+  }
+  
+  .filter-btn {
+    padding: 0.6rem 1rem;
+    font-size: 0.8rem;
   }
 }
 
@@ -1583,13 +2012,37 @@ watch(isOldVersion, (newValue) => {
   .blog-container {
     padding: 1rem;
   }
+  
+  .dashboard-panel {
+    grid-template-columns: 2.5fr 2.5fr 100px;
+    gap: 0.75rem;
+  }
 
   .stat-card {
-    padding: 1rem;
+    padding: 0.75rem;
+  }
+  
+  .stat-icon {
+    width: 40px;
+    height: 40px;
   }
 
   .stat-value {
-    font-size: 2rem;
+    font-size: 1.5rem;
+  }
+  
+  .stat-label {
+    font-size: 0.75rem;
+  }
+  
+  .filter-btn {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+  }
+  
+  .filter-btn svg {
+    width: 14px;
+    height: 14px;
   }
 
   .stat-icon {
@@ -1609,117 +2062,6 @@ watch(isOldVersion, (newValue) => {
 
   .author-stats-chart {
     font-size: 0.9rem;
-  }
-
-  /* ===== 網格模式手機版 ===== */
-  .articles-list.grid {
-    grid-template-columns: 1fr !important;
-    gap: 1.5rem;
-  }
-
-  .articles-list.grid .article-card {
-    display: flex !important;
-    flex-direction: column !important;
-  }
-
-  .articles-list.grid .article-image {
-    width: 100%;
-    height: 180px;
-    margin: 0;
-    padding: 0;
-  }
-
-  .articles-list.grid .article-image img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 0;
-    aspect-ratio: 16 / 9;
-  }
-
-  .articles-list.grid .article-content {
-    padding: 1rem !important;
-    margin: 0 !important;
-  }
-
-  .articles-list.grid .article-title {
-    font-size: 1.1rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .articles-list.grid .article-summary {
-    display: block;
-  }
-
-  /* ===== 列表模式手機版 ===== */
-  .articles-list.list {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 1rem;
-  }
-
-  .articles-list.list .article-card {
-    display: grid !important;
-    grid-template-columns: 100px 1fr !important;
-    gap: 0.75rem !important;
-    padding: 0.75rem !important;
-    align-items: start;
-  }
-
-  .articles-list.list .article-image {
-    width: 100px !important;
-    height: 100px !important;
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-
-  .articles-list.list .article-image img {
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: cover;
-    border-radius: 8px;
-    aspect-ratio: 1 / 1 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-
-  .articles-list.list .article-content {
-    padding: 0 !important;
-    margin: 0 !important;
-    display: flex;
-    flex-direction: column;
-    gap: 0.1rem;
-  }
-
-  .articles-list.list .article-title {
-    font-size: 1rem !important;
-    margin: 0 !important;
-    line-height: 1.3;
-  }
-
-  .articles-list.list .article-summary {
-    display: block !important;
-    font-size: 0.8rem !important;
-    -webkit-line-clamp: 1 !important;
-    margin: 0 !important;
-  }
-
-  .articles-list.list .article-tags {
-    display: flex !important;
-    gap: 0.3rem;
-    flex-wrap: wrap;
-    margin: 0 !important;
-  }
-
-  .articles-list.list .tag {
-    padding: 0.15rem 0.5rem !important;
-    font-size: 0.65rem !important;
-    margin: 0 !important;
-  }
-
-  .article-meta {
-    font-size: 0.75rem;
-    margin: 0 !important;
   }
 
   .author-stats-popup {
