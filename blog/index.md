@@ -693,7 +693,7 @@ watch(isOldVersion, (newValue) => {
         class="article-card"
       >
         <div class="article-image">
-          <img :src="post.image" :alt="post.title" @error="onImgError" loading="lazy">
+          <img :src="post.image" :alt="post.title" @error="onImgError" loading="lazy" class="no-zoom">
         </div>
         <div class="article-content">
           <h3 class="article-title">{{ post.title }}</h3>
