@@ -242,7 +242,7 @@ function flashVolumePercentage() {
 
     <transition name="player-slide">
         <div v-if="isMobile && mobilePlayerOpen" class="my-bgm-player my-bgm-player-mobile" ref="playerContainer" @click.stop>
-        <div v-if="isAdjustingVolume" class="volume-percentage-display-local">{{ Math.round(volume * 100) }}%</div>
+        <div v-if="isAdjustingVolume && isVolumeSliderVisible" class="volume-percentage-display-mobile">{{ Math.round(volume * 100) }}%</div>
         <div class="my-bgm-mobile-row title-row">
             <span class="music-icon">🎵</span>
             <div class="marquee-container"><span class="music-title-text">{{ currentMusicTitle }}</span></div>
@@ -306,6 +306,7 @@ function flashVolumePercentage() {
 
     <transition name="player-slide">
         <div v-if="!isMobile && desktopPlayerOpen" class="my-bgm-player my-bgm-player-desktop" ref="playerContainer" @click.stop>
+        <div v-if="isAdjustingVolume && isVolumeSliderVisible" class="volume-percentage-display-desktop">{{ Math.round(volume * 100) }}%</div>
         <!-- 第一行：標題 + 關閉按鈕 -->
         <div class="desktop-row title-row">
             <div class="marquee-container">
@@ -359,10 +360,15 @@ function flashVolumePercentage() {
                 <!-- 音量滑桿浮動面板 -->
                 <transition name="fade">
                     <div v-if="isVolumeSliderVisible" class="volume-popup-desktop" @click.stop>
+                        <span class="volume-icon" @click.stop="toggleMute" title="靜音/取消靜音">
+                            <template v-if="volume === 0">🔇</template>
+                            <template v-else-if="volume < 0.33">🔈</template>
+                            <template v-else-if="volume < 0.7">🔉</template>
+                            <template v-else>🔊</template>
+                        </span>
                         <input
                             type="range"
-                            class="volume-slider-vertical"
-                            orient="vertical"
+                            class="volume-slider-horizontal"
                             min="0"
                             max="1"
                             step="0.01"
@@ -417,70 +423,21 @@ function flashVolumePercentage() {
     align-items: center;
 }
 
-/* 桌面版垂直音量滑桿 */
+/* 桌面版音量滑桿彈出面板 (水平) */
 .volume-popup-desktop {
     position: absolute;
     bottom: calc(100% + 12px);
     right: 0;
-    background: var(--vp-c-bg, var(--player-bg));
-    border: 1px solid var(--vp-c-divider, var(--player-border));
-    border-radius: 12px;
-    box-shadow: var(--player-shadow-lg);
-    padding: 16px 12px;
+    background: rgba(40, 40, 40, 0.75);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    border-radius: 8px;
+    padding: 8px 12px;
     z-index: 11;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
     gap: 8px;
-    animation: volumePopIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-@keyframes volumePopIn {
-    0% {
-        opacity: 0;
-        transform: translateY(10px) scale(0.9);
-    }
-    100% {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-}
-
-.volume-slider-vertical {
-    -webkit-appearance: slider-vertical;
-    appearance: slider-vertical;
-    writing-mode: bt-lr;
-    width: 6px;
-    height: 120px;
-    background: var(--vp-c-divider, var(--player-border));
-    border-radius: 3px;
-    outline: none;
-    cursor: pointer;
-}
-
-.volume-slider-vertical::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 16px;
-    height: 16px;
-    background: var(--player-primary);
-    border-radius: 50%;
-    cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.volume-slider-vertical::-webkit-slider-thumb:hover {
-    transform: scale(1.2);
-    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
-}
-
-.volume-slider-vertical::-moz-range-thumb {
-    width: 16px;
-    height: 16px;
-    background: var(--player-primary);
-    border: none;
-    border-radius: 50%;
-    cursor: pointer;
 }
 
 .volume-percentage-display {
@@ -491,57 +448,41 @@ function flashVolumePercentage() {
     text-align: center;
 }
 
-/* 手機版橫向音量滑桿 */
+/* 音量彈出面板 */
 .volume-popup-shared {
     position: absolute;
-    background: var(--vp-c-bg, var(--player-bg));
-    border: 1px solid var(--vp-c-divider, var(--player-border));
-    border-radius: 12px;
-    box-shadow: var(--player-shadow-lg);
+    background: rgba(40, 40, 40, 0.75);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    border-radius: 8px;
     z-index: 11;
     transition: opacity 0.2s, transform 0.2s;
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 12px 16px;
-    animation: volumeSlideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-@keyframes volumeSlideUp {
-    0% {
-        opacity: 0;
-        transform: translateY(10px) scale(0.95);
-    }
-    100% {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
+    gap: 8px;
+    padding: 8px 12px;
 }
 
 .volume-popup-shared .volume-icon {
-    color: var(--vp-c-text-1, var(--player-text));
+    color: #fff;
 }
 
 .volume-slider-horizontal {
     -webkit-appearance: none;
     appearance: none;
-    width: 120px;
-    height: 6px;
-    background: var(--vp-c-divider, var(--player-border));
-    border-radius: 3px;
-    outline: none;
-    cursor: pointer;
+    width: 200px;
+    height: 4px;
+    background: rgba(255,255,255,0.3);
+    border-radius: 2px;
 }
 
 .volume-slider-horizontal::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 16px;
-    height: 16px;
-    background: var(--player-primary);
+    width: 14px;
+    height: 14px;
+    background: #fff;
     border-radius: 50%;
-    cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .volume-slider-horizontal::-webkit-slider-thumb:hover {
@@ -565,10 +506,42 @@ function flashVolumePercentage() {
     box-shadow: var(--player-shadow);
 }
 
+.volume-percentage-display-desktop {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.75);
+    color: white;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.9em;
+    font-weight: bold;
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+.volume-percentage-display-mobile {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.75);
+    color: white;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.9em;
+    font-weight: bold;
+    pointer-events: none;
+    white-space: nowrap;
+}
+
 .volume-popup-mobile {
-    bottom: 60px;
-    left: 12px;
-    right: 12px;
+    bottom: 61px;
+    left: 10px;
+    right: 10px;
+    max-width: 250px;
+    margin: 0 auto;
 }
 /* ==================== 桌面版播放器 ==================== */
 .my-bgm-player-desktop {
@@ -787,79 +760,48 @@ button, button:focus, button:focus-visible,
 
 /* ==================== 播放按鈕 ==================== */
 .my-bgm-play-btn {
-    background: linear-gradient(135deg, var(--player-primary) 0%, var(--player-secondary) 100%);
-    color: white !important;
+    background: linear-gradient(145deg, #e3f2fd 60%, #b6c8e6 100%);
+    color: #1565c0;
     border-radius: 50%;
     border: none;
-    width: 48px;
-    height: 48px;
-    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+    width: 40px;
+    height: 40px;
+    box-shadow: 0 2px 8px #b3c7e6bb;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 1.5em;
     font-weight: bold;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: box-shadow .2s, background .2s, color .2s;
     flex-shrink: 0;
-    cursor: pointer;
-    filter: none !important;
-    -webkit-text-fill-color: white !important;
-    text-shadow: none !important;
 }
 
-/* 確保 emoji 顯示為彩色 */
-.my-bgm-play-btn::before {
-    content: attr(data-emoji);
-}
-
-.my-bgm-play-btn:hover {
-    transform: scale(1.08);
-    box-shadow: 0 6px 16px rgba(99, 102, 241, 0.5);
-}
-
-.my-bgm-play-btn:active {
-    transform: scale(0.95);
-    animation: buttonPulse 0.4s ease-out;
-}
-
-@keyframes buttonPulse {
-    0% {
-        box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7);
-    }
-    50% {
-        box-shadow: 0 0 0 10px rgba(99, 102, 241, 0);
-    }
-    100% {
-        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
-    }
+.my-bgm-play-btn:hover,
+.my-bgm-play-btn:focus {
+    box-shadow: 0 4px 14px #64b5f6aa;
+    background: linear-gradient(145deg, #bbdefb 60%, #90caf9 100%);
+    color: #0d47a1;
 }
 
 /* ==================== 上下首按鈕 ==================== */
 .my-bgm-prev-next-btn {
-    font-size: 1.25em;
+    font-size: 1.3em;
     line-height: 1;
     background: transparent;
-    color: var(--vp-c-text-2, var(--player-text-secondary));
-    border-radius: 8px;
-    padding: 8px;
-    transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
-    cursor: pointer;
+    color: #666;
+    border-radius: 5px;
+    padding: 4px 8px;
+    transition: box-shadow .2s, color .2s;
     border: none;
-    width: 40px;
-    height: 40px;
-    display: flex;
+    cursor: pointer;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
 }
 
 .my-bgm-prev-next-btn:hover {
-    background: var(--vp-c-bg-soft, var(--player-surface));
-    color: var(--player-primary);
-    transform: scale(1.1);
-}
-
-.my-bgm-prev-next-btn:active {
-    transform: scale(0.9);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    color: #1976d2;
 }
 /* ==================== 關閉按鈕 ==================== */
 .my-bgm-close {
@@ -1177,67 +1119,45 @@ button, button:focus, button:focus-visible,
     -webkit-appearance: none;
     appearance: none;
     width: 100%;
-    height: 6px;
-    background: var(--vp-c-divider, #e5e7eb);
-    border-radius: 3px;
+    height: 4px;
+    background: #e9e9e9;
+    border-radius: 2px;
     outline: none;
-    cursor: pointer;
-    position: relative;
 }
 
-/* Webkit (Chrome, Safari, Edge) */
 .progress-bar::-webkit-slider-runnable-track {
     width: 100%;
-    height: 6px;
-    background: var(--vp-c-divider, #e5e7eb);
-    border-radius: 3px;
+    height: 4px;
+    background: #e9e9e9;
+    border-radius: 2px;
 }
 
 .progress-bar::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 14px;
-    height: 14px;
-    background: var(--player-primary);
+    width: 12px;
+    height: 12px;
+    background: #fff;
+    border: 2.5px solid #1976d2;
     border-radius: 50%;
     cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    margin-top: -4px; /* 讓thumb居中 */
-    box-shadow: -999px 0 0 990px var(--player-primary); /* 填充進度 */
+    margin-top: -4.5px;
 }
 
-.progress-bar::-webkit-slider-thumb:hover {
-    transform: scale(1.3);
-    box-shadow: -999px 0 0 990px var(--player-primary), 0 0 0 6px rgba(99, 102, 241, 0.2);
-}
-
-/* Firefox */
 .progress-bar::-moz-range-track {
     width: 100%;
-    height: 6px;
-    background: var(--vp-c-divider, #e5e7eb);
-    border-radius: 3px;
-}
-
-.progress-bar::-moz-range-progress {
-    height: 6px;
-    background: var(--player-primary);
-    border-radius: 3px;
+    height: 4px;
+    background: #e9e9e9;
+    border-radius: 2px;
 }
 
 .progress-bar::-moz-range-thumb {
-    width: 14px;
-    height: 14px;
-    background: var(--player-primary);
-    border: none;
+    width: 12px;
+    height: 12px;
+    background: #fff;
+    border: 2.5px solid #1976d2;
     border-radius: 50%;
     cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.progress-bar::-moz-range-thumb:hover {
-    transform: scale(1.3);
-    box-shadow: 0 0 0 6px rgba(99, 102, 241, 0.2);
 }
 
 /* ==================== 響應式設計 ==================== */
