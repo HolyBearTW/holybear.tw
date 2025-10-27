@@ -1836,46 +1836,45 @@ watch(isOldVersion, (newValue) => {
   border: none !important;
 }
 
-/* 列表模式：article-meta 樣式調整 (匹配 blog/index.md 的 .byline) */
+/* 列表模式：article-meta 樣式調整 (匹配網格模式的對齊方式) */
 .articles-list.list .article-meta {
   color: var(--vp-c-text-2);
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   display: flex;
   align-items: center;
   padding: 0 !important;
-  line-height: 1 !important;
-  height: 20px;
   gap: 1rem;
   margin-bottom: 6px;
+  flex-wrap: nowrap;
 }
 
 .articles-list.list .article-meta .meta-item {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 0.375rem;
+  white-space: nowrap;
 }
 
 .articles-list.list .article-meta .meta-item svg {
   opacity: 0.6;
+  flex-shrink: 0;
 }
 
-/* 手機版和平板：調整 meta 樣式 (匹配 blog/index.md) */
+/* 手機版和平板：調整 meta 樣式 (匹配網格模式) */
 @media (max-width: 768px) {
   .articles-list.list .article-meta {
     font-size: 13px !important;
-    gap: 0.5rem !important;
+    gap: 0.75rem !important;
     flex-wrap: nowrap !important;
-    white-space: nowrap !important;
   }
   
   .articles-list.list .article-meta .meta-item {
-    gap: 2px !important;
+    gap: 0.375rem !important;
   }
   
   .articles-list.list .article-meta .meta-item svg {
-    width: 13px !important;
-    height: 13px !important;
-    flex-shrink: 0 !important;
+    width: 12px !important;
+    height: 12px !important;
   }
 }
 
