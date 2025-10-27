@@ -303,23 +303,19 @@ const isOldVersion = ref(false)
 // 設置卡片動畫
 const setupCardAnimations = () => {
   const cards = document.querySelectorAll('.article-card')
-  cards.forEach((element: any, index) => {
-    // 移除動畫完成類以重新開始動畫
+  cards.forEach((element: any) => {
+    // 移除動畫完成類
     element.classList.remove('animation-complete')
     
-    // 清除內聯樣式
-    element.style.cssText = ''
-    
-    // 強制觸發重排
-    void element.offsetHeight
-    
-    // 添加動畫延遲
-    element.style.setProperty('--animation-delay', `${index * 0.1}s`)
-    
-    // 監聽動畫完成事件
-    element.addEventListener('animationend', () => {
-      element.classList.add('animation-complete')
-    }, { once: true })
+    // 監聽動畫完成（避免重複綁定）
+    if (!element._animationEndBound) {
+      element._animationEndBound = true
+      element.addEventListener('animationend', function(e) {
+        if (e.target === element && !element.classList.contains('animation-complete')) {
+          element.classList.add('animation-complete')
+        }
+      }, { once: true })
+    }
   })
 }
 
@@ -1367,7 +1363,6 @@ watch(isOldVersion, (newValue) => {
   opacity: 0;
   transform: translateY(30px);
   animation: fadeInUp 0.6s ease forwards;
-  animation-delay: var(--animation-delay, 0s);
 }
 
 .article-card:hover {
@@ -1397,6 +1392,18 @@ watch(isOldVersion, (newValue) => {
 .article-card.animation-complete:hover .article-title {
   color: #00b8b8 !important;
 }
+
+/* 為每張卡片添加延遲效果，讓它們依序出現 */
+.article-card:nth-child(1) { animation-delay: 0s; }
+.article-card:nth-child(2) { animation-delay: 0.1s; }
+.article-card:nth-child(3) { animation-delay: 0.2s; }
+.article-card:nth-child(4) { animation-delay: 0.3s; }
+.article-card:nth-child(5) { animation-delay: 0.4s; }
+.article-card:nth-child(6) { animation-delay: 0.5s; }
+.article-card:nth-child(7) { animation-delay: 0.6s; }
+.article-card:nth-child(8) { animation-delay: 0.7s; }
+.article-card:nth-child(9) { animation-delay: 0.8s; }
+.article-card:nth-child(10) { animation-delay: 0.9s; }
 
 .dark .article-card {
   background: #1c1c1c !important;
@@ -1442,7 +1449,6 @@ watch(isOldVersion, (newValue) => {
   opacity: 0;
   transform: translateY(30px);
   animation: fadeInUp 0.6s ease forwards;
-  animation-delay: var(--animation-delay, 0s);
 }
 
 .article-card:hover {
