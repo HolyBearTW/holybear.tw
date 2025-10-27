@@ -1,20 +1,22 @@
 import MyCustomLayout from './MyCustomLayout.vue';
 import './style.css';
 import OpenCCConverter from '../components/OpenCCConverter.vue';
+import Spoiler from './Spoiler.vue';
 
 export default {
     Layout: MyCustomLayout,
     enhanceApp({ router, app }) {
         // ✅ 就是這一行！在此註冊您的元件
         app.component('OpenCCConverter', OpenCCConverter);
+        app.component('Spoiler', Spoiler);
 
         // --- 您原本的所有其他程式碼都保留 ---
         if (typeof document === 'undefined') return; // SSR 階段直接跳過
 
         // 恢復 is-blog-page 判斷，只加在文章內頁（不是首頁、index-new等列表頁）
         function isBlogPage(path: string) {
-            // 只針對 /blog/xxxx 文章頁（不是 /blog/ 、/blog 、/blog/index、/blog/index-new等列表頁）
-            return /^\/(en\/)?blog\/(?!$|index|index-new)[\w-]+/.test(path);
+            // 匹配 /blog/xxxx、/en/blog/xxxx、/docs/xxxx 文章頁（不是列表頁）
+            return /^\/(en\/)?blog\/(?!$|index|index-new)[\w-]+/.test(path) || /^\/docs\/[\w-]+/.test(path);
         }
         function forceBlogClass() {
             // 保留原有 class，確保最多只有一個 is-blog-page
