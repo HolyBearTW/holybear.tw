@@ -45,14 +45,12 @@ ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale)
 const savedViewMode = (typeof localStorage !== 'undefined' && localStorage.getItem('blog-view-mode')) as 'grid' | 'list' | null
 const viewMode = ref<'grid' | 'list'>(savedViewMode || 'grid')
 
-// 監聽 viewMode 變化並保存到 localStorage，同時重新設置動畫
-watch(viewMode, async (newMode) => {
+// 監聽 viewMode 變化並保存到 localStorage
+watch(viewMode, (newMode) => {
   if (typeof localStorage !== 'undefined') {
     localStorage.setItem('blog-view-mode', newMode)
   }
-  // 視圖模式改變時重新設置卡片進場動畫
-  await nextTick()
-  setTimeout(setupCardAnimations, 50)
+  // 切換模式時不重新播放動畫，保持卡片的 animation-complete 狀態
 })
 
 const selectedAuthor = ref('')
