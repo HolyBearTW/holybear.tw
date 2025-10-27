@@ -4,6 +4,7 @@ import gitMetaPlugin from './git-meta'
 import sidebar from './sidebars/blog.sidebar'
 import TelegramRoseBotDocsSidebar from './sidebars/Telegram-Rose-Bot-docs.sidebar.ts'
 import VitepressBlogDocsSidebar from './sidebars/Vitepress-Blog-docs-sidebar.ts'
+import SpoilerComponentDocsSidebar from './sidebars/spoiler-component-docs-sidebar.ts'
 
 export default defineConfig({
     ignoreDeadLinks: true,
@@ -230,7 +231,8 @@ export default defineConfig({
         sidebar: {
             '/blog/': sidebar,
             '/docs/Telegram-Rose-Bot.md': TelegramRoseBotDocsSidebar,
-            '/docs/Vitepress-Blog.md': VitepressBlogDocsSidebar
+            '/docs/Vitepress-Blog.md': VitepressBlogDocsSidebar,
+            '/docs/spoiler-component.md': SpoilerComponentDocsSidebar
         },
                 socialLinks: [
             { icon: 'github', link: 'https://github.com/HolyBearTW' }
