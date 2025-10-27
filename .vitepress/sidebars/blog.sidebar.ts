@@ -3,6 +3,10 @@ export default [
   {
     "items": [
       {
+        "text": "2025台北同志遊行 — 我的彩虹初體驗！",
+        "link": "/blog/2025-10-27"
+      },
+      {
         "text": "咖波屋",
         "link": "/blog/2025-10-12-capoo"
       },
@@ -37,10 +41,6 @@ export default [
       {
         "text": "鋼索上的日子：一個年輕人的自由渴望",
         "link": "/blog/2025-06-13"
-      },
-      {
-        "text": "台東好好玩",
-        "link": "/blog/2025-06-12"
       }
     ]
   },
