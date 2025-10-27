@@ -55,6 +55,45 @@
 .vp-doc img:not(.no-zoom) {
   cursor: url('/MapleStory_cursor_hand.png'), pointer !important;
 }
+
+/* 修正表格邊框顯示問題 - 統一處理所有表格 */
+.vp-doc table {
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  width: auto !important;
+  max-width: 100% !important;
+  margin: 1rem 0;
+  border: 1px solid var(--vp-c-divider) !important;
+  border-radius: 0 !important;
+  display: table !important;
+}
+
+.vp-doc table th,
+.vp-doc table td {
+  border-right: 1px solid var(--vp-c-divider) !important;
+  border-bottom: 1px solid var(--vp-c-divider) !important;
+  padding: 8px 16px;
+  white-space: nowrap;
+}
+
+/* 移除最右側單元格的右邊框（避免雙重邊框） */
+.vp-doc table th:last-child,
+.vp-doc table td:last-child {
+  border-right: none !important;
+}
+
+/* 移除最後一行的下邊框（避免雙重邊框） */
+.vp-doc table tr:last-child td,
+.vp-doc table tr:last-child th {
+  border-bottom: none !important;
+}
+
+.vp-doc table thead tr {
+  background-color: var(--vp-c-bg-soft);
+}
+
+
+
 /**
  * Customize default theme styling by overriding CSS variables:
  * https://github.com/vuejs/vitepress/blob/main/src/client/theme-default/styles/vars.css
