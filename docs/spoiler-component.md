@@ -6,6 +6,7 @@ tag:
   - VitePress
   - Vue
   - 組件
+  - 防劇透
 category:
   - 技術分享
 ---
@@ -35,12 +36,12 @@ category:
 最簡單的方式，就是用 `src` 屬性直接指定圖片：
 
 ```markdown
-<Spoiler src="/public/image/cat.png" alt="可愛的貓咪" reason="超萌貓貓注意！" />
+<Spoiler src="/image/cat.png" alt="可愛的貓咪" reason="超萌貓貓注意！" />
 ```
 
 **實際效果：**
 
-<Spoiler src="/public/image/cat.png" alt="可愛的貓咪" reason="超萌貓貓注意！" />
+<Spoiler src="/image/cat.png" alt="可愛的貓咪" reason="超萌貓貓注意！" />
 
 ### 方式二：包裹 Markdown 內容
 
@@ -49,8 +50,8 @@ category:
 ```markdown
 <Spoiler reason="這裡有多張可愛貓貓">
 
-![貓貓1](/public/image/cat.png)
-![貓貓2](/public/image/cat.png)
+![貓貓1](/image/cat.png)
+![貓貓2](/image/cat.png)
 
 </Spoiler>
 ```
@@ -59,8 +60,8 @@ category:
 
 <Spoiler reason="這裡有多張可愛貓貓">
 
-![貓貓1](/public/image/cat.png)
-![貓貓2](/public/image/cat.png)
+![貓貓1](/image/cat.png)
+![貓貓2](/image/cat.png)
 
 </Spoiler>
 
@@ -80,13 +81,13 @@ category:
 
 如果不指定 `reason`，會自動顯示「劇透內容」：
 
-<Spoiler src="/public/image/cat.png" />
+<Spoiler src="/image/cat.png" />
 
 ### 自訂警告文字
 
 可以根據內容特性，自訂警告文字：
 
-<Spoiler src="/public/image/cat.png" reason="警告：此圖片可能導致你想養貓" />
+<Spoiler src="/image/cat.png" reason="警告：此圖片可能導致你想養貓" />
 
 ## 技術細節
 
