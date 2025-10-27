@@ -1863,11 +1863,19 @@ watch(isOldVersion, (newValue) => {
 @media (max-width: 768px) {
   .articles-list.list .article-meta {
     font-size: 13px !important;
+    gap: 0.5rem !important;
+    flex-wrap: nowrap !important;
+    white-space: nowrap !important;
+  }
+  
+  .articles-list.list .article-meta .meta-item {
+    gap: 2px !important;
   }
   
   .articles-list.list .article-meta .meta-item svg {
-    width: 12px !important;
-    height: 12px !important;
+    width: 13px !important;
+    height: 13px !important;
+    flex-shrink: 0 !important;
   }
 }
 
