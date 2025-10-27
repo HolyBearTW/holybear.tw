@@ -134,12 +134,18 @@ const displayAuthors = computed(() => {
   })
 })
 
-// 格式化日期
+// 格式化日期為 YYYY-MM-DD HH:mm 格式（含時間）
 const formatDate = (dateString: string) => {
   if (!dateString) return '未知日期'
   const date = new Date(dateString)
   if (isNaN(date.getTime())) return '未知日期'
-  return date.toISOString().slice(0, 10)
+  const twDate = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }))
+  const yyyy = twDate.getFullYear()
+  const mm = String(twDate.getMonth() + 1).padStart(2, '0')
+  const dd = String(twDate.getDate()).padStart(2, '0')
+  const hh = String(twDate.getHours()).padStart(2, '0')
+  const min = String(twDate.getMinutes()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd} ${hh}:${min}`
 }
 
 const fallbackImg = '/blog_no_image.svg'
@@ -1835,7 +1841,7 @@ watch(isOldVersion, (newValue) => {
   padding: 0 !important;
   line-height: 1 !important;
   height: 20px;
-  gap: 4px;
+  gap: 1rem;
   margin-bottom: 6px;
 }
 
