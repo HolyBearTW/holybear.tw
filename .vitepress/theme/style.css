@@ -43,6 +43,138 @@
  *   in custom container, badges, etc.
  * -------------------------------------------------------------------------- */
 
+/* ========== HyperOS 官方背景效果（來自 BgEffectDataManager）========== */
+/* 首頁 body 設置背景 - 覆蓋整個頁面包括頁腳 */
+body:has(.VPHome)::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Phone Dark 深色模式：HyperOS 舊版配色 (be13398 之前) */
+/* 藍色、咖啡色、深紅紫、深紫藍 */
+body:has(.VPHome)::before {
+  background: 
+    radial-gradient(circle at 63% 50%, rgba(0, 79, 148, 1.0) 0%, transparent 50%),
+    radial-gradient(circle at 88% 69%, rgba(135, 74, 38, 1.0) 0%, transparent 50%),
+    radial-gradient(circle at 75% 80%, rgba(117, 15, 69, 1.0) 0%, transparent 50%),
+    radial-gradient(circle at 17% 66%, rgba(41, 31, 115, 1.0) 0%, transparent 50%),
+    linear-gradient(135deg, #0a0a14 0%, #14141e 50%, #1e1e28 100%);
+  background-size: 200% 200%, 200% 200%, 200% 200%, 200% 200%, 100% 100%;
+  animation: hyperOSColors1to2 18s ease-in-out infinite;
+  filter: blur(60px);
+}
+
+/* 第二層：較不明顯的輔助層 */
+body:has(.VPHome)::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: 
+    radial-gradient(circle at 81% 14%, rgba(0, 79, 148, 0.7) 0%, transparent 45%),
+    radial-gradient(circle at 24% 72%, rgba(117, 15, 69, 0.7) 0%, transparent 45%);
+  background-size: 200% 200%, 200% 200%;
+  animation: hyperOSColors2to3 22s ease-in-out infinite;
+  opacity: 0;
+  mix-blend-mode: screen;
+}
+
+/* 確保內容在背景之上 */
+body:has(.VPHome) > * {
+  position: relative;
+  z-index: 0;
+}
+
+/* 確保首頁的頁腳背景透明，讓漸變背景可見 */
+body:has(.VPHome) .VPFooter {
+  background-color: transparent !important;
+  border-top: none !important;
+}
+
+/* 確保首頁的導航欄背景透明 */
+body:has(.VPHome) .VPNavBar {
+  background-color: transparent !important;
+}
+
+/* 滾動後才加上模糊效果 */
+body:has(.VPHome) .VPNavBar:not(.top) {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* 確保首頁的內容容器背景透明 */
+body:has(.VPHome) .content-body,
+body:has(.VPHome) .VPContent,
+body:has(.VPHome) .VPHero,
+body:has(.VPHome) .VPHomeHero {
+  background-color: transparent !important;
+}
+
+/* 模擬 shader 中的 sin/cos uPointOffset 動畫 */
+@keyframes hyperOSColors1to2 {
+  0%, 100% {
+    background-position: 80% 20%, 80% 90%, 20% 90%, 20% 20%, 0% 50%;
+  }
+  25% {
+    background-position: 85% 25%, 75% 85%, 15% 95%, 25% 15%, 25% 50%;
+  }
+  50% {
+    background-position: 75% 30%, 85% 80%, 25% 90%, 15% 25%, 50% 50%;
+  }
+  75% {
+    background-position: 80% 15%, 80% 95%, 20% 85%, 20% 30%, 75% 50%;
+  }
+}
+
+@keyframes hyperOSColors2to3 {
+  0%, 20% {
+    opacity: 0;
+  }
+  25%, 45% {
+    opacity: 0.6;
+    background-position: 80% 20%, 80% 90%, 20% 90%, 20% 20%;
+  }
+  50%, 70% {
+    opacity: 0;
+  }
+  75%, 95% {
+    opacity: 0.6;
+    background-position: 75% 25%, 85% 85%, 25% 85%, 25% 25%;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* 淺色模式：HyperOS 舊版配色 (be13398 之前) */
+html:not(.dark) body:has(.VPHome)::before {
+  /* 淺藍、淺橙粉、淺粉紫、淺紫藍 */
+  background: 
+    radial-gradient(circle at 71% 95%, rgba(145, 194, 250, 1.0) 0%, transparent 50%),
+    radial-gradient(circle at 14% 27%, rgba(250, 217, 173, 1.0) 0%, transparent 50%),
+    radial-gradient(circle at 80% 27%, rgba(250, 191, 237, 1.0) 0%, transparent 50%),
+    radial-gradient(circle at 22% 80%, rgba(186, 179, 250, 1.0) 0%, transparent 50%),
+    linear-gradient(135deg, #f8f7ff 0%, #fef9fb 50%, #f5f8ff 100%);
+  filter: blur(50px);
+}
+
+html:not(.dark) body:has(.VPHome)::after {
+  /* 輔助層：較柔和的色彩 */
+  background: 
+    radial-gradient(circle at 60% 40%, rgba(145, 194, 250, 0.6) 0%, transparent 45%),
+    radial-gradient(circle at 40% 70%, rgba(250, 191, 237, 0.6) 0%, transparent 45%);
+}
+
 /* medium-zoom 放大圖片與遮罩層級，確保不被側邊欄蓋住 */
 .medium-zoom-overlay {
   z-index: 9999 !important;
