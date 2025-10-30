@@ -85,13 +85,8 @@ const handleAuthorStatsLeave = () => {
   }, 300) // 延遲 0.3 秒
 }
 
-// 點擊切換作者統計顯示(僅用於行動裝置)
+// 點擊切換作者統計顯示(桌面版和行動裝置都可用)
 const handleAuthorStatsClick = () => {
-  // 只在行動裝置(螢幕寬度 < 1024px)才允許點擊切換
-  if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
-    return
-  }
-  
   // 切換顯示狀態
   showAuthorStats.value = !showAuthorStats.value
   
@@ -422,8 +417,6 @@ watch(isOldVersion, (newValue) => {
     <!-- 中間：文章統計圖表 -->
     <div 
       class="author-contribution-wrapper"
-      @mouseenter="handleAuthorStatsEnter"
-      @mouseleave="handleAuthorStatsLeave"
       @click="handleAuthorStatsClick"
     >
       <!-- 原始摘要卡片（保持不動） -->
@@ -454,8 +447,6 @@ watch(isOldVersion, (newValue) => {
         <div 
           v-if="showAuthorStats" 
           class="author-details-modal"
-          @mouseenter="handleAuthorStatsEnter"
-          @mouseleave="handleAuthorStatsLeave"
           @click.stop
         >
           <div class="modal-header">
@@ -725,10 +716,11 @@ watch(isOldVersion, (newValue) => {
     </div>
     <!-- 空狀態 -->
     <div v-if="filteredPosts.length === 0" class="empty-state">
-      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-        <circle cx="12" cy="12" r="10"></circle>
-        <line x1="12" y1="8" x2="12" y2="12"></line>
-        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"></circle>
+        <path d="M21 21l-4.35-4.35"></path>
+        <path d="M9.5 9.5c0-1.1.9-2 2-2s2 .9 2 2c0 1.1-1.2 1.5-2 2.2-.6.5-.6 1.3-.6 1.3" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="11.5" cy="15.5" r="0.5" fill="currentColor" />
       </svg>
       <p>沒有找到符合條件的文章</p>
     </div>
@@ -1055,6 +1047,17 @@ watch(isOldVersion, (newValue) => {
   white-space: nowrap; /* 防止文字換行 */
 }
 
+.filter-btn svg {
+  flex-shrink: 0; /* 防止 icon 被壓縮 */
+}
+
+/* 淺色模式：加強對比度 */
+html:not(.dark) .filter-btn {
+  border-color: rgba(0, 200, 220, 0.3);
+  background: rgba(240, 250, 255, 0.9);
+  color: rgba(0, 150, 200, 1);
+}
+
 .filter-btn:hover {
   border-color: var(--vp-c-brand);
   color: var(--vp-c-brand);
@@ -1062,10 +1065,22 @@ watch(isOldVersion, (newValue) => {
   transform: translateY(-1px);
 }
 
+/* 淺色模式 hover */
+html:not(.dark) .filter-btn:hover {
+  background: rgba(0, 255, 238, 0.15);
+  box-shadow: 0 2px 8px rgba(0, 255, 238, 0.2);
+}
+
 .filter-btn.active {
   border-color: var(--vp-c-brand);
   background: rgba(0, 255, 238, 0.1);
   color: var(--vp-c-brand);
+}
+
+/* 淺色模式 active */
+html:not(.dark) .filter-btn.active {
+  background: rgba(0, 255, 238, 0.15);
+  box-shadow: 0 2px 8px rgba(0, 255, 238, 0.2);
 }
 
 /* 移除特定按鈕的自定義顏色，保持主題色一致性 */
@@ -1106,6 +1121,10 @@ watch(isOldVersion, (newValue) => {
   color: #ef4444;
   font-weight: 500;
   white-space: nowrap; /* 防止文字換行 */
+}
+
+.clear-btn svg {
+  flex-shrink: 0; /* 防止 icon 被壓縮 */
 }
 
 .clear-btn:hover {

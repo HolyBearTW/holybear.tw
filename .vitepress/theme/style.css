@@ -175,6 +175,48 @@ html:not(.dark) body:has(.VPHome)::after {
     radial-gradient(circle at 40% 70%, rgba(250, 191, 237, 0.6) 0%, transparent 45%);
 }
 
+/* ========== 首頁按鈕樣式 ========== */
+/* brand 主按鈕：加強發光效果 */
+.VPHome .VPButton.brand {
+  transition: all 0.3s ease !important;
+  box-shadow: 0 0 20px rgba(0, 255, 238, 0.3) !important;
+  border-radius: 24px !important;
+}
+
+.VPHome .VPButton.brand:hover {
+  box-shadow: 0 0 30px rgba(0, 255, 238, 0.5) !important;
+  transform: translateY(-2px) !important;
+}
+
+/* alt 次要按鈕：套用部落格篩選按鈕的顏色效果 */
+.VPHome .VPButton.alt {
+  border: 2px solid var(--vp-c-divider) !important;
+  background: var(--vp-c-bg-soft) !important;
+  transition: all 0.3s ease !important;
+  color: var(--vp-c-text-1) !important;
+  border-radius: 24px !important;
+}
+
+/* 淺色模式：加強對比度 */
+html:not(.dark) .VPHome .VPButton.alt {
+  border-color: rgba(0, 200, 220, 0.3) !important;
+  background: rgba(240, 250, 255, 0.9) !important;
+  color: rgba(0, 150, 200, 1) !important;
+}
+
+.VPHome .VPButton.alt:hover {
+  border-color: var(--vp-c-brand) !important;
+  color: var(--vp-c-brand) !important;
+  background: rgba(0, 255, 238, 0.1) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* 淺色模式 hover：加強品牌色顯示 */
+html:not(.dark) .VPHome .VPButton.alt:hover {
+  background: rgba(0, 255, 238, 0.15) !important;
+  box-shadow: 0 2px 8px rgba(0, 255, 238, 0.2) !important;
+}
+
 /* medium-zoom 放大圖片與遮罩層級，確保不被側邊欄蓋住 */
 .medium-zoom-overlay {
   z-index: 9999 !important;
