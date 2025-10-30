@@ -528,113 +528,122 @@ watch(isOldVersion, (newValue) => {
   </div>
 
   <!-- 作者篩選浮動視窗 -->
-  <div v-if="showAuthorFilter" class="filter-modal-overlay" @click="closeAllFilters">
-    <div class="filter-modal" @click.stop>
-      <div class="filter-modal-header">
-        <h3>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-            <circle cx="9" cy="7" r="4"></circle>
-          </svg>
-          選擇作者
-        </h3>
-        <button @click="closeAllFilters" class="close-modal-btn">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
-      </div>
-      <div class="filter-modal-content">
-        <button
-          v-for="author in uniqueAuthors"
-          :key="author"
-          @click="selectedAuthor = selectedAuthor === author ? '' : author; closeAllFilters()"
-          :class="{ active: selectedAuthor === author }"
-          class="filter-option author-option"
-        >
-          {{ getAuthorMeta(author).name }}
-          <svg v-if="selectedAuthor === author" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-            <polyline points="20 6 9 17 4 12"></polyline>
-          </svg>
-        </button>
+  <div v-if="showAuthorFilter">
+    <div class="modal-backdrop" @click="closeAllFilters"></div>
+    <div class="filter-modal-overlay" @click="closeAllFilters">
+      <div class="filter-modal" @click.stop>
+        <div class="filter-modal-header">
+          <h3>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+            </svg>
+            選擇作者
+          </h3>
+          <button @click="closeAllFilters" class="close-modal-btn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+        <div class="filter-modal-content">
+          <button
+            v-for="author in uniqueAuthors"
+            :key="author"
+            @click="selectedAuthor = selectedAuthor === author ? '' : author; closeAllFilters()"
+            :class="{ active: selectedAuthor === author }"
+            class="filter-option author-option"
+          >
+            {{ getAuthorMeta(author).name }}
+            <svg v-if="selectedAuthor === author" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
   </div>
 
   <!-- 類別篩選浮動視窗 -->
-  <div v-if="showCategoryFilter" class="filter-modal-overlay" @click="closeAllFilters">
-    <div class="filter-modal" @click.stop>
-      <div class="filter-modal-header">
-        <h3>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-          </svg>
-          選擇類別
-        </h3>
-        <button @click="closeAllFilters" class="close-modal-btn">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
-      </div>
-      <div class="filter-modal-content">
-        <button
-          v-for="cat in uniqueCategories"
-          :key="cat"
-          @click="selectedCategory = selectedCategory === cat ? '' : cat; closeAllFilters()"
-          :class="{ active: selectedCategory === cat }"
-          class="filter-option category-option"
-        >
-          {{ cat }}
-          <svg v-if="selectedCategory === cat" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-            <polyline points="20 6 9 17 4 12"></polyline>
-          </svg>
-        </button>
+  <div v-if="showCategoryFilter">
+    <div class="modal-backdrop" @click="closeAllFilters"></div>
+    <div class="filter-modal-overlay" @click="closeAllFilters">
+      <div class="filter-modal" @click.stop>
+        <div class="filter-modal-header">
+          <h3>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+            </svg>
+            選擇類別
+          </h3>
+          <button @click="closeAllFilters" class="close-modal-btn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+        <div class="filter-modal-content">
+          <button
+            v-for="cat in uniqueCategories"
+            :key="cat"
+            @click="selectedCategory = selectedCategory === cat ? '' : cat; closeAllFilters()"
+            :class="{ active: selectedCategory === cat }"
+            class="filter-option category-option"
+          >
+            {{ cat }}
+            <svg v-if="selectedCategory === cat" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
   </div>
 
   <!-- 標籤篩選浮動視窗 -->
-  <div v-if="showTagFilter" class="filter-modal-overlay" @click="closeAllFilters">
-    <div class="filter-modal" @click.stop>
-      <div class="filter-modal-header">
-        <h3>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
-            <line x1="7" y1="7" x2="7.01" y2="7"></line>
-          </svg>
-          選擇標籤（可多選）
-        </h3>
-        <button @click="closeAllFilters" class="close-modal-btn">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
-      </div>
-      <div class="filter-modal-subtitle">
-        選擇多個標籤時，會顯示包含任一所選標籤的文章
-      </div>
-      <div class="filter-modal-content">
-        <button
-          v-for="tag in uniqueTags"
-          :key="tag"
-          @click="toggleTag(tag)"
-          :class="{ active: selectedTags.includes(tag) }"
-          class="filter-option tag-option"
-        >
-          {{ tag }}
-          <svg v-if="selectedTags.includes(tag)" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-            <polyline points="20 6 9 17 4 12"></polyline>
-          </svg>
-        </button>
-      </div>
-      <div class="filter-modal-footer">
-        <button @click="closeAllFilters" class="apply-filter-btn">
-          確定
-        </button>
+  <div v-if="showTagFilter">
+    <div class="modal-backdrop" @click="closeAllFilters"></div>
+    <div class="filter-modal-overlay" @click="closeAllFilters">
+      <div class="filter-modal" @click.stop>
+        <div class="filter-modal-header">
+          <h3>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+              <line x1="7" y1="7" x2="7.01" y2="7"></line>
+            </svg>
+            選擇標籤（可多選）
+          </h3>
+          <button @click="closeAllFilters" class="close-modal-btn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+        <div class="filter-modal-subtitle">
+          選擇多個標籤時，會顯示包含任一所選標籤的文章
+        </div>
+        <div class="filter-modal-content">
+          <button
+            v-for="tag in uniqueTags"
+            :key="tag"
+            @click="toggleTag(tag)"
+            :class="{ active: selectedTags.includes(tag) }"
+            class="filter-option tag-option"
+          >
+            {{ tag }}
+            <svg v-if="selectedTags.includes(tag)" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </button>
+        </div>
+        <div class="filter-modal-footer">
+          <button @click="closeAllFilters" class="apply-filter-btn">
+            確定
+          </button>
+        </div>
       </div>
     </div>
   </div>
