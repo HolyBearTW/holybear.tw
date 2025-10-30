@@ -14,7 +14,7 @@
     "algoliasearch": "^5.41.0",
     "chart.js": "^4.5.1",
     "dotenv": "^17.2.3",
-    "firebase": "^12.4.0",
+    "firebase": "^12.5.0",
     "gray-matter": "^4.0.3",
     "hogan.js": "^3.0.2",
     "instantsearch.js": "^4.81.0",
