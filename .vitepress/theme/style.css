@@ -22,11 +22,6 @@
  *   or badges. It must satisfy the contrast ratio when putting `XXX-1` colors
  *   on top of it.
  *
- *   The soft color must be semi transparent alpha channel. This is crucial
- *   because it allows adding multiple "soft" colors on top of each other
- *   to create a accent, such as when having inline code block inside
- *   custom containers.
- *
  * - `default`: The color used purely for subtle indication without any
  *   special meanings attached to it such as bg color for menu hover state.
  *
@@ -794,7 +789,26 @@ html {
     }
 }
 
-  /* 導覽列 */
+/* 移除手機版導航欄橫線（分隔線、偽元素） */
+@media (max-width: 1200px) {
+  .VPNavBar {
+    border-bottom: none !important;
+    box-shadow: none !important;
+  }
+  .VPNavBar::after,
+  .VPNavBar::before {
+    border-bottom: none !important;
+    box-shadow: none !important;
+    background: none !important;
+    height: 0 !important;
+  }
+  .divider,
+  .divider-line {
+    display: none !important;
+  }
+}
+
+/* 導覽列 */
   /* 導覽列「內容區」流體居中 + padding */
     :root {
     --main-width: 1200px;
@@ -916,4 +930,141 @@ html {
   transform: translateX(2px);
   color: var(--vp-c-brand-1);
   background-color: var(--vp-c-bg-soft);
+}
+
+.VPNavScreen {
+  background: transparent !important;
+}
+
+.VPNavScreen::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: rgba(0,0,0,0.25);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.VPNavScreen > * {
+  position: relative;
+  z-index: 1;
+}
+
+.VPNavScreen .VPNavScreenMenu .VPNavScreenMenuLink {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: rgba(255,255,255,0.12);
+  border-radius: 14px;
+  transition: background 0.2s, box-shadow 0.2s;
+  font-weight: 600;
+  font-size: 1.08em;
+  margin: 0.5em 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.VPNavScreen .VPNavScreenMenu .VPNavScreenMenuLink:hover {
+  background: rgba(0,255,238,0.18);
+  color: #00b8b8;
+  box-shadow: 0 4px 16px rgba(0,255,238,0.18);
+}
+
+/* 語言選項置中 */
+.VPNavScreen .VPNavScreenMenu .VPNavScreenMenuGroup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.VPNavScreen .VPNavScreenMenu .VPNavScreenMenuGroup .VPNavScreenMenuLink {
+  justify-content: center;
+}
+
+/* 手機選單底部語言選項置中 */
+.VPNavScreenTranslations.translations {
+  text-align: center;
+}
+.VPNavScreenTranslations.translations .VPNavScreenMenuLink {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+/* 語言選單標題與列表都置中 */
+.VPNavScreenTranslations.translations .title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  width: 100%;
+}
+.VPNavScreenTranslations.translations .list {
+  text-align: center;
+  width: 100%;
+  padding: 0;
+}
+.VPNavScreenTranslations.translations .item {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+.VPNavScreenTranslations.translations .VPLink.link {
+  text-align: center;
+  width: 100%;
+  padding: 0.5em 0;
+}
+
+/* 手機選單外觀切換區塊高斯模糊（字體大小、顏色與其他按鈕一致） */
+.VPNavScreenAppearance.appearance {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.12);
+  border-radius: 14px; /* 與其他按鈕一致 */
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  margin: 0.5em 0;
+  padding: 0.7em 1.2em;
+  font-size: 1.08em;
+  font-weight: 600;
+  color: var(--vp-c-text-1);
+  transition: background 0.2s, box-shadow 0.2s, color 0.2s;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+.VPNavScreenAppearance.appearance .text {
+  position: static;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 1.08em;
+  color: var(--vp-c-text-1);
+  width: auto;
+  height: auto;
+  pointer-events: none;
+}
+.VPNavScreenAppearance.appearance .VPSwitchAppearance {
+  position: absolute;
+  right: 1.2em;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: auto;
+}
+.VPNavScreenAppearance.appearance:hover {
+  background: rgba(0,255,238,0.18);
+  color: #00b8b8;
+  box-shadow: 0 6px 24px rgba(0,255,238,0.18);
+}
+
+@media (max-width: 1200px) {
+  /* 移除手機版選單黑色透明遮罩 */
+  .VPNavScreen::before {
+    background: none !important;
+    backdrop-filter: blur(18px) !important;
+    -webkit-backdrop-filter: blur(18px) !important;
+    opacity: 1 !important;
+  }
 }
