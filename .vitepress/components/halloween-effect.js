@@ -39,16 +39,25 @@ export function showHalloweenEffect() {
     pumpkin.style.bottom = '0';
     pumpkin.style.transform = 'translateX(-50%)';
     pumpkin.style.zIndex = '9998';
-    pumpkin.style.pointerEvents = 'none';
+    pumpkin.style.pointerEvents = 'auto';
     pumpkin.style.width = '320px';
     pumpkin.style.height = '320px';
     pumpkin.innerHTML = `
-      <div style="position:relative;width:100%;height:100%;">
-  <img src="/image/halloween/halloween1.png" style="width:100%;filter:drop-shadow(0 0 48px #ff9800) brightness(1.2);transition:filter 1.2s;" id="pumpkin-img">
+      <div style="position:relative;width:100%;height:100%;cursor:pointer;" id="pumpkin-click-area">
+        <img src="/image/halloween/halloween1.png" style="width:100%;filter:drop-shadow(0 0 48px #ff9800) brightness(1.2);transition:filter 1.2s;" id="pumpkin-img">
         <div id="pumpkin-glow" style="position:absolute;left:80px;top:120px;width:160px;height:80px;background:radial-gradient(circle,#fff200 60%,#ff9800 100%);border-radius:50%;opacity:0.7;filter:blur(16px);transition:background 1.2s;"></div>
       </div>
     `;
     document.body.appendChild(pumpkin);
+    // 點擊南瓜燈顯示提示
+    setTimeout(() => {
+      const clickArea = document.getElementById('pumpkin-click-area');
+      if (clickArea) {
+        clickArea.addEventListener('click', () => {
+          alert('Helloween! 小熊祝你萬聖節快樂!');
+        });
+      }
+    }, 100);
     // 漸變動畫
     let glowColors = [
       ['#fff200', '#ff9800'],
