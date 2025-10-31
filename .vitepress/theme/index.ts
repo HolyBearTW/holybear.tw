@@ -46,14 +46,6 @@ export default {
                     if (!document.body.classList.contains('halloween-theme')) {
                         document.body.classList.add('halloween-theme');
                     }
-                    // 動態載入 CSS
-                    if (!document.getElementById('halloween-css')) {
-                        const link = document.createElement('link');
-                        link.id = 'halloween-css';
-                        link.rel = 'stylesheet';
-                        link.href = '/.vitepress/theme/halloween.css';
-                        document.head.appendChild(link);
-                    }
                     // 以 import 方式載入萬聖節動畫 JS（蝙蝠+南瓜燈怪物）
                     import('../components/halloween-effect.js').then(mod => {
                         if (mod && typeof mod.showHalloweenEffect === 'function') {
