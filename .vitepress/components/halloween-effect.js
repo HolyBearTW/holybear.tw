@@ -54,7 +54,11 @@ export function showHalloweenEffect() {
       const clickArea = document.getElementById('pumpkin-click-area');
       if (clickArea) {
         clickArea.addEventListener('click', () => {
-          alert('Helloween! 小熊祝你萬聖節快樂!');
+          alert('Halloween! 小熊祝你萬聖節快樂!');
+          const pumpkinDiv = document.getElementById('halloween-pumpkin');
+          if (pumpkinDiv) {
+            pumpkinDiv.remove();
+          }
         });
       }
     }, 100);
