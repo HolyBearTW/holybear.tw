@@ -54,14 +54,12 @@ export default {
                         link.href = '/.vitepress/theme/halloween.css';
                         document.head.appendChild(link);
                     }
-                    // 載入萬聖節動畫 JS（蝙蝠+南瓜燈怪物）
-                    if (!document.getElementById('halloween-effect-js')) {
-                        const script = document.createElement('script');
-                        script.id = 'halloween-effect-js';
-                        script.src = '/.vitepress/components/halloween-effect.js';
-                        script.async = true;
-                        document.body.appendChild(script);
-                    }
+                    // 以 import 方式載入萬聖節動畫 JS（蝙蝠+南瓜燈怪物）
+                    import('../components/halloween-effect.js').then(mod => {
+                        if (mod && typeof mod.showHalloweenEffect === 'function') {
+                            mod.showHalloweenEffect();
+                        }
+                    });
                 } else {
                     document.body.classList.remove('halloween-theme');
                     const css = document.getElementById('halloween-css');

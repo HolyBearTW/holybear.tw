@@ -1,5 +1,5 @@
 // 萬聖節蝙蝠動畫 + 南瓜燈怪物（大且顯眼，漸變動畫）
-(function(){
+export function showHalloweenEffect() {
   if (!document.body.classList.contains('halloween-theme')) return;
   // 蝙蝠動畫
   if (!document.getElementById('halloween-bats')) {
@@ -65,4 +65,4 @@
       if(img) img.style.filter = `drop-shadow(0 0 48px ${glowColors[idx][1]}) brightness(1.2)`;
     }, 1200);
   }
-})();
+}
