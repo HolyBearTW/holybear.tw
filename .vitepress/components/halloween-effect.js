@@ -15,7 +15,7 @@ export function showHalloweenEffect() {
     batContainer.style.zIndex = '9999';
     for(let i=0;i<batCount;i++){
       const bat = document.createElement('img');
-      bat.src = '/image/helloween/helloween2.png';
+  bat.src = '/image/halloween/halloween2.png';
       bat.style.position = 'absolute';
       bat.style.width = '48px';
       bat.style.height = 'auto';
@@ -44,7 +44,7 @@ export function showHalloweenEffect() {
     pumpkin.style.height = '320px';
     pumpkin.innerHTML = `
       <div style="position:relative;width:100%;height:100%;">
-        <img src="/image/helloween/helloween1.png" style="width:100%;filter:drop-shadow(0 0 48px #ff9800) brightness(1.2);transition:filter 1.2s;" id="pumpkin-img">
+  <img src="/image/halloween/halloween1.png" style="width:100%;filter:drop-shadow(0 0 48px #ff9800) brightness(1.2);transition:filter 1.2s;" id="pumpkin-img">
         <div id="pumpkin-glow" style="position:absolute;left:80px;top:120px;width:160px;height:80px;background:radial-gradient(circle,#fff200 60%,#ff9800 100%);border-radius:50%;opacity:0.7;filter:blur(16px);transition:background 1.2s;"></div>
       </div>
     `;
