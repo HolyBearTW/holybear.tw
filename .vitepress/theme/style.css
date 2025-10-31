@@ -1061,13 +1061,30 @@ html {
 
 /* === Halloween 主題樣式（自動切換）=== */
 body.halloween-theme {
-  background: #1a1a1a url('/halloween/halloween1.png') repeat;
+  background: #1a1a1a url('/image/halloween/halloween2.png') repeat;
   color: #ff9800;
 }
 
 header, .VPNav {
-  background: #222 url('/halloween/halloween2.png') repeat-x;
+  position: relative;
+  background: #222 url('/image/halloween/halloween1.png') repeat-x;
+  background-size: 90px auto;
   border-bottom: 2px solid #ff9800;
+}
+
+header::before, .VPNav::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: rgba(34, 34, 34, 0.7);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  pointer-events: none;
+}
+header > *, .VPNav > * {
+  position: relative;
+  z-index: 1;
 }
 
 h1, h2, h3, h4, h5, h6 {
