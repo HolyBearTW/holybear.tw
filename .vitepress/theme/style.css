@@ -84,12 +84,6 @@ body:has(.VPHome)::after {
   mix-blend-mode: screen;
 }
 
-/* 確保內容在背景之上 */
-body:has(.VPHome) > * {
-  position: relative;
-  z-index: 0;
-}
-
 /* 確保首頁的頁腳背景透明，讓漸變背景可見 */
 body:has(.VPHome) .VPFooter {
   background-color: transparent !important;
