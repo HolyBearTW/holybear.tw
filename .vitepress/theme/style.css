@@ -1065,14 +1065,16 @@ body.halloween-theme {
   color: #ff9800;
 }
 
-header, .VPNav {
+body.halloween-theme header, 
+body.halloween-theme .VPNav {
   position: relative;
   background: #222 url('/image/halloween/halloween1.png') repeat-x;
   background-size: 90px auto;
   border-bottom: 2px solid #ff9800;
 }
 
-header::before, .VPNav::before {
+body.halloween-theme header::before, 
+body.halloween-theme .VPNav::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -1082,12 +1084,18 @@ header::before, .VPNav::before {
   -webkit-backdrop-filter: blur(2px);
   pointer-events: none;
 }
-header > *, .VPNav > * {
+body.halloween-theme header > *, 
+body.halloween-theme .VPNav > * {
   position: relative;
   z-index: 1;
 }
 
-h1, h2, h3, h4, h5, h6 {
+body.halloween-theme h1, 
+body.halloween-theme h2, 
+body.halloween-theme h3, 
+body.halloween-theme h4, 
+body.halloween-theme h5, 
+body.halloween-theme h6 {
   color: #ff5722;
   text-shadow: 2px 2px 4px #000;
 }
