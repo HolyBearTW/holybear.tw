@@ -266,10 +266,13 @@ html:not(.dark) .VPHome .VPButton.alt:hover {
 body {
     cursor: url('/MapleStory_cursor_new.png'), auto;
 }
-a:hover,
-button:hover {
-    cursor: url('/MapleStory_cursor_hand.png'), pointer !important;
-}
+
+/* 所有可點擊元素預設游標 */
+a,
+button,
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
 [role="button"],
 .btn,
 .VPSidebar .text,
@@ -277,6 +280,35 @@ button:hover {
 .VPSidebarLink,
 .VPSidebar .VPSidebarItem .link,
 .VPSidebar .VPSidebarItem .text,
+.VPButton,
+.VPNavBarMenuLink,
+.VPNavBarMenuGroup,
+.VPLocalNavOutlineDropdown,
+.VPSwitchAppearance,
+.VPSocialLink,
+.VPFlyout,
+.action-btn,
+.navigation button,
+input[type="range"],
+.DocSearch-Button,
+.vp-doc a,
+[onclick],
+[role="tab"],
+[role="menuitem"],
+.clickable,
+.VPImage.logo,
+.VPNavBarTitle,
+.VPNavBarHamburger,
+.VPNavScreenMenuLink,
+.VPNavScreenMenuGroup,
+.outline-link,
+label,
+select,
+textarea {
+    cursor: url('/MapleStory_cursor_hand.png'), pointer !important;
+}
+
+/* 覆蓋所有播放器內的游標樣式 */
 .my-bgm-fab,
 .my-bgm-player,
 .my-bgm-player *,
@@ -289,12 +321,32 @@ button:hover {
 .playlist-overlay,
 .playlist-modal,
 .playlist-header,
-.playlist-item,
-.playlist-item *,
 .main-controls,
 .marquee-container,
-.music-title-text {
+.music-title-text,
+.volume-slider-vertical,
+.volume-slider-vertical-container,
+.music-info,
+.music-container.minimized .music-info {
     cursor: url('/MapleStory_cursor_new.png'), auto !important;
+}
+
+/* 播放進度與列表項目 */
+.progress-container,
+.playlist-item,
+.playlist-item * {
+    cursor: url('/MapleStory_cursor_hand.png'), pointer !important;
+}
+
+/* 滑桿圓點 */
+.volume-slider-vertical::-webkit-slider-thumb,
+input[type="range"]::-webkit-slider-thumb {
+    cursor: url('/MapleStory_cursor_hand.png'), pointer !important;
+}
+
+.volume-slider-vertical::-moz-range-thumb,
+input[type="range"]::-moz-range-thumb {
+    cursor: url('/MapleStory_cursor_hand.png'), pointer !important;
 }
 
 /**
