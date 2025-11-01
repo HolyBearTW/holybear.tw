@@ -29,35 +29,48 @@ const musicList = [
     { src: '/music/MapleStory_AnEternalBreath.mp3', title: '楓之谷：克拉奇亞 - 永恆的氣息' },
     { src: '/music/MapleStory_old_title.mp3', title: '楓之谷 - 懷舊登入音樂' }
 ]
-
 /* --- LocalStorage Keys --- */
 const VOLUME_KEY = 'holybear-bgm-volume'
 const PLAYING_KEY = 'holybear-bgm-playing'
-const MOBILE_OPEN_KEY = 'holybear-bgm-mobile-open'
-const DESKTOP_OPEN_KEY = 'holybear-bgm-desktop-open'
 const INDEX_KEY = 'holybear-bgm-index'
+const PLAYER_OPEN_KEY = 'holybear-bgm-player-open'
 
 /* --- Refs & 狀態 --- */
-const bgm = ref(null)
+const audio = ref(null)
 const playerContainer = ref(null)
+const sidebarToggle = ref(null)
 const playing = ref(false)
 const volume = ref(0.6)
 const volumeBeforeMute = ref(0.6)
-const currentIndex = ref(0) // 預設 0，會在 onMounted 時修正
+const currentIndex = ref(0)
 const currentTime = ref(0)
 const duration = ref(0)
 const isSeeking = ref(false)
-const isMobile = ref(false)
-const mobilePlayerOpen = ref(false)
-const desktopPlayerOpen = ref(true)
-const isVolumeSliderVisible = ref(false)
+const playerOpen = ref(true) 
 const isPlaylistVisible = ref(false)
-const isAdjustingVolume = ref(false)
-let volumeAdjustTimeout = null
+const isVolumeVisible = ref(false)
+const playerMinimized = ref(false)
+const musicInfoHidden = ref(false)
+const showSidebarButton = ref(false)
+const showPlayerToggle = ref(false) // 播放器開關按鈕
+
+/* --- 滑動手勢相關 --- */
+const touchStartX = ref(0)
+const touchStartY = ref(0)
+const isDragging = ref(false)
+const dragOffset = ref(0) // 拖動偏移量
+
+/* --- 滑鼠懸停相關 --- */
+let hoverTimer = null // 懸停計時器
+let leaveTimer = null // 離開延遲計時器
+const isHovering = ref(false) // 是否正在懸停
+const isClicked = ref(false) // 是否已點擊顯示播放器
+
+/* --- 自動播放監聽器 --- */
+let autoPlayListener = null
 
 /* --- Computed 屬性 --- */
-const currentSrc = computed(() => musicList[currentIndex.value].src)
-const currentMusicTitle = computed(() => musicList[currentIndex.value].title)
+const currentSong = computed(() => musicList[currentIndex.value])
 const progressPercent = computed(() => {
     if (duration.value === 0) return 0
     return (currentTime.value / duration.value) * 100
@@ -65,89 +78,134 @@ const progressPercent = computed(() => {
 
 /* --- Lifecycle --- */
 onMounted(() => {
-    resize()
-    window.addEventListener('resize', resize)
     window.addEventListener('click', handleClickOutside)
+    
+    // 添加全域滑鼠移動監聽
+    document.addEventListener('mousemove', handleGlobalMouseMove)
 
     const savedVolume = localStorage.getItem(VOLUME_KEY)
     if (savedVolume !== null) {
         volume.value = parseFloat(savedVolume)
         if (volume.value > 0) volumeBeforeMute.value = volume.value
     }
+    
     const savedPlaying = localStorage.getItem(PLAYING_KEY)
-    if (savedPlaying === 'true') {
-        document.body.addEventListener('click', () => { playMusic() }, { once: true })
+    if (savedPlaying === 'true' && playerOpen.value) {
+        // 只有在播放器開啟時才自動播放
+        autoPlayListener = () => { playMusic() }
+        document.body.addEventListener('click', autoPlayListener, { once: true })
     }
 
-    // 讀取上次播放到第幾首
     const savedIndex = localStorage.getItem(INDEX_KEY)
-    if (
-        savedIndex !== null &&
-        !isNaN(+savedIndex) &&
-        +savedIndex >= 0 &&
-        +savedIndex < musicList.length
-    ) {
+    if (savedIndex !== null && !isNaN(+savedIndex) && +savedIndex >= 0 && +savedIndex < musicList.length) {
         currentIndex.value = +savedIndex
-    } else {
-        currentIndex.value = 0
     }
 
-    const savedMobileOpen = localStorage.getItem(MOBILE_OPEN_KEY)
-    if (savedMobileOpen !== null) {
-        mobilePlayerOpen.value = savedMobileOpen === 'true'
+    const savedPlayerOpen = localStorage.getItem(PLAYER_OPEN_KEY)
+    if (savedPlayerOpen !== null) {
+        playerOpen.value = savedPlayerOpen === 'true'
     }
-    const savedDesktopOpen = localStorage.getItem(DESKTOP_OPEN_KEY)
-    if (savedDesktopOpen !== null) {
-        desktopPlayerOpen.value = savedDesktopOpen === 'true'
-    }
-    if (bgm.value) {
-        bgm.value.volume = volume.value
-        bgm.value.addEventListener('timeupdate', updateProgress)
-        bgm.value.addEventListener('loadedmetadata', onLoadedMetadata)
+
+    if (audio.value) {
+        audio.value.volume = volume.value
+        audio.value.addEventListener('timeupdate', updateProgress)
+        audio.value.addEventListener('loadedmetadata', onLoadedMetadata)
     }
 })
 
 onUnmounted(() => {
-    window.removeEventListener('resize', resize)
     window.removeEventListener('click', handleClickOutside)
-    if (bgm.value) {
-        bgm.value.removeEventListener('timeupdate', updateProgress)
-        bgm.value.removeEventListener('loadedmetadata', onLoadedMetadata)
+    document.removeEventListener('mousemove', handleGlobalMouseMove)
+    document.removeEventListener('mousemove', handleMouseDragMove)
+    document.removeEventListener('mouseup', handleMouseDragEnd)
+    if (audio.value) {
+        audio.value.removeEventListener('timeupdate', updateProgress)
+        audio.value.removeEventListener('loadedmetadata', onLoadedMetadata)
+    }
+    // 移除自動播放監聽器
+    if (autoPlayListener) {
+        document.body.removeEventListener('click', autoPlayListener)
+    }
+    // 清理懸停計時器
+    if (hoverTimer) {
+        clearTimeout(hoverTimer)
+    }
+    // 清理離開計時器
+    if (leaveTimer) {
+        clearTimeout(leaveTimer)
     }
 })
 
+/* --- Watchers --- */
 watch(volume, (newVolume) => {
-    if (bgm.value) bgm.value.volume = newVolume
+    if (audio.value) audio.value.volume = newVolume
     localStorage.setItem(VOLUME_KEY, newVolume.toString())
     if (newVolume > 0) volumeBeforeMute.value = newVolume
 })
-watch(mobilePlayerOpen, (val) => {
-    localStorage.setItem(MOBILE_OPEN_KEY, val ? 'true' : 'false')
+
+watch(playerOpen, (val) => {
+    localStorage.setItem(PLAYER_OPEN_KEY, val ? 'true' : 'false')
+    
+    // 當播放器關閉時,移除自動播放監聽器並顯示開啟按鈕
+    if (!val) {
+        if (autoPlayListener) {
+            document.body.removeEventListener('click', autoPlayListener)
+            autoPlayListener = null
+        }
+        // 延遲顯示播放器開啟按鈕
+        setTimeout(() => {
+            showPlayerToggle.value = true
+        }, 400)
+    } else {
+        // 播放器開啟時隱藏開啟按鈕
+        showPlayerToggle.value = false
+    }
 })
-watch(desktopPlayerOpen, (val) => {
-    localStorage.setItem(DESKTOP_OPEN_KEY, val ? 'true' : 'false')
-})
+
 watch(currentIndex, (val) => {
     localStorage.setItem(INDEX_KEY, val.toString())
 })
 
+watch(musicInfoHidden, (newVal) => {
+    // 當 music-info 隱藏時，延遲顯示側邊欄按鈕
+    if (newVal === true && playerMinimized.value) {
+        setTimeout(() => {
+            showSidebarButton.value = true
+        }, 400) // 等待 music-info 隱藏動畫完成
+    } else {
+        // 當 music-info 顯示時，立即隱藏側邊欄按鈕
+        showSidebarButton.value = false
+    }
+})
+
+watch(playerMinimized, (newVal) => {
+    // 如果取消最小化，隱藏側邊欄按鈕
+    if (newVal === false) {
+        showSidebarButton.value = false
+    } else {
+        // 最小化時重置點擊狀態
+        isClicked.value = false
+    }
+})
+
+/* --- 播放控制函數 --- */
 function playMusic() {
-    if (!bgm.value) return
-    bgm.value.volume = volume.value
-    bgm.value.play().then(() => {
+    if (!audio.value) return
+    audio.value.volume = volume.value
+    audio.value.play().then(() => {
         playing.value = true
         localStorage.setItem(PLAYING_KEY, 'true')
     }).catch(e => console.error("音樂播放失敗", e))
 }
 
 function pauseMusic() {
-    if (!bgm.value) return
-    bgm.value.pause()
+    if (!audio.value) return
+    audio.value.pause()
     playing.value = false
     localStorage.setItem(PLAYING_KEY, 'false')
 }
 
-function toggleBgm() {
+function togglePlay() {
     playing.value ? pauseMusic() : playMusic()
 }
 
@@ -166,1032 +224,1171 @@ async function selectAndPlaySong(index, options = {}) {
     if (!forceRestart && index === currentIndex.value && playing.value) return
     currentIndex.value = index
     await nextTick()
-    if (bgm.value) {
+    if (audio.value) {
         currentTime.value = 0
         playMusic()
     }
+    isPlaylistVisible.value = false
 }
 
-function onLoadedMetadata(e) { duration.value = e.target.duration }
-function updateProgress(e) { if (!isSeeking.value) currentTime.value = e.target.currentTime }
-function startSeek() { isSeeking.value = true }
-function endSeek() { if (bgm.value) bgm.value.currentTime = currentTime.value; isSeeking.value = false }
-function formatTime(seconds) {
-    if (isNaN(seconds) || seconds === 0) return "00:00"
-    const floorSeconds = Math.floor(seconds)
-    const min = Math.floor(floorSeconds / 60)
-    const sec = floorSeconds % 60
-    return `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`
+/* --- 進度控制 --- */
+function onLoadedMetadata(e) { 
+    duration.value = e.target.duration 
 }
 
-function resize() { isMobile.value = window.innerWidth <= 640 }
-function togglePlaylist() { isPlaylistVisible.value = !isPlaylistVisible.value }
-function toggleVolumeSlider() { isVolumeSliderVisible.value = !isVolumeSliderVisible.value }
-function handleClickOutside(event) {
-    if (playerContainer.value && !playerContainer.value.contains(event.target)) {
-        isVolumeSliderVisible.value = false
-    }
+function updateProgress(e) { 
+    if (!isSeeking.value) currentTime.value = e.target.currentTime 
 }
+
+function setProgress(e) {
+    if (!audio.value || duration.value === 0) return
+    const rect = e.currentTarget.getBoundingClientRect()
+    const clickX = e.clientX - rect.left
+    const width = rect.width
+    const percent = clickX / width
+    audio.value.currentTime = percent * duration.value
+}
+
+/* --- 音量控制 --- */
 function toggleMute() {
     if (volume.value > 0) {
         volume.value = 0
     } else {
         volume.value = volumeBeforeMute.value > 0 ? volumeBeforeMute.value : 0.6
     }
-    flashVolumePercentage()
 }
-function flashVolumePercentage() {
-    isAdjustingVolume.value = true
-    if (volumeAdjustTimeout) clearTimeout(volumeAdjustTimeout)
-    volumeAdjustTimeout = setTimeout(() => {
-        isAdjustingVolume.value = false
-    }, 1200)
+
+/* --- UI 控制 --- */
+function togglePlaylist() { 
+    isPlaylistVisible.value = !isPlaylistVisible.value 
+    if (isPlaylistVisible.value) isVolumeVisible.value = false
 }
+
+function toggleVolume() { 
+    isVolumeVisible.value = !isVolumeVisible.value 
+    if (isVolumeVisible.value) isPlaylistVisible.value = false
+}
+
+function handleClickOutside(event) {
+    // 檢查點擊是否在播放器容器或側邊欄按鈕內
+    const clickedInsidePlayer = playerContainer.value && playerContainer.value.contains(event.target)
+    const clickedInsideSidebar = sidebarToggle.value && sidebarToggle.value.contains(event.target)
+    
+    if (!clickedInsidePlayer && !clickedInsideSidebar) {
+        // 關閉面板（播放清單 / 音量面板）
+        isPlaylistVisible.value = false
+        isVolumeVisible.value = false
+
+        // 如果 music-info 已經被手動隱藏，不做任何操作
+        if (musicInfoHidden.value) {
+            return
+        }
+
+        // 如果正在播放，將播放器最小化（主體淡出，只保留歌曲資訊）
+        if (playing.value) {
+            playerMinimized.value = true
+        } else {
+            // 未播放時才收起整個播放器
+            playerOpen.value = false
+        }
+    }
+}
+
+function formatTime(seconds) {
+    if (isNaN(seconds) || seconds === 0) return "0:00"
+    const min = Math.floor(seconds / 60)
+    const sec = Math.floor(seconds % 60)
+    return `${min}:${sec.toString().padStart(2, '0')}`
+}
+
+/* --- 滑動手勢處理（支援觸控和滑鼠） --- */
+function handleDragStart(e) {
+    // 只要 music-info 顯示就允許滑動（無論 music-container 是否展開）
+    if (musicInfoHidden.value) return
+    
+    // 觸控事件
+    if (e.type === 'touchstart') {
+        touchStartX.value = e.touches[0].clientX
+        touchStartY.value = e.touches[0].clientY
+        isDragging.value = false
+        dragOffset.value = 0
+    } 
+    // 滑鼠事件
+    else if (e.type === 'mousedown') {
+        touchStartX.value = e.clientX
+        touchStartY.value = e.clientY
+        isDragging.value = false
+        dragOffset.value = 0
+        e.preventDefault() // 防止文字選擇
+        
+        // 綁定全域滑鼠事件
+        document.addEventListener('mousemove', handleMouseDragMove)
+        document.addEventListener('mouseup', handleMouseDragEnd)
+    }
+}
+
+function handleDragMove(e) {
+    // 只處理觸控事件
+    if (e.type !== 'touchmove') return
+    
+    // 只要 music-info 顯示就允許拖動
+    if (!musicInfoHidden.value) {
+        const currentX = e.touches[0].clientX
+        const currentY = e.touches[0].clientY
+        
+        const deltaX = currentX - touchStartX.value
+        const deltaY = currentY - touchStartY.value
+        
+        // 確保是水平向右滑動（而不是垂直滾動或其他方向）
+        if (Math.abs(deltaX) > Math.abs(deltaY) && deltaX > 10) {
+            isDragging.value = true
+            dragOffset.value = deltaX // 更新拖動偏移量
+            e.preventDefault()  // 防止文字選擇等默認行為
+        }
+    }
+}
+
+function handleDragEnd(e) {
+    // 只處理觸控事件
+    if (e.type !== 'touchend') return
+    if (!isDragging.value) return
+    
+    const endX = e.changedTouches[0].clientX
+    const deltaX = endX - touchStartX.value
+    
+    // 向右滑動超過 50px 就隱藏 music-info
+    if (deltaX > 50) {
+        musicInfoHidden.value = true
+        // 如果是在展開狀態下隱藏 music-info，也要最小化播放器
+        if (!playerMinimized.value) {
+            playerMinimized.value = true
+        }
+    }
+    
+    // 重置拖動偏移量
+    isDragging.value = false
+    dragOffset.value = 0
+}
+
+/* --- 滑鼠拖動處理（全域事件） --- */
+function handleMouseDragMove(e) {
+    if (musicInfoHidden.value) {
+        // 如果 music-info 已隱藏，清理事件監聽
+        document.removeEventListener('mousemove', handleMouseDragMove)
+        document.removeEventListener('mouseup', handleMouseDragEnd)
+        return
+    }
+    
+    const currentX = e.clientX
+    const currentY = e.clientY
+    
+    const deltaX = currentX - touchStartX.value
+    const deltaY = currentY - touchStartY.value
+    
+    // 確保是水平向右滑動
+    if (Math.abs(deltaX) > Math.abs(deltaY) && deltaX > 10) {
+        isDragging.value = true
+        dragOffset.value = deltaX
+        e.preventDefault()
+        
+        // 拖動時清除懸停計時器，防止展開 music-container
+        if (hoverTimer) {
+            clearTimeout(hoverTimer)
+            hoverTimer = null
+        }
+        if (leaveTimer) {
+            clearTimeout(leaveTimer)
+            leaveTimer = null
+        }
+        isHovering.value = false
+    }
+}
+
+function handleMouseDragEnd(e) {
+    // 移除全域事件監聽
+    document.removeEventListener('mousemove', handleMouseDragMove)
+    document.removeEventListener('mouseup', handleMouseDragEnd)
+    
+    if (!isDragging.value) return
+    
+    const endX = e.clientX
+    const deltaX = endX - touchStartX.value
+    
+    // 向右滑動超過 50px 就隱藏 music-info
+    if (deltaX > 50) {
+        musicInfoHidden.value = true
+        // 如果是在展開狀態下隱藏 music-info，也要最小化播放器
+        if (!playerMinimized.value) {
+            playerMinimized.value = true
+        }
+    }
+    
+    // 重置拖動偏移量
+    isDragging.value = false
+    dragOffset.value = 0
+}
+
+/* --- 滑鼠懸停處理 --- */
+function handleMouseEnter() {
+    // 只在最小化且 music-info 顯示時才啟用懸停效果
+    if (!playerMinimized.value || musicInfoHidden.value || isClicked.value) return
+    
+    isHovering.value = true
+    
+    // 清除離開計時器（如果正在等待隱藏）
+    if (leaveTimer) {
+        clearTimeout(leaveTimer)
+        leaveTimer = null
+    }
+    
+    // 清除之前的懸停計時器
+    if (hoverTimer) {
+        clearTimeout(hoverTimer)
+    }
+    
+    // 設置 0.1 秒後顯示播放器
+    hoverTimer = setTimeout(() => {
+        if (isHovering.value && !isClicked.value) {
+            playerMinimized.value = false
+        }
+    }, 200)
+}
+
+function handleMouseLeave() {
+    isHovering.value = false
+    
+    // 清除懸停計時器
+    if (hoverTimer) {
+        clearTimeout(hoverTimer)
+        hoverTimer = null
+    }
+    
+    // 如果沒有被點擊過且播放器已展開，延遲 100ms 後再隱藏
+    // 這給用戶時間從 music-info 移動到 music-container
+    if (!isClicked.value && !playerMinimized.value && !isPlaylistVisible.value && !isVolumeVisible.value) {
+        leaveTimer = setTimeout(() => {
+            // 再次檢查是否還在懸停狀態（可能已經移動到 music-container）
+            if (!isHovering.value && !isClicked.value) {
+                playerMinimized.value = true
+            }
+        }, 100)
+    }
+}
+
+function handleContainerMouseEnter() {
+    // music-container 被懸停時，標記為懸停狀態並清除所有計時器
+    isHovering.value = true
+    
+    if (hoverTimer) {
+        clearTimeout(hoverTimer)
+        hoverTimer = null
+    }
+    
+    if (leaveTimer) {
+        clearTimeout(leaveTimer)
+        leaveTimer = null
+    }
+}
+
+function handleContainerMouseLeave() {
+    // 離開 music-container 時，如果沒有被點擊鎖定，則延遲後最小化
+    isHovering.value = false
+    
+    if (!isClicked.value && !playerMinimized.value && !isPlaylistVisible.value && !isVolumeVisible.value) {
+        leaveTimer = setTimeout(() => {
+            if (!isHovering.value && !isClicked.value) {
+                playerMinimized.value = true
+            }
+        }, 300)
+    }
+}
+
+// 添加全域滑鼠移動監聽，以處理 minimized 狀態下的懸停檢測
+function handleGlobalMouseMove(e) {
+    // 只在非最小化且非點擊鎖定狀態下才處理
+    if (playerMinimized.value || isClicked.value || !playerOpen.value) return
+    
+    const container = playerContainer.value
+    if (!container) return
+    
+    const rect = container.getBoundingClientRect()
+    const isInside = (
+        e.clientX >= rect.left &&
+        e.clientX <= rect.right &&
+        e.clientY >= rect.top &&
+        e.clientY <= rect.bottom
+    )
+    
+    if (isInside) {
+        // 滑鼠在 music-container 範圍內
+        isHovering.value = true
+        if (leaveTimer) {
+            clearTimeout(leaveTimer)
+            leaveTimer = null
+        }
+    }
+}
+
+function handleMusicInfoClick(e) {
+    // 點擊時展開播放器並標記為已點擊（包含懸停狀態下的點擊）
+    if (playerMinimized.value) {
+        e.stopPropagation()
+        playerMinimized.value = false
+        isClicked.value = true // 標記為已點擊
+    } else if (!isClicked.value) {
+        // 如果已經是懸停展開狀態，點擊後鎖定
+        e.stopPropagation()
+        isClicked.value = true
+    }
+}
+
+function handleContainerClick(e) {
+    // 在懸停展開狀態下點擊 music-container，鎖定顯示
+    if (!isClicked.value && !playerMinimized.value) {
+        e.stopPropagation()
+        isClicked.value = true
+    }
+}
+
+function showMusicInfo() {
+    // 先設置 musicInfoHidden 為 false
+    musicInfoHidden.value = false
+    // 確保播放器保持最小化狀態（不觸發外部點擊邏輯）
+    playerMinimized.value = true
+}
+
 </script>
 
 <template>
-    <audio ref="bgm" :src="currentSrc" preload="auto" @ended="nextSong"></audio>
+    <audio ref="audio" :src="currentSong.src" preload="auto" @ended="nextSong"></audio>
 
-    <div
-        v-if="(isMobile && !mobilePlayerOpen) || (!isMobile && !desktopPlayerOpen)"
-        class="my-bgm-fab"
-        @click.stop="isMobile ? (mobilePlayerOpen = true) : (desktopPlayerOpen = true)"
-    >
-        <span>🎵</span>
-    </div>
-
-    <div v-if="isPlaylistVisible" class="playlist-overlay" @click="togglePlaylist">
-        <div class="playlist-modal" @click.stop>
-            <div class="playlist-header">
-                <h3>播放清單</h3>
-                <button @click="togglePlaylist" class="my-bgm-close">✖️</button>
-            </div>
-            <ul class="playlist-items">
-                <li
-    v-for="(song, index) in musicList"
-    :key="song.src"
-    :class="['playlist-item', { 'is-playing': index === currentIndex }]"
-    @click="selectAndPlaySong(index)"
->
-    <span class="song-title-in-list">{{ song.title }}</span>
-    <span v-if="index === currentIndex" class="playing-indicator">正在播放...</span>
-</li>
-            </ul>
-        </div>
-    </div>
-
-    <transition name="player-slide">
-        <div v-if="isMobile && mobilePlayerOpen" class="my-bgm-player my-bgm-player-mobile" ref="playerContainer" @click.stop>
-        <div v-if="isAdjustingVolume && isVolumeSliderVisible" class="volume-percentage-display-mobile">{{ Math.round(volume * 100) }}%</div>
-        <div class="my-bgm-mobile-row title-row">
-            <span class="music-icon">🎵</span>
-            <div class="marquee-container"><span class="music-title-text">{{ currentMusicTitle }}</span></div>
-            <button class="my-bgm-close" @click.stop="mobilePlayerOpen = false">✖️</button>
-        </div>
-        <div class="my-bgm-mobile-row progress-bar-row">
-            <span class="time-display">{{ formatTime(currentTime) }}</span>
-            <input
-                type="range"
-                class="progress-bar"
-                :style="{ '--progress-percent': progressPercent + '%' }"
-                :max="duration"
-                v-model.number="currentTime"
-                @mousedown="startSeek"
-                @mouseup="endSeek"
-                @touchstart="startSeek"
-                @touchend="endSeek"
+    <!-- 主播放器 -->
+    <transition name="player-fade">
+        <div 
+            v-if="playerOpen" 
+            ref="playerContainer"
+            class="music-container" 
+            :class="{ 
+                'play': playing, 
+                'minimized': playerMinimized,
+                'panel-open': isPlaylistVisible || isVolumeVisible,
+                'info-hidden': musicInfoHidden
+            }"
+            @click.stop="handleContainerClick"
+            @mouseenter="handleContainerMouseEnter"
+            @mouseleave="handleContainerMouseLeave"
+        >
+            <!-- 歌曲資訊（播放時從上方滑出） -->
+            <div 
+                class="music-info" 
+                :class="{ 
+                    'hidden': musicInfoHidden,
+                    'dragging': isDragging
+                }"
+                :style="isDragging ? { transform: `translateX(${dragOffset}px) translateY(-107%)` } : {}"
+                @click="handleMusicInfoClick"
+                @mouseenter="handleMouseEnter"
+                @mouseleave="handleMouseLeave"
+                @touchstart="handleDragStart"
+                @touchmove="handleDragMove"
+                @touchend="handleDragEnd"
+                @mousedown="handleDragStart"
             >
-            <span class="time-display">{{ formatTime(duration) }}</span>
-        </div>
-        <div v-if="isVolumeSliderVisible" class="volume-popup-shared volume-popup-mobile">
-            <span class="volume-icon" @click.stop="toggleMute" title="靜音/取消靜音">
-                <template v-if="volume === 0">🔇</template>
-                <template v-else-if="volume < 0.33">🔈</template>
-                <template v-else-if="volume < 0.7">🔉</template>
-                <template v-else>🔊</template>
-            </span>
-            <input
-                type="range"
-                class="volume-slider-horizontal"
-                min="0"
-                max="1"
-                step="0.01"
-                v-model.number="volume"
-                @mousedown="isAdjustingVolume = true"
-                @mouseup="isAdjustingVolume = false"
-                @touchstart="isAdjustingVolume = true"
-                @touchend="isAdjustingVolume = false"
-            >
-        </div>
-        <div class="my-bgm-mobile-row main-controls-row">
-            <button class="control-btn" @click.stop="toggleVolumeSlider" title="音量">
-                <span class="volume-icon">
-                    <template v-if="volume === 0">🔇</template>
-                    <template v-else-if="volume < 0.33">🔈</template>
-                    <template v-else-if="volume < 0.7">🔉</template>
-                    <template v-else>🔊</template>
-                </span>
-            </button>
-            <div class="main-controls">
-                <button @click.stop="prevSong" title="上一首" class="my-bgm-prev-next-btn">⏮️</button>
-                <button class="my-bgm-play-btn" @click.stop="toggleBgm" :title="playing ? '暫停' : '播放'">
-                    {{ playing ? "⏸️" : "▶️" }}
-                </button>
-                <button @click.stop="nextSong" title="下一首" class="my-bgm-prev-next-btn">⏭️</button>
+                <h2 class="title">
+                    <span class="title-text">{{ currentSong.title }} &nbsp;&nbsp;&nbsp; {{ currentSong.title }} &nbsp;&nbsp;&nbsp; {{ currentSong.title }}</span>
+                </h2>
+                <div class="time-info">
+                    <span>{{ formatTime(currentTime) }}</span>
+                    <span>{{ formatTime(duration) }}</span>
+                </div>
+                <div class="progress-container" @click="setProgress">
+                    <div class="progress" :style="{ width: progressPercent + '%' }"></div>
+                </div>
             </div>
-            <button class="control-btn" @click.stop="togglePlaylist" title="播放清單">🎶</button>
-        </div>
-    </div>
-    </transition>
 
-    <transition name="player-slide">
-        <div v-if="!isMobile && desktopPlayerOpen" class="my-bgm-player my-bgm-player-desktop" ref="playerContainer" @click.stop>
-        <div v-if="isAdjustingVolume && isVolumeSliderVisible" class="volume-percentage-display-desktop">{{ Math.round(volume * 100) }}%</div>
-        <!-- 第一行：標題 + 關閉按鈕 -->
-        <div class="desktop-row title-row">
-            <div class="marquee-container">
-                <span class="music-title-text">{{ currentMusicTitle }}</span>
-            </div>
-            <button class="my-bgm-close" @click.stop="desktopPlayerOpen = false" title="收合">✖️</button>
-        </div>
-        
-        <!-- 第二行：進度條 + 時間 -->
-        <div class="desktop-row progress-row">
-            <span class="time-display">{{ formatTime(currentTime) }}</span>
-            <input
-                type="range"
-                class="progress-bar"
-                :style="{ '--progress-percent': progressPercent + '%' }"
-                :max="duration"
-                v-model.number="currentTime"
-                @mousedown="startSeek"
-                @mouseup="endSeek"
-            >
-            <span class="time-display">{{ formatTime(duration) }}</span>
-        </div>
-        
-        <!-- 第三行：播放清單 + 控制按鈕 + 音量 -->
-        <div class="desktop-row controls-row">
-            <!-- 播放清單按鈕（左側） -->
-            <div class="playlist-control-container">
-                <button class="control-btn playlist-btn" @click.stop="togglePlaylist" title="播放清單">
-                    ≡
+            <!-- 封面圖片（旋轉） -->
+
+            <!-- 控制按鈕 -->
+            <div class="navigation">
+                <!-- 播放清單按鈕 -->
+                <button class="action-btn" @click.stop="togglePlaylist" title="播放清單">
+                    <i class="fas fa-list"></i>
+                </button>
+
+                <!-- 上一首 -->
+                <button class="action-btn" @click.stop="prevSong" title="上一首">
+                    <i class="fas fa-backward"></i>
+                </button>
+
+                <!-- 播放/暫停 -->
+                <button class="action-btn action-btn-big" @click.stop="togglePlay" :title="playing ? '暫停' : '播放'">
+                    <i class="fas" :class="playing ? 'fa-pause' : 'fa-play'"></i>
+                </button>
+
+                <!-- 下一首 -->
+                <button class="action-btn" @click.stop="nextSong" title="下一首">
+                    <i class="fas fa-forward"></i>
+                </button>
+
+                <!-- 音量按鈕 -->
+                <button class="action-btn" @click.stop="toggleVolume" title="音量">
+                    <i class="fas" :class="volume === 0 ? 'fa-volume-mute' : volume < 0.5 ? 'fa-volume-down' : 'fa-volume-up'"></i>
                 </button>
             </div>
-            
-            <!-- 播放控制（中間） -->
-            <div class="main-controls">
-                <button @click.stop="prevSong" title="上一首" class="my-bgm-prev-next-btn">⏮️</button>
-                <button class="my-bgm-play-btn" @click.stop="toggleBgm" :title="playing ? '暫停' : '播放'">
-                    {{ playing ? "⏸️" : "▶️" }}
-                </button>
-                <button @click.stop="nextSong" title="下一首" class="my-bgm-prev-next-btn">⏭️</button>
-            </div>
-            
-            <!-- 音量控制（右側） -->
-            <div class="volume-control-container">
-                <button class="control-btn volume-btn" @click.stop="toggleVolumeSlider" title="音量">
-                    <template v-if="volume === 0">🔇</template>
-                    <template v-else-if="volume < 0.33">🔈</template>
-                    <template v-else-if="volume < 0.7">🔉</template>
-                    <template v-else>🔊</template>
-                </button>
-                
-                <!-- 音量滑桿浮動面板 -->
-                <transition name="fade">
-                    <div v-if="isVolumeSliderVisible" class="volume-popup-desktop" @click.stop>
-                        <span class="volume-icon" @click.stop="toggleMute" title="靜音/取消靜音">
-                            <template v-if="volume === 0">🔇</template>
-                            <template v-else-if="volume < 0.33">🔈</template>
-                            <template v-else-if="volume < 0.7">🔉</template>
-                            <template v-else>🔊</template>
-                        </span>
+
+            <!-- 關閉按鈕（已移除：改為點擊外部在未播放時關閉） -->
+
+            <!-- 音量控制面板 -->
+            <transition name="slide-up">
+                <div v-if="isVolumeVisible" class="volume-panel">
+                    <div class="volume-slider-vertical-container">
                         <input
                             type="range"
-                            class="volume-slider-horizontal"
+                            class="volume-slider-vertical"
                             min="0"
                             max="1"
                             step="0.01"
                             v-model.number="volume"
-                            @input="flashVolumePercentage"
-                        >
+                            orient="vertical"
+                        />
                     </div>
-                </transition>
-            </div>
+                </div>
+            </transition>
+
+            <!-- 播放清單面板 -->
+            <transition name="slide-up">
+                <div v-if="isPlaylistVisible" class="playlist-panel">
+                    <h3 class="playlist-title">播放清單</h3>
+                    <div class="playlist-items">
+                        <div
+                            v-for="(song, index) in musicList"
+                            :key="song.src"
+                            class="playlist-item"
+                            :class="{ 'active': index === currentIndex }"
+                            @click="selectAndPlaySong(index)"
+                        >
+                            <div class="song-info">
+                                <span class="song-number">{{ index + 1 }}</span>
+                                <span class="song-title">{{ song.title }}</span>
+                            </div>
+                            <i v-if="index === currentIndex && playing" class="fas fa-volume-up playing-icon"></i>
+                        </div>
+                    </div>
+                </div>
+            </transition>
         </div>
-    </div>
+    </transition>
+
+    <!-- 側邊欄按鈕（當 music-info 隱藏時顯示） - 放在 music-container 外部 -->
+    <transition name="sidebar-fade">
+        <div 
+            v-if="showSidebarButton && playerOpen"
+            ref="sidebarToggle"
+            class="sidebar-toggle"
+            @click.stop.prevent="showMusicInfo"
+            @touchend.stop.prevent="showMusicInfo"
+        >
+            <div class="sidebar-icon">&lt;</div>
+        </div>
+    </transition>
+
+    <!-- 播放器開關按鈕（當播放器關閉時顯示） -->
+    <transition name="sidebar-fade">
+        <div 
+            v-if="showPlayerToggle"
+            class="sidebar-toggle player-toggle"
+            @click.stop.prevent="playerOpen = true"
+            @touchend.stop.prevent="playerOpen = true"
+        >
+            <i class="fa-solid fa-music"></i>        
+</div>
     </transition>
 </template>
 
 <style scoped>
-/* ==================== 現代平面化設計 ==================== */
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
 
-:root {
-    --player-primary: #6366f1;
-    --player-primary-hover: #4f46e5;
-    --player-secondary: #8b5cf6;
-    --player-accent: #ec4899;
-    --player-bg: #ffffff;
-    --player-bg-dark: #1f2937;
-    --player-surface: #f9fafb;
-    --player-border: #e5e7eb;
-    --player-text: #111827;
-    --player-text-secondary: #6b7280;
-    --player-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    --player-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-}
-
-.music-icon {
-    color: var(--player-primary);
-    font-size: 1.1em;
-    flex-shrink: 0;
-}
-
-.volume-icon {
-    font-size: 1.1em;
-    cursor: pointer;
-    transition: transform 0.2s ease;
-}
-
-.volume-icon:hover {
-    transform: scale(1.1);
-}
-/* ==================== 音量控制 ==================== */
-.volume-control-container {
-    position: relative;
-    display: flex;
-    align-items: center;
-}
-
-/* 桌面版音量滑桿彈出面板 (水平) */
-.volume-popup-desktop {
-    position: absolute;
-    bottom: calc(100% + 12px);
-    right: 0;
-    background: rgba(40, 40, 40, 0.75);
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
-    border-radius: 8px;
-    padding: 8px 12px;
-    z-index: 11;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 8px;
-}
-
-.volume-percentage-display {
-    font-size: 0.875em;
-    font-weight: 600;
-    color: var(--player-primary);
-    min-width: 40px;
-    text-align: center;
-}
-
-/* 音量彈出面板 */
-.volume-popup-shared {
-    position: absolute;
-    background: rgba(40, 40, 40, 0.75);
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
-    border-radius: 8px;
-    z-index: 11;
-    transition: opacity 0.2s, transform 0.2s;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-}
-
-.volume-popup-shared .volume-icon {
-    color: #fff;
-}
-
-.volume-slider-horizontal {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 200px;
-    height: 4px;
-    background: rgba(255,255,255,0.3);
-    border-radius: 2px;
-}
-
-.volume-slider-horizontal::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 14px;
-    height: 14px;
-    background: #fff;
-    border-radius: 50%;
-}
-
-.volume-slider-horizontal::-webkit-slider-thumb:hover {
-    transform: scale(1.2);
-    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
-}
-
-.volume-percentage-display-local {
-    position: absolute;
-    bottom: calc(100% + 8px);
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--player-primary);
-    color: white;
-    padding: 6px 12px;
-    border-radius: 8px;
-    font-size: 0.875em;
-    font-weight: 600;
-    pointer-events: none;
-    white-space: nowrap;
-    box-shadow: var(--player-shadow);
-}
-
-.volume-percentage-display-desktop {
-    position: absolute;
-    bottom: calc(100% + 8px);
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0, 0, 0, 0.75);
-    color: white;
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-size: 0.9em;
-    font-weight: bold;
-    pointer-events: none;
-    white-space: nowrap;
-}
-
-.volume-percentage-display-mobile {
-    position: absolute;
-    bottom: calc(100% + 8px);
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0, 0, 0, 0.75);
-    color: white;
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-size: 0.9em;
-    font-weight: bold;
-    pointer-events: none;
-    white-space: nowrap;
-}
-
-.volume-popup-mobile {
-    bottom: 61px;
-    left: 10px;
-    right: 10px;
-    max-width: 250px;
-    margin: 0 auto;
-}
-/* ==================== 桌面版播放器 ==================== */
-.my-bgm-player-desktop {
-    width: 320px;
-    flex-direction: column;
-    gap: 12px;
-    padding: 16px;
-}
-
-.desktop-row {
-    display: flex;
-    align-items: center;
-    width: 100%;
-}
-
-/* 標題行 */
-.desktop-row.title-row {
-    justify-content: space-between;
-    gap: 8px;
-}
-
-.desktop-row.title-row .marquee-container {
-    flex: 1;
-}
-
-.desktop-row.title-row .music-title-text {
-    font-size: 0.9em;
-    font-weight: 600;
-    color: var(--vp-c-text-1, var(--player-text));
-}
-
-/* 進度行 */
-.desktop-row.progress-row {
-    gap: 10px;
-}
-
-/* 控制行 */
-.desktop-row.controls-row {
-    justify-content: space-between;
-    gap: 8px;
-}
-
-.playlist-control-container {
-    position: relative;
-}
-
-.playlist-btn {
-    font-size: 1.5em !important;
-    font-weight: bold;
-}
-
-.volume-btn {
-    font-size: 1.2em;
-}
-
-.my-bgm-player-desktop .main-controls {
-    gap: 8px;
-    flex: 1;
-    justify-content: center;
-}
-
-.my-bgm-player-desktop .my-bgm-prev-next-btn {
-    margin: 0;
-    width: 36px;
-    height: 36px;
-}
-
-.my-bgm-player-desktop .my-bgm-play-btn {
-    width: 44px;
-    height: 44px;
-}
-/* ==================== 手機版播放器 ==================== */
-.my-bgm-player-mobile {
-    width: calc(100vw - 40px);
-    max-width: 400px;
-    flex-direction: column;
-    gap: 8px;
-    padding: 16px;
-    position: relative;
-}
-
-.my-bgm-mobile-row {
-    display: flex;
-    align-items: center;
-    width: 100%;
-}
-
-.title-row {
-    justify-content: space-between;
-    margin-bottom: 4px;
-    gap: 8px;
-}
-
-.title-row .music-title-text {
-    font-size: 0.9em;
-    font-weight: 600;
-    color: var(--vp-c-text-1, var(--player-text));
-}
-
-.title-row .my-bgm-close {
-    flex-shrink: 0;
-}
-
-.progress-bar-row {
-    gap: 10px;
-}
-
-.main-controls-row {
-    justify-content: space-between;
-    padding-top: 4px;
-}
-/* ==================== FAB 按鈕 ==================== */
-.my-bgm-fab {
+/* ==================== 主播放器容器 ==================== */
+.music-container {
     position: fixed;
     bottom: 24px;
     right: 24px;
-    z-index: 10000;
-    width: 56px;
-    height: 56px;
-    background: linear-gradient(135deg, var(--player-primary) 0%, var(--player-secondary) 100%);
-    color: white;
-    border-radius: 16px;
-    box-shadow: var(--player-shadow-lg);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5em;
-    cursor: pointer;
-    user-select: none;
-    border: none;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    animation: fabBounceIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-}
-
-.my-bgm-fab:hover {
-    transform: translateY(-2px) scale(1.05);
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-}
-
-.my-bgm-fab:active {
-    transform: translateY(0) scale(0.95);
-}
-
-@keyframes fabBounceIn {
-    0% {
-        opacity: 0;
-        transform: scale(0) rotate(-180deg);
-    }
-    50% {
-        transform: scale(1.1) rotate(10deg);
-    }
-    100% {
-        opacity: 1;
-        transform: scale(1) rotate(0deg);
-    }
-}
-
-/* ==================== 播放器主容器 ==================== */
-.my-bgm-player {
-    position: fixed;
-    bottom: 24px;
-    right: 24px;
-    display: flex;
-    align-items: center;
+    background: rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-radius: 24px;
+    padding: 20px 30px;
     z-index: 9999;
-    background: var(--vp-c-bg, var(--player-bg));
-    color: var(--vp-c-text-1, var(--player-text));
-    border-radius: 16px;
-    border: 1px solid var(--vp-c-divider, var(--player-border));
-    box-shadow: var(--player-shadow-lg);
-    padding: 16px;
-    box-sizing: border-box;
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    min-width: 350px;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid rgba(79, 195, 247, 0);
+
 }
 
-/* 播放器進入/離開動畫 */
-.player-slide-enter-active {
-    animation: playerSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.player-slide-leave-active {
-    animation: playerSlideOut 0.3s cubic-bezier(0.4, 0, 1, 1);
-}
-
-@keyframes playerSlideIn {
-    0% {
-        opacity: 0;
-        transform: translate(40px, 40px) scale(0.8);
-    }
-    100% {
-        opacity: 1;
-        transform: translate(0, 0) scale(1);
-    }
-}
-
-@keyframes playerSlideOut {
-    0% {
-        opacity: 1;
-        transform: translate(0, 0) scale(1);
-    }
-    100% {
-        opacity: 0;
-        transform: translate(40px, 40px) scale(0.8);
-    }
-}
-
-/* ==================== 按鈕通用樣式 ==================== */
-button, button:focus, button:focus-visible,
-.my-bgm-play-btn:focus, .my-bgm-play-btn:focus-visible,
-.my-bgm-prev-next-btn:focus, .my-bgm-prev-next-btn:focus-visible,
-.control-btn:focus, .control-btn:focus-visible {
-    outline: none !important;
+/* 最小化狀態：主體完全消失 */
+.music-container.minimized {
+    background: transparent !important;
+    border-color: transparent !important;
     box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    transform: translateY(20px);
 }
 
-/* ==================== 播放按鈕 ==================== */
-.my-bgm-play-btn {
-    background: linear-gradient(145deg, #e3f2fd 60%, #b6c8e6 100%);
-    color: #1565c0;
-    border-radius: 50%;
-    border: none;
-    width: 40px;
-    height: 40px;
-    box-shadow: 0 2px 8px #b3c7e6bb;
+/* 最小化狀態：隱藏所有子元素（除了 music-info） */
+.music-container.minimized > *:not(.music-info) {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+    transform: translateY(15px);
+    transition: all 0.4s ease;
+}
+
+/* 最小化狀態：歌曲資訊保持可見並向下移動 */
+.music-container.minimized .music-info {
+    opacity: 0.9 !important;
+    transform: translateY(-50%) !important;
+    pointer-events: auto;
+    cursor: pointer;
+    box-shadow: 0 8px 28px rgba(33, 150, 243, 0.3),
+                0 0 0 1px rgba(255, 255, 255, 0.25) inset;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 最小化狀態:主體完全消失 */
+.music-container.minimized {
+    background: transparent !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    transform: translateY(20px);
+    transition-delay: 0s;
+}
+
+/* 恢復時延遲主容器淡入 */
+.music-container:not(.minimized) {
+    transition-delay: 0.1s;
+}
+
+/* 當 music-info 被隱藏時，保持主體完全隱藏 */
+.music-container.info-hidden {
+    background: transparent !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    pointer-events: none !important; /* 完全禁用點擊事件 */
+}
+
+.music-container.info-hidden > *:not(.sidebar-toggle) {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+}
+
+/* ==================== 歌曲資訊 ==================== */
+.music-info {
+    background: rgba(227, 242, 253, 0.5);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(79, 195, 247, 0.3);
+    border-radius: 16px;
+    position: absolute;
+    width: calc(100% - 80px);
+    padding: 18px 22px;
+    top: 30px;
+    left: 40px;
+    opacity: 0;
+    transform: translateY(0%);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: -1;
+    box-shadow: 0 4px 16px rgba(33, 150, 243, 0.1),
+                0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+    /* 防止文字選擇 */
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    /* 防止長按觸發上下文菜單 */
+    -webkit-touch-callout: none;
+}
+
+/* 播放時顯示歌曲資訊 */
+.music-container.play .music-info {
+    opacity: 1;
+    transform: translateY(-107%);
+}
+
+/* 拖動時禁用過渡動畫 */
+.music-info.dragging {
+    transition: none !important;
+}
+
+/* 當播放清單或音量面板打開時，隱藏 music-info（純淡出，不移動位置） */
+.music-container.panel-open .music-info {
+    opacity: 0 !important;
+    pointer-events: none;
+}
+
+/* music-info 向右滑動隱藏 */
+.music-info.hidden {
+    opacity: 0 !important;
+    transform: translateX(120%) translateY(-50%) !important;
+    pointer-events: none !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* 最小化狀態下 music-info 隱藏時的動畫 */
+.music-container.minimized .music-info.hidden {
+    transform: translateX(120%) translateY(-50%) !important;
+}
+
+/* ==================== 側邊欄按鈕 ==================== */
+.sidebar-toggle {
+    position: fixed;
+    right: 0px;
+    bottom: 24px;
+    width: 20px;
+    height: 108px;
+    background: rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 12px 0 0 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.5em;
-    font-weight: bold;
-    transition: box-shadow .2s, background .2s, color .2s;
-    flex-shrink: 0;
-}
-
-.my-bgm-play-btn:hover,
-.my-bgm-play-btn:focus {
-    box-shadow: 0 4px 14px #64b5f6aa;
-    background: linear-gradient(145deg, #bbdefb 60%, #90caf9 100%);
-    color: #0d47a1;
-}
-
-/* ==================== 上下首按鈕 ==================== */
-.my-bgm-prev-next-btn {
-    font-size: 1.3em;
-    line-height: 1;
-    background: transparent;
-    color: #666;
-    border-radius: 5px;
-    padding: 4px 8px;
-    transition: box-shadow .2s, color .2s;
-    border: none;
     cursor: pointer;
-    display: inline-flex;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 10000;
+    
+    /* 關閉所有觸控和焦點效果 */
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    outline: none;
+    
+    /* 確保點擊區域精確 */
+    pointer-events: auto;
+    touch-action: manipulation;
+}
+
+.sidebar-toggle:hover {
+    background: rgba(0, 0, 0, 0.75);
+    transform: translateX(-3px);
+}
+
+.sidebar-toggle:focus {
+    outline: none;
+}
+
+.sidebar-toggle:active {
+    outline: none;
+}
+
+.sidebar-icon {
+    font-size: 20px;
+    font-weight: bold;
+    color: rgba(255, 255, 255, 0.9);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    pointer-events: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
+.sidebar-fade-enter-active,
+.sidebar-fade-leave-active {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-fade-enter-from,
+.sidebar-fade-leave-to {
+    transform: translateX(40px);
+}
+
+/* 側邊欄按鈕和播放器開關按鈕進入時從右側滑入 */
+.sidebar-fade-enter-from {
+    transform: translateX(40px);
+}
+
+.sidebar-fade-leave-to {
+    transform: translateX(40px);
+}
+
+/* 播放器開關按鈕（使用音樂符號） */
+.sidebar-toggle.player-toggle .sidebar-icon {
+    font-size: 24px;
+}
+
+.music-info .title {
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0 0 8px 0;
+    color: #333;
+    overflow: hidden;
+    position: relative;
+    height: 1.5em;
+    width: 100%;
+}
+
+.title-text {
+    display: inline-block;
+    white-space: nowrap;
+    animation: scrollText 12s linear infinite;
+}
+
+.title-text-duplicate {
+    display: none;
+}
+
+/* 跑馬燈滾動動畫 - 從右到左無限循環 */
+@keyframes scrollText {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(-100%);
+    }
+}
+
+/* 暫停動畫（當未播放時） */
+.music-container:not(.play) .title-text {
+    animation-play-state: paused;
+}
+
+.time-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: #666;
+    margin-bottom: 8px;
+}
+
+/* ==================== 進度條 ==================== */
+.progress-container {
+    background-color: rgba(179, 229, 252, 0.3);
+    backdrop-filter: blur(8px);
+    border-radius: 8px;
+    cursor: pointer;
+    height: 6px;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 0 0 1px rgba(79, 195, 247, 0.2) inset;
+}
+
+.progress {
+    background: linear-gradient(90deg, rgba(79, 195, 247, 0.8) 0%, rgba(41, 182, 246, 0.9) 100%);
+    border-radius: 8px;
+    height: 100%;
+    width: 0%;
+    transition: width 0.1s linear;
+    position: relative;
+    box-shadow: 0 0 8px rgba(79, 195, 247, 0.4);
+}
+
+.progress::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 10px;
+    height: 10px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 0px solid rgba(79, 195, 247, 0.8);
+    border-radius: 50%;
+    box-shadow: 0 0 8px rgba(79, 195, 247, 0.6),
+                0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* ==================== 控制按鈕 ==================== */
+.navigation {
+    display: flex;
     align-items: center;
     justify-content: center;
+    gap: 13px;
+    margin-top: 10px;
 }
 
-.my-bgm-prev-next-btn:hover {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-    color: #1976d2;
+.action-btn {
+    color: rgb(55 173 226);
+    font-size: 20px;
+    cursor: pointer;
+    padding: 10px;
+    transition: all 0.3s ease;
+    border-radius: 25%;
+    width: 45px;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
 }
+
+.action-btn:hover {
+    color: rgba(41, 182, 246, 1);
+    background-color: rgba(79, 195, 247, 0.3);
+    border-color: rgba(79, 195, 247, 0.5);
+    transform: scale(1.1);
+    box-shadow: 0 6px 16px rgba(79, 195, 247, 0.3);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(79, 195, 247, 0.3);
+    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.1);
+}
+
+.action-btn:active {
+    transform: scale(0.95);
+}
+
+.action-btn-big {
+    color: #fff;
+    background: linear-gradient(135deg, rgba(25, 118, 210, 0.9) 0%, rgba(21, 101, 192, 0.9) 100%);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(79, 195, 247, 0.4);
+    font-size: 24px;
+    width: 55px;
+    height: 55px;
+    box-shadow: 0 6px 20px rgba(33, 150, 243, 0.4),
+                0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+}
+
+.action-btn-big:hover {
+    color: #fff;
+    background: linear-gradient(135deg, rgba(30, 136, 229, 0.95) 0%, rgba(25, 118, 210, 0.95) 100%);
+    box-shadow: 0 8px 24px rgba(33, 150, 243, 0.4),
+                0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+}
+
 /* ==================== 關閉按鈕 ==================== */
-.my-bgm-close {
-    font-size: 1.1em;
-    color: var(--vp-c-text-2, var(--player-text-secondary));
-    transition: color 0.2s ease, transform 0.2s ease, background 0.2s ease;
-    background: transparent;
-    border: none;
+.close-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: rgba(227, 242, 253, 0.3);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(79, 195, 247, 0.3);
+    color: rgba(120, 120, 120, 0.9);
+    font-size: 18px;
     cursor: pointer;
     padding: 8px;
-    border-radius: 8px;
+    border-radius: 50%;
+    transition: all 0.3s ease;
     width: 32px;
     height: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
+    box-shadow: 0 2px 8px rgba(33, 150, 243, 0.1);
 }
 
-.my-bgm-close:hover {
-    color: var(--player-accent);
-    background: var(--vp-c-bg-soft, var(--player-surface));
-    transform: rotate(90deg) scale(1.1);
+.close-btn:hover {
+    color: rgba(41, 182, 246, 1);
+    background-color: rgba(79, 195, 247, 0.3);
+    border-color: rgba(79, 195, 247, 0.5);
+    transform: rotate(90deg);
+    box-shadow: 0 4px 12px rgba(79, 195, 247, 0.3);
 }
 
-.my-bgm-close:active {
-    transform: rotate(90deg) scale(0.9);
-}
-
-/* ==================== 主控制區 ==================== */
-.main-controls {
+/* ==================== 音量面板 ==================== */
+.volume-panel {
+    position: absolute;
+    bottom: calc(75% );
+    left: 84.7%;
+    transform: translateX(-50%);
+    background: rgba(227, 242, 253, 0.9);
+    border: 1px solid rgba(79, 195, 247, 0.);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 8px 32px rgba(33, 150, 243, 0.2),
+                0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+    min-width: 10px;
+    z-index: 10;
     display: flex;
+    flex-direction: column;
     align-items: center;
     gap: 12px;
 }
 
-/* ==================== 控制按鈕 ==================== */
-.control-btn {
-    font-size: 1.1em;
-    color: var(--vp-c-text-1, var(--player-text));
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
-    cursor: pointer;
-    background: var(--vp-c-bg-soft, rgba(0, 0, 0, 0.05));
-    border: 1px solid var(--vp-c-divider, var(--player-border));
-}
 
-.control-btn:hover {
-    background: var(--player-primary);
-    color: white;
-    transform: scale(1.1);
-    border-color: var(--player-primary);
-}
 
-.control-btn:active {
-    transform: scale(0.95);
-}
-/* ==================== 跑馬燈 ==================== */
-.marquee-container {
-    flex: 1 1 0;
-    min-width: 0;
-    overflow: hidden;
-    white-space: nowrap;
-}
-
-.music-title-text {
-    font-weight: 600;
-    font-size: 0.95em;
-    display: inline-block;
-    padding-left: 100%;
-    animation: marquee 12s linear infinite;
-    animation-play-state: running;
-    color: var(--vp-c-text-1, var(--player-text));
-}
-
-@keyframes marquee {
-    0% { transform: translateX(0); }
-    100% { transform: translateX(-100%); }
-}
-
-/* ==================== 播放清單遮罩 ==================== */
-.playlist-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background-color: transparent;
-    z-index: 10001;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    box-sizing: border-box;
-}
-
-/* 桌面版：播放清單在按鈕旁顯示 */
-@media (min-width: 641px) {
-    .playlist-overlay {
-        background-color: transparent;
-        align-items: flex-end;
-        justify-content: flex-end;
-        padding-bottom: 140px;
-        padding-right: 24px;
-    }
-}
-
-/* 手機版：播放清單居中顯示 */
-@media (max-width: 640px) {
-    .playlist-overlay {
-        background-color: rgba(0, 0, 0, 0.5);
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
-    }
-}
-
-@keyframes fadeIn {
-    0% { 
-        opacity: 0;
-        backdrop-filter: blur(0px);
-        -webkit-backdrop-filter: blur(0px);
-    }
-    100% { 
-        opacity: 1;
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
-    }
-}
-/* ==================== 播放清單模態框 ==================== */
-.playlist-modal {
-    margin-right: 1%;
-    background: var(--vp-c-bg, var(--player-bg));
-    border-radius: 16px;
-    width: 320px;
-    max-height: 400px;
+.volume-slider-vertical-container {
     display: flex;
     flex-direction: column;
-    overflow: hidden;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-    border: 1px solid var(--vp-c-divider, var(--player-border));
-    animation: slideUp 0.3s ease;
-}
-
-/* 手機版播放清單 */
-@media (max-width: 640px) {
-    .playlist-modal {
-        width: 90vw;
-        max-width: 400px;
-        max-height: 60vh;
-    }
-}
-
-@keyframes slideUp {
-    0% {
-        opacity: 0;
-        transform: translateY(30px) scale(0.95);
-    }
-    100% {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-}
-
-.playlist-header {
-    display: flex;
-    justify-content: space-between;
     align-items: center;
-    padding: 20px 24px;
-    border-bottom: 1px solid var(--vp-c-divider, var(--player-border));
-    background: var(--vp-c-bg-soft, var(--player-surface));
+    height: 120px;
 }
 
-.playlist-header h3 {
-    margin: 0;
-    font-size: 1.25em;
+.volume-slider-vertical {
+    -webkit-appearance: none;
+    appearance: none;
+    writing-mode: vertical-lr;
+    direction: rtl;
+    width: 6px;
+    height: 120px;
+    background: rgba(179, 229, 252, 0.4);
+    backdrop-filter: blur(8px);
+    border-radius: 3px;
+    outline: none;
+    box-shadow: 0 0 0 1px rgba(79, 195, 247, 0.2) inset;
+    cursor: pointer;
+}
+
+.volume-slider-vertical::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: linear-gradient(135deg, rgba(79, 195, 247, 0.9) 0%, rgba(41, 182, 246, 0.9) 100%);
+    backdrop-filter: blur(8px);
+    border: 2px solid rgba(255, 255, 255, 0.6);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 3px 10px rgba(79, 195, 247, 0.5),
+                0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+    transition: all 0.3s ease;
+}
+
+.volume-slider-vertical::-webkit-slider-thumb:hover {
+    transform: scale(1.3);
+    box-shadow: 0 4px 16px rgba(79, 195, 247, 0.7),
+                0 0 0 2px rgba(255, 255, 255, 0.3) inset;
+}
+
+.volume-slider-vertical::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: linear-gradient(135deg, rgba(79, 195, 247, 0.9) 0%, rgba(41, 182, 246, 0.9) 100%);
+    border: 2px solid rgba(255, 255, 255, 0.6);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 3px 10px rgba(79, 195, 247, 0.5);
+}
+
+/* ==================== 播放清單面板 ==================== */
+.playlist-panel {
+    position: absolute;
+    bottom: calc(75% );
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(227, 242, 253, 0.35);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(px) saturate(180%);
+    border: 1px solid rgba(79, 195, 247, 0.3);
+    border-radius: 18px;
+    padding: 25px;
+    box-shadow: 0 8px 32px rgba(33, 150, 243, 0.2),
+                0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+    max-width: 350px;
+    max-height: 400px;
+    z-index: 10;
+}
+
+.playlist-title {
+    margin: 0 0 18px 0;
+    font-size: 1.25rem;
     font-weight: 700;
-    color: var(--vp-c-text-1, var(--player-text));
+    color: rgb(46, 46, 46);
+    text-align: center;
+    text-shadow: 0 2px 4px rgba(255, 255, 255, 0.1);
 }
 
 .playlist-items {
-    padding: 12px;
-    margin: 00;
-    list-style: none;
+    max-height: 300px;
     overflow-y: auto;
-    flex: 1;
 }
 
-/* ==================== 播放清單項目 ==================== */
 .playlist-item {
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    justify-content: space-between;
     padding: 14px 16px;
-    cursor: pointer;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-bottom: 10px;
     border-radius: 12px;
-    margin: 4px 0;
-    position: relative;
-    overflow: hidden;
-}
-
-.playlist-item::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    height: 100%;
-    width: 3px;
-    background: linear-gradient(135deg, var(--player-primary) 0%, var(--player-secondary) 100%);
-    transform: scaleY(0);
-    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: rgba(227, 242, 253, 0.3);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(79, 195, 247, 0.2);
+    box-shadow: 0 2px 8px rgba(33, 150, 243, 0.05);
 }
 
 .playlist-item:hover {
-    background: var(--vp-c-bg-soft, var(--player-surface));
-    transform: translateX(6px);
-    box-shadow: -2px 0 8px rgba(99, 102, 241, 0.1);
+    background: rgba(129, 212, 250, 0.35);
+    border-color: rgba(79, 195, 247, 0.4);
+    box-shadow: 0 4px 12px rgba(79, 195, 247, 0.2);
 }
 
-.playlist-item:hover::before {
-    transform: scaleY(1);
+.playlist-item.active {
+    background: linear-gradient(135deg, rgba(79, 195, 247, 0.4) 0%, rgba(41, 182, 246, 0.4) 100%);
+    border-left: 3px solid rgba(41, 182, 246, 0.8);
+    border-color: rgba(79, 195, 247, 0.5);
+    box-shadow: 0 4px 16px rgba(79, 195, 247, 0.3),
+                0 0 0 1px rgba(255, 255, 255, 0.2) inset;
 }
 
-.playlist-item:active {
-    transform: translateX(6px) scale(0.98);
+.song-info {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    overflow: hidden;
 }
 
-.playlist-item.is-playing {
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(139, 92, 246, 0.12) 100%);
-    border-left: 3px solid var(--player-primary);
-    font-weight: 600;
-    animation: nowPlayingGlow 2s ease-in-out infinite;
+.song-number {
+    font-weight: 700;
+    color: rgba(25, 118, 210, 0.85);
+    min-width: 28px;
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
 }
 
-@keyframes nowPlayingGlow {
-    0%, 100% {
-        box-shadow: 0 0 0 rgba(99, 102, 241, 0);
-    }
-    50% {
-        box-shadow: 0 0 12px rgba(99, 102, 241, 0.3);
-    }
-}
-
-.playlist-item.is-playing::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 3px;
-    background: linear-gradient(135deg, var(--player-primary) 0%, var(--player-secondary) 100%);
-    border-radius: 0 2px 2px 0;
-    transform: scaleY(1);
-}
-
-.song-title-in-list {
-    font-weight: 500;
-    color: var(--vp-c-text-1, var(--player-text));
+.song-title {
+    color: rgba(51, 51, 51, 0.9);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    flex: 1;
+    font-size: 0.95rem;
+    font-weight: 500;
 }
 
-.playlist-item.is-playing .song-title-in-list {
-    color: var(--player-primary);
-    font-weight: 600;
+
+.playing-icon {
+    color: rgba(41, 182, 246, 1);
+    animation: pulse 1.5s ease-in-out infinite;
 }
 
-.playing-indicator {
-    font-size: 0.75em;
-    color: var(--player-accent);
-    font-weight: 600;
-    padding: 4px 8px;
-    background: rgba(236, 72, 153, 0.1);
-    border-radius: 6px;
-    margin-left: 8px;
-    flex-shrink: 0;
-    animation: playingPulse 1.5s ease-in-out infinite;
-}
-
-@keyframes playingPulse {
+@keyframes pulse {
     0%, 100% {
         opacity: 1;
-        transform: scale(1);
     }
     50% {
-        opacity: 0.8;
-        transform: scale(0.98);
+        opacity: 0.5;
     }
 }
-/* ==================== 進度條區域 ==================== */
-.progress-bar-row {
-    display: flex;
-    align-items: center;
-    width: 100%;
-    gap: 12px;
+
+/* ==================== 捲軸樣式 ==================== */
+.playlist-items::-webkit-scrollbar {
+    width: 4px;
 }
 
-.time-display {
-    font-size: 0.75em;
-    color: var(--vp-c-text-2, var(--player-text-secondary));
-    flex-shrink: 0;
-    font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
-    font-weight: 500;
-    min-width: 42px;
-}
-
-/* ==================== 進度條樣式 ==================== */
-.progress-bar {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 100%;
-    height: 4px;
-    background: #e9e9e9;
-    border-radius: 2px;
-    outline: none;
-}
-
-.progress-bar::-webkit-slider-runnable-track {
-    width: 100%;
-    height: 4px;
-    background: #e9e9e9;
+.playlist-items::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(8px);
     border-radius: 2px;
 }
 
-.progress-bar::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 12px;
-    height: 12px;
-    background: #fff;
-    border: 2.5px solid #1976d2;
-    border-radius: 50%;
-    cursor: pointer;
-    margin-top: -4.5px;
-}
-
-.progress-bar::-moz-range-track {
-    width: 100%;
-    height: 4px;
-    background: #e9e9e9;
+.playlist-items::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(8px);
     border-radius: 2px;
 }
 
-.progress-bar::-moz-range-thumb {
-    width: 12px;
-    height: 12px;
-    background: #fff;
-    border: 2.5px solid #1976d2;
-    border-radius: 50%;
-    cursor: pointer;
+.playlist-items::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.7);
 }
 
+/* ==================== 動畫效果 ==================== */
+.player-fade-enter-active,
+.player-fade-leave-active {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.player-fade-enter-from {
+    transform: translateX(120%);
+}
+
+.player-fade-leave-to {
+    transform: translateX(120%);
+}
+
+.slide-up-enter-active,
+.slide-up-leave-active {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slide-up-enter-from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px);
+}
+
+.slide-up-leave-to {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px);
+}
+.volume-panel,.playlist-panel {
+        background: rgba(255, 255, 255, 0.75);
+        border-color: rgba(15, 139, 197, 0.993);
+    }
 /* ==================== 響應式設計 ==================== */
-@media (max-width: 640px) {
-    .my-bgm-player-desktop {
-        min-width: auto;
-        max-width: calc(100vw - 40px);
+@media (max-width: 480px) {
+    .music-container {
+        right: 12px;
+        bottom: 12px;
+        min-width: 300px;
+        padding: 20px 25px;
     }
 }
 
+/* ==================== 深色模式 ==================== */
 @media (prefers-color-scheme: dark) {
-    :root {
-        --player-bg: #1f2937;
-        --player-surface: #374151;
-        --player-border: #4b5563;
-        --player-text: #f9fafb;
-        --player-text-secondary: #9ca3af;
+    .dark .music-container {
+        background: rgba(30, 30, 30, 0.5);
+        border: 0px solid rgba(79, 195, 247, 0);
     }
-    
-    .control-btn {
-        background: rgba(255, 255, 255, 0.05);
-        border-color: var(--player-border);
+    .dark .action-btn{
+    color: rgba(250, 254, 255, 0.7);
     }
-    
-    .progress-bar {
-        background: #4b5563;
+    .dark .music-info {
+        background: linear-gradient(to top, rgba(30, 30, 30, 0.9), rgba(30, 30, 30, 0.5));
+        border-color: rgba(153, 211, 238, 0.5);
     }
-    
-    .progress-bar::-webkit-slider-runnable-track {
-        background: #4b5563;
+
+    .dark .music-info .title {
+        color: rgba(255, 255, 255, 0.95);
     }
-    
-    .progress-bar::-moz-range-track {
-        background: #4b5563;
+
+    .dark .time-info {
+        color: rgba(170, 170, 170, 0.9);
+    }
+
+    .dark .volume-panel,
+    .dark  .playlist-panel {
+        background: rgba(30, 30, 30, 0.75);
+        border-color: rgba(15, 139, 197, 0.993);
+    }
+
+    .dark .playlist-item {
+        background: rgba(79, 195, 247, 0.15);
+        border-color: rgba(79, 195, 247, 0.15);
+    }
+
+    .dark .playlist-title {
+    margin: 0 0 18px 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: rgb(255, 255, 255);
+    text-align: center;
+    text-shadow: 0 2px 4px rgba(255, 255, 255, 0.1);
+}
+    .dark .song-title {
+        color: rgba(221, 221, 221, 0.9);
+    }
+
+    .dark .close-btn {
+        color: rgba(170, 170, 170, 0.9);
+    }
+
+    .dark .close-btn:hover {
+        color: rgba(79, 195, 247, 1);
+    }
+
+    .dark .song-number {
+        color: rgba(129, 212, 250, 0.9);
     }
 }
 </style>
+
