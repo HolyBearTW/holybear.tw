@@ -641,6 +641,8 @@ function showMusicInfo() {
             <!-- 音量控制面板 -->
             <transition name="slide-up">
                 <div v-if="isVolumeVisible" class="volume-panel">
+                    <!-- 音量百分比顯示 -->
+                    <div class="volume-percentage-display">{{ Math.round(volume * 100) }}%</div>
                     <div class="volume-slider-vertical-container">
                         <input
                             type="range"
@@ -1115,7 +1117,15 @@ function showMusicInfo() {
     gap: 12px;
 }
 
-
+/* 音量百分比顯示 */
+.volume-percentage-display {
+    font-size: 18px;
+    font-weight: 600;
+    color: rgba(33, 150, 243, 1);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    margin-bottom: 8px;
+    user-select: none;
+}
 
 .volume-slider-vertical-container {
     display: flex;
@@ -1359,6 +1369,10 @@ function showMusicInfo() {
     .dark  .playlist-panel {
         background: rgba(30, 30, 30, 0.75);
         border-color: rgba(15, 139, 197, 0.993);
+    }
+
+    .dark .volume-percentage-display {
+        color: rgba(79, 195, 247, 1);
     }
 
     .dark .playlist-item {
