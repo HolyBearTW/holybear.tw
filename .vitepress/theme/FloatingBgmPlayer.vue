@@ -853,9 +853,13 @@ function showMusicInfo() {
     bottom: 24px;
     width: 20px;
     height: 108px;
-    background: rgba(0, 0, 0, 0.35);
+    background: rgba(255, 255, 255, 0.35);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(33, 150, 243, 0.5);
+    box-shadow: 0 0 20px rgba(33, 150, 243, 0.3),
+                0 0 40px rgba(33, 150, 243, 0.15),
+                inset 0 0 20px rgba(33, 150, 243, 0.1);
     border-radius: 12px 0 0 12px;
     display: flex;
     align-items: center;
@@ -879,7 +883,11 @@ function showMusicInfo() {
 }
 
 .sidebar-toggle:hover {
-    background: rgba(0, 0, 0, 0.75);
+    background: rgba(255, 255, 255, 0.55);
+    border-color: rgba(33, 150, 243, 0.8);
+    box-shadow: 0 0 25px rgba(33, 150, 243, 0.5),
+                0 0 50px rgba(33, 150, 243, 0.25),
+                inset 0 0 25px rgba(33, 150, 243, 0.15);
     transform: translateX(-3px);
 }
 
@@ -894,8 +902,8 @@ function showMusicInfo() {
 .sidebar-icon {
     font-size: 20px;
     font-weight: bold;
-    color: rgba(255, 255, 255, 0.9);
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    color: rgba(33, 150, 243, 0.9);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     pointer-events: none;
     user-select: none;
     -webkit-user-select: none;
@@ -1402,6 +1410,28 @@ function showMusicInfo() {
 
     .dark .song-number {
         color: rgba(129, 212, 250, 0.9);
+    }
+
+    /* 深色模式下的側邊欄按鈕 */
+    .dark .sidebar-toggle {
+        background: rgba(0, 0, 0, 0.35);
+        border-color: rgba(79, 195, 247, 0.5);
+        box-shadow: 0 0 20px rgba(79, 195, 247, 0.3),
+                    0 0 40px rgba(79, 195, 247, 0.15),
+                    inset 0 0 20px rgba(79, 195, 247, 0.1);
+    }
+
+    .dark .sidebar-toggle:hover {
+        background: rgba(0, 0, 0, 0.75);
+        border-color: rgba(79, 195, 247, 0.8);
+        box-shadow: 0 0 25px rgba(79, 195, 247, 0.5),
+                    0 0 50px rgba(79, 195, 247, 0.25),
+                    inset 0 0 25px rgba(79, 195, 247, 0.15);
+    }
+
+    .dark .sidebar-icon {
+        color: rgba(255, 255, 255, 0.9);
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
     }
 }
 </style>
