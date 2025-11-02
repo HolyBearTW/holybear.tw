@@ -998,23 +998,11 @@ html {
 }
 
 .VPNavScreen {
-  background: transparent !important;
-}
-
-.VPNavScreen::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background: rgba(0,0,0,0.25);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-}
-
-.VPNavScreen > * {
+  background: rgba(0,0,0,0.25) !important;
+  backdrop-filter: blur(18px) !important;
+  -webkit-backdrop-filter: blur(18px) !important;
+  z-index: var(--vp-z-index-nav) !important;
   position: relative;
-  z-index: 1;
 }
 
 .VPNavScreen .VPNavScreenMenu .VPNavScreenMenuLink {
