@@ -52,16 +52,16 @@ export default {
                     
                     // === 文章內頁的動畫邏輯 ===
                     if (!isHomePage) {
-                        // 獲取當前頁面背景色
-                        const currentBgColor = isDark 
-                            ? window.getComputedStyle(document.body).backgroundColor 
-                            : window.getComputedStyle(document.body).backgroundColor;
+                        // 捕獲當前的背景色（主內容區和側邊欄）
+                        const bodyBg = window.getComputedStyle(document.body).backgroundColor;
+                        const sidebar = document.querySelector('.VPSidebar, aside') as HTMLElement;
+                        const sidebarBg = sidebar ? window.getComputedStyle(sidebar).backgroundColor : bodyBg;
                         
-                        // 創建全屏遮罩
-                        const overlay = document.createElement('div');
-                        overlay.className = 'theme-transition-overlay';
-                        overlay.setAttribute('data-direction', direction);
-                        overlay.style.cssText = `
+                        // 創建舊背景容器（在內容下方，模擬首頁的邏輯）
+                        const oldBgContainer = document.createElement('div');
+                        oldBgContainer.className = 'theme-transition-overlay';
+                        oldBgContainer.setAttribute('data-direction', direction);
+                        oldBgContainer.style.cssText = `
                             position: fixed;
                             top: 0;
                             left: 0;
@@ -69,14 +69,80 @@ export default {
                             bottom: 0;
                             width: 100%;
                             height: 100%;
-                            background: ${currentBgColor};
-                            z-index: 0;
+                            z-index: -1;
                             pointer-events: none;
                             transition: transform 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+                            overflow: hidden;
                         `;
                         
-                        // 插入到 body 的第一個子元素之前，確保在內容下方
-                        document.body.insertBefore(overlay, document.body.firstChild);
+                        // 檢查側邊欄位置
+                        if (sidebar) {
+                            const sidebarRect = sidebar.getBoundingClientRect();
+                            
+                            // 創建側邊欄區域的舊背景
+                            const sidebarBgDiv = document.createElement('div');
+                            sidebarBgDiv.style.cssText = `
+                                position: absolute;
+                                top: 0;
+                                left: 0;
+                                width: ${sidebarRect.right}px;
+                                height: 100%;
+                                background: ${sidebarBg};
+                            `;
+                            oldBgContainer.appendChild(sidebarBgDiv);
+                            
+                            // 創建主內容區背景（從側邊欄右側開始）
+                            const mainBg = document.createElement('div');
+                            mainBg.style.cssText = `
+                                position: absolute;
+                                top: 0;
+                                left: ${sidebarRect.right}px;
+                                right: 0;
+                                bottom: 0;
+                                background: ${bodyBg};
+                            `;
+                            oldBgContainer.appendChild(mainBg);
+                        } else {
+                            // 沒有側邊欄時，主內容區佔滿整個寬度
+                            const mainBg = document.createElement('div');
+                            mainBg.style.cssText = `
+                                position: absolute;
+                                top: 0;
+                                left: 0;
+                                right: 0;
+                                bottom: 0;
+                                background: ${bodyBg};
+                            `;
+                            oldBgContainer.appendChild(mainBg);
+                        }
+                        
+                        // 插入到 body 的第一個子元素之前（在內容下方）
+                        document.body.insertBefore(oldBgContainer, document.body.firstChild);
+                        
+                        // 強制隱藏側邊欄頂部區域的背景和分隔線
+                        if (sidebar) {
+                            const sidebarTopElements = sidebar.querySelectorAll('.title, .curtain, nav, .nav, [class*="title"], [class*="curtain"]');
+                            sidebarTopElements.forEach(el => {
+                                if (el instanceof HTMLElement) {
+                                    el.style.setProperty('background-color', 'transparent', 'important');
+                                    el.style.setProperty('background', 'transparent', 'important');
+                                    el.style.setProperty('transition', 'none', 'important');
+                                    el.style.setProperty('border-bottom-color', 'transparent', 'important');
+                                }
+                            });
+                            
+                            // 隱藏所有可能的分隔線偽元素（通過父元素）
+                            const allSidebarElements = sidebar.querySelectorAll('*');
+                            allSidebarElements.forEach(el => {
+                                if (el instanceof HTMLElement) {
+                                    const computedStyle = window.getComputedStyle(el, '::after');
+                                    const computedStyleBefore = window.getComputedStyle(el, '::before');
+                                    if (computedStyle.borderBottomWidth !== '0px' || computedStyleBefore.borderBottomWidth !== '0px') {
+                                        el.classList.add('hide-sidebar-borders');
+                                    }
+                                }
+                            });
+                        }
                         
                         // 立即切換主題
                         if (isDark) {
@@ -88,15 +154,15 @@ export default {
                         // 觸發滑出動畫
                         requestAnimationFrame(() => {
                             if (direction === 'to-light') {
-                                overlay.style.transform = 'translateY(-100%)';
+                                oldBgContainer.style.transform = 'translateY(-100%)';
                             } else {
-                                overlay.style.transform = 'translateY(100%)';
+                                oldBgContainer.style.transform = 'translateY(100%)';
                             }
                         });
                         
                         // 清理
                         setTimeout(() => {
-                            overlay.remove();
+                            oldBgContainer.remove();
                             isAnimating = false;
                         }, 1500);
                         
