@@ -72,7 +72,7 @@ export default {
                             background: ${currentBgColor};
                             z-index: 0;
                             pointer-events: none;
-                            transition: transform 1s cubic-bezier(0.4, 0, 0.2, 1);
+                            transition: transform 1.5s cubic-bezier(0.4, 0, 0.2, 1);
                         `;
                         
                         // 插入到 body 的第一個子元素之前，確保在內容下方
@@ -98,7 +98,7 @@ export default {
                         setTimeout(() => {
                             overlay.remove();
                             isAnimating = false;
-                        }, 1000);
+                        }, 1500);
                         
                         return;
                     }
@@ -273,7 +273,7 @@ export default {
                             });
                         }
                     }
-                }, 120) as NodeJS.Timeout;
+                }, 500) as NodeJS.Timeout;
             }
         }
 
