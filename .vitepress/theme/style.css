@@ -648,7 +648,8 @@ html.dark .VPHero .name {
 
 /* 只為目錄項目添加動畫效果 */
 .VPDocAsideOutline .outline-link {
-  transition: all 0.2s ease-out;
+  display: inline-block;
+  transition: all 0.2s ease-out, transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
   opacity: 0.8;
   cursor: pointer;
   border-radius: 4px;
@@ -664,7 +665,8 @@ html.dark .VPHero .name {
   color: var(--vp-c-brand-1);
   background-color: var(--vp-c-bg-soft);
 }
-/* 點擊時的動畫效果 */
+
+/* 點擊時縮放動畫 */
 .VPDocAsideOutline .outline-link:active {
   transform: scale(0.98);
   transition: all 0.1s ease-out;
@@ -691,17 +693,6 @@ html {
 /* 滾動時的慣性效果 */
 .VPDoc .vp-doc * {
   will-change: transform;
-}
-
-/* 強制讓 outline link 支援 transform 動畫（重點：inline-block） */
-.VPDocAsideOutline .outline-link {
-  display: inline-block;
-  transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* 點擊時縮放動畫 */
-.VPDocAsideOutline .outline-link:active {
-  transform: scale(0.98);
 }
 
 /* 左側 sidebar 文章項目的動態效果 */
@@ -978,31 +969,16 @@ html {
     margin-top: -20px;
     }
 
-/* 只為目錄項目添加動畫效果 */
-.VPDocAsideOutline .outline-link {
-  transition: all 0.2s ease-out;
-  opacity: 0.8;
-  cursor: pointer;
-  border-radius: 4px;
-  padding: 4px 8px;
-  margin: -4px -8px;
-  position: relative;
-}
-
-/* 為目錄項目添加懸停效果 */
-.VPDocAsideOutline .outline-link:hover {
-  opacity: 1;
-  transform: translateX(2px);
-  color: var(--vp-c-brand-1);
-  background-color: var(--vp-c-bg-soft);
-}
-
+/* 手機版選單背景：與導航欄同步 */
 .VPNavScreen {
-  background: rgba(0,0,0,0.0) !important;
-  backdrop-filter: blur(18px) !important;
-  -webkit-backdrop-filter: blur(18px) !important;
-  z-index: var(--vp-z-index-nav) !important;
-  position: relative;
+  background-color: transparent !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+}
+
+/* 非首頁時，使用 VitePress 預設的導航欄背景色 */
+body:not(:has(.VPHome)) .VPNavScreen {
+  background-color: var(--vp-nav-bg-color) !important;
 }
 
 .VPNavScreen .VPNavScreenMenu .VPNavScreenMenuLink {
@@ -1153,12 +1129,4 @@ body.halloween-theme h6 {
   text-shadow: 2px 2px 4px #000;
 }
 
-@media (max-width: 1200px) {
-  /* 移除手機版選單黑色透明遮罩 */
-  .VPNavScreen::before {
-    background: none !important;
-    backdrop-filter: blur(18px) !important;
-    -webkit-backdrop-filter: blur(18px) !important;
-    opacity: 1 !important;
-  }
-}
+/* 已移除舊的 @media 規則，避免與新的 ::before 銜接層衝突 */
