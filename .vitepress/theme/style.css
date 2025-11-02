@@ -3,40 +3,59 @@
  * https://github.com/vuejs/vitepress/blob/main/src/client/theme-default/styles/vars.css
  */
 
-/**
- * Colors
- *
- * Each colors have exact same color scale system with 3 levels of solid
- * colors with different brightness, and 1 soft color.
- *
- * - `XXX-1`: The most solid color used mainly for colored text. It must
- *   satisfy the contrast ratio against when used on top of `XXX-soft`.
- *
- * - `XXX-2`: The color used mainly for hover state of the button.
- *
- * - `XXX-3`: The color for solid background, such as bg color of the button.
- *   It must satisfy the contrast ratio with pure white (#ffffff) text on
- *   top of it.
- *
- * - `XXX-soft`: The color used for subtle background such as custom container
- *   or badges. It must satisfy the contrast ratio when putting `XXX-1` colors
- *   on top of it.
- *
- * - `default`: The color used purely for subtle indication without any
- *   special meanings attached to it such as bg color for menu hover state.
- *
- * - `brand`: Used for primary brand colors, such as link text, button with
- *   brand theme, etc.
- *
- * - `tip`: Used to indicate useful information. The default theme uses the
- *   brand color for this by default.
- *
- * - `warning`: Used to indicate warning to the users. Used in custom
- *   container, badges, etc.
- *
- * - `danger`: Used to show error, or dangerous message to the users. Used
- *   in custom container, badges, etc.
- * -------------------------------------------------------------------------- */
+/* ==================== 深色/淺色模式切換動畫 ==================== */
+:root {
+  color-scheme: light dark;
+}
+
+/* 切換到淺色模式時：新背景立即顯示（不淡入），避免白色閃現 */
+body:has(.theme-transition-bg-container[data-direction="to-light"])::before,
+body:has(.theme-transition-bg-container[data-direction="to-light"])::after {
+  opacity: 1 !important;
+  visibility: visible !important;
+  z-index: -2 !important; /* 確保在舊背景下方 */
+}
+
+/* 為舊背景容器設定更高的 z-index，確保在新背景上方滑動 */
+.theme-transition-bg-container[data-direction="to-light"] {
+  z-index: -1 !important;
+}
+
+/* 動畫進行中：延遲所有顏色變化，讓它們跟著背景推進才改變 */
+body:has(.theme-transition-bg-container) *:not(.theme-transition-bg-container):not(.theme-transition-bg-container *) {
+  transition: color 0.8s ease 0.4s,
+              background-color 0.8s ease 0.4s,
+              border-color 0.8s ease 0.4s,
+              box-shadow 0.8s ease 0.4s,
+              background 0.8s ease 0.4s !important;
+}
+
+/* 主題切換時：禁用 fadeInUp 動畫，避免與切換動畫衝突 */
+body:has(.theme-transition-bg-container) .VPDoc .vp-doc * {
+  animation: none !important;
+}
+
+/* 文章內頁動畫進行中：延遲所有顏色變化 */
+body:has(.theme-transition-overlay) *:not(.theme-transition-overlay) {
+  transition: color 0.8s ease 0.3s,
+              background-color 0.8s ease 0.3s,
+              border-color 0.8s ease 0.3s,
+              box-shadow 0.8s ease 0.3s,
+              background 0.8s ease 0.3s !important;
+}
+
+/* 文章內頁動畫時：禁用 fadeInUp 動畫 */
+body:has(.theme-transition-overlay) .VPDoc .vp-doc * {
+  animation: none !important;
+}
+
+/* 沒有動畫時：正常的顏色過渡 */
+html * {
+  transition: color 0.3s ease,
+              background-color 0.3s ease,
+              border-color 0.3s ease, 
+              box-shadow 0.3s ease;
+}
 
 /* ========== HyperOS 官方背景效果（來自 BgEffectDataManager）========== */
 /* 首頁 body 設置背景 - 覆蓋整個頁面包括頁腳 */

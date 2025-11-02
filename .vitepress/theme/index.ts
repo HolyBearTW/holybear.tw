@@ -29,6 +29,172 @@ export default {
         forceBlogClass();
         setInterval(forceBlogClass, 200);
 
+        // ==================== 深色/淺色模式切換動畫效果 ====================
+        if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+            let isAnimating = false;
+            
+            // 攔截主題切換按鈕的點擊事件
+            document.addEventListener('click', (e: MouseEvent) => {
+                const target = e.target as HTMLElement;
+                const switchBtn = target?.closest('.VPSwitchAppearance');
+                
+                if (switchBtn && !isAnimating) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    isAnimating = true;
+                    
+                    // 檢查是否在首頁
+                    const isHomePage = document.querySelector('.VPHome') !== null;
+                    
+                    // 獲取當前主題
+                    const isDark = document.documentElement.classList.contains('dark');
+                    const direction = isDark ? 'to-light' : 'to-dark';
+                    
+                    // === 文章內頁的動畫邏輯 ===
+                    if (!isHomePage) {
+                        // 獲取當前頁面背景色
+                        const currentBgColor = isDark 
+                            ? window.getComputedStyle(document.body).backgroundColor 
+                            : window.getComputedStyle(document.body).backgroundColor;
+                        
+                        // 創建全屏遮罩
+                        const overlay = document.createElement('div');
+                        overlay.className = 'theme-transition-overlay';
+                        overlay.setAttribute('data-direction', direction);
+                        overlay.style.cssText = `
+                            position: fixed;
+                            top: 0;
+                            left: 0;
+                            right: 0;
+                            bottom: 0;
+                            width: 100%;
+                            height: 100%;
+                            background: ${currentBgColor};
+                            z-index: 0;
+                            pointer-events: none;
+                            transition: transform 1s cubic-bezier(0.4, 0, 0.2, 1);
+                        `;
+                        
+                        // 插入到 body 的第一個子元素之前，確保在內容下方
+                        document.body.insertBefore(overlay, document.body.firstChild);
+                        
+                        // 立即切換主題
+                        if (isDark) {
+                            document.documentElement.classList.remove('dark');
+                        } else {
+                            document.documentElement.classList.add('dark');
+                        }
+                        
+                        // 觸發滑出動畫
+                        requestAnimationFrame(() => {
+                            if (direction === 'to-light') {
+                                overlay.style.transform = 'translateY(-100%)';
+                            } else {
+                                overlay.style.transform = 'translateY(100%)';
+                            }
+                        });
+                        
+                        // 清理
+                        setTimeout(() => {
+                            overlay.remove();
+                            isAnimating = false;
+                        }, 1000);
+                        
+                        return;
+                    }
+                    
+                    // === 首頁的背景推開動畫邏輯 ===
+                    
+                    // ⚠️ 重要：在切換主題之前先捕獲當前背景樣式
+                    const beforeStyle = window.getComputedStyle(document.body, '::before');
+                    const afterStyle = window.getComputedStyle(document.body, '::after');
+                    
+                    // 創建容器來包裝兩層背景
+                    const oldBgContainer = document.createElement('div');
+                    oldBgContainer.className = 'theme-transition-bg-container';
+                    oldBgContainer.setAttribute('data-direction', direction);
+                    oldBgContainer.style.cssText = `
+                        position: fixed;
+                        top: -10%;
+                        left: -10%;
+                        right: -10%;
+                        bottom: -10%;
+                        width: 120%;
+                        height: 120%;
+                        z-index: -1;
+                        pointer-events: none;
+                        transition: transform 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+                        overflow: hidden;
+                    `;
+                    
+                    // 創建 ::before 層的副本
+                    const oldBg = document.createElement('div');
+                    oldBg.style.cssText = `
+                        position: absolute !important;
+                        top: 0 !important;
+                        left: 0 !important;
+                        right: 0 !important;
+                        bottom: 0 !important;
+                        background: ${beforeStyle.background} !important;
+                        background-size: ${beforeStyle.backgroundSize} !important;
+                        background-position: ${beforeStyle.backgroundPosition} !important;
+                        filter: ${beforeStyle.filter} !important;
+                        animation: ${beforeStyle.animation} !important;
+                        opacity: 1 !important;
+                        transition: none !important;
+                    `;
+                    oldBgContainer.appendChild(oldBg);
+                    
+                    // 創建 ::after 層的副本（如果有的話）
+                    const afterBg = afterStyle.background;
+                    if (afterBg && afterBg !== 'none' && afterBg !== 'rgba(0, 0, 0, 0)') {
+                        const oldBgAfter = document.createElement('div');
+                        oldBgAfter.style.cssText = `
+                            position: absolute !important;
+                            top: 0 !important;
+                            left: 0 !important;
+                            right: 0 !important;
+                            bottom: 0 !important;
+                            background: ${afterStyle.background} !important;
+                            background-size: ${afterStyle.backgroundSize} !important;
+                            background-position: ${afterStyle.backgroundPosition} !important;
+                            filter: ${afterStyle.filter} !important;
+                            mix-blend-mode: ${afterStyle.mixBlendMode} !important;
+                            opacity: ${afterStyle.opacity} !important;
+                            animation: ${afterStyle.animation} !important;
+                            transition: none !important;
+                        `;
+                        oldBgContainer.appendChild(oldBgAfter);
+                    }
+                    
+                    // 插入到 body 的第一個子元素之前，與 ::before 同層級
+                    document.body.insertBefore(oldBgContainer, document.body.firstChild);
+                    
+                    // 立即切換主題（讓新背景在下方）
+                    if (isDark) {
+                        document.documentElement.classList.remove('dark');
+                    } else {
+                        document.documentElement.classList.add('dark');
+                    }
+                    
+                    // 觸發滑出動畫
+                    requestAnimationFrame(() => {
+                        if (direction === 'to-light') {
+                            oldBgContainer.style.transform = 'translateY(-100%)';
+                        } else {
+                            oldBgContainer.style.transform = 'translateY(100%)';
+                        }
+                    });
+                    
+                    // 動畫結束後清理
+                    setTimeout(() => {
+                        oldBgContainer.remove();
+                        isAnimating = false;
+                    }, 1500);
+                }
+            }, true);
+        }
+
         // --- 其餘原本功能 ---
         let lastContent: string | null = null;
         let hoverTimer: NodeJS.Timeout | null = null;
