@@ -998,7 +998,7 @@ html {
 }
 
 .VPNavScreen {
-  background: rgba(0,0,0,0.25) !important;
+  background: rgba(0,0,0,0.0) !important;
   backdrop-filter: blur(18px) !important;
   -webkit-backdrop-filter: blur(18px) !important;
   z-index: var(--vp-z-index-nav) !important;
