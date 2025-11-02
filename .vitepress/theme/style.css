@@ -21,6 +21,7 @@ body:has(.theme-transition-bg-container[data-direction="to-light"])::after {
   z-index: -1 !important;
 }
 
+/* ========== 首頁主題切換動畫 ========== */
 /* 動畫進行中：延遲所有顏色變化，讓它們跟著背景推進才改變 */
 body:has(.theme-transition-bg-container) *:not(.theme-transition-bg-container):not(.theme-transition-bg-container *) {
   transition: color 0.8s ease 0.4s,
@@ -30,22 +31,97 @@ body:has(.theme-transition-bg-container) *:not(.theme-transition-bg-container):n
               background 0.8s ease 0.4s !important;
 }
 
-/* 主題切換時：禁用 fadeInUp 動畫，避免與切換動畫衝突 */
+/* ========== 文章內頁主題切換動畫 ========== */
+/* 動畫進行中：延遲主內容區的顏色變化 */
+html body:has(.theme-transition-overlay) *:not(.theme-transition-overlay):not(.VPNav):not(.VPNav *):not(.VPNavBar):not(.VPNavBar *):not(.VPLocalNav):not(.VPLocalNav *):not(.VPSidebar):not(.VPSidebar *):not(aside):not(aside *) {
+  transition-property: color, background-color, border-color, box-shadow, background !important;
+  transition-duration: 0.8s !important;
+  transition-timing-function: ease !important;
+  transition-delay: 0.3s !important;
+}
+
+/* 導航欄和側邊欄：文字顏色延遲改變，但背景立即透明 */
+html body:has(.theme-transition-overlay) .VPNav,
+html body:has(.theme-transition-overlay) .VPNav *:not(.curtain):not(.curtain *),
+html body:has(.theme-transition-overlay) .VPNavBar,
+html body:has(.theme-transition-overlay) .VPNavBar *,
+html body:has(.theme-transition-overlay) .VPNavBar::before,
+html body:has(.theme-transition-overlay) .VPNavBar::after,
+html body:has(.theme-transition-overlay) .VPLocalNav,
+html body:has(.theme-transition-overlay) .VPLocalNav *,
+html body:has(.theme-transition-overlay) .VPSidebar:not(.curtain),
+html body:has(.theme-transition-overlay) .VPSidebar *:not(.curtain):not(.curtain *),
+html body:has(.theme-transition-overlay) aside:not(.curtain),
+html body:has(.theme-transition-overlay) aside *:not(.curtain):not(.curtain *),
+html body:has(.theme-transition-overlay) .divider,
+html body:has(.theme-transition-overlay) .divider-line {
+  transition: color 0.8s ease 0.3s !important;
+}
+
+/* 側邊欄：所有元素背景立即變透明，讓後面的推開動畫可見 */
+html body:has(.theme-transition-overlay) .VPSidebar,
+html body:has(.theme-transition-overlay) .VPSidebar *,
+html body:has(.theme-transition-overlay) .VPSidebar > *,
+html body:has(.theme-transition-overlay) .VPSidebar nav,
+html body:has(.theme-transition-overlay) .VPSidebar .curtain,
+html body:has(.theme-transition-overlay) .VPSidebar .title,
+html body:has(.theme-transition-overlay) .VPSidebar .nav,
+html body:has(.theme-transition-overlay) .VPSidebar .curtain[data-v-8f603b0e],
+html body:has(.theme-transition-overlay) .VPSidebar .title[data-v-bf706f89],
+html body:has(.theme-transition-overlay) aside,
+html body:has(.theme-transition-overlay) aside *,
+html body:has(.theme-transition-overlay) aside > *,
+html body:has(.theme-transition-overlay) aside nav,
+html body:has(.theme-transition-overlay) aside .curtain,
+html body:has(.theme-transition-overlay) aside .title,
+html body:has(.theme-transition-overlay) aside .nav,
+html body:has(.theme-transition-overlay) aside .curtain[data-v-8f603b0e],
+html body:has(.theme-transition-overlay) aside .title[data-v-bf706f89] {
+  background-color: transparent !important;
+  background: transparent !important;
+  transition: none !important;
+  border-bottom-color: transparent !important;
+}
+
+/* 動畫進行時：隱藏所有分隔線和邊框元素，避免顏色閃變 */
+html body:has(.theme-transition-overlay) .divider,
+html body:has(.theme-transition-overlay) .divider-line,
+html body:has(.theme-transition-overlay) .VPNavBar .divider,
+html body:has(.theme-transition-overlay) .VPNavBar .divider-line,
+html body:has(.theme-transition-overlay) .VPLocalNav .divider-line,
+html body:has(.theme-transition-overlay) .VPSidebar .group + .group::before,
+html body:has(.theme-transition-overlay) .VPSidebar .divider,
+html body:has(.theme-transition-overlay) .VPSidebar .title,
+html body:has(.theme-transition-overlay) .VPSidebar .title::after,
+html body:has(.theme-transition-overlay) .VPSidebar .title::before,
+html body:has(.theme-transition-overlay) .VPSidebar .curtain,
+html body:has(.theme-transition-overlay) .VPSidebar .curtain::after,
+html body:has(.theme-transition-overlay) .VPSidebar .curtain::before,
+html body:has(.theme-transition-overlay) .VPSidebar nav::after,
+html body:has(.theme-transition-overlay) .VPSidebar nav::before,
+html body:has(.theme-transition-overlay) .VPSidebar > *::after,
+html body:has(.theme-transition-overlay) .VPSidebar > *::before,
+html body:has(.theme-transition-overlay) aside .divider,
+html body:has(.theme-transition-overlay) aside .title,
+html body:has(.theme-transition-overlay) aside .title::after,
+html body:has(.theme-transition-overlay) aside .title::before,
+html body:has(.theme-transition-overlay) aside .curtain,
+html body:has(.theme-transition-overlay) aside .curtain::after,
+html body:has(.theme-transition-overlay) aside .curtain::before,
+html body:has(.theme-transition-overlay) aside nav::after,
+html body:has(.theme-transition-overlay) aside nav::before,
+html body:has(.theme-transition-overlay) aside > *::after,
+html body:has(.theme-transition-overlay) aside > *::before,
+.hide-sidebar-borders::after,
+.hide-sidebar-borders::before {
+  opacity: 0 !important;
+  border-color: transparent !important;
+  border-bottom-color: transparent !important;
+}
+
+/* 動畫進行時：禁用 fadeInUp 動畫，避免與主題切換動畫衝突 */
+body:has(.theme-transition-overlay) .VPDoc .vp-doc *,
 body:has(.theme-transition-bg-container) .VPDoc .vp-doc * {
-  animation: none !important;
-}
-
-/* 文章內頁動畫進行中：延遲所有顏色變化 */
-body:has(.theme-transition-overlay) *:not(.theme-transition-overlay) {
-  transition: color 0.8s ease 0.3s,
-              background-color 0.8s ease 0.3s,
-              border-color 0.8s ease 0.3s,
-              box-shadow 0.8s ease 0.3s,
-              background 0.8s ease 0.3s !important;
-}
-
-/* 文章內頁動畫時：禁用 fadeInUp 動畫 */
-body:has(.theme-transition-overlay) .VPDoc .vp-doc * {
   animation: none !important;
 }
 
@@ -118,6 +194,30 @@ body:has(.VPHome) .VPNavBar {
 body:has(.VPHome) .VPNavBar:not(.top) {
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+}
+
+/* 文章內頁的導航欄：使用與首頁相同的純模糊效果 */
+body:not(:has(.VPHome)) .VPNav {
+  background: transparent !important;
+  --vp-nav-bg-color: transparent !important;
+}
+
+body:not(:has(.VPHome)) .VPNavBar {
+  background: transparent !important;
+  background-color: transparent !important;
+  backdrop-filter: blur(12px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
+}
+
+/* 關鍵修正：.content-body 也需要模糊效果 */
+body:not(:has(.VPHome)) .VPNavBar .content-body,
+body:not(:has(.VPHome)) .VPNavBar:not(.home) .content-body,
+body:not(:has(.VPHome)) .VPNavBar:not(.top) .content-body,
+body:not(:has(.VPHome)) .VPNavBar:not(.home.top) .content-body {
+  background: transparent !important;
+  background-color: transparent !important;
+  backdrop-filter: blur(12px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
 }
 
 /* 確保首頁的內容容器背景透明 */
