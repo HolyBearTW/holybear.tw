@@ -423,7 +423,9 @@
         padding-bottom: 0;
         margin-bottom: 0;
         box-sizing: border-box;
-        background-color: var(--vp-c-bg);
+        background-color: transparent;
+        border: none;
+        box-shadow: none;
         z-index: 1;
     }
 
