@@ -630,19 +630,51 @@
   /* 手機版側邊欄選單項目對齊 */
   .VPSidebar .VPSidebarItem .link,
   .VPSidebar .VPSidebarItem .text {
-    margin-left: 0px !important;
+    margin-left: 0 !important;
   }
 }
 
 /* 側邊欄 group 分隔線樣式與對齊 - 只針對側邊欄,不影響主內容區 */
 .VPSidebar .group + .group {
-        border-top: 1px solid var(--vp-c-divider) !important;
-        padding-top: 8px !important;
-        margin-top: 8px !important;
-    }
+    border-top: 1px solid var(--vp-c-divider) !important;
+    padding-top: 8px !important;
+    margin-top: 8px !important;
+    /* 只有 group 裡沒有 VPLink link link 才加負 margin */
+    margin-left: -7px !important;
+    margin-right: -7px !important;
+}
 
-    section.VPSidebarItem.level-0 {
+/* VPLink link link 裡的 text 額外對齊 */
+.VPSidebar .group + .group .VPLink.link.link:has(.text) {
+    margin-left: 5px !important;
+    margin-right: 5px !important;
+}
+.VPSidebar .group + .group h2.text {
+    margin-left: 3px !important;
+    margin-right: 3px !important;
+}
+.group:first-of-type .VPSidebarItem.level-0 > .item > h2.text {
+    margin-left: -5px !important;
+    margin-right: -5px !important;
+}
+section.VPSidebarItem.level-0 {
         padding-bottom: 4px !important;
         padding-top: 0 !important;
+}
+
+@media (max-width: 1440px) {
+.VPSidebar .group + .group {
+    margin-left: 0 !important;  /* 手機版取消負數對齊 */
+    margin-right: 0 !important; /* 手機版取消負數對齊 */
     }
+.VPSidebar .group  + .group .VPLink.link.link:has(.text),
+.VPSidebar .group + .group h2.text {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    }
+.group:first-of-type .VPSidebarItem.level-0 > .item > h2.text {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    }
+}
 </style>
