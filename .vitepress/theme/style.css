@@ -1213,4 +1213,30 @@ body.halloween-theme h6 {
   text-shadow: 2px 2px 4px #000;
 }
 
-/* 已移除舊的 @media 規則，避免與新的 ::before 銜接層衝突 */
+/* 修正側邊欄選單項目對齊 - 往左移動 */
+.VPSidebar .VPSidebarItem .link,
+.VPSidebar .VPSidebarItem .text {
+  margin-left: -3px !important;  /* 負數往左移，正數往右移 */
+}
+
+/* 修正側邊欄 group 分隔線對齊 - 全域規則 */
+.VPSidebar .group + .group {
+  margin-left: -3px !important;
+  margin-right: -3px !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+@media (max-width: 1440px) {
+  /* 手機版側邊欄選單項目對齊 - 往左移動 */
+  .VPSidebar .VPSidebarItem .link,
+  .VPSidebar .VPSidebarItem .text {
+    margin-left: 0px !important;
+  }
+
+  /* 手機版側邊欄 group 分隔線對齊 - 全域規則 */
+  .VPSidebar .group + .group {
+    margin-left: 0px !important;
+    margin-right: 0px !important;
+  }
+}

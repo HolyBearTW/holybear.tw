@@ -583,6 +583,10 @@
         border-top: 1px solid var(--vp-c-divider) !important;
         padding-top: 8px !important;
         margin-top: 8px !important;
+        margin-left: -3px !important;
+        margin-right: -3px !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
     }
 
     section.VPSidebarItem.level-0 {
