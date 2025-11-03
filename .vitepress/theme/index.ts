@@ -13,6 +13,16 @@ export default {
         // --- 您原本的所有其他程式碼都保留 ---
         if (typeof document === 'undefined') return; // SSR 階段直接跳過
 
+        // 確保預設為深色模式（首次訪問時）
+        if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+            const savedTheme = localStorage.getItem('vitepress-theme-appearance');
+            if (!savedTheme) {
+                // 首次訪問,設定為深色模式
+                localStorage.setItem('vitepress-theme-appearance', 'dark');
+                document.documentElement.classList.add('dark');
+            }
+        }
+
         // 恢復 is-blog-page 判斷，只加在文章內頁（不是首頁、index-new等列表頁）
         function isBlogPage(path: string) {
             // 匹配 /blog/xxxx、/en/blog/xxxx、/docs/xxxx 文章頁（不是列表頁）
@@ -119,36 +129,28 @@ export default {
                         // 插入到 body 的第一個子元素之前（在內容下方）
                         document.body.insertBefore(oldBgContainer, document.body.firstChild);
                         
-                        // 強制隱藏側邊欄頂部區域的背景和分隔線
-                        if (sidebar) {
-                            const sidebarTopElements = sidebar.querySelectorAll('.title, .curtain, nav, .nav, [class*="title"], [class*="curtain"]');
-                            sidebarTopElements.forEach(el => {
-                                if (el instanceof HTMLElement) {
-                                    el.style.setProperty('background-color', 'transparent', 'important');
-                                    el.style.setProperty('background', 'transparent', 'important');
-                                    el.style.setProperty('transition', 'none', 'important');
-                                    el.style.setProperty('border-bottom-color', 'transparent', 'important');
-                                }
-                            });
-                            
-                            // 隱藏所有可能的分隔線偽元素（通過父元素）
-                            const allSidebarElements = sidebar.querySelectorAll('*');
-                            allSidebarElements.forEach(el => {
-                                if (el instanceof HTMLElement) {
-                                    const computedStyle = window.getComputedStyle(el, '::after');
-                                    const computedStyleBefore = window.getComputedStyle(el, '::before');
-                                    if (computedStyle.borderBottomWidth !== '0px' || computedStyleBefore.borderBottomWidth !== '0px') {
-                                        el.classList.add('hide-sidebar-borders');
-                                    }
-                                }
-                            });
+                        // 強制導航欄立即變透明並禁用過渡效果
+                        const nav = document.querySelector('.VPNav') as HTMLElement;
+                        const navBar = document.querySelector('.VPNavBar') as HTMLElement;
+                        if (nav) {
+                            nav.style.setProperty('transition', 'none', 'important');
+                            nav.style.setProperty('background-color', 'transparent', 'important');
+                        }
+                        if (navBar) {
+                            navBar.style.setProperty('transition', 'none', 'important');
+                            navBar.style.setProperty('background-color', 'transparent', 'important');
+                            navBar.style.setProperty('border-bottom-color', 'transparent', 'important');
                         }
                         
-                        // 立即切換主題
+
+                        
+                        // 立即切換主題並保存到 localStorage
                         if (isDark) {
                             document.documentElement.classList.remove('dark');
+                            localStorage.setItem('vitepress-theme-appearance', 'light');
                         } else {
                             document.documentElement.classList.add('dark');
+                            localStorage.setItem('vitepress-theme-appearance', 'dark');
                         }
                         
                         // 觸發滑出動畫
@@ -163,6 +165,20 @@ export default {
                         // 清理
                         setTimeout(() => {
                             oldBgContainer.remove();
+                            
+                            // 恢復導航欄的正常樣式
+                            const nav = document.querySelector('.VPNav') as HTMLElement;
+                            const navBar = document.querySelector('.VPNavBar') as HTMLElement;
+                            if (nav) {
+                                nav.style.removeProperty('transition');
+                                nav.style.removeProperty('background-color');
+                            }
+                            if (navBar) {
+                                navBar.style.removeProperty('transition');
+                                navBar.style.removeProperty('background-color');
+                                navBar.style.removeProperty('border-bottom-color');
+                            }
+                            
                             isAnimating = false;
                         }, 1500);
                         
@@ -236,11 +252,13 @@ export default {
                     // 插入到 body 的第一個子元素之前，與 ::before 同層級
                     document.body.insertBefore(oldBgContainer, document.body.firstChild);
                     
-                    // 立即切換主題（讓新背景在下方）
+                    // 立即切換主題並保存到 localStorage（讓新背景在下方）
                     if (isDark) {
                         document.documentElement.classList.remove('dark');
+                        localStorage.setItem('vitepress-theme-appearance', 'light');
                     } else {
                         document.documentElement.classList.add('dark');
+                        localStorage.setItem('vitepress-theme-appearance', 'dark');
                     }
                     
                     // 觸發滑出動畫

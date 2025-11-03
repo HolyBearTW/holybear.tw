@@ -8,6 +8,15 @@
   color-scheme: light dark;
 }
 
+/* 在動畫期間只針對側邊欄和導航欄覆蓋 divider 顏色變數 */
+html body:has(.theme-transition-overlay) .VPSidebar,
+html body:has(.theme-transition-overlay) aside,
+html body:has(.theme-transition-overlay) .VPNav,
+html body:has(.theme-transition-overlay) .VPNavBar,
+html body:has(.theme-transition-overlay) .VPLocalNav {
+  --vp-c-divider: transparent !important;
+}
+
 /* 切換到淺色模式時：新背景立即顯示（不淡入），避免白色閃現 */
 body:has(.theme-transition-bg-container[data-direction="to-light"])::before,
 body:has(.theme-transition-bg-container[data-direction="to-light"])::after {
@@ -58,65 +67,32 @@ html body:has(.theme-transition-overlay) .divider-line {
   transition: color 0.8s ease 0.3s !important;
 }
 
-/* 側邊欄：所有元素背景立即變透明，讓後面的推開動畫可見 */
-html body:has(.theme-transition-overlay) .VPSidebar,
-html body:has(.theme-transition-overlay) .VPSidebar *,
-html body:has(.theme-transition-overlay) .VPSidebar > *,
-html body:has(.theme-transition-overlay) .VPSidebar nav,
-html body:has(.theme-transition-overlay) .VPSidebar .curtain,
-html body:has(.theme-transition-overlay) .VPSidebar .title,
-html body:has(.theme-transition-overlay) .VPSidebar .nav,
-html body:has(.theme-transition-overlay) .VPSidebar .curtain[data-v-8f603b0e],
-html body:has(.theme-transition-overlay) .VPSidebar .title[data-v-bf706f89],
-html body:has(.theme-transition-overlay) aside,
-html body:has(.theme-transition-overlay) aside *,
-html body:has(.theme-transition-overlay) aside > *,
-html body:has(.theme-transition-overlay) aside nav,
-html body:has(.theme-transition-overlay) aside .curtain,
-html body:has(.theme-transition-overlay) aside .title,
-html body:has(.theme-transition-overlay) aside .nav,
-html body:has(.theme-transition-overlay) aside .curtain[data-v-8f603b0e],
-html body:has(.theme-transition-overlay) aside .title[data-v-bf706f89] {
+/* VPLocalNav：背景立即變透明，讓後面的推開動畫可見 */
+html body:has(.theme-transition-overlay) .VPLocalNav,
+html body:has(.theme-transition-overlay) .VPLocalNav *,
+html body:has(.theme-transition-overlay) .VPLocalNav::before,
+html body:has(.theme-transition-overlay) .VPLocalNav::after {
   background-color: transparent !important;
   background: transparent !important;
   transition: none !important;
   border-bottom-color: transparent !important;
+  border-color: transparent !important;
 }
 
-/* 動畫進行時：隱藏所有分隔線和邊框元素，避免顏色閃變 */
+/* 側邊欄：所有元素背景立即變透明，讓後面的推開動畫可見 */
+html body:has(.theme-transition-overlay) .VPSidebar,
+html body:has(.theme-transition-overlay) .VPSidebar *,
+html body:has(.theme-transition-overlay) aside,
+html body:has(.theme-transition-overlay) aside * {
+  background-color: transparent !important;
+  background: transparent !important;
+  transition: none !important;
+}
+
+/* 動畫進行時：隱藏所有分隔線元素，避免顏色閃變 */
 html body:has(.theme-transition-overlay) .divider,
-html body:has(.theme-transition-overlay) .divider-line,
-html body:has(.theme-transition-overlay) .VPNavBar .divider,
-html body:has(.theme-transition-overlay) .VPNavBar .divider-line,
-html body:has(.theme-transition-overlay) .VPLocalNav .divider-line,
-html body:has(.theme-transition-overlay) .VPSidebar .group + .group::before,
-html body:has(.theme-transition-overlay) .VPSidebar .divider,
-html body:has(.theme-transition-overlay) .VPSidebar .title,
-html body:has(.theme-transition-overlay) .VPSidebar .title::after,
-html body:has(.theme-transition-overlay) .VPSidebar .title::before,
-html body:has(.theme-transition-overlay) .VPSidebar .curtain,
-html body:has(.theme-transition-overlay) .VPSidebar .curtain::after,
-html body:has(.theme-transition-overlay) .VPSidebar .curtain::before,
-html body:has(.theme-transition-overlay) .VPSidebar nav::after,
-html body:has(.theme-transition-overlay) .VPSidebar nav::before,
-html body:has(.theme-transition-overlay) .VPSidebar > *::after,
-html body:has(.theme-transition-overlay) .VPSidebar > *::before,
-html body:has(.theme-transition-overlay) aside .divider,
-html body:has(.theme-transition-overlay) aside .title,
-html body:has(.theme-transition-overlay) aside .title::after,
-html body:has(.theme-transition-overlay) aside .title::before,
-html body:has(.theme-transition-overlay) aside .curtain,
-html body:has(.theme-transition-overlay) aside .curtain::after,
-html body:has(.theme-transition-overlay) aside .curtain::before,
-html body:has(.theme-transition-overlay) aside nav::after,
-html body:has(.theme-transition-overlay) aside nav::before,
-html body:has(.theme-transition-overlay) aside > *::after,
-html body:has(.theme-transition-overlay) aside > *::before,
-.hide-sidebar-borders::after,
-.hide-sidebar-borders::before {
+html body:has(.theme-transition-overlay) .divider-line {
   opacity: 0 !important;
-  border-color: transparent !important;
-  border-bottom-color: transparent !important;
 }
 
 /* 動畫進行時：禁用 fadeInUp 動畫，避免與主題切換動畫衝突 */
@@ -214,6 +190,14 @@ body:not(:has(.VPHome)) .VPNavBar .content-body,
 body:not(:has(.VPHome)) .VPNavBar:not(.home) .content-body,
 body:not(:has(.VPHome)) .VPNavBar:not(.top) .content-body,
 body:not(:has(.VPHome)) .VPNavBar:not(.home.top) .content-body {
+  background: transparent !important;
+  background-color: transparent !important;
+  backdrop-filter: blur(12px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
+}
+
+/* VPLocalNav 高斯模糊效果 */
+body:not(:has(.VPHome)) .VPLocalNav {
   background: transparent !important;
   background-color: transparent !important;
   backdrop-filter: blur(12px) saturate(180%) !important;
