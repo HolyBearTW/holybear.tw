@@ -578,23 +578,6 @@
     }
 </style>
 
-<style>
-    .group + .group[data-v-a84b7c21] {
-        border-top: 1px solid var(--vp-c-divider) !important;
-        padding-top: 8px !important;
-        margin-top: 8px !important;
-        margin-left: -3px !important;
-        margin-right: -3px !important;
-        padding-left: 0 !important;
-        padding-right: 0 !important;
-    }
-
-    section.VPSidebarItem.level-0 {
-        padding-bottom: 4px !important;
-        padding-top: 0 !important;
-    }
-</style>
-
 <style scoped>
     .meta-content-wrapper, .skeleton-wrapper, .author-inline {
         height: 28px;
@@ -633,5 +616,33 @@
         border-bottom: 1px dashed var(--vp-c-divider);
         margin-bottom: 0.5rem;
         margin-top: 0;
+    }
+</style>
+
+<style>
+/* 修正側邊欄選單項目對齊 */
+.VPSidebar .VPSidebarItem .link,
+.VPSidebar .VPSidebarItem .text {
+  margin-left: -3px !important;  /* 負數往左移，正數往右移 */
+}
+
+@media (max-width: 1440px) {
+  /* 手機版側邊欄選單項目對齊 */
+  .VPSidebar .VPSidebarItem .link,
+  .VPSidebar .VPSidebarItem .text {
+    margin-left: 0px !important;
+  }
+}
+
+/* 側邊欄 group 分隔線樣式與對齊 - 只針對側邊欄,不影響主內容區 */
+.VPSidebar .group + .group {
+        border-top: 1px solid var(--vp-c-divider) !important;
+        padding-top: 8px !important;
+        margin-top: 8px !important;
+    }
+
+    section.VPSidebarItem.level-0 {
+        padding-bottom: 4px !important;
+        padding-top: 0 !important;
     }
 </style>
