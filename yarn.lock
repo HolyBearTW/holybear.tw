@@ -231,10 +231,12 @@
   resolved "https://registry.yarnpkg.com/@docsearch/css/-/css-4.2.0.tgz#473bb4c51f4b2b037a71f423e569907ab19e6d72"
   integrity sha512-65KU9Fw5fGsPPPlgIghonMcndyx1bszzrDQYLfierN+Ha29yotMHzVS94bPkZS6On9LS8dE4qmW4P/fGjtCf/g==
 
-"@docsearch/js@^4.0.0", "@docsearch/js@^4.0.0-beta.7":
-  version "4.2.0"
-  resolved "https://registry.yarnpkg.com/@docsearch/js/-/js-4.2.0.tgz#66f08161102effaf60c0197be9bb74b81fbfb176"
-  integrity sha512-KBHVPO29QiGUFJYeAqxW0oXtGf/aghNmRrIRPT4/28JAefqoCkNn/ZM/jeQ7fHjl0KNM6C+KlLVYjwyz6lNZnA==
+"@docsearch/js@^4.0.0-beta.7", "@docsearch/js@^4.3.1":
+  version "4.3.1"
+  resolved "https://registry.yarnpkg.com/@docsearch/js/-/js-4.3.1.tgz#ce1e7f17316b1a1e86844a843f8651778d3f2b41"
+  integrity sha512-Xi2OztaQqTnNj0HGTcS/RtoXe4ASOgKRuH8hAKKqISqv13oUxpVBIBUHpvPIU4qgmJRZN2gA2gdjdn+VuvrvRQ==
+  dependencies:
+    htm "3.1.1"
 
 "@esbuild/aix-ppc64@0.25.11":
   version "0.25.11"
@@ -1591,7 +1593,7 @@ hookable@^5.5.3:
   resolved "https://registry.yarnpkg.com/hookable/-/hookable-5.5.3.tgz#6cfc358984a1ef991e2518cb9ed4a778bbd3215d"
   integrity sha512-Yc+BQe8SvoXH1643Qez1zqLRmbA5rCL+sSmk6TVos0LWVfNIB7PGncdlId77WzLGSIB5KaWgTaNTs2lNVEI6VQ==
 
-htm@^3.0.0, htm@^3.1.1:
+htm@3.1.1, htm@^3.0.0, htm@^3.1.1:
   version "3.1.1"
   resolved "https://registry.yarnpkg.com/htm/-/htm-3.1.1.tgz#49266582be0dc66ed2235d5ea892307cc0c24b78"
   integrity sha512-983Vyg8NwUE7JkZ6NmOqpCZ+sh1bKv2iYTlUkzlWmA5JD2acKoxd4KVxbMmxX/85mtfdnDmTFoNKcg5DGAvxNQ==
