@@ -1,6 +1,6 @@
 ---
 title: 作品集
-layout_type: custom_header
+layout_type: blog
 ---
 
 ::: tip

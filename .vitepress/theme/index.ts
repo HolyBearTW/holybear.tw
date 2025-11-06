@@ -1,11 +1,15 @@
+
 import MyCustomLayout from './MyCustomLayout.vue';
 import './style.css';
 import OpenCCConverter from '../components/OpenCCConverter.vue';
 import Spoiler from './Spoiler.vue';
+import GlobalAnimations from './GlobalAnimations.vue';
 
 export default {
     Layout: MyCustomLayout,
     enhanceApp({ router, app }) {
+        // 全域註冊動畫 keyframes 元件，供 Layout.vue 使用
+        app.component('GlobalAnimations', GlobalAnimations);
         // ✅ 就是這一行！在此註冊您的元件
         app.component('OpenCCConverter', OpenCCConverter);
         app.component('Spoiler', Spoiler);
@@ -322,17 +326,7 @@ export default {
                 setHalloweenTheme(isHalloweenPeriod());
             }, 60000);
 
-        function replayIfChanged() {
-            const doc = document.querySelector('.vp-doc') as HTMLElement;
-            if (!doc) return;
-            const current = doc.innerHTML;
-            if (current !== lastContent) {
-                doc.classList.remove('fade-in-up');
-                void (doc as any).offsetWidth;
-                doc.classList.add('fade-in-up');
-                lastContent = current;
-            }
-        }
+
 
         function globalHoverDelegate(e) {
             const link = e.target.closest('.outline-link');
@@ -502,24 +496,19 @@ export default {
         let lastSyncedUrl = updateCanonicalAndOg();
 
         // 首次進站
-        replayIfChanged();
+    // 移除 replayIfChanged，避免動畫重複觸發
         setupGlobalOutlineHoverScroll();
         updateCanonicalAndOg();
 
-        // 輪詢，每 200ms 強制同步一次
-        setInterval(() => {
-            replayIfChanged();
-        }, 200);
+        // 已移除 replayIfChanged 輪詢
 
         // 監聽 VitePress 事件與路由
         window.addEventListener('DOMContentLoaded', () => {
-            replayIfChanged();
             setupGlobalOutlineHoverScroll();
             updateCanonicalAndOg();
         });
         window.addEventListener('vitepress:pageview', () => {
             setTimeout(() => {
-                replayIfChanged();
                 setupGlobalOutlineHoverScroll();
                 lastSyncedUrl = updateCanonicalAndOg();
             }, 80);
@@ -527,7 +516,6 @@ export default {
         if (router && typeof router.onAfterRouteChanged === 'function') {
             router.onAfterRouteChanged(() => {
                 setTimeout(() => {
-                    replayIfChanged();
                     setupGlobalOutlineHoverScroll();
                     lastSyncedUrl = updateCanonicalAndOg();
                 }, 50);
