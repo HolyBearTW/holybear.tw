@@ -17,7 +17,7 @@
     "firebase": "^12.5.0",
     "gray-matter": "^4.0.3",
     "hogan.js": "^3.0.2",
-    "instantsearch.js": "^4.81.0",
+    "instantsearch.js": "^4.82.0",
     "medium-zoom": "^1.1.0",
     "opencc-js": "^1.0.5",
     "vue-chartjs": "^5.3.3",
