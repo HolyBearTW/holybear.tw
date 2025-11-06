@@ -289,52 +289,53 @@
 </script>
 
 <template>
-        <!-- 搬家通知彈窗 -->
-        <MigrationNotice :intro-finished="true" />
-        <FloatingBgmPlayer />
-        <Theme.Layout>
-            <template #doc-before>
-                <div v-if="!isHomePage" class="blog-post-header-injected">
-                    <h1 class="blog-post-title">{{ currentTitle }}</h1>
-                    <div v-if="(frontmatter.category && frontmatter.category.length) || (frontmatter.tag && frontmatter.tag.length)"
+    <GlobalAnimations />
+    <!-- 搬家通知彈窗 -->
+    <MigrationNotice :intro-finished="true" />
+    <FloatingBgmPlayer />
+    <Theme.Layout>
+        <template #doc-before>
+            <div v-if="!isHomePage" class="blog-post-header-injected">
+                <h1 class="blog-post-title">{{ currentTitle }}</h1>
+                <div v-if="(frontmatter.category && frontmatter.category.length) || (frontmatter.tag && frontmatter.tag.length)"
                          class="blog-post-meta-row">
-                        <span v-for="c in frontmatter.category" :key="'cat-' + c" class="category">{{ c }}</span>
-                        <span v-for="(t, i) in frontmatter.tag" :key="'tag-' + t + '-' + i" class="tag">{{ t }}</span>
-                    </div>
-                    <p class="blog-post-date-in-content">
-                        <span class="blog-post-date-main">
-                            <span v-if="!isMetaLoading" class="author-inline">
-                                <img class="post-author-avatar" :src="currentAuthorAvatar" :alt="currentAuthorMeta.name" />
-                                <a :href="currentAuthorUrl" target="_blank" rel="noopener" class="author-link-name">{{ currentAuthorMeta.name }}</a>
-                                <span v-if="currentDisplayDate" class="dot" aria-hidden="true">•</span>
-                                <span v-if="currentDisplayDate">{{ currentDisplayDate }}</span>
-                            </span>
-                            <ClientOnly v-else>
-                                <span class="author-inline">
-                                    <div class="meta-content-wrapper skeleton-wrapper">
-                                        <span class="post-author-avatar skeleton skeleton-avatar"></span>
-                                        <span class="skeleton skeleton-meta-bar"></span>
-                                    </div>
-                                </span>
-                            </ClientOnly>
-                        </span>
-                        <span class="blog-post-date-right">
-                            <ClientOnly>
-                                <ViewCounter :slug="currentSlug" />
-                            </ClientOnly>
-                        </span>
-                    </p>
-                    <div class="blog-post-date-divider"></div>
+                    <span v-for="c in frontmatter.category" :key="'cat-' + c" class="category">{{ c }}</span>
+                    <span v-for="(t, i) in frontmatter.tag" :key="'tag-' + t + '-' + i" class="tag">{{ t }}</span>
                 </div>
-            </template>
-            <template #doc-after>
-                <ClientOnly>
-                    <VotePanel />
-                    <!-- 只在非 docs 頁面顯示 GiscusComments -->
-                    <GiscusComments v-if="!page?.path?.startsWith('/docs/')" />
-                </ClientOnly>
-            </template>
-        </Theme.Layout>
+                <p class="blog-post-date-in-content">
+                    <span class="blog-post-date-main">
+                        <span v-if="!isMetaLoading" class="author-inline">
+                            <img class="post-author-avatar" :src="currentAuthorAvatar" :alt="currentAuthorMeta.name" />
+                            <a :href="currentAuthorUrl" target="_blank" rel="noopener" class="author-link-name">{{ currentAuthorMeta.name }}</a>
+                            <span v-if="currentDisplayDate" class="dot" aria-hidden="true">•</span>
+                            <span v-if="currentDisplayDate">{{ currentDisplayDate }}</span>
+                        </span>
+                        <ClientOnly v-else>
+                            <span class="author-inline">
+                                <div class="meta-content-wrapper skeleton-wrapper">
+                                    <span class="post-author-avatar skeleton skeleton-avatar"></span>
+                                    <span class="skeleton skeleton-meta-bar"></span>
+                                </div>
+                            </span>
+                        </ClientOnly>
+                    </span>
+                    <span class="blog-post-date-right">
+                        <ClientOnly>
+                            <ViewCounter :slug="currentSlug" />
+                        </ClientOnly>
+                    </span>
+                </p>
+                <div class="blog-post-date-divider"></div>
+            </div>
+        </template>
+        <template #doc-after>
+            <ClientOnly>
+                <VotePanel />
+                <!-- 只在非 docs 頁面顯示 GiscusComments -->
+                <GiscusComments v-if="!page?.path?.startsWith('/docs/')" />
+            </ClientOnly>
+        </template>
+    </Theme.Layout>
 </template>
 
 <style scoped>
