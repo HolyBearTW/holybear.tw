@@ -466,7 +466,7 @@ body.is-blog-page:not(:has(.VPHome)) .VPNavBar .content-body {
   -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
 }
 
-body:not(.is-blog-page):not(:has(.VPHome)) .VPNav:not(.top) {
+body:not(.is-blog-page):not(:has(.VPHome)) {
   backdrop-filter: blur(12px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
 }
