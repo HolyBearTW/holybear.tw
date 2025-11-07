@@ -11,7 +11,9 @@ category:
   - 技術分享
 ---
 
-<center><img src="https://i.redd.it/bnnb0cfnz5681.png"></center>
+<div style="text-align:center">
+  <img src="https://i.redd.it/bnnb0cfnz5681.png" style="display:inline-block;" />
+</div>
 
 嗨，大家好！今天想跟大家分享一個我最近為部落格開發的小功能 —— **防劇透組件（Spoiler Component）**。
 

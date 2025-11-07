@@ -83,7 +83,7 @@ const reveal = () => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -127,10 +127,5 @@ const reveal = () => {
 
 .spoiler-container:hover .spoiler-hint {
   background: rgba(255, 255, 255, 0.2);
-}
-
-/* 暗色模式調整 */
-.dark .spoiler-overlay {
-  background: rgba(0, 0, 0, 0.85);
 }
 </style>
