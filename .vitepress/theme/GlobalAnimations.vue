@@ -22,8 +22,35 @@
   0%, 100% {
     background-position: 80% 20%, 80% 90%, 20% 90%, 20% 20%, 0% 50%;
   }
-  25% {
-    background-position: 85% 25%, 75% 85%, 15% 95%, 25% 15%, 25% 50%;
+  10% {
+    background-position: 60% 10%, 85% 80%, 10% 80%, 30% 30%, 10% 60%;
+  }
+  20% {
+    background-position: 40% 40%, 70% 60%, 30% 70%, 40% 40%, 20% 70%;
+  }
+  30% {
+    background-position: 20% 60%, 60% 40%, 50% 60%, 50% 50%, 30% 80%;
+  }
+  40% {
+    background-position: 10% 80%, 50% 20%, 70% 50%, 60% 60%, 40% 90%;
+  }
+  50% {
+    background-position: 30% 60%, 40% 80%, 90% 40%, 70% 70%, 50% 100%;
+  }
+  60% {
+    background-position: 50% 40%, 30% 60%, 80% 20%, 80% 80%, 60% 80%;
+  }
+  70% {
+    background-position: 70% 20%, 20% 40%, 60% 80%, 90% 90%, 70% 60%;
+  }
+  80% {
+    background-position: 90% 40%, 10% 20%, 40% 60%, 100% 100%, 80% 40%;
+  }
+  90% {
+    background-position: 100% 60%, 80% 10%, 20% 40%, 80% 80%, 90% 20%;
+  }
+  100% {
+    background-position: 80% 20%, 80% 90%, 20% 90%, 20% 20%, 0% 50%;
   }
 }
 
@@ -118,13 +145,14 @@ body:not(:has(.VPHome))::before {
   z-index: -1;
   pointer-events: none;
   background: 
-    radial-gradient(circle at 63% 50%, rgba(0, 79, 148, 1.0) 0%, transparent 50%),
-    radial-gradient(circle at 88% 69%, rgba(135, 74, 38, 1.0) 0%, transparent 50%),
-    radial-gradient(circle at 75% 80%, rgba(117, 15, 69, 1.0) 0%, transparent 50%),
-    radial-gradient(circle at 17% 66%, rgba(41, 31, 115, 1.0) 0%, transparent 50%),
+    radial-gradient(circle at 63% 50%, #005094 0%, transparent 50%),
+    radial-gradient(circle at 88% 69%, #874A26 0%, transparent 50%),
+    radial-gradient(circle at 75% 80%, #761045 0%, transparent 50%),
+    radial-gradient(circle at 17% 66%, #291E73 0%, transparent 50%),
     linear-gradient(135deg, #0a0a14 0%, #14141e 50%, #1e1e28 100%);
   background-size: 200% 200%, 200% 200%, 200% 200%, 200% 200%, 100% 100%;
-  animation: hyperOSColors1to2 18s ease-in-out infinite;
+  background-position: 80% 20%, 80% 90%, 20% 90%, 20% 20%, 0% 50%;
+  animation: hyperOSColors1to2 8s ease-in-out infinite;
 }
 body:not(:has(.VPHome))::after {
   /* 深色模式：HyperOS 輔助層動畫背景 */
@@ -140,18 +168,21 @@ body:not(:has(.VPHome))::after {
     radial-gradient(circle at 81% 14%, rgba(0, 79, 148, 0.7) 0%, transparent 45%),
     radial-gradient(circle at 24% 72%, rgba(117, 15, 69, 0.7) 0%, transparent 45%);
   background-size: 200% 200%, 200% 200%;
-  animation: hyperOSColors2to3 22s ease-in-out infinite;
+  animation: hyperOSColors2to3 10s ease-in-out infinite;
   opacity: 0;
   mix-blend-mode: screen;
 }
 html:not(.dark) body:not(:has(.VPHome))::before {
-  /* 淺色模式：HyperOS 多層漸變動畫背景 */
+  /* 淺色模式：HyperOS 多層漸變動畫背景 + 統一動畫 */
   background: 
-    radial-gradient(circle at 71% 95%, rgba(145, 194, 250, 1.0) 0%, transparent 50%),
-    radial-gradient(circle at 14% 27%, rgba(250, 217, 173, 1.0) 0%, transparent 50%),
-    radial-gradient(circle at 80% 27%, rgba(250, 191, 237, 1.0) 0%, transparent 50%),
-    radial-gradient(circle at 22% 80%, rgba(186, 179, 250, 1.0) 0%, transparent 50%),
+    radial-gradient(circle at 71% 95%, #91C2FA 0%, transparent 50%),
+    radial-gradient(circle at 14% 27%, #F9D9AD 0%, transparent 50%),
+    radial-gradient(circle at 80% 27%, #FBC0ED 0%, transparent 50%),
+    radial-gradient(circle at 22% 80%, #BAB2FA 0%, transparent 50%),
     linear-gradient(135deg, #f8f7ff 0%, #fef9fb 50%, #f5f8ff 100%);
+  background-size: 200% 200%, 200% 200%, 200% 200%, 200% 200%, 100% 100%;
+  background-position: 80% 20%, 80% 90%, 20% 90%, 20% 20%, 0% 50%;
+  animation: gradientRotate 8s linear infinite;
   filter: blur(50px);
 }
 html:not(.dark) body:not(:has(.VPHome))::after {
@@ -165,13 +196,13 @@ html:not(.dark) body:not(:has(.VPHome))::after {
 /* === 首頁與 Hero 動畫（原 style.css） === */
 body:has(.VPHome)::before {
   background:
-    radial-gradient(circle at 63% 50%, rgba(0, 79, 148, 1.0) 0%, transparent 50%),
-    radial-gradient(circle at 88% 69%, rgba(135, 74, 38, 1.0) 0%, transparent 50%),
-    radial-gradient(circle at 75% 80%, rgba(117, 15, 69, 1.0) 0%, transparent 50%),
-    radial-gradient(circle at 17% 66%, rgba(41, 31, 115, 1.0) 0%, transparent 50%),
+    radial-gradient(circle at 63% 50%, #005094 0%, transparent 50%),
+    radial-gradient(circle at 88% 69%, #874A26 0%, transparent 50%),
+    radial-gradient(circle at 75% 80%, #761045 0%, transparent 50%),
+    radial-gradient(circle at 17% 66%, #291E73 0%, transparent 50%),
     linear-gradient(135deg, #0a0a14 0%, #14141e 50%, #1e1e28 100%);
   background-size: 200% 200%, 200% 200%, 200% 200%, 200% 200%, 100% 100%;
-  animation: hyperOSColors1to2 10s ease-in-out infinite;
+  animation: hyperOSColors1to2 5s ease-in-out infinite;
   filter: blur(60px);
 }
 body:has(.VPHome)::after {
@@ -179,17 +210,19 @@ body:has(.VPHome)::after {
     radial-gradient(circle at 81% 14%, rgba(0, 79, 148, 0.7) 0%, transparent 45%),
     radial-gradient(circle at 24% 72%, rgba(117, 15, 69, 0.7) 0%, transparent 45%);
   background-size: 200% 200%, 200% 200%;
-  animation: hyperOSColors2to3 12s ease-in-out infinite;
+  animation: hyperOSColors2to3 6s ease-in-out infinite;
   opacity: 0;
   mix-blend-mode: screen;
 }
 html:not(.dark) body:has(.VPHome)::before {
   background:
-    radial-gradient(circle at 71% 95%, rgba(145, 194, 250, 1.0) 0%, transparent 50%),
-    radial-gradient(circle at 14% 27%, rgba(250, 217, 173, 1.0) 0%, transparent 50%),
-    radial-gradient(circle at 80% 27%, rgba(250, 191, 237, 1.0) 0%, transparent 50%),
-    radial-gradient(circle at 22% 80%, rgba(186, 179, 250, 1.0) 0%, transparent 50%),
+    radial-gradient(circle at 71% 95%, #91C2FA 0%, transparent 50%),
+    radial-gradient(circle at 14% 27%, #F9D9AD 0%, transparent 50%),
+    radial-gradient(circle at 80% 27%, #FBC0ED 0%, transparent 50%),
+    radial-gradient(circle at 22% 80%, #BAB2FA 0%, transparent 50%),
     linear-gradient(135deg, #f8f7ff 0%, #fef9fb 50%, #f5f8ff 100%);
+  background-size: 200% 200%, 200% 200%, 200% 200%, 200% 200%, 100% 100%;
+  animation: gradientRotate 5s ease-in-out infinite;
   filter: blur(50px);
 }
 html:not(.dark) body:has(.VPHome)::after {

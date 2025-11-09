@@ -459,8 +459,12 @@ body .VPSidebar {
   background: var(--my-glass-bg) !important;
   box-shadow: 0 4px 16px rgba(33, 150, 243, 0.1), 0 0 0 1px rgba(255,255,255,0.1) inset !important;
   transition: background 0.5s cubic-bezier(0.4,0,0.2,1), background-color 0.5s cubic-bezier(0.4,0,0.2,1);
+  }
+  html:not(.dark) body .VPSidebar.open {
+    background: rgba(255,255,255,0.85) !important;
 }
 
+/* 導航欄背景 */
 body.is-blog-page:not(:has(.VPHome)) .VPNavBar .content-body {
   backdrop-filter: blur(12px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
@@ -814,3 +818,13 @@ body:not(:has(.VPHome)) .VPLocalNav {
   overflow: hidden !important;
   word-break: keep-all !important;
 }
+
+    /* 語言選單背景 */
+    .VPMenu {
+    background: rgba(255, 255, 255, 0.7) !important; /* 淺色模式 */
+    backdrop-filter: blur(30px) !important;
+    -webkit-backdrop-filter: blur(30px) !important;
+    }
+    html.dark .VPMenu {
+    background: rgba(35, 35, 35, 0.7) !important; /* 深色模式 */
+    }
