@@ -1286,6 +1286,13 @@ algoliasearch-helper@3.26.0:
   dependencies:
     "@algolia/events" "^4.0.1"
 
+algoliasearch-helper@3.26.1:
+  version "3.26.1"
+  resolved "https://registry.yarnpkg.com/algoliasearch-helper/-/algoliasearch-helper-3.26.1.tgz#5b7f0874a2751c3d6de675d5403d8fa2f015023f"
+  integrity sha512-CAlCxm4fYBXtvc5MamDzP6Svu8rW4z9me4DCBY1rQ2UDJ0u0flWmusQ8M3nOExZsLLRcUwUPoRAPMrhzOG3erw==
+  dependencies:
+    "@algolia/events" "^4.0.1"
+
 algoliasearch@^5.43.0:
   version "5.43.0"
   resolved "https://registry.yarnpkg.com/algoliasearch/-/algoliasearch-5.43.0.tgz#b4198ded9a105881bac9e9c2765c82e1acdaa6e2"
@@ -1624,7 +1631,18 @@ instantsearch-ui-components@0.13.0:
     zod "^3.25.76 || ^4"
     zod-to-json-schema "3.24.6"
 
-instantsearch.js@4.82.0, instantsearch.js@^4.81.0:
+instantsearch-ui-components@0.14.0:
+  version "0.14.0"
+  resolved "https://registry.yarnpkg.com/instantsearch-ui-components/-/instantsearch-ui-components-0.14.0.tgz#f015a04f7036f851578428ba4dd1f123c7034397"
+  integrity sha512-SX04/mWtHp6DLFrHVJWJHvsMmF6Ppo9pAxqBuW+herAd6L/CJPuY/Sy4f3LSkUUIybJ9USVzuO6uIUJyi3xAcw==
+  dependencies:
+    "@babel/runtime" "^7.27.6"
+    ai "^5.0.18"
+    markdown-to-jsx "^7.7.15"
+    zod "^3.25.76 || ^4"
+    zod-to-json-schema "3.24.6"
+
+instantsearch.js@4.82.0:
   version "4.82.0"
   resolved "https://registry.yarnpkg.com/instantsearch.js/-/instantsearch.js-4.82.0.tgz#d189930e5b1f5b694bcab2f546ea28e56d228d25"
   integrity sha512-K1iJ2/Zx3omHieFi0K/zUVtmxlectXiIdOFp3nLm6L+uSIR7jVvlPd0LLokJ5tgsG1TYn8uEF2TB/inaCWSepQ==
@@ -1639,6 +1657,28 @@ instantsearch.js@4.82.0, instantsearch.js@^4.81.0:
     hogan.js "^3.0.2"
     htm "^3.0.0"
     instantsearch-ui-components "0.13.0"
+    preact "^10.10.0"
+    qs "^6.5.1 < 6.10"
+    react ">= 0.14.0"
+    search-insights "^2.17.2"
+    zod "^3.25.76 || ^4"
+    zod-to-json-schema "3.24.6"
+
+instantsearch.js@^4.83.0:
+  version "4.83.0"
+  resolved "https://registry.yarnpkg.com/instantsearch.js/-/instantsearch.js-4.83.0.tgz#8688d636f4bc7dbc3446674ea843fb8ae8f55723"
+  integrity sha512-/JmiKCAJwJbh4E+LbdYJWe/OQO1ZwbAHiPmz1NImdRInQW0aPI1w8iwjo6fxg1J1lk4Jd6ERd28KYhviI5fJdw==
+  dependencies:
+    "@algolia/events" "^4.0.1"
+    "@types/dom-speech-recognition" "^0.0.1"
+    "@types/google.maps" "^3.55.12"
+    "@types/hogan.js" "^3.0.0"
+    "@types/qs" "^6.5.3"
+    ai "^5.0.18"
+    algoliasearch-helper "3.26.1"
+    hogan.js "^3.0.2"
+    htm "^3.0.0"
+    instantsearch-ui-components "0.14.0"
     preact "^10.10.0"
     qs "^6.5.1 < 6.10"
     react ">= 0.14.0"
