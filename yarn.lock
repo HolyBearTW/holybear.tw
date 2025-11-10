@@ -231,10 +231,10 @@
   resolved "https://registry.yarnpkg.com/@docsearch/css/-/css-4.2.0.tgz#473bb4c51f4b2b037a71f423e569907ab19e6d72"
   integrity sha512-65KU9Fw5fGsPPPlgIghonMcndyx1bszzrDQYLfierN+Ha29yotMHzVS94bPkZS6On9LS8dE4qmW4P/fGjtCf/g==
 
-"@docsearch/js@^4.0.0-beta.7", "@docsearch/js@^4.3.1":
-  version "4.3.1"
-  resolved "https://registry.yarnpkg.com/@docsearch/js/-/js-4.3.1.tgz#ce1e7f17316b1a1e86844a843f8651778d3f2b41"
-  integrity sha512-Xi2OztaQqTnNj0HGTcS/RtoXe4ASOgKRuH8hAKKqISqv13oUxpVBIBUHpvPIU4qgmJRZN2gA2gdjdn+VuvrvRQ==
+"@docsearch/js@^4.0.0-beta.7", "@docsearch/js@^4.3.2":
+  version "4.3.2"
+  resolved "https://registry.yarnpkg.com/@docsearch/js/-/js-4.3.2.tgz#3c799069c1a6614fe4b3d95205d90df8a0bebe95"
+  integrity sha512-xdfpPXMgKRY9EW7U1vtY7gLKbLZFa9ed+t0Dacquq8zXBqAlH9HlUf0h4Mhxm0xatsVeMaIR2wr/u6g0GsZyQw==
   dependencies:
     htm "3.1.1"
 
