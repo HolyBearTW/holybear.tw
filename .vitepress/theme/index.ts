@@ -3,13 +3,10 @@ import MyCustomLayout from './MyCustomLayout.vue';
 import './style.css';
 import OpenCCConverter from '../components/OpenCCConverter.vue';
 import Spoiler from './Spoiler.vue';
-import GlobalAnimations from './GlobalAnimations.vue';
 
 export default {
     Layout: MyCustomLayout,
     enhanceApp({ router, app }) {
-        // 全域註冊動畫 keyframes 元件，供 Layout.vue 使用
-        app.component('GlobalAnimations', GlobalAnimations);
         // ✅ 就是這一行！在此註冊您的元件
         app.component('OpenCCConverter', OpenCCConverter);
         app.component('Spoiler', Spoiler);

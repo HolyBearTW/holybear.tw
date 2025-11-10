@@ -713,6 +713,38 @@ body:not(:has(.VPHome)) .VPNavScreen {
   color: #00b8b8;
   box-shadow: 0 6px 24px rgba(0,255,238,0.18);
 }
+.VPNavScreenMenuGroup,
+.VPNavScreen {
+  overflow: visible !important;
+  height: auto !important;
+  max-height: none !important;
+}
+.VPNavScreenMenuGroup > .button .button-text {
+  flex: 1;
+  text-align: center;
+}
+.VPNavScreenMenuGroup > .button:hover {
+  background: rgba(0,255,238,0.18);
+  color: #00b8b8;
+  box-shadow: 0 4px 16px rgba(0,255,238,0.18);
+}
+/* 主題選單群組按鈕玻璃高斯模糊效果 */
+.VPNavScreenMenuGroup > .button {
+  background: rgba(255,255,255,0.12);
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  font-weight: 600;
+  font-size: 1.08em;
+  margin: 0.5em 0;
+  transition: background 0.2s, box-shadow 0.2s;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+.VPNavScreenMenuGroup > .button:hover {
+  background: rgba(0,255,238,0.18);
+  color: #00b8b8;
+  box-shadow: 0 4px 16px rgba(0,255,238,0.18);
+}
 
 /* ==================== 主題樣式範例 (Halloween) ==================== */
 body.halloween-theme { background: #1a1a1a url('/image/halloween/halloween2.png') repeat; color: #ff9800; }

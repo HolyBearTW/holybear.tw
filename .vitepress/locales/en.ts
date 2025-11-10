@@ -9,7 +9,14 @@ export default {
       { text: 'Portfolio', link: '/en/Mod' },
       { text: 'Shortlink', link: 'https://go.holybear.tw/' },
       { text: 'Telegram', link: 'https://t.me/HolyBearTW' },
-      { text: 'Donate', link: 'https://paypal.me/holybear0610' }
+      { text: 'Donate', link: 'https://paypal.me/holybear0610' },
+      {
+        text: 'Theme',
+        items: [
+          { text: 'Default', link: '?theme=default' },
+          { text: 'HyperOS 2', link: '?theme=hyperos2' }
+        ]
+      }
     ],
     sidebar: {
       '/en/blog/': sidebarEn
