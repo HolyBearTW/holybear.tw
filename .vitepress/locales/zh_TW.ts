@@ -8,7 +8,14 @@ export default {
       { text: '技術文件', link: '/docs/' },
       { text: '簡轉繁', link: '/converter' },
       { text: 'Telegram', link: 'https://t.me/HolyBearTW' },
-      { text: '贊助', link: 'https://paypal.me/holybear0610' }
+      { text: '贊助', link: 'https://paypal.me/holybear0610' },
+      {
+        text: '佈景主題',
+        items: [
+          { text: '預設主題', link: '?theme=default' },
+          { text: 'HyperOS 2', link: '?theme=hyperos2' }
+        ]
+      }
     ],
     sidebarMenuLabel: '日誌列表',
     returnToTopLabel: '回到頂部',

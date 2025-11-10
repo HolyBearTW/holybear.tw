@@ -1,7 +1,7 @@
 <script setup>
     import Theme from 'vitepress/theme'
     import { useData } from 'vitepress'
-    import { computed, ref, onMounted, watch } from 'vue'
+    import { computed, shallowRef, markRaw, onMounted, watch, ref } from 'vue'
     import { useRoute } from 'vitepress'
     import { useAuthors } from '../components/useAuthors.js'
     import FloatingBgmPlayer from './FloatingBgmPlayer.vue'
@@ -11,6 +11,56 @@
     import MigrationNotice from '../components/MigrationNotice.vue'
     import mediumZoom from 'medium-zoom'
     import { data as allPosts } from './posts.data.ts'
+    import GlobalAnimations from './GlobalAnimations.vue'
+    import HyperOS2Animations from './HyperOS2Animations.vue'
+
+
+    // 根據網址 query 切換動畫元件
+
+// 監聽主題選單點擊，動態切換網址 query 並觸發動畫切換
+
+onMounted(() => {
+    updateBgComponent()
+    window.addEventListener('popstate', updateBgComponent)
+    document.querySelectorAll('a[href*="?theme="]').forEach(el => {
+        el.addEventListener('click', function(e) {
+            e.preventDefault()
+            const url = el.getAttribute('href')
+            // 解析 theme 參數
+            const params = new URLSearchParams(url.split('?')[1] || '')
+            const theme = params.get('theme') || 'default'
+            localStorage.setItem('site-theme', theme)
+            // 保留當前路徑，只更新 query
+            // 保留原本 query 與 hash
+            const urlObj = new URL(window.location.href)
+            urlObj.searchParams.set('theme', theme)
+            window.history.pushState({}, '', urlObj.pathname + urlObj.search + urlObj.hash)
+            updateBgComponent()
+        })
+    })
+})
+
+const currentBgComponent = shallowRef(markRaw(GlobalAnimations))
+
+function updateBgComponent() {
+    if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search)
+        let theme = params.get('theme')
+        // 若網址沒帶 theme，則讀 localStorage
+        if (!theme) {
+            theme = localStorage.getItem('site-theme') || 'default'
+        }
+        if (theme === 'hyperos2') {
+            currentBgComponent.value = markRaw(HyperOS2Animations)
+        } else {
+            currentBgComponent.value = markRaw(GlobalAnimations)
+        }
+    }
+}
+onMounted(() => {
+    updateBgComponent()
+    window.addEventListener('popstate', updateBgComponent)
+})
 
         // 只保留一份 normalizeUrl function
         function normalizeUrl(url) {
@@ -289,7 +339,7 @@
 </script>
 
 <template>
-    <GlobalAnimations />
+    <component :is="currentBgComponent" />
     <!-- 搬家通知彈窗 -->
     <MigrationNotice :intro-finished="true" />
     <FloatingBgmPlayer />
