@@ -1,15 +1,432 @@
+<script setup lang="ts">
+import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { useData } from 'vitepress'
+
+const { isDark } = useData()
+const canvas = ref<HTMLCanvasElement | null>(null)
+let animationId: number | null = null
+let nodes: Node[] = []
+let dataFlows: DataFlow[] = []
+let hexagons: Hexagon[] = []
+let mouseX = 0
+let mouseY = 0
+let time = 0
+let glitchTime = 0
+let nextGlitchTime = Math.random() * 300 + 200 // 隨機 200-500 幀後觸發 glitch
+
+interface Node {
+  x: number
+  y: number
+  vx: number
+  vy: number
+  radius: number
+  connections: Node[]
+}
+
+interface DataFlow {
+  path: { x: number; y: number }[]
+  position: number
+  speed: number
+  color: string
+  opacity: number
+}
+
+interface Hexagon {
+  x: number
+  y: number
+  size: number
+  opacity: number
+  targetOpacity: number
+  active: boolean
+  activationTime: number
+}
+
+// 顏色配置
+const colors = computed(() => ({
+  node: isDark.value ? 'rgba(100, 200, 255, 0.6)' : 'rgba(80, 150, 220, 0.4)',
+  line: isDark.value ? 'rgba(100, 200, 255, 0.15)' : 'rgba(80, 150, 220, 0.1)',
+  dataFlow: isDark.value ? 'rgba(0, 255, 200, 0.8)' : 'rgba(0, 180, 150, 0.6)',
+  grid: isDark.value ? 'rgba(100, 150, 255, 0.1)' : 'rgba(100, 150, 200, 0.08)',
+  hexagon: isDark.value ? 'rgba(100, 200, 255, 0.08)' : 'rgba(80, 150, 220, 0.05)',
+  hexagonActive: isDark.value ? 'rgba(100, 200, 255, 0.25)' : 'rgba(80, 150, 220, 0.18)',
+  scanline: isDark.value ? 'rgba(0, 255, 200, 0.03)' : 'rgba(0, 180, 150, 0.02)'
+}))
+
+// 初始化 Plexus 節點
+const initNodes = (width: number, height: number) => {
+  const nodeCount = Math.floor((width * height) / 25000)
+  nodes = []
+  
+  for (let i = 0; i < nodeCount; i++) {
+    nodes.push({
+      x: Math.random() * width,
+      y: Math.random() * height,
+      vx: (Math.random() - 0.5) * 0.2,
+      vy: (Math.random() - 0.5) * 0.2,
+      radius: Math.random() * 2 + 1,
+      connections: []
+    })
+  }
+}
+
+// 初始化數據流
+const initDataFlows = (width: number, height: number) => {
+  const flowCount = 5
+  dataFlows = []
+  
+  for (let i = 0; i < flowCount; i++) {
+    const path: { x: number; y: number }[] = []
+    const segments = Math.floor(Math.random() * 5) + 8
+    
+    // 創建類似電路的路徑
+    let x = Math.random() * width
+    let y = Math.random() * height
+    path.push({ x, y })
+    
+    for (let j = 0; j < segments; j++) {
+      const direction = Math.random() > 0.5 ? 'horizontal' : 'vertical'
+      const distance = Math.random() * 150 + 50
+      
+      if (direction === 'horizontal') {
+        x += (Math.random() > 0.5 ? 1 : -1) * distance
+      } else {
+        y += (Math.random() > 0.5 ? 1 : -1) * distance
+      }
+      
+      x = Math.max(0, Math.min(width, x))
+      y = Math.max(0, Math.min(height, y))
+      path.push({ x, y })
+    }
+    
+    dataFlows.push({
+      path,
+      position: Math.random() * path.length,
+      speed: Math.random() * 0.01 + 0.005,
+      color: colors.value.dataFlow,
+      opacity: Math.random() * 0.3 + 0.3
+    })
+  }
+}
+
+// 初始化六邊形網格
+const initHexagons = (width: number, height: number) => {
+  hexagons = []
+  const size = 40
+  const rows = Math.ceil(height / (size * 1.5)) + 2
+  const cols = Math.ceil(width / (size * Math.sqrt(3))) + 2
+  
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) {
+      const x = col * size * Math.sqrt(3) + (row % 2) * size * Math.sqrt(3) / 2
+      const y = row * size * 1.5
+      
+      hexagons.push({
+        x,
+        y,
+        size,
+        opacity: 0.08,
+        targetOpacity: 0.08,
+        active: false,
+        activationTime: Math.random() * 1000
+      })
+    }
+  }
+}
+
+// 繪製六邊形
+const drawHexagon = (ctx: CanvasRenderingContext2D, x: number, y: number, size: number, opacity: number) => {
+  ctx.beginPath()
+  for (let i = 0; i < 6; i++) {
+    const angle = (Math.PI / 3) * i
+    const hx = x + size * Math.cos(angle)
+    const hy = y + size * Math.sin(angle)
+    if (i === 0) {
+      ctx.moveTo(hx, hy)
+    } else {
+      ctx.lineTo(hx, hy)
+    }
+  }
+  ctx.closePath()
+  ctx.strokeStyle = isDark.value 
+    ? `rgba(100, 200, 255, ${opacity})`
+    : `rgba(80, 150, 220, ${opacity})`
+  ctx.lineWidth = 0.5
+  ctx.stroke()
+}
+
+// 繪製 3D 網格
+const draw3DGrid = (ctx: CanvasRenderingContext2D, width: number, height: number, offset: number) => {
+  const gridSize = 80
+  const perspective = 600
+  const vanishingPointY = height * 0.4
+  
+  ctx.strokeStyle = colors.value.grid
+  ctx.lineWidth = 0.8
+  
+  // 繪製縱向網格線（透視效果）
+  for (let x = -5; x <= 20; x++) {
+    const startX = width / 2 + (x * gridSize - width / 2) * 0.3
+    const endX = width / 2 + (x * gridSize - width / 2) * 2
+    
+    ctx.beginPath()
+    ctx.moveTo(startX, vanishingPointY - offset % (gridSize * 2))
+    ctx.lineTo(endX, height)
+    ctx.stroke()
+  }
+  
+  // 繪製橫向網格線
+  for (let y = 0; y < 15; y++) {
+    const currentY = vanishingPointY + y * gridSize - offset % (gridSize * 2)
+    if (currentY > height) continue
+    
+    const scale = (currentY - vanishingPointY + perspective) / perspective
+    const leftX = width / 2 - (width / 2) * scale
+    const rightX = width / 2 + (width / 2) * scale
+    
+    ctx.beginPath()
+    ctx.moveTo(leftX, currentY)
+    ctx.lineTo(rightX, currentY)
+    ctx.stroke()
+  }
+}
+
+// 繪製 Glitch 效果
+const drawGlitch = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
+  if (glitchTime <= 0) return
+  
+  const intensity = glitchTime / 10
+  
+  // 隨機水平偏移
+  for (let i = 0; i < 5; i++) {
+    const y = Math.random() * height
+    const h = Math.random() * 3 + 1
+    const offset = (Math.random() - 0.5) * 10 * intensity
+    
+    const imageData = ctx.getImageData(0, y, width, h)
+    ctx.putImageData(imageData, offset, y)
+  }
+  
+  // RGB 分離效果
+  if (Math.random() > 0.7) {
+    ctx.fillStyle = `rgba(255, 0, 0, ${0.05 * intensity})`
+    ctx.fillRect(0, 0, width, height)
+  }
+  
+  glitchTime--
+}
+
+// 繪製掃描線
+const drawScanlines = (ctx: CanvasRenderingContext2D, width: number, height: number, offset: number) => {
+  ctx.strokeStyle = colors.value.scanline
+  ctx.lineWidth = 1
+  
+  for (let y = offset % 4; y < height; y += 4) {
+    ctx.beginPath()
+    ctx.moveTo(0, y)
+    ctx.lineTo(width, y)
+    ctx.stroke()
+  }
+}
+
+// 主動畫循環
+const animate = () => {
+  if (!canvas.value) return
+  
+  const ctx = canvas.value.getContext('2d')
+  if (!ctx) return
+  
+  const width = canvas.value.width
+  const height = canvas.value.height
+  
+  time += 0.3
+  
+  // 清除畫布
+  ctx.fillStyle = isDark.value ? 'rgba(10, 15, 25, 0.95)' : 'rgba(250, 252, 255, 0.95)'
+  ctx.fillRect(0, 0, width, height)
+  
+  // 1. 繪製 3D 網格 (最底層)
+  draw3DGrid(ctx, width, height, time * 0.5)
+  
+  // 2. 繪製六邊形網格
+  hexagons.forEach(hex => {
+    // 隨機激活六邊形
+    if (time % 300 === 0 && Math.random() > 0.98) {
+      hex.active = true
+      hex.targetOpacity = Math.random() * 0.2 + 0.15
+      hex.activationTime = time
+    }
+    
+    // 激活效果衰減
+    if (hex.active && time - hex.activationTime > 120) {
+      hex.active = false
+      hex.targetOpacity = 0.08
+    }
+    
+    // 平滑過渡
+    hex.opacity += (hex.targetOpacity - hex.opacity) * 0.02
+    
+    drawHexagon(ctx, hex.x, hex.y, hex.size * 0.5, hex.opacity)
+  })
+  
+  // 3. 繪製 Plexus 節點和連線
+  nodes.forEach((node, i) => {
+    // 滑鼠互動
+    const dx = mouseX - node.x
+    const dy = mouseY - node.y
+    const distance = Math.sqrt(dx * dx + dy * dy)
+    
+    if (distance < 200) {
+      const force = (200 - distance) / 200
+      node.vx -= (dx / distance) * force * 0.05
+      node.vy -= (dy / distance) * force * 0.05
+    }
+    
+    // 更新位置
+    node.x += node.vx
+    node.y += node.vy
+    
+    // 阻力
+    node.vx *= 0.98
+    node.vy *= 0.98
+    
+    // 邊界反彈
+    if (node.x < 0 || node.x > width) node.vx *= -1
+    if (node.y < 0 || node.y > height) node.vy *= -1
+    node.x = Math.max(0, Math.min(width, node.x))
+    node.y = Math.max(0, Math.min(height, node.y))
+    
+    // 繪製節點
+    ctx.beginPath()
+    ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2)
+    ctx.fillStyle = colors.value.node
+    ctx.fill()
+    
+    // 繪製連線
+    nodes.slice(i + 1).forEach(other => {
+      const dx = node.x - other.x
+      const dy = node.y - other.y
+      const dist = Math.sqrt(dx * dx + dy * dy)
+      
+      if (dist < 150) {
+        const opacity = (1 - dist / 150) * 0.3
+        ctx.beginPath()
+        ctx.moveTo(node.x, node.y)
+        ctx.lineTo(other.x, other.y)
+        ctx.strokeStyle = isDark.value 
+          ? `rgba(100, 200, 255, ${opacity})`
+          : `rgba(80, 150, 220, ${opacity * 0.6})`
+        ctx.lineWidth = 0.5
+        ctx.stroke()
+      }
+    })
+  })
+  
+  // 4. 繪製數據流
+  dataFlows.forEach(flow => {
+    flow.position += flow.speed
+    if (flow.position >= flow.path.length) {
+      flow.position = 0
+    }
+    
+    const currentIndex = Math.floor(flow.position)
+    const nextIndex = (currentIndex + 1) % flow.path.length
+    const progress = flow.position - currentIndex
+    
+    const current = flow.path[currentIndex]
+    const next = flow.path[nextIndex]
+    
+    const x = current.x + (next.x - current.x) * progress
+    const y = current.y + (next.y - current.y) * progress
+    
+    // 繪製數據流尾跡
+    for (let i = 1; i <= 8; i++) {
+      const trailIndex = Math.max(0, currentIndex - i)
+      const trailPoint = flow.path[trailIndex]
+      const trailOpacity = flow.opacity * (1 - i / 8)
+      
+      ctx.beginPath()
+      ctx.arc(trailPoint.x, trailPoint.y, 2, 0, Math.PI * 2)
+      ctx.fillStyle = isDark.value 
+        ? `rgba(0, 255, 200, ${trailOpacity})`
+        : `rgba(0, 180, 150, ${trailOpacity})`
+      ctx.fill()
+    }
+    
+    // 繪製當前位置（發光效果）
+    const gradient = ctx.createRadialGradient(x, y, 0, x, y, 8)
+    gradient.addColorStop(0, isDark.value ? 'rgba(0, 255, 200, 0.8)' : 'rgba(0, 220, 180, 0.6)')
+    gradient.addColorStop(1, 'rgba(0, 255, 200, 0)')
+    ctx.fillStyle = gradient
+    ctx.beginPath()
+    ctx.arc(x, y, 8, 0, Math.PI * 2)
+    ctx.fill()
+  })
+  
+  // 5. 繪製掃描線
+  drawScanlines(ctx, width, height, time)
+  
+  // 6. Glitch 效果（偶發）
+  if (time > nextGlitchTime) {
+    glitchTime = Math.random() * 8 + 3
+    nextGlitchTime = time + Math.random() * 300 + 200
+  }
+  drawGlitch(ctx, width, height)
+  
+  animationId = requestAnimationFrame(animate)
+}
+
+// 滑鼠移動處理
+const handleMouseMove = (e: MouseEvent) => {
+  mouseX = e.clientX
+  mouseY = e.clientY
+}
+
+// 視窗調整處理
+const handleResize = () => {
+  if (!canvas.value) return
+  canvas.value.width = window.innerWidth
+  canvas.value.height = window.innerHeight
+  initNodes(canvas.value.width, canvas.value.height)
+  initDataFlows(canvas.value.width, canvas.value.height)
+  initHexagons(canvas.value.width, canvas.value.height)
+}
+
+// 組件掛載
+onMounted(() => {
+  if (!canvas.value) return
+  
+  canvas.value.width = window.innerWidth
+  canvas.value.height = window.innerHeight
+  
+  initNodes(canvas.value.width, canvas.value.height)
+  initDataFlows(canvas.value.width, canvas.value.height)
+  initHexagons(canvas.value.width, canvas.value.height)
+  animate()
+  
+  window.addEventListener('mousemove', handleMouseMove)
+  window.addEventListener('resize', handleResize)
+})
+
+// 組件卸載
+onUnmounted(() => {
+  if (animationId) {
+    cancelAnimationFrame(animationId)
+  }
+  window.removeEventListener('mousemove', handleMouseMove)
+  window.removeEventListener('resize', handleResize)
+})
+</script>
+
 <template>
-  <div class="animated-background">
-    <div class="blob blob-1"></div>
-    <div class="blob blob-2"></div>
-    <div class="blob blob-3"></div>
-    <div class="blob blob-4"></div>
-    <div class="blob blob-5"></div>
-  </div>
+  <canvas
+    ref="canvas"
+    class="tech-background"
+    :class="{ 'dark-mode': isDark }"
+  />
 </template>
 
 <style scoped>
-.animated-background {
+.tech-background {
   position: fixed;
   top: 0;
   left: 0;
@@ -17,131 +434,41 @@
   height: 100vh;
   z-index: -1;
   pointer-events: none;
-  overflow: hidden;
-    background: linear-gradient(135deg, #f8f7ff 0%, #fef9fb 50%, #f5f8ff 100%);
-  }
-  html:not(.dark) .animated-background {
-    background:
-      radial-gradient(circle at 71% 95%, #91C2FA 0%, transparent 50%),
-      radial-gradient(circle at 14% 27%, #F9D9AD 0%, transparent 50%),
-      radial-gradient(circle at 80% 27%, #FBC0ED 0%, transparent 50%),
-      radial-gradient(circle at 22% 80%, #BAB2FA 0%, transparent 50%),
-      linear-gradient(135deg, #f8f7ff 0%, #fef9fb 50%, #f5f8ff 100%);
-    background-size: 200% 200%, 200% 200%, 200% 200%, 200% 200%, 100% 100%;
-    background-position: 80% 20%, 80% 90%, 20% 90%, 20% 20%, 0% 50%;
-  }
-  html.dark .animated-background {
-    background: linear-gradient(135deg, #0a0a14 0%, #14141e 50%, #1e1e28 100%);
-  }
-
-html.dark .animated-background {
-  background: linear-gradient(135deg, #0a0a14 0%, #14141e 50%, #1e1e28 100%);
+  opacity: 1;
+  transition: opacity 0.6s ease-in-out;
 }
 
-  /* blob 樣式（基礎） */
-  .blob {
-    position: absolute;
-    border-radius: 50%;
-    opacity: 0.4;
-    filter: blur(40px);
-    pointer-events: auto;
-    mix-blend-mode: lighten;
-    z-index: 0;
-  }
-  /* blob 樣式（基礎） */
-  .blob {
-    position: absolute;
-    border-radius: 50%;
-    opacity: 0.4;
-    filter: blur(40px);
-    pointer-events: auto;
-    mix-blend-mode: lighten;
-  }
-/* 淺色模式 blob 強化 */
-html:not(.dark) .blob {
-  opacity: 0.6;
-  filter: blur(32px);
-  mix-blend-mode: normal;
+.tech-background.dark-mode {
+  opacity: 1;
 }
-/* 各 blob 位置與顏色 */
-.blob-1 {
-  width: 400px;
-  height: 400px;
-  left: 10vw;
-  top: 20vh;
-  background: radial-gradient(circle, #91C2FA 0%, transparent 70%);
-  animation: blobMove1 24s ease-in-out infinite;
+
+/* 確保背景不會影響其他元素 */
+.tech-background::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: transparent;
+  pointer-events: none;
 }
-.blob-2 {
-  width: 300px;
-  height: 300px;
-  left: 60vw;
-  top: 10vh;
-  background: radial-gradient(circle, #F9D9AD 0%, transparent 70%);
-  animation: blobMove2 28s ease-in-out infinite;
+
+/* 添加輕微的雜訊紋理 */
+@keyframes noise {
+  0%, 100% { opacity: 0.03; }
+  50% { opacity: 0.05; }
 }
-.blob-3 {
-  width: 350px;
-  height: 350px;
-  left: 30vw;
-  top: 60vh;
-  background: radial-gradient(circle, #FBC0ED 0%, transparent 70%);
-  animation: blobMove3 32s ease-in-out infinite;
-}
-.blob-4 {
-  width: 250px;
-  height: 250px;
-  left: 80vw;
-  top: 70vh;
-  background: radial-gradient(circle, #BAB2FA 0%, transparent 70%);
-  animation: blobMove4 36s ease-in-out infinite;
-}
-.blob-5 {
-  width: 200px;
-  height: 200px;
-  left: 50vw;
-  top: 40vh;
-  background: radial-gradient(circle, #4facfe 0%, transparent 70%);
-  animation: blobMove5 40s ease-in-out infinite;
-}
-/* 淺色模式 blob 顏色加深 */
-html:not(.dark) .blob-1 {
-  background: radial-gradient(circle, #5a9cfb 0%, #91C2FA 60%, transparent 80%);
-}
-html:not(.dark) .blob-2 {
-  background: radial-gradient(circle, #e8b26a 0%, #F9D9AD 60%, transparent 80%);
-}
-html:not(.dark) .blob-3 {
-  background: radial-gradient(circle, #e97ac6 0%, #FBC0ED 60%, transparent 80%);
-}
-html:not(.dark) .blob-4 {
-  background: radial-gradient(circle, #8c7cfb 0%, #BAB2FA 60%, transparent 80%);
-}
-html:not(.dark) .blob-5 {
-  background: radial-gradient(circle, #3576e6 0%, #4facfe 60%, transparent 80%);
-}
-@keyframes blobMove3 {
-  0%,100% { left: 30vw; top: 60vh; }
-  50% { left: 35vw; top: 65vh; }
-}
-@keyframes blobMove1 {
-  0%,100% { left: 10vw; top: 20vh; }
-  50% { left: 30vw; top: 40vh; }
-}
-@keyframes blobMove2 {
-  0%,100% { left: 60vw; top: 10vh; }
-  50% { left: 75vw; top: 35vh; }
-}
-@keyframes blobMove3 {
-  0%,100% { left: 30vw; top: 60vh; }
-  50% { left: 50vw; top: 80vh; }
-}
-@keyframes blobMove4 {
-  0%,100% { left: 80vw; top: 70vh; }
-  50% { left: 60vw; top: 90vh; }
-}
-@keyframes blobMove5 {
-  0%,100% { left: 50vw; top: 40vh; }
-  50% { left: 70vw; top: 60vh; }
+
+.tech-background::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  animation: noise 8s infinite;
 }
 </style>
