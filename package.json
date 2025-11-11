@@ -12,6 +12,7 @@
     "@algolia/autocomplete-js": "^1.19.4",
     "@docsearch/js": "^4.3.2",
     "algoliasearch": "^5.43.0",
+    "animejs": "^4.2.2",
     "chart.js": "^4.5.1",
     "dotenv": "^17.2.3",
     "firebase": "^12.5.0",

@@ -13,7 +13,10 @@
     import { data as allPosts } from './posts.data.ts'
     import NavThemeHandler from './NavThemeHandler.vue'
     import TechBackground from './background/TechBackground.vue'
+    import GamingRGB from './background/GamingRGB.vue'
+    import Slow3DFly from './background/Slow3DFly.vue'
     import HyperOSTheme from './background/HyperOSTheme.vue'
+    import HyperOSTheme2 from './background/HyperOS2Theme.vue'
     import { 
      defaultTheme, 
      THEME_STORAGE_KEY, 
@@ -29,23 +32,41 @@ const enableTransitions = () =>
   'startViewTransition' in document &&
   window.matchMedia('(prefers-reduced-motion: no-preference)').matches
 
+
+// 帷幕式切換效果 (從上到下/從下到上)
 provide('toggle-appearance', async () => {
   if (!enableTransitions()) {
     isDark.value = !isDark.value
     return
   }
 
+  // 淺色→深色：從上到下 (0% to 100%)
+  // 深色→淺色：從下到上 (100% to 0%)
+  const clipPath = isDark.value 
+    ? ['inset(0 0 100% 0)', 'inset(0 0 0% 0)']  // 深色→淺色：從下往上展開
+    : ['inset(0 0 0% 0)', 'inset(0 0 100% 0)']  // 淺色→深色：從上往下覆蓋
+
   await document.startViewTransition(async () => {
     isDark.value = !isDark.value
     await nextTick()
   }).ready
+
+  document.documentElement.animate(
+    { clipPath: isDark.value ? clipPath : clipPath },
+    {
+      duration: 400,
+      easing: 'ease-in-out',
+      fill: 'forwards',
+      pseudoElement: `::view-transition-${isDark.value ? 'old' : 'new'}(root)`
+    }
+  )
 })
+
 
 // 監聽主題切換事件
 const handleThemeChange = (event) => {
   const customEvent = event
   const newTheme = customEvent.detail.theme
-  console.log('Layout 收到主題切換事件:', newTheme) // 調試用
   currentBackgroundTheme.value = newTheme
   
   // 更新 body class 以應用主題特定樣式
@@ -67,7 +88,6 @@ onMounted(() => {
   // 從 localStorage 載入主題
   const savedTheme = localStorage.getItem(THEME_STORAGE_KEY)
   if (savedTheme) {
-    console.log('從 localStorage 載入主題:', savedTheme) // 調試用
     currentBackgroundTheme.value = savedTheme
     updateBodyClass(savedTheme)
   } else {
@@ -76,7 +96,6 @@ onMounted(() => {
   
   // 監聽主題切換事件
   window.addEventListener(THEME_CHANGE_EVENT, handleThemeChange)
-  console.log('Layout 已掛載，當前主題:', currentBackgroundTheme.value) // 調試用
 })
 
 onUnmounted(() => {
@@ -84,8 +103,7 @@ onUnmounted(() => {
 })
 
 
-    // 根據網址 query 切換動畫元件
-
+// 根據網址 query 切換動畫元件
 // 監聽主題選單點擊，動態切換網址 query 並觸發動畫切換
 
         // 只保留一份 normalizeUrl function
@@ -366,14 +384,17 @@ onUnmounted(() => {
 
 <template>
   <!-- 根據選擇的主題顯示對應背景 -->
-    <TechBackground v-if="currentBackgroundTheme === 'tech'" :is-dark="isDark" />
-    <HyperOSTheme v-if="currentBackgroundTheme === 'hyperos'" :is-dark="isDark" />
-  
-  <DefaultTheme.Layout>
-  <NavThemeHandler />
-
+    <TechBackground v-if="currentBackgroundTheme === 'tech'" />
+    <GamingRGB v-if="currentBackgroundTheme === 'gaming'" />
+    <Slow3DFly v-if="currentBackgroundTheme === 'slow3dfly'" />
+    <HyperOSTheme v-if="currentBackgroundTheme === 'hyperos'" />
+    <HyperOSTheme2 v-if="currentBackgroundTheme === 'hyperos2'" />
+    <!-- 佈景主題處理 -->
+    <DefaultTheme.Layout>
+    <NavThemeHandler />
     <!-- 搬家通知彈窗 -->
     <MigrationNotice :intro-finished="true" />
+    <!-- 音樂播放器 -->
     <FloatingBgmPlayer />
     
         <template #doc-before>
@@ -759,5 +780,71 @@ section.VPSidebarItem.level-0 {
     margin-left: 0 !important;
     margin-right: 0 !important;
     }
+}
+</style>
+
+<style>
+/* Hero 文字動畫 */
+.VPHero .name {
+  background: var(--vp-home-hero-name-background);
+  background-size: 400% 400%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: gradientRotate 5s ease infinite;
+}
+html.dark .VPHero .name {
+  animation: gradientRotate 5s ease infinite, dynamicGlow 5s ease infinite;
+}
+@keyframes dynamicGlow {
+  0%   { filter: drop-shadow(-1.6px -1.6px 8px #03141a); }
+  10%  { filter: drop-shadow(-1.6px -1.6px 8px #4D55E0); }
+  20%  { filter: drop-shadow(-1.2px -1.2px 8px #9901DF); }
+  30%  { filter: drop-shadow(-0.8px -0.8px 8px #7A01E0); }
+  40%  { filter: drop-shadow(-0.4px -0.4px 8px #5A00E0); }
+  50%  { filter: drop-shadow(0px 0px 8px #5A00E0); }
+  60%  { filter: drop-shadow(-0.4px -0.4px 8px #5100E6); }
+  70%  { filter: drop-shadow(-0.8px -0.8px 8px #4800EB); }
+  80%  { filter: drop-shadow(-1.2px -1.2px 8px #3500F5); }
+  90%  { filter: drop-shadow(-1.6px -1.6px 8px #1B04F5); }
+  100% { filter: drop-shadow(-1.6px -1.6px 8px #0008F5); }
+}
+@keyframes gradientRotate {
+  0% {
+    background-position: 0% 50%;
+  }
+  25% {
+    background-position: 100% 50%;
+  }
+  50% {
+    background-position: 100% 100%;
+  }
+  75% {
+    background-position: 50% 100%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* === 全站自動進場動畫（由下到上） === */
+.main,
+.items,
+.box,
+.post-item,
+ .VPDoc .vp-doc > * {
+  animation: fadeInUp 0.6s ease !important;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 </style>

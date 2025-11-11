@@ -853,12 +853,12 @@ body:not(:has(.VPHome)) .VPLocalNav {
   word-break: keep-all !important;
 }
 
-    /* 語言選單背景 */
-    .VPMenu {
-    background: rgba(255, 255, 255, 0.7) !important; /* 淺色模式 */
-    backdrop-filter: blur(30px) !important;
-    -webkit-backdrop-filter: blur(30px) !important;
-    }
-    html.dark .VPMenu {
-    background: rgba(35, 35, 35, 0.7) !important; /* 深色模式 */
-    }
+/* 語言選單背景 */
+.VPMenu {
+background: rgba(255, 255, 255, 0.7) !important; /* 淺色模式 */
+backdrop-filter: blur(30px) !important;
+-webkit-backdrop-filter: blur(30px) !important;
+}
+html.dark .VPMenu {
+background: rgba(35, 35, 35, 0.7) !important; /* 深色模式 */
+}

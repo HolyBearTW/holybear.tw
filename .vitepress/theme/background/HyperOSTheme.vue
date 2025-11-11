@@ -13,14 +13,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 
-interface Block {
-  color: string
-  initialX: number
-  initialY: number
-  blur: number
-  hideOnMobile?: boolean
-}
-
 // 4 個色塊的配置 - Xiaomi HyperOS 官方配色
 //色塊位置
 const blocks = ref<Block[]>([
@@ -63,10 +55,6 @@ const getBlockStyle = (block: Block) => {
     transform: 'translate(-50%, -50%)'
   }
 }
-
-onMounted(() => {
-  console.log('HyperOS Theme 已載入')
-})
 </script>
 
 <style scoped>
@@ -411,3 +399,5 @@ onMounted(() => {
   }
 }
 </style>
+
+
