@@ -1,7 +1,7 @@
 <script setup>
-    import Theme from 'vitepress/theme'
+    import DefaultTheme from 'vitepress/theme'
     import { useData } from 'vitepress'
-    import { computed, shallowRef, markRaw, onMounted, watch, ref } from 'vue'
+    import { computed, onMounted, onUnmounted, watch, ref, provide, nextTick } from 'vue'
     import { useRoute } from 'vitepress'
     import { useAuthors } from '../components/useAuthors.js'
     import FloatingBgmPlayer from './FloatingBgmPlayer.vue'
@@ -11,56 +11,82 @@
     import MigrationNotice from '../components/MigrationNotice.vue'
     import mediumZoom from 'medium-zoom'
     import { data as allPosts } from './posts.data.ts'
-    import GlobalAnimations from './GlobalAnimations.vue'
-    import HyperOS2Animations from './HyperOS2Animations.vue'
+    import NavThemeHandler from './NavThemeHandler.vue'
+    import TechBackground from './background/TechBackground.vue'
+    import HyperOSTheme from './background/HyperOSTheme.vue'
+    import { 
+     defaultTheme, 
+     THEME_STORAGE_KEY, 
+     THEME_CHANGE_EVENT 
+    } from './background/themes'
+
+const { isDark } = useData()
+
+// 當前背景主題
+const currentBackgroundTheme = ref(defaultTheme)
+
+const enableTransitions = () =>
+  'startViewTransition' in document &&
+  window.matchMedia('(prefers-reduced-motion: no-preference)').matches
+
+provide('toggle-appearance', async () => {
+  if (!enableTransitions()) {
+    isDark.value = !isDark.value
+    return
+  }
+
+  await document.startViewTransition(async () => {
+    isDark.value = !isDark.value
+    await nextTick()
+  }).ready
+})
+
+// 監聽主題切換事件
+const handleThemeChange = (event) => {
+  const customEvent = event
+  const newTheme = customEvent.detail.theme
+  console.log('Layout 收到主題切換事件:', newTheme) // 調試用
+  currentBackgroundTheme.value = newTheme
+  
+  // 更新 body class 以應用主題特定樣式
+  updateBodyClass(newTheme)
+}
+
+  // 更新 body class
+const updateBodyClass = (theme) => {
+  // 移除所有主題 class
+  document.body.classList.remove('theme-tech', 'theme-hyperos', 'theme-none')
+  
+  // 添加當前主題 class
+  if (theme && theme !== 'none') {
+    document.body.classList.add(`theme-${theme}`)
+  }
+}
+
+onMounted(() => {
+  // 從 localStorage 載入主題
+  const savedTheme = localStorage.getItem(THEME_STORAGE_KEY)
+  if (savedTheme) {
+    console.log('從 localStorage 載入主題:', savedTheme) // 調試用
+    currentBackgroundTheme.value = savedTheme
+    updateBodyClass(savedTheme)
+  } else {
+    updateBodyClass(defaultTheme)
+  }
+  
+  // 監聽主題切換事件
+  window.addEventListener(THEME_CHANGE_EVENT, handleThemeChange)
+  console.log('Layout 已掛載，當前主題:', currentBackgroundTheme.value) // 調試用
+})
+
+onUnmounted(() => {
+  window.removeEventListener(THEME_CHANGE_EVENT, handleThemeChange)
+})
 
 
     // 根據網址 query 切換動畫元件
 
 // 監聽主題選單點擊，動態切換網址 query 並觸發動畫切換
-
-onMounted(() => {
-    updateBgComponent()
-    window.addEventListener('popstate', updateBgComponent)
-    document.querySelectorAll('a[href*="?theme="]').forEach(el => {
-        el.addEventListener('click', function(e) {
-            e.preventDefault()
-            const url = el.getAttribute('href')
-            // 解析 theme 參數
-            const params = new URLSearchParams(url.split('?')[1] || '')
-            const theme = params.get('theme') || 'default'
-            localStorage.setItem('site-theme', theme)
-            // 保留當前路徑，只更新 query
-            // 保留原本 query 與 hash
-            const urlObj = new URL(window.location.href)
-            urlObj.searchParams.set('theme', theme)
-            window.history.pushState({}, '', urlObj.pathname + urlObj.search + urlObj.hash)
-            updateBgComponent()
-        })
-    })
-})
-
-const currentBgComponent = shallowRef(markRaw(GlobalAnimations))
-
-function updateBgComponent() {
-    if (typeof window !== 'undefined') {
-        const params = new URLSearchParams(window.location.search)
-        let theme = params.get('theme')
-        // 若網址沒帶 theme，則讀 localStorage
-        if (!theme) {
-            theme = localStorage.getItem('site-theme') || 'default'
-        }
-        if (theme === 'hyperos2') {
-            currentBgComponent.value = markRaw(HyperOS2Animations)
-        } else {
-            currentBgComponent.value = markRaw(GlobalAnimations)
-        }
-    }
-}
-onMounted(() => {
-    updateBgComponent()
-    window.addEventListener('popstate', updateBgComponent)
-})
 
         // 只保留一份 normalizeUrl function
         function normalizeUrl(url) {
@@ -339,11 +365,17 @@ onMounted(() => {
 </script>
 
 <template>
-    <component :is="currentBgComponent" />
+  <!-- 根據選擇的主題顯示對應背景 -->
+    <TechBackground v-if="currentBackgroundTheme === 'tech'" :is-dark="isDark" />
+    <HyperOSTheme v-if="currentBackgroundTheme === 'hyperos'" :is-dark="isDark" />
+  
+  <DefaultTheme.Layout>
+  <NavThemeHandler />
+
     <!-- 搬家通知彈窗 -->
     <MigrationNotice :intro-finished="true" />
     <FloatingBgmPlayer />
-    <Theme.Layout>
+    
         <template #doc-before>
             <div v-if="!isHomePage" class="blog-post-header-injected">
                 <h1 class="blog-post-title">{{ currentTitle }}</h1>
@@ -385,7 +417,7 @@ onMounted(() => {
                 <GiscusComments v-if="!page?.path?.startsWith('/docs/')" />
             </ClientOnly>
         </template>
-    </Theme.Layout>
+    </DefaultTheme.Layout>
 </template>
 
 <style scoped>
