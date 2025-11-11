@@ -3,6 +3,7 @@ import MyCustomLayout from './MyCustomLayout.vue';
 import './style.css';
 import OpenCCConverter from '../components/OpenCCConverter.vue';
 import Spoiler from './Spoiler.vue';
+import { THEME_STORAGE_KEY } from './background/themes';
 
 export default {
     Layout: MyCustomLayout,
@@ -353,6 +354,36 @@ export default {
         }
 
         function globalClickDelegate(e) {
+            // 處理主題鏈接點擊
+            const themeLink = e.target.closest('a[href^="#theme-"]');
+            if (themeLink && themeLink instanceof HTMLElement) {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+
+                const href = themeLink.getAttribute('href');
+                if (href && href.startsWith('#theme-')) {
+                    const themeId = href.replace('#theme-', '');
+                    console.log('點擊主題鏈接:', themeId); // 調試用
+
+                    // 保存到 localStorage
+                    localStorage.setItem(THEME_STORAGE_KEY, themeId);
+
+                    // 觸發主題切換事件
+                    window.dispatchEvent(new CustomEvent('theme-change', {
+                        detail: { theme: themeId }
+                    }));
+
+                    // 關閉下拉菜單（如果有的話）
+                    const dropdown = themeLink.closest('.VPNavBarMenuGroup');
+                    if (dropdown) {
+                        dropdown.classList.remove('open');
+                    }
+                }
+                return false;
+            }
+
+            // 原有的 outline-link 處理邏輯
             const link = e.target.closest('.outline-link');
             if (
                 link &&
@@ -363,7 +394,7 @@ export default {
                 e.preventDefault();
                 e.stopPropagation();
                 e.stopImmediatePropagation(); // 阻止其他監聽器
-                
+
                 const href = link.getAttribute('href');
                 if (href && href.startsWith('#')) {
                     const anchor = document.querySelector(href);
@@ -371,7 +402,7 @@ export default {
                         // 完全複製懸停時的邏輯
                         const elementPosition = anchor.getBoundingClientRect().top;
                         const offsetPosition = elementPosition + window.pageYOffset - 50;
-                        
+
                         // 使用 setTimeout 確保在其他事件處理完後執行
                         setTimeout(() => {
                             window.scrollTo({
@@ -379,7 +410,7 @@ export default {
                                 behavior: 'smooth'
                             });
                         }, 10);
-                        
+
                         // 更新 URL，但不觸發跳轉
                         setTimeout(() => {
                             history.pushState(null, '', href);

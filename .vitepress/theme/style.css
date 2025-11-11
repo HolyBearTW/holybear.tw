@@ -107,6 +107,8 @@ html body:has(.theme-transition-overlay) .VPLocalNav::before,
 html body:has(.theme-transition-overlay) .VPLocalNav::after {
   background-color: transparent !important;
   background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
   transition: none !important;
   border-bottom-color: transparent !important;
   border-color: transparent !important;
@@ -466,20 +468,20 @@ body .VPSidebar {
 
 /* 導航欄背景 */
 body.is-blog-page:not(:has(.VPHome)) .VPNavBar .content-body {
-  backdrop-filter: blur(12px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
+  backdrop-filter: blur(4px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(4px) saturate(180%) !important;
 }
 
 body:not(.is-blog-page):not(:has(.VPHome)) {
-  backdrop-filter: blur(12px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
+  backdrop-filter: blur(4px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(4px) saturate(180%) !important;
 }
 
 @media (max-width: 959px) {
 body:not(:has(.VPHome)) .VPNavBarTitle.has-sidebar,
 body:not(:has(.VPHome)) .wrapper {
-  backdrop-filter: blur(12px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
+  backdrop-filter: blur(4px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(4px) saturate(180%) !important;
   }
 }
 
@@ -819,8 +821,8 @@ body:has(.VPHome) .VPNavBar::after {
 body:not(:has(.VPHome)) .VPLocalNav {
   background: transparent !important;
   background-color: transparent !important;
-  backdrop-filter: blur(12px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
+  backdrop-filter: blur(4px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(4px) saturate(180%) !important;
 }
 
 /* 確保右側目錄（On this page）過長文字以省略號顯示，並且占滿可用空間 */

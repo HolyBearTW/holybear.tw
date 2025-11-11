@@ -1,4 +1,5 @@
 import sidebarEn from '../sidebars/blog.sidebar.en'
+import { generateNavThemes } from '../theme/background/themes';
 
 export default {
   lang: 'en',
@@ -10,12 +11,9 @@ export default {
       { text: 'Shortlink', link: 'https://go.holybear.tw/' },
       { text: 'Telegram', link: 'https://t.me/HolyBearTW' },
       { text: 'Donate', link: 'https://paypal.me/holybear0610' },
-      {
-        text: 'Theme',
-        items: [
-          { text: 'Default', link: '?theme=default' },
-          { text: 'HyperOS 2', link: '?theme=hyperos2' }
-        ]
+      { 
+        text: 'Themes', 
+        items: generateNavThemes()
       }
     ],
     sidebar: {
