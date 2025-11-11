@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useData } from 'vitepress'
 
 const { isDark } = useData()
@@ -102,7 +102,7 @@ const initDataFlows = (width: number, height: number) => {
       path,
       position: Math.random() * path.length,
       speed: Math.random() * 0.01 + 0.005,
-      color: colors.value.dataFlow,
+      color: '', // 不預設顏色，在 animate 時動態取
       opacity: Math.random() * 0.3 + 0.3
     })
   }
@@ -133,8 +133,8 @@ const initHexagons = (width: number, height: number) => {
   }
 }
 
-// 繪製六邊形
-const drawHexagon = (ctx: CanvasRenderingContext2D, x: number, y: number, size: number, opacity: number) => {
+// 繪製六邊形（顏色由外部傳入）
+const drawHexagon = (ctx: CanvasRenderingContext2D, x: number, y: number, size: number, opacity: number, color: string) => {
   ctx.beginPath()
   for (let i = 0; i < 6; i++) {
     const angle = (Math.PI / 3) * i
@@ -147,9 +147,7 @@ const drawHexagon = (ctx: CanvasRenderingContext2D, x: number, y: number, size: 
     }
   }
   ctx.closePath()
-  ctx.strokeStyle = isDark.value 
-    ? `rgba(100, 200, 255, ${opacity})`
-    : `rgba(80, 150, 220, ${opacity})`
+  ctx.strokeStyle = color
   ctx.lineWidth = 0.5
   ctx.stroke()
 }
@@ -232,7 +230,7 @@ const drawScanlines = (ctx: CanvasRenderingContext2D, width: number, height: num
 const animate = () => {
   if (!canvas.value) return
   
-  const ctx = canvas.value.getContext('2d')
+  const ctx = canvas.value.getContext('2d', { willReadFrequently: true })
   if (!ctx) return
   
   const width = canvas.value.width
@@ -265,7 +263,7 @@ const animate = () => {
     // 平滑過渡
     hex.opacity += (hex.targetOpacity - hex.opacity) * 0.02
     
-    drawHexagon(ctx, hex.x, hex.y, hex.size * 0.5, hex.opacity)
+    drawHexagon(ctx, hex.x, hex.y, hex.size * 0.5, hex.opacity, colors.value.hexagon)
   })
   
   // 3. 繪製 Plexus 節點和連線
@@ -312,9 +310,7 @@ const animate = () => {
         ctx.beginPath()
         ctx.moveTo(node.x, node.y)
         ctx.lineTo(other.x, other.y)
-        ctx.strokeStyle = isDark.value 
-          ? `rgba(100, 200, 255, ${opacity})`
-          : `rgba(80, 150, 220, ${opacity * 0.6})`
+        ctx.strokeStyle = colors.value.line.replace(/0\.1|0\.15/, opacity.toString())
         ctx.lineWidth = 0.5
         ctx.stroke()
       }
@@ -346,15 +342,13 @@ const animate = () => {
       
       ctx.beginPath()
       ctx.arc(trailPoint.x, trailPoint.y, 2, 0, Math.PI * 2)
-      ctx.fillStyle = isDark.value 
-        ? `rgba(0, 255, 200, ${trailOpacity})`
-        : `rgba(0, 180, 150, ${trailOpacity})`
+      ctx.fillStyle = colors.value.dataFlow.replace(/0\.8|0\.6/, trailOpacity.toString())
       ctx.fill()
     }
     
     // 繪製當前位置（發光效果）
     const gradient = ctx.createRadialGradient(x, y, 0, x, y, 8)
-    gradient.addColorStop(0, isDark.value ? 'rgba(0, 255, 200, 0.8)' : 'rgba(0, 220, 180, 0.6)')
+    gradient.addColorStop(0, colors.value.dataFlow)
     gradient.addColorStop(1, 'rgba(0, 255, 200, 0)')
     ctx.fillStyle = gradient
     ctx.beginPath()
@@ -394,15 +388,12 @@ const handleResize = () => {
 // 組件掛載
 onMounted(() => {
   if (!canvas.value) return
-  
   canvas.value.width = window.innerWidth
   canvas.value.height = window.innerHeight
-  
   initNodes(canvas.value.width, canvas.value.height)
   initDataFlows(canvas.value.width, canvas.value.height)
   initHexagons(canvas.value.width, canvas.value.height)
   animate()
-  
   window.addEventListener('mousemove', handleMouseMove)
   window.addEventListener('resize', handleResize)
 })
