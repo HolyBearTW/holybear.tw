@@ -8,7 +8,6 @@ import SpoilerComponentDocsSidebar from './sidebars/spoiler-component-docs-sideb
 
 export default defineConfig({
     ignoreDeadLinks: true,
-    appearance: 'dark',
     title: '聖小熊的秘密基地',
     base: '/',
     lang: 'zh-TW',
@@ -224,6 +223,7 @@ export default defineConfig({
     // ✨ END: 整合所有 OG 標籤的最終邏輯 ✨
 
         themeConfig: {
+        appearance: 'dark',
         logo: '/logo.png',
         outline: {
             level: [2, 3], // 默認顯示 H2 和 H3 標題

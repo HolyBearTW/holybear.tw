@@ -3,9 +3,12 @@
 // 添加新主題只需在這個數組中添加一行
 
 export const backgroundThemes = [
-  ['⚡ 科技感　', 'tech', '⚡'],
-  ['📱 HyperOS ', 'hyperos', '📱'],
-  ['⬜ 無背景　', 'none', '⬜'],
+  ['⚡ 科技感', 'tech', '⚡'],
+  ['🎮 電競RGB ', 'gaming', '🎮'],
+  ['🌟 螢火蟲', 'slow3dfly', '🌟'],
+  ['📱 HyperOS', 'hyperos', '📱'],
+  ['📱 HyperOS 2', 'hyperos2', '📱'],
+  ['⬜ 無背景', 'none', '⬜'],
 ]
 
 // 預設主題 (使用主題ID)
