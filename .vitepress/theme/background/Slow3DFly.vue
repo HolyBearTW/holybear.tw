@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
 import { useData } from 'vitepress'
-import { animate as animeAnimate, stagger, utils } from 'animejs'
+import { animate as animeAnimate } from 'animejs'
 
 // Canvas 引用
 const canvasRef = ref<HTMLCanvasElement | null>(null)
@@ -97,8 +97,8 @@ const initPetals = (width: number, height: number) => {
           ? `hsl(${Math.random() * 60 + 300}, 70%, 75%)` // 粉紫色花瓣（明亮）
           : `hsl(200, 80%, 90%)` // 淺藍雪花
         : shape === 'petal'
-          ? `hsl(${Math.random() * 40 + 320}, 65%, 70%)` // 粉色花瓣（避免過深）
-          : `hsl(200, 75%, 75%)`, // 中藍雪花（避免過深）
+          ? `hsl(${Math.random() * 30 + 330}, 85%, 55%)` // 淺色模式：鮮豔粉紅色花瓣
+          : `hsl(200, 90%, 50%)`, // 淺色模式：鮮豔藍色雪花
       shape
     }
     
@@ -207,10 +207,10 @@ const initInkBlots = (width: number, height: number) => {
             const hue = Math.random() * 360
             return `hsl(${hue}, 60%, 50%)`
           })()
-        : // 淺色模式：較深的彩色墨水
+        : // 淺色模式：明亮飽和的彩色墨水
           (() => {
             const hue = Math.random() * 360
-            return `hsl(${hue}, 60%, 40%)`
+            return `hsl(${hue}, 80%, 45%)` // 更高飽和度，適中亮度
           })(),
       dots
     }
@@ -259,8 +259,8 @@ const initFireflies = (width: number, height: number) => {
       brightness: Math.random() * 0.8 + 0.2,
       size: Math.random() * 3 + 1.5,
       color: isDark.value
-        ? `hsl(${Math.random() * 60 + 50}, 100%, 70%)` // 黃綠色
-        : `hsl(${Math.random() * 60 + 50}, 90%, 55%)`,
+        ? `hsl(${Math.random() * 60 + 50}, 100%, 70%)` // 深色模式：黃綠色
+        : `hsl(${Math.random() * 60 + 30}, 100%, 55%)`, // 淺色模式：亮橙黃色（更暖色調）
       animationIndex: i % 4, // 4 種不同的移動軌跡
       animationDuration: 200000 + Math.random() * 100000, // 200-300 秒 (超級緩慢，3-5 分鐘一個循環)
       animationDelay: i * 300 // 交錯啟動延遲增加
@@ -324,20 +324,36 @@ const drawPetals = (ctx: CanvasRenderingContext2D) => {
     
     if (petal.shape === 'petal') {
       // 使用 SVG 圖片繪製花瓣
-      if (flowerImage && flowerImage.complete && flowerImage.naturalWidth > 0) {
+      if (flowerImage && flowerImage.complete) {
         const size = petal.size * 3 // 放大尺寸以適配 SVG
-        // 直接繪製 SVG，使用 petal.color 來著色
-        // 先繪製陰影/著色層
+        
         ctx.save()
-        ctx.globalCompositeOperation = 'source-over'
-        ctx.fillStyle = petal.color
+        
+        // 先繪製彩色陰影光暈
         ctx.shadowColor = petal.color
-        ctx.shadowBlur = 8
-        // 繪製 SVG
-        ctx.drawImage(flowerImage, -size / 2, -size / 2, size, size)
-        // 使用 multiply 混合模式為 SVG 上色
-        ctx.globalCompositeOperation = 'multiply'
-        ctx.fillRect(-size / 2, -size / 2, size, size)
+        ctx.shadowBlur = 15
+        ctx.shadowOffsetX = 0
+        ctx.shadowOffsetY = 0
+        
+        // 創建一個臨時 canvas 來處理 SVG 著色
+        const tempCanvas = document.createElement('canvas')
+        tempCanvas.width = size
+        tempCanvas.height = size
+        const tempCtx = tempCanvas.getContext('2d')
+        
+        if (tempCtx) {
+          // 在臨時 canvas 上繪製 SVG
+          tempCtx.drawImage(flowerImage, 0, 0, size, size)
+          
+          // 使用 source-in 混合模式填充顏色
+          tempCtx.globalCompositeOperation = 'source-in'
+          tempCtx.fillStyle = petal.color
+          tempCtx.fillRect(0, 0, size, size)
+          
+          // 將著色後的圖片繪製到主 canvas
+          ctx.drawImage(tempCanvas, -size / 2, -size / 2, size, size)
+        }
+        
         ctx.restore()
       }
     } else {
@@ -377,14 +393,14 @@ const drawBubbles = (ctx: CanvasRenderingContext2D) => {
   bubbles.forEach(bubble => {
     const x = bubble.x + bubble.sway
     
-    // 外圈光暈
+    // 外圈光暈 - 淺色模式使用更鮮豔的顏色
     const gradient = ctx.createRadialGradient(x, bubble.y, 0, x, bubble.y, bubble.size)
     gradient.addColorStop(0, isDark.value 
       ? `rgba(100, 200, 255, ${bubble.opacity * 0.6})`
-      : `rgba(150, 220, 255, ${bubble.opacity * 0.5})`)
+      : `rgba(100, 180, 255, ${bubble.opacity * 0.8})`) // 淺色模式：更亮的藍色
     gradient.addColorStop(0.7, isDark.value
       ? `rgba(50, 150, 200, ${bubble.opacity * 0.3})`
-      : `rgba(100, 180, 220, ${bubble.opacity * 0.2})`)
+      : `rgba(50, 150, 255, ${bubble.opacity * 0.5})`) // 淺色模式：更鮮豔
     gradient.addColorStop(1, 'rgba(0, 0, 0, 0)')
     
     ctx.fillStyle = gradient
@@ -392,19 +408,19 @@ const drawBubbles = (ctx: CanvasRenderingContext2D) => {
     ctx.arc(x, bubble.y, bubble.size, 0, Math.PI * 2)
     ctx.fill()
     
-    // 氣泡邊緣
+    // 氣泡邊緣 - 淺色模式使用更明顯的顏色
     ctx.strokeStyle = isDark.value
       ? `rgba(150, 220, 255, ${bubble.opacity * 0.8})`
-      : `rgba(100, 180, 230, ${bubble.opacity * 0.6})`
+      : `rgba(50, 150, 255, ${bubble.opacity * 0.9})` // 淺色模式：更深的藍色邊緣
     ctx.lineWidth = 1.5
     ctx.beginPath()
     ctx.arc(x, bubble.y, bubble.size * 0.9, 0, Math.PI * 2)
     ctx.stroke()
     
-    // 高光
+    // 高光 - 淺色模式也保持明亮
     ctx.fillStyle = isDark.value
       ? `rgba(255, 255, 255, ${bubble.opacity * 0.6})`
-      : `rgba(255, 255, 255, ${bubble.opacity * 0.4})`
+      : `rgba(255, 255, 255, ${bubble.opacity * 0.9})` // 淺色模式：更明顯的高光
     ctx.beginPath()
     ctx.arc(x - bubble.size * 0.3, bubble.y - bubble.size * 0.3, bubble.size * 0.2, 0, Math.PI * 2)
     ctx.fill()
@@ -509,13 +525,16 @@ const drawBackground = (ctx: CanvasRenderingContext2D, width: number, height: nu
   const gradient = ctx.createLinearGradient(0, 0, 0, height)
   
   if (isDark.value) {
+    // 深色模式：深紫色漸變
     gradient.addColorStop(0, '#0a0a1a')
     gradient.addColorStop(0.5, '#1a1430')
     gradient.addColorStop(1, '#0f0820')
   } else {
-    gradient.addColorStop(0, '#0a0a1a')
-    gradient.addColorStop(0.5, '#1a1430')
-    gradient.addColorStop(1, '#0f0820')
+    // 淺色模式：粉色漸變（明亮溫暖）
+    gradient.addColorStop(0, '#ffe8f5')
+    gradient.addColorStop(0.3, '#fff0f8')
+    gradient.addColorStop(0.7, '#fef5fa')
+    gradient.addColorStop(1, '#ffe8f0')
   }
   
   ctx.fillStyle = gradient
@@ -609,5 +628,6 @@ onUnmounted(() => {
   height: 100vh;
   z-index: -1;
   pointer-events: none;
+  /* 移除固定黑色背景，讓 Canvas 繪製的漸變顯示 */
 }
 </style>

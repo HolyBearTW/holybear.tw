@@ -152,26 +152,6 @@ body:has(.VPHome) .VPFooter {
   z-index: 1;
 }
 
-/* 深色模式首頁背景 */
-body:has(.VPHome)::before {
-  /* ...已移至 GlobalAnimations.vue... */
-}
-
-/* 深色模式第二層 (overlay / 混合效果) */
-body:has(.VPHome)::after {
-  /* ...已移至 GlobalAnimations.vue... */
-}
-
-/* 淺色模式覆蓋（首頁才有效） */
-html:not(.dark) body:has(.VPHome)::before {
-  /* ...已移至 GlobalAnimations.vue... */
-}
-html:not(.dark) body:has(.VPHome)::after {
-  /* ...已移至 GlobalAnimations.vue... */
-}
-
-/* 動畫 keyframes（保留原始設定） */
-
 /* 確保頁腳背景透明，讓漸變背景可見 */
 .VPFooter {
   background-color: transparent !important;
@@ -472,7 +452,7 @@ body.is-blog-page:not(:has(.VPHome)) .VPNavBar .content-body {
   -webkit-backdrop-filter: blur(4px) saturate(180%) !important;
 }
 
-body:not(.is-blog-page):not(:has(.VPHome)) {
+body:not(.is-blog-page):not(:has(.VPHome)) .VPNavBar {
   backdrop-filter: blur(4px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(4px) saturate(180%) !important;
 }
@@ -628,14 +608,11 @@ body:not(:has(.VPHome)) .VPNavScreen {
   box-shadow: 0 4px 16px rgba(0,255,238,0.18);
 }
 
-/* 語言選項置中 */
-.VPNavScreen .VPNavScreenMenu .VPNavScreenMenuGroup {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-.VPNavScreen .VPNavScreenMenu .VPNavScreenMenuGroup .VPNavScreenMenuLink {
-  justify-content: center;
+/* 隱藏外部連結的小箭頭 */
+.vp-external-link-icon::after,
+.vp-external-link-icon::before {
+  display: none !important;
+  content: none !important;
 }
 
 /* 手機選單底部語言選項置中 */
@@ -721,14 +698,26 @@ body:not(:has(.VPHome)) .VPNavScreen {
   height: auto !important;
   max-height: none !important;
 }
+.VPNavScreenMenuGroup > .button {
+  min-height: 48px;
+  padding: 0.7em 1.2em;
+  box-sizing: border-box;
+  transition: background 0.2s, box-shadow 0.2s, color 0.2s;
+}
 .VPNavScreenMenuGroup > .button .button-text {
   flex: 1;
   text-align: center;
+  padding-left: 18px;
 }
 .VPNavScreenMenuGroup > .button:hover {
   background: rgba(0,255,238,0.18);
   color: #00b8b8;
   box-shadow: 0 4px 16px rgba(0,255,238,0.18);
+}
+.dark .VPNavScreenMenuGroup.open .button {
+  background: rgba(0,255,238,0.18) !important;
+  color: #00b8b8 !important;
+  box-shadow: 0 4px 16px rgba(0,255,238,0.18) !important;
 }
 /* 主題選單群組按鈕玻璃高斯模糊效果 */
 .VPNavScreenMenuGroup > .button {
@@ -746,6 +735,10 @@ body:not(:has(.VPHome)) .VPNavScreen {
   background: rgba(0,255,238,0.18);
   color: #00b8b8;
   box-shadow: 0 4px 16px rgba(0,255,238,0.18);
+}
+.VPNavScreenMenuLink:active {
+  transform: scale(0.98) !important;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 /* ==================== 主題樣式範例 (Halloween) ==================== */
