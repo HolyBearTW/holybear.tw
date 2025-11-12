@@ -739,6 +739,49 @@ onUnmounted(() => {
 
 <style>
 /* ============================================
+   content-body - 內容主體區域
+   功能: 文檔主要內容區域,包含文章正文
+   ============================================ */
+
+/* 內容區域圓角 */
+.VPDoc .content:not(.VPDocAsideOutline):not(.VPDocAsideOutline *) {
+  border-radius: 18px !important;
+}
+
+/* Light Mode - 內容區域背景 (透射模糊) */
+.VPDoc .content:not(.VPDocAsideOutline):not(.VPDocAsideOutline *) {
+  background-color: rgba(255, 255, 255, 0.5) !important;
+  padding: 24px;
+}
+
+.VPContent{
+    background-color: rgb(255, 255, 255,.2) !important;
+}
+.dark .VPContent{
+    background-color: rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Dark Mode - 內容區域背景 (透射模糊) */
+.dark .VPDoc .content:not(.VPDocAsideOutline):not(.VPDocAsideOutline *)
+ {
+  background-color: rgba(26, 26, 30, 0.8) !important;
+}
+
+/* Light Mode - 內容區域文字顏色 */
+.content-body,
+.VPDoc .content,
+.vp-doc {
+  color: #1a1a1a !important;
+}
+
+/* Dark Mode - 內容區域文字顏色 */
+.dark .content-body,
+.dark .VPDoc .content,
+.dark .vp-doc {
+  color: #ffffff !important;
+}
+
+/* ============================================
    視圖過渡動畫 (View Transition API)
    功能: 深淺色模式切換時的帷幕動畫效果
    ============================================ */
