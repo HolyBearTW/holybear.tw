@@ -4,8 +4,10 @@
 
 export const backgroundThemes = [
   ['⚡ 科技感', 'tech', '⚡'],
+  ['🌊 柔和抽象', 'animated', '🌊'],
   ['🎮 電競RGB ', 'gaming', '🎮'],
   ['🌟 螢火蟲', 'slow3dfly', '🌟'],
+  ['💧 圓點光暈', 'halo', '💧'],
   ['📱 HyperOS', 'hyperos', '📱'],
   ['📱 HyperOS 2', 'hyperos2', '📱'],
   ['⬜ 無背景', 'none', '⬜'],

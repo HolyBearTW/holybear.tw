@@ -12,11 +12,13 @@
     import mediumZoom from 'medium-zoom'
     import { data as allPosts } from './posts.data.ts'
     import NavThemeHandler from './NavThemeHandler.vue'
-    import TechBackground from './background/TechBackground.vue'
+    import Tech from './background/TechBackground.vue'
+    import Animated from './background/AnimatedBackground.vue'
     import GamingRGB from './background/GamingRGB.vue'
     import Slow3DFly from './background/Slow3DFly.vue'
-    import HyperOSTheme from './background/HyperOSTheme.vue'
-    import HyperOSTheme2 from './background/HyperOS2Theme.vue'
+    import Halo from './background/CircularHaloBackgroud.vue'
+    import HyperOS from './background/HyperOSTheme.vue'
+    import HyperOS2 from './background/HyperOS2Theme.vue'
     import { 
      defaultTheme, 
      THEME_STORAGE_KEY, 
@@ -79,7 +81,7 @@ const updateBodyClass = (theme: string) => {
   if (typeof document === 'undefined') return
   
   // 移除所有主題 class
-  document.body.classList.remove('theme-animated', 'theme-all', 'theme-tech', 'theme-ink', 'theme-cinemagraph', 'theme-morphing', 'theme-gaming', 'theme-slow3dfly', 'theme-hyperos', 'theme-none')
+  document.body.classList.remove('theme-animated', 'theme-tech', 'theme-gaming', 'theme-slow3dfly', 'theme-halo', 'theme-hyperos', 'theme-hyperos2', 'theme-none')
   
   // 添加當前主題 class
   if (theme && theme !== 'none') {
@@ -397,11 +399,13 @@ onUnmounted(() => {
     <FloatingBgmPlayer />
 
     <ClientOnly>
-        <TechBackground v-if="currentBackgroundTheme === 'tech'" />
+        <Tech v-if="currentBackgroundTheme === 'tech'" />
+        <Animated v-if="currentBackgroundTheme === 'animated'" />
         <GamingRGB v-if="currentBackgroundTheme === 'gaming'" />
         <Slow3DFly v-if="currentBackgroundTheme === 'slow3dfly'" />
-        <HyperOSTheme v-if="currentBackgroundTheme === 'hyperos'" />
-        <HyperOSTheme2 v-if="currentBackgroundTheme === 'hyperos2'" />
+        <Halo v-if="currentBackgroundTheme === 'halo'" />
+        <HyperOS v-if="currentBackgroundTheme === 'hyperos'" />
+        <HyperOS2 v-if="currentBackgroundTheme === 'hyperos2'" />
     </ClientOnly>
 
     <component :is="DefaultTheme.Layout">

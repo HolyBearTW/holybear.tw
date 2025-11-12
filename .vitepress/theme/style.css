@@ -475,7 +475,7 @@ body:has(.VPHome) .VPNavBar.top {
 body:has(.VPHome) .VPNavBar:not(.top) {
   backdrop-filter: blur(8px) !important;
   -webkit-backdrop-filter: blur(8px) !important;
-  background-color: var(--vp-nav-bg-color, rgba(255,255,255,0.7)) !important;
+  background-color: var(--vp-nav-bg-color, rgba(255,255,255,0.55)) !important;
 }
 
 /* curtain 處理（避免遮罩擋住模糊） */
@@ -854,4 +854,21 @@ backdrop-filter: blur(30px) !important;
 }
 html.dark .VPMenu {
 background: rgba(35, 35, 35, 0.7) !important; /* 深色模式 */
+}
+
+/* 首頁與文章列表 box 背景 */
+.VPLink.no-icon.VPFeature,
+.stat-card,
+.author-contribution-section,
+.filter-btn {
+  background: rgba(255, 255, 255, 0.48) !important; /* 淺色 */
+  backdrop-filter: blur(1px) !important;
+  border-radius: 18px !important;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08) !important;
+}
+html.dark .VPLink.no-icon.VPFeature,
+html.dark .stat-card,
+html.dark .author-contribution-section,
+html.dark .filter-btn {
+  background: rgba(30, 30, 30, 0.38) !important;    /* 深色 */
 }
