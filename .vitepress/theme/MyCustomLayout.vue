@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
     import DefaultTheme from 'vitepress/theme'
     import { useData } from 'vitepress'
     import { computed, onMounted, onUnmounted, watch, ref, provide, nextTick } from 'vue'
@@ -29,54 +29,57 @@ const { isDark } = useData()
 const currentBackgroundTheme = ref(defaultTheme)
 
 const enableTransitions = () =>
+  typeof document !== 'undefined' &&
   'startViewTransition' in document &&
   window.matchMedia('(prefers-reduced-motion: no-preference)').matches
 
-
-// 帷幕式切換效果 (從上到下/從下到上)
 provide('toggle-appearance', async () => {
-  if (!enableTransitions()) {
+  // 檢查瀏覽器環境和 View Transition API 支援
+  if (typeof document === 'undefined' || !enableTransitions()) {
     isDark.value = !isDark.value
     return
   }
 
-  // 淺色→深色：從上到下 (0% to 100%)
-  // 深色→淺色：從下到上 (100% to 0%)
-  const clipPath = isDark.value 
-    ? ['inset(0 0 100% 0)', 'inset(0 0 0% 0)']  // 深色→淺色：從下往上展開
-    : ['inset(0 0 0% 0)', 'inset(0 0 100% 0)']  // 淺色→深色：從上往下覆蓋
-
+  // 記錄切換前的狀態（用於決定動畫方向）
+  const wasLight = !isDark.value
+  
   await document.startViewTransition(async () => {
     isDark.value = !isDark.value
     await nextTick()
-  }).ready
-
-  document.documentElement.animate(
-    { clipPath: isDark.value ? clipPath : clipPath },
-    {
-      duration: 400,
-      easing: 'ease-in-out',
-      fill: 'forwards',
-      pseudoElement: `::view-transition-${isDark.value ? 'old' : 'new'}(root)`
+    
+    // 根據切換方向添加 class
+    if (wasLight) {
+      // 淺色 → 深色：從上到下
+      document.documentElement.classList.add('theme-transition-down')
+    } else {
+      // 深色 → 淺色：從下到上
+      document.documentElement.classList.add('theme-transition-up')
     }
-  )
+  }).ready
+  
+  // 動畫完成後移除 class
+  setTimeout(() => {
+    document.documentElement.classList.remove('theme-transition-down', 'theme-transition-up')
+  }, 600)
 })
 
-
 // 監聽主題切換事件
-const handleThemeChange = (event) => {
-  const customEvent = event
+const handleThemeChange = (event: Event) => {
+  const customEvent = event as CustomEvent
   const newTheme = customEvent.detail.theme
+  console.log('Layout 收到主題切換事件:', newTheme) // 調試用
   currentBackgroundTheme.value = newTheme
   
   // 更新 body class 以應用主題特定樣式
   updateBodyClass(newTheme)
 }
 
-  // 更新 body class
-const updateBodyClass = (theme) => {
+  // 更新 body class - 檢查 browser 環境避免 SSR 錯誤
+const updateBodyClass = (theme: string) => {
+  if (typeof document === 'undefined') return
+  
   // 移除所有主題 class
-  document.body.classList.remove('theme-tech', 'theme-hyperos', 'theme-none')
+  document.body.classList.remove('theme-animated', 'theme-all', 'theme-tech', 'theme-ink', 'theme-cinemagraph', 'theme-morphing', 'theme-gaming', 'theme-slow3dfly', 'theme-hyperos', 'theme-none')
   
   // 添加當前主題 class
   if (theme && theme !== 'none') {
@@ -85,21 +88,28 @@ const updateBodyClass = (theme) => {
 }
 
 onMounted(() => {
-  // 從 localStorage 載入主題
-  const savedTheme = localStorage.getItem(THEME_STORAGE_KEY)
-  if (savedTheme) {
-    currentBackgroundTheme.value = savedTheme
-    updateBodyClass(savedTheme)
-  } else {
-    updateBodyClass(defaultTheme)
+  // 只在客戶端執行 localStorage 和 DOM 操作
+  if (typeof window !== 'undefined') {
+    // 從 localStorage 載入主題
+    const savedTheme = localStorage.getItem(THEME_STORAGE_KEY)
+    if (savedTheme) {
+      console.log('從 localStorage 載入主題:', savedTheme) // 調試用
+      currentBackgroundTheme.value = savedTheme
+      updateBodyClass(savedTheme)
+    } else {
+      updateBodyClass(defaultTheme)
+    }
+    
+    // 監聽主題切換事件
+    window.addEventListener(THEME_CHANGE_EVENT, handleThemeChange)
+    console.log('Layout 已掛載，當前主題:', currentBackgroundTheme.value) // 調試用
   }
-  
-  // 監聽主題切換事件
-  window.addEventListener(THEME_CHANGE_EVENT, handleThemeChange)
 })
 
 onUnmounted(() => {
-  window.removeEventListener(THEME_CHANGE_EVENT, handleThemeChange)
+  if (typeof window !== 'undefined') {
+    window.removeEventListener(THEME_CHANGE_EVENT, handleThemeChange)
+  }
 })
 
 
@@ -383,25 +393,26 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <!-- 根據選擇的主題顯示對應背景 -->
-    <TechBackground v-if="currentBackgroundTheme === 'tech'" />
-    <GamingRGB v-if="currentBackgroundTheme === 'gaming'" />
-    <Slow3DFly v-if="currentBackgroundTheme === 'slow3dfly'" />
-    <HyperOSTheme v-if="currentBackgroundTheme === 'hyperos'" />
-    <HyperOSTheme2 v-if="currentBackgroundTheme === 'hyperos2'" />
-    <!-- 佈景主題處理 -->
-    <DefaultTheme.Layout>
-    <NavThemeHandler />
-    <!-- 搬家通知彈窗 -->
     <MigrationNotice :intro-finished="true" />
-    <!-- 音樂播放器 -->
     <FloatingBgmPlayer />
-    
+
+    <ClientOnly>
+        <TechBackground v-if="currentBackgroundTheme === 'tech'" />
+        <GamingRGB v-if="currentBackgroundTheme === 'gaming'" />
+        <Slow3DFly v-if="currentBackgroundTheme === 'slow3dfly'" />
+        <HyperOSTheme v-if="currentBackgroundTheme === 'hyperos'" />
+        <HyperOSTheme2 v-if="currentBackgroundTheme === 'hyperos2'" />
+    </ClientOnly>
+
+    <component :is="DefaultTheme.Layout">
+        <template #layout-top>
+            <NavThemeHandler />
+        </template>
         <template #doc-before>
             <div v-if="!isHomePage" class="blog-post-header-injected">
                 <h1 class="blog-post-title">{{ currentTitle }}</h1>
                 <div v-if="(frontmatter.category && frontmatter.category.length) || (frontmatter.tag && frontmatter.tag.length)"
-                         class="blog-post-meta-row">
+                    class="blog-post-meta-row">
                     <span v-for="c in frontmatter.category" :key="'cat-' + c" class="category">{{ c }}</span>
                     <span v-for="(t, i) in frontmatter.tag" :key="'tag-' + t + '-' + i" class="tag">{{ t }}</span>
                 </div>
@@ -434,11 +445,10 @@ onUnmounted(() => {
         <template #doc-after>
             <ClientOnly>
                 <VotePanel />
-                <!-- 只在非 docs 頁面顯示 GiscusComments -->
                 <GiscusComments v-if="!page?.path?.startsWith('/docs/')" />
             </ClientOnly>
         </template>
-    </DefaultTheme.Layout>
+    </component>
 </template>
 
 <style scoped>
@@ -724,6 +734,98 @@ onUnmounted(() => {
 </style>
 
 <style>
+/* ============================================
+   視圖過渡動畫 (View Transition API)
+   功能: 深淺色模式切換時的帷幕動畫效果
+   ============================================ */
+
+/* 視圖過渡基礎設定 */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+  animation-duration: 0.6s;
+}
+
+/* 舊視圖層級 */
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+/* 新視圖層級 */
+::view-transition-new(root) {
+  z-index: 9999;
+}
+
+/* 視圖過渡組動畫設定 */
+::view-transition-group(root) {
+  animation-duration: 0.6s;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 帷幕往下拉動畫（淺色 → 深色）*/
+@keyframes curtain-down {
+  from {
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+/* 帷幕往上拉動畫（深色 → 淺色）*/
+@keyframes curtain-up {
+  from {
+    clip-path: inset(100% 0 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+/* 淺色 → 深色：新視圖從上到下出現 */
+.theme-transition-down::view-transition-new(root) {
+  animation: curtain-down 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 淺色 → 深色：舊視圖保持不動 */
+.theme-transition-down::view-transition-old(root) {
+  animation: none;
+}
+
+/* 深色 → 淺色：新視圖從下到上出現 */
+.theme-transition-up::view-transition-new(root) {
+  animation: curtain-up 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 深色 → 淺色：舊視圖保持不動 */
+.theme-transition-up::view-transition-old(root) {
+  animation: none;
+}
+
+/* 後備方案：如果沒有方向 class，使用淡入淡出 */
+::view-transition-old(root):not(.theme-transition-down):not(.theme-transition-up) {
+  animation: fade-out var(--transition-duration) var(--transition-timing) forwards;
+}
+
+::view-transition-new(root):not(.theme-transition-down):not(.theme-transition-up) {
+  animation: fade-in var(--transition-duration) var(--transition-timing) forwards;
+}
+
+/* 淡入動畫關鍵幀（後備用）*/
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* 淡出動畫關鍵幀（後備用）*/
+@keyframes fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+</style>
+
+<style>
 /* 修正側邊欄選單項目對齊 */
 .VPSidebar .VPSidebarItem .link,
 .VPSidebar .VPSidebarItem .text {
@@ -780,6 +882,179 @@ section.VPSidebarItem.level-0 {
     margin-left: 0 !important;
     margin-right: 0 !important;
     }
+}
+</style>
+
+<style>
+/* ============================================
+   VPNavScreenMenuGroup 動畫增強（僅移動端）
+   功能: 為手機版選單群組添加流暢動畫效果，內容隨展開往下推移
+   ============================================ */
+
+@media (max-width: 768px) {
+  /* 選單群組容器動畫 - 使用 max-height 實現平滑展開 */
+  .VPNavScreenMenuGroup {
+    transition: 
+      max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+      padding 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+      border-color 0.5s ease !important;
+    overflow: hidden;
+  }
+
+  /* 按鈕基礎動畫 */
+  .VPNavScreenMenuGroup .button {
+    transition: 
+      color 0.3s ease,
+      background-color 0.3s ease,
+      transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+      box-shadow 0.3s ease !important;
+    transform-origin: center;
+  }
+
+  /* 按鈕點擊效果 */
+  .VPNavScreenMenuGroup .button:active {
+    transform: scale(0.98) !important;
+  }
+
+  /* 按鈕圖標旋轉動畫 */
+  .VPNavScreenMenuGroup .button-icon {
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    display: inline-block;
+  }
+
+  .VPNavScreenMenuGroup.open .button-icon {
+    transform: rotate(45deg) !important;
+  }
+
+  /* 展開內容容器 - 平滑高度展開動畫 */
+  .VPNavScreenMenuGroup .items {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: 
+      max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.2s,  /* 收起時：延遲 0.2s 再收起高度 */
+      opacity 0.5s ease !important;                       /* 收起時：立即開始淡出 */
+  }
+
+  .VPNavScreenMenuGroup.open .items {
+    max-height: 1000px; /* 足夠大的值以容納所有項目 */
+    opacity: 1;
+    transition: 
+      max-height 1.5s cubic-bezier(0.4, 0, 0.2, 1),       /* 展開時：立即展開高度 */
+      opacity 0.35s ease 0.15s !important;                 /* 展開時：延遲 0.15s 再淡入 */
+  }
+
+  /* 單個項目淡入動畫 - 從左滑入 */
+  .VPNavScreenMenuGroup .item,
+  .VPNavScreenMenuGroup .group {
+    opacity: 0;
+    transform: translateX(-12px);
+    transition: 
+      opacity 0.25s ease,                                  /* 收起時：快速淡出 */
+      transform 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important; /* 收起時：快速滑出 */
+  }
+
+  .VPNavScreenMenuGroup.open .item,
+  .VPNavScreenMenuGroup.open .group {
+    opacity: 1;
+    transform: translateX(0);
+    transition: 
+      opacity 0.3s ease,                                   /* 展開時：平滑淡入 */
+      transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important; /* 展開時：平滑滑入 */
+  }
+
+  /* 交錯延遲動畫 - 支持最多 15 個項目，波浪式出現 */
+  .VPNavScreenMenuGroup.open .item:nth-child(1),
+  .VPNavScreenMenuGroup.open .group:nth-child(1) {
+    transition-delay: 0.12s !important;
+  }
+
+  .VPNavScreenMenuGroup.open .item:nth-child(2),
+  .VPNavScreenMenuGroup.open .group:nth-child(2) {
+    transition-delay: 0.16s !important;
+  }
+
+  .VPNavScreenMenuGroup.open .item:nth-child(3),
+  .VPNavScreenMenuGroup.open .group:nth-child(3) {
+    transition-delay: 0.20s !important;
+  }
+
+  .VPNavScreenMenuGroup.open .item:nth-child(4),
+  .VPNavScreenMenuGroup.open .group:nth-child(4) {
+    transition-delay: 0.24s !important;
+  }
+
+  .VPNavScreenMenuGroup.open .item:nth-child(5),
+  .VPNavScreenMenuGroup.open .group:nth-child(5) {
+    transition-delay: 0.28s !important;
+  }
+
+  .VPNavScreenMenuGroup.open .item:nth-child(6),
+  .VPNavScreenMenuGroup.open .group:nth-child(6) {
+    transition-delay: 0.32s !important;
+  }
+
+  .VPNavScreenMenuGroup.open .item:nth-child(7),
+  .VPNavScreenMenuGroup.open .group:nth-child(7) {
+    transition-delay: 0.36s !important;
+  }
+
+  .VPNavScreenMenuGroup.open .item:nth-child(8),
+  .VPNavScreenMenuGroup.open .group:nth-child(8) {
+    transition-delay: 0.40s !important;
+  }
+
+  .VPNavScreenMenuGroup.open .item:nth-child(9),
+  .VPNavScreenMenuGroup.open .group:nth-child(9) {
+    transition-delay: 0.44s !important;
+  }
+
+  .VPNavScreenMenuGroup.open .item:nth-child(10),
+  .VPNavScreenMenuGroup.open .group:nth-child(10) {
+    transition-delay: 0.48s !important;
+  }
+
+  .VPNavScreenMenuGroup.open .item:nth-child(11),
+  .VPNavScreenMenuGroup.open .group:nth-child(11) {
+    transition-delay: 0.52s !important;
+  }
+
+  .VPNavScreenMenuGroup.open .item:nth-child(12),
+  .VPNavScreenMenuGroup.open .group:nth-child(12) {
+    transition-delay: 0.56s !important;
+  }
+
+  .VPNavScreenMenuGroup.open .item:nth-child(13),
+  .VPNavScreenMenuGroup.open .group:nth-child(13) {
+    transition-delay: 0.60s !important;
+  }
+
+  .VPNavScreenMenuGroup.open .item:nth-child(14),
+  .VPNavScreenMenuGroup.open .group:nth-child(14) {
+    transition-delay: 0.64s !important;
+  }
+
+  .VPNavScreenMenuGroup.open .item:nth-child(15),
+  .VPNavScreenMenuGroup.open .group:nth-child(15) {
+    transition-delay: 0.68s !important;
+  }
+
+  /* 項目懸停效果 */
+  .VPNavScreenMenuGroup .item:hover,
+  .VPNavScreenMenuGroup .group:hover {
+    transform: translateX(4px) !important;
+    transition: transform 0.2s ease !important;
+  }
+
+  /* 按鈕文字動畫 */
+  .VPNavScreenMenuGroup .button-text {
+    display: inline-block;
+    transition: transform 0.3s ease !important;
+  }
+
+  .VPNavScreenMenuGroup.open .button-text {
+    transform: scale(1.05) !important;
+  }
 }
 </style>
 
