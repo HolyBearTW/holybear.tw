@@ -11,7 +11,9 @@ export default {
         // ✅ 就是這一行！在此註冊您的元件
         app.component('OpenCCConverter', OpenCCConverter);
         app.component('Spoiler', Spoiler);
-        }
+
+        if (typeof document === 'undefined') return; // SSR 階段直接跳過
+
         // 恢復 is-blog-page 判斷，只加在文章內頁（不是首頁、index-new等列表頁）
         function isBlogPage(path: string) {
             // 匹配 /blog/xxxx、/en/blog/xxxx、/docs/xxxx 文章頁（不是列表頁）
