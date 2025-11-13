@@ -509,6 +509,12 @@ onUnmounted(() => {
             </ClientOnly>
         </template>
     </component>
+    <footer class="BlogVPFooter">
+  <div class="container">
+    <p class="message">AGPL-3.0 Licensed</p>
+    <p class="copyright">Copyright © 2025 聖小熊</p>
+  </div>
+</footer>
 </template>
 
 <style scoped>
@@ -1140,5 +1146,45 @@ html.dark .VPHero .name {
     opacity: 1;
     transform: translateY(0);
   }
+}
+</style>
+
+<style>
+/* 文章頁腳 */
+.BlogVPFooter {
+        width: 100%;
+        padding: 32px 0 24px 0;
+        background: var(--vp-c-bg);
+        border-top: none !important;
+        text-align: center;
+        font-size: 14px;
+        background: rgba(255, 255, 255,.2) !important;
+        color: #67676c !important;
+}
+.dark .BlogVPFooter {
+    background: rgba(0, 0, 0, 0.2) !important;
+    color: #98989f !important;
+}
+.dark .BlogVPFooter {
+  background: rgba(0, 0, 0, 0.2) !important;
+}
+.BlogVPFooter .container {
+    max-width: 960px;
+    margin: 0 auto;
+}
+.BlogVPFooter .message {
+    margin-bottom: 4px;
+}
+.BlogVPFooter .copyright {
+    margin: 0;
+}
+/* 1. 預設情況下，先將 .VPFooter 隱藏 */
+.BlogVPFooter {
+  display: none;
+}
+
+/* 2. 只有當 body 標籤上同時有 .is-blog-page 這個 class 時，才顯示 .VPFooter */
+body.is-blog-page .BlogVPFooter {
+  display: flex; /* 或是 'block'，取決於您原本的佈局 */
 }
 </style>
