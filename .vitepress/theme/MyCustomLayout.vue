@@ -1,69 +1,124 @@
 <script setup lang="ts">
-    import DefaultTheme from 'vitepress/theme'
-    import { useData } from 'vitepress'
-    import { computed, onMounted, onUnmounted, watch, ref, provide, nextTick } from 'vue'
-    import { useRoute } from 'vitepress'
-    import { useAuthors } from '../components/useAuthors.js'
-    import FloatingBgmPlayer from './FloatingBgmPlayer.vue'
-    import GiscusComments from '../components/GiscusComments.vue'
-    import VotePanel from '../components/VotePanel.vue'
-    import ViewCounter from '../components/ViewCounter.vue'
-    import MigrationNotice from '../components/MigrationNotice.vue'
-    import mediumZoom from 'medium-zoom'
-    import { data as allPosts } from './posts.data.ts'
-    import NavThemeHandler from './NavThemeHandler.vue'
-    import Tech from './background/TechBackground.vue'
-    import Animated from './background/AnimatedBackground.vue'
-    import GamingRGB from './background/GamingRGB.vue'
-    import Slow3DFly from './background/Slow3DFly.vue'
-    import Halo from './background/CircularHaloBackgroud.vue'
-    import HyperOS from './background/HyperOSTheme.vue'
-    import HyperOS2 from './background/HyperOS2Theme.vue'
-    import { 
-     defaultTheme, 
-     THEME_STORAGE_KEY, 
-     THEME_CHANGE_EVENT 
-    } from './background/themes'
+import DefaultTheme from 'vitepress/theme'
+import { useData } from 'vitepress'
+import { computed, onMounted, onUnmounted, watch, ref, provide, nextTick } from 'vue'
+import { useRoute } from 'vitepress'
+import { useAuthors } from '../components/useAuthors.js'
+import FloatingBgmPlayer from './FloatingBgmPlayer.vue'
+import GiscusComments from '../components/GiscusComments.vue'
+import VotePanel from '../components/VotePanel.vue'
+import ViewCounter from '../components/ViewCounter.vue'
+import MigrationNotice from '../components/MigrationNotice.vue'
+import mediumZoom from 'medium-zoom'
+import { data as allPosts } from './posts.data.ts'
+import NavThemeHandler from './NavThemeHandler.vue'
+import Tech from './background/TechBackground.vue'
+import Animated from './background/AnimatedBackground.vue'
+import GamingRGB from './background/GamingRGB.vue'
+import Slow3DFly from './background/Slow3DFly.vue'
+import Halo from './background/CircularHaloBackgroud.vue'
+import HyperOS from './background/HyperOSTheme.vue'
+import HyperOS2 from './background/HyperOS2Theme.vue'
+import { 
+  defaultTheme, 
+  THEME_STORAGE_KEY, 
+  THEME_CHANGE_EVENT 
+} from './background/themes'
 
 const { isDark } = useData()
 
 // 當前背景主題
 const currentBackgroundTheme = ref(defaultTheme)
 
-const enableTransitions = () =>
-  typeof document !== 'undefined' &&
-  'startViewTransition' in document &&
-  window.matchMedia('(prefers-reduced-motion: no-preference)').matches
+// ============================================
+// 　　　　　　　深淺色模式切換邏輯
+// ============================================
+
+// 動畫標誌
+let isAnimating = false;
 
 provide('toggle-appearance', async () => {
-  // 檢查瀏覽器環境和 View Transition API 支援
-  if (typeof document === 'undefined' || !enableTransitions()) {
-    isDark.value = !isDark.value
-    return
-  }
-
-  // 記錄切換前的狀態（用於決定動畫方向）
-  const wasLight = !isDark.value
-  
-  await document.startViewTransition(async () => {
-    isDark.value = !isDark.value
-    await nextTick()
-    
-    // 根據切換方向添加 class
-    if (wasLight) {
-      // 淺色 → 深色：從上到下
-      document.documentElement.classList.add('theme-transition-down')
-    } else {
-      // 深色 → 淺色：從下到上
-      document.documentElement.classList.add('theme-transition-up')
+    // 1. 檢查
+    if (typeof document === 'undefined' || isAnimating) {
+        return
     }
-  }).ready
-  
-  // 動畫完成後移除 class
-  setTimeout(() => {
-    document.documentElement.classList.remove('theme-transition-down', 'theme-transition-up')
-  }, 600)
-})
+
+    isAnimating = true;
+
+    // 2. 獲取當前狀態
+    const isDarkNow = isDark.value; // 切換前的狀態
+    const direction = isDarkNow ? 'to-light' : 'to-dark';
+
+    // 3. === 統一的動畫邏輯 (適用於所有頁面) ===
+    
+            // 判斷是否為 canvas 動畫主題
+            const canvasThemes = ['tech', 'animated', 'gaming', 'slow3dfly'];
+            let overlayStyle = `
+                position: fixed;
+                top: 0; left: 0; right: 0; bottom: 0;
+                width: 100%; height: 100%;
+                z-index: 0;
+                pointer-events: none;
+                transition: transform 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+            `;
+            let useCanvasImage = false;
+            if (canvasThemes.includes(currentBackgroundTheme.value)) {
+                // 嘗試取得主背景 canvas
+                const canvas = document.querySelector('.ClientOnly canvas, canvas');
+                if (canvas && canvas instanceof HTMLCanvasElement) {
+                    try {
+                        const dataUrl = canvas.toDataURL('image/png');
+                        overlayStyle += `background: url('${dataUrl}') center/cover no-repeat;`;
+                        useCanvasImage = true;
+                    } catch(e) {}
+                }
+            }
+            if (!useCanvasImage) {
+                // 取得 body 的所有背景屬性
+                const bodyStyle = window.getComputedStyle(document.body);
+                const bgProps = [
+                    'background',
+                    'backgroundImage',
+                    'backgroundSize',
+                    'backgroundPosition',
+                    'backgroundRepeat',
+                    'backgroundColor'
+                ];
+                bgProps.forEach(prop => {
+                    const val = bodyStyle.getPropertyValue(prop);
+                    if (val) {
+                        overlayStyle += `${prop}: ${val};`;
+                    }
+                });
+            }
+            // 創建全屏遮罩
+            const overlay = document.createElement('div');
+            overlay.className = 'theme-transition-overlay';
+            overlay.setAttribute('data-direction', direction);
+            overlay.style.cssText = overlayStyle;
+            // 插入到 body 的第一個子元素之前，確保在內容下方
+            document.body.insertBefore(overlay, document.body.firstChild);
+
+    // 4. **!! 核心修改 !!**
+    // 立即切換主題 (使用 Vue ref, 而不是手動改 class)
+    isDark.value = !isDarkNow;
+    await nextTick(); // 等待 Vue 響應並更新 DOM (VitePress 會更新 <html> class)
+
+    // 5. 觸發滑出動畫
+    requestAnimationFrame(() => {
+        if (direction === 'to-light') {
+            overlay.style.transform = 'translateY(-100%)';
+        } else { // 'to-dark'
+            overlay.style.transform = 'translateY(100%)';
+        }
+    });
+
+    // 6. 清理
+    setTimeout(() => {
+        overlay.remove();
+        isAnimating = false;
+    }, 1500);
+});
 
 // 監聽主題切換事件
 const handleThemeChange = (event: Event) => {
@@ -242,17 +297,17 @@ onUnmounted(() => {
     // const HOUR = 60 * 60 * 1000
 
     // function hideIntro() {
-    //     showIntro.value = false
-    //     localStorage.setItem(STORAGE_KEY, Date.now().toString())
+    //     showIntro.value = false
+    //     localStorage.setItem(STORAGE_KEY, Date.now().toString())
     // }
 
     // onMounted(() => {
-    //     const lastPlayed = parseInt(localStorage.getItem(STORAGE_KEY) || '0', 10)
-    //     if (Date.now() - lastPlayed < HOUR) {
-    //         showIntro.value = false
-    //     } else {
-    //         showIntro.value = true
-    //     }
+    //     const lastPlayed = parseInt(localStorage.getItem(STORAGE_KEY) || '0', 10)
+    //     if (Date.now() - lastPlayed < HOUR) {
+    //         showIntro.value = false
+    //     } else {
+    //         showIntro.value = true
+    //     }
     // })
     // /* === ENTRANCE ANIMATION END === */
 
@@ -415,11 +470,12 @@ onUnmounted(() => {
         <template #doc-before>
             <div v-if="!isHomePage" class="blog-post-header-injected">
                 <h1 class="blog-post-title">{{ currentTitle }}</h1>
-                <div v-if="(frontmatter.category && frontmatter.category.length) || (frontmatter.tag && frontmatter.tag.length)"
-                    class="blog-post-meta-row">
+                
+                <div v-if="(frontmatter.category && frontmatter.category.length) || (frontmatter.tag && frontmatter.tag.length)" class="blog-post-meta-row">
                     <span v-for="c in frontmatter.category" :key="'cat-' + c" class="category">{{ c }}</span>
                     <span v-for="(t, i) in frontmatter.tag" :key="'tag-' + t + '-' + i" class="tag">{{ t }}</span>
                 </div>
+
                 <p class="blog-post-date-in-content">
                     <span class="blog-post-date-main">
                         <span v-if="!isMetaLoading" class="author-inline">
@@ -449,7 +505,7 @@ onUnmounted(() => {
         <template #doc-after>
             <ClientOnly>
                 <VotePanel />
-                <GiscusComments v-if="!page?.path?.startsWith('/docs/')" />
+                <GiscusComments />
             </ClientOnly>
         </template>
     </component>
@@ -739,9 +795,9 @@ onUnmounted(() => {
 
 <style>
 /* ============================================
-   content-body - 內容主體區域
-   功能: 文檔主要內容區域,包含文章正文
-   ============================================ */
+    content-body - 內容主體區域
+    功能: 文檔主要內容區域,包含文章正文
+    ============================================ */
 
 /* 內容區域圓角 */
 .VPDoc .content:not(.VPDocAsideOutline):not(.VPDocAsideOutline *) {
@@ -763,7 +819,7 @@ onUnmounted(() => {
 
 /* Dark Mode - 內容區域背景 (透射模糊) */
 .dark .VPDoc .content:not(.VPDocAsideOutline):not(.VPDocAsideOutline *)
- {
+  {
   background-color: rgba(26, 26, 30, 0.8) !important;
 }
 
@@ -782,94 +838,10 @@ onUnmounted(() => {
 }
 
 /* ============================================
-   視圖過渡動畫 (View Transition API)
-   功能: 深淺色模式切換時的帷幕動畫效果
-   ============================================ */
-
-/* 視圖過渡基礎設定 */
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation: none;
-  mix-blend-mode: normal;
-  animation-duration: 0.6s;
-}
-
-/* 舊視圖層級 */
-::view-transition-old(root) {
-  z-index: 1;
-}
-
-/* 新視圖層級 */
-::view-transition-new(root) {
-  z-index: 9999;
-}
-
-/* 視圖過渡組動畫設定 */
-::view-transition-group(root) {
-  animation-duration: 0.6s;
-  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* 帷幕往下拉動畫（淺色 → 深色）*/
-@keyframes curtain-down {
-  from {
-    clip-path: inset(0 0 100% 0);
-  }
-  to {
-    clip-path: inset(0 0 0 0);
-  }
-}
-
-/* 帷幕往上拉動畫（深色 → 淺色）*/
-@keyframes curtain-up {
-  from {
-    clip-path: inset(100% 0 0 0);
-  }
-  to {
-    clip-path: inset(0 0 0 0);
-  }
-}
-
-/* 淺色 → 深色：新視圖從上到下出現 */
-.theme-transition-down::view-transition-new(root) {
-  animation: curtain-down 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* 淺色 → 深色：舊視圖保持不動 */
-.theme-transition-down::view-transition-old(root) {
-  animation: none;
-}
-
-/* 深色 → 淺色：新視圖從下到上出現 */
-.theme-transition-up::view-transition-new(root) {
-  animation: curtain-up 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* 深色 → 淺色：舊視圖保持不動 */
-.theme-transition-up::view-transition-old(root) {
-  animation: none;
-}
-
-/* 後備方案：如果沒有方向 class，使用淡入淡出 */
-::view-transition-old(root):not(.theme-transition-down):not(.theme-transition-up) {
-  animation: fade-out var(--transition-duration) var(--transition-timing) forwards;
-}
-
-::view-transition-new(root):not(.theme-transition-down):not(.theme-transition-up) {
-  animation: fade-in var(--transition-duration) var(--transition-timing) forwards;
-}
-
-/* 淡入動畫關鍵幀（後備用）*/
-@keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-/* 淡出動畫關鍵幀（後備用）*/
-@keyframes fade-out {
-  from { opacity: 1; }
-  to { opacity: 0; }
-}
+    💡 【已移除】
+    視圖過渡動畫 (View Transition API)
+    (此區塊的 CSS 已被移除，因為新邏輯不使用 View Transition)
+    ============================================ */
 </style>
 
 <style>
@@ -934,9 +906,9 @@ section.VPSidebarItem.level-0 {
 
 <style>
 /* ============================================
-   VPNavScreenMenuGroup 動畫增強（僅移動端）
-   功能: 為手機版選單群組添加流暢動畫效果，內容隨展開往下推移
-   ============================================ */
+    VPNavScreenMenuGroup 動畫增強（僅移動端）
+    功能: 為手機版選單群組添加流暢動畫效果，內容隨展開往下推移
+    ============================================ */
 
 @media (max-width: 768px) {
   /* 選單群組容器動畫 - 使用 max-height 實現平滑展開 */

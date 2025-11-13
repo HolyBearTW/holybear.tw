@@ -85,6 +85,12 @@ export default {
                 link.matches('.outline-link')
             ) {
                 if (hoverTimer) clearTimeout(hoverTimer);
+
+               // 滑鼠移出時清除 timer
+                link.addEventListener('mouseleave', () => {
+                     if (hoverTimer) clearTimeout(hoverTimer);
+                }, { once: true });
+
                 hoverTimer = setTimeout(() => {
                     const href = link.getAttribute('href');
                     if (href && href.startsWith('#')) {
