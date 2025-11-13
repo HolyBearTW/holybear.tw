@@ -262,7 +262,10 @@ html.dark .VPLink.link.pager-link.prev:hover {
 
 /* ==================== 游標 & 點擊元素 ==================== */
 /* 預設網站游標（僅一次定義） */
-body { cursor: url('/MapleStory_cursor_new.png'), auto; }
+body,
+.outline-title { 
+  cursor: url('/MapleStory_cursor_new.png'), auto !important; }
+
 
 /* 可點擊元素使用手指游標（合併常見選取器） */
 a, button, input[type="button"], input[type="submit"], input[type="reset"], [role="button"],
@@ -825,7 +828,6 @@ body:not(:has(.VPHome)) .VPLocalNav {
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
-  max-width: 100% !important;
   box-sizing: border-box !important;
 }
 
