@@ -1151,6 +1151,12 @@ html.dark .VPHero .name {
 
 <style>
 /* 文章頁腳 */
+.VPFooter {
+    background: rgba(255, 255, 255,.2) !important;
+}
+.dark .VPFooter {
+    background: rgba(0, 0, 0, 0.2) !important;
+}
 .BlogVPFooter {
         width: 100%;
         padding: 32px 0 24px 0;
