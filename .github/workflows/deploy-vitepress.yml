@@ -80,7 +80,7 @@ jobs:
 
       - name: 偵測並收集新文章 Metadata
         id: collect-new-posts
-        if: steps.detect-content-changed.outputs.has_changed == 'true' || github.event.inputs.scan_all_posts == 'true'
+        if: ${{ steps.detect-content-changed.outputs.has_changed == 'true' || github.event.inputs.scan_all_posts }}
         run: |
           set -e
           
@@ -153,12 +153,14 @@ jobs:
                 
                 console.log(`-> 處理文章: ${discussionTitle}`);
 
+                const searchQuery = `repo:${repoOwner}/${repoName} category:${discussionCategoryId} in:title "${discussionTitle}" type:discussion`;
+                
                 const searchResult = await github.graphql(
                     `
-                    query($repoOwner: String!, $repoName: String!, $title: String!, $categoryId: ID!) {
-                        repository(owner: $repoOwner, name: $repoName) {
-                            discussions(first: 1, categoryID: $categoryId, filterBy: {query: $title}) {
-                                nodes {
+                    query($searchQuery: String!) {
+                        search(query: $searchQuery, type: DISCUSSION, first: 1) {
+                            nodes {
+                                ... on Discussion {
                                     url
                                     title
                                 }
@@ -166,15 +168,10 @@ jobs:
                         }
                     }
                     `,
-                    {
-                        repoOwner: repoOwner,
-                        repoName: repoName,
-                        title: discussionTitle,
-                        categoryId: discussionCategoryId
-                    }
+                    { searchQuery }
                 );
                 
-                const nodes = searchResult.repository?.discussions?.nodes;
+                const nodes = searchResult.search?.nodes;
                 
                 const existingDiscussion = nodes?.find(node => node.title === discussionTitle);
 
