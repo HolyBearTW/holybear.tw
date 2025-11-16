@@ -3,6 +3,7 @@ permissions:
   actions: read
   pages: write
   id-token: write
+  discussions: write
 
 name: 部署 VitePress 靜態網站到 GitHub Pages
 
@@ -70,6 +71,137 @@ jobs:
       - name: 安裝相依套件
         run: yarn install
 
+
+      - name: 偵測並收集新文章 Metadata
+        id: collect-new-posts
+        if: steps.detect-content-changed.outputs.has_changed == 'true'
+        run: |
+          set -e
+          echo "正在偵測新的 blog/ 文章..."
+          
+          NEW_FILES=$(git diff --name-only --diff-filter=A ${{ github.event.before }} ${{ github.sha }} | grep 'blog/.*\.md$' || true)
+          
+          if [ -z "$NEW_FILES" ]; then
+            echo "posts_metadata=[]" >> $GITHUB_OUTPUT 
+            echo "沒有偵測到新的 blog/ 文章，跳過討論串創建。"
+            exit 0
+          fi
+          
+          POSTS_METADATA="["
+          first=true
+          
+          for file_path in $NEW_FILES; do
+            if [ "$first" = false ]; then
+              POSTS_METADATA="${POSTS_METADATA},"
+            fi
+            
+            FILE_CONTENT=$(cat "$file_path")
+            TITLE=$(echo "$FILE_CONTENT" | awk -F': ' '/^title:/ {print $2; exit}' | sed 's/"//g' | xargs || echo "無標題文章")
+            SLUG=$(basename "$file_path" .md)
+            
+            JSON_ENTRY=$(printf '{"title": "%s", "slug": "%s"}' "$TITLE" "$SLUG")
+            POSTS_METADATA="${POSTS_METADATA}${JSON_ENTRY}"
+            
+            first=false
+          done
+          
+          POSTS_METADATA="${POSTS_METADATA}]"
+          echo "收集到的 Metadata: $POSTS_METADATA"
+          echo "posts_metadata=$POSTS_METADATA" >> $GITHUB_OUTPUT
+
+
+      - name: 執行 Discussion 創建 (Giscus)
+        if: steps.detect-content-changed.outputs.has_changed == 'true'
+        uses: actions/github-script@v6
+        env:
+          CATEGORY_ID: 'DIC_kwDOJmguVs4Cqo90'
+          POSTS_METADATA_JSON: ${{ steps.collect-new-posts.outputs.posts_metadata }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            // 讀取 JSON
+            const metadata = JSON.parse(process.env.POSTS_METADATA_JSON);
+            
+            if (metadata.length === 0) {
+                console.log('沒有文章 Metadata 可供處理，跳過 Discussion 創建。');
+                return;
+            }
+
+            console.log(`準備為 ${metadata.length} 篇文章創建討論串...`);
+            
+            const discussionCategoryId = process.env.CATEGORY_ID;
+            const repoOwner = '${{ github.repository_owner }}';
+            const repoName = '${{ github.event.repository.name }}';
+            const repoId = '${{ github.repository_id }}';
+            const baseURL = 'https://holybear.tw/blog/';
+            
+            for (const post of metadata) {
+                const discussionTitle = post.title; 
+                const discussionBody = `文章連結: ${baseURL}${post.slug}/\n\n---\n\n這是 Giscus 自動創建的討論串，用於初始化 Giscus 介面。`;
+                
+                console.log(`-> 處理文章: ${discussionTitle}`);
+
+                const searchResult = await github.graphql(
+                    `
+                    query($repoOwner: String!, $repoName: String!, $title: String!, $categoryId: ID!) {
+                        repository(owner: $repoOwner, name: $repoName) {
+                            discussions(first: 1, categoryID: $categoryId, filterBy: {query: $title}) {
+                                nodes {
+                                    url
+                                    title
+                                }
+                            }
+                        }
+                    }
+                    `,
+                    {
+                        repoOwner: repoOwner,
+                        repoName: repoName,
+                        title: discussionTitle,
+                        categoryId: discussionCategoryId
+                    }
+                );
+                
+                const nodes = searchResult.repository?.discussions?.nodes;
+                
+                const existingDiscussion = nodes?.find(node => node.title === discussionTitle);
+
+                if (existingDiscussion) {
+                   console.log(`⚠️ 討論串已存在 (URL: ${existingDiscussion.url})，跳過創建。`);
+                   continue;
+                }
+                
+                try {
+                  const result = await github.graphql(
+                      `
+                      mutation($repositoryId: ID!, $categoryId: ID!, $title: String!, $body: String!) {
+                        createDiscussion(input: {
+                          repositoryId: $repositoryId,
+                          categoryId: $categoryId,
+                          title: $title,
+                          body: $body
+                        }) {
+                          discussion {
+                            url
+                          }
+                        }
+                      }
+                      `,
+                      {
+                        repositoryId: repoId,
+                        categoryId: discussionCategoryId,
+                        title: discussionTitle,
+                        body: discussionBody
+                      }
+                  );
+                  
+                  console.log(`✅ 討論串已創建: ${discussionTitle}`);
+                  console.log(`URL: ${result.createDiscussion.discussion.url}`);
+                } catch(error) {
+                   // 如果這裡出錯，則是非預期的錯誤 (權限、網路等)
+                   console.error(`❌ 討論串創建失敗 (非預期錯誤 - ${discussionTitle}):`, error.message);
+                }
+            }
 
       - name: 產生側邊欄
         if: steps.detect-content-changed.outputs.has_changed == 'true'
