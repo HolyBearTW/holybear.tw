@@ -134,7 +134,7 @@ new Crawler({
   ],
   initialIndexSettings: {
     "holybear.tw": {
-      attributesForFaceting: ["type", "lang", "category", "tag", "tags"],
+      attributesForFaceting: ["type", "lang", "category", "tags", "tags"],
       searchableAttributes: [
         "unordered(hierarchy.lvl0)",
         "unordered(hierarchy.lvl1)",
@@ -166,7 +166,7 @@ new Crawler({
         "type",
         "lang",
         "category",
-        "tag",
+        "tags",
         "tags",
         "post_title",
         "post_date",

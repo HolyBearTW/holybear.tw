@@ -1,4 +1,5 @@
-import { defineConfig } from 'vitepress'
+/* import { defineConfig } from 'vitepress' */
+import {defineConfig} from '@lando/vitepress-theme-default-plus/config'
 import locales from './locales'
 import gitMetaPlugin from './git-meta'
 import sidebar from './sidebars/blog.sidebar'
@@ -56,8 +57,9 @@ export default defineConfig({
             },
             // 增加 CORS 限制
             cors: true
-        }
-    },   // ✨ START: 整合所有 OG 標籤的最終邏輯 ✨
+        },
+    },   
+    // ✨ START: 整合所有 OG 標籤的最終邏輯 ✨
     transformHead({ pageData, head }) {
             const { frontmatter, relativePath } = pageData;
 
@@ -234,8 +236,9 @@ export default defineConfig({
             '/docs/Vitepress-Blog.md': VitepressBlogDocsSidebar,
             '/docs/spoiler-component.md': SpoilerComponentDocsSidebar
         },
-                socialLinks: [
-            { icon: 'github', link: 'https://github.com/HolyBearTW' }
+        socialLinks: [
+            { icon: 'github', link: 'https://github.com/HolyBearTW' },
+            { icon: 'telegram', link: 'https://t.me/HolyBearTW' }
         ],
         search: {
             provider: 'algolia',
@@ -254,6 +257,17 @@ export default defineConfig({
     buildEnd(siteConfig) {
         // 這裡不需要處理 Git 資訊，因為我們已經在 git-meta 插件中處理了
     },
+
+        // 自動讓 blog 文章預設顯示側邊欄和右側目錄，並自動加上 blog: true 標籤
+transformPageData(pageData) {
+    // 檢查路徑是否以 'blog/' 開頭
+    if (pageData.relativePath?.startsWith('blog/')) {
+        // 確保側邊欄和右側目錄顯示 (您原有的部分)
+        pageData.frontmatter.aside = true;
+        pageData.frontmatter.sidebar = true;
+    }
+    return pageData;
+},
 
     transformHtml: (_, id, { pageData }) => {
         if (id.endsWith('.html')) {

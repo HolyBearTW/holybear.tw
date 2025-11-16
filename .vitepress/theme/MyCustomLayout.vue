@@ -471,9 +471,9 @@ onUnmounted(() => {
             <div v-if="!isHomePage" class="blog-post-header-injected">
                 <h1 class="blog-post-title">{{ currentTitle }}</h1>
                 
-                <div v-if="(frontmatter.category && frontmatter.category.length) || (frontmatter.tag && frontmatter.tag.length)" class="blog-post-meta-row">
+                <div v-if="(frontmatter.category && frontmatter.category.length) || (frontmatter.tags && frontmatter.tags.length)" class="blog-post-meta-row">
                     <span v-for="c in frontmatter.category" :key="'cat-' + c" class="category">{{ c }}</span>
-                    <span v-for="(t, i) in frontmatter.tag" :key="'tag-' + t + '-' + i" class="tag">{{ t }}</span>
+                    <span v-for="(t, i) in frontmatter.tags" :key="'tags-' + t + '-' + i" class="tags">{{ t }}</span>
                 </div>
 
                 <p class="blog-post-date-in-content">
@@ -524,7 +524,7 @@ onUnmounted(() => {
     color: #00796b !important;
     border-radius: 999px !important;
     border: 1.5px solid #00b8b8 !important;
-    padding: 8px 12px !important;
+    padding: 10px 12px 6px 12px !important; /* 上10px，下6px，左右12px */
     font-size: 13px !important;
     line-height: 1 !important;
 }
@@ -533,20 +533,20 @@ onUnmounted(() => {
     color: #4dd0e1 !important;
     border-radius: 999px !important;
     border: 1.5px solid #00b8b8 !important;
-    padding: 8px 12px !important;
+    padding: 10px 12px 6px 12px !important; /* 上10px，下6px，左右12px */
     font-size: 13px !important;
     line-height: 1 !important;
 }
-.blog-post-meta-row .tag {
+.blog-post-meta-row .tags {
     background: #eaf4fb !important;
     color: #2077c7 !important;
     border-radius: 999px !important;
     border: 1px solid #b5d0ea !important;
-    padding: 8px 12px !important;
+    padding: 10px 12px 6px 12px !important; /* 上10px，下6px，左右12px */
     font-size: 13px !important;
     line-height: 1 !important;
 }
-.dark .blog-post-meta-row .tag {
+.dark .blog-post-meta-row .tags {
     background: #23263a !important;
     color: #b5c6e0 !important;
     border: 1px solid #3b3b3b !important;
@@ -650,24 +650,6 @@ onUnmounted(() => {
         display: flex;
         flex-wrap: wrap;
         gap: 0.5em;
-    }
-
-    .category {
-        display: inline-block;
-        background: #00FFEE;
-        color: #000;
-        border-radius: 3px;
-        padding: 0 0.5em;
-        font-size: 0.85em;
-    }
-
-    .tag {
-        display: inline-block;
-        background: #e3f2fd;
-        color: #2077c7;
-        border-radius: 3px;
-        padding: 0 0.5em;
-        font-size: 0.85em;
     }
 
     .blog-post-date-in-content {
@@ -1192,5 +1174,20 @@ html.dark .VPHero .name {
 /* 2. 只有當 body 標籤上同時有 .is-blog-page 這個 class 時，才顯示 .VPFooter */
 body.is-blog-page .BlogVPFooter {
   display: flex; /* 或是 'block'，取決於您原本的佈局 */
+}
+
+.back-link {
+  /* 隱藏原本內容 */
+  color: transparent !important;
+  position: relative;
+}
+.back-link::after {
+  content: "<- 返回部落格";
+  color: var(--vp-c-brand-1);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  pointer-events: none;
 }
 </style>
