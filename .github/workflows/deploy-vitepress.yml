@@ -124,7 +124,7 @@ jobs:
           echo "posts_metadata=$POSTS_METADATA" >> $GITHUB_OUTPUT
 
       - name: 執行 Discussion 創建 (Giscus)
-        if: ${{ steps.detect-content-changed.outputs.has_changed == 'true' || github.event.inputs.scan_all_posts == true }}
+        if: ${{ steps.detect-content-changed.outputs.has_changed == 'true' || github.event.inputs.scan_all_posts }}
         uses: actions/github-script@v6
         env:
           CATEGORY_ID: 'DIC_kwDOJmguVs4Cqo90'
