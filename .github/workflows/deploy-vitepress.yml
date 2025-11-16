@@ -11,7 +11,7 @@ on:
   push:
     branches:
       - main
- workflow_dispatch:
+  workflow_dispatch:
     inputs:
       scan_all_posts:
         description: '是否掃描所有舊文章以創建 Discussions? (True 則掃描所有文章，忽略 git diff)'
