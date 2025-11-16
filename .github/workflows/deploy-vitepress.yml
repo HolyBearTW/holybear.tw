@@ -158,8 +158,9 @@ jobs:
             const globalRepoId = repoData.repository.id;
             
             for (const post of metadata) {
-                const discussionTitle = post.title; 
-                const discussionBody = `文章連結: ${baseURL}${post.slug}/\n\n---\n\n這是 Giscus 自動創建的討論串，用於初始化 Giscus 介面。`;
+                // 【關鍵修正：使用 Giscus 期望的 path 格式作為標題】
+                const discussionTitle = `blog/${post.slug}`; 
+                const discussionBody = `文章標題: ${post.title}\n文章連結: ${baseURL}${post.slug}/\n\n---\n\n這是 Giscus 自動創建的討論串，用於初始化 Giscus 介面。`;
                 
                 console.log(`-> 處理文章: ${discussionTitle}`);
 
@@ -183,6 +184,7 @@ jobs:
                 );
                 
                 const nodes = searchResult.search?.nodes;
+                
                 const existingDiscussion = nodes?.find(node => node.title === discussionTitle);
 
                 if (existingDiscussion) {
@@ -210,7 +212,7 @@ jobs:
                       {
                         repositoryId: globalRepoId, // 使用 Global ID
                         categoryId: discussionCategoryId,
-                        title: discussionTitle,
+                        title: discussionTitle, // 使用修正後的 Title 格式
                         body: discussionBody
                       }
                   );
