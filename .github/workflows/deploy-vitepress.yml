@@ -123,6 +123,51 @@ jobs:
           echo "收集到的 Metadata: $POSTS_METADATA"
           echo "posts_metadata=$POSTS_METADATA" >> $GITHUB_OUTPUT
 
+      - name: 偵測並收集新文章 Metadata
+        id: collect-new-posts
+        if: ${{ steps.detect-content-changed.outputs.has_changed == 'true' || github.event.inputs.scan_all_posts }}
+        run: |
+          set -e
+          
+          SCAN_ALL="${{ github.event.inputs.scan_all_posts }}"
+          TARGET_DIR="blog/"
+          
+          if [ "$SCAN_ALL" == "true" ]; then
+            echo "🔥 啟用 '強制掃描所有文章' 模式..."
+            NEW_FILES=$(find "$TARGET_DIR" -type f -name "*.md" | grep 'blog/.*\.md$' || true)
+          else
+            echo "🔍 啟用 '新增文件偵測' 模式..."
+            NEW_FILES=$(git diff --name-only --diff-filter=A ${{ github.event.before }} ${{ github.sha }} | grep 'blog/.*\.md$' || true)
+          fi
+          
+          if [ -z "$NEW_FILES" ]; then
+            echo "posts_metadata=[]" >> $GITHUB_OUTPUT 
+            echo "沒有偵測到新的或需要處理的文章，跳過討論串創建。"
+            exit 0
+          fi
+          
+          POSTS_METADATA="["
+          first=true
+          
+          for file_path in $NEW_FILES; do
+            if [ "$first" = false ]; then
+              POSTS_METADATA="${POSTS_METADATA},"
+            fi
+            
+            FILE_CONTENT=$(cat "$file_path")
+            TITLE=$(echo "$FILE_CONTENT" | awk -F': ' '/^title:/ {print $2; exit}' | sed 's/"//g' | xargs || echo "無標題文章")
+            SLUG=$(basename "$file_path" .md)
+            
+            JSON_ENTRY=$(printf '{"title": "%s", "slug": "%s"}' "$TITLE" "$SLUG")
+            POSTS_METADATA="${POSTS_METADATA}${JSON_ENTRY}"
+            
+            first=false
+          done
+          
+          POSTS_METADATA="${POSTS_METADATA}]"
+          echo "收集到的 Metadata: $POSTS_METADATA"
+          echo "posts_metadata=$POSTS_METADATA" >> $GITHUB_OUTPUT
+
       - name: 執行 Discussion 創建 (Giscus)
         if: ${{ steps.detect-content-changed.outputs.has_changed == 'true' || github.event.inputs.scan_all_posts }}
         uses: actions/github-script@v6
@@ -158,41 +203,13 @@ jobs:
             const globalRepoId = repoData.repository.id;
             
             for (const post of metadata) {
-                // 【關鍵修正：使用 Giscus 期望的 path 格式作為標題】
+                // 使用 Giscus 期望的 path 格式作為標題
                 const discussionTitle = `blog/${post.slug}`; 
                 const discussionBody = `文章標題: ${post.title}\n文章連結: ${baseURL}${post.slug}/\n\n---\n\n這是 Giscus 自動創建的討論串，用於初始化 Giscus 介面。`;
                 
                 console.log(`-> 處理文章: ${discussionTitle}`);
 
-                // 2. 檢查討論串是否已存在 (使用 search API)
-                const searchQuery = `repo:${repoOwner}/${repoName} category:"General" in:title "${discussionTitle}" type:discussion`;
-                
-                const searchResult = await github.graphql(
-                    `
-                    query($searchQuery: String!) {
-                        search(query: $searchQuery, type: DISCUSSION, first: 1) {
-                            nodes {
-                                ... on Discussion {
-                                    url
-                                    title
-                                }
-                            }
-                        }
-                    }
-                    `,
-                    { searchQuery }
-                );
-                
-                const nodes = searchResult.search?.nodes;
-                
-                const existingDiscussion = nodes?.find(node => node.title === discussionTitle);
-
-                if (existingDiscussion) {
-                   console.log(`⚠️ 討論串已存在 (URL: ${existingDiscussion.url})，跳過創建。`);
-                   continue;
-                }
-                
-                // 3. 如果不存在，則執行創建 (Mutation)
+                // 【✅ 修正：移除 search 預先檢查，依賴 Mutation 錯誤處理】
                 try {
                   const result = await github.graphql(
                       `
@@ -210,9 +227,9 @@ jobs:
                       }
                       `,
                       {
-                        repositoryId: globalRepoId, // 使用 Global ID
+                        repositoryId: globalRepoId,
                         categoryId: discussionCategoryId,
-                        title: discussionTitle, // 使用修正後的 Title 格式
+                        title: discussionTitle, 
                         body: discussionBody
                       }
                   );
@@ -220,7 +237,13 @@ jobs:
                   console.log(`✅ 討論串已創建: ${discussionTitle}`);
                   console.log(`URL: ${result.createDiscussion.discussion.url}`);
                 } catch(error) {
-                   console.error(`❌ 討論串創建失敗 (非預期錯誤 - ${discussionTitle}):`, error.message);
+                   // 檢查是否為標題重複錯誤
+                   if (error.message && error.message.includes('Discussion with the same title already exists')) {
+                        console.log(`⚠️ 討論串已存在 (API 衝突檢查確認)，跳過創建: ${discussionTitle}`);
+                   } else {
+                        // 處理其他非預期錯誤 (例如權限不足等)
+                        console.error(`❌ 討論串創建失敗 (非預期錯誤 - ${discussionTitle}):`, error.message);
+                   }
                 }
             }
 
