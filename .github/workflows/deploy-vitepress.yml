@@ -12,12 +12,6 @@ on:
     branches:
       - main
   workflow_dispatch:
-    inputs:
-      scan_all_posts:
-        description: '是否掃描所有舊文章以創建 Discussions? (True 則掃描所有文章，忽略 git diff)'
-        required: false
-        default: false
-        type: boolean
 
 jobs:
   full-pipeline:
@@ -80,24 +74,18 @@ jobs:
 
       - name: 偵測並收集新文章 Metadata
         id: collect-new-posts
-        if: ${{ steps.detect-content-changed.outputs.has_changed == 'true' || github.event.inputs.scan_all_posts }}
+        if: steps.detect-content-changed.outputs.has_changed == 'true'
         run: |
           set -e
           
-          SCAN_ALL="${{ github.event.inputs.scan_all_posts }}"
           TARGET_DIR="blog/"
           
-          if [ "$SCAN_ALL" == "true" ]; then
-            echo "🔥 啟用 '強制掃描所有文章' 模式..."
-            NEW_FILES=$(find "$TARGET_DIR" -type f -name "*.md" | grep 'blog/.*\.md$' || true)
-          else
-            echo "🔍 啟用 '新增文件偵測' 模式..."
-            NEW_FILES=$(git diff --name-only --diff-filter=A ${{ github.event.before }} ${{ github.sha }} | grep 'blog/.*\.md$' || true)
-          fi
+          # 只偵測本次提交中新增的 .md 檔案，並排除 index.md
+          NEW_FILES=$(git diff --name-only --diff-filter=A ${{ github.event.before }} ${{ github.sha }} | grep 'blog/.*\.md$' | grep -v 'index.md$' || true)
           
           if [ -z "$NEW_FILES" ]; then
             echo "posts_metadata=[]" >> $GITHUB_OUTPUT 
-            echo "沒有偵測到新的或需要處理的文章，跳過討論串創建。"
+            echo "沒有偵測到新的文章，跳過討論串創建。"
             exit 0
           fi
           
@@ -124,7 +112,7 @@ jobs:
           echo "posts_metadata=$POSTS_METADATA" >> $GITHUB_OUTPUT
 
       - name: 執行 Discussion 創建 (Giscus)
-        if: ${{ steps.detect-content-changed.outputs.has_changed == 'true' || github.event.inputs.scan_all_posts }}
+        if: steps.detect-content-changed.outputs.has_changed == 'true'
         uses: actions/github-script@v6
         env:
           CATEGORY_ID: 'DIC_kwDOJmguVs4Cqo90'
@@ -147,24 +135,29 @@ jobs:
             const baseURL = 'https://holybear.tw/blog/';
             
             // 1. 獲取 Global Repository ID (節點 ID)
-            const repoData = await github.graphql(
-                `query($repoOwner: String!, $repoName: String!) {
-                    repository(owner: $repoOwner, name: $repoName) {
-                        id
-                    }
-                }`, 
-                { repoOwner, repoName }
-            );
-            const globalRepoId = repoData.repository.id;
+            try {
+                const repoData = await github.graphql(
+                    `query($repoOwner: String!, $repoName: String!) {
+                        repository(owner: $repoOwner, name: $repoName) {
+                            id
+                        }
+                    }`, 
+                    { repoOwner, repoName }
+                );
+                var globalRepoId = repoData.repository.id;
+            } catch (error) {
+                console.error('❌ 致命錯誤：無法獲取 Global Repository ID。', error.message);
+                throw new Error('無法繼續執行：Global Repository ID 獲取失敗。');
+            }
             
             for (const post of metadata) {
-                // 使用 Giscus 期望的 path 格式作為標題
+                // 使用 Giscus 期望的 path 格式作為標題 (例如: blog/2025-08-28)
                 const discussionTitle = `blog/${post.slug}`; 
                 const discussionBody = `文章標題: ${post.title}\n文章連結: ${baseURL}${post.slug}/\n\n---\n\n這是 Giscus 自動創建的討論串，用於初始化 Giscus 介面。`;
                 
                 console.log(`-> 處理文章: ${discussionTitle}`);
 
-                // 【✅ 修正：移除 search 預先檢查，依賴 Mutation 錯誤處理】
+                // 2. 執行創建 (Mutation)，並依賴 API 衝突檢查
                 try {
                   const result = await github.graphql(
                       `
@@ -192,11 +185,11 @@ jobs:
                   console.log(`✅ 討論串已創建: ${discussionTitle}`);
                   console.log(`URL: ${result.createDiscussion.discussion.url}`);
                 } catch(error) {
-                   // 檢查是否為標題重複錯誤
-                   if (error.message && error.message.includes('Discussion with the same title already exists')) {
-                        console.log(`⚠️ 討論串已存在 (API 衝突檢查確認)，跳過創建: ${discussionTitle}`);
+                   // 檢查是否為標題重複錯誤 (最準確的 API 錯誤訊息)
+                   if (error.message && error.message.includes('A discussion with that title already exists')) {
+                        console.log(`⚠️ 討論串已存在 (Mutation 衝突確認)，跳過創建: ${discussionTitle}`);
                    } else {
-                        // 處理其他非預期錯誤 (例如權限不足等)
+                        // 處理其他非預期錯誤 (例如權限不足)
                         console.error(`❌ 討論串創建失敗 (非預期錯誤 - ${discussionTitle}):`, error.message);
                    }
                 }
