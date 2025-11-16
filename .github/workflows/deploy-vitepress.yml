@@ -144,8 +144,18 @@ jobs:
             const discussionCategoryId = process.env.CATEGORY_ID;
             const repoOwner = '${{ github.repository_owner }}';
             const repoName = '${{ github.event.repository.name }}';
-            const repoId = '${{ github.repository_id }}';
             const baseURL = 'https://holybear.tw/blog/';
+            
+            // 1. 獲取 Global Repository ID (節點 ID)
+            const repoData = await github.graphql(
+                `query($repoOwner: String!, $repoName: String!) {
+                    repository(owner: $repoOwner, name: $repoName) {
+                        id
+                    }
+                }`, 
+                { repoOwner, repoName }
+            );
+            const globalRepoId = repoData.repository.id;
             
             for (const post of metadata) {
                 const discussionTitle = post.title; 
@@ -153,7 +163,8 @@ jobs:
                 
                 console.log(`-> 處理文章: ${discussionTitle}`);
 
-                const searchQuery = `repo:${repoOwner}/${repoName} category:${discussionCategoryId} in:title "${discussionTitle}" type:discussion`;
+                // 2. 檢查討論串是否已存在 (使用 search API)
+                const searchQuery = `repo:${repoOwner}/${repoName} category:"General" in:title "${discussionTitle}" type:discussion`;
                 
                 const searchResult = await github.graphql(
                     `
@@ -172,7 +183,6 @@ jobs:
                 );
                 
                 const nodes = searchResult.search?.nodes;
-                
                 const existingDiscussion = nodes?.find(node => node.title === discussionTitle);
 
                 if (existingDiscussion) {
@@ -180,6 +190,7 @@ jobs:
                    continue;
                 }
                 
+                // 3. 如果不存在，則執行創建 (Mutation)
                 try {
                   const result = await github.graphql(
                       `
@@ -197,7 +208,7 @@ jobs:
                       }
                       `,
                       {
-                        repositoryId: repoId,
+                        repositoryId: globalRepoId, // 使用 Global ID
                         categoryId: discussionCategoryId,
                         title: discussionTitle,
                         body: discussionBody
