@@ -123,51 +123,6 @@ jobs:
           echo "收集到的 Metadata: $POSTS_METADATA"
           echo "posts_metadata=$POSTS_METADATA" >> $GITHUB_OUTPUT
 
-      - name: 偵測並收集新文章 Metadata
-        id: collect-new-posts
-        if: ${{ steps.detect-content-changed.outputs.has_changed == 'true' || github.event.inputs.scan_all_posts }}
-        run: |
-          set -e
-          
-          SCAN_ALL="${{ github.event.inputs.scan_all_posts }}"
-          TARGET_DIR="blog/"
-          
-          if [ "$SCAN_ALL" == "true" ]; then
-            echo "🔥 啟用 '強制掃描所有文章' 模式..."
-            NEW_FILES=$(find "$TARGET_DIR" -type f -name "*.md" | grep 'blog/.*\.md$' || true)
-          else
-            echo "🔍 啟用 '新增文件偵測' 模式..."
-            NEW_FILES=$(git diff --name-only --diff-filter=A ${{ github.event.before }} ${{ github.sha }} | grep 'blog/.*\.md$' || true)
-          fi
-          
-          if [ -z "$NEW_FILES" ]; then
-            echo "posts_metadata=[]" >> $GITHUB_OUTPUT 
-            echo "沒有偵測到新的或需要處理的文章，跳過討論串創建。"
-            exit 0
-          fi
-          
-          POSTS_METADATA="["
-          first=true
-          
-          for file_path in $NEW_FILES; do
-            if [ "$first" = false ]; then
-              POSTS_METADATA="${POSTS_METADATA},"
-            fi
-            
-            FILE_CONTENT=$(cat "$file_path")
-            TITLE=$(echo "$FILE_CONTENT" | awk -F': ' '/^title:/ {print $2; exit}' | sed 's/"//g' | xargs || echo "無標題文章")
-            SLUG=$(basename "$file_path" .md)
-            
-            JSON_ENTRY=$(printf '{"title": "%s", "slug": "%s"}' "$TITLE" "$SLUG")
-            POSTS_METADATA="${POSTS_METADATA}${JSON_ENTRY}"
-            
-            first=false
-          done
-          
-          POSTS_METADATA="${POSTS_METADATA}]"
-          echo "收集到的 Metadata: $POSTS_METADATA"
-          echo "posts_metadata=$POSTS_METADATA" >> $GITHUB_OUTPUT
-
       - name: 執行 Discussion 創建 (Giscus)
         if: ${{ steps.detect-content-changed.outputs.has_changed == 'true' || github.event.inputs.scan_all_posts }}
         uses: actions/github-script@v6
