@@ -17,6 +17,7 @@ hero:
     - theme: alt
       text: 回到主站
       link: "/"
+blog: true
 ---
 
 <script setup lang="ts">

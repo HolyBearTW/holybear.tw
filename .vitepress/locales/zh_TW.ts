@@ -9,7 +9,7 @@ export default {
       { text: '作品集', link: '/Mod' },
       { text: '技術文件', link: '/docs/' },
       { text: '簡轉繁', link: '/converter' },
-      { text: 'Telegram', link: 'https://t.me/HolyBearTW' },
+      { text: '短網址', link: 'https://go.holybear.tw/' },
       { text: '贊助', link: 'https://paypal.me/holybear0610' },
       { 
         text: '佈景主題', 

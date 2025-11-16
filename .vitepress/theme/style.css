@@ -4,17 +4,24 @@
    ========================================================================== */
 
 /* ==================== 全域變數 (合併) ==================== */
+
 :root {
   color-scheme: light dark;
 
   /* brand colors */
-  --vp-c-brand: #00FFEE;
-  --vp-c-brand-light: #33FFFF;
-  --vp-c-brand-lighter: #66FFFF;
-  --vp-c-brand-lightest: #99FFFF;
-  --vp-c-brand-dark: #00CCEE;
+  --vp-c-brand: #00FFEE !important;
+  --vp-c-brand-light: #33FFFF !important;
+  --vp-c-brand-lighter: #66FFFF !important;
+  --vp-c-brand-lightest: #99FFFF !important;
+  --vp-c-brand-dark: #00CCEE !important;
   --vp-c-brand-darker: #0099BB;
-  --vp-c-brand-dimm: rgba(100, 108, 255, 0.08);
+  --vp-c-brand-dimm: rgba(100, 108, 255, 0.08) !important;
+
+/* 強制使用藍色（indigo）作為品牌色，覆蓋 vitepress-theme-default-plus 的紅色 */
+  --vp-c-brand-1: var(--vp-c-indigo-1) !important;
+  --vp-c-brand-2: var(--vp-c-indigo-2) !important;
+  --vp-c-brand-3: var(--vp-c-indigo-3) !important;
+  --vp-c-brand-soft: var(--vp-c-indigo-soft) !important;
 
   /* button */
   --vp-button-brand-border: var(--vp-c-brand-light);
@@ -29,8 +36,8 @@
 
   /* home hero */
   --vp-home-hero-name-color: transparent;
-  --vp-home-hero-name-background: -webkit-linear-gradient(120deg, #C1836C 0%, #F7E1C4 20%, #8F70FF 40%, #00FFEE 60%, #33FFFF 100%);
-  --vp-home-hero-image-background-image: linear-gradient(-45deg, #C1836C 0%, #F7E1C4 20%, #8F70FF 40%, #00FFEE 60%, #33FFFF 100%);
+  --vp-home-hero-name-background: -webkit-linear-gradient(120deg, #C1836C 0%, #F7E1C4 20%, #8F70FF 40%, #00FFEE 60%, #33FFFF 100%) !important;
+  --vp-home-hero-image-background-image: linear-gradient(-45deg, #C1836C 0%, #F7E1C4 20%, #8F70FF 40%, #00FFEE 60%, #33FFFF 100%) !important;
   --vp-home-hero-image-filter: blur(100px);
 
   /* layout */
@@ -43,6 +50,11 @@
 
 /* dark override for glass */
 html.dark body {
+  --vp-c-brand: #00FFEE !important;
+  --vp-c-brand-1: #00FFEE !important;
+  --vp-c-brand-2: #00FFEE !important;
+  --vp-c-brand-3: #00FFEE !important;
+  --vp-c-brand-soft: #00FFEE1A !important; /* 可用透明度 */
   --my-glass-bg: rgba(0, 0, 0, 0.3);
 }
 
@@ -873,4 +885,20 @@ html.dark .stat-card,
 html.dark .author-contribution-section,
 html.dark .filter-btn {
   background: rgba(30, 30, 30, 0.38) !important;    /* 深色 */
+}
+.VPDocAside, .VPDocSidebar {
+  display: block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* button */
+.button .text {
+  color: var(--vp-c-text-1) !important;
+}
+.button[aria-expanded="true"] .text {
+  color: var(--vp-c-indigo-1) !important;
+}
+html.dark .button[aria-expanded="true"] .text {
+  color: #00FFEE !important;
 }

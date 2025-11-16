@@ -1,4 +1,4 @@
-
+import VPLTheme from '@lando/vitepress-theme-default-plus';
 import MyCustomLayout from './MyCustomLayout.vue';
 import './style.css';
 import OpenCCConverter from '../components/OpenCCConverter.vue';
@@ -6,9 +6,9 @@ import Spoiler from './Spoiler.vue';
 import { THEME_STORAGE_KEY } from './background/themes';
 
 export default {
+    extends: VPLTheme,
     Layout: MyCustomLayout,
     enhanceApp({ router, app }) {
-        // ✅ 就是這一行！在此註冊您的元件
         app.component('OpenCCConverter', OpenCCConverter);
         app.component('Spoiler', Spoiler);
 
