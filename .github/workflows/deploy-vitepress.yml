@@ -80,7 +80,7 @@ jobs:
 
       - name: 偵測並收集新文章 Metadata
         id: collect-new-posts
-        if: steps.detect-content-changed.outputs.has_changed == 'true' || github.event.inputs.scan_all_posts == true
+        if: steps.detect-content-changed.outputs.has_changed == 'true' || github.event.inputs.scan_all_posts == 'true'
         run: |
           set -e
           
