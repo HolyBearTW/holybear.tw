@@ -19,6 +19,8 @@ import Slow3DFly from './background/Slow3DFly.vue'
 import Halo from './background/CircularHaloBackgroud.vue'
 import HyperOS from './background/HyperOSTheme.vue'
 import HyperOS2 from './background/HyperOS2Theme.vue'
+import Christmas from './background/ChristmasBackground.vue'
+import HalloweenBackground from './background/HalloweenBackground.vue'
 import { 
   defaultTheme, 
   THEME_STORAGE_KEY, 
@@ -135,8 +137,8 @@ const handleThemeChange = (event: Event) => {
 const updateBodyClass = (theme: string) => {
   if (typeof document === 'undefined') return
   
-  // 移除所有主題 class
-  document.body.classList.remove('theme-animated', 'theme-tech', 'theme-gaming', 'theme-slow3dfly', 'theme-halo', 'theme-hyperos', 'theme-hyperos2', 'theme-none')
+    // 移除所有主題 class（包含萬聖節主題）
+    document.body.classList.remove('theme-animated', 'theme-tech', 'theme-gaming', 'theme-slow3dfly', 'theme-halo', 'theme-hyperos', 'theme-hyperos2', 'theme-none', 'theme-christmas', 'theme-halloween')
   
   // 添加當前主題 class
   if (theme && theme !== 'none') {
@@ -461,6 +463,8 @@ onUnmounted(() => {
         <Halo v-if="currentBackgroundTheme === 'halo'" />
         <HyperOS v-if="currentBackgroundTheme === 'hyperos'" />
         <HyperOS2 v-if="currentBackgroundTheme === 'hyperos2'" />
+        <HalloweenBackground v-if="currentBackgroundTheme === 'halloween'" />
+        <Christmas v-if="currentBackgroundTheme === 'christmas'" />
     </ClientOnly>
 
     <component :is="DefaultTheme.Layout">

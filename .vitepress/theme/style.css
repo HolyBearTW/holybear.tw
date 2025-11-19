@@ -756,16 +756,6 @@ body:not(:has(.VPHome)) .VPNavScreen {
   transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
-/* ==================== 主題樣式範例 (Halloween) ==================== */
-body.halloween-theme { background: #1a1a1a url('/image/halloween/halloween2.png') repeat; color: #ff9800; }
-body.halloween-theme header, body.halloween-theme .VPNav { position: relative; background: #222 url('/image/halloween/halloween1.png') repeat-x; background-size: 90px auto; border-bottom: 2px solid #ff9800; }
-body.halloween-theme header::before, body.halloween-theme .VPNav::before {
-  content: ''; position: absolute; inset: 0; z-index: 0; background: rgba(34,34,34,0.7); backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); pointer-events: none;
-}
-body.halloween-theme header > *, body.halloween-theme .VPNav > * { position: relative; z-index: 1; }
-body.halloween-theme h1, body.halloween-theme h2, body.halloween-theme h3, body.halloween-theme h4, body.halloween-theme h5, body.halloween-theme h6 {
-  color: #ff5722; text-shadow: 2px 2px 4px #000;
-}
 
 /* ==================== 小調整 / 方便閱讀 ==================== */
 /* 首個 h2 標題微調（文章頁） */

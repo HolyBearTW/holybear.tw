@@ -1,8 +1,33 @@
 <script setup>
 import { ref, watch, onMounted, onUnmounted, computed, nextTick } from 'vue'
+import { THEME_CHANGE_EVENT } from './background/themes'
+
+// 主題切換時自動插入聖誕歌並播放
+onMounted(() => {
+    window.addEventListener(THEME_CHANGE_EVENT, (e) => {
+        if (e.detail?.theme === 'christmas') {
+            if (!musicList.value.find(m => m.src === '/music/MapleStory_WhiteChristmas.mp3')) {
+                musicList.value.unshift({
+                    src: '/music/MapleStory_WhiteChristmas.mp3',
+                    title: '楓之谷 - 幸福村（聖誕村莊）'
+                })
+            }
+            currentIndex.value = 0
+            playing.value = true
+            playMusic()
+        }
+    })
+})
 
 /* --- 音樂清單 --- */
-const musicList = [
+const musicList = ref([
+    { src: '/music/LeagueofLegends_OmegaSquadTeemo.mp3', title: '英雄聯盟：戰爭機器 - 提摩' },
+    { src: '/music/MapleStory_Reborngods.mp3', title: '楓之谷：塔拉哈特 - 遺跡廢墟' },
+    { src: '/music/MapleStory_NightField.mp3', title: '楓之谷 - 不夜城徒步區' },
+    { src: '/music/MapleStory_KerningSquareField.mp3', title: '楓之谷 - 101大道徒步區' },
+    { src: '/music/MapleStory_AdventurersfromBeyond.mp3', title: '楓之谷 - 次元的戰場' },
+    { src: '/music/MapleStory_2015gamaday_park.mp3', title: '楓之谷 - 橘子樂園' },
+    { src: '/music/MapleStory_KerningSquare.mp3', title: '楓之谷 - 101大道' },
     { src: '/music/MapleStory_The_Lost_City_among_the_Clouds.mp3', title: '楓之谷 - 奧迪溫' },
     { src: '/music/MapleStory_Sunshine_blurring_the_Unknown.mp3', title: '楓之谷 - 陽光灑落的實驗室' },
     { src: '/music/MapleStory_CashShop.mp3', title: '楓之谷 - 新購物商城' },
@@ -28,12 +53,13 @@ const musicList = [
     { src: '/music/MapleStory_NeoTokyo_Rockbongi.mp3', title: '楓之谷：未來東京 - 澀谷 2102年' },
     { src: '/music/MapleStory_AnEternalBreath.mp3', title: '楓之谷：克拉奇亞 - 永恆的氣息' },
     { src: '/music/MapleStory_old_title.mp3', title: '楓之谷 - 懷舊登入音樂' }
-]
+])
 /* --- LocalStorage Keys --- */
 const VOLUME_KEY = 'holybear-bgm-volume'
 const PLAYING_KEY = 'holybear-bgm-playing'
 const INDEX_KEY = 'holybear-bgm-index'
 const PLAYER_OPEN_KEY = 'holybear-bgm-player-open'
+const REPEAT_ONE_KEY = 'holybear-bgm-repeat-one'
 
 /* --- Refs & 狀態 --- */
 const audio = ref(null)
@@ -53,6 +79,38 @@ const playerMinimized = ref(false)
 const musicInfoHidden = ref(false)
 const showSidebarButton = ref(false)
 const showPlayerToggle = ref(false) // 播放器開關按鈕
+const repeatOne = ref(false) // 重複播放同一首
+
+// Toast 狀態
+const showTitleToast = ref(false)
+const toastText = ref('')
+let toastTimer = null
+
+function handleSongTitleMouseEnter(title, e) {
+    // 判斷是否超長
+    const el = e.target
+    if (el.scrollWidth > el.clientWidth) {
+        toastText.value = title
+        showTitleToast.value = true
+        // 自動隱藏
+        if (toastTimer) clearTimeout(toastTimer)
+        toastTimer = setTimeout(() => {
+            showTitleToast.value = false
+        }, 2200)
+    }
+}
+function handleSongTitleMouseLeave() {
+    showTitleToast.value = false
+    if (toastTimer) clearTimeout(toastTimer)
+}
+
+function toggleRepeatOne() {
+    repeatOne.value = !repeatOne.value
+    localStorage.setItem(REPEAT_ONE_KEY, repeatOne.value ? 'true' : 'false')
+    if (audio.value) {
+        audio.value.loop = repeatOne.value
+    }
+}
 
 /* --- 滑動手勢相關 --- */
 const touchStartX = ref(0)
@@ -70,7 +128,7 @@ const isClicked = ref(false) // 是否已點擊顯示播放器
 let autoPlayListener = null
 
 /* --- Computed 屬性 --- */
-const currentSong = computed(() => musicList[currentIndex.value])
+const currentSong = computed(() => musicList.value[currentIndex.value])
 const progressPercent = computed(() => {
     if (duration.value === 0) return 0
     return (currentTime.value / duration.value) * 100
@@ -88,7 +146,13 @@ onMounted(() => {
         volume.value = parseFloat(savedVolume)
         if (volume.value > 0) volumeBeforeMute.value = volume.value
     }
-    
+
+    const savedRepeatOne = localStorage.getItem(REPEAT_ONE_KEY)
+    if (savedRepeatOne !== null) {
+        repeatOne.value = savedRepeatOne === 'true'
+        if (audio.value) audio.value.loop = repeatOne.value
+    }
+
     const savedPlaying = localStorage.getItem(PLAYING_KEY)
     if (savedPlaying === 'true' && playerOpen.value) {
         // 只有在播放器開啟時才自動播放
@@ -108,6 +172,7 @@ onMounted(() => {
 
     if (audio.value) {
         audio.value.volume = volume.value
+        audio.value.loop = repeatOne.value
         audio.value.addEventListener('timeupdate', updateProgress)
         audio.value.addEventListener('loadedmetadata', onLoadedMetadata)
     }
@@ -192,6 +257,7 @@ watch(playerMinimized, (newVal) => {
 function playMusic() {
     if (!audio.value) return
     audio.value.volume = volume.value
+    audio.value.loop = repeatOne.value
     audio.value.play().then(() => {
         playing.value = true
         localStorage.setItem(PLAYING_KEY, 'true')
@@ -669,12 +735,23 @@ function showMusicInfo() {
                             :class="{ 'active': index === currentIndex }"
                             @click="selectAndPlaySong(index)"
                         >
-                            <div class="song-info">
+                            <div class="song-info" style="display: flex; align-items: center;">
                                 <span class="song-number">{{ index + 1 }}</span>
-                                <span class="song-title">{{ song.title }}</span>
+                                <span class="song-title"
+                                    @mouseenter="handleSongTitleMouseEnter(song.title, $event)"
+                                    @mouseleave="handleSongTitleMouseLeave"
+                                >{{ song.title }}</span>
+                                <!-- 只在目前播放的歌曲顯示 repeatOne 按鈕 -->
+                                <button v-if="index === currentIndex" class="action-btn" @click.stop="toggleRepeatOne" :title="repeatOne ? '重複播放：開啟' : '重複播放：關閉'" style="margin-left:2px; padding:2px 4px; font-size:1em; height:22px; width:22px;">
+                                    <i class="fas fa-repeat" :style="repeatOne ? 'color:#ff9800; filter:drop-shadow(0 0 2px #ff9800);' : 'color:#bbb;'" />
+                                </button>
                             </div>
-                            <i v-if="index === currentIndex && playing" class="fas fa-volume-up playing-icon"></i>
+                            <i v-if="index === currentIndex && playing" class="fas fa-volume-up playing-icon" style="margin-left:2px;"></i>
                         </div>
+                        <!-- 歌曲名稱 Toast -->
+                        <transition name="toast-fade">
+                            <div v-if="showTitleToast" class="title-toast">{{ toastText }}</div>
+                        </transition>
                     </div>
                 </div>
             </transition>
@@ -707,6 +784,37 @@ function showMusicInfo() {
     </transition>
 </template>
 
+<style>
+/* ==================== 歌曲名稱 Toast ==================== */
+.title-toast {
+    position: fixed;
+    left: 50%;
+    bottom: 110px;
+    transform: translateX(-50%);
+    /* 使用深色品牌色作為背景，確保白色文字可讀 */
+    background: var(--vp-c-brand-darker); 
+    color: #fff;
+    font-size: 1.08rem;
+    font-weight: 600;
+    padding: 10px 22px;
+    border-radius: 16px;
+    box-shadow: 0 4px 18px rgba(0, 204, 238, 0.3);
+    z-index: 99999;
+    pointer-events: none;
+    user-select: none;
+    white-space: pre-line;
+    max-width: 80vw;
+    text-align: center;
+    opacity: 0.98;
+}
+.toast-fade-enter-active, .toast-fade-leave-active {
+    transition: opacity 0.3s;
+}
+.toast-fade-enter-from, .toast-fade-leave-to {
+    opacity: 0;
+}
+</style>
+
 <style scoped>
 @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
 
@@ -723,8 +831,8 @@ function showMusicInfo() {
     z-index: 9999;
     min-width: 350px;
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    border: 1px solid rgba(79, 195, 247, 0);
-
+    /* 邊框使用極淡的品牌色 */
+    border: 1px solid var(--vp-c-brand-dimm);
 }
 
 /* 最小化狀態：主體完全消失 */
@@ -737,7 +845,6 @@ function showMusicInfo() {
     transform: translateY(20px);
 }
 
-/* 最小化狀態：隱藏所有子元素（除了 music-info） */
 .music-container.minimized > *:not(.music-info) {
     opacity: 0 !important;
     pointer-events: none !important;
@@ -746,41 +853,28 @@ function showMusicInfo() {
     transition: all 0.4s ease;
 }
 
-/* 最小化狀態：歌曲資訊保持可見並向下移動 */
 .music-container.minimized .music-info {
     opacity: 0.9 !important;
     transform: translateY(-50%) !important;
     pointer-events: auto;
     cursor: pointer;
-    box-shadow: 0 8px 28px rgba(33, 150, 243, 0.3),
+    /* 陰影改為品牌色 */
+    box-shadow: 0 8px 28px rgba(0, 204, 238, 0.25),
                 0 0 0 1px rgba(255, 255, 255, 0.25) inset;
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* 最小化狀態:主體完全消失 */
-.music-container.minimized {
-    background: transparent !important;
-    border-color: transparent !important;
-    box-shadow: none !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    transform: translateY(20px);
-    transition-delay: 0s;
-}
-
-/* 恢復時延遲主容器淡入 */
 .music-container:not(.minimized) {
     transition-delay: 0.1s;
 }
 
-/* 當 music-info 被隱藏時，保持主體完全隱藏 */
 .music-container.info-hidden {
     background: transparent !important;
     border-color: transparent !important;
     box-shadow: none !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
-    pointer-events: none !important; /* 完全禁用點擊事件 */
+    pointer-events: none !important;
 }
 
 .music-container.info-hidden > *:not(.sidebar-toggle) {
@@ -791,10 +885,11 @@ function showMusicInfo() {
 
 /* ==================== 歌曲資訊 ==================== */
 .music-info {
-    background: rgba(227, 242, 253, 0.5);
+    /* 背景帶一點點品牌色調 */
+    background: rgba(227, 253, 253, 0.5);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(79, 195, 247, 0.3);
+    border: 1px solid var(--vp-c-brand-dimm);
     border-radius: 16px;
     position: absolute;
     width: calc(100% - 80px);
@@ -805,35 +900,27 @@ function showMusicInfo() {
     transform: translateY(0%);
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: -1;
-    box-shadow: 0 4px 16px rgba(33, 150, 243, 0.1),
+    box-shadow: 0 4px 16px rgba(0, 204, 238, 0.1),
                 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
-    /* 防止文字選擇 */
     user-select: none;
     -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    /* 防止長按觸發上下文菜單 */
     -webkit-touch-callout: none;
 }
 
-/* 播放時顯示歌曲資訊 */
 .music-container.play .music-info {
     opacity: 1;
     transform: translateY(-107%);
 }
 
-/* 拖動時禁用過渡動畫 */
 .music-info.dragging {
     transition: none !important;
 }
 
-/* 當播放清單或音量面板打開時，隱藏 music-info（純淡出，不移動位置） */
 .music-container.panel-open .music-info {
     opacity: 0 !important;
     pointer-events: none;
 }
 
-/* music-info 向右滑動隱藏 */
 .music-info.hidden {
     opacity: 0 !important;
     transform: translateX(120%) translateY(-50%) !important;
@@ -841,7 +928,6 @@ function showMusicInfo() {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
-/* 最小化狀態下 music-info 隱藏時的動畫 */
 .music-container.minimized .music-info.hidden {
     transform: translateX(120%) translateY(-50%) !important;
 }
@@ -856,10 +942,10 @@ function showMusicInfo() {
     background: rgba(255, 255, 255, 0.35);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(33, 150, 243, 0.5);
-    box-shadow: 0 0 20px rgba(33, 150, 243, 0.3),
-                0 0 40px rgba(33, 150, 243, 0.15),
-                inset 0 0 20px rgba(33, 150, 243, 0.1);
+    border: 1px solid var(--vp-c-brand-dark); 
+    box-shadow: 0 0 20px rgba(0, 204, 238, 0.2),
+                0 0 40px rgba(0, 204, 238, 0.1),
+                inset 0 0 20px rgba(0, 204, 238, 0.05);
     border-radius: 12px 0 0 12px;
     display: flex;
     align-items: center;
@@ -867,48 +953,27 @@ function showMusicInfo() {
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 10000;
-    
-    /* 關閉所有觸控和焦點效果 */
     -webkit-tap-highlight-color: transparent;
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
     outline: none;
-    
-    /* 確保點擊區域精確 */
     pointer-events: auto;
     touch-action: manipulation;
 }
 
 .sidebar-toggle:hover {
     background: rgba(255, 255, 255, 0.55);
-    border-color: rgba(33, 150, 243, 0.8);
-    box-shadow: 0 0 25px rgba(33, 150, 243, 0.5),
-                0 0 50px rgba(33, 150, 243, 0.25),
-                inset 0 0 25px rgba(33, 150, 243, 0.15);
+    border-color: var(--vp-c-brand-darker);
+    box-shadow: 0 0 25px rgba(0, 204, 238, 0.4),
+                0 0 50px rgba(0, 204, 238, 0.2),
+                inset 0 0 25px rgba(0, 204, 238, 0.1);
     transform: translateX(-3px);
-}
-
-.sidebar-toggle:focus {
-    outline: none;
-}
-
-.sidebar-toggle:active {
-    outline: none;
 }
 
 .sidebar-icon {
     font-size: 20px;
     font-weight: bold;
-    color: rgba(33, 150, 243, 0.9);
+    color: var(--vp-c-brand-darker);
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     pointer-events: none;
-    user-select: none;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
 }
 
 .sidebar-fade-enter-active,
@@ -921,16 +986,6 @@ function showMusicInfo() {
     transform: translateX(40px);
 }
 
-/* 側邊欄按鈕和播放器開關按鈕進入時從右側滑入 */
-.sidebar-fade-enter-from {
-    transform: translateX(40px);
-}
-
-.sidebar-fade-leave-to {
-    transform: translateX(40px);
-}
-
-/* 播放器開關按鈕（使用音樂符號） */
 .sidebar-toggle.player-toggle .sidebar-icon {
     font-size: 24px;
 }
@@ -952,21 +1007,11 @@ function showMusicInfo() {
     animation: scrollText 12s linear infinite;
 }
 
-.title-text-duplicate {
-    display: none;
-}
-
-/* 跑馬燈滾動動畫 - 從右到左無限循環 */
 @keyframes scrollText {
-    0% {
-        transform: translateX(0);
-    }
-    100% {
-        transform: translateX(-100%);
-    }
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-100%); }
 }
 
-/* 暫停動畫（當未播放時） */
 .music-container:not(.play) .title-text {
     animation-play-state: paused;
 }
@@ -981,7 +1026,7 @@ function showMusicInfo() {
 
 /* ==================== 進度條 ==================== */
 .progress-container {
-    background-color: rgba(179, 229, 252, 0.3);
+    background-color: rgba(179, 252, 247, 0.3);
     backdrop-filter: blur(8px);
     border-radius: 8px;
     cursor: pointer;
@@ -989,17 +1034,18 @@ function showMusicInfo() {
     width: 100%;
     overflow: hidden;
     position: relative;
-    box-shadow: 0 0 0 1px rgba(79, 195, 247, 0.2) inset;
+    box-shadow: 0 0 0 1px var(--vp-c-brand-dimm) inset;
 }
 
 .progress {
-    background: linear-gradient(90deg, rgba(79, 195, 247, 0.8) 0%, rgba(41, 182, 246, 0.9) 100%);
+    /* 使用品牌色漸層 */
+    background: linear-gradient(90deg, var(--vp-c-brand-darker) 0%, var(--vp-c-brand) 100%);
     border-radius: 8px;
     height: 100%;
     width: 0%;
     transition: width 0.1s linear;
     position: relative;
-    box-shadow: 0 0 8px rgba(79, 195, 247, 0.4);
+    box-shadow: 0 0 8px var(--vp-c-brand-dimm);
 }
 
 .progress::after {
@@ -1011,9 +1057,9 @@ function showMusicInfo() {
     width: 10px;
     height: 10px;
     background: rgba(255, 255, 255, 0.95);
-    border: 0px solid rgba(79, 195, 247, 0.8);
+    border: 0px solid var(--vp-c-brand-dark);
     border-radius: 50%;
-    box-shadow: 0 0 8px rgba(79, 195, 247, 0.6),
+    box-shadow: 0 0 8px var(--vp-c-brand),
                 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
@@ -1027,7 +1073,8 @@ function showMusicInfo() {
 }
 
 .action-btn {
-    color: rgb(55 173 226);
+    /* 亮色模式下使用深品牌色以增加對比 */
+    color: var(--vp-c-brand-darker);
     font-size: 20px;
     cursor: pointer;
     padding: 10px;
@@ -1038,18 +1085,16 @@ function showMusicInfo() {
     display: flex;
     align-items: center;
     justify-content: center;
-
 }
 
 .action-btn:hover {
-    color: rgba(41, 182, 246, 1);
-    background-color: rgba(79, 195, 247, 0.3);
-    border-color: rgba(79, 195, 247, 0.5);
+    color: var(--vp-c-brand-dark);
+    background-color: var(--vp-c-brand-dimm);
+    border-color: var(--vp-c-brand-light);
     transform: scale(1.1);
-    box-shadow: 0 6px 16px rgba(79, 195, 247, 0.3);
     backdrop-filter: blur(8px);
-    border: 1px solid rgba(79, 195, 247, 0.3);
-    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.1);
+    border: 1px solid var(--vp-c-brand-dimm);
+    box-shadow: 0 4px 12px rgba(0, 204, 238, 0.15);
 }
 
 .action-btn:active {
@@ -1058,64 +1103,35 @@ function showMusicInfo() {
 
 .action-btn-big {
     color: #fff;
-    background: linear-gradient(135deg, rgba(25, 118, 210, 0.9) 0%, rgba(21, 101, 192, 0.9) 100%);
+    /* 大按鈕漸層：深青色 -> 青色 */
+    background: linear-gradient(135deg, var(--vp-c-brand-darker) 0%, var(--vp-c-brand-dark) 100%);
     backdrop-filter: blur(10px);
-    border: 1px solid rgba(79, 195, 247, 0.4);
+    border: 1px solid var(--vp-c-brand-dimm);
     font-size: 24px;
     width: 55px;
     height: 55px;
-    box-shadow: 0 6px 20px rgba(33, 150, 243, 0.4),
+    box-shadow: 0 6px 20px rgba(0, 204, 238, 0.3),
                 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
 }
 
 .action-btn-big:hover {
     color: #fff;
-    background: linear-gradient(135deg, rgba(30, 136, 229, 0.95) 0%, rgba(25, 118, 210, 0.95) 100%);
-    box-shadow: 0 8px 24px rgba(33, 150, 243, 0.4),
+    background: linear-gradient(135deg, var(--vp-c-brand-dark) 0%, var(--vp-c-brand-darker) 100%);
+    box-shadow: 0 8px 24px rgba(0, 204, 238, 0.4),
                 0 0 0 1px rgba(255, 255, 255, 0.2) inset;
-}
-
-/* ==================== 關閉按鈕 ==================== */
-.close-btn {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    background: rgba(227, 242, 253, 0.3);
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(79, 195, 247, 0.3);
-    color: rgba(120, 120, 120, 0.9);
-    font-size: 18px;
-    cursor: pointer;
-    padding: 8px;
-    border-radius: 50%;
-    transition: all 0.3s ease;
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 2px 8px rgba(33, 150, 243, 0.1);
-}
-
-.close-btn:hover {
-    color: rgba(41, 182, 246, 1);
-    background-color: rgba(79, 195, 247, 0.3);
-    border-color: rgba(79, 195, 247, 0.5);
-    transform: rotate(90deg);
-    box-shadow: 0 4px 12px rgba(79, 195, 247, 0.3);
 }
 
 /* ==================== 音量面板 ==================== */
 .volume-panel {
     position: absolute;
-    bottom: calc(75% );
+    bottom: calc(75%);
     left: 84.7%;
     transform: translateX(-50%);
-    background: rgba(227, 242, 253, 0.9);
-    border: 1px solid rgba(79, 195, 247, 0.);
+    background: rgba(240, 255, 255, 0.9);
+    border: 1px solid var(--vp-c-brand-dimm);
     border-radius: 12px;
     padding: 20px;
-    box-shadow: 0 8px 32px rgba(33, 150, 243, 0.2),
+    box-shadow: 0 8px 32px rgba(0, 204, 238, 0.15),
                 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
     min-width: 10px;
     z-index: 10;
@@ -1125,11 +1141,10 @@ function showMusicInfo() {
     gap: 12px;
 }
 
-/* 音量百分比顯示 */
 .volume-percentage-display {
     font-size: 18px;
     font-weight: 600;
-    color: rgba(33, 150, 243, 1);
+    color: var(--vp-c-brand-darker);
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
     margin-bottom: 8px;
     user-select: none;
@@ -1149,11 +1164,11 @@ function showMusicInfo() {
     direction: rtl;
     width: 6px;
     height: 120px;
-    background: rgba(179, 229, 252, 0.4);
+    background: rgba(179, 252, 247, 0.4);
     backdrop-filter: blur(8px);
     border-radius: 3px;
     outline: none;
-    box-shadow: 0 0 0 1px rgba(79, 195, 247, 0.2) inset;
+    box-shadow: 0 0 0 1px var(--vp-c-brand-dimm) inset;
     cursor: pointer;
 }
 
@@ -1162,45 +1177,45 @@ function showMusicInfo() {
     appearance: none;
     width: 16px;
     height: 16px;
-    background: linear-gradient(135deg, rgba(79, 195, 247, 0.9) 0%, rgba(41, 182, 246, 0.9) 100%);
+    background: linear-gradient(135deg, var(--vp-c-brand) 0%, var(--vp-c-brand-dark) 100%);
     backdrop-filter: blur(8px);
     border: 2px solid rgba(255, 255, 255, 0.6);
     border-radius: 50%;
     cursor: pointer;
-    box-shadow: 0 3px 10px rgba(79, 195, 247, 0.5),
+    box-shadow: 0 3px 10px rgba(0, 204, 238, 0.4),
                 0 0 0 1px rgba(255, 255, 255, 0.2) inset;
     transition: all 0.3s ease;
 }
 
 .volume-slider-vertical::-webkit-slider-thumb:hover {
     transform: scale(1.3);
-    box-shadow: 0 4px 16px rgba(79, 195, 247, 0.7),
+    box-shadow: 0 4px 16px rgba(0, 204, 238, 0.6),
                 0 0 0 2px rgba(255, 255, 255, 0.3) inset;
 }
 
 .volume-slider-vertical::-moz-range-thumb {
     width: 16px;
     height: 16px;
-    background: linear-gradient(135deg, rgba(79, 195, 247, 0.9) 0%, rgba(41, 182, 246, 0.9) 100%);
+    background: linear-gradient(135deg, var(--vp-c-brand) 0%, var(--vp-c-brand-dark) 100%);
     border: 2px solid rgba(255, 255, 255, 0.6);
     border-radius: 50%;
     cursor: pointer;
-    box-shadow: 0 3px 10px rgba(79, 195, 247, 0.5);
+    box-shadow: 0 3px 10px rgba(0, 204, 238, 0.4);
 }
 
 /* ==================== 播放清單面板 ==================== */
 .playlist-panel {
     position: absolute;
-    bottom: calc(75% );
+    bottom: calc(75%);
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(227, 242, 253, 0.35);
+    background: rgba(240, 255, 255, 0.35);
     backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(px) saturate(180%);
-    border: 1px solid rgba(79, 195, 247, 0.3);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid var(--vp-c-brand-dimm);
     border-radius: 18px;
     padding: 25px;
-    box-shadow: 0 8px 32px rgba(33, 150, 243, 0.2),
+    box-shadow: 0 8px 32px rgba(0, 204, 238, 0.15),
                 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
     max-width: 350px;
     max-height: 400px;
@@ -1219,6 +1234,10 @@ function showMusicInfo() {
 .playlist-items {
     max-height: 300px;
     overflow-y: auto;
+    padding-right: 15px;
+    padding-left: 15px;
+    margin-left: -15px;
+    box-sizing: border-box;
 }
 
 .playlist-item {
@@ -1230,23 +1249,24 @@ function showMusicInfo() {
     border-radius: 12px;
     cursor: pointer;
     transition: all 0.3s ease;
-    background: rgba(227, 242, 253, 0.3);
+    background: rgba(240, 255, 255, 0.3);
     backdrop-filter: blur(8px);
-    border: 1px solid rgba(79, 195, 247, 0.2);
-    box-shadow: 0 2px 8px rgba(33, 150, 243, 0.05);
+    border: 1px solid rgba(0, 204, 238, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 204, 238, 0.05);
 }
 
 .playlist-item:hover {
-    background: rgba(129, 212, 250, 0.35);
-    border-color: rgba(79, 195, 247, 0.4);
-    box-shadow: 0 4px 12px rgba(79, 195, 247, 0.2);
+    background: var(--vp-c-brand-dimm);
+    border-color: var(--vp-c-brand-light);
+    box-shadow: 0 4px 12px rgba(0, 204, 238, 0.15);
 }
 
 .playlist-item.active {
-    background: linear-gradient(135deg, rgba(79, 195, 247, 0.4) 0%, rgba(41, 182, 246, 0.4) 100%);
-    border-left: 3px solid rgba(41, 182, 246, 0.8);
-    border-color: rgba(79, 195, 247, 0.5);
-    box-shadow: 0 4px 16px rgba(79, 195, 247, 0.3),
+    /* 激活狀態使用品牌漸層背景 */
+    background: linear-gradient(135deg, rgba(0, 255, 238, 0.15) 0%, rgba(0, 204, 238, 0.15) 100%);
+    border-left: 3px solid var(--vp-c-brand-dark);
+    border-color: var(--vp-c-brand-light);
+    box-shadow: 0 4px 16px rgba(0, 204, 238, 0.2),
                 0 0 0 1px rgba(255, 255, 255, 0.2) inset;
 }
 
@@ -1259,7 +1279,7 @@ function showMusicInfo() {
 
 .song-number {
     font-weight: 700;
-    color: rgba(25, 118, 210, 0.85);
+    color: var(--vp-c-brand-darker);
     min-width: 28px;
     text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
 }
@@ -1273,19 +1293,14 @@ function showMusicInfo() {
     font-weight: 500;
 }
 
-
 .playing-icon {
-    color: rgba(41, 182, 246, 1);
+    color: var(--vp-c-brand-dark);
     animation: pulse 1.5s ease-in-out infinite;
 }
 
 @keyframes pulse {
-    0%, 100% {
-        opacity: 1;
-    }
-    50% {
-        opacity: 0.5;
-    }
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
 }
 
 /* ==================== 捲軸樣式 ==================== */
@@ -1315,10 +1330,7 @@ function showMusicInfo() {
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.player-fade-enter-from {
-    transform: translateX(120%);
-}
-
+.player-fade-enter-from,
 .player-fade-leave-to {
     transform: translateX(120%);
 }
@@ -1337,10 +1349,12 @@ function showMusicInfo() {
     opacity: 0;
     transform: translateX(-50%) translateY(10px);
 }
-.volume-panel,.playlist-panel {
-        background: rgba(255, 255, 255, 0.75);
-        border-color: rgba(15, 139, 197, 0.993);
-    }
+
+.volume-panel, .playlist-panel {
+    background: rgba(255, 255, 255, 0.75);
+    border-color: var(--vp-c-brand-dark);
+}
+
 /* ==================== 響應式設計 ==================== */
 @media (max-width: 480px) {
     .music-container {
@@ -1351,18 +1365,22 @@ function showMusicInfo() {
     }
 }
 
-/* ==================== 深色模式 ==================== */
+/* ==================== 深色模式 (Dark Mode) ==================== */
 @media (prefers-color-scheme: dark) {
     .dark .music-container {
         background: rgba(30, 30, 30, 0.5);
-        border: 0px solid rgba(79, 195, 247, 0);
+        border: 0px solid transparent;
     }
-    .dark .action-btn{
-    color: rgba(250, 254, 255, 0.7);
+    
+    .dark .action-btn {
+        /* 深色模式下使用最亮的品牌色 */
+        color: var(--vp-c-brand);
+        text-shadow: 0 0 5px var(--vp-c-brand-darker);
     }
+    
     .dark .music-info {
         background: linear-gradient(to top, rgba(30, 30, 30, 0.9), rgba(30, 30, 30, 0.5));
-        border-color: rgba(153, 211, 238, 0.5);
+        border-color: var(--vp-c-brand-dimm);
     }
 
     .dark .music-info .title {
@@ -1374,65 +1392,63 @@ function showMusicInfo() {
     }
 
     .dark .volume-panel,
-    .dark  .playlist-panel {
+    .dark .playlist-panel {
         background: rgba(30, 30, 30, 0.75);
-        border-color: rgba(15, 139, 197, 0.993);
+        border-color: var(--vp-c-brand-dark);
     }
 
     .dark .volume-percentage-display {
-        color: rgba(79, 195, 247, 1);
+        color: var(--vp-c-brand);
     }
 
     .dark .playlist-item {
-        background: rgba(79, 195, 247, 0.15);
-        border-color: rgba(79, 195, 247, 0.15);
+        background: rgba(0, 255, 238, 0.05);
+        border-color: rgba(0, 255, 238, 0.05);
+    }
+    
+    .dark .playlist-item:hover {
+        background: var(--vp-c-brand-dimm);
+        border-color: var(--vp-c-brand);
+        box-shadow: 0 0 10px var(--vp-c-brand-dimm);
     }
 
     .dark .playlist-title {
-    margin: 0 0 18px 0;
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: rgb(255, 255, 255);
-    text-align: center;
-    text-shadow: 0 2px 4px rgba(255, 255, 255, 0.1);
-}
+        margin: 0 0 18px 0;
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: rgb(255, 255, 255);
+        text-align: center;
+        text-shadow: 0 2px 4px rgba(255, 255, 255, 0.1);
+    }
+    
     .dark .song-title {
         color: rgba(221, 221, 221, 0.9);
     }
 
-    .dark .close-btn {
-        color: rgba(170, 170, 170, 0.9);
-    }
-
-    .dark .close-btn:hover {
-        color: rgba(79, 195, 247, 1);
-    }
-
     .dark .song-number {
-        color: rgba(129, 212, 250, 0.9);
+        color: var(--vp-c-brand-light);
     }
 
     /* 深色模式下的側邊欄按鈕 */
     .dark .sidebar-toggle {
         background: rgba(0, 0, 0, 0.35);
-        border-color: rgba(79, 195, 247, 0.5);
-        box-shadow: 0 0 20px rgba(79, 195, 247, 0.3),
-                    0 0 40px rgba(79, 195, 247, 0.15),
-                    inset 0 0 20px rgba(79, 195, 247, 0.1);
+        border-color: var(--vp-c-brand-dark);
+        box-shadow: 0 0 20px rgba(0, 204, 238, 0.2),
+                    0 0 40px rgba(0, 204, 238, 0.1),
+                    inset 0 0 20px rgba(0, 204, 238, 0.05);
     }
 
     .dark .sidebar-toggle:hover {
         background: rgba(0, 0, 0, 0.75);
-        border-color: rgba(79, 195, 247, 0.8);
-        box-shadow: 0 0 25px rgba(79, 195, 247, 0.5),
-                    0 0 50px rgba(79, 195, 247, 0.25),
-                    inset 0 0 25px rgba(79, 195, 247, 0.15);
+        border-color: var(--vp-c-brand);
+        box-shadow: 0 0 25px rgba(0, 204, 238, 0.4),
+                    0 0 50px rgba(0, 204, 238, 0.2),
+                    inset 0 0 25px rgba(0, 204, 238, 0.15);
     }
 
     .dark .sidebar-icon {
-        color: rgba(255, 255, 255, 0.9);
-        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        color: var(--vp-c-brand);
+        text-shadow: 0 0 8px var(--vp-c-brand-dark);
     }
 }
 </style>
-
