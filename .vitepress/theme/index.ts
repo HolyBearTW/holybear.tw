@@ -36,44 +36,7 @@ export default {
         let lastContent: string | null = null;
         let hoverTimer: NodeJS.Timeout | null = null;
 
-            // 萬聖節主題自動切換
-            function isHalloweenPeriod() {
-                const now = new Date();
-                // 2025/10/31 00:00 ~ 2025/11/01 12:00
-                const start = new Date('2025-10-31T00:00:00+08:00');
-                const end = new Date('2025-11-01T12:00:00+08:00');
-                return now >= start && now < end;
-            }
-            function setHalloweenTheme(enable: boolean) {
-                if (enable) {
-                    if (!document.body.classList.contains('halloween-theme')) {
-                        document.body.classList.add('halloween-theme');
-                    }
-                    // 以 import 方式載入萬聖節動畫 JS（蝙蝠+南瓜燈怪物）
-                    import('../components/halloween-effect.js').then(mod => {
-                        if (mod && typeof mod.showHalloweenEffect === 'function') {
-                            mod.showHalloweenEffect();
-                        }
-                    });
-                } else {
-                    document.body.classList.remove('halloween-theme');
-                    const css = document.getElementById('halloween-css');
-                    if (css) css.remove();
-                    // 移除萬聖節動畫
-                    const bats = document.getElementById('halloween-bats');
-                    if (bats) bats.remove();
-                    const pumpkin = document.getElementById('halloween-pumpkin');
-                    if (pumpkin) pumpkin.remove();
-                    const effectJs = document.getElementById('halloween-effect-js');
-                    if (effectJs) effectJs.remove();
-                }
-            }
-            // 初始判斷
-            setHalloweenTheme(isHalloweenPeriod());
-            // 每分鐘重新判斷一次
-            setInterval(() => {
-                setHalloweenTheme(isHalloweenPeriod());
-            }, 60000);
+
 
 
 

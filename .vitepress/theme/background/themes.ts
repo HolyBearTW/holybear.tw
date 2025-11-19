@@ -10,6 +10,8 @@ export const backgroundThemes = [
   ['💧 圓點光暈', 'halo', '💧'],
   ['📱 HyperOS', 'hyperos', '📱'],
   ['📱 HyperOS 2', 'hyperos2', '📱'],
+  ['🎃 萬聖節', 'halloween', '🎃'],
+  ['🎄 聖誕節', 'christmas', '🎄'],
   ['⬜ 無背景', 'none', '⬜'],
 ]
 
