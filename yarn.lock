@@ -2226,10 +2226,10 @@ indent-string@^4.0.0:
   resolved "https://registry.yarnpkg.com/indent-string/-/indent-string-4.0.0.tgz#624f8f4497d619b2d9768531d58f4122854d7251"
   integrity sha512-EdDDZu4A2OyIK7Lr/2zG+w5jmbuk1DVBnEwREQvBzspBJkCEbRa8GxU1lghYcaGJCnRWibjDXlq779X1/y5xwg==
 
-instantsearch-ui-components@0.14.0:
-  version "0.14.0"
-  resolved "https://registry.yarnpkg.com/instantsearch-ui-components/-/instantsearch-ui-components-0.14.0.tgz#f015a04f7036f851578428ba4dd1f123c7034397"
-  integrity sha512-SX04/mWtHp6DLFrHVJWJHvsMmF6Ppo9pAxqBuW+herAd6L/CJPuY/Sy4f3LSkUUIybJ9USVzuO6uIUJyi3xAcw==
+instantsearch-ui-components@0.15.0:
+  version "0.15.0"
+  resolved "https://registry.yarnpkg.com/instantsearch-ui-components/-/instantsearch-ui-components-0.15.0.tgz#f651657d5f528630396f84e9d8b7a56ab55f663a"
+  integrity sha512-eQYwOgHk7+JJwr8C/QQOAsiPV8JdDN7D5edjO1VZVW6UgZWvTlfRR7xM9qPLJjpqbZMw46n1N2Bx8ZAYQjXiCA==
   dependencies:
     "@babel/runtime" "^7.27.6"
     ai "^5.0.18"
@@ -2237,10 +2237,10 @@ instantsearch-ui-components@0.14.0:
     zod "^3.25.76 || ^4"
     zod-to-json-schema "3.24.6"
 
-instantsearch.js@4.83.0:
-  version "4.83.0"
-  resolved "https://registry.yarnpkg.com/instantsearch.js/-/instantsearch.js-4.83.0.tgz#8688d636f4bc7dbc3446674ea843fb8ae8f55723"
-  integrity sha512-/JmiKCAJwJbh4E+LbdYJWe/OQO1ZwbAHiPmz1NImdRInQW0aPI1w8iwjo6fxg1J1lk4Jd6ERd28KYhviI5fJdw==
+instantsearch.js@4.84.0:
+  version "4.84.0"
+  resolved "https://registry.yarnpkg.com/instantsearch.js/-/instantsearch.js-4.84.0.tgz#2dc0d4ee998e7f942ef6d9a77019ecd7cb1c39e9"
+  integrity sha512-7ThTNzBgyFJgZT2ng/0lwGmCXZnK3nq5476bu0hL5u6Nc+AuKFGtAMKlNozXI/Nel3i3WJkoWwxO+37OxfqQmw==
   dependencies:
     "@algolia/events" "^4.0.1"
     "@types/dom-speech-recognition" "^0.0.1"
@@ -2251,7 +2251,7 @@ instantsearch.js@4.83.0:
     algoliasearch-helper "3.26.1"
     hogan.js "^3.0.2"
     htm "^3.0.0"
-    instantsearch-ui-components "0.14.0"
+    instantsearch-ui-components "0.15.0"
     preact "^10.10.0"
     qs "^6.5.1 < 6.10"
     react ">= 0.14.0"
@@ -3391,13 +3391,13 @@ vue-chartjs@^5.3.3:
   resolved "https://registry.yarnpkg.com/vue-chartjs/-/vue-chartjs-5.3.3.tgz#1ee3e1580bb35779616f881eaf56711aee9e1c85"
   integrity sha512-jqxtL8KZ6YJ5NTv6XzrzLS7osyegOi28UGNZW0h9OkDL7Sh1396ht4Dorh04aKrl2LiSalQ84WtqiG0RIJb0tA==
 
-vue-instantsearch@^4.22.2:
-  version "4.22.2"
-  resolved "https://registry.yarnpkg.com/vue-instantsearch/-/vue-instantsearch-4.22.2.tgz#c9e6e10ab207f0614986ce57800b80548ce78063"
-  integrity sha512-pDcsPMk+xZPnhvfMjZUse4/HUQb1VDiPFMvCrqu3wFZiCyJfA5xM3gy/BWkYbdwEszx95+4Kj7eLH2mqWUyKZA==
+vue-instantsearch@^4.22.3:
+  version "4.22.3"
+  resolved "https://registry.yarnpkg.com/vue-instantsearch/-/vue-instantsearch-4.22.3.tgz#c1ae59b8aeb1a54c2e60b18db5082828451e2a5c"
+  integrity sha512-cDc/c9wT70VzGc8p11+ELURrDTjKOTzJuj6hTHfh4kw5y6CwGfo7QZLqP6xw2c0s0kNtFyHM0e84G9LhG6UGOg==
   dependencies:
-    instantsearch-ui-components "0.14.0"
-    instantsearch.js "4.83.0"
+    instantsearch-ui-components "0.15.0"
+    instantsearch.js "4.84.0"
     mitt "^2.1.0"
 
 vue@^3.4.15, vue@^3.5.24:
