@@ -3350,10 +3350,10 @@ vite@^7.2.2:
   optionalDependencies:
     fsevents "~2.3.3"
 
-vitepress-plugin-auto-sidebar@^1.3.5:
-  version "1.3.5"
-  resolved "https://registry.yarnpkg.com/vitepress-plugin-auto-sidebar/-/vitepress-plugin-auto-sidebar-1.3.5.tgz#fe89f6c87bf9ec200993abee5a7ebb563069c31d"
-  integrity sha512-drC4CuJlE1IQFP8mv8BRMKZpHLFjJTdBw9C9TJ2VWyl6BOvIs157HCaDvcP/xM8fviG+mjSe3MJ2Z+wrsV4E4w==
+vitepress-plugin-auto-sidebar@^1.4.0:
+  version "1.4.0"
+  resolved "https://registry.yarnpkg.com/vitepress-plugin-auto-sidebar/-/vitepress-plugin-auto-sidebar-1.4.0.tgz#f9480106ba45c1cc492559a159577f2e08328132"
+  integrity sha512-fxVo4WUc9QiBt9XiveBEUi38qZ9TBOj2fFUCRZJIlp+FVmQVYh0bOxE802b1UGouQGe8XutkXl0z0Vbm/++fQg==
   dependencies:
     front-matter "^4.0.2"
 
