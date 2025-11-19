@@ -16,7 +16,7 @@
     "medium-zoom": "^1.1.0",
     "opencc-js": "^1.0.5",
     "vue-chartjs": "^5.3.3",
-    "vue-instantsearch": "^4.22.2"
+    "vue-instantsearch": "^4.22.3"
   },
   "scripts": {
     "dev": "vitepress dev",
