@@ -442,4 +442,13 @@ body.theme-halloween .VPHome .VPButton.brand {
   transition: all 0.3s ease !important;
   box-shadow: 0 0 20px rgba(255, 152, 0, 0.25) !important;
 }
+
+/* Change logo and hero image for Halloween theme */
+body.theme-halloween .VPImage.logo {
+  content: url('/image/halloween/halloween.png');
+}
+
+body.theme-halloween .VPHero .image-container .VPImage {
+  content: url('/image/halloween/halloween.png');
+}
 </style>

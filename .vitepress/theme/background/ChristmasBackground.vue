@@ -33,8 +33,10 @@ import { onMounted, onUnmounted } from 'vue'
 let snowflakeIntervalIds = [];
 let presentIntervalId = null;
 let mutationObserver = null;
+let htmlObserver = null;
 
 function startChristmas() {
+  document.documentElement.classList.add('dark');
   if (document.getElementById('christmas-snowflakes') || document.getElementById('christmas-present')) return;
 
   try {
@@ -151,19 +153,34 @@ function stopChristmas() {
 
 onMounted(() => {
   if (typeof document === 'undefined') return;
-  if (document.body.classList.contains('theme-christmas')) startChristmas();
+  if (document.body.classList.contains('theme-christmas')) {
+    startChristmas();
+  }
+
   mutationObserver = new MutationObserver((mutations) => {
     for (const m of mutations) {
       if (m.attributeName === 'class') {
-        if (m.target.classList.contains('theme-christmas')) startChristmas(); else stopChristmas();
+        if (m.target.classList.contains('theme-christmas')) {
+          startChristmas();
+        } else {
+          stopChristmas();
+        }
       }
     }
   });
   mutationObserver.observe(document.body, { attributes: true });
+
+  htmlObserver = new MutationObserver(() => {
+    if (document.body.classList.contains('theme-christmas') && !document.documentElement.classList.contains('dark')) {
+      document.documentElement.classList.add('dark');
+    }
+  });
+  htmlObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 });
 
 onUnmounted(() => {
   if (mutationObserver) mutationObserver.disconnect();
+  if (htmlObserver) htmlObserver.disconnect();
   stopChristmas();
 });
 </script>
@@ -216,7 +233,7 @@ body.theme-christmas.is-blog-page header {
 .moon {
   position: absolute;
   top: 10%;
-  left: 75%;
+  left: 85%;
   width: 70px;
   height: 70px;
   border-radius: 50%;
@@ -313,4 +330,13 @@ body.theme-christmas.is-blog-page header {
 }
 .tree .tree-layer:nth-child(2) { transform: scale(1.2); }
 .tree .tree-layer:nth-child(3) { transform: scale(1.4); }
+
+/* Change logo and hero image for Christmas theme */
+body.theme-christmas .VPImage.logo {
+  content: url('/image/christmas/christmas.png');
+}
+
+body.theme-christmas .VPHero .image-container .VPImage {
+  content: url('/image/christmas/christmas.png');
+}
 </style>

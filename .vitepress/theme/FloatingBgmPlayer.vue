@@ -2,58 +2,42 @@
 import { ref, watch, onMounted, onUnmounted, computed, nextTick } from 'vue'
 import { THEME_CHANGE_EVENT } from './background/themes'
 
-// 主題切換時自動插入聖誕歌並播放
-onMounted(() => {
-    window.addEventListener(THEME_CHANGE_EVENT, (e) => {
-        if (e.detail?.theme === 'christmas') {
-            if (!musicList.value.find(m => m.src === '/music/MapleStory_WhiteChristmas.mp3')) {
-                musicList.value.unshift({
-                    src: '/music/MapleStory_WhiteChristmas.mp3',
-                    title: '楓之谷 - 幸福村（聖誕村莊）'
-                })
-            }
-            currentIndex.value = 0
-            playing.value = true
-            playMusic()
-        }
-    })
-})
-
 /* --- 音樂清單 --- */
 const musicList = ref([
-    { src: '/music/LeagueofLegends_OmegaSquadTeemo.mp3', title: '英雄聯盟：戰爭機器 - 提摩' },
-    { src: '/music/MapleStory_Reborngods.mp3', title: '楓之谷：塔拉哈特 - 遺跡廢墟' },
-    { src: '/music/MapleStory_NightField.mp3', title: '楓之谷 - 不夜城徒步區' },
-    { src: '/music/MapleStory_KerningSquareField.mp3', title: '楓之谷 - 101大道徒步區' },
-    { src: '/music/MapleStory_AdventurersfromBeyond.mp3', title: '楓之谷 - 次元的戰場' },
-    { src: '/music/MapleStory_2015gamaday_park.mp3', title: '楓之谷 - 橘子樂園' },
-    { src: '/music/MapleStory_KerningSquare.mp3', title: '楓之谷 - 101大道' },
-    { src: '/music/MapleStory_The_Lost_City_among_the_Clouds.mp3', title: '楓之谷 - 奧迪溫' },
-    { src: '/music/MapleStory_Sunshine_blurring_the_Unknown.mp3', title: '楓之谷 - 陽光灑落的實驗室' },
-    { src: '/music/MapleStory_CashShop.mp3', title: '楓之谷 - 新購物商城' },
-    { src: '/music/MapleStoryM_TheGuardianOfTheStars.mp3', title: '楓之谷M - 星之守護者' },
-    { src: '/music/MapleStory_MissingYou.mp3', title: '楓之谷 - 魔法森林樹洞' },
-    { src: '/music/MapleStory_WhereStarsRest.mp3', title: '楓之谷 - 賽拉斯' },
-    { src: '/music/MapleStory_WhaleBelly.mp3', title: '楓之谷 - 星星被吞噬的深海' },
-    { src: '/music/MapleStory_Suu2phase.mp3', title: '楓之谷 - 決戰史烏' },
-    { src: '/music/MapleStory_18th_Event.mp3', title: '楓之谷 - 綻放森林' },
-    { src: '/music/MapleStory_AdventureIsland.mp3', title: '楓之谷 - 冒險島' },
-    { src: '/music/MapleStory_Fantasia.mp3', title: '楓之谷：時空的裂縫 - 玩偶之家' },
-    { src: '/music/MapleStory_ComeWithMe.mp3', title: '楓之谷 - 天空之塔' },
-    { src: '/music/MapleStory_TowerOfGoddess.mp3', title: '楓之谷：雅典娜禁地 - 女神之塔' },
-    { src: '/music/MapleStory_mapleLIVE.mp3', title: '楓之谷 -  LIVE On Air' },
-    { src: '/music/MapleStory_NLCtown.mp3', title: '楓之谷 - 新葉城' },
-    { src: '/music/MapleStory_VictoriaCupDay.mp3', title: '楓之谷 - 維多利亞盃' },
-    { src: '/music/MapleStory_Kamuna.mp3', title: '楓之谷：未來東京 - 卡姆那' },
-    { src: '/music/MapleStory_NeoTokyo_Office.mp3', title: '楓之谷：未來東京 - 秋葉原司令室 2012年' },
-    { src: '/music/MapleStory_NeoTokyo_Park.mp3', title: '楓之谷：未來東京 - 東京公園 2095年' },
-    { src: '/music/MapleStory_NeoTokyo_DunasRaid.mp3', title: '楓之谷：未來東京 - 台場 2100年' },
-    { src: '/music/MapleStory_NeoTokyo_Bergamot.mp3', title: '楓之谷：未來東京 - 東京秋葉原 2102年' },
-    { src: '/music/MapleStory_NeoTokyo_Tokyosky.mp3', title: '楓之谷：未來東京 - 東京上空 2102年' },
-    { src: '/music/MapleStory_NeoTokyo_Rockbongi.mp3', title: '楓之谷：未來東京 - 澀谷 2102年' },
-    { src: '/music/MapleStory_AnEternalBreath.mp3', title: '楓之谷：克拉奇亞 - 永恆的氣息' },
-    { src: '/music/MapleStory_old_title.mp3', title: '楓之谷 - 懷舊登入音樂' }
+  { src: '/music/LeagueofLegends_OmegaSquadTeemo.mp3', title: '英雄聯盟：戰爭機器 - 提摩' },
+  { src: '/music/MapleStory_Reborngods.mp3', title: '楓之谷：塔拉哈特 - 遺跡廢墟' },
+  { src: '/music/MapleStory_NightField.mp3', title: '楓之谷 - 不夜城徒步區' },
+  { src: '/music/MapleStory_KerningSquareField.mp3', title: '楓之谷 - 101大道徒步區' },
+  { src: '/music/MapleStory_AdventurersfromBeyond.mp3', title: '楓之谷 - 次元的戰場' },
+  { src: '/music/MapleStory_2015gamaday_park.mp3', title: '楓之谷 - 橘子樂園' },
+  { src: '/music/MapleStory_KerningSquare.mp3', title: '楓之谷 - 101大道' },
+  { src: '/music/MapleStory_The_Lost_City_among_the_Clouds.mp3', title: '楓之谷 - 奧迪溫' },
+  { src: '/music/MapleStory_Sunshine_blurring_the_Unknown.mp3', title: '楓之谷 - 陽光灑落的實驗室' },
+  { src: '/music/MapleStory_CashShop.mp3', title: '楓之谷 - 新購物商城' },
+  { src: '/music/MapleStoryM_TheGuardianOfTheStars.mp3', title: '楓之谷M - 星之守護者' },
+  { src: '/music/MapleStory_MissingYou.mp3', title: '楓之谷 - 魔法森林樹洞' },
+  { src: '/music/MapleStory_WhereStarsRest.mp3', title: '楓之谷 - 賽拉斯' },
+  { src: '/music/MapleStory_WhaleBelly.mp3', title: '楓之谷 - 星星被吞噬的深海' },
+  { src: '/music/MapleStory_Suu2phase.mp3', title: '楓之谷 - 決戰史烏' },
+  { src: '/music/MapleStory_18th_Event.mp3', title: '楓之谷 - 綻放森林' },
+  { src: '/music/MapleStory_AdventureIsland.mp3', title: '楓之谷 - 冒險島' },
+  { src: '/music/MapleStory_Fantasia.mp3', title: '楓之谷：時空的裂縫 - 玩偶之家' },
+  { src: '/music/MapleStory_ComeWithMe.mp3', title: '楓之谷 - 天空之塔' },
+  { src: '/music/MapleStory_TowerOfGoddess.mp3', title: '楓之谷：雅典娜禁地 - 女神之塔' },
+  { src: '/music/MapleStory_mapleLIVE.mp3', title: '楓之谷 - LIVE On Air' },
+  { src: '/music/MapleStory_NLCtown.mp3', title: '楓之谷 - 新葉城' },
+  { src: '/music/MapleStory_VictoriaCupDay.mp3', title: '楓之谷 - 維多利亞盃' },
+  { src: '/music/MapleStory_Kamuna.mp3', title: '楓之谷：未來東京 - 卡姆那' },
+  { src: '/music/MapleStory_NeoTokyo_Office.mp3', title: '楓之谷：未來東京 - 秋葉原司令室 2012年' },
+  { src: '/music/MapleStory_NeoTokyo_Park.mp3', title: '楓之谷：未來東京 - 東京公園 2095年' },
+  { src: '/music/MapleStory_NeoTokyo_DunasRaid.mp3', title: '楓之谷：未來東京 - 台場 2100年' },
+  { src: '/music/MapleStory_NeoTokyo_Bergamot.mp3', title: '楓之谷：未來東京 - 東京秋葉原 2102年' },
+  { src: '/music/MapleStory_NeoTokyo_Tokyosky.mp3', title: '楓之谷：未來東京 - 東京上空 2102年' },
+  { src: '/music/MapleStory_NeoTokyo_Rockbongi.mp3', title: '楓之谷：未來東京 - 澀谷 2102年' },
+  { src: '/music/MapleStory_AnEternalBreath.mp3', title: '楓之谷：克拉奇亞 - 永恆的氣息' },
+  { src: '/music/MapleStory_old_title.mp3', title: '楓之谷 - 懷舊登入音樂' }
 ])
+
 /* --- LocalStorage Keys --- */
 const VOLUME_KEY = 'holybear-bgm-volume'
 const PLAYING_KEY = 'holybear-bgm-playing'
@@ -72,716 +56,611 @@ const currentIndex = ref(0)
 const currentTime = ref(0)
 const duration = ref(0)
 const isSeeking = ref(false)
-const playerOpen = ref(true) 
+const playerOpen = ref(true)
 const isPlaylistVisible = ref(false)
 const isVolumeVisible = ref(false)
 const playerMinimized = ref(false)
 const musicInfoHidden = ref(false)
 const showSidebarButton = ref(false)
-const showPlayerToggle = ref(false) // 播放器開關按鈕
-const repeatOne = ref(false) // 重複播放同一首
+const showPlayerToggle = ref(false)
+const repeatOne = ref(false)
 
-// Toast 狀態
 const showTitleToast = ref(false)
 const toastText = ref('')
 let toastTimer = null
 
-function handleSongTitleMouseEnter(title, e) {
-    // 判斷是否超長
-    const el = e.target
-    if (el.scrollWidth > el.clientWidth) {
-        toastText.value = title
-        showTitleToast.value = true
-        // 自動隱藏
-        if (toastTimer) clearTimeout(toastTimer)
-        toastTimer = setTimeout(() => {
-            showTitleToast.value = false
-        }, 2200)
-    }
-}
-function handleSongTitleMouseLeave() {
-    showTitleToast.value = false
-    if (toastTimer) clearTimeout(toastTimer)
-}
+let hoverTimer = null
+let leaveTimer = null
+const isHovering = ref(false)
+const isClicked = ref(false)
 
-function toggleRepeatOne() {
-    repeatOne.value = !repeatOne.value
-    localStorage.setItem(REPEAT_ONE_KEY, repeatOne.value ? 'true' : 'false')
-    if (audio.value) {
-        audio.value.loop = repeatOne.value
-    }
-}
-
-/* --- 滑動手勢相關 --- */
-const touchStartX = ref(0)
-const touchStartY = ref(0)
-const isDragging = ref(false)
-const dragOffset = ref(0) // 拖動偏移量
-
-/* --- 滑鼠懸停相關 --- */
-let hoverTimer = null // 懸停計時器
-let leaveTimer = null // 離開延遲計時器
-const isHovering = ref(false) // 是否正在懸停
-const isClicked = ref(false) // 是否已點擊顯示播放器
-
-/* --- 自動播放監聽器 --- */
 let autoPlayListener = null
 
 /* --- Computed 屬性 --- */
-const currentSong = computed(() => musicList.value[currentIndex.value])
-const progressPercent = computed(() => {
-    if (duration.value === 0) return 0
-    return (currentTime.value / duration.value) * 100
+const currentSong = computed(() => {
+  const list = Array.isArray(musicList.value) ? musicList.value : []
+  const idx = Number(currentIndex.value || 0)
+  if (list.length === 0) return { src: '', title: '' }
+  const safeIdx = (idx >= 0 && idx < list.length) ? idx : 0
+  return list[safeIdx] || { src: '', title: '' }
 })
 
-/* --- Lifecycle --- */
-onMounted(() => {
-    window.addEventListener('click', handleClickOutside)
-    
-    // 添加全域滑鼠移動監聽
-    document.addEventListener('mousemove', handleGlobalMouseMove)
+const progressPercent = computed(() => {
+  if (duration.value === 0) return 0
+  return (currentTime.value / duration.value) * 100
+})
 
-    const savedVolume = localStorage.getItem(VOLUME_KEY)
-    if (savedVolume !== null) {
-        volume.value = parseFloat(savedVolume)
-        if (volume.value > 0) volumeBeforeMute.value = volume.value
+/* --- 生命週期 --- */
+const themeHandler = (e) => {
+  if (e.detail?.theme === 'christmas') {
+    if (!musicList.value.find(m => m.src === '/music/MapleStory_WhiteChristmas.mp3')) {
+      musicList.value.unshift({
+        src: '/music/MapleStory_WhiteChristmas.mp3',
+        title: '楓之谷 - 幸福村（聖誕村莊）'
+      })
     }
+    // 用 selectAndPlaySong 負責切歌與播放
+    selectAndPlaySong(0, { forceRestart: true })
+  }
+}
 
-    const savedRepeatOne = localStorage.getItem(REPEAT_ONE_KEY)
-    if (savedRepeatOne !== null) {
-        repeatOne.value = savedRepeatOne === 'true'
-        if (audio.value) audio.value.loop = repeatOne.value
+onMounted(async () => {
+  // 頁面載入時檢查初始主題
+  const savedTheme = localStorage.getItem('vitepress-background-theme')
+  if (savedTheme === 'christmas') {
+    if (!musicList.value.find(m => m.src === '/music/MapleStory_WhiteChristmas.mp3')) {
+      musicList.value.unshift({
+        src: '/music/MapleStory_WhiteChristmas.mp3',
+        title: '楓之谷 - 幸福村（聖誕村莊）'
+      })
     }
+  }
 
-    const savedPlaying = localStorage.getItem(PLAYING_KEY)
-    if (savedPlaying === 'true' && playerOpen.value) {
-        // 只有在播放器開啟時才自動播放
-        autoPlayListener = () => { playMusic() }
-        document.body.addEventListener('click', autoPlayListener, { once: true })
-    }
+  // 主題事件
+  window.addEventListener(THEME_CHANGE_EVENT, themeHandler)
+  window.addEventListener('click', handleClickOutside)
+  document.addEventListener('mousemove', handleGlobalMouseMove)
 
-    const savedIndex = localStorage.getItem(INDEX_KEY)
-    if (savedIndex !== null && !isNaN(+savedIndex) && +savedIndex >= 0 && +savedIndex < musicList.length) {
-        currentIndex.value = +savedIndex
-    }
+  const savedVolume = localStorage.getItem(VOLUME_KEY)
+  if (savedVolume !== null) {
+    volume.value = parseFloat(savedVolume)
+    if (volume.value > 0) volumeBeforeMute.value = volume.value
+  }
 
-    const savedPlayerOpen = localStorage.getItem(PLAYER_OPEN_KEY)
-    if (savedPlayerOpen !== null) {
-        playerOpen.value = savedPlayerOpen === 'true'
-    }
+  const savedRepeatOne = localStorage.getItem(REPEAT_ONE_KEY)
+  if (savedRepeatOne !== null) {
+    repeatOne.value = savedRepeatOne === 'true'
+  }
 
-    if (audio.value) {
-        audio.value.volume = volume.value
-        audio.value.loop = repeatOne.value
-        audio.value.addEventListener('timeupdate', updateProgress)
-        audio.value.addEventListener('loadedmetadata', onLoadedMetadata)
+  const savedPlaying = localStorage.getItem(PLAYING_KEY)
+  if (savedPlaying === 'true' && playerOpen.value) {
+    autoPlayListener = () => { playMusic() }
+    document.body.addEventListener('click', autoPlayListener, { once: true })
+  }
+
+  const savedIndex = localStorage.getItem(INDEX_KEY)
+  if (savedIndex !== null && !isNaN(+savedIndex) && +savedIndex >= 0 && +savedIndex < musicList.value.length) {
+    currentIndex.value = +savedIndex
+  }
+
+  const savedPlayerOpen = localStorage.getItem(PLAYER_OPEN_KEY)
+  if (savedPlayerOpen !== null) {
+    playerOpen.value = savedPlayerOpen === 'true'
+  }
+
+  // 等 template 綁定完畢再初始化 audio
+  await nextTick()
+  if (audio.value) {
+    if (musicList.value && musicList.value.length > 0) {
+      audio.value.src = musicList.value[currentIndex.value]?.src || ''
+      try { audio.value.load() } catch (e) { /* ignore */ }
     }
+    audio.value.volume = volume.value
+    audio.value.loop = repeatOne.value
+    audio.value.addEventListener('timeupdate', updateProgress)
+    // loadedmetadata 綁在 template (@loadedmetadata)，這裡可以備援但不必要重複綁
+  }
 })
 
 onUnmounted(() => {
-    window.removeEventListener('click', handleClickOutside)
-    document.removeEventListener('mousemove', handleGlobalMouseMove)
-    document.removeEventListener('mousemove', handleMouseDragMove)
-    document.removeEventListener('mouseup', handleMouseDragEnd)
-    if (audio.value) {
-        audio.value.removeEventListener('timeupdate', updateProgress)
-        audio.value.removeEventListener('loadedmetadata', onLoadedMetadata)
-    }
-    // 移除自動播放監聽器
-    if (autoPlayListener) {
-        document.body.removeEventListener('click', autoPlayListener)
-    }
-    // 清理懸停計時器
-    if (hoverTimer) {
-        clearTimeout(hoverTimer)
-    }
-    // 清理離開計時器
-    if (leaveTimer) {
-        clearTimeout(leaveTimer)
-    }
+  window.removeEventListener(THEME_CHANGE_EVENT, themeHandler)
+  window.removeEventListener('click', handleClickOutside)
+  document.removeEventListener('mousemove', handleGlobalMouseMove)
+  document.removeEventListener('mousemove', handleMouseDragMove)
+  document.removeEventListener('mouseup', handleMouseDragEnd)
+
+  if (audio.value) {
+    audio.value.removeEventListener('timeupdate', updateProgress)
+    // 由 template 綁定的 loadedmetadata 事件不需移除這裡，但 safe 做一次移除
+    audio.value.removeEventListener('loadedmetadata', onLoadedMetadata)
+  }
+
+  if (autoPlayListener) {
+    document.body.removeEventListener('click', autoPlayListener)
+  }
+  if (hoverTimer) clearTimeout(hoverTimer)
+  if (leaveTimer) clearTimeout(leaveTimer)
 })
 
 /* --- Watchers --- */
+// 只同步 localStorage，避免跟 selectAndPlaySong 重複操作
+watch(currentIndex, (val) => {
+  localStorage.setItem(INDEX_KEY, String(val))
+})
+
 watch(volume, (newVolume) => {
-    if (audio.value) audio.value.volume = newVolume
-    localStorage.setItem(VOLUME_KEY, newVolume.toString())
-    if (newVolume > 0) volumeBeforeMute.value = newVolume
+  if (audio.value) audio.value.volume = newVolume
+  localStorage.setItem(VOLUME_KEY, newVolume.toString())
+  if (newVolume > 0) volumeBeforeMute.value = newVolume
 })
 
 watch(playerOpen, (val) => {
-    localStorage.setItem(PLAYER_OPEN_KEY, val ? 'true' : 'false')
-    
-    // 當播放器關閉時,移除自動播放監聽器並顯示開啟按鈕
-    if (!val) {
-        if (autoPlayListener) {
-            document.body.removeEventListener('click', autoPlayListener)
-            autoPlayListener = null
-        }
-        // 延遲顯示播放器開啟按鈕
-        setTimeout(() => {
-            showPlayerToggle.value = true
-        }, 400)
-    } else {
-        // 播放器開啟時隱藏開啟按鈕
-        showPlayerToggle.value = false
+  localStorage.setItem(PLAYER_OPEN_KEY, val ? 'true' : 'false')
+  if (!val) {
+    if (autoPlayListener) {
+      document.body.removeEventListener('click', autoPlayListener)
+      autoPlayListener = null
     }
-})
-
-watch(currentIndex, (val) => {
-    localStorage.setItem(INDEX_KEY, val.toString())
-})
-
-watch(musicInfoHidden, (newVal) => {
-    // 當 music-info 隱藏時，延遲顯示側邊欄按鈕
-    if (newVal === true && playerMinimized.value) {
-        setTimeout(() => {
-            showSidebarButton.value = true
-        }, 400) // 等待 music-info 隱藏動畫完成
-    } else {
-        // 當 music-info 顯示時，立即隱藏側邊欄按鈕
-        showSidebarButton.value = false
-    }
+    setTimeout(() => { showPlayerToggle.value = true }, 400)
+  } else {
+    showPlayerToggle.value = false
+  }
 })
 
 watch(playerMinimized, (newVal) => {
-    // 如果取消最小化，隱藏側邊欄按鈕
-    if (newVal === false) {
-        showSidebarButton.value = false
-    } else {
-        // 最小化時重置點擊狀態
-        isClicked.value = false
-    }
+  if (newVal === false) {
+    showSidebarButton.value = false
+  } else {
+    isClicked.value = false
+  }
+})
+
+watch(musicInfoHidden, (newVal) => {
+  if (newVal === true && playerMinimized.value) {
+    setTimeout(() => { showSidebarButton.value = true }, 400)
+  } else {
+    showSidebarButton.value = false
+  }
 })
 
 /* --- 播放控制函數 --- */
 function playMusic() {
-    if (!audio.value) return
-    audio.value.volume = volume.value
-    audio.value.loop = repeatOne.value
-    audio.value.play().then(() => {
-        playing.value = true
-        localStorage.setItem(PLAYING_KEY, 'true')
-    }).catch(e => console.error("音樂播放失敗", e))
+  if (!audio.value) return
+  audio.value.volume = volume.value
+  audio.value.loop = repeatOne.value
+  audio.value.play().then(() => {
+    playing.value = true
+    localStorage.setItem(PLAYING_KEY, 'true')
+  }).catch(e => console.error('音樂播放失敗', e))
 }
 
 function pauseMusic() {
-    if (!audio.value) return
-    audio.value.pause()
-    playing.value = false
-    localStorage.setItem(PLAYING_KEY, 'false')
+  if (!audio.value) return
+  audio.value.pause()
+  playing.value = false
+  localStorage.setItem(PLAYING_KEY, 'false')
 }
 
 function togglePlay() {
-    playing.value ? pauseMusic() : playMusic()
+  playing.value ? pauseMusic() : playMusic()
 }
 
 function prevSong() {
-    const newIndex = (currentIndex.value - 1 + musicList.length) % musicList.length
-    selectAndPlaySong(newIndex, { forceRestart: true })
+  if (!musicList.value || musicList.value.length === 0) return
+  const len = musicList.value.length
+  const newIndex = (currentIndex.value - 1 + len) % len
+  selectAndPlaySong(newIndex, { forceRestart: true })
 }
 
 function nextSong() {
-    const newIndex = (currentIndex.value + 1) % musicList.length
-    selectAndPlaySong(newIndex, { forceRestart: true })
+  if (!musicList.value || musicList.value.length === 0) return
+  const len = musicList.value.length
+  const newIndex = (currentIndex.value + 1) % len
+  // 如果 repeatOne 開著，audio.loop 會阻止 ended 事件 — 但我們仍呼叫 nextSong 時會在這裡執行切歌
+  selectAndPlaySong(newIndex, { forceRestart: true })
 }
 
+// 統一負責切歌：設定 src -> load() -> play()
 async function selectAndPlaySong(index, options = {}) {
-    const { forceRestart = false } = options
-    if (!forceRestart && index === currentIndex.value && playing.value) return
-    currentIndex.value = index
-    await nextTick()
-    if (audio.value) {
-        currentTime.value = 0
-        playMusic()
+  const { forceRestart = false } = options
+  if (!musicList.value || musicList.value.length === 0) return
+  if (!forceRestart && index === currentIndex.value && playing.value) return
+
+  if (index < 0 || index >= musicList.value.length) index = 0
+  currentIndex.value = index
+  await nextTick()
+  if (!audio.value) return
+
+  try {
+    audio.value.src = musicList.value[index].src
+    audio.value.load()
+    currentTime.value = 0
+
+    if (playing.value || options.forceRestart) {
+      await audio.value.play()
+      playing.value = true
+      localStorage.setItem(PLAYING_KEY, 'true')
     }
-    isPlaylistVisible.value = false
+  } catch (e) {
+    if (e.name !== 'AbortError') {
+      console.error('切歌/播放失敗', e)
+      playing.value = false
+      localStorage.setItem(PLAYING_KEY, 'false')
+    }
+  }
+
+  isPlaylistVisible.value = false
 }
 
-/* --- 進度控制 --- */
-function onLoadedMetadata(e) { 
-    duration.value = e.target.duration 
+/* --- 進度與 metadata --- */
+function onLoadedMetadata(e) {
+  duration.value = e.target.duration || 0
 }
 
-function updateProgress(e) { 
-    if (!isSeeking.value) currentTime.value = e.target.currentTime 
+function updateProgress(e) {
+  if (!isSeeking.value) currentTime.value = e.target.currentTime
 }
 
 function setProgress(e) {
-    if (!audio.value || duration.value === 0) return
-    const rect = e.currentTarget.getBoundingClientRect()
-    const clickX = e.clientX - rect.left
-    const width = rect.width
-    const percent = clickX / width
-    audio.value.currentTime = percent * duration.value
+  if (!audio.value || duration.value === 0) return
+  const rect = e.currentTarget.getBoundingClientRect()
+  const clickX = e.clientX - rect.left
+  const width = rect.width
+  const percent = clickX / width
+  audio.value.currentTime = percent * duration.value
 }
 
-/* --- 音量控制 --- */
+/* --- 音量 --- */
 function toggleMute() {
-    if (volume.value > 0) {
-        volume.value = 0
-    } else {
-        volume.value = volumeBeforeMute.value > 0 ? volumeBeforeMute.value : 0.6
-    }
+  if (volume.value > 0) {
+    volume.value = 0
+  } else {
+    volume.value = volumeBeforeMute.value > 0 ? volumeBeforeMute.value : 0.6
+  }
 }
 
-/* --- UI 控制 --- */
-function togglePlaylist() { 
-    isPlaylistVisible.value = !isPlaylistVisible.value 
-    if (isPlaylistVisible.value) isVolumeVisible.value = false
+/* --- UI 邏輯（滑動、懸停、按鈕等） --- */
+function togglePlaylist() {
+  isPlaylistVisible.value = !isPlaylistVisible.value
+  if (isPlaylistVisible.value) isVolumeVisible.value = false
 }
 
-function toggleVolume() { 
-    isVolumeVisible.value = !isVolumeVisible.value 
-    if (isVolumeVisible.value) isPlaylistVisible.value = false
+function toggleVolume() {
+  isVolumeVisible.value = !isVolumeVisible.value
+  if (isVolumeVisible.value) isPlaylistVisible.value = false
 }
 
 function handleClickOutside(event) {
-    // 檢查點擊是否在播放器容器或側邊欄按鈕內
-    const clickedInsidePlayer = playerContainer.value && playerContainer.value.contains(event.target)
-    const clickedInsideSidebar = sidebarToggle.value && sidebarToggle.value.contains(event.target)
-    
-    if (!clickedInsidePlayer && !clickedInsideSidebar) {
-        // 關閉面板（播放清單 / 音量面板）
-        isPlaylistVisible.value = false
-        isVolumeVisible.value = false
+  const clickedInsidePlayer = playerContainer.value && playerContainer.value.contains(event.target)
+  const clickedInsideSidebar = sidebarToggle.value && sidebarToggle.value.contains(event.target)
 
-        // 如果 music-info 已經被手動隱藏，不做任何操作
-        if (musicInfoHidden.value) {
-            return
-        }
+  if (!clickedInsidePlayer && !clickedInsideSidebar) {
+    isPlaylistVisible.value = false
+    isVolumeVisible.value = false
 
-        // 如果正在播放，將播放器最小化（主體淡出，只保留歌曲資訊）
-        if (playing.value) {
-            playerMinimized.value = true
-        } else {
-            // 未播放時才收起整個播放器
-            playerOpen.value = false
-        }
+    if (musicInfoHidden.value) return
+
+    if (playing.value) {
+      playerMinimized.value = true
+    } else {
+      playerOpen.value = false
     }
+  }
 }
 
 function formatTime(seconds) {
-    if (isNaN(seconds) || seconds === 0) return "0:00"
-    const min = Math.floor(seconds / 60)
-    const sec = Math.floor(seconds % 60)
-    return `${min}:${sec.toString().padStart(2, '0')}`
+  if (isNaN(seconds) || seconds === 0) return '0:00'
+  const min = Math.floor(seconds / 60)
+  const sec = Math.floor(seconds % 60)
+  return `${min}:${sec.toString().padStart(2, '0')}`
 }
 
-/* --- 滑動手勢處理（支援觸控和滑鼠） --- */
+/* --- 拖曳/懸停相關（保留原邏輯） --- */
+const touchStartX = ref(0)
+const touchStartY = ref(0)
+const isDragging = ref(false)
+const dragOffset = ref(0)
+
 function handleDragStart(e) {
-    // 只要 music-info 顯示就允許滑動（無論 music-container 是否展開）
-    if (musicInfoHidden.value) return
-    
-    // 觸控事件
-    if (e.type === 'touchstart') {
-        touchStartX.value = e.touches[0].clientX
-        touchStartY.value = e.touches[0].clientY
-        isDragging.value = false
-        dragOffset.value = 0
-    } 
-    // 滑鼠事件
-    else if (e.type === 'mousedown') {
-        touchStartX.value = e.clientX
-        touchStartY.value = e.clientY
-        isDragging.value = false
-        dragOffset.value = 0
-        e.preventDefault() // 防止文字選擇
-        
-        // 綁定全域滑鼠事件
-        document.addEventListener('mousemove', handleMouseDragMove)
-        document.addEventListener('mouseup', handleMouseDragEnd)
-    }
+  if (musicInfoHidden.value) return
+  if (e.type === 'touchstart') {
+    touchStartX.value = e.touches[0].clientX
+    touchStartY.value = e.touches[0].clientY
+    isDragging.value = false
+    dragOffset.value = 0
+  } else if (e.type === 'mousedown') {
+    touchStartX.value = e.clientX
+    touchStartY.value = e.clientY
+    isDragging.value = false
+    dragOffset.value = 0
+    e.preventDefault()
+    document.addEventListener('mousemove', handleMouseDragMove)
+    document.addEventListener('mouseup', handleMouseDragEnd)
+  }
 }
 
 function handleDragMove(e) {
-    // 只處理觸控事件
-    if (e.type !== 'touchmove') return
-    
-    // 只要 music-info 顯示就允許拖動
-    if (!musicInfoHidden.value) {
-        const currentX = e.touches[0].clientX
-        const currentY = e.touches[0].clientY
-        
-        const deltaX = currentX - touchStartX.value
-        const deltaY = currentY - touchStartY.value
-        
-        // 確保是水平向右滑動（而不是垂直滾動或其他方向）
-        if (Math.abs(deltaX) > Math.abs(deltaY) && deltaX > 10) {
-            isDragging.value = true
-            dragOffset.value = deltaX // 更新拖動偏移量
-            e.preventDefault()  // 防止文字選擇等默認行為
-        }
+  if (e.type !== 'touchmove') return
+  if (!musicInfoHidden.value) {
+    const currentX = e.touches[0].clientX
+    const currentY = e.touches[0].clientY
+    const deltaX = currentX - touchStartX.value
+    const deltaY = currentY - touchStartY.value
+    if (Math.abs(deltaX) > Math.abs(deltaY) && deltaX > 10) {
+      isDragging.value = true
+      dragOffset.value = deltaX
+      e.preventDefault()
     }
+  }
 }
 
 function handleDragEnd(e) {
-    // 只處理觸控事件
-    if (e.type !== 'touchend') return
-    if (!isDragging.value) return
-    
-    const endX = e.changedTouches[0].clientX
-    const deltaX = endX - touchStartX.value
-    
-    // 向右滑動超過 50px 就隱藏 music-info
-    if (deltaX > 50) {
-        musicInfoHidden.value = true
-        // 如果是在展開狀態下隱藏 music-info，也要最小化播放器
-        if (!playerMinimized.value) {
-            playerMinimized.value = true
-        }
-    }
-    
-    // 重置拖動偏移量
-    isDragging.value = false
-    dragOffset.value = 0
+  if (e.type !== 'touchend') return
+  if (!isDragging.value) return
+  const endX = e.changedTouches[0].clientX
+  const deltaX = endX - touchStartX.value
+  if (deltaX > 50) {
+    musicInfoHidden.value = true
+    if (!playerMinimized.value) playerMinimized.value = true
+  }
+  isDragging.value = false
+  dragOffset.value = 0
 }
 
-/* --- 滑鼠拖動處理（全域事件） --- */
 function handleMouseDragMove(e) {
-    if (musicInfoHidden.value) {
-        // 如果 music-info 已隱藏，清理事件監聽
-        document.removeEventListener('mousemove', handleMouseDragMove)
-        document.removeEventListener('mouseup', handleMouseDragEnd)
-        return
-    }
-    
-    const currentX = e.clientX
-    const currentY = e.clientY
-    
-    const deltaX = currentX - touchStartX.value
-    const deltaY = currentY - touchStartY.value
-    
-    // 確保是水平向右滑動
-    if (Math.abs(deltaX) > Math.abs(deltaY) && deltaX > 10) {
-        isDragging.value = true
-        dragOffset.value = deltaX
-        e.preventDefault()
-        
-        // 拖動時清除懸停計時器，防止展開 music-container
-        if (hoverTimer) {
-            clearTimeout(hoverTimer)
-            hoverTimer = null
-        }
-        if (leaveTimer) {
-            clearTimeout(leaveTimer)
-            leaveTimer = null
-        }
-        isHovering.value = false
-    }
+  if (musicInfoHidden.value) {
+    document.removeEventListener('mousemove', handleMouseDragMove)
+    document.removeEventListener('mouseup', handleMouseDragEnd)
+    return
+  }
+  const currentX = e.clientX
+  const currentY = e.clientY
+  const deltaX = currentX - touchStartX.value
+  const deltaY = currentY - touchStartY.value
+  if (Math.abs(deltaX) > Math.abs(deltaY) && deltaX > 10) {
+    isDragging.value = true
+    dragOffset.value = deltaX
+    e.preventDefault()
+    if (hoverTimer) { clearTimeout(hoverTimer); hoverTimer = null }
+    if (leaveTimer) { clearTimeout(leaveTimer); leaveTimer = null }
+    isHovering.value = false
+  }
 }
 
 function handleMouseDragEnd(e) {
-    // 移除全域事件監聽
-    document.removeEventListener('mousemove', handleMouseDragMove)
-    document.removeEventListener('mouseup', handleMouseDragEnd)
-    
-    if (!isDragging.value) return
-    
-    const endX = e.clientX
-    const deltaX = endX - touchStartX.value
-    
-    // 向右滑動超過 50px 就隱藏 music-info
-    if (deltaX > 50) {
-        musicInfoHidden.value = true
-        // 如果是在展開狀態下隱藏 music-info，也要最小化播放器
-        if (!playerMinimized.value) {
-            playerMinimized.value = true
-        }
-    }
-    
-    // 重置拖動偏移量
-    isDragging.value = false
-    dragOffset.value = 0
+  document.removeEventListener('mousemove', handleMouseDragMove)
+  document.removeEventListener('mouseup', handleMouseDragEnd)
+  if (!isDragging.value) return
+  const endX = e.clientX
+  const deltaX = endX - touchStartX.value
+  if (deltaX > 50) {
+    musicInfoHidden.value = true
+    if (!playerMinimized.value) playerMinimized.value = true
+  }
+  isDragging.value = false
+  dragOffset.value = 0
 }
 
-/* --- 滑鼠懸停處理 --- */
 function handleMouseEnter() {
-    // 只在最小化且 music-info 顯示時才啟用懸停效果
-    if (!playerMinimized.value || musicInfoHidden.value || isClicked.value) return
-    
-    isHovering.value = true
-    
-    // 清除離開計時器（如果正在等待隱藏）
-    if (leaveTimer) {
-        clearTimeout(leaveTimer)
-        leaveTimer = null
-    }
-    
-    // 清除之前的懸停計時器
-    if (hoverTimer) {
-        clearTimeout(hoverTimer)
-    }
-    
-    // 設置 0.1 秒後顯示播放器
-    hoverTimer = setTimeout(() => {
-        if (isHovering.value && !isClicked.value) {
-            playerMinimized.value = false
-        }
-    }, 200)
+  if (!playerMinimized.value || musicInfoHidden.value || isClicked.value) return
+  isHovering.value = true
+  if (leaveTimer) { clearTimeout(leaveTimer); leaveTimer = null }
+  if (hoverTimer) { clearTimeout(hoverTimer) }
+  hoverTimer = setTimeout(() => {
+    if (isHovering.value && !isClicked.value) playerMinimized.value = false
+  }, 200)
 }
 
 function handleMouseLeave() {
-    isHovering.value = false
-    
-    // 清除懸停計時器
-    if (hoverTimer) {
-        clearTimeout(hoverTimer)
-        hoverTimer = null
-    }
-    
-    // 如果沒有被點擊過且播放器已展開，延遲 100ms 後再隱藏
-    // 這給用戶時間從 music-info 移動到 music-container
-    if (!isClicked.value && !playerMinimized.value && !isPlaylistVisible.value && !isVolumeVisible.value) {
-        leaveTimer = setTimeout(() => {
-            // 再次檢查是否還在懸停狀態（可能已經移動到 music-container）
-            if (!isHovering.value && !isClicked.value) {
-                playerMinimized.value = true
-            }
-        }, 100)
-    }
+  isHovering.value = false
+  if (hoverTimer) { clearTimeout(hoverTimer); hoverTimer = null }
+  if (!isClicked.value && !playerMinimized.value && !isPlaylistVisible.value && !isVolumeVisible.value) {
+    leaveTimer = setTimeout(() => {
+      if (!isHovering.value && !isClicked.value) playerMinimized.value = true
+    }, 100)
+  }
 }
 
 function handleContainerMouseEnter() {
-    // music-container 被懸停時，標記為懸停狀態並清除所有計時器
-    isHovering.value = true
-    
-    if (hoverTimer) {
-        clearTimeout(hoverTimer)
-        hoverTimer = null
-    }
-    
-    if (leaveTimer) {
-        clearTimeout(leaveTimer)
-        leaveTimer = null
-    }
+  isHovering.value = true
+  if (hoverTimer) { clearTimeout(hoverTimer); hoverTimer = null }
+  if (leaveTimer) { clearTimeout(leaveTimer); leaveTimer = null }
 }
 
 function handleContainerMouseLeave() {
-    // 離開 music-container 時，如果沒有被點擊鎖定，則延遲後最小化
-    isHovering.value = false
-    
-    if (!isClicked.value && !playerMinimized.value && !isPlaylistVisible.value && !isVolumeVisible.value) {
-        leaveTimer = setTimeout(() => {
-            if (!isHovering.value && !isClicked.value) {
-                playerMinimized.value = true
-            }
-        }, 300)
-    }
+  isHovering.value = false
+  if (!isClicked.value && !playerMinimized.value && !isPlaylistVisible.value && !isVolumeVisible.value) {
+    leaveTimer = setTimeout(() => {
+      if (!isHovering.value && !isClicked.value) playerMinimized.value = true
+    }, 300)
+  }
 }
 
-// 添加全域滑鼠移動監聽，以處理 minimized 狀態下的懸停檢測
 function handleGlobalMouseMove(e) {
-    // 只在非最小化且非點擊鎖定狀態下才處理
-    if (playerMinimized.value || isClicked.value || !playerOpen.value) return
-    
-    const container = playerContainer.value
-    if (!container) return
-    
-    const rect = container.getBoundingClientRect()
-    const isInside = (
-        e.clientX >= rect.left &&
-        e.clientX <= rect.right &&
-        e.clientY >= rect.top &&
-        e.clientY <= rect.bottom
-    )
-    
-    if (isInside) {
-        // 滑鼠在 music-container 範圍內
-        isHovering.value = true
-        if (leaveTimer) {
-            clearTimeout(leaveTimer)
-            leaveTimer = null
-        }
-    }
+  if (playerMinimized.value || isClicked.value || !playerOpen.value) return
+  const container = playerContainer.value
+  if (!container) return
+  const rect = container.getBoundingClientRect()
+  const isInside = e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom
+  if (isInside) {
+    isHovering.value = true
+    if (leaveTimer) { clearTimeout(leaveTimer); leaveTimer = null }
+  }
 }
 
 function handleMusicInfoClick(e) {
-    // 點擊時展開播放器並標記為已點擊（包含懸停狀態下的點擊）
-    if (playerMinimized.value) {
-        e.stopPropagation()
-        playerMinimized.value = false
-        isClicked.value = true // 標記為已點擊
-    } else if (!isClicked.value) {
-        // 如果已經是懸停展開狀態，點擊後鎖定
-        e.stopPropagation()
-        isClicked.value = true
-    }
+  if (playerMinimized.value) {
+    e.stopPropagation()
+    playerMinimized.value = false
+    isClicked.value = true
+  } else if (!isClicked.value) {
+    e.stopPropagation()
+    isClicked.value = true
+  }
 }
 
 function handleContainerClick(e) {
-    // 在懸停展開狀態下點擊 music-container，鎖定顯示
-    if (!isClicked.value && !playerMinimized.value) {
-        e.stopPropagation()
-        isClicked.value = true
-    }
+  if (!isClicked.value && !playerMinimized.value) {
+    e.stopPropagation()
+    isClicked.value = true
+  }
 }
 
 function showMusicInfo() {
-    // 先設置 musicInfoHidden 為 false
-    musicInfoHidden.value = false
-    // 確保播放器保持最小化狀態（不觸發外部點擊邏輯）
-    playerMinimized.value = true
+  musicInfoHidden.value = false
+  playerMinimized.value = true
 }
 
+/* --- 歌曲 title toast --- */
+function handleSongTitleMouseEnter(title, e) {
+  const el = e.target
+  if (el.scrollWidth > el.clientWidth) {
+    toastText.value = title
+    showTitleToast.value = true
+    if (toastTimer) clearTimeout(toastTimer)
+    toastTimer = setTimeout(() => { showTitleToast.value = false }, 2200)
+  }
+}
+function handleSongTitleMouseLeave() {
+  showTitleToast.value = false
+  if (toastTimer) clearTimeout(toastTimer)
+}
+
+function toggleRepeatOne() {
+  repeatOne.value = !repeatOne.value
+  localStorage.setItem(REPEAT_ONE_KEY, repeatOne.value ? 'true' : 'false')
+  if (audio.value) audio.value.loop = repeatOne.value
+}
 </script>
 
 <template>
-    <audio ref="audio" :src="currentSong.src" preload="auto" @ended="nextSong"></audio>
+  <audio
+    ref="audio"
+    preload="auto"
+    @ended="nextSong"
+    @loadedmetadata="onLoadedMetadata"
+  ></audio>
 
-    <!-- 主播放器 -->
-    <transition name="player-fade">
-        <div 
-            v-if="playerOpen" 
-            ref="playerContainer"
-            class="music-container" 
-            :class="{ 
-                'play': playing, 
-                'minimized': playerMinimized,
-                'panel-open': isPlaylistVisible || isVolumeVisible,
-                'info-hidden': musicInfoHidden
-            }"
-            @click.stop="handleContainerClick"
-            @mouseenter="handleContainerMouseEnter"
-            @mouseleave="handleContainerMouseLeave"
-        >
-            <!-- 歌曲資訊（播放時從上方滑出） -->
-            <div 
-                class="music-info" 
-                :class="{ 
-                    'hidden': musicInfoHidden,
-                    'dragging': isDragging
-                }"
-                :style="isDragging ? { transform: `translateX(${dragOffset}px) translateY(-107%)` } : {}"
-                @click="handleMusicInfoClick"
-                @mouseenter="handleMouseEnter"
-                @mouseleave="handleMouseLeave"
-                @touchstart="handleDragStart"
-                @touchmove="handleDragMove"
-                @touchend="handleDragEnd"
-                @mousedown="handleDragStart"
+  <transition name="player-fade">
+    <div
+      v-if="playerOpen"
+      ref="playerContainer"
+      class="music-container"
+      :class="{
+        play: playing,
+        minimized: playerMinimized,
+        'panel-open': isPlaylistVisible || isVolumeVisible,
+        'info-hidden': musicInfoHidden
+      }"
+      @click.stop="handleContainerClick"
+      @mouseenter="handleContainerMouseEnter"
+      @mouseleave="handleContainerMouseLeave"
+    >
+      <div
+        class="music-info"
+        :class="{ hidden: musicInfoHidden, dragging: isDragging }"
+        :style="isDragging ? { transform: `translateX(${dragOffset}px) translateY(-107%)` } : {}"
+        @click="handleMusicInfoClick"
+        @mouseenter="handleMouseEnter"
+        @mouseleave="handleMouseLeave"
+        @touchstart="handleDragStart"
+        @touchmove="handleDragMove"
+        @touchend="handleDragEnd"
+        @mousedown="handleDragStart"
+      >
+        <h2 class="title">
+          <span class="title-text">{{ currentSong.title }} &nbsp;&nbsp;&nbsp; {{ currentSong.title }} &nbsp;&nbsp;&nbsp; {{ currentSong.title }}</span>
+        </h2>
+        <div class="time-info">
+          <span>{{ formatTime(currentTime) }}</span>
+          <span>{{ formatTime(duration) }}</span>
+        </div>
+        <div class="progress-container" @click="setProgress">
+          <div class="progress" :style="{ width: progressPercent + '%' }"></div>
+        </div>
+      </div>
+
+      <!-- 控制按鈕 -->
+      <div class="navigation">
+        <button class="action-btn" @click.stop="togglePlaylist" title="播放清單">
+          <i class="fas fa-list"></i>
+        </button>
+
+        <button class="action-btn" @click.stop="prevSong" title="上一首">
+          <i class="fas fa-backward"></i>
+        </button>
+
+        <button class="action-btn action-btn-big" @click.stop="togglePlay" :title="playing ? '暫停' : '播放'">
+          <i class="fas" :class="playing ? 'fa-pause' : 'fa-play'"></i>
+        </button>
+
+        <button class="action-btn" @click.stop="nextSong" title="下一首">
+          <i class="fas fa-forward"></i>
+        </button>
+
+        <button class="action-btn" @click.stop="toggleVolume" title="音量">
+          <i class="fas" :class="volume === 0 ? 'fa-volume-mute' : volume < 0.5 ? 'fa-volume-down' : 'fa-volume-up'"></i>
+        </button>
+      </div>
+
+      <transition name="slide-up">
+        <div v-if="isVolumeVisible" class="volume-panel">
+          <div class="volume-percentage-display">{{ Math.round(volume * 100) }}%</div>
+          <div class="volume-slider-vertical-container">
+            <input
+              type="range"
+              class="volume-slider-vertical"
+              min="0"
+              max="1"
+              step="0.01"
+              v-model.number="volume"
+              orient="vertical"
+            />
+          </div>
+        </div>
+      </transition>
+
+      <transition name="slide-up">
+        <div v-if="isPlaylistVisible" class="playlist-panel">
+          <h3 class="playlist-title">播放清單</h3>
+          <div class="playlist-items">
+            <div
+              v-for="(song, index) in musicList"
+              :key="song.src"
+              class="playlist-item"
+              :class="{ active: index === currentIndex }"
+              @click="selectAndPlaySong(index)"
             >
-                <h2 class="title">
-                    <span class="title-text">{{ currentSong.title }} &nbsp;&nbsp;&nbsp; {{ currentSong.title }} &nbsp;&nbsp;&nbsp; {{ currentSong.title }}</span>
-                </h2>
-                <div class="time-info">
-                    <span>{{ formatTime(currentTime) }}</span>
-                    <span>{{ formatTime(duration) }}</span>
-                </div>
-                <div class="progress-container" @click="setProgress">
-                    <div class="progress" :style="{ width: progressPercent + '%' }"></div>
-                </div>
+              <div class="song-info" style="display:flex;align-items:center;">
+                <span class="song-number">{{ index + 1 }}</span>
+                <span class="song-title" @mouseenter="handleSongTitleMouseEnter(song.title, $event)" @mouseleave="handleSongTitleMouseLeave">{{ song.title }}</span>
+                <button v-if="index === currentIndex" class="action-btn" @click.stop="toggleRepeatOne" :title="repeatOne ? '重複播放：開啟' : '重複播放：關閉'" style="margin-left:2px; padding:2px 4px; font-size:1em; height:22px; width:22px;">
+                  <i class="fas fa-repeat" :style="repeatOne ? 'color:#ff9800; filter:drop-shadow(0 0 2px #ff9800);' : 'color:#bbb;'" />
+                </button>
+              </div>
+              <i v-if="index === currentIndex && playing" class="fas fa-volume-up playing-icon" style="margin-left:2px;"></i>
             </div>
 
-            <!-- 封面圖片（旋轉） -->
-
-            <!-- 控制按鈕 -->
-            <div class="navigation">
-                <!-- 播放清單按鈕 -->
-                <button class="action-btn" @click.stop="togglePlaylist" title="播放清單">
-                    <i class="fas fa-list"></i>
-                </button>
-
-                <!-- 上一首 -->
-                <button class="action-btn" @click.stop="prevSong" title="上一首">
-                    <i class="fas fa-backward"></i>
-                </button>
-
-                <!-- 播放/暫停 -->
-                <button class="action-btn action-btn-big" @click.stop="togglePlay" :title="playing ? '暫停' : '播放'">
-                    <i class="fas" :class="playing ? 'fa-pause' : 'fa-play'"></i>
-                </button>
-
-                <!-- 下一首 -->
-                <button class="action-btn" @click.stop="nextSong" title="下一首">
-                    <i class="fas fa-forward"></i>
-                </button>
-
-                <!-- 音量按鈕 -->
-                <button class="action-btn" @click.stop="toggleVolume" title="音量">
-                    <i class="fas" :class="volume === 0 ? 'fa-volume-mute' : volume < 0.5 ? 'fa-volume-down' : 'fa-volume-up'"></i>
-                </button>
-            </div>
-
-            <!-- 關閉按鈕（已移除：改為點擊外部在未播放時關閉） -->
-
-            <!-- 音量控制面板 -->
-            <transition name="slide-up">
-                <div v-if="isVolumeVisible" class="volume-panel">
-                    <!-- 音量百分比顯示 -->
-                    <div class="volume-percentage-display">{{ Math.round(volume * 100) }}%</div>
-                    <div class="volume-slider-vertical-container">
-                        <input
-                            type="range"
-                            class="volume-slider-vertical"
-                            min="0"
-                            max="1"
-                            step="0.01"
-                            v-model.number="volume"
-                            orient="vertical"
-                        />
-                    </div>
-                </div>
+            <transition name="toast-fade">
+              <div v-if="showTitleToast" class="title-toast">{{ toastText }}</div>
             </transition>
-
-            <!-- 播放清單面板 -->
-            <transition name="slide-up">
-                <div v-if="isPlaylistVisible" class="playlist-panel">
-                    <h3 class="playlist-title">播放清單</h3>
-                    <div class="playlist-items">
-                        <div
-                            v-for="(song, index) in musicList"
-                            :key="song.src"
-                            class="playlist-item"
-                            :class="{ 'active': index === currentIndex }"
-                            @click="selectAndPlaySong(index)"
-                        >
-                            <div class="song-info" style="display: flex; align-items: center;">
-                                <span class="song-number">{{ index + 1 }}</span>
-                                <span class="song-title"
-                                    @mouseenter="handleSongTitleMouseEnter(song.title, $event)"
-                                    @mouseleave="handleSongTitleMouseLeave"
-                                >{{ song.title }}</span>
-                                <!-- 只在目前播放的歌曲顯示 repeatOne 按鈕 -->
-                                <button v-if="index === currentIndex" class="action-btn" @click.stop="toggleRepeatOne" :title="repeatOne ? '重複播放：開啟' : '重複播放：關閉'" style="margin-left:2px; padding:2px 4px; font-size:1em; height:22px; width:22px;">
-                                    <i class="fas fa-repeat" :style="repeatOne ? 'color:#ff9800; filter:drop-shadow(0 0 2px #ff9800);' : 'color:#bbb;'" />
-                                </button>
-                            </div>
-                            <i v-if="index === currentIndex && playing" class="fas fa-volume-up playing-icon" style="margin-left:2px;"></i>
-                        </div>
-                        <!-- 歌曲名稱 Toast -->
-                        <transition name="toast-fade">
-                            <div v-if="showTitleToast" class="title-toast">{{ toastText }}</div>
-                        </transition>
-                    </div>
-                </div>
-            </transition>
+          </div>
         </div>
-    </transition>
+      </transition>
+    </div>
+  </transition>
 
-    <!-- 側邊欄按鈕（當 music-info 隱藏時顯示） - 放在 music-container 外部 -->
-    <transition name="sidebar-fade">
-        <div 
-            v-if="showSidebarButton && playerOpen"
-            ref="sidebarToggle"
-            class="sidebar-toggle"
-            @click.stop.prevent="showMusicInfo"
-            @touchend.stop.prevent="showMusicInfo"
-        >
-            <div class="sidebar-icon">&lt;</div>
-        </div>
-    </transition>
+  <transition name="sidebar-fade">
+    <div v-if="showSidebarButton && playerOpen" ref="sidebarToggle" class="sidebar-toggle" @click.stop.prevent="showMusicInfo" @touchend.stop.prevent="showMusicInfo">
+      <div class="sidebar-icon">&lt;</div>
+    </div>
+  </transition>
 
-    <!-- 播放器開關按鈕（當播放器關閉時顯示） -->
-    <transition name="sidebar-fade">
-        <div 
-            v-if="showPlayerToggle"
-            class="sidebar-toggle player-toggle"
-            @click.stop.prevent="playerOpen = true"
-            @touchend.stop.prevent="playerOpen = true"
-        >
-            <i class="fa-solid fa-music"></i>        
-</div>
-    </transition>
+  <transition name="sidebar-fade">
+    <div v-if="showPlayerToggle" class="sidebar-toggle player-toggle" @click.stop.prevent="playerOpen = true" @touchend.stop.prevent="playerOpen = true">
+      <i class="fa-solid fa-music"></i>
+    </div>
+  </transition>
 </template>
 
 <style>
