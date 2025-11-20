@@ -20,7 +20,7 @@ import Halo from './background/CircularHaloBackgroud.vue'
 import HyperOS from './background/HyperOSTheme.vue'
 import HyperOS2 from './background/HyperOS2Theme.vue'
 import Christmas from './background/ChristmasBackground.vue'
-import HalloweenBackground from './background/HalloweenBackground.vue'
+import Halloween from './background/HalloweenBackground.vue'
 import { 
   defaultTheme, 
   THEME_STORAGE_KEY, 
@@ -463,7 +463,7 @@ onUnmounted(() => {
         <Halo v-if="currentBackgroundTheme === 'halo'" />
         <HyperOS v-if="currentBackgroundTheme === 'hyperos'" />
         <HyperOS2 v-if="currentBackgroundTheme === 'hyperos2'" />
-        <HalloweenBackground v-if="currentBackgroundTheme === 'halloween'" />
+        <Halloween v-if="currentBackgroundTheme === 'halloween'" />
         <Christmas v-if="currentBackgroundTheme === 'christmas'" />
     </ClientOnly>
 

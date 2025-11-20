@@ -481,12 +481,6 @@ body:not(:has(.VPHome)) .wrapper {
 }
 
 /* 首頁導航透明/模糊行為 */
-body:has(.VPHome) .VPNavBar.top {
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  background: transparent !important;
-  background-color: transparent !important;
-}
 body:has(.VPHome) .VPNavBar:not(.top) {
   backdrop-filter: blur(8px) !important;
   -webkit-backdrop-filter: blur(8px) !important;
@@ -707,8 +701,10 @@ body:not(:has(.VPHome)) .VPNavScreen {
   color: #00b8b8;
   box-shadow: 0 6px 24px rgba(0,255,238,0.18);
 }
-.VPNavScreenMenuGroup,
 .VPNavScreen {
+  overflow-y: auto !important;
+}
+.VPNavScreenMenuGroup {
   overflow: visible !important;
   height: auto !important;
   max-height: none !important;

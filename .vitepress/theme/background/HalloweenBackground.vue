@@ -12,6 +12,17 @@ import { onMounted, onUnmounted } from 'vue'
 let batIntervalIds = [];
 let pumpkinIntervalId = null;
 let mutationObserver = null;
+let navObserver = null;
+
+// 處理導覽列開關：開啟時隱藏蝙蝠，避免覆蓋
+function handleNavToggle() {
+  if (typeof document === 'undefined') return;
+  const isNavOpen = document.documentElement.classList.contains('vp-mobile-nav-open');
+  const bats = document.getElementById('halloween-bats');
+  if (bats) {
+    bats.style.display = isNavOpen ? 'none' : '';
+  }
+}
 
 function startHalloween() {
   // 防呆：已經存在就不再建立
@@ -40,8 +51,6 @@ function startHalloween() {
       document.querySelectorAll(sel).forEach(el => {
         // 儲存舊的 inline style，方便還原
         el.setAttribute('data-hb-old-style', el.getAttribute('style') || '');
-        el.style.background = "#222 url('/image/halloween/halloween1.png') repeat-x";
-        el.style.backgroundSize = '90px auto';
         el.style.borderBottom = '2px solid #ff9800';
         el.style.color = '#ff9800';
       });
@@ -90,45 +99,60 @@ function startHalloween() {
   }
   document.body.appendChild(batContainer);
 
+  // 新增：立即檢查導覽列狀態，避免主題切換時蝙蝠覆蓋已開啟的選單
+  handleNavToggle();
+
   // --- 2. 南瓜燈怪物 (位置在下方 + 可點擊) ---
-  const pumpkin = document.createElement('div');
-  pumpkin.id = 'halloween-pumpkin';
-  pumpkin.style.position = 'fixed';
-  pumpkin.style.left = '50%';
-  pumpkin.style.bottom = '20px';
-  pumpkin.style.top = 'auto';
-  pumpkin.style.transform = 'translateX(-50%)';
-  pumpkin.style.zIndex = '9999';
-  pumpkin.style.pointerEvents = 'auto';
-  pumpkin.style.cursor = 'pointer';
+  const pumpkinLastClicked = localStorage.getItem('halloweenPumpkinClicked');
+  const oneDay = 24 * 60 * 60 * 1000;
 
-  pumpkin.onclick = () => {
-    alert('halloween! 小熊祝你萬聖節快樂!');
-  };
+  if (!pumpkinLastClicked || (Date.now() - parseInt(pumpkinLastClicked, 10) >= oneDay)) {
+    const pumpkin = document.createElement('div');
+    pumpkin.id = 'halloween-pumpkin';
+    pumpkin.style.position = 'fixed';
+    pumpkin.style.left = '50%';
+    pumpkin.style.bottom = '20px';
+    pumpkin.style.top = 'auto';
+    pumpkin.style.transform = 'translateX(-50%)';
+    pumpkin.style.zIndex = '9999';
+    pumpkin.style.pointerEvents = 'auto';
+    pumpkin.style.cursor = 'pointer';
 
-  pumpkin.innerHTML = `
+    pumpkin.onclick = () => {
+      alert('halloween! 小熊祝你萬聖節快樂!');
+      const p = document.getElementById('halloween-pumpkin');
+      if (p) p.remove();
+      if (pumpkinIntervalId) {
+        clearInterval(pumpkinIntervalId);
+        pumpkinIntervalId = null;
+      }
+      localStorage.setItem('halloweenPumpkinClicked', Date.now().toString());
+    };
+
+    pumpkin.innerHTML = `
     <div style="position:relative;width:320px;height:220px;">
       <img src="/image/halloween/halloween1.png" style="width:100%;filter:drop-shadow(0 0 48px #ff9800) brightness(1.2);transition:filter 1.2s;" id="pumpkin-img">
       <div id="pumpkin-glow" style="position:absolute;left:80px;top:120px;width:160px;height:80px;background:radial-gradient(circle,#fff200 60%,#ff9800 100%);border-radius:50%;opacity:0.7;filter:blur(16px);transition:background 1.2s; pointer-events: none;"></div>
     </div>
   `;
-  document.body.appendChild(pumpkin);
+    document.body.appendChild(pumpkin);
 
-  // 南瓜呼吸燈動畫
-  const pumpkin_glowColors = [
-    ['#fff200', '#ff9800'],
-    ['#ff9800', '#fff200'],
-    ['#fff200', '#ff9800'],
-    ['#ff9800', '#fff200']
-  ];
-  let pumpkin_idx = 0;
-  pumpkinIntervalId = setInterval(()=>{
-    pumpkin_idx = (pumpkin_idx+1) % pumpkin_glowColors.length;
-    const glow = document.getElementById('pumpkin-glow');
-    if (glow) glow.style.background = `radial-gradient(circle,${pumpkin_glowColors[pumpkin_idx][0]} 60%,${pumpkin_glowColors[pumpkin_idx][1]} 100%)`;
-    const img = document.getElementById('pumpkin-img');
-    if (img) img.style.filter = `drop-shadow(0 0 48px ${pumpkin_glowColors[pumpkin_idx][1]}) brightness(1.2)`;
-  }, 1200);
+    // 南瓜呼吸燈動畫
+    const pumpkin_glowColors = [
+      ['#fff200', '#ff9800'],
+      ['#ff9800', '#fff200'],
+      ['#fff200', '#ff9800'],
+      ['#ff9800', '#fff200']
+    ];
+    let pumpkin_idx = 0;
+    pumpkinIntervalId = setInterval(()=>{
+      pumpkin_idx = (pumpkin_idx+1) % pumpkin_glowColors.length;
+      const glow = document.getElementById('pumpkin-glow');
+      if (glow) glow.style.background = `radial-gradient(circle,${pumpkin_glowColors[pumpkin_idx][0]} 60%,${pumpkin_glowColors[pumpkin_idx][1]} 100%)`;
+      const img = document.getElementById('pumpkin-img');
+      if (img) img.style.filter = `drop-shadow(0 0 48px ${pumpkin_glowColors[pumpkin_idx][1]}) brightness(1.2)`;
+    }, 1200);
+  }
 }
 
 function stopHalloween() {
@@ -216,12 +240,20 @@ onMounted(() => {
     }
   });
   mutationObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+
+  // 監聽根元素 class 變化（vp-mobile-nav-open）
+  navObserver = new MutationObserver(handleNavToggle);
+  navObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 });
 
 onUnmounted(() => {
   if (mutationObserver) {
     mutationObserver.disconnect();
     mutationObserver = null;
+  }
+  if (navObserver) {
+    navObserver.disconnect();
+    navObserver = null;
   }
   stopHalloween();
 });
@@ -252,7 +284,8 @@ body.theme-halloween {
 body.theme-halloween .VPNav,
 body.theme-halloween .VPNavBar,
 body.theme-halloween header {
-  background: #222 url('/image/halloween/halloween1.png') repeat-x !important;
+  /* Apply the semi-transparent background directly to the nav bar */
+  background: rgba(34,34,34,0.7) url('/image/halloween/halloween1.png') repeat-x !important;
   background-size: 90px auto !important;
   border-bottom: 2px solid #ff9800 !important;
   color: #ff9800 !important;
@@ -269,7 +302,7 @@ body.theme-halloween header::before {
   position: absolute;
   inset: 0;
   z-index: 0;
-  background: rgba(34,34,34,0.7) !important;
+  /* This pseudo-element is now ONLY for the blur effect */
   backdrop-filter: blur(2px) !important;
   -webkit-backdrop-filter: blur(2px) !important;
   pointer-events: none;
@@ -279,6 +312,23 @@ body.theme-halloween .VPNavBar > *,
 body.theme-halloween header > * {
   position: relative;
   z-index: 1;
+}
+
+/* --- Scrolled State --- */
+
+/* 1. Hide the non-scrolled pseudo-elements to prevent conflicts. */
+body.theme-halloween .VPNav.is-scrolled::before,
+body.theme-halloween .VPNav.is-scrolled .VPNavBar::before,
+body.theme-halloween .VPNav.is-scrolled header::before {
+  content: none !important;
+}
+
+/* 2. Apply blur to VitePress's dedicated scrolled-nav background element. */
+body.theme-halloween .VPNav.is-scrolled .VPNavBar-bg {
+  /* Use a semi-transparent background to allow the blur to be visible. */
+  background-color: rgba(34, 34, 34, 0.7) !important;
+  backdrop-filter: blur(2px) !important;
+  -webkit-backdrop-filter: blur(2px) !important;
 }
 body.theme-halloween {
   --vp-c-brand: #ff9800 !important;
@@ -303,6 +353,9 @@ body.theme-halloween h6 {
 
 /* 手機選單：固定覆蓋並啟用模糊（與預設主題一致） */
 @media (max-width: 959px) {
+  body.theme-halloween .VPNavBar {
+    z-index: 100000 !important;
+  }
   body.theme-halloween .VPNavScreen {
     position: fixed !important;
     inset: 0 !important;

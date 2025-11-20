@@ -13,40 +13,6 @@ const { isDark } = useData()
 const router = useRouter()
 const currentTheme = ref<string>(defaultTheme)
 
-// 顯示簡單的「敬請期待」訊息（自動或點擊關閉）
-function showComingSoon() {
-  if (document.getElementById('theme-coming-soon')) return
-  const wrapper = document.createElement('div')
-  wrapper.id = 'theme-coming-soon'
-  wrapper.style.position = 'fixed'
-  wrapper.style.left = '0'
-  wrapper.style.top = '0'
-  wrapper.style.width = '100vw'
-  wrapper.style.height = '100vh'
-  wrapper.style.display = 'flex'
-  wrapper.style.alignItems = 'center'
-  wrapper.style.justifyContent = 'center'
-  wrapper.style.zIndex = '99999'
-  wrapper.style.background = 'rgba(0,0,0,0.45)'
-  wrapper.style.cursor = 'pointer'
-
-  const box = document.createElement('div')
-  box.textContent = '敬請期待'
-  box.style.padding = '18px 28px'
-  box.style.borderRadius = '10px'
-  box.style.background = 'linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02))'
-  box.style.color = '#fff'
-  box.style.fontSize = '20px'
-  box.style.fontWeight = '700'
-  box.style.boxShadow = '0 8px 40px rgba(0,0,0,0.6)'
-
-  wrapper.appendChild(box)
-  wrapper.onclick = () => { wrapper.remove() }
-  document.body.appendChild(wrapper)
-
-  setTimeout(() => { try { wrapper.remove() } catch (e) {} }, 5000) // 5 秒後自動消失
-}
-
 // 切換主題的核心函數
 const changeTheme = (theme: string) => {
   console.log('切換主題到:', theme) // 調試用
@@ -80,11 +46,6 @@ const handleClick = (event: MouseEvent) => {
       if (href.includes(themeHash) || text.includes(icon) || text.includes(displayName)) {
         event.preventDefault()
         event.stopPropagation()
-        // 若為聖誕節主題，顯示敬請期待並不要切換
-        if (themeId === 'christmas') {
-          showComingSoon()
-          return false
-        }
         changeTheme(themeId)
         return false
       }
@@ -100,12 +61,6 @@ const handleHashChange = () => {
   // 遍歷所有主題配置，檢查 hash 是否匹配
   for (const [_, themeId] of backgroundThemes) {
     if (hash === `#theme-${themeId}`) {
-      // 若為聖誕節主題，顯示敬請期待並不要切換
-      if (themeId === 'christmas') {
-        showComingSoon()
-        history.replaceState(null, '', window.location.pathname + window.location.search)
-        return
-      }
       changeTheme(themeId)
       // 清除 hash
       history.replaceState(null, '', window.location.pathname + window.location.search)
