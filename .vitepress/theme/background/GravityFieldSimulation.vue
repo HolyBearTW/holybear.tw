@@ -8,9 +8,9 @@ import * as THREE from 'three'
 import { GPUComputationRenderer } from 'three/examples/jsm/misc/GPUComputationRenderer.js'
 
 // --- 參數設定 ---
-const WIDTH = 300 
+const WIDTH = 300
 const BOUNDS = 2000 
-const FORCE_MULTIPLIER = 2.0 // 音樂反應強度
+const FORCE_MULTIPLIER = 2.0 
 
 const canvasContainer = ref(null)
 
@@ -42,7 +42,7 @@ const gravityPoints = [
 ]
 
 // ============================================================================
-// 1. GPGPU Shaders (物理核心)
+// 1. GPGPU Shaders (物理)
 // ============================================================================
 
 const velocityFragmentShader = `
@@ -57,7 +57,6 @@ const velocityFragmentShader = `
 
       vec3 acceleration = vec3( 0.0 );
 
-      // [關鍵修正] 基礎引力稍微降低，但讓它更集中
       float baseForce = 6000.0;
       float musicForce = baseForce * (1.0 + uMusicBass * 3.0); 
 
@@ -65,8 +64,6 @@ const velocityFragmentShader = `
           vec3 distVec = gravityPoints[i] - pos;
           float dist = length( distVec );
           
-          // [關鍵修正] 將原本的 +500.0 改為 +40.0
-          // 這樣粒子靠近球體時會被"狠狠吸住"，不會飛散
           float force = musicForce / ( dist * dist + 40.0 ); 
           
           vec3 dir = normalize( distVec );
@@ -74,8 +71,8 @@ const velocityFragmentShader = `
       }
 
       vel += acceleration;
-      // 阻尼設為 0.97，增加一點點摩擦力讓粒子更容易停留在球體表面
-      vel *= 0.97;
+
+      vel *= 0.96;
 
       gl_FragColor = vec4( vel, 1.0 );
   }
@@ -97,7 +94,7 @@ const positionFragmentShader = `
 `
 
 // ============================================================================
-// 2. Render Shaders
+// 2. Render Shaders (視覺)
 // ============================================================================
 
 const particleVertexShader = `
@@ -122,15 +119,14 @@ const particleVertexShader = `
       vec3 vel = velTemp.xyz;
 
       float speed = length( vel );
-      float nSpeed = smoothstep(0.0, 15.0, speed); 
-
-      // 顏色邏輯
-      float baseHue = mod(time * 0.15, 1.0);
-      vec3 colorDark = hsv2rgb(vec3(baseHue + 0.6, 0.8, 0.4));
-      vec3 colorLight = hsv2rgb(vec3(baseHue + 0.9, 0.6, 1.0));
-      vec3 pinkHighlight = vec3(1.0, 0.2, 0.6);
+      float nSpeed = smoothstep(0.0, 20.0, speed); 
+      float baseHue = mod(time * 0.05, 1.0);
       
-      colorLight = mix(colorLight, pinkHighlight, 0.2 + uMusicHigh * 0.6);
+      vec3 colorDark = hsv2rgb(vec3(baseHue + 0.6, 0.6, 0.4));
+      vec3 colorLight = hsv2rgb(vec3(baseHue + 0.9, 0.5, 1.0));
+      vec3 pinkHighlight = vec3(1.0, 0.4, 0.8); 
+      
+      colorLight = mix(colorLight, pinkHighlight, 0.1 + uMusicHigh * 0.3);
 
       vec3 finalColor = mix( colorDark, colorLight, nSpeed );
 
@@ -139,8 +135,8 @@ const particleVertexShader = `
       vec4 mvPosition = modelViewMatrix * vec4( pos, 1.0 );
       gl_Position = projectionMatrix * mvPosition;
 
-      float sizePulse = 1.0 + uMusicHigh * 0.8;
-      gl_PointSize = ( 1.6 * cameraConstant * sizePulse ) / - mvPosition.z;
+      float sizePulse = 1.0 + uMusicHigh * 0.6;
+      gl_PointSize = ( 1.4 * cameraConstant * sizePulse ) / - mvPosition.z;
   }
 `
 
@@ -151,7 +147,8 @@ const particleFragmentShader = `
   void main() {
       float f = length( gl_PointCoord - vec2( 0.5, 0.5 ) );
       if ( f > 0.5 ) discard;
-      gl_FragColor = vec4(vColor.rgb, vColor.a * uOpacity);
+      
+      gl_FragColor = vec4(vColor.rgb, vColor.a * uOpacity * 0.6);
   }
 `
 
@@ -273,7 +270,6 @@ const initComputeRenderer = () => {
   gpuCompute.init()
 }
 
-// 初始化邏輯 (全螢幕散佈)
 const fillTextures = ( texturePosition, textureVelocity ) => {
   const posArray = texturePosition.image.data
   const velArray = textureVelocity.image.data
@@ -364,7 +360,6 @@ const animate = () => {
   particleUniforms["uOpacity"].value = opacity
   particleUniforms["time"].value = accumulatedTime
 
-  // 移動重力球
   gravityPoints[0].set(Math.sin(accumulatedTime * 0.7) * 500, Math.cos(accumulatedTime * 0.5) * 400, Math.sin(accumulatedTime * 0.3) * 500)
   gravityPoints[1].set(Math.sin(accumulatedTime * 0.4 + 2.0) * 600, Math.cos(accumulatedTime * 0.6) * 500, Math.sin(accumulatedTime * 0.8) * 200)
   gravityPoints[2].set(Math.sin(accumulatedTime * 1.2) * 400, Math.cos(accumulatedTime * 0.9 + 1.0) * 400, Math.sin(accumulatedTime * 1.1) * 400)
@@ -376,7 +371,7 @@ const animate = () => {
       const color = new THREE.Color().setHSL(hue, 0.8, 0.5);
       gravitySpheres[i].material.color.copy(color);
       gravitySpheres[i].children[0].color.copy(color);
-      gravitySpheres[i].scale.setScalar(1.0); // 大小固定
+      gravitySpheres[i].scale.setScalar(1.0);
       gravitySpheres[i].children[0].intensity = 10 + (isPlaying ? musicUniforms.bass.value * 40 : 0);
     }
   }
