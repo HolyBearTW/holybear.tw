@@ -7,15 +7,13 @@ import { ref, onMounted, onBeforeUnmount } from 'vue'
 import * as THREE from 'three'
 import { GPUComputationRenderer } from 'three/examples/jsm/misc/GPUComputationRenderer.js'
 
-// --- [參數設定區] ---
-const WIDTH = 300 // 粒子解析度
-const BOUNDS = 2000 // 物理邊界
-// [調整] 力道倍率：從 4.0 降到 1.5，讓訊號更溫和
-const FORCE_MULTIPLIER = 1.5 
+// --- 參數設定 ---
+const WIDTH = 300 
+const BOUNDS = 2000 
+const FORCE_MULTIPLIER = 2.0 // 音樂反應強度
 
 const canvasContainer = ref(null)
 
-// 全域變數
 let scene, camera, renderer
 let gpuCompute
 let velocityVariable, positionVariable
@@ -24,22 +22,18 @@ let particleUniforms
 let particleMesh
 let animationId
 
-// 時間與狀態控制
 let accumulatedTime = 0
 let isPlaying = false
 
-// 音頻分析變數
 let audioContext, audioAnalyser, audioSource
 let frequencyData
 let checkTimer = null
 
-// 傳遞給 Shader 的音樂參數
 let musicUniforms = {
   bass: { value: 0.0 },
   high: { value: 0.0 }
 }
 
-// 視覺重力球
 const gravitySpheres = []
 const gravityPoints = [
   new THREE.Vector3(),
@@ -48,7 +42,7 @@ const gravityPoints = [
 ]
 
 // ============================================================================
-// 1. GPGPU Shaders (物理模擬)
+// 1. GPGPU Shaders (物理核心)
 // ============================================================================
 
 const velocityFragmentShader = `
@@ -63,27 +57,25 @@ const velocityFragmentShader = `
 
       vec3 acceleration = vec3( 0.0 );
 
-      // 基礎引力強度
-      float baseForce = 8000.0;
-      
-      // [調整] 音樂互動：原本 * 5.0 改為 * 0.8
-      // 這樣引力變化不會太劇烈，避免粒子亂噴
-      float musicForce = baseForce * (1.0 + uMusicBass * 0.8); 
+      // [關鍵修正] 基礎引力稍微降低，但讓它更集中
+      float baseForce = 6000.0;
+      float musicForce = baseForce * (1.0 + uMusicBass * 3.0); 
 
       for ( int i = 0; i < 3; i++ ) {
           vec3 distVec = gravityPoints[i] - pos;
           float dist = length( distVec );
           
-          float force = musicForce / ( dist * dist + 20.0 ); 
+          // [關鍵修正] 將原本的 +500.0 改為 +40.0
+          // 這樣粒子靠近球體時會被"狠狠吸住"，不會飛散
+          float force = musicForce / ( dist * dist + 40.0 ); 
           
           vec3 dir = normalize( distVec );
           acceleration += dir * force;
       }
 
       vel += acceleration;
-      
-      // 阻尼
-      vel *= 0.98;
+      // 阻尼設為 0.97，增加一點點摩擦力讓粒子更容易停留在球體表面
+      vel *= 0.97;
 
       gl_FragColor = vec4( vel, 1.0 );
   }
@@ -105,7 +97,7 @@ const positionFragmentShader = `
 `
 
 // ============================================================================
-// 2. Render Shaders (視覺渲染)
+// 2. Render Shaders
 // ============================================================================
 
 const particleVertexShader = `
@@ -113,7 +105,7 @@ const particleVertexShader = `
   uniform sampler2D textureVelocity;
   uniform float cameraConstant;
   uniform float time;
-  uniform float uMusicHigh; 
+  uniform float uMusicHigh;
   
   varying vec4 vColor;
 
@@ -132,14 +124,13 @@ const particleVertexShader = `
       float speed = length( vel );
       float nSpeed = smoothstep(0.0, 15.0, speed); 
 
-      // [顏色邏輯]
-      float baseHue = mod(time * 0.1, 1.0);
+      // 顏色邏輯
+      float baseHue = mod(time * 0.15, 1.0);
       vec3 colorDark = hsv2rgb(vec3(baseHue + 0.6, 0.8, 0.4));
       vec3 colorLight = hsv2rgb(vec3(baseHue + 0.9, 0.6, 1.0));
       vec3 pinkHighlight = vec3(1.0, 0.2, 0.6);
       
-      // [調整] 高音對顏色的影響係數降低，避免閃瞎眼
-      colorLight = mix(colorLight, pinkHighlight, 0.2 + uMusicHigh * 0.5);
+      colorLight = mix(colorLight, pinkHighlight, 0.2 + uMusicHigh * 0.6);
 
       vec3 finalColor = mix( colorDark, colorLight, nSpeed );
 
@@ -148,9 +139,8 @@ const particleVertexShader = `
       vec4 mvPosition = modelViewMatrix * vec4( pos, 1.0 );
       gl_Position = projectionMatrix * mvPosition;
 
-      // [調整] 粒子大小震動幅度減小 (1.2 -> 0.5)
-      float sizePulse = 1.0 + uMusicHigh * 0.5;
-      gl_PointSize = ( 1.8 * cameraConstant * sizePulse ) / - mvPosition.z;
+      float sizePulse = 1.0 + uMusicHigh * 0.8;
+      gl_PointSize = ( 1.6 * cameraConstant * sizePulse ) / - mvPosition.z;
   }
 `
 
@@ -166,24 +156,18 @@ const particleFragmentShader = `
 `
 
 // ============================================================================
-// 3. 音頻處理邏輯
+// 3. 音頻與初始化
 // ============================================================================
 
 const initAudio = () => {
   checkTimer = setInterval(() => {
     const mediaElement = document.getElementById('global-audio-player') || document.querySelector('audio');
-    
     if (mediaElement) {
       clearInterval(checkTimer);
-      console.log('GravityField: 成功連結至音樂播放器');
-
       mediaElement.addEventListener('play', () => { isPlaying = true });
       mediaElement.addEventListener('pause', () => { isPlaying = false });
       isPlaying = !mediaElement.paused;
-
-      if (!audioContext) {
-        setupAudioContext(mediaElement);
-      }
+      if (!audioContext) setupAudioContext(mediaElement);
     }
   }, 1000);
 }
@@ -195,20 +179,13 @@ const setupAudioContext = (mediaElement) => {
     audioAnalyser = audioContext.createAnalyser();
     audioAnalyser.fftSize = 512;
     frequencyData = new Uint8Array(audioAnalyser.frequencyBinCount);
-
     audioSource = audioContext.createMediaElementSource(mediaElement);
     audioSource.connect(audioAnalyser);
     audioAnalyser.connect(audioContext.destination);
-
-    const resumeCtx = () => {
-      if (audioContext.state === 'suspended') audioContext.resume();
-    }
+    const resumeCtx = () => { if (audioContext.state === 'suspended') audioContext.resume(); }
     document.addEventListener('click', resumeCtx, { once: true });
     mediaElement.addEventListener('play', resumeCtx);
-
-  } catch (e) {
-    console.error('GravityField: 音頻初始化錯誤', e);
-  }
+  } catch (e) { console.error(e); }
 }
 
 const updateAudioData = () => {
@@ -217,35 +194,17 @@ const updateAudioData = () => {
     musicUniforms.high.value += (0 - musicUniforms.high.value) * 0.05;
     return;
   }
-
   audioAnalyser.getByteFrequencyData(frequencyData);
-
-  let bassSum = 0;
-  let highSum = 0;
+  let bassSum = 0, highSum = 0;
+  for (let i = 0; i < 5; i++) bassSum += frequencyData[i];
+  for (let i = 100; i < 150; i++) highSum += frequencyData[i];
   
-  for (let i = 0; i < 5; i++) {
-    bassSum += frequencyData[i];
-  }
-  for (let i = 100; i < 150; i++) {
-    highSum += frequencyData[i];
-  }
-
   const targetBass = (bassSum / 5 / 255.0) * FORCE_MULTIPLIER;
   const targetHigh = (highSum / 50 / 255.0) * FORCE_MULTIPLIER;
 
-  // =========== 請加入這行測試 ===========
-  // 如果有抓到音樂，這裡應該會一直跑出大於 0 的數字 (例如 0.5, 1.2, 0.8...)
-  // 如果一直是 0.00，代表抓取失敗
-  // console.log("Bass力道:", targetBass.toFixed(2), "High力道:", targetHigh.toFixed(2));
-  // ====================================
-
-  musicUniforms.bass.value += (targetBass - musicUniforms.bass.value) * 0.08;
-  musicUniforms.high.value += (targetHigh - musicUniforms.high.value) * 0.08;
+  musicUniforms.bass.value += (targetBass - musicUniforms.bass.value) * 0.1;
+  musicUniforms.high.value += (targetHigh - musicUniforms.high.value) * 0.1;
 }
-
-// ============================================================================
-// 4. Three.js 初始化
-// ============================================================================
 
 const init = () => {
   const container = canvasContainer.value
@@ -262,14 +221,12 @@ const init = () => {
   renderer = new THREE.WebGLRenderer( { alpha: true, antialias: true } )
   renderer.setPixelRatio( window.devicePixelRatio )
   renderer.setSize( width, height )
-  
   renderer.domElement.style.position = 'fixed'
   renderer.domElement.style.top = '0'
   renderer.domElement.style.left = '0'
   renderer.domElement.style.width = '100vw'
   renderer.domElement.style.height = '100vh'
   renderer.domElement.style.zIndex = '-1'
-  
   container.appendChild( renderer.domElement )
 
   initComputeRenderer()
@@ -278,29 +235,19 @@ const init = () => {
   initAudio()
 
   window.addEventListener( 'resize', onWindowResize )
-  
   animate()
 }
 
 const initGravityVisuals = () => {
   const geometry = new THREE.SphereGeometry( 30, 32, 32 ); 
   const colors = [0xff0055, 0x00ffaa, 0x5500ff];
-
   for(let i=0; i<3; i++) {
     const material = new THREE.MeshBasicMaterial( { 
-      color: colors[i],
-      transparent: true,
-      opacity: 0.9,
-      depthTest: false,
-      depthWrite: false 
+      color: colors[i], transparent: true, opacity: 0.9, depthTest: false, depthWrite: false 
     } );
-
     const sphere = new THREE.Mesh( geometry, material );
     sphere.renderOrder = 999; 
-    
-    const light = new THREE.PointLight( colors[i], 10, 600 );
-    sphere.add( light );
-
+    sphere.add( new THREE.PointLight( colors[i], 10, 600 ) );
     scene.add( sphere );
     gravitySpheres.push( sphere );
   }
@@ -308,51 +255,39 @@ const initGravityVisuals = () => {
 
 const initComputeRenderer = () => {
   gpuCompute = new GPUComputationRenderer( WIDTH, WIDTH, renderer )
-
   const dtPosition = gpuCompute.createTexture()
   const dtVelocity = gpuCompute.createTexture()
-
   fillTextures( dtPosition, dtVelocity )
-
   positionVariable = gpuCompute.addVariable( "texturePosition", positionFragmentShader, dtPosition )
   velocityVariable = gpuCompute.addVariable( "textureVelocity", velocityFragmentShader, dtVelocity )
-
   gpuCompute.setVariableDependencies( positionVariable, [ positionVariable, velocityVariable ] )
   gpuCompute.setVariableDependencies( velocityVariable, [ positionVariable, velocityVariable ] )
-
+  
   positionUniforms = positionVariable.material.uniforms
   velocityUniforms = velocityVariable.material.uniforms
-
   positionUniforms[ "time" ] = { value: 0.0 }
   positionUniforms[ "delta" ] = { value: 0.0 }
-  
   velocityUniforms[ "time" ] = { value: 1.0 }
   velocityUniforms[ "gravityPoints" ] = { value: gravityPoints }
   velocityUniforms[ "uMusicBass" ] = musicUniforms.bass;
-
-  const error = gpuCompute.init()
-  if ( error !== null ) console.error( error )
+  gpuCompute.init()
 }
 
+// 初始化邏輯 (全螢幕散佈)
 const fillTextures = ( texturePosition, textureVelocity ) => {
   const posArray = texturePosition.image.data
   const velArray = textureVelocity.image.data
   const aspect = window.innerWidth / window.innerHeight;
   const widthBounds = BOUNDS * Math.max(1, aspect);
   const heightBounds = BOUNDS * Math.max(1, 1/aspect); 
-  const depthBounds = BOUNDS;
   const widthHalf = widthBounds / 2;
   const heightHalf = heightBounds / 2;
-  const depthHalf = depthBounds / 2;
+  const depthHalf = BOUNDS / 2;
 
   for ( let k = 0, kl = posArray.length; k < kl; k += 4 ) {
-      const x = Math.random() * widthBounds - widthHalf
-      const y = Math.random() * heightBounds - heightHalf
-      const z = Math.random() * depthBounds - depthHalf
-
-      posArray[ k + 0 ] = x
-      posArray[ k + 1 ] = y
-      posArray[ k + 2 ] = z
+      posArray[ k + 0 ] = Math.random() * widthBounds - widthHalf
+      posArray[ k + 1 ] = Math.random() * heightBounds - heightHalf
+      posArray[ k + 2 ] = Math.random() * BOUNDS - depthHalf
       posArray[ k + 3 ] = 1
 
       velArray[ k + 0 ] = Math.random() * 0.2 - 0.1
@@ -367,18 +302,14 @@ const initParticles = () => {
   const positions = new Float32Array( WIDTH * WIDTH * 3 )
   const uvs = new Float32Array( WIDTH * WIDTH * 2 )
   let p = 0
-
   for ( let j = 0; j < WIDTH; j++ ) {
       for ( let i = 0; i < WIDTH; i++ ) {
           uvs[ p * 2 + 0 ] = i / ( WIDTH - 1 )
           uvs[ p * 2 + 1 ] = j / ( WIDTH - 1 )
-          positions[ p * 3 + 0 ] = 0;
-          positions[ p * 3 + 1 ] = 0;
-          positions[ p * 3 + 2 ] = 0;
+          positions[ p * 3 + 0 ] = 0; positions[ p * 3 + 1 ] = 0; positions[ p * 3 + 2 ] = 0;
           p++;
       }
   }
-
   geometry.setAttribute( 'position', new THREE.BufferAttribute( positions, 3 ) )
   geometry.setAttribute( 'uv', new THREE.BufferAttribute( uvs, 2 ) )
   geometry.boundingSphere = new THREE.Sphere( new THREE.Vector3(), 10000 )
@@ -391,16 +322,12 @@ const initParticles = () => {
       "uOpacity": { value: 0.0 },
       "uMusicHigh": musicUniforms.high 
   }
-
   const material = new THREE.ShaderMaterial( {
       uniforms: particleUniforms,
       vertexShader: particleVertexShader,
       fragmentShader: particleFragmentShader,
-      transparent: true,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending
+      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending
   } )
-
   particleMesh = new THREE.Points( geometry, material )
   particleMesh.matrixAutoUpdate = false
   particleMesh.updateMatrix()
@@ -415,21 +342,14 @@ const onWindowResize = () => {
   if (!camera || !renderer) return
   const width = window.innerWidth
   const height = window.innerHeight
-  
   camera.aspect = width / height
   camera.updateProjectionMatrix()
-  
   renderer.setSize( width, height )
   particleUniforms[ "cameraConstant" ].value = getCameraConstant( camera )
 }
 
-// ============================================================================
-// 5. 動畫迴圈
-// ============================================================================
-
 const animate = () => {
   animationId = requestAnimationFrame( animate )
-
   updateAudioData();
 
   const delta = 0.016;
@@ -440,41 +360,23 @@ const animate = () => {
   }
 
   let opacity = 0.0
-  if (accumulatedTime > 0.5) {
-    opacity = Math.min((accumulatedTime - 0.5) / 2.0, 1.0)
-  }
+  if (accumulatedTime > 0.5) opacity = Math.min((accumulatedTime - 0.5) / 2.0, 1.0)
   particleUniforms["uOpacity"].value = opacity
   particleUniforms["time"].value = accumulatedTime
 
-  gravityPoints[0].set(
-    Math.sin(accumulatedTime * 0.7) * 500, 
-    Math.cos(accumulatedTime * 0.5) * 400,
-    Math.sin(accumulatedTime * 0.3) * 500
-  )
-  gravityPoints[1].set(
-    Math.sin(accumulatedTime * 0.4 + 2.0) * 600,
-    Math.cos(accumulatedTime * 0.6) * 500,
-    Math.sin(accumulatedTime * 0.8) * 200
-  )
-  gravityPoints[2].set(
-    Math.sin(accumulatedTime * 1.2) * 400,
-    Math.cos(accumulatedTime * 0.9 + 1.0) * 400,
-    Math.sin(accumulatedTime * 1.1) * 400
-  )
+  // 移動重力球
+  gravityPoints[0].set(Math.sin(accumulatedTime * 0.7) * 500, Math.cos(accumulatedTime * 0.5) * 400, Math.sin(accumulatedTime * 0.3) * 500)
+  gravityPoints[1].set(Math.sin(accumulatedTime * 0.4 + 2.0) * 600, Math.cos(accumulatedTime * 0.6) * 500, Math.sin(accumulatedTime * 0.8) * 200)
+  gravityPoints[2].set(Math.sin(accumulatedTime * 1.2) * 400, Math.cos(accumulatedTime * 0.9 + 1.0) * 400, Math.sin(accumulatedTime * 1.1) * 400)
 
   for(let i=0; i<3; i++) {
     if(gravitySpheres[i]) {
       gravitySpheres[i].position.copy(gravityPoints[i])
-      
       const hue = (accumulatedTime * 0.1 + i * 0.3) % 1.0;
       const color = new THREE.Color().setHSL(hue, 0.8, 0.5);
       gravitySpheres[i].material.color.copy(color);
       gravitySpheres[i].children[0].color.copy(color);
-
-      // 球體大小固定
-      gravitySpheres[i].scale.setScalar(1.0);
-
-      // 燈光強度隨低音變化 (保留一點互動感)
+      gravitySpheres[i].scale.setScalar(1.0); // 大小固定
       gravitySpheres[i].children[0].intensity = 10 + (isPlaying ? musicUniforms.bass.value * 40 : 0);
     }
   }
@@ -484,33 +386,21 @@ const animate = () => {
   positionUniforms[ "delta" ].value = 1.0 / 3.0
 
   gpuCompute.compute()
-
   particleUniforms[ "texturePosition" ].value = gpuCompute.getCurrentRenderTarget( positionVariable ).texture
   particleUniforms[ "textureVelocity" ].value = gpuCompute.getCurrentRenderTarget( velocityVariable ).texture
-
   renderer.render( scene, camera )
 }
 
-onMounted(() => {
-  init()
-})
-
+onMounted(() => { init() })
 onBeforeUnmount(() => {
   window.removeEventListener('resize', onWindowResize)
   if (animationId) cancelAnimationFrame(animationId)
   if (checkTimer) clearInterval(checkTimer)
   if (audioContext) audioContext.close();
-  if (renderer) {
-    renderer.dispose()
-    renderer.forceContextLoss()
-    renderer.domElement.remove()
-  }
+  if (renderer) { renderer.dispose(); renderer.forceContextLoss(); renderer.domElement.remove() }
 })
 </script>
 
 <style scoped>
-.gravity-container {
-  display: block;
-  pointer-events: none; 
-}
+.gravity-container { display: block; pointer-events: none; }
 </style>
