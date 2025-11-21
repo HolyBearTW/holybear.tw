@@ -568,6 +568,9 @@ const animate = () => {
 }
 
 // 調整 Canvas 大小
+let resizeTimeout: number | null = null
+let lastWidth = 0
+
 const resizeCanvas = () => {
   const canvas = canvasRef.value
   if (!canvas) return
@@ -575,8 +578,24 @@ const resizeCanvas = () => {
   const width = window.innerWidth
   const height = window.innerHeight
   
+  // 忽略只有高度變化的 resize (移動端工具列顯示/隱藏)
+  if (lastWidth !== 0 && Math.abs(width - lastWidth) < 10) {
+    return
+  }
+  
+  lastWidth = width
   canvas.width = width
   canvas.height = height
+}
+
+// Debounced resize handler - 防止頻繁觸發
+const handleResize = () => {
+  if (resizeTimeout) {
+    clearTimeout(resizeTimeout)
+  }
+  resizeTimeout = window.setTimeout(() => {
+    resizeCanvas()
+  }, 150) // 150ms 延遲
 }
 
 // 初始化
@@ -588,6 +607,7 @@ onMounted(() => {
   loadFlowerSVG()
   
   resizeCanvas()
+  lastWidth = window.innerWidth
   
   const width = canvas.width
   const height = canvas.height
@@ -597,7 +617,7 @@ onMounted(() => {
   initInkBlots(width, height)
   initFireflies(width, height)
   
-  window.addEventListener('resize', resizeCanvas)
+  window.addEventListener('resize', handleResize)
   
   // 開始動畫
   animate()
@@ -608,7 +628,10 @@ onUnmounted(() => {
   if (animationId) {
     cancelAnimationFrame(animationId)
   }
-  window.removeEventListener('resize', resizeCanvas)
+  if (resizeTimeout) {
+    clearTimeout(resizeTimeout)
+  }
+  window.removeEventListener('resize', handleResize)
 })
 </script>
 
@@ -626,6 +649,8 @@ onUnmounted(() => {
   left: 0;
   width: 100vw;
   height: 100vh;
+  min-height: 100vh;
+  min-height: 100dvh; /* 動態視窗高度,支援移動端工具列變化 */
   z-index: -1;
   pointer-events: none;
   /* 移除固定黑色背景，讓 Canvas 繪製的漸變顯示 */

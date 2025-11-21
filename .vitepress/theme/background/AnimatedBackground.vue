@@ -167,11 +167,34 @@ const handleMouseMove = (e: MouseEvent) => {
 }
 
 // 處理視窗大小調整
+let resizeTimeout: number | null = null
+let lastWidth = 0
+
 const handleResize = () => {
   if (!canvas.value) return
-  canvas.value.width = window.innerWidth
-  canvas.value.height = window.innerHeight
-  initParticles(canvas.value.width, canvas.value.height)
+  
+  const width = window.innerWidth
+  const height = window.innerHeight
+  
+  // 忽略只有高度變化的 resize (移動端工具列顯示/隱藏)
+  if (lastWidth !== 0 && Math.abs(width - lastWidth) < 10) {
+    return
+  }
+  
+  lastWidth = width
+  canvas.value.width = width
+  canvas.value.height = height
+  initParticles(width, height)
+}
+
+// Debounced resize handler
+const debouncedResize = () => {
+  if (resizeTimeout) {
+    clearTimeout(resizeTimeout)
+  }
+  resizeTimeout = window.setTimeout(() => {
+    handleResize()
+  }, 150)
 }
 
 // 組件掛載時初始化
@@ -180,12 +203,13 @@ onMounted(() => {
   
   canvas.value.width = window.innerWidth
   canvas.value.height = window.innerHeight
+  lastWidth = window.innerWidth
   
   initParticles(canvas.value.width, canvas.value.height)
   animate()
   
   window.addEventListener('mousemove', handleMouseMove)
-  window.addEventListener('resize', handleResize)
+  window.addEventListener('resize', debouncedResize)
 })
 
 // 組件卸載時清理
@@ -193,8 +217,11 @@ onUnmounted(() => {
   if (animationId) {
     cancelAnimationFrame(animationId)
   }
+  if (resizeTimeout) {
+    clearTimeout(resizeTimeout)
+  }
   window.removeEventListener('mousemove', handleMouseMove)
-  window.removeEventListener('resize', handleResize)
+  window.removeEventListener('resize', debouncedResize)
 })
 </script>
 
@@ -213,6 +240,8 @@ onUnmounted(() => {
   left: 0;
   width: 100vw;
   height: 100vh;
+  min-height: 100vh;
+  min-height: 100dvh; /* 動態視窗高度,支援移動端工具列變化 */
   z-index: -1;
   pointer-events: none;
   opacity: 1;

@@ -5,6 +5,7 @@ import { useData } from 'vitepress'
 const { isDark } = useData()
 const canvas = ref<HTMLCanvasElement | null>(null)
 let animationId: number | null = null
+let ctx: CanvasRenderingContext2D | null = null
 let nodes: Node[] = []
 let dataFlows: DataFlow[] = []
 let hexagons: Hexagon[] = []
@@ -231,9 +232,11 @@ const drawScanlines = (ctx: CanvasRenderingContext2D, width: number, height: num
 // 主動畫循環
 const animate = () => {
   if (!canvas.value) return
-  
-  const ctx = canvas.value.getContext('2d', { willReadFrequently: true })
+  if (!ctx) {
+    ctx = canvas.value.getContext('2d') as CanvasRenderingContext2D | null
+  }
   if (!ctx) return
+  const c = ctx as CanvasRenderingContext2D
   
   const width = canvas.value.width
   const height = canvas.value.height
@@ -241,11 +244,11 @@ const animate = () => {
   time += 0.3
   
   // 清除畫布
-  ctx.fillStyle = isDark.value ? 'rgba(10, 15, 25, 0.95)' : 'rgba(250, 252, 255, 0.95)'
-  ctx.fillRect(0, 0, width, height)
+  c.fillStyle = isDark.value ? 'rgba(10, 15, 25, 0.95)' : 'rgba(250, 252, 255, 0.95)'
+  c.fillRect(0, 0, width, height)
   
   // 1. 繪製 3D 網格 (最底層)
-  draw3DGrid(ctx, width, height, time * 0.5)
+  draw3DGrid(c, width, height, time * 0.5)
   
   // 2. 繪製六邊形網格
   hexagons.forEach(hex => {
@@ -265,7 +268,7 @@ const animate = () => {
     // 平滑過渡
     hex.opacity += (hex.targetOpacity - hex.opacity) * 0.02
     
-    drawHexagon(ctx, hex.x, hex.y, hex.size * 0.5, hex.opacity)
+    drawHexagon(c, hex.x, hex.y, hex.size * 0.5, hex.opacity)
   })
   
   // 3. 繪製 Plexus 節點和連線
@@ -296,10 +299,10 @@ const animate = () => {
     node.y = Math.max(0, Math.min(height, node.y))
     
     // 繪製節點
-    ctx.beginPath()
-    ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2)
-    ctx.fillStyle = colors.value.node
-    ctx.fill()
+    c.beginPath()
+    c.arc(node.x, node.y, node.radius, 0, Math.PI * 2)
+    c.fillStyle = colors.value.node
+    c.fill()
     
     // 繪製連線
     nodes.slice(i + 1).forEach(other => {
@@ -309,14 +312,14 @@ const animate = () => {
       
       if (dist < 150) {
         const opacity = (1 - dist / 150) * 0.3
-        ctx.beginPath()
-        ctx.moveTo(node.x, node.y)
-        ctx.lineTo(other.x, other.y)
-        ctx.strokeStyle = isDark.value 
+        c.beginPath()
+        c.moveTo(node.x, node.y)
+        c.lineTo(other.x, other.y)
+        c.strokeStyle = isDark.value 
           ? `rgba(100, 200, 255, ${opacity})`
           : `rgba(80, 150, 220, ${opacity * 0.6})`
-        ctx.lineWidth = 0.5
-        ctx.stroke()
+        c.lineWidth = 0.5
+        c.stroke()
       }
     })
   })
@@ -344,33 +347,33 @@ const animate = () => {
       const trailPoint = flow.path[trailIndex]
       const trailOpacity = flow.opacity * (1 - i / 8)
       
-      ctx.beginPath()
-      ctx.arc(trailPoint.x, trailPoint.y, 2, 0, Math.PI * 2)
-      ctx.fillStyle = isDark.value 
+      c.beginPath()
+      c.arc(trailPoint.x, trailPoint.y, 2, 0, Math.PI * 2)
+      c.fillStyle = isDark.value 
         ? `rgba(0, 255, 200, ${trailOpacity})`
         : `rgba(0, 180, 150, ${trailOpacity})`
-      ctx.fill()
+      c.fill()
     }
     
     // 繪製當前位置（發光效果）
-    const gradient = ctx.createRadialGradient(x, y, 0, x, y, 8)
+    const gradient = c.createRadialGradient(x, y, 0, x, y, 8)
     gradient.addColorStop(0, isDark.value ? 'rgba(0, 255, 200, 0.8)' : 'rgba(0, 220, 180, 0.6)')
     gradient.addColorStop(1, 'rgba(0, 255, 200, 0)')
-    ctx.fillStyle = gradient
-    ctx.beginPath()
-    ctx.arc(x, y, 8, 0, Math.PI * 2)
-    ctx.fill()
+    c.fillStyle = gradient
+    c.beginPath()
+    c.arc(x, y, 8, 0, Math.PI * 2)
+    c.fill()
   })
   
   // 5. 繪製掃描線
-  drawScanlines(ctx, width, height, time)
+  drawScanlines(c, width, height, time)
   
   // 6. Glitch 效果（偶發）
   if (time > nextGlitchTime) {
     glitchTime = Math.random() * 8 + 3
     nextGlitchTime = time + Math.random() * 300 + 200
   }
-  drawGlitch(ctx, width, height)
+  drawGlitch(c, width, height)
   
   animationId = requestAnimationFrame(animate)
 }
@@ -382,13 +385,36 @@ const handleMouseMove = (e: MouseEvent) => {
 }
 
 // 視窗調整處理
+let resizeTimeout: number | null = null
+let lastWidth = 0
+
 const handleResize = () => {
   if (!canvas.value) return
-  canvas.value.width = window.innerWidth
-  canvas.value.height = window.innerHeight
-  initNodes(canvas.value.width, canvas.value.height)
-  initDataFlows(canvas.value.width, canvas.value.height)
-  initHexagons(canvas.value.width, canvas.value.height)
+  
+  const width = window.innerWidth
+  const height = window.innerHeight
+  
+  // 忽略只有高度變化的 resize (移動端工具列顯示/隱藏)
+  if (lastWidth !== 0 && Math.abs(width - lastWidth) < 10) {
+    return
+  }
+  
+  lastWidth = width
+  canvas.value.width = width
+  canvas.value.height = height
+  initNodes(width, height)
+  initDataFlows(width, height)
+  initHexagons(width, height)
+}
+
+// Debounced resize handler
+const debouncedResize = () => {
+  if (resizeTimeout) {
+    clearTimeout(resizeTimeout)
+  }
+  resizeTimeout = window.setTimeout(() => {
+    handleResize()
+  }, 150)
 }
 
 // 組件掛載
@@ -397,14 +423,17 @@ onMounted(() => {
   
   canvas.value.width = window.innerWidth
   canvas.value.height = window.innerHeight
+  lastWidth = window.innerWidth
   
   initNodes(canvas.value.width, canvas.value.height)
   initDataFlows(canvas.value.width, canvas.value.height)
   initHexagons(canvas.value.width, canvas.value.height)
+  // 取得 2D context，提示瀏覽器此畫布會頻繁讀取像素以提升效能
+  ctx = canvas.value.getContext('2d', { willReadFrequently: true }) as CanvasRenderingContext2D | null
   animate()
   
   window.addEventListener('mousemove', handleMouseMove)
-  window.addEventListener('resize', handleResize)
+  window.addEventListener('resize', debouncedResize)
 })
 
 // 組件卸載
@@ -412,8 +441,12 @@ onUnmounted(() => {
   if (animationId) {
     cancelAnimationFrame(animationId)
   }
+  ctx = null
+  if (resizeTimeout) {
+    clearTimeout(resizeTimeout)
+  }
   window.removeEventListener('mousemove', handleMouseMove)
-  window.removeEventListener('resize', handleResize)
+  window.removeEventListener('resize', debouncedResize)
 })
 </script>
 
@@ -432,6 +465,8 @@ onUnmounted(() => {
   left: 0;
   width: 100vw;
   height: 100vh;
+  min-height: 100vh;
+  min-height: 100dvh; /* 動態視窗高度,支援移動端工具列變化 */
   z-index: -1;
   pointer-events: none;
   opacity: 1;
@@ -472,4 +507,3 @@ onUnmounted(() => {
   animation: noise 8s infinite;
 }
 </style>
-

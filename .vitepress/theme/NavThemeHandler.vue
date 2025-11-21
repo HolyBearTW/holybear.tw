@@ -139,7 +139,6 @@ a.theme-active {
 
 a.theme-active::after {
   content: '';
-  margin-left: 6px;
   font-size: 12px;
   color: var(--vp-c-brand-1);
 }

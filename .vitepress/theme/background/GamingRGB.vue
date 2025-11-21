@@ -445,6 +445,9 @@ const animate = () => {
 }
 
 // 調整 Canvas 大小
+let resizeTimeout: number | null = null
+let lastWidth = 0
+
 const resizeCanvas = () => {
   const canvas = canvasRef.value
   if (!canvas) return
@@ -452,6 +455,12 @@ const resizeCanvas = () => {
   const width = window.innerWidth
   const height = window.innerHeight
   
+  // 忽略只有高度變化的 resize (移動端工具列顯示/隱藏)
+  if (lastWidth !== 0 && Math.abs(width - lastWidth) < 10) {
+    return
+  }
+  
+  lastWidth = width
   canvas.width = width
   canvas.height = height
   
@@ -461,6 +470,16 @@ const resizeCanvas = () => {
   // 重新初始化
   initParticles(width, height)
   initFlowingLights(width, height)
+}
+
+// Debounced resize handler
+const debouncedResize = () => {
+  if (resizeTimeout) {
+    clearTimeout(resizeTimeout)
+  }
+  resizeTimeout = window.setTimeout(() => {
+    resizeCanvas()
+  }, 150)
 }
 
 // 處理滑鼠移動
@@ -478,7 +497,9 @@ onMounted(() => {
   updateResponsive()
   
   resizeCanvas()
-  window.addEventListener('resize', resizeCanvas)
+  lastWidth = window.innerWidth
+  
+  window.addEventListener('resize', debouncedResize)
   window.addEventListener('mousemove', handleMouseMove)
   
   // 開始動畫
@@ -490,11 +511,14 @@ onUnmounted(() => {
   if (animationId) {
     cancelAnimationFrame(animationId)
   }
+  if (resizeTimeout) {
+    clearTimeout(resizeTimeout)
+  }
   // 停止所有 anime.js 動畫
   lightAnimations.forEach(anim => anim.pause && anim.pause())
   lightAnimations = []
   
-  window.removeEventListener('resize', resizeCanvas)
+  window.removeEventListener('resize', debouncedResize)
   window.removeEventListener('mousemove', handleMouseMove)
 })
 </script>
@@ -513,6 +537,8 @@ onUnmounted(() => {
   left: 0;
   width: 100vw;
   height: 100vh;
+  min-height: 100vh;
+  min-height: 100dvh; /* 動態視窗高度,支援移動端工具列變化 */
   z-index: -1;
   pointer-events: none;
 }

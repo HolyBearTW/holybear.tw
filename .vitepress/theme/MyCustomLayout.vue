@@ -21,6 +21,7 @@ import HyperOS from './background/HyperOSTheme.vue'
 import HyperOS2 from './background/HyperOS2Theme.vue'
 import Christmas from './background/ChristmasBackground.vue'
 import Halloween from './background/HalloweenBackground.vue'
+import GravityFieldSimulation from './background/GravityFieldSimulation.vue'
 import { 
   defaultTheme, 
   THEME_STORAGE_KEY, 
@@ -54,7 +55,7 @@ provide('toggle-appearance', async () => {
     // 3. === 統一的動畫邏輯 (適用於所有頁面) ===
     
             // 判斷是否為 canvas 動畫主題
-            const canvasThemes = ['tech', 'animated', 'gaming', 'slow3dfly'];
+            const canvasThemes = ['tech', 'animated', 'gaming', 'slow3dfly', 'gravityfield'];
             let overlayStyle = `
                 position: fixed;
                 top: 0; left: 0; right: 0; bottom: 0;
@@ -137,8 +138,8 @@ const handleThemeChange = (event: Event) => {
 const updateBodyClass = (theme: string) => {
   if (typeof document === 'undefined') return
   
-    // 移除所有主題 class（包含萬聖節主題）
-    document.body.classList.remove('theme-animated', 'theme-tech', 'theme-gaming', 'theme-slow3dfly', 'theme-halo', 'theme-hyperos', 'theme-hyperos2', 'theme-none', 'theme-christmas', 'theme-halloween')
+    // 移除所有主題 class（包含萬聖節與重力場主題）
+    document.body.classList.remove('theme-animated', 'theme-tech', 'theme-gaming', 'theme-slow3dfly', 'theme-halo', 'theme-hyperos', 'theme-hyperos2', 'theme-none', 'theme-christmas', 'theme-halloween', 'theme-gravityfield')
   
   // 添加當前主題 class
   if (theme && theme !== 'none') {
@@ -464,6 +465,7 @@ onUnmounted(() => {
         <HyperOS v-if="currentBackgroundTheme === 'hyperos'" />
         <HyperOS2 v-if="currentBackgroundTheme === 'hyperos2'" />
         <Halloween v-if="currentBackgroundTheme === 'halloween'" />
+        <GravityFieldSimulation v-if="currentBackgroundTheme === 'gravityfield'" />
         <Christmas v-if="currentBackgroundTheme === 'christmas'" />
     </ClientOnly>
 

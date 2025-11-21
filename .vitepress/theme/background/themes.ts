@@ -4,6 +4,7 @@
 
 export const backgroundThemes = [
   ['⚡ 科技感', 'tech', '⚡'],
+  ['🌌 引力場', 'gravityfield', '🌌'],
   ['🌊 柔和抽象', 'animated', '🌊'],
   ['🎮 電競RGB ', 'gaming', '🎮'],
   ['🌟 螢火蟲', 'slow3dfly', '🌟'],

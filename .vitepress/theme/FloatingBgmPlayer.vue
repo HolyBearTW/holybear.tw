@@ -535,11 +535,13 @@ function toggleRepeatOne() {
 
 <template>
   <audio
-    ref="audio"
-    preload="auto"
-    @ended="nextSong"
-    @loadedmetadata="onLoadedMetadata"
-  ></audio>
+  ref="audio"
+  id="global-audio-player" 
+  crossorigin="anonymous"
+  preload="auto"
+  @ended="nextSong"
+  @loadedmetadata="onLoadedMetadata"
+></audio>
 
   <transition name="player-fade">
     <div
