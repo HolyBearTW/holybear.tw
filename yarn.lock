@@ -823,10 +823,10 @@
     protobufjs "^7.2.5"
     yargs "^17.7.2"
 
-"@iconify-json/simple-icons@^1.2.58":
-  version "1.2.58"
-  resolved "https://registry.yarnpkg.com/@iconify-json/simple-icons/-/simple-icons-1.2.58.tgz#a1b7eef3cee6a969b34af66170d19e7341d9f9bf"
-  integrity sha512-XtXEoRALqztdNc9ujYBj2tTCPKdIPKJBdLNDebFF46VV1aOAwTbAYMgNsK5GMCpTJupLCmpBWDn+gX5SpECorQ==
+"@iconify-json/simple-icons@^1.2.59":
+  version "1.2.59"
+  resolved "https://registry.yarnpkg.com/@iconify-json/simple-icons/-/simple-icons-1.2.59.tgz#19b6a5eea538b74815d777839506f77f7455fc57"
+  integrity sha512-fYx/InyQsWFW4wVxWka3CGDJ6m/fXoTqWBSl+oA3FBXO5RhPAb6S3Y5bRgCPnrYevErH8VjAL0TZevIqlN2PhQ==
   dependencies:
     "@iconify/types" "*"
 
@@ -1606,19 +1606,19 @@
     "@vue/compiler-dom" "3.5.24"
     "@vue/shared" "3.5.24"
 
-"@vue/devtools-api@^8.0.3":
-  version "8.0.3"
-  resolved "https://registry.yarnpkg.com/@vue/devtools-api/-/devtools-api-8.0.3.tgz#18e5e8fe57dcb4b83ebfed714bb40da7d7ba55cb"
-  integrity sha512-YxZE7xNvvfq5XmjJh1ml+CzVNrRjuZYCuT5Xjj0u9RlXU7za/MRuZDUXcKfp0j7IvYkDut49vlKqbiQ1xhXP2w==
+"@vue/devtools-api@^8.0.5":
+  version "8.0.5"
+  resolved "https://registry.yarnpkg.com/@vue/devtools-api/-/devtools-api-8.0.5.tgz#313c563954b06b8254100ebc0d0e3773b1a06e18"
+  integrity sha512-DgVcW8H/Nral7LgZEecYFFYXnAvGuN9C3L3DtWekAncFBedBczpNW8iHKExfaM559Zm8wQWrwtYZ9lXthEHtDw==
   dependencies:
-    "@vue/devtools-kit" "^8.0.3"
+    "@vue/devtools-kit" "^8.0.5"
 
-"@vue/devtools-kit@^8.0.3":
-  version "8.0.3"
-  resolved "https://registry.yarnpkg.com/@vue/devtools-kit/-/devtools-kit-8.0.3.tgz#c07b36ff27734c366e33eb0f4ca82304ce2d566a"
-  integrity sha512-UF4YUOVGdfzXLCv5pMg2DxocB8dvXz278fpgEE+nJ/DRALQGAva7sj9ton0VWZ9hmXw+SV8yKMrxP2MpMhq9Wg==
+"@vue/devtools-kit@^8.0.5":
+  version "8.0.5"
+  resolved "https://registry.yarnpkg.com/@vue/devtools-kit/-/devtools-kit-8.0.5.tgz#d16927554adf527785706caa11e910ff4e00a998"
+  integrity sha512-q2VV6x1U3KJMTQPUlRMyWEKVbcHuxhqJdSr6Jtjz5uAThAIrfJ6WVZdGZm5cuO63ZnSUz0RCsVwiUUb0mDV0Yg==
   dependencies:
-    "@vue/devtools-shared" "^8.0.3"
+    "@vue/devtools-shared" "^8.0.5"
     birpc "^2.6.1"
     hookable "^5.5.3"
     mitt "^3.0.1"
@@ -1626,10 +1626,10 @@
     speakingurl "^14.0.1"
     superjson "^2.2.2"
 
-"@vue/devtools-shared@^8.0.3":
-  version "8.0.3"
-  resolved "https://registry.yarnpkg.com/@vue/devtools-shared/-/devtools-shared-8.0.3.tgz#0ce5d353de5d7f29d22b0683e82d0b09535adbfe"
-  integrity sha512-s/QNll7TlpbADFZrPVsaUNPCOF8NvQgtgmmB7Tip6pLf/HcOvBTly0lfLQ0Eylu9FQ4OqBhFpLyBgwykiSf8zw==
+"@vue/devtools-shared@^8.0.5":
+  version "8.0.5"
+  resolved "https://registry.yarnpkg.com/@vue/devtools-shared/-/devtools-shared-8.0.5.tgz#d97e887640fb2cad1e9b9e40fb46010d69852103"
+  integrity sha512-bRLn6/spxpmgLk+iwOrR29KrYnJjG9DGpHGkDFG82UM21ZpJ39ztUT9OXX3g+usW7/b2z+h46I9ZiYyB07XMXg==
   dependencies:
     rfdc "^1.4.1"
 
@@ -3843,20 +3843,20 @@ vitepress-plugin-tabs@^0.5.0:
   resolved "https://registry.yarnpkg.com/vitepress-plugin-tabs/-/vitepress-plugin-tabs-0.5.0.tgz#2b193a72ed36b9fcd63e3907d3044fe7b6cf3e4e"
   integrity sha512-SIhFWwGsUkTByfc2b279ray/E0Jt8vDTsM1LiHxmCOBAEMmvzIBZSuYYT1DpdDTiS3SuJieBheJkYnwCq/yD9A==
 
-vitepress@^2.0.0-alpha.13:
-  version "2.0.0-alpha.13"
-  resolved "https://registry.yarnpkg.com/vitepress/-/vitepress-2.0.0-alpha.13.tgz#f349b2c550a3c8419b6bf6335d8eeed0c9e6986e"
-  integrity sha512-bnUfnyL3TRqqYvOxQ68MxbFyI6qkQ8IQnhwIiGLSMF9GXloyfBCV1hnVJE6yA+Rlk+T+y19gzDKjKIMpiCIUvA==
+vitepress@^2.0.0-alpha.14:
+  version "2.0.0-alpha.14"
+  resolved "https://registry.yarnpkg.com/vitepress/-/vitepress-2.0.0-alpha.14.tgz#9041ba9b054c47123c4c68d1d92d6ea5e85f2395"
+  integrity sha512-byPDAwYGP10NvH6BVeQcVYMJ96B5LktgCpOUmDA9HdNsRJZUG5pr7pe3B/DDEy9nTzi5JyOdhYPXvhI+s5tGew==
   dependencies:
     "@docsearch/css" "^4.3.2"
     "@docsearch/js" "^4.3.2"
-    "@iconify-json/simple-icons" "^1.2.58"
+    "@iconify-json/simple-icons" "^1.2.59"
     "@shikijs/core" "^3.15.0"
     "@shikijs/transformers" "^3.15.0"
     "@shikijs/types" "^3.15.0"
     "@types/markdown-it" "^14.1.2"
     "@vitejs/plugin-vue" "^6.0.1"
-    "@vue/devtools-api" "^8.0.3"
+    "@vue/devtools-api" "^8.0.5"
     "@vue/shared" "^3.5.24"
     "@vueuse/core" "^14.0.0"
     "@vueuse/integrations" "^14.0.0"
