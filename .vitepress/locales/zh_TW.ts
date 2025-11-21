@@ -5,16 +5,22 @@ export default {
   description: '聖小熊的個人網站，收錄 HyperOS 模組、技術筆記與開發心得，專注於 Android 客製化與開源創作分享。',
   themeConfig: {
     nav: [
-      { text: '日誌', link: '/blog/' },
-      { text: '作品集', link: '/Mod' },
-      { text: '技術文件', link: '/docs/' },
-      { text: '簡轉繁', link: '/converter' },
-      { text: '短網址', link: 'https://go.holybear.tw/' },
-      { text: '贊助', link: 'https://paypal.me/holybear0610' },
-      { 
-        text: '佈景主題', 
-        items: generateNavThemes()
-      }
+  { text: '日誌', link: '/blog/' },
+  { text: '作品集', link: '/Mod' },
+  { text: '技術文件', link: '/docs/' },
+  { text: '贊助', link: 'https://paypal.me/holybear0610' },
+  {
+    text: '實用工具',
+    items: [
+      { text: '📝 文章編輯器', link: '/editmd' },
+      { text: '🔄 簡繁轉換器', link: '/converter' },
+      { text: '🔗 短網址服務', link: 'https://go.holybear.tw/' }
+    ]
+  },
+  {
+    text: '佈景主題',
+    items: generateNavThemes()
+  }
     ],
     sidebarMenuLabel: '日誌列表',
     returnToTopLabel: '回到頂部',

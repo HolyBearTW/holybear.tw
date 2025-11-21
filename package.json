@@ -10,12 +10,23 @@
     "vue": "^3.5.24"
   },
   "dependencies": {
+    "@tiptap/extension-character-count": "^3.11.0",
+    "@tiptap/extension-highlight": "^3.11.0",
+    "@tiptap/extension-placeholder": "^3.11.0",
+    "@tiptap/extension-task-item": "^3.11.0",
+    "@tiptap/extension-task-list": "^3.11.0",
+    "@tiptap/extension-text-align": "^3.11.0",
+    "@tiptap/extension-youtube": "^3.11.0",
+    "@tiptap/starter-kit": "^3.11.0",
+    "@tiptap/vue-3": "^3.11.0",
     "animejs": "^4.2.2",
     "chart.js": "^4.5.1",
     "firebase": "^12.6.0",
+    "markdown-it": "^14.1.0",
     "medium-zoom": "^1.1.0",
     "opencc-js": "^1.0.5",
     "three": "^0.181.2",
+    "turndown": "^7.2.2",
     "vue-chartjs": "^5.3.3",
     "vue-instantsearch": "^4.22.3"
   },

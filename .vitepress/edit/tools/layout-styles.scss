@@ -1,0 +1,100 @@
+/* ===== 多欄布局樣式 - 從 @lando/vitepress-theme-default-plus 移植 ===== */
+
+/* 兩欄布局 */
+.half {
+  &.custom-block {
+    width: 50%;
+    padding: 1px;
+    display: inline-block;
+    vertical-align: top;
+    box-sizing: border-box;
+  }
+}
+
+/* 三欄布局 */
+.third {
+  &.custom-block {
+    width: 33%;
+    padding: 1px;
+    display: inline-block;
+    vertical-align: top;
+    box-sizing: border-box;
+  }
+}
+
+/* 居中布局 */
+.center {
+  &.custom-block {
+    text-align: center;
+    padding: 0;
+    img {
+      margin: auto;
+    }
+  }
+}
+
+/* 左對齊 */
+.left {
+  &.custom-block {
+    float: left;
+    padding: 1em 2em;
+    padding-left: 0;
+    width: auto;
+    text-align: center;
+    max-width: 50%;
+  }
+}
+
+/* 右對齊 */
+.right {
+  &.custom-block {
+    float: right;
+    padding: 1em 2em;
+    width: auto;
+    text-align: center;
+    max-width: 50%;
+  }
+}
+
+/* ===== 響應式設計 ===== */
+
+@media (max-width: 767px) {
+  .half, .third {
+    &.custom-block {
+      margin: 0 auto;
+      width: 100%;
+      padding: 0;
+      margin-bottom: 10px;
+      img {
+        width: 100%
+      }
+    }
+  }
+}
+
+@media (min-width: 400px) {
+  .sidebar-end {
+    flex: auto;
+    display: flex;
+    align-items: flex-end;
+    padding-bottom: 16px;
+  }
+  .VPSidebar {
+    padding-bottom: 0px !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .left, .right {
+    &.custom-block {
+      float: none;
+      margin: 0 auto;
+      width: 100%;
+      padding: 0;
+      margin-bottom: 10px;
+      img {
+        width: 100%
+      }
+    }
+  }
+}
