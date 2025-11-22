@@ -381,11 +381,99 @@ watch(() => props.isVisible, async (visible) => {
   border: 1px solid var(--vp-c-divider);
   border-radius: 8px;
   box-shadow: var(--vp-shadow-3);
-  width: 320px;
+  width: 320px; /* Default desktop width */
   max-height: 400px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+}
+
+@media (max-width: 767px) {
+  .slash-menu {
+    width: calc(100% - 2rem); /* Full width with some padding */
+    left: 1rem !important; /* Center on screen, override inline style */
+    transform: none !important; /* Remove horizontal transform if any */
+    max-height: 50vh; /* Limit height to prevent being hidden by virtual keyboard */
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+
+  .menu-search {
+    padding: 0.5rem;
+  }
+
+  .search-input {
+    padding: 0.6rem;
+    font-size: 1rem;
+  }
+
+  .menu-item {
+    padding: 0.6rem 0.75rem; /* Larger padding for touch */
+    gap: 0.5rem;
+  }
+
+  .item-icon {
+    width: 2.2rem; /* Larger icon container */
+    height: 2.2rem;
+    font-size: 1.1rem;
+  }
+
+  .item-title {
+    font-size: 1rem;
+  }
+
+  .item-description {
+    font-size: 0.8rem;
+    white-space: normal; /* Allow description to wrap */
+    -webkit-line-clamp: 2; /* Limit to 2 lines */
+    -webkit-box-orient: vertical;
+    display: -webkit-box;
+    overflow: hidden;
+  }
+}
+
+@media (max-width: 767px) {
+  .slash-menu {
+    width: calc(100% - 2rem); /* Full width with some padding */
+    left: 1rem !important; /* Center on screen, override inline style */
+    transform: none !important; /* Remove horizontal transform if any */
+    max-height: 50vh; /* Limit height to prevent being hidden by virtual keyboard */
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+
+  .menu-search {
+    padding: 0.5rem;
+  }
+
+  .search-input {
+    padding: 0.6rem;
+    font-size: 1rem;
+  }
+
+  .menu-item {
+    padding: 0.6rem 0.75rem; /* Larger padding for touch */
+    gap: 0.5rem;
+  }
+
+  .item-icon {
+    width: 2.2rem; /* Larger icon container */
+    height: 2.2rem;
+    font-size: 1.1rem;
+  }
+
+  .item-title {
+    font-size: 1rem;
+  }
+
+  .item-description {
+    font-size: 0.8rem;
+    white-space: normal; /* Allow description to wrap */
+    -webkit-line-clamp: 2; /* Limit to 2 lines */
+    -webkit-box-orient: vertical;
+    display: -webkit-box;
+    overflow: hidden;
+  }
 }
 
 .menu-search {

@@ -24,6 +24,15 @@
         </div>
       </div>
     </div>
+
+    <!-- 新增固定工具列 -->
+    <FixedToolbar
+      :editor="editor"
+      @insertImage="handleInsertImage"
+      @insertYoutube="handleInsertYoutube"
+      @insertTable="handleInsertTable"
+      @insertTabs="handleInsertTabs"
+    />
     
     <div class="editor-container">
       <!-- Bubble Menu (選取文字時顯示) -->
@@ -45,7 +54,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onBeforeUnmount, watch, onMounted } from 'vue'
+import { ref, onBeforeUnmount } from 'vue'
 import { useEditor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import TaskList from '@tiptap/extension-task-list'
@@ -55,8 +64,10 @@ import TextAlign from '@tiptap/extension-text-align'
 import Placeholder from '@tiptap/extension-placeholder'
 import CharacterCount from '@tiptap/extension-character-count'
 import Highlight from '@tiptap/extension-highlight'
+import Strike from '@tiptap/extension-strike'
 import SlashMenu from './SlashMenu.vue'
 import BubbleMenu from './BubbleMenu.vue'
+import FixedToolbar from './FixedToolbar.vue'
 // 導入自訂節點
 import { 
   CenterNode, RowNode, ThirdNode, HalfNode,
@@ -74,7 +85,8 @@ const props = defineProps<{
 
 // 定義 emits
 const emit = defineEmits<{
-  update: [html: string]
+  update: [html: string],
+  showExportPreview: [markdownContent: string] // New emit for showing export preview
 }>()
 
 const showSlashMenu = ref(false)
@@ -105,6 +117,9 @@ const editor = useEditor({
       heading: {
         levels: [1, 2, 3, 4, 5, 6],
       },
+      // StarterKit already includes Strike, but we explicitly add it below
+      // to ensure it's properly configured and recognized.
+      strike: false, // Disable strike from StarterKit to avoid conflicts
     }),
     DraggableImage.configure({
       inline: false,
@@ -130,6 +145,14 @@ const editor = useEditor({
     CharacterCount,
     Highlight.configure({
       multicolor: false,
+    }),
+    Strike.configure({
+      // Configure Strike to render as <del> for consistency with markdown-it
+      HTMLAttributes: {
+        tag: 'del',
+      },
+      // parseHTML is not a configurable option here; Strike extension already handles <del> by default.
+      // Removed to fix TypeScript error.
     }),
     // Link extension 已由 StarterKit 內建，無需重複註冊
     // 自訂版面節點 (注意順序: Row 必須在 Half/Third 之前)
@@ -235,14 +258,8 @@ const exportMarkdown = () => {
     // 生成檔案名稱 (使用當前時間)
     const now = new Date()
     const timestamp = now.toISOString().slice(0, 19).replace(/[:.]/g, '-')
-    const filename = `vitepress-document-${timestamp}.md`
-    
-    // 下載檔案
-    downloadMarkdown(markdown, filename)
-    
-    console.log('✅ Markdown 導出成功!')
-    console.log('📄 檔案名稱:', filename)
-    console.log('📝 內容預覽:', markdown.slice(0, 200) + '...')
+    // 觸發父組件顯示預覽彈窗
+    emit('showExportPreview', markdown)
   } catch (error) {
     console.error('❌ Markdown 導出失敗:', error)
     alert('Markdown 導出失敗,請查看控制台了解詳情')
@@ -254,6 +271,66 @@ const clearContent = () => {
   
   if (confirm('確定要清空所有內容嗎?')) {
     editor.value.commands.clearContent()
+  }
+}
+
+// FixedToolbar 事件處理器
+const handleInsertImage = () => {
+  if (!editor.value) return
+  const url = prompt('請輸入圖片 URL:')
+  if (url) {
+    try {
+      editor.value.chain().focus().setImage({ src: url }).run()
+    } catch (e) {
+      console.error('插入圖片失敗:', e)
+      alert('插入圖片失敗，請查看控制台')
+    }
+  }
+}
+
+const handleInsertYoutube = () => {
+  if (!editor.value) return
+  const url = prompt('請輸入 YouTube 影片 URL 或 ID:')
+  if (url) {
+    try {
+      // 使用與 SlashMenu 相同的命令名稱
+      ;(editor.value as any).chain().focus().setYoutubeVideo({ src: url }).run()
+    } catch (e) {
+      console.error('插入 YouTube 影片失敗:', e)
+      alert('插入 YouTube 影片失敗，請查看控制台')
+    }
+  }
+}
+
+const handleInsertTable = () => {
+  if (!editor.value) return
+  const rowsStr = prompt('請輸入表格列數 (rows):', '2')
+  const colsStr = prompt('請輸入表格欄數 (cols):', '2')
+  const rows = parseInt(rowsStr || '2')
+  const cols = parseInt(colsStr || '2')
+  if (rows > 0 && cols > 0) {
+    try {
+      ;(editor.value as any).chain().focus().insertTable({ rows, cols, withHeaderRow: true }).run()
+    } catch (e) {
+      console.error('插入表格失敗:', e)
+      alert('插入表格失敗，請查看控制台')
+    }
+  }
+}
+
+const handleInsertTabs = () => {
+  if (!editor.value) return
+  const countStr = prompt('請輸入標籤頁數量 (2-8):', '2')
+  const count = parseInt(countStr || '2')
+  if (count >= 2 && count <= 8) {
+    try {
+      ;(editor.value as any).chain().focus().setTabs('default', count).run()
+    } catch (e) {
+      console.error('插入 Tabs 失敗:', e)
+      alert('插入 Tabs 失敗，請查看控制台')
+    }
+  } else {
+    alert('標籤頁數量必須在 2-8 之間')
   }
 }
 
@@ -441,10 +518,43 @@ onBeforeUnmount(() => {
   position: relative;
   flex: 1;
 }
+
+@media (max-width: 768px) {
+  .editor-toolbar {
+    flex-wrap: wrap;
+    height: auto;
+    padding: 0.75rem;
+  }
+  .toolbar-btn {
+    padding: 0.6rem 0.9rem;
+  }
+  .toolbar-info {
+    width: 100%;
+    margin-left: 0;
+    justify-content: flex-end;
+    margin-top: 0.5rem;
+  }
+}
 </style>
 
 <style>
 /* TipTap 編輯器全域樣式 */
+
+/* BubbleMenu and SlashMenu Mobile Optimizations */
+@media (max-width: 768px) {
+  .tiptap-bubble-menu {
+    transform: scale(1.1);
+    transform-origin: bottom;
+  }
+  .tiptap-bubble-menu button {
+    padding: 0.6rem !important;
+  }
+  .slash-menu {
+    max-height: 250px;
+    overflow-y: auto;
+  }
+}
+
 .vp-editor-prose {
   padding: 2rem;
   min-height: 600px;
@@ -608,6 +718,12 @@ onBeforeUnmount(() => {
   background-color: rgba(255, 208, 0, 0.4);
   padding: 0.1em 0.3em;
   border-radius: 3px;
+}
+
+/* 刪除線樣式 */
+.vp-editor-prose s,
+.vp-editor-prose del { /* Add del tag for consistency with markdown-it output */
+  text-decoration: line-through;
 }
 
 /* 連結樣式 */

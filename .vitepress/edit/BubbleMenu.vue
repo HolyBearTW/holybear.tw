@@ -119,8 +119,16 @@
         </button>
         
         <button
-          @click="editor.chain().focus().toggleBlockquote().run()"
-          :class="{ 'is-active': editor.isActive('blockquote') }"
+          @click="() => {
+            if (editor?.isActive('bulletList') || editor?.isActive('orderedList') || editor?.isActive('taskList')) {
+              // 如果在列表內，先清除當前節點的格式 (轉為段落)，然後應用引用
+              editor?.chain().focus().clearNodes().toggleBlockquote().run();
+            } else {
+              // 否則，直接切換引用塊
+              editor?.chain().focus().toggleBlockquote().run();
+            }
+          }"
+          :class="{ 'is-active': editor?.isActive('blockquote') }"
           class="menu-btn"
           title="引用區塊"
         >
@@ -352,6 +360,8 @@ onBeforeUnmount(() => {
   display: flex;
   gap: 0.25rem;
   animation: fadeIn 0.2s ease;
+  flex-wrap: wrap; /* Allow wrapping on smaller screens */
+  justify-content: center; /* Center items when wrapped */
 }
 
 @keyframes fadeIn {
@@ -369,6 +379,8 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  flex-wrap: wrap; /* Allow groups to wrap */
+  justify-content: center;
 }
 
 .button-group {
@@ -377,8 +389,8 @@ onBeforeUnmount(() => {
 }
 
 .menu-btn {
-  width: 32px;
-  height: 32px;
+  width: 38px; /* Slightly larger for touch */
+  height: 38px; /* Slightly larger for touch */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -388,6 +400,7 @@ onBeforeUnmount(() => {
   cursor: pointer;
   transition: all 0.2s;
   color: var(--vp-c-text-2);
+  font-size: 1.1rem; /* Larger icons */
 }
 
 .menu-btn:hover {
@@ -402,16 +415,17 @@ onBeforeUnmount(() => {
 }
 
 .heading-select {
-  height: 32px;
-  padding: 0 0.5rem;
+  height: 38px; /* Match button height */
+  padding: 0 0.75rem;
   background: var(--vp-c-bg);
   border: 1px solid var(--vp-c-divider);
   border-radius: 6px;
   color: var(--vp-c-text-1);
-  font-size: 0.85rem;
+  font-size: 0.95rem; /* Slightly larger font */
   cursor: pointer;
   outline: none;
   transition: all 0.2s;
+  min-width: 100px; /* Ensure it's readable */
 }
 
 .heading-select:hover {

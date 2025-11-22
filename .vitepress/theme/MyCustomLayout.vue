@@ -596,23 +596,8 @@ onUnmounted(() => {
         }
     /* === ENTRANCE ANIMATION END === */
 
-    :deep(.vp-doc h1:first-of-type) {
-        display: none !important;
-    }
-
     .blog-post-header-injected {
-        position: relative;
-        width: 100%;
-        padding-left: var(--vp-content-padding);
-        padding-right: var(--vp-content-padding);
-        padding-top: 0;
-        padding-bottom: 0;
-        margin-bottom: 0;
-        box-sizing: border-box;
-        background-color: transparent;
-        border: none;
-        box-shadow: none;
-        z-index: 1;
+        padding-top: 30px !important;
     }
 
     :deep(.vp-doc) {

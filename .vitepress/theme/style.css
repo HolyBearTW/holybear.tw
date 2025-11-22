@@ -16,6 +16,8 @@
   --vp-c-brand-dark: #00CCEE !important;
   --vp-c-brand-darker: #0099BB;
   --vp-c-brand-dimm: rgba(100, 108, 255, 0.08) !important;
+  --vp-button-brand-text: #000000 !important;
+  --vp-button-brand-hover-text: #000000 !important;
 
 /* 強制使用藍色（indigo）作為品牌色，覆蓋 vitepress-theme-default-plus 的紅色 */
   --vp-c-brand-1: var(--vp-c-indigo-1) !important;
@@ -105,10 +107,8 @@ html body:has(.theme-transition-overlay) .VPNavBar::before,
 html body:has(.theme-transition-overlay) .VPNavBar::after,
 html body:has(.theme-transition-overlay) .VPLocalNav,
 html body:has(.theme-transition-overlay) .VPLocalNav *,
-html body:has(.theme-transition-overlay) .VPSidebar:not(.curtain),
-html body:has(.theme-transition-overlay) aside:not(.curtain),
-html body:has(.theme-transition-overlay) .divider,
-html body:has(.theme-transition-overlay) .divider-line {
+html body:has(.theme-transition-overlay) .VPLocalNav::before,
+html body:has(.theme-transition-overlay) .VPLocalNav::after {
   transition: color 0.8s ease 0.3s !important;
 }
 
@@ -207,6 +207,7 @@ html:not(.dark) .VPHome .VPButton.alt {
   border-color: var(--vp-c-brand) !important;
   color: var(--vp-c-brand) !important;
   background: rgba(0, 255, 238, 0.1) !important;
+  box-shadow: 0 2px 8px rgba(0, 255, 238, 0.2) !important;
   transform: translateY(-1px) !important;
 }
 html:not(.dark) .VPHome .VPButton.alt:hover {
@@ -339,9 +340,9 @@ input[type="range"]::-moz-range-thumb {
 }
 .VPImage.logo {
   border-radius: 30px !important;
-  aspect-ratio: 1/1;
-  object-fit: cover;
-  background: transparent;
+  aspect-ratio: 1/1 !important;
+  object-fit: cover !important;
+  background: transparent !important;
   box-shadow: none !important;
   filter: none !important;
 }
@@ -755,8 +756,36 @@ body:not(:has(.VPHome)) .VPNavScreen {
 
 /* ==================== 小調整 / 方便閱讀 ==================== */
 /* 首個 h2 標題微調（文章頁） */
-.vp-doc > div > h2:first-child { border-top: none !important; padding-top: 5px !important; margin-top: 5px !important; }
-.vp-doc > div > h2:first-child .header-anchor { margin-top: -20px; }
+.vp-doc > div > h1:first-child,
+.vp-doc > div > h2:first-child { 
+  border-top: none !important; padding-top: 5px !important; margin-top: 5px !important; 
+}
+
+.vp-doc > div > h1:first-child .header-anchor,
+.vp-doc > div > h2:first-child .header-anchor { 
+  margin-top: -20px;
+}
+
+/* 首個 h1 和 h2 標題微調（編輯頁） */
+/* 針對沒有 blog 標頭的情況 */
+.markdown-preview.vp-doc > h1:first-child,
+.markdown-preview.vp-doc > h2:first-child {
+  border-top: none !important;
+  padding-top: 30px !important;
+  margin-top: 5px !important;
+}
+
+/* 針對勾選 blog 的情況（編輯頁） */
+.markdown-preview.vp-doc > .blog-post-header-injected + h1,
+.markdown-preview.vp-doc > .blog-post-header-injected + h2 {
+  border-top: none !important;
+  padding-top: 30px !important;
+  margin-top: 5px !important;
+}
+
+.markdown-preview.vp-doc > h2:first-child .header-anchor {
+  margin-top: -20px;
+}
 
 /* 只保留 aside 外層透明 */
 .aside { background: transparent !important; background-color: transparent !important; }

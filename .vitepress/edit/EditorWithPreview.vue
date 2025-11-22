@@ -1,92 +1,139 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, onBeforeUnmount, computed, defineAsyncComponent, Suspense } from 'vue'
+import { ref, watch, onMounted, onBeforeUnmount, computed, defineAsyncComponent, Suspense, nextTick } from 'vue'
 import { exportToMarkdown } from './utils/markdownExporter'
 import DocumentHistory from './DocumentHistory.vue'
 import MarkdownPreview from './MarkdownPreview.vue'
 import MarkdownIt from 'markdown-it'
+import fm from 'front-matter'
+import markdownItFrontMatter from 'markdown-it-front-matter'
 
-// 異步載入編輯器組件
-const VPEditor = defineAsyncComponent(() => import('./VPEditor.vue'))
-
-// 初始化 markdown-it
-const md = new MarkdownIt({
-  html: true,
-  breaks: true,
-  linkify: true
-})
-
-// 歷史記錄介面
+// 常數與 interface
+const historyUpdateKey = ref(0) // 用來強制刷新歷史列表
+const isEditorActive = ref(true) // 用來強制重置編輯器
+const CURRENT_DOC_KEY = 'vitepress-editor-current'
+const HISTORY_KEY = 'vitepress-editor-history'
 interface HistoryItem {
   id: string
   title: string
   content: string
-  createdAt: number
+  markdown?: string
   updatedAt: number
 }
 
-// LocalStorage 鍵名
-const CURRENT_DOC_KEY = 'vitepress-editor-current'
-const HISTORY_KEY = 'vitepress-editor-history'
+// 初始化時加入插件，回呼函式可以留空，它的作用就是把 Front Matter 從渲染結果中移出
+const md = new MarkdownIt({ html: true, breaks: true, linkify: true })
+    .use(markdownItFrontMatter, (fm: string) => { // Added type annotation
+        // fm 是解析出來的內容，這裡我們單純只是為了讓它從 HTML 中消失
+        // 所以不做任何事
+    })
+    .enable('strikethrough') // Explicitly enable strikethrough for this markdown-it instance
+// Front Matter 相關
+const documentTitle = ref('')
+const documentDescription = ref('')
+const documentImage = ref('')
+const documentTag = ref<string[]>([])
+const documentCategory = ref<string[]>([])
+const documentBlog = ref(true)
+const documentTagString = ref('')
+const documentCategoryString = ref('')
 
-// 當前文檔 ID
+// 主要內容
 const currentDocId = ref<string>('')
-
-// 編輯器引用
 const editorRef = ref<any>(null)
-
-// 文檔標題
-const documentTitle = ref('未命名文檔')
-
-// 編輯器內容 (HTML)
 const editorContent = ref('')
-
-// Markdown 內容 (用於預覽)
 const markdownContent = ref('')
-
-// 是否顯示預覽
 const showPreview = ref(true)
-
-// 是否顯示歷史記錄
 const showHistory = ref(true)
-
-// 編輯模式: 'visual' 或 'markdown'
 const editMode = ref<'visual' | 'markdown'>('visual')
-
-// Markdown 源碼 (純文本編輯模式)
 const markdownSource = ref('')
-
-// 分隔線位置 (用於調整大小)
-const historyWidth = ref(280) // 歷史記錄寬度
-const editorWidth = ref(50) // 編輯器寬度百分比
-
-// 自動保存計時器
+const historyWidth = ref(280)
+const editorWidth = ref(50)
 let autoSaveTimer: number | null = null
-
-// 歷史記錄組件引用
 const historyRef = ref<any>(null)
-
-// 是否正在拖拽調整大小
 const isResizing = ref(false)
 const isResizingHistory = ref(false)
+const showFrontMatter = ref(true) // New: Controls visibility of front matter inputs
+const showExportConfirmation = ref(false) // New: Controls visibility of export confirmation modal
+const exportMarkdownContent = ref('') // New: Content to display in the export confirmation modal
+
+// Helper to generate full markdown with front matter (used for saving/exporting)
+const generateFullMarkdownString = (bodyContent: string) => {
+  const contentLines: string[] = [];
+  if (documentTitle.value) {
+    contentLines.push(`title: ${documentTitle.value}`);
+  }
+  if (documentDescription.value) {
+    contentLines.push(`description: ${documentDescription.value}`);
+  }
+  if (documentImage.value) {
+    contentLines.push(`image: ${documentImage.value}`);
+  }
+  if (documentTag.value.length) {
+    contentLines.push(`tag:\n  - ${documentTag.value.join('\n  - ')}`);
+  }
+  if (documentCategory.value.length) {
+    contentLines.push(`category:\n  - ${documentCategory.value.join('\n  - ')}`);
+  }
+  // Always include blog field to explicitly set its value
+  contentLines.push(`blog: ${documentBlog.value}`);
+
+  let frontMatterBlock = '';
+  if (contentLines.length > 0) { // Only add --- if there's actual front matter content
+    frontMatterBlock = '---' + '\n' + contentLines.join('\n') + '\n' + '---';
+  }
+  
+  return `${frontMatterBlock}\n\n${bodyContent}`.trim();
+};
+
+// Helper to extract body content for preview, removing front matter
+const getBodyContentForPreview = (source: string) => {
+  try {
+    const parsed = fm(source);
+    return parsed.body || '';
+  } catch (error) {
+    console.warn('解析 Front Matter 失敗，顯示原始內容:', error);
+    return source; // Fallback to raw source if parsing fails
+  }
+};
+
+const previewBodyMarkdown = computed(() => { // Renamed for clarity
+  if (editMode.value === 'visual') {
+    return getBodyContentForPreview(markdownContent.value);
+  } else {
+    return getBodyContentForPreview(markdownSource.value);
+  }
+});
+
+// Helper to generate styled HTML for the header (title, category, tags)
+
+// markdown-it 初始化
+
+const VPEditor = defineAsyncComponent(() => import('./VPEditor.vue'))
 
 // 生成新文檔 ID
-const generateDocId = () => {
-  return `doc_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
-}
+const generateDocId = () => `doc_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
 
-// 載入當前文檔
+// 載入當前文檔，解析 Front Matter
 const loadCurrentDoc = () => {
   try {
-    const stored = localStorage.getItem(CURRENT_DOC_KEY)
+    const stored = localStorage.getItem('vitepress-editor-current')
     if (stored) {
       const doc = JSON.parse(stored)
       currentDocId.value = doc.id
-      documentTitle.value = doc.title
+      const parsed = fm(doc.markdown || '')
+      const attrs: Record<string, any> = parsed.attributes || {}
+      documentTitle.value = 'title' in attrs && typeof attrs.title === 'string' ? attrs.title : (doc.title || '')
+      documentDescription.value = 'description' in attrs && typeof attrs.description === 'string' ? attrs.description : ''
+      documentImage.value = 'image' in attrs && typeof attrs.image === 'string' ? attrs.image : ''
+      documentTag.value = 'tag' in attrs && Array.isArray(attrs.tag) ? attrs.tag.map(String) : ('tag' in attrs && typeof attrs.tag === 'string' ? [attrs.tag] : [])
+      documentCategory.value = 'category' in attrs && Array.isArray(attrs.category) ? attrs.category.map(String) : ('category' in attrs && typeof attrs.category === 'string' ? [attrs.category] : [])
+      documentBlog.value = 'blog' in attrs && typeof attrs.blog === 'boolean' ? attrs.blog : true
+      documentTagString.value = documentTag.value.join('\n')
+      documentCategoryString.value = documentCategory.value.join('\n')
       editorContent.value = doc.content
-      markdownContent.value = doc.markdown || ''
+      markdownContent.value = parsed.body || doc.markdown || ''
       markdownSource.value = doc.markdown || ''
     } else {
-      // 創建新文檔
       createNewDoc()
     }
   } catch (error) {
@@ -98,21 +145,29 @@ const loadCurrentDoc = () => {
 // 創建新文檔
 const createNewDoc = () => {
   currentDocId.value = generateDocId()
-  documentTitle.value = '未命名文檔'
+  documentTitle.value = ''
+  documentDescription.value = ''
+  documentImage.value = ''
+  documentTag.value = []
+  documentCategory.value = []
+  documentBlog.value = true
+  documentTagString.value = ''
+  documentCategoryString.value = ''
   editorContent.value = ''
   markdownContent.value = ''
   markdownSource.value = ''
   saveCurrentDoc()
 }
 
-// 保存當前文檔
+// 保存當前文檔（合併 Front Matter）
 const saveCurrentDoc = () => {
   try {
+    const markdown = generateFullMarkdownString(markdownContent.value);
     const doc = {
       id: currentDocId.value,
-      title: documentTitle.value,
+      title: documentTitle.value, // Keep documentTitle.value here for doc object, it's the internal ref
       content: editorContent.value,
-      markdown: markdownContent.value,
+      markdown,
       updatedAt: Date.now()
     }
     localStorage.setItem(CURRENT_DOC_KEY, JSON.stringify(doc))
@@ -121,78 +176,85 @@ const saveCurrentDoc = () => {
   }
 }
 
-// 保存到歷史記錄
-const saveToHistory = () => {
-  try {
-    // 讀取現有歷史
-    let history: HistoryItem[] = []
-    const stored = localStorage.getItem(HISTORY_KEY)
-    if (stored) {
-      history = JSON.parse(stored)
-    }
+// 導出 Markdown 文件（包含 Front Matter）
 
-    // 查找是否已存在
-    const existingIndex = history.findIndex(item => item.id === currentDocId.value)
-    
-    const historyItem: HistoryItem = {
-      id: currentDocId.value,
-      title: documentTitle.value,
-      content: markdownContent.value,
-      createdAt: existingIndex >= 0 ? history[existingIndex].createdAt : Date.now(),
-      updatedAt: Date.now()
-    }
-
-    if (existingIndex >= 0) {
-      // 更新現有記錄
-      history[existingIndex] = historyItem
-    } else {
-      // 新增記錄
-      history.unshift(historyItem)
-    }
-
-    // 限制歷史記錄數量 (最多 50 條)
-    if (history.length > 50) {
-      history = history.slice(0, 50)
-    }
-
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(history))
-    
-    // 刷新歷史記錄列表
-    if (historyRef.value) {
-      historyRef.value.loadHistory()
-    }
-  } catch (error) {
-    console.error('保存歷史記錄失敗:', error)
-  }
+// Tag/Category textarea 處理
+watch(documentTag, (val) => {
+  documentTagString.value = val.join(', ') // 使用逗號和空格重新組合
+})
+watch(documentTitle, (val) => {
+  console.log('documentTitle changed:', val);
+});
+watch(documentCategory, (val) => {
+  documentCategoryString.value = val.join(', ') // 使用逗號和空格重新組合
+})
+const updateTag = () => {
+  documentTag.value = documentTagString.value.split(/,|\r?\n/).filter(Boolean).map(s => s.trim()) // 支援逗號和換行符，並移除空白
+}
+const updateCategory = () => {
+  documentCategory.value = documentCategoryString.value.split(/,|\r?\n/).filter(Boolean).map(s => s.trim()) // 支援逗號和換行符，並移除空白
 }
 
-// 從編輯器更新內容
+// 其他 UI/功能函式（如 handleEditorUpdate, scheduleAutoSave, ...）請依原本檔案保留
+// 補齊 template 綁定的函式與 computed 變數
+const scheduleAutoSave = () => {
+  if (autoSaveTimer) clearTimeout(autoSaveTimer)
+  autoSaveTimer = window.setTimeout(() => {
+    saveCurrentDoc()
+    // 這裡可加 saveToHistory()
+  }, 2000)
+}
+
+const handleManualSave = () => {
+  if (autoSaveTimer) {
+    clearTimeout(autoSaveTimer);
+    autoSaveTimer = null;
+  }
+  saveCurrentDoc();
+  saveToHistory();
+  historyUpdateKey.value++; // Force refresh of history list
+  alert('已手動儲存文件！'); // Provide feedback to the user
+};
+
 const handleEditorUpdate = (html: string) => {
   editorContent.value = html
-  
-  // 轉換為 Markdown
   try {
     markdownContent.value = exportToMarkdown(html)
     markdownSource.value = markdownContent.value
   } catch (error) {
     console.error('轉換 Markdown 失敗:', error)
   }
-  
-  // 啟動自動保存
   scheduleAutoSave()
 }
 
-// 排程自動保存
-const scheduleAutoSave = () => {
-  if (autoSaveTimer) {
-    clearTimeout(autoSaveTimer)
+// 保存到歷史記錄
+const saveToHistory = () => {
+  try {
+    let history: HistoryItem[] = []
+    const stored = localStorage.getItem(HISTORY_KEY)
+    if (stored) {
+      history = JSON.parse(stored)
+    }
+    const doc: HistoryItem = {
+      id: currentDocId.value,
+      title: documentTitle.value,
+      content: markdownContent.value,
+      markdown: markdownSource.value,
+      updatedAt: Date.now()
+    }
+    const existingIndex = history.findIndex(item => item.id === currentDocId.value)
+    if (existingIndex !== -1) {
+      history[existingIndex] = doc
+    } else {
+      history.unshift(doc)
+    }
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(history))
+  } catch (error) {
+    console.error('保存歷史失敗:', error)
   }
-  
-  autoSaveTimer = window.setTimeout(() => {
-    saveCurrentDoc()
-    saveToHistory()
-  }, 2000) // 2 秒後自動保存
 }
+
+// 已移除重複宣告，僅保留唯一一份
 
 // 載入歷史記錄項目
 const handleLoadHistory = (item: HistoryItem) => {
@@ -229,6 +291,10 @@ const toggleHistory = () => {
   showHistory.value = !showHistory.value
 }
 
+const toggleMoreActions = () => {
+  showFrontMatter.value = !showFrontMatter.value
+}
+
 // 切換編輯模式
 const toggleEditMode = () => {
   if (editMode.value === 'visual') {
@@ -258,26 +324,84 @@ const updateMarkdownSource = () => {
   scheduleAutoSave()
 }
 
-// 導出 Markdown 文件
+// 導出 Markdown 文件（包含 Front Matter）
 const exportDocument = () => {
-  const blob = new Blob([markdownContent.value], { type: 'text/markdown' })
+  exportMarkdownContent.value = generateFullMarkdownString(markdownContent.value);
+  showExportConfirmation.value = true; // Show the confirmation modal
+};
+
+const confirmExport = () => {
+  const markdown = exportMarkdownContent.value;
+  const blob = new Blob([markdown], { type: 'text/markdown' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `${documentTitle.value}.md`
+  a.download = `${documentTitle.value || '未命名文件'}.md`; // Fallback for download name
   a.click()
   URL.revokeObjectURL(url)
-}
+  showExportConfirmation.value = false; // Close the modal after download
+};
+
+const cancelExport = () => {
+  showExportConfirmation.value = false; // Just close the modal
+};
+
+const handleShowExportPreview = (markdownContent: string) => {
+  exportMarkdownContent.value = markdownContent;
+  showExportConfirmation.value = true;
+};
+
+const copyExportContent = async () => {
+  try {
+    await navigator.clipboard.writeText(exportMarkdownContent.value);
+    alert('Markdown 內容已複製到剪貼簿！');
+  } catch (err) {
+    console.error('複製失敗:', err);
+    alert('複製失敗，請手動複製。');
+  }
+};
 
 // 創建新文檔 (按鈕)
-const handleNewDoc = () => {
-  if (confirm('確定要創建新文檔嗎?當前未保存的更改將會丟失。')) {
-    createNewDoc()
-    if (editorRef.value) {
-      editorRef.value.commands.setContent('')
-    }
+const handleNewDoc = async () => {
+  // 1. 先把當前看到的內容存入歷史紀錄
+  saveToHistory();
+
+  // 2. 檢查是否有重複標題
+  let history: HistoryItem[] = [];
+  const storedHistory = localStorage.getItem(HISTORY_KEY);
+  if (storedHistory) {
+    history = JSON.parse(storedHistory);
   }
-}
+
+  const currentTitle = documentTitle.value.trim();
+  const hasDuplicateTitle = currentTitle && history.some(item => item.title.trim() === currentTitle);
+
+  if (hasDuplicateTitle) {
+    const confirmMessage = `歷史紀錄中已存在標題為「${currentTitle}」的文件。您確定要創建一個新的同名文件嗎？(當前內容已保存為歷史紀錄中的一個新條目)`;
+    if (!confirm(confirmMessage)) {
+      // 使用者選擇取消，則不繼續創建新文檔
+      return;
+    }
+  } else if (!confirm('確定要創建新文檔嗎？(當前內容已保存至歷史紀錄)')) {
+    // 如果沒有重複標題，但使用者取消了新建操作
+    return;
+  }
+  
+  // 3. 🔴 關鍵：讓歷史列表組件強制刷新
+  historyUpdateKey.value++; 
+
+  // 4. 暫時殺死編輯器
+  isEditorActive.value = false;
+  
+  // 5. 重置資料
+  createNewDoc();
+  
+  // 6. 等待 Vue 處理完 DOM 更新
+  await nextTick();
+  
+  // 7. 復活編輯器 (此時它會讀取到 <p></p>，顯示為空白)
+  isEditorActive.value = true;
+};
 
 // 開始調整編輯器大小
 const startResizeEditor = (e: MouseEvent) => {
@@ -316,6 +440,20 @@ const startResizeHistory = (e: MouseEvent) => {
   }
   
   const onMouseUp = () => {
+      // Tag/Category textarea 處理
+      watch(documentTag, (val) => {
+        documentTagString.value = val.join('\n')
+      })
+      watch(documentCategory, (val) => {
+        documentCategoryString.value = val.join('\n')
+      })
+
+      const updateTag = () => {
+        documentTag.value = documentTagString.value.split(/\r?\n/).filter(Boolean)
+      }
+      const updateCategory = () => {
+        documentCategory.value = documentCategoryString.value.split(/\r?\n/).filter(Boolean)
+      }
     isResizingHistory.value = false
     document.removeEventListener('mousemove', onMouseMove)
     document.removeEventListener('mouseup', onMouseUp)
@@ -344,6 +482,16 @@ const previewStyle = computed(() => {
 // 組件掛載
 onMounted(() => {
   loadCurrentDoc()
+  // Debug: expose helper functions to window for easy console inspection
+  ;(window as any).getEditorHTML = () => editorRef?.value?.getHTML?.() || null
+  ;(window as any).exportedMD = () => {
+    try {
+      const html = editorRef?.value?.getHTML?.() || ''
+      return exportToMarkdown(html)
+    } catch (e) {
+      return null
+    }
+  }
 })
 
 // 組件卸載
@@ -351,6 +499,7 @@ onBeforeUnmount(() => {
   if (autoSaveTimer) {
     clearTimeout(autoSaveTimer)
   }
+  // Ensure save actions are always performed on unmount
   saveCurrentDoc()
   saveToHistory()
 })
@@ -360,57 +509,100 @@ onBeforeUnmount(() => {
   <div class="editor-with-preview">
     <!-- 頂部工具列 -->
     <div class="top-toolbar">
-      <div class="toolbar-left">
-        <input
-          v-model="documentTitle"
-          type="text"
-          class="doc-title-input"
-          placeholder="輸入文檔標題..."
-          @blur="scheduleAutoSave"
-        />
+      <!-- 前置元數據控制區 -->
+      <div class="front-matter-toggle-wrapper">
+        <button @click="toggleMoreActions" class="toolbar-btn front-matter-toggle-btn">
+          <i :class="showFrontMatter ? 'fas fa-angle-up' : 'fas fa-angle-down'"></i>
+          <span class="btn-text">Front Matter</span>
+        </button>
       </div>
-      
-      <div class="toolbar-center">
+
+      <div class="toolbar-spacer"></div>
+
+      <!-- 主要功能按鈕 -->
+      <div class="main-action-buttons">
         <button
           @click="toggleEditMode"
-          class="mode-toggle-btn"
+          class="toolbar-btn mode-toggle-btn"
           :class="{ active: editMode === 'markdown' }"
           title="切換編輯模式"
         >
           <i :class="editMode === 'visual' ? 'fas fa-code' : 'fas fa-eye'"></i>
-          {{ editMode === 'visual' ? 'Markdown 源碼' : '視覺編輯' }}
+          <span class="btn-text">{{ editMode === 'visual' ? '源碼' : '視覺' }}</span>
         </button>
-      </div>
-      
-      <div class="toolbar-right">
         <button @click="toggleHistory" class="toolbar-btn" :class="{ active: showHistory }">
           <i class="fas fa-history"></i>
-          歷史記錄
+          <span class="btn-text">歷史</span>
         </button>
         <button @click="togglePreview" class="toolbar-btn" :class="{ active: showPreview }">
           <i class="fas fa-eye"></i>
-          預覽
+          <span class="btn-text">預覽</span>
         </button>
         <button @click="exportDocument" class="toolbar-btn">
           <i class="fas fa-download"></i>
-          導出
+          <span class="btn-text">導出</span>
         </button>
         <button @click="handleNewDoc" class="toolbar-btn">
           <i class="fas fa-file-alt"></i>
-          新建
+          <span class="btn-text">新建</span>
+        </button>
+        <button @click="handleManualSave" class="toolbar-btn save-btn">
+          <i class="fas fa-save"></i>
+          <span class="btn-text">儲存</span>
         </button>
       </div>
     </div>
 
+    <!-- 前置元數據輸入區 -->
+    <div v-if="showFrontMatter" class="front-matter-inputs">
+      <input
+        v-model="documentCategoryString"
+        type="text"
+        class="doc-title-input"
+        placeholder="分類 category (逗號分隔)"
+        @blur="updateCategory"
+      />
+      <input
+        v-model="documentTitle"
+        type="text"
+        class="doc-title-input"
+        placeholder="標題 title..."
+        @blur="scheduleAutoSave"
+      />
+      <input
+        v-model="documentDescription"
+        type="text"
+        class="doc-title-input"
+        placeholder="描述 description..."
+        @blur="scheduleAutoSave"
+      />
+      <input
+        v-model="documentImage"
+        type="text"
+        class="doc-title-input"
+        placeholder="封面圖片 image..."
+        @blur="scheduleAutoSave"
+      />
+      <input
+        v-model="documentTagString"
+        type="text"
+        class="doc-title-input"
+        placeholder="標籤 tag (逗號分隔)"
+        @blur="updateTag"
+      />
+      <label class="blog-checkbox-label">Blog <input type="checkbox" v-model="documentBlog" /></label>
+    </div>
+
     <!-- 主內容區 -->
-    <div class="main-content">
+    <div class="main-content" :class="{ 'history-open': showHistory }">
       <!-- 歷史記錄側邊欄 -->
       <div v-if="showHistory" class="history-sidebar" :style="{ width: historyWidth + 'px' }">
         <DocumentHistory
-          ref="historyRef"
-          :current-doc-id="currentDocId"
-          @load="handleLoadHistory"
-          @delete="handleDeleteHistory"
+        :key="historyUpdateKey"
+         ref="historyRef"
+        :current-doc-id="currentDocId"
+        @load="handleLoadHistory"
+        @delete="handleDeleteHistory"
         />
         
         <!-- 調整大小手柄 -->
@@ -422,13 +614,16 @@ onBeforeUnmount(() => {
         <!-- 編輯器區 -->
         <div class="editor-section" :style="editorStyle">
           <!-- 視覺編輯模式 -->
-          <div v-if="editMode === 'visual'" class="visual-editor">
+          <div v-if="editMode === 'visual'" class="visual-editor" @contextmenu.prevent="() => {}">
             <Suspense>
               <template #default>
                 <VPEditor
+                  v-if="isEditorActive"
+                  :key="currentDocId"
                   ref="editorRef"
                   :initial-content="editorContent"
                   @update="handleEditorUpdate"
+                  @showExportPreview="handleShowExportPreview"
                 />
               </template>
               <template #fallback>
@@ -456,6 +651,7 @@ onBeforeUnmount(() => {
               class="markdown-textarea"
               placeholder="# 開始編寫 Markdown..."
               @input="updateMarkdownSource"
+              @contextmenu.prevent="() => {}"
             ></textarea>
           </div>
           
@@ -469,19 +665,43 @@ onBeforeUnmount(() => {
 
         <!-- 預覽區 -->
         <div v-if="showPreview" class="preview-section" :style="previewStyle">
-          <MarkdownPreview :markdown="markdownContent" />
+            <MarkdownPreview
+              :markdown="previewBodyMarkdown"
+              :title="documentTitle"
+              :categories="documentCategory"
+              :tags="documentTag"
+              :is-blog-post="documentBlog"
+            />
         </div>
+        {{ console.log('EditorWithPreview: documentTitle =', documentTitle) }}
+        {{ console.log('EditorWithPreview: documentCategory =', documentCategory) }}
+        {{ console.log('EditorWithPreview: documentTag =', documentTag) }}
       </div>
     </div>
 
     <!-- 拖拽遮罩 -->
     <div v-if="isResizing || isResizingHistory" class="resize-overlay"></div>
+
+    <!-- 導出確認彈窗 -->
+    <div v-if="showExportConfirmation" class="export-modal-overlay">
+      <div class="export-modal">
+        <h3>導出文件預覽</h3>
+        <div class="export-preview-content">
+          <pre>{{ exportMarkdownContent }}</pre>
+        </div>
+        <div class="export-modal-actions">
+          <button @click="confirmExport" class="modal-btn confirm-btn">確認導出</button>
+          <button @click="copyExportContent" class="modal-btn copy-btn">複製</button>
+          <button @click="cancelExport" class="modal-btn cancel-btn">取消</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <style scoped>
 .editor-with-preview {
-  height: calc(100vh - 64px);
+  height: calc(100vh - var(--vp-nav-height, 64px)); /* Use CSS variable for nav height */
   display: flex;
   flex-direction: column;
   background: var(--vp-c-bg);
@@ -490,74 +710,20 @@ onBeforeUnmount(() => {
 
 /* 頂部工具列 */
 .top-toolbar {
-  height: 60px;
+  height: 60px; /* Fixed height for consistency */
   padding: 0 1rem;
   background: var(--vp-c-bg-soft);
   border-bottom: 1px solid var(--vp-c-divider);
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 1rem;
-  flex-shrink: 0;
+  flex-shrink: 0; /* Prevent toolbar from shrinking */
+  z-index: 101; /* Ensure it's on top */
+  position: relative; /* Needed for z-index to work */
 }
 
-.toolbar-left,
-.toolbar-center,
-.toolbar-right {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.toolbar-left {
-  flex: 1;
-  min-width: 0;
-}
-
-.doc-title-input {
-  width: 100%;
-  max-width: 400px;
-  padding: 0.5rem 0.75rem;
-  background: var(--vp-c-bg);
-  border: 1px solid var(--vp-c-divider);
-  border-radius: 6px;
-  color: var(--vp-c-text-1);
-  font-size: 1rem;
-  font-weight: 600;
-  transition: all 0.2s;
-}
-
-.doc-title-input:focus {
-  outline: none;
-  border-color: var(--vp-c-brand-1);
-  background: var(--vp-c-bg-alt);
-}
-
-.mode-toggle-btn {
-  padding: 0.5rem 1rem;
-  background: var(--vp-c-bg);
-  border: 1px solid var(--vp-c-divider);
-  border-radius: 6px;
-  color: var(--vp-c-text-1);
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  white-space: nowrap;
-}
-
-.mode-toggle-btn:hover {
-  background: var(--vp-c-bg-alt);
-  border-color: var(--vp-c-brand-2);
-}
-
-.mode-toggle-btn.active {
-  background: var(--vp-c-brand-soft);
-  border-color: var(--vp-c-brand-1);
-  color: var(--vp-c-brand-1);
+.toolbar-spacer {
+  flex-grow: 1;
 }
 
 .toolbar-btn {
@@ -585,6 +751,86 @@ onBeforeUnmount(() => {
   background: var(--vp-c-brand-soft);
   border-color: var(--vp-c-brand-1);
   color: var(--vp-c-brand-1);
+}
+
+.toolbar-btn .btn-text {
+  display: inline;
+}
+
+/* Front Matter Toggle */
+.front-matter-toggle-wrapper {
+  flex-shrink: 0;
+}
+
+.front-matter-toggle-btn .btn-text {
+  font-weight: 600;
+  color: var(--vp-c-text-1);
+}
+
+/* Main Action Buttons */
+.main-action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.mode-toggle-btn {
+  font-weight: 500;
+}
+
+/* 前置元數據輸入區 */
+.front-matter-inputs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--vp-c-bg-soft);
+  border-bottom: 1px solid var(--vp-c-divider);
+  transition: all 0.2s ease-out;
+  flex-shrink: 0; /* Prevent from shrinking */
+  overflow-y: auto; /* Allow scrolling if content is too tall */
+}
+
+.doc-title-input {
+  flex: 1;
+  min-width: 150px; /* Allow wrapping */
+  padding: 0.5rem 0.75rem;
+  background: var(--vp-c-bg);
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 6px;
+  color: var(--vp-c-text-1);
+  font-size: 0.9rem;
+  font-weight: 400;
+  transition: all 0.2s;
+}
+
+.doc-title-input:focus {
+  outline: none;
+  border-color: var(--vp-c-brand-1);
+  background: var(--vp-c-bg-alt);
+}
+
+.blog-checkbox-label {
+  display: flex;
+  align-items: center;
+  font-size: 0.9rem;
+  color: var(--vp-c-text-2);
+  white-space: nowrap;
+  gap: 0.5rem;
+}
+
+.blog-checkbox-label input[type="checkbox"] {
+  margin-top: 0;
+  transform: scale(1.1);
+}
+
+/* 主內容區 */
+.main-content {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  min-height: 0;
 }
 
 /* 主內容區 */
@@ -625,6 +871,7 @@ onBeforeUnmount(() => {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  cursor: text; /* 確保游標顯示為文本編輯狀態 */
 }
 
 /* Markdown 編輯器 */
@@ -740,40 +987,281 @@ onBeforeUnmount(() => {
 }
 
 /* 響應式設計 */
-@media (max-width: 960px) {
+
+/* 桌面版佈局 (默認) */
+@media (min-width: 960px) {
+  .front-matter-toggle-wrapper .btn-text {
+    display: none; /* Hide text on desktop as icon is enough */
+  }
+}
+
+/* 平板和桌面 */
+@media (min-width: 768px) {
   .top-toolbar {
-    height: auto;
-    flex-wrap: wrap;
-    padding: 0.75rem;
+    padding: 0.75rem 1.5rem;
   }
-  
-  .toolbar-left,
-  .toolbar-center,
-  .toolbar-right {
-    width: 100%;
-    justify-content: space-between;
+  .main-action-buttons .btn-text {
+    display: inline;
   }
-  
   .doc-title-input {
-    max-width: none;
+    min-width: 200px;
+  }
+}
+
+/* 手機版佈局 */
+@media (max-width: 767px) {
+  .top-toolbar {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    height: auto;
+    flex-wrap: wrap; /* Allow wrapping if buttons get too crowded */
+  }
+
+  .toolbar-spacer {
+    display: none; /* Hide spacer on mobile */
+  }
+
+  .main-action-buttons {
+    width: auto;
+    justify-content: flex-end;
+    flex-wrap: nowrap;
+    gap: 0.25rem;
+  }
+
+  .main-action-buttons .toolbar-btn {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.8rem;
   }
   
+  .main-action-buttons .btn-text {
+    display: none; /* Hide text on smaller buttons */
+  }
+
+  .front-matter-toggle-wrapper {
+    flex-grow: 1; /* Allow front matter toggle to take available space */
+  }
+
+  .front-matter-toggle-btn {
+    width: auto;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.8rem;
+  }
+
+  .front-matter-inputs {
+    flex-direction: column;
+    padding: 0.75rem;
+    gap: 0.75rem;
+  }
+
+  .doc-title-input {
+    width: 100%;
+    min-width: auto;
+    font-size: 0.9rem;
+    padding: 0.6rem 0.8rem;
+  }
+
+  .blog-checkbox-label {
+    justify-content: flex-end;
+    font-size: 0.85rem;
+  }
+
   .history-sidebar {
-    width: 100% !important;
-    max-width: 280px;
+    position: fixed;
+    top: var(--top-toolbar-mobile-height); /* Dynamic top based on toolbar */
+    left: 0;
+    width: 100%;
+    height: calc(100% - var(--top-toolbar-mobile-height));
+    z-index: 100;
+    background: var(--vp-c-bg);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    transform: translateX(-100%);
+    transition: transform 0.3s ease-out;
   }
-  
+
+  .history-sidebar[style*="width"] { /* Override inline style if present */
+    width: 100% !important;
+  }
+
+  .main-content.history-open .history-sidebar {
+    transform: translateX(0);
+  }
+
+  /* When history is open, hide content-area */
+  .main-content.history-open .content-area {
+    display: none;
+  }
+
+  .content-area {
+    flex-direction: column;
+    display: flex;
+  }
+
   .editor-section {
+    flex: 1; /* 讓編輯器佔用可用空間 */
     width: 100% !important;
+    border-right: none;
+    border-bottom: 1px solid var(--vp-c-divider);
+    order: 1;
+    min-height: 50%; /* 確保至少有一半高度 */
+  }
+
+  .preview-section {
+    flex: 1; /* 讓預覽佔用可用空間 */
+    width: 100% !important;
+    border-right: none;
+    border-top: 1px solid var(--vp-c-divider);
+    order: 2;
+    margin-top: 0;
+    min-height: 50%; /* 確保至少有一半高度 */
+  }
+}
+
+/* Tablet (Portrait) */
+@media (min-width: 768px) and (max-width: 959px) {
+  .front-matter-inputs {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .doc-title-input {
+    min-width: auto;
+  }
+
+  .main-action-buttons .btn-text {
+    display: inline; /* Show text on tablet */
+  }
+
+  .history-sidebar {
+    width: 300px !important; /* Fixed width for tablet sidebar */
+    position: static;
+    transform: translateX(0);
+  }
+
+  .main-content.history-open .history-sidebar {
+    transform: translateX(0);
+  }
+
+  .content-area {
+    flex-direction: row;
+    display: flex;
   }
   
-  .preview-section {
-    display: none !important;
+  .main-content.history-open .content-area {
+    display: flex; /* Show content area even if history is open */
   }
 }
 
 /* 暗色模式 */
 .dark .markdown-textarea {
   background: var(--vp-c-bg-alt);
+}
+
+/* Export Modal Styles */
+.export-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.export-modal {
+  background-color: var(--vp-c-bg);
+  border-radius: 8px;
+  padding: 2rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  width: 90%;
+  max-width: 800px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  color: var(--vp-c-text-1);
+}
+
+.export-modal h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: var(--vp-c-brand-1);
+  font-size: 1.5rem;
+  border-bottom: 1px solid var(--vp-c-divider);
+  padding-bottom: 0.75rem;
+}
+
+.export-preview-content {
+  flex-grow: 1;
+  background-color: var(--vp-c-bg-soft);
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 4px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  overflow: auto;
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  white-space: pre-wrap; /* Preserve whitespace and wrap long lines */
+}
+
+.export-preview-content pre {
+  margin: 0;
+  white-space: pre-wrap; /* Ensure preformatted text wraps */
+}
+
+.export-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+.modal-btn {
+  padding: 0.6rem 1.2rem;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.modal-btn.confirm-btn {
+  background-color: var(--vp-c-brand-1);
+  color: #fff;
+}
+
+html.dark .modal-btn.confirm-btn {
+  color: #000;
+}
+
+.modal-btn.confirm-btn:hover {
+  background-color: var(--vp-c-brand-2);
+}
+
+.modal-btn.cancel-btn {
+  background-color: var(--vp-c-bg-alt);
+  color: var(--vp-c-text-2);
+  border-color: var(--vp-c-divider);
+}
+
+.modal-btn.cancel-btn:hover {
+  background-color: var(--vp-c-divider);
+  color: var(--vp-c-text-1);
+}
+
+.modal-btn.copy-btn {
+  background-color: var(--vp-c-brand-soft);
+  color: var(--vp-c-brand-1);
+  border-color: var(--vp-c-brand-1);
+}
+
+.modal-btn.copy-btn:hover {
+  background-color: var(--vp-c-brand-2);
+  color: #fff;
 }
 </style>
