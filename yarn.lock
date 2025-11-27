@@ -1406,10 +1406,10 @@
   resolved "https://registry.npmjs.org/@tiptap/extension-underline/-/extension-underline-3.11.0.tgz"
   integrity sha512-D3PsS/84RlQKFjd5eerMIUioC0mNh4yy1RRV/WbXx6ugu+6T+0hT42gNk9Ap8pDsVQZCk0SHfDyBEUFC2KOwKw==
 
-"@tiptap/extension-youtube@^3.11.0":
-  version "3.11.0"
-  resolved "https://registry.npmjs.org/@tiptap/extension-youtube/-/extension-youtube-3.11.0.tgz"
-  integrity sha512-BEPFdA+wrNZer4Ewp5lqOAKx4wTGVfX7ep+UCxnxtMpfpIF1TaNZe3Dt89Wh6ZgV/TnSsA/boB0Q4UXn90LVIQ==
+"@tiptap/extension-youtube@^3.11.1":
+  version "3.11.1"
+  resolved "https://registry.yarnpkg.com/@tiptap/extension-youtube/-/extension-youtube-3.11.1.tgz#bb4c4ae8b73940715b25b8816106013bc3a1164c"
+  integrity sha512-9iWj7jbggY0neNuRf7U3DL1chvIuywW88+r4WIA+7O4s+gSGDVvwb9PAavi/Jprv4lhehNr4XVmHQdMnzSNPuQ==
 
 "@tiptap/extensions@^3.11.0":
   version "3.11.0"
