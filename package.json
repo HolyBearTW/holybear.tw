@@ -14,7 +14,7 @@
     "@tiptap/extension-character-count": "^3.11.1",
     "@tiptap/extension-highlight": "^3.11.0",
     "@tiptap/extension-placeholder": "^3.11.1",
-    "@tiptap/extension-table": "^3.11.0",
+    "@tiptap/extension-table": "^3.11.1",
     "@tiptap/extension-table-cell": "^3.11.0",
     "@tiptap/extension-table-header": "^3.11.0",
     "@tiptap/extension-table-row": "^3.11.0",
