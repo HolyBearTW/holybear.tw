@@ -23,7 +23,7 @@
     "@tiptap/extension-text-align": "^3.11.1",
     "@tiptap/extension-youtube": "^3.11.1",
     "@tiptap/starter-kit": "^3.11.1",
-    "@tiptap/vue-3": "^3.11.0",
+    "@tiptap/vue-3": "^3.11.1",
     "animejs": "^4.2.2",
     "chart.js": "^4.5.1",
     "firebase": "^12.6.0",
