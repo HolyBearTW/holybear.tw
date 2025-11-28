@@ -300,10 +300,24 @@ function playMusic() {
   if (!audio.value) return
   audio.value.volume = volume.value
   audio.value.loop = repeatOne.value
+
+  if (autoPlayListener) { // 如果存在未觸發的自動播放監聽器，先移除
+    document.body.removeEventListener('click', autoPlayListener);
+    autoPlayListener = null;
+  }
+
   audio.value.play().then(() => {
     playing.value = true
     localStorage.setItem(PLAYING_KEY, 'true')
-  }).catch(e => console.error('音樂播放失敗', e))
+  }).catch(e => {
+    console.error('音樂播放失敗', e);
+    // 如果播放失敗，且是瀏覽器阻止，重新設置監聽器
+    if (e.name === 'NotAllowedError') {
+      console.warn('自動播放被瀏覽器阻止，等待用戶互動...');
+      autoPlayListener = () => { playMusic(); };
+      document.body.addEventListener('click', autoPlayListener, { once: true, capture: true });
+    }
+  })
 }
 
 function pauseMusic() {
@@ -358,6 +372,16 @@ async function selectAndPlaySong(index, options = {}) {
       console.error('切歌/播放失敗', e)
       playing.value = false
       localStorage.setItem(PLAYING_KEY, 'false')
+      // 如果播放失敗，且是瀏覽器阻止，重新設置監聽器
+      if (e.name === 'NotAllowedError') {
+        console.warn('自動播放被瀏覽器阻止，等待用戶互動...');
+        // 確保在重新添加之前，如果存在，先移除舊的監聽器
+        if (autoPlayListener) {
+          document.body.removeEventListener('click', autoPlayListener);
+        }
+        autoPlayListener = () => { playMusic(); };
+        document.body.addEventListener('click', autoPlayListener, { once: true, capture: true });
+      }
     }
   }
 
