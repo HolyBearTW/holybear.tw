@@ -31,7 +31,6 @@ import { onMounted, onUnmounted } from 'vue'
 // 聖誕節主題背景元件
 
 let snowflakeIntervalIds = [];
-let presentIntervalId = null;
 let mutationObserver = null;
 let htmlObserver = null;
 
@@ -41,6 +40,7 @@ function startChristmas() {
 
   try {
     const root = document.documentElement;
+    // ... 顏色變數 ...
     root.style.setProperty('--vp-c-brand', '#d93025');
     root.style.setProperty('--vp-c-brand-light', '#e57373');
     root.style.setProperty('--vp-c-brand-dark', '#c62828');
@@ -50,36 +50,112 @@ function startChristmas() {
     root.style.setProperty('--vp-c-text-2', '#a8b2d1');
   } catch (e) {}
 
-  // --- Snowflakes ---
+  // --- Snowflakes Container ---
   const snowflakeContainer = document.createElement('div');
   snowflakeContainer.id = 'christmas-snowflakes';
-  snowflakeContainer.style.cssText = 'position:fixed; left:0; top:0; width:100vw; height:100vh; z-index:9998; pointer-events:none;';
+  snowflakeContainer.style.cssText = 'position:fixed; left:0; top:0; width:100vw; height:100vh; z-index:9998; pointer-events:none; overflow: hidden;';
 
-  const animateSnow = (snowflake, fallDuration, index) => {
+  // --- 核心動畫邏輯 ---
+  const animateSnow = (snowflake, index) => {
+    // 50% 是前景大光斑(會消失)，50% 是背景細雪
+    const isVanishing = Math.random() > 0.5;
+
+    let size, startOpacity, duration;
+
+    // 重置樣式
+    snowflake.style.filter = ''; 
+    snowflake.style.boxShadow = '';
+    snowflake.style.background = '';
+    snowflake.style.borderRadius = '50%'; 
+
+    if (isVanishing) {
+      // --- 【修改重點：清晰度平衡】 ---
+      // 1. 尺寸：維持大尺寸
+      size = 30 + Math.random() * 40; // 30px ~ 70px
+
+      // 2. 顏色：關鍵在於「淡」。
+      // 改回 radial-gradient 但讓它更透，中心也不要全白
+      // 中心透明度 0.6 -> 邊緣 0。這樣既有實體感，又不會像實心湯圓。
+      snowflake.style.background = 'radial-gradient(circle, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0.1) 60%, transparent 100%)';
+      
+      // 3. 模糊度：大幅降低！
+      // 從原本的 10-20px 降到 3-6px。
+      // 這樣看起來就是「失焦的鏡頭光點」，而不是「霧」。
+      const blurAmount = 3 + (size / 70) * 3; 
+      snowflake.style.filter = `blur(${blurAmount}px)`;
+      
+      // 4. 起始透明度：因為本體已經很淡了，這裡設高一點確保看得到
+      startOpacity = 0.8 + Math.random() * 0.2; 
+      
+      duration = 10 + Math.random() * 8; 
+    } else {
+      // --- 【背景細雪】 ---
+      size = 3 + Math.random() * 5;
+      snowflake.style.background = 'rgba(255, 255, 255, 0.9)'; // 比較實心
+      snowflake.style.filter = 'blur(1px)'; // 輕微柔化
+      snowflake.style.boxShadow = '0 0 3px rgba(255,255,255,0.5)'; // 微微發光
+      startOpacity = 0.6 + Math.random() * 0.4;
+      
+      duration = 6 + Math.random() * 6;
+    }
+
+    // 設定共同樣式
+    snowflake.style.width = `${size}px`;
+    snowflake.style.height = `${size}px`;
+    snowflake.style.opacity = startOpacity;
+
+    // 設定路徑
+    const startLeft = Math.random() * 100;
+    const drift = (Math.random() - 0.5) * 50;
+    const endLeft = startLeft + drift;
+
+    // 設定終點
+    // 消失雪只下到畫面 40%~85%
+    const endTop = isVanishing ? (40 + Math.random() * 45) : 110;
+
+    // 1. 初始化位置
     snowflake.style.transition = 'none';
-    snowflake.style.top = '-10vh';
-    snowflake.style.left = `${Math.random() * 100}vw`;
+    snowflake.style.top = `${-size - 30}px`; 
+    snowflake.style.left = `${startLeft}vw`;
+    snowflake.style.opacity = startOpacity;
+
+    // 2. 開始動畫
     setTimeout(() => {
-      snowflake.style.transition = `top ${fallDuration}s linear, left ${fallDuration}s linear`;
-      snowflake.style.top = '110vh';
-    }, 50);
-    const timeoutId = setTimeout(() => animateSnow(snowflake, fallDuration, index), fallDuration * 1000 + 50);
-    snowflakeIntervalIds[index] = timeoutId;
+      // opacity transition: 配合 duration，如果是消失雪，會變為 0
+      snowflake.style.transition = `top ${duration}s linear, left ${duration}s ease-in-out, opacity ${duration}s ease-in`;
+      
+      snowflake.style.top = `${endTop}vh`;
+      snowflake.style.left = `${endLeft}vw`;
+      
+      if (isVanishing) {
+        snowflake.style.opacity = 0; 
+      }
+    }, 80); 
+
+    // 3. 循環
+    const timeoutId = setTimeout(() => {
+      animateSnow(snowflake, index);
+    }, duration * 1000 + 100);
+    
+    if (snowflakeIntervalIds) {
+      snowflakeIntervalIds[index] = timeoutId;
+    }
   };
 
-  snowflakeIntervalIds = new Array(50);
-  for (let i = 0; i < 50; i++) {
+  snowflakeIntervalIds = new Array(130);
+
+  for (let i = 0; i < 130; i++) {
     const snowflake = document.createElement('div');
-    const size = 4 + Math.random() * 5;
-    const fallDuration = 20 + Math.random() * 10;
-    snowflake.style.cssText = `position:absolute; left:${Math.random()*100}vw; top: -10vh; width:${size}px; height:${size}px; background:white; border-radius:50%; opacity:${0.3 + Math.random()*0.7}; transition: top ${fallDuration}s linear, left ${fallDuration}s linear;`;
+    snowflake.style.cssText = `position:absolute; pointer-events:none; will-change: transform, opacity;`;
     snowflakeContainer.appendChild(snowflake);
-    const initialTimeoutId = setTimeout(() => animateSnow(snowflake, fallDuration, i), Math.random() * fallDuration * 1000);
-    snowflakeIntervalIds[i] = initialTimeoutId;
+    
+    const initialDelay = Math.random() * 8000; 
+    const initialTimeout = setTimeout(() => animateSnow(snowflake, i), initialDelay);
+    snowflakeIntervalIds[i] = initialTimeout;
   }
   document.body.appendChild(snowflakeContainer);
 
-  // --- Flying Sleigh ---
+  // --- Sleigh (保持不變) ---
   if (!document.getElementById('sleigh-animation-style')) {
     const style = document.createElement('style');
     style.id = 'sleigh-animation-style';
@@ -94,38 +170,26 @@ function startChristmas() {
   const sleigh = document.createElement('div');
   sleigh.id = 'christmas-sleigh';
   sleigh.style.cssText = `
-    position: fixed;
-    top: 18%;
-    left: 0;
-    width: 200px;
-    height: 100px;
+    position: fixed; top: 18%; left: 0; width: 200px; height: 100px;
     background-image: url('/image/christmas/christmas1.png');
-    background-size: contain;
-    background-repeat: no-repeat;
-    animation: fly-by 60s linear infinite;
-    animation-delay: 15s;
-    transform: translateX(-150%);
-    z-index: 9997;
-    pointer-events: none;
+    background-size: contain; background-repeat: no-repeat;
+    animation: fly-by 60s linear infinite; animation-delay: 15s;
+    transform: translateX(-150%); z-index: 9997; pointer-events: none;
   `;
   document.body.appendChild(sleigh);
 
-
-  // --- Present ---
+  // --- Present (保持不變) ---
   const oneDay = 24 * 60 * 60 * 1000;
   const lastClicked = localStorage.getItem('christmasPresentClicked');
-
   if (!lastClicked || (Date.now() - lastClicked > oneDay)) {
     const present = document.createElement('div');
     present.id = 'christmas-present';
     present.style.cssText = 'position:fixed; left:50%; bottom:20px; transform:translateX(-50%); z-index:9999; pointer-events:auto; cursor:pointer; font-size:80px; filter:drop-shadow(0 0 20px #ffdd00); transition:transform 0.3s ease;';
-
     present.onclick = () => {
       alert('Merry Christmas! 小熊祝你聖誕快樂!');
       present.style.display = 'none';
       localStorage.setItem('christmasPresentClicked', Date.now());
     };
-
     present.innerHTML = '🎁';
     document.body.appendChild(present);
   }

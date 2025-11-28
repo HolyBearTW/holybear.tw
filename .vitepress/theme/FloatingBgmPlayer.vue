@@ -1,9 +1,9 @@
 <script setup>
 import { ref, watch, onMounted, onUnmounted, computed, nextTick } from 'vue'
-import { THEME_CHANGE_EVENT } from './background/themes'
+import { defaultTheme, THEME_CHANGE_EVENT } from './background/themes'
 
 /* --- 音樂清單 --- */
-const musicList = ref([
+const originalMusicList = ref([
   { src: '/music/LeagueofLegends_OmegaSquadTeemo.mp3', title: '英雄聯盟：戰爭機器 - 提摩' },
   { src: '/music/MapleStory_Reborngods.mp3', title: '楓之谷：塔拉哈特 - 遺跡廢墟' },
   { src: '/music/MapleStory_NightField.mp3', title: '楓之谷 - 不夜城徒步區' },
@@ -37,6 +37,8 @@ const musicList = ref([
   { src: '/music/MapleStory_AnEternalBreath.mp3', title: '楓之谷：克拉奇亞 - 永恆的氣息' },
   { src: '/music/MapleStory_old_title.mp3', title: '楓之谷 - 懷舊登入音樂' }
 ])
+
+const musicList = ref([...originalMusicList.value])
 
 /* --- LocalStorage Keys --- */
 const VOLUME_KEY = 'holybear-bgm-volume'
@@ -92,29 +94,89 @@ const progressPercent = computed(() => {
 
 /* --- 生命週期 --- */
 const themeHandler = (e) => {
-  if (e.detail?.theme === 'christmas') {
-    if (!musicList.value.find(m => m.src === '/music/MapleStory_WhiteChristmas.mp3')) {
-      musicList.value.unshift({
-        src: '/music/MapleStory_WhiteChristmas.mp3',
-        title: '楓之谷 - 幸福村（聖誕村莊）'
-      })
+  const isChristmasTheme = e.detail?.theme === 'christmas';
+  const christmasSong = {
+    src: '/music/MapleStory_WhiteChristmas.mp3',
+    title: '楓之谷 - 幸福村（聖誕村莊）'
+  };
+  const isChristmasSongInList = musicList.value.some(m => m.src === christmasSong.src);
+  const wasPlaying = playing.value; // 保存切換前是否正在播放
+
+  if (isChristmasTheme) {
+    if (!isChristmasSongInList) {
+      // 確保聖誕歌曲只添加一次
+      musicList.value.unshift(christmasSong);
     }
-    // 用 selectAndPlaySong 負責切歌與播放
-    selectAndPlaySong(0, { forceRestart: true })
+    // 無論是否在播放，切換到聖誕主題時都強制播放聖誕音樂
+    selectAndPlaySong(0, { forceRestart: true });
+  } else {
+    // 從聖誕主題切換到其他主題
+    if (isChristmasSongInList) {
+      const currentSongSrc = currentSong.value.src;
+      // 移除聖誕音樂
+      musicList.value = [...originalMusicList.value]; // 恢復原始列表
+
+      // 調整 currentIndex，確保其指向原始列表中的有效歌曲
+      // 移除聖誕音樂後，currentIndex 應該回到原始歌曲的索引
+      // 如果之前播放的是聖誕音樂 (索引為0)，則恢復後 currentIndex 仍為0 (原始列表的第一首)
+      // 如果之前播放的是非聖誕音樂 (索引為 X > 0)，則恢復後其索引應該為 X - 1
+      if (wasPlaying && currentSongSrc === christmasSong.src) { // 如果之前播放的是聖誕音樂
+        currentIndex.value = 0; // 恢復為原始列表的第一首
+      } else if (wasPlaying) { // 如果之前播放的是非聖誕音樂
+        // 找到該歌曲在原始列表中的位置
+        const originalIndex = originalMusicList.value.findIndex(m => m.src === currentSongSrc);
+        currentIndex.value = (originalIndex !== -1) ? originalIndex : 0;
+      } else { // 如果之前沒有播放
+        // 保持當前索引，但確保在原始列表範圍內
+        currentIndex.value = 0; // 可以簡化為總是設為0，或保持不變 (取決於設計)
+      }
+
+      if (wasPlaying) {
+        selectAndPlaySong(currentIndex.value, { forceRestart: true });
+      } else {
+        if (audio.value) {
+          audio.value.src = musicList.value[currentIndex.value]?.src || '';
+          audio.value.load();
+          currentTime.value = 0;
+        }
+      }
+    }
   }
-}
+};
 
 onMounted(async () => {
   // 頁面載入時檢查初始主題
-  const savedTheme = localStorage.getItem('vitepress-background-theme')
+  let currentTheme = localStorage.getItem('vitepress-background-theme');
+  if (!currentTheme) { // 如果 localStorage 沒有主題設定，則使用 defaultTheme
+    currentTheme = defaultTheme;
+  }
+
+  const savedTheme = currentTheme; // 使用修正後的主題值
+
+  const christmasSong = {
+    src: '/music/MapleStory_WhiteChristmas.mp3',
+    title: '楓之谷 - 幸福村（聖誕村莊）'
+  };
+
+  let initialMusicIndex = 0; // 默認初始播放第一首
+
   if (savedTheme === 'christmas') {
-    if (!musicList.value.find(m => m.src === '/music/MapleStory_WhiteChristmas.mp3')) {
-      musicList.value.unshift({
-        src: '/music/MapleStory_WhiteChristmas.mp3',
-        title: '楓之谷 - 幸福村（聖誕村莊）'
-      })
+    if (!musicList.value.find(m => m.src === christmasSong.src)) {
+      musicList.value.unshift(christmasSong);
+    }
+    initialMusicIndex = 0; // 如果是聖誕主題，強制為聖誕音樂
+  } else {
+    // 如果初始不是聖誕主題，且 musicList 包含了聖誕音樂 (可能是上次切換後殘留)
+    if (musicList.value.some(m => m.src === christmasSong.src)) {
+      musicList.value = [...originalMusicList.value];
+    }
+    const savedIndex = localStorage.getItem(INDEX_KEY);
+    if (savedIndex !== null && !isNaN(+savedIndex) && +savedIndex >= 0 && +savedIndex < musicList.value.length) {
+      initialMusicIndex = +savedIndex;
     }
   }
+
+  currentIndex.value = initialMusicIndex; // 統一設定 currentIndex
 
   // 主題事件
   window.addEventListener(THEME_CHANGE_EVENT, themeHandler)
@@ -127,20 +189,9 @@ onMounted(async () => {
     if (volume.value > 0) volumeBeforeMute.value = volume.value
   }
 
-  const savedRepeatOne = localStorage.getItem(REPEAT_ONE_KEY)
+  const savedRepeatOne = localStorage.getItem(REPEAT_ONE_KEY);
   if (savedRepeatOne !== null) {
-    repeatOne.value = savedRepeatOne === 'true'
-  }
-
-  const savedPlaying = localStorage.getItem(PLAYING_KEY)
-  if (savedPlaying === 'true' && playerOpen.value) {
-    autoPlayListener = () => { playMusic() }
-    document.body.addEventListener('click', autoPlayListener, { once: true })
-  }
-
-  const savedIndex = localStorage.getItem(INDEX_KEY)
-  if (savedIndex !== null && !isNaN(+savedIndex) && +savedIndex >= 0 && +savedIndex < musicList.value.length) {
-    currentIndex.value = +savedIndex
+    repeatOne.value = savedRepeatOne === 'true';
   }
 
   const savedPlayerOpen = localStorage.getItem(PLAYER_OPEN_KEY)
@@ -153,12 +204,33 @@ onMounted(async () => {
   if (audio.value) {
     if (musicList.value && musicList.value.length > 0) {
       audio.value.src = musicList.value[currentIndex.value]?.src || ''
-      try { audio.value.load() } catch (e) { /* ignore */ }
+      try { audio.value.load() } catch (e) { console.error('Audio load failed:', e); } // 添加錯誤日誌
     }
-    audio.value.volume = volume.value
-    audio.value.loop = repeatOne.value
-    audio.value.addEventListener('timeupdate', updateProgress)
+    audio.value.volume = volume.value;
+    audio.value.loop = repeatOne.value;
+    audio.value.addEventListener('timeupdate', updateProgress);
     // loadedmetadata 綁在 template (@loadedmetadata)，這裡可以備援但不必要重複綁
+
+    // 統一處理初始播放邏輯
+    const isPlayingOnLoad = localStorage.getItem(PLAYING_KEY) === 'true';
+    if (playerOpen.value && (savedTheme === 'christmas' || isPlayingOnLoad)) {
+        await selectAndPlaySong(currentIndex.value, { forceRestart: true });
+        // 如果 selectAndPlaySong 因瀏覽器政策未能自動播放，則設置點擊監聽器
+        if (!playing.value) { // 檢查 playing.value 是否仍為 false (selectAndPlaySong 會更新此值)
+            console.warn('自動播放被瀏覽器阻止，等待用戶互動...');
+            autoPlayListener = () => { playMusic(); };
+            document.body.addEventListener('click', autoPlayListener, { once: true, capture: true }); // 在捕獲階段監聽
+        }
+    } else if (playerOpen.value) {
+        // 播放器開啟，但上次非播放狀態且不是聖誕主題，等待用戶互動
+        console.warn('播放器開啟但上次非播放狀態或首次加載，等待用戶互動...');
+        autoPlayListener = () => { playMusic(); };
+        document.body.addEventListener('click', autoPlayListener, { once: true, capture: true }); // 在捕獲階段監聽
+    } else {
+        // 播放器未開啟，確保播放狀態為 false
+        playing.value = false;
+        localStorage.setItem(PLAYING_KEY, 'false');
+    }
   }
 })
 
@@ -654,7 +726,7 @@ function toggleRepeatOne() {
 
   <transition name="sidebar-fade">
     <div v-if="showSidebarButton && playerOpen" ref="sidebarToggle" class="sidebar-toggle" @click.stop.prevent="showMusicInfo" @touchend.stop.prevent="showMusicInfo">
-      <div class="sidebar-icon">&lt;</div>
+      <div class="sidebar-icon"><</div>
     </div>
   </transition>
 

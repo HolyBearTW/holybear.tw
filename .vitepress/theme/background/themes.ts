@@ -17,7 +17,7 @@ export const backgroundThemes = [
 ]
 
 // 預設主題 (使用主題ID)
-export const defaultTheme = 'tech'
+export const defaultTheme = 'christmas'
 
 // 主題本地存儲鍵名
 export const THEME_STORAGE_KEY = 'vitepress-background-theme'
