@@ -1259,10 +1259,10 @@
   resolved "https://registry.yarnpkg.com/@tiptap/extension-bullet-list/-/extension-bullet-list-3.11.1.tgz#c27ad12c0d2f0f1ff8223dc6eede6c2e75624cb6"
   integrity sha512-6fj0b0Ynam8FMsP3NiCZ4a2uP7lCBHDFBXfcRwFDOqAgBIPvIK+r6CuHEGothGaF7EeQ9MTyj9fwlGjyHsPQcg==
 
-"@tiptap/extension-character-count@^3.11.1":
-  version "3.11.1"
-  resolved "https://registry.yarnpkg.com/@tiptap/extension-character-count/-/extension-character-count-3.11.1.tgz#b7c1403b34d884f66385d58b38d7849c54f49326"
-  integrity sha512-bpPYXST1GedDyEVj8Ii4bYRhOywlcka5KC6VxbvWlBYohRWyXbGqPrL1A48OsaHqCPkOxOU6BWsBhCBNZfWvaQ==
+"@tiptap/extension-character-count@^3.12.0":
+  version "3.12.0"
+  resolved "https://registry.yarnpkg.com/@tiptap/extension-character-count/-/extension-character-count-3.12.0.tgz#25e958daae941308ab4999f23cd2ab72e99361a4"
+  integrity sha512-v/5rEVJzj9dwkiBQ/0qj4qR9CTRj+M8isr2CkmIvUOBfoIqbPb29v2m6BJQXTpXqay0SdhIZ7kGOV/WJ7VAOVw==
 
 "@tiptap/extension-code-block@^3.11.1":
   version "3.11.1"
