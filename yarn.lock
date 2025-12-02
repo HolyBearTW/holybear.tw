@@ -1391,10 +1391,10 @@
   resolved "https://registry.yarnpkg.com/@tiptap/extension-task-list/-/extension-task-list-3.12.0.tgz#d27d90edf4067aa42891897438e425bbb0b6c1c9"
   integrity sha512-MtQsp1w9gR5OAG5xzmSoAK/R/8SXzkKmQFrYL/1KM2Gs18QuVvhSnIV6u0hbB/QjG7xDsxC4ktpyrZ3vl2c2Ow==
 
-"@tiptap/extension-text-align@^3.11.1":
-  version "3.11.1"
-  resolved "https://registry.yarnpkg.com/@tiptap/extension-text-align/-/extension-text-align-3.11.1.tgz#c74c9c1121ffbb71eca7230c70b25b914abe52b5"
-  integrity sha512-lZvM8HF4qlHuXX1u0ngj1Si1zVzWhS+RiF5kczScul+F1lEQgK+ugL6iF87MSc1yxw5eZQDpA0byx1N+ZqZWZg==
+"@tiptap/extension-text-align@^3.12.0":
+  version "3.12.0"
+  resolved "https://registry.yarnpkg.com/@tiptap/extension-text-align/-/extension-text-align-3.12.0.tgz#b0a920fa806391297586322fcce34accd75bede4"
+  integrity sha512-OpfLVZWHl1HiZ6bSlqh1GcHrm2wjHH5Ctbi4kBG7NvMZFY1aDPzYcULW5Xwc1EArefKd7rZRpKPWBJnre4RrFg==
 
 "@tiptap/extension-text@^3.11.1":
   version "3.11.1"
