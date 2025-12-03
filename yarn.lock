@@ -1304,10 +1304,10 @@
   resolved "https://registry.yarnpkg.com/@tiptap/extension-heading/-/extension-heading-3.12.0.tgz#c29007c9c510c9bcc62c834c903277548f192962"
   integrity sha512-lXpamseuGEiLWjjVxT5HXgDem/sjVuqiRPOs+BcG+p+545Dig0sehxmD/2ZYBe0lgoWlh3R9iIwaYCQfrmrwtw==
 
-"@tiptap/extension-highlight@^3.12.0":
-  version "3.12.0"
-  resolved "https://registry.yarnpkg.com/@tiptap/extension-highlight/-/extension-highlight-3.12.0.tgz#37ef5b639bc3bc9b6a175d504d1d3e2691511e4c"
-  integrity sha512-0FJfsj9kYRtZHvXOhv9cjhSG4Y9ftT0c+4Uvl2Qnu9b4odM0RjWvUdvin1YYz8JoYe/yblqNrGIdp8udUNkuTA==
+"@tiptap/extension-highlight@^3.12.1":
+  version "3.12.1"
+  resolved "https://registry.yarnpkg.com/@tiptap/extension-highlight/-/extension-highlight-3.12.1.tgz#cd37096f198c7c8fdb39751c8117c7e37df529ac"
+  integrity sha512-p1GjCuS94zfnOJd/fx5wt62M5g3L88xbhwpyBAQ5hKOLuD3NqxzHgUe57yfACMTwMuoQ9mGhLNqznkyp5SfEAg==
 
 "@tiptap/extension-horizontal-rule@^3.12.0":
   version "3.12.0"
