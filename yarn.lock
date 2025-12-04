@@ -1371,10 +1371,10 @@
   resolved "https://registry.yarnpkg.com/@tiptap/extension-table-header/-/extension-table-header-3.12.1.tgz#cc0a59409ed19c9edcc2d434b459a12c4158ef98"
   integrity sha512-yAgO4NmW2XTOBFesSJAfPnXEVfhZyU5zSKRWEMdjvQmfxnshamxDTyk3e/A4iMmBcRZFi20WUheGgWe6snkjzw==
 
-"@tiptap/extension-table-row@^3.11.1":
-  version "3.11.1"
-  resolved "https://registry.yarnpkg.com/@tiptap/extension-table-row/-/extension-table-row-3.11.1.tgz#b03d40b30813da96ea2c8397efac46b02e322158"
-  integrity sha512-KfB9axBtfE59/xC++4SS2iYkfEv93k5EWDbjIjC6T62FpfTYlBDOQutj79Nnmn8XkS5srT4nmxrohqRc1wUSQg==
+"@tiptap/extension-table-row@^3.12.1":
+  version "3.12.1"
+  resolved "https://registry.yarnpkg.com/@tiptap/extension-table-row/-/extension-table-row-3.12.1.tgz#4fe919c7fd9e301ca569adba4150843da28c86f4"
+  integrity sha512-3rxe5jpJAZYfPcaFxJRTpYK1I410bCrd/m9vr1S2C7CfHj6UJBJIbTUuOy7enujkL02G/PvPKiLGOofr7dzEoQ==
 
 "@tiptap/extension-table@^3.12.1":
   version "3.12.1"
