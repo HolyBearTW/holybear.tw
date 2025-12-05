@@ -1247,10 +1247,10 @@
   resolved "https://registry.yarnpkg.com/@tiptap/extension-bold/-/extension-bold-3.13.0.tgz#1fbff35b20da292172fc5a1886576c3410e1e3ca"
   integrity sha512-VYiDN9EEwR6ShaDLclG8mphkb/wlIzqfk7hxaKboq1G+NSDj8PcaSI9hldKKtTCLeaSNu6UR5nkdu/YHdzYWTw==
 
-"@tiptap/extension-bubble-menu@^3.12.1":
-  version "3.12.1"
-  resolved "https://registry.yarnpkg.com/@tiptap/extension-bubble-menu/-/extension-bubble-menu-3.12.1.tgz#ebb5c76abb0a2db507667afa208b144745c81105"
-  integrity sha512-RMhZbI+CmcEuGrKgMmHFXyGs/UdAQPBjW8wMEiZIqa2ZxnOwhMd79jRRTzLW7uhArzXMOe6hyytOHuEMvoj+NQ==
+"@tiptap/extension-bubble-menu@^3.13.0":
+  version "3.13.0"
+  resolved "https://registry.yarnpkg.com/@tiptap/extension-bubble-menu/-/extension-bubble-menu-3.13.0.tgz#c62dece2e865a2efaaf455061204f48f59f5b24f"
+  integrity sha512-qZ3j2DBsqP9DjG2UlExQ+tHMRhAnWlCKNreKddKocb/nAFrPdBCtvkqIEu+68zPlbLD4ukpoyjUklRJg+NipFg==
   dependencies:
     "@floating-ui/dom" "^1.0.0"
 
@@ -1284,10 +1284,10 @@
   resolved "https://registry.yarnpkg.com/@tiptap/extension-dropcursor/-/extension-dropcursor-3.13.0.tgz#04f7659c86558ebeb068fd7d5c2474d8bd28b430"
   integrity sha512-m7GPT3c/83ni+bbU8c+3dpNa8ug+aQ4phNB1Q52VQG3oTonDJnZS7WCtn3lB/Hi1LqoqMtEHwhepU2eD+JeXqQ==
 
-"@tiptap/extension-floating-menu@^3.12.1":
-  version "3.12.1"
-  resolved "https://registry.yarnpkg.com/@tiptap/extension-floating-menu/-/extension-floating-menu-3.12.1.tgz#ef61b892cbd73f0f7dae4032dedd7b9300c7ccbc"
-  integrity sha512-FY0QmubovOSnH8PhHH0pnmgXUQernfLMeHq2qT1B/itCDOeDULFrBQtZ5KTMAi522czuErW6s0d2EhJQlnazdw==
+"@tiptap/extension-floating-menu@^3.13.0":
+  version "3.13.0"
+  resolved "https://registry.yarnpkg.com/@tiptap/extension-floating-menu/-/extension-floating-menu-3.13.0.tgz#03d03292add49d1b380cdb1ff3890b2956d4e3f5"
+  integrity sha512-OsezV2cMofZM4c13gvgi93IEYBUzZgnu8BXTYZQiQYekz4bX4uulBmLa1KOA9EN71FzS+SoLkXHU0YzlbLjlxA==
 
 "@tiptap/extension-gapcursor@^3.13.0":
   version "3.13.0"
@@ -1470,13 +1470,13 @@
     "@tiptap/extensions" "^3.13.0"
     "@tiptap/pm" "^3.13.0"
 
-"@tiptap/vue-3@^3.12.1":
-  version "3.12.1"
-  resolved "https://registry.yarnpkg.com/@tiptap/vue-3/-/vue-3-3.12.1.tgz#60c4d74496ad1c4b7b864802c4d52243779f7d28"
-  integrity sha512-SeyI3Y/ERMajfGUAuFZ3RhoB+p8iEVSi4J4O4+xXMczOUzb1G0NKmHDzy7ox6RDspdHd+QicspH5J/hdOdfh7w==
+"@tiptap/vue-3@^3.13.0":
+  version "3.13.0"
+  resolved "https://registry.yarnpkg.com/@tiptap/vue-3/-/vue-3-3.13.0.tgz#87170cfaa42a01e8c2a27e3effaac77a5316bc1c"
+  integrity sha512-vl9l2oEARKyUNpViqwSPCL0+dlyIomrPTdHOtDJb6ldo/umWKvjqgLhAtgA7MQ9NwVQa1k5rKICWU6ZH+jLBOw==
   optionalDependencies:
-    "@tiptap/extension-bubble-menu" "^3.12.1"
-    "@tiptap/extension-floating-menu" "^3.12.1"
+    "@tiptap/extension-bubble-menu" "^3.13.0"
+    "@tiptap/extension-floating-menu" "^3.13.0"
 
 "@types/dom-speech-recognition@^0.0.1":
   version "0.0.1"
