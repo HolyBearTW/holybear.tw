@@ -131,8 +131,9 @@ const loadCurrentDoc = () => {
       documentTagString.value = documentTag.value.join('\n')
       documentCategoryString.value = documentCategory.value.join('\n')
       editorContent.value = doc.content
-      markdownContent.value = parsed.body || doc.markdown || ''
-      markdownSource.value = doc.markdown || ''
+      // 修正: 當 body 為空字串時，不應 fallback 到 doc.markdown (因為 doc.markdown 包含 Front Matter)
+      markdownContent.value = parsed.body !== undefined ? parsed.body : (doc.markdown || '')
+      markdownSource.value = parsed.body !== undefined ? parsed.body : (doc.markdown || '')
     } else {
       createNewDoc()
     }
@@ -154,7 +155,7 @@ const createNewDoc = () => {
   documentTagString.value = ''
   documentCategoryString.value = ''
   editorContent.value = ''
-  markdownContent.value = ''
+  markdownContent.value = '' // Body is empty
   markdownSource.value = ''
   saveCurrentDoc()
 }
@@ -162,12 +163,22 @@ const createNewDoc = () => {
 // 保存當前文檔（合併 Front Matter）
 const saveCurrentDoc = () => {
   try {
+    // 如果是在 Markdown 模式下，markdownSource 已經包含了使用者編輯的完整內容（含 Front Matter）
+    // 我們應該直接使用它，而不是重新生成，除非我們想要強制格式化 Front Matter
+    // 但為了保持一致性，我們還是使用 generateFullMarkdownString 重新生成，確保 Front Matter 格式正確
+    // 關鍵是 markdownContent.value 必須只包含 body
+    
     const markdown = generateFullMarkdownString(markdownContent.value);
+    
+    // 如果我們在 Markdown 模式，且 markdownSource 與生成的 markdown 不同步（例如 Front Matter 被標準化了）
+    // 我們可能需要更新 markdownSource，但這會導致游標跳動，所以暫時不更新 markdownSource
+    // 除非是在非編輯狀態下
+    
     const doc = {
       id: currentDocId.value,
-      title: documentTitle.value, // Keep documentTitle.value here for doc object, it's the internal ref
+      title: documentTitle.value, 
       content: editorContent.value,
-      markdown,
+      markdown, // 儲存完整的 Markdown
       updatedAt: Date.now()
     }
     localStorage.setItem(CURRENT_DOC_KEY, JSON.stringify(doc))
