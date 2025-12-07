@@ -1,6 +1,4 @@
 
-import { Node, mergeAttributes } from '@tiptap/core'
-import { VueNodeViewRenderer } from '@tiptap/vue-3'
 import TabsNodeView from './TabsNodeView.vue'
 
 export interface TabItem {
@@ -9,7 +7,7 @@ export interface TabItem {
   content: string
 }
 
-export const TabsNode = Node.create({
+export const TabsNode = {} /* Node.create({
   name: 'tabs',
 
   group: 'block',
@@ -88,4 +86,4 @@ export const TabsNode = Node.create({
       },
     }
   },
-})
+}) */

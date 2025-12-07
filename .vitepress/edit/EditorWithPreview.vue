@@ -44,7 +44,7 @@ const editorContent = ref('')
 const markdownContent = ref('')
 const showPreview = ref(true)
 const showHistory = ref(true)
-const editMode = ref<'visual' | 'markdown'>('visual')
+const editMode = ref<'visual' | 'markdown'>('markdown') // Default to markdown as Tiptap is removed
 const markdownSource = ref('')
 const historyWidth = ref(280)
 const editorWidth = ref(50)
@@ -521,7 +521,7 @@ onBeforeUnmount(() => {
 
       <!-- 主要功能按鈕 -->
       <div class="main-action-buttons">
-        <button
+        <!-- <button
           @click="toggleEditMode"
           class="toolbar-btn mode-toggle-btn"
           :class="{ active: editMode === 'markdown' }"
@@ -529,7 +529,7 @@ onBeforeUnmount(() => {
         >
           <i :class="editMode === 'visual' ? 'fas fa-code' : 'fas fa-eye'"></i>
           <span class="btn-text">{{ editMode === 'visual' ? '源碼' : '視覺' }}</span>
-        </button>
+        </button> -->
         <button @click="toggleHistory" class="toolbar-btn" :class="{ active: showHistory }">
           <i class="fas fa-history"></i>
           <span class="btn-text">歷史</span>

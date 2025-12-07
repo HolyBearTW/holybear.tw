@@ -1,6 +1,4 @@
 
-import { Node, mergeAttributes } from '@tiptap/core'
-import { VueNodeViewRenderer } from '@tiptap/vue-3'
 import DraggableImageView from './DraggableImageView.vue'
 
 export interface DraggableImageOptions {
@@ -9,7 +7,7 @@ export interface DraggableImageOptions {
   HTMLAttributes: Record<string, any>
 }
 
-declare module '@tiptap/core' {
+/* declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     draggableImage: {
       /**
@@ -25,9 +23,9 @@ declare module '@tiptap/core' {
       }) => ReturnType
     }
   }
-}
+} */
 
-export const DraggableImage = Node.create<DraggableImageOptions>({
+export const DraggableImage = {} /* Node.create<DraggableImageOptions>({
   name: 'image',
 
   addOptions() {
@@ -130,4 +128,4 @@ export const DraggableImage = Node.create<DraggableImageOptions>({
   addNodeView() {
     return VueNodeViewRenderer(DraggableImageView)
   },
-})
+}) */

@@ -1,15 +1,13 @@
-import { Node, mergeAttributes } from '@tiptap/core'
-import { VueNodeViewRenderer } from '@tiptap/vue-3'
 import CenterNodeView from './CenterNodeView.vue'
 
-export const CenterNode = Node.create({
+export const CenterNode = {} /* Node.create({
   name: 'center',
 
   group: 'block',
 
   content: 'block+',
 
-  defining: true,
+  defining: true, */
 
   addAttributes() {
     return {
@@ -45,4 +43,4 @@ export const CenterNode = Node.create({
       },
     }
   },
-})
+}) */

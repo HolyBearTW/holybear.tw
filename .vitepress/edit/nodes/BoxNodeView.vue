@@ -6,7 +6,6 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { NodeViewWrapper, NodeViewContent } from '@tiptap/vue-3'
 
 const props = defineProps<{
   node: {

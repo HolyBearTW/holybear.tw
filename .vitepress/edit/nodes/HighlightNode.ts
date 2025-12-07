@@ -1,9 +1,7 @@
 
-import { Node, mergeAttributes } from '@tiptap/core'
-import { VueNodeViewRenderer } from '@tiptap/vue-3'
 import HighlightNodeView from './HighlightNodeView.vue'
 
-export const HighlightNode = Node.create({
+export const HighlightNode = {} /* Node.create({
   name: 'highlightBlock',
 
   group: 'block',
@@ -43,4 +41,4 @@ export const HighlightNode = Node.create({
       },
     }
   },
-})
+}) */

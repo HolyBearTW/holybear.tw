@@ -1,9 +1,7 @@
 
-import { Node, mergeAttributes } from '@tiptap/core'
-import { VueNodeViewRenderer } from '@tiptap/vue-3'
 import CardNodeView from './CardNodeView.vue'
 
-export const CardNode = Node.create({
+export const CardNode = {} /* Node.create({
   name: 'card',
 
   group: 'block',
@@ -48,4 +46,4 @@ export const CardNode = Node.create({
       },
     }
   },
-})
+}) */

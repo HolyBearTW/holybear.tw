@@ -1,8 +1,6 @@
-import { Node, mergeAttributes } from '@tiptap/core'
-import { VueNodeViewRenderer } from '@tiptap/vue-3'
 import ThirdNodeView from './ThirdNodeView.vue'
 
-export const ThirdNode = Node.create({
+export const ThirdNode = {} /* Node.create({
   name: 'third',
 
   group: 'block',
@@ -36,4 +34,4 @@ export const ThirdNode = Node.create({
   addNodeView() {
     return VueNodeViewRenderer(ThirdNodeView)
   },
-})
+}) */

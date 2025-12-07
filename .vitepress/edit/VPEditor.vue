@@ -39,7 +39,8 @@
       <BubbleMenu v-if="editor" :editor="editor" />
       
       <!-- Editor Content -->
-      <EditorContent :editor="editor" class="editor-content" />
+      <!-- <EditorContent :editor="editor" class="editor-content" /> -->
+
       
       <!-- Slash Menu (輸入 / 時顯示) -->
       <SlashMenu
@@ -55,16 +56,6 @@
 
 <script setup lang="ts">
 import { ref, onBeforeUnmount } from 'vue'
-import { useEditor, EditorContent } from '@tiptap/vue-3'
-import StarterKit from '@tiptap/starter-kit'
-import TaskList from '@tiptap/extension-task-list'
-import TaskItem from '@tiptap/extension-task-item'
-import Youtube from '@tiptap/extension-youtube'
-import TextAlign from '@tiptap/extension-text-align'
-import Placeholder from '@tiptap/extension-placeholder'
-import CharacterCount from '@tiptap/extension-character-count'
-import Highlight from '@tiptap/extension-highlight'
-import Strike from '@tiptap/extension-strike'
 import SlashMenu from './SlashMenu.vue'
 import BubbleMenu from './BubbleMenu.vue'
 import FixedToolbar from './FixedToolbar.vue'
@@ -111,6 +102,8 @@ const infoTips = [
 // 當前顯示的提示文字
 const currentTip = ref('')
 
+const editor = ref(null)
+/*
 const editor = useEditor({
   extensions: [
     StarterKit.configure({
@@ -244,8 +237,10 @@ const editor = useEditor({
     }
   },
 })
+*/
 
 const exportMarkdown = () => {
+  /*
   if (!editor.value) return
   
   try {
@@ -264,18 +259,22 @@ const exportMarkdown = () => {
     console.error('❌ Markdown 導出失敗:', error)
     alert('Markdown 導出失敗,請查看控制台了解詳情')
   }
+  */
 }
 
 const clearContent = () => {
+  /*
   if (!editor.value) return
   
   if (confirm('確定要清空所有內容嗎?')) {
     editor.value.commands.clearContent()
   }
+  */
 }
 
 // FixedToolbar 事件處理器
 const handleInsertImage = () => {
+  /*
   if (!editor.value) return
   const url = prompt('請輸入圖片 URL:')
   if (url) {
@@ -286,9 +285,11 @@ const handleInsertImage = () => {
       alert('插入圖片失敗，請查看控制台')
     }
   }
+  */
 }
 
 const handleInsertYoutube = () => {
+  /*
   if (!editor.value) return
   const url = prompt('請輸入 YouTube 影片 URL 或 ID:')
   if (url) {
@@ -300,12 +301,15 @@ const handleInsertYoutube = () => {
       alert('插入 YouTube 影片失敗，請查看控制台')
     }
   }
+  */
 }
 
 const handleInsertTable = () => {
+  /*
   if (!editor.value) return
   const rowsStr = prompt('請輸入表格列數 (rows):', '2')
   const colsStr = prompt('請輸入表格欄數 (cols):', '2')
+  
   const rows = parseInt(rowsStr || '2')
   const cols = parseInt(colsStr || '2')
   if (rows > 0 && cols > 0) {
@@ -316,9 +320,11 @@ const handleInsertTable = () => {
       alert('插入表格失敗，請查看控制台')
     }
   }
+  */
 }
 
 const handleInsertTabs = () => {
+  /*
   if (!editor.value) return
   const countStr = prompt('請輸入標籤頁數量 (2-8):', '2')
   const count = parseInt(countStr || '2')
@@ -332,6 +338,7 @@ const handleInsertTabs = () => {
   } else {
     alert('標籤頁數量必須在 2-8 之間')
   }
+  */
 }
 
 // Tooltip 處理函數
@@ -363,17 +370,19 @@ const initializeRandomTip = () => {
 
 // 暴露方法給父組件
 defineExpose({
-  getHTML: () => editor.value?.getHTML() || '',
+  getHTML: () => '', // editor.value?.getHTML() || '',
   setContent: (content: string) => {
+    /*
     if (editor.value) {
       editor.value.commands.setContent(content)
     }
+    */
   },
-  commands: editor.value?.commands
+  commands: null // editor.value?.commands
 })
 
 onBeforeUnmount(() => {
-  editor.value?.destroy()
+  // editor.value?.destroy()
   if (tooltipTimer) {
     clearTimeout(tooltipTimer)
   }

@@ -1,9 +1,7 @@
 
-import { Node, mergeAttributes } from '@tiptap/core'
-import { VueNodeViewRenderer } from '@tiptap/vue-3'
 import RowNodeView from './RowNodeView.vue'
 
-export const RowNode = Node.create({
+export const RowNode = {} /* Node.create({
   name: 'row',
 
   group: 'block',
@@ -80,4 +78,4 @@ export const RowNode = Node.create({
       },
     }
   },
-})
+}) */

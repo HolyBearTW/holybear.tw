@@ -1,8 +1,6 @@
-import { Node, mergeAttributes } from '@tiptap/core'
-import { VueNodeViewRenderer } from '@tiptap/vue-3'
 import HalfNodeView from './HalfNodeView.vue'
 
-export const HalfNode = Node.create({
+export const HalfNode = {} /* Node.create({
   name: 'half',
 
   group: 'block',
@@ -36,4 +34,4 @@ export const HalfNode = Node.create({
   addNodeView() {
     return VueNodeViewRenderer(HalfNodeView)
   },
-})
+}) */

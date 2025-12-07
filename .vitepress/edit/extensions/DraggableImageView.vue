@@ -93,7 +93,6 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { NodeViewWrapper } from '@tiptap/vue-3'
 
 interface Props {
   node: {

@@ -11,7 +11,6 @@
 </template>
 
 <script setup lang="ts">
-import { NodeViewWrapper, NodeViewContent } from '@tiptap/vue-3'
 
 defineProps<{
   node: {

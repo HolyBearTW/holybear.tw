@@ -1,9 +1,7 @@
 
-import { Node, mergeAttributes } from '@tiptap/core'
-import { VueNodeViewRenderer } from '@tiptap/vue-3'
 import BoxNodeView from './BoxNodeView.vue'
 
-export const BoxNode = Node.create({
+export const BoxNode = {} /* Node.create({
   name: 'box',
 
   group: 'block',
@@ -64,4 +62,4 @@ export const BoxNode = Node.create({
       },
     }
   },
-})
+}) */
