@@ -110,14 +110,179 @@ const previewBodyMarkdown = computed(() => { // Renamed for clarity
 
 const VPEditor = defineAsyncComponent(() => import('./VPEditor.vue'))
 
+// 預設範例內容
+const DEFAULT_EXAMPLE_MARKDOWN = `---
+title: 預設範例檔案
+description: 這是 Markdown 源碼範例
+image: https://thinktandem.io/images/articles/kalabox1.png
+tag:
+  - Markdown
+  - 教學
+category:
+  - 範例
+blog: true
+---
+
+::: half
+![Is it possible to learn this power?](https://media1.giphy.com/media/bjtM9GdxbqL5e/giphy.gif)
+:::
+
+:::::: center
+:::: third
+::: box
+WAIT.
+:::
+::::
+:::: third
+::: box
+FOR.
+:::
+::::
+:::: third
+::: box
+FOR.
+:::
+::::
+:::: third
+::: box
+FOR.
+:::
+::::
+:::: third
+::: box
+FOR.
+:::
+::::
+:::: third
+::: box
+FOR.
+:::
+::::
+::::::
+
+
+:::: center
+::: third
+![What a show!](https://c.tenor.com/88jV4RXj3x4AAAAC/not-from-a-jedi-palpatine.gif)
+:::
+::: third
+![What a show!](https://c.tenor.com/88jV4RXj3x4AAAAC/not-from-a-jedi-palpatine.gif)
+:::
+::: third
+![What a show!](https://c.tenor.com/88jV4RXj3x4AAAAC/not-from-a-jedi-palpatine.gif)
+:::
+::::
+::: highlight
+What if I told you that the Republic was now under the control of a Dark Lord of the Sith?
+:::
+
+:::tabs
+== tab a
+a content
+== tab b
+b content
+:::
+
+:::tabs box
+== tab a
+a content
+== tab b
+b content
+== tab c
+c content
+:::
+
+:::tabs box-blue
+== tab a
+a content
+== tab b
+b content
+
+:::
+
+:::tabs box-brand
+== tab a
+a content
+== tab b
+b content
+:::
+
+:::tabs box-green
+== tab a
+a content
+== tab b
+b content
+== tab c
+c content
+:::
+
+:::tabs box-red
+== tab a
+a content
+== tab b
+b content
+:::
+
+:::tabs box-yellow
+== tab a
+a content
+== tab b
+b content
+:::
+
+:::: thumbnail
+![kalabox1-dash](https://thinktandem.io/images/articles/kalabox1.png "Kalabox V1 Dashboard")
+::: caption
+Kalabox Version 1 Dashboard
+:::
+::::
+::::third
+:::card Cat 1
+![Cat 1](https://media0.giphy.com/media/SUWn1xWsXKDbz6Y1Dx/giphy.gif)
+:::
+::::
+
+::::third
+:::card Cat 2
+![Cat 2](https://media0.giphy.com/media/rxYG6rKr0iQla/200.gif)
+:::
+::::
+
+::::third
+:::card Cat 3
+![Cat 3](https://media2.giphy.com/media/YRVP7mapl24G6RNkwJ/200.gif)
+:::
+::::
+
+\`\`\`
+- [ ] todo
+- [x] finished
+\`\`\`
+
+- [ ] todo
+- [x] finished
+
+<YouTube id="Qs68Fugalro"/>`
+
 // 生成新文檔 ID
 const generateDocId = () => `doc_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
 
 // 載入當前文檔，解析 Front Matter
 const loadCurrentDoc = () => {
   try {
+    // 檢查是否已經初始化過（是否是第一次進入）
+    const isInitialized = localStorage.getItem('vitepress-editor-initialized')
     const stored = localStorage.getItem('vitepress-editor-current')
-    if (stored) {
+
+    if (!isInitialized) {
+      // 第一次進入
+      // 1. 將範例檔案加入歷史紀錄，但不直接載入
+      addExampleToHistory()
+      // 2. 建立空白新文檔作為當前文檔
+      createNewDoc()
+      localStorage.setItem('vitepress-editor-initialized', 'true')
+    } else if (stored) {
+      // 非第一次進入且有儲存的文檔，載入它
       const doc = JSON.parse(stored)
       currentDocId.value = doc.id
       const parsed = fm(doc.markdown || '')
@@ -135,11 +300,40 @@ const loadCurrentDoc = () => {
       markdownContent.value = parsed.body !== undefined ? parsed.body : (doc.markdown || '')
       markdownSource.value = parsed.body !== undefined ? parsed.body : (doc.markdown || '')
     } else {
+      // 非第一次進入但沒有儲存的文檔（例如被手動刪除），建立空白新文檔
       createNewDoc()
     }
   } catch (error) {
     console.error('載入文檔失敗:', error)
     createNewDoc()
+  }
+}
+
+// 將預設範例加入歷史紀錄
+const addExampleToHistory = () => {
+  try {
+    const parsed = fm(DEFAULT_EXAMPLE_MARKDOWN)
+    const attrs: Record<string, any> = parsed.attributes || {}
+    
+    const exampleDoc: HistoryItem = {
+      id: `doc_example_${Date.now()}`,
+      title: 'title' in attrs ? String(attrs.title) : '預設範例檔案',
+      content: parsed.body || '', // 解析出的內文
+      markdown: DEFAULT_EXAMPLE_MARKDOWN, // 完整 Markdown 內容
+      updatedAt: Date.now()
+    }
+    
+    let history: HistoryItem[] = []
+    const stored = localStorage.getItem(HISTORY_KEY)
+    if (stored) {
+      history = JSON.parse(stored)
+    }
+    
+    history.unshift(exampleDoc)
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(history))
+    historyUpdateKey.value++
+  } catch (e) {
+    console.error('加入範例檔案至歷史紀錄失敗:', e)
   }
 }
 
@@ -270,15 +464,42 @@ const saveToHistory = () => {
 // 載入歷史記錄項目
 const handleLoadHistory = (item: HistoryItem) => {
   currentDocId.value = item.id
-  documentTitle.value = item.title
-  markdownContent.value = item.content
-  markdownSource.value = item.content
   
-  // 如果在視覺模式,需要將 Markdown 轉回 HTML
-  if (editMode.value === 'visual' && editorRef.value) {
-    // 使用 markdown-it 將 Markdown 轉換為 HTML
-    const htmlContent = md.render(item.content)
-    editorRef.value.setContent(htmlContent)
+  // 優先使用 item.markdown (完整內容)，如果沒有則使用 item.content
+  const fullContent = item.markdown || item.content || ''
+  
+  try {
+    const parsed = fm(fullContent)
+    const attrs: Record<string, any> = parsed.attributes || {}
+    
+    // 更新 Front Matter 相關變數
+    documentTitle.value = 'title' in attrs ? String(attrs.title) : (item.title || '')
+    documentDescription.value = 'description' in attrs ? String(attrs.description) : ''
+    documentImage.value = 'image' in attrs ? String(attrs.image) : ''
+    documentTag.value = 'tag' in attrs && Array.isArray(attrs.tag) ? attrs.tag.map(String) : ('tag' in attrs && typeof attrs.tag === 'string' ? [attrs.tag] : [])
+    documentCategory.value = 'category' in attrs && Array.isArray(attrs.category) ? attrs.category.map(String) : ('category' in attrs && typeof attrs.category === 'string' ? [attrs.category] : [])
+    documentBlog.value = 'blog' in attrs && typeof attrs.blog === 'boolean' ? attrs.blog : true
+    
+    documentTagString.value = documentTag.value.join('\n')
+    documentCategoryString.value = documentCategory.value.join('\n')
+    
+    // 更新編輯器內容
+    // 如果有解析出 body，使用 body；否則使用原始內容
+    const bodyContent = parsed.body !== undefined ? parsed.body : fullContent
+    markdownContent.value = bodyContent
+    markdownSource.value = bodyContent
+    
+    // 如果在視覺模式 (雖然現在預設是 markdown 模式)，需要將 Markdown 轉回 HTML
+    if (editMode.value === 'visual' && editorRef.value) {
+      const htmlContent = md.render(bodyContent)
+      editorRef.value.setContent(htmlContent)
+    }
+  } catch (e) {
+    console.error('解析歷史紀錄失敗:', e)
+    // Fallback
+    documentTitle.value = item.title
+    markdownContent.value = item.content
+    markdownSource.value = item.content
   }
   
   saveCurrentDoc()
