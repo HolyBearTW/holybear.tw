@@ -19,7 +19,7 @@
     "markdown-it-front-matter": "^0.2.4",
     "medium-zoom": "^1.1.0",
     "opencc-js": "^1.0.5",
-    "three": "^0.181.2",
+    "three": "^0.182.0",
     "turndown": "^7.2.2",
     "vue-chartjs": "^5.3.3",
     "vue-instantsearch": "^4.22.4"
