@@ -63,7 +63,7 @@ const App: React.FC = () => {
     return import.meta.env.VITE_NEXON_API_KEY || localStorage.getItem('nexon_api_key') || null;
   });
   const [geminiKey, setGeminiKey] = useState<string | null>(() => {
-    return import.meta.env.VITE_GEMINI_API_KEY || localStorage.getItem('gemini_api_key') || null;
+    return import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_DEFAULT_GEMINI_KEY || localStorage.getItem('gemini_api_key') || null;
   });
   const [geminiModel, setGeminiModel] = useState<string>(() => {
     return localStorage.getItem('gemini_model') || 'gemini-2.5-flash';
@@ -267,6 +267,8 @@ const App: React.FC = () => {
     <div className="min-h-screen bg-transparent text-slate-200 font-sans pb-20">
       {!apiKey && (
         <ApiKeyModal 
+          defaultNexonKey={apiKey || ''}
+          defaultGeminiKey={geminiKey || ''}
           onSave={(nexonKey, geminiKey) => {
             setApiKey(nexonKey);
             localStorage.setItem('nexon_api_key', nexonKey);

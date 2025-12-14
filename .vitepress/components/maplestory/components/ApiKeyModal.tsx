@@ -4,11 +4,13 @@ import { Key, Lock, ExternalLink, Sparkles } from 'lucide-react';
 interface ApiKeyModalProps {
   onSave: (nexonKey: string, geminiKey: string) => void;
   onDemo: () => void;
+  defaultNexonKey?: string;
+  defaultGeminiKey?: string;
 }
 
-const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ onSave, onDemo }) => {
-  const [nexonKey, setNexonKey] = useState('');
-  const [geminiKey, setGeminiKey] = useState('');
+const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ onSave, onDemo, defaultNexonKey = '', defaultGeminiKey = '' }) => {
+  const [nexonKey, setNexonKey] = useState(defaultNexonKey);
+  const [geminiKey, setGeminiKey] = useState(defaultGeminiKey);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
