@@ -121,9 +121,9 @@ const CashEquipmentGrid: React.FC<CashEquipmentGridProps> = ({ cashEquipment, be
     p3: CashItemEquipmentPreset[], 
     currentPreset: number
   ) => {
-    if (currentPreset === 1) return p1;
-    if (currentPreset === 2) return p2;
-    if (currentPreset === 3) return p3;
+    if (currentPreset === 1 && p1 && p1.length > 0) return p1;
+    if (currentPreset === 2 && p2 && p2.length > 0) return p2;
+    if (currentPreset === 3 && p3 && p3.length > 0) return p3;
     return base;
   };
 
@@ -259,7 +259,11 @@ const CashEquipmentGrid: React.FC<CashEquipmentGridProps> = ({ cashEquipment, be
                 <CashSlot label="帽子" item={findByKeywords(['帽子', 'Hat', 'Cap'])} tooltipSide="left" />
                 <CashSlot label="上衣" item={findByKeywords(['上衣', '套服', 'Top', 'Overall'])} tooltipSide="left" />
                 <CashSlot label="褲子" item={findByKeywords(['褲子', 'Bottom'])} tooltipSide="left" />
-                <CashSlot label="武器" item={findByKeywords(['武器', 'Weapon'])} tooltipSide="left" />
+                <CashSlot label="武器" item={activeItems.find(item => 
+                    (item.cash_item_equipment_slot === '武器' || item.cash_item_equipment_slot === 'Weapon') && 
+                    !item.cash_item_equipment_slot.includes('Secondary') && 
+                    !item.cash_item_equipment_slot.includes('Shield')
+                )} tooltipSide="left" />
             </div>
             <div className="flex flex-col gap-2">
                 <CashSlot label="披風" item={findByKeywords(['披風', 'Cape'])} tooltipSide="left" />
