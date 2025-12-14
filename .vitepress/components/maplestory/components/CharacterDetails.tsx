@@ -26,6 +26,7 @@ const LINK_SKILL_DATA: Record<string, (lv: number) => Record<string, number>> = 
   '精靈的祝福': (lv) => ({ '經驗值獲得量': lv === 1 ? 10 : 15 }), // Mercedes
   '自然之友': (lv) => ({ '傷害': lv === 1 ? 3 : 5 }), // Lara
   '自信': (lv) => ({ '無視防禦率': lv === 1 ? 5 : 10 }), // Hoyoung (IED is passive)
+  '自信心': (lv) => ({ '無視防禦率': lv === 1 ? 5 : 10 }), // Hoyoung (Alias)
   '鋼鐵之牆': (lv) => ({ '最大HP': lv === 1 ? 5 : 10 }), // Kaiser (Iron Will)
   '光之守護': (lv) => ({ '攻擊力': lv === 1 ? 10 : 15, '魔法攻擊力': lv === 1 ? 10 : 15 }), // Explorer Warrior (Wait, this is actually Cygnus? No, Cygnus is Cygnus Blessing. Explorer Warrior is Invincible Belief (HP regen). Wait, "光之守護" is usually Mihile (Knight's Watch)? No, Mihile is "守護者". "光之守護" might be a translation for something else or I made a mistake in previous turn. Let's check standard translations.
   // "光之守護" -> Light's Guardian? 
@@ -164,36 +165,40 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data }) => {
                         // Boss Damage (covers "Boss Damage" and "Boss Attack Power")
                         { regex: /(?:Boss|BOSS).*(?:傷害|攻擊力)[^0-9]*(\d+)%?/i, name: 'BOSS 傷害', isPercent: true },
                         
-                        // IED
-                        { regex: /無視.*防禦率[^0-9]*(\d+)%?/, name: '無視防禦率', isPercent: true },
+                        // IED - Check for "10% Ignore Defense" first, then "Ignore Defense 10%"
+                        { regex: /(\d+)%?\s*無視.*防禦率/, name: '無視防禦率', isPercent: true },
+                        { regex: /無視.*防禦率\s*(?:\+|:)?\s*(\d+)%?/, name: '無視防禦率', isPercent: true },
                         
                         // Crit Rate (covers "Crit Rate" and "Crit Probability")
-                        { regex: /爆擊(?:機)?率[^0-9]*(\d+)%?/, name: '爆擊率', isPercent: true },
+                        { regex: /(\d+)%?\s*爆擊(?:機)?率/, name: '爆擊率', isPercent: true },
+                        { regex: /爆擊(?:機)?率\s*(?:\+|:)?\s*(\d+)%?/, name: '爆擊率', isPercent: true },
                         
                         // Crit Damage
-                        { regex: /爆擊傷害[^0-9]*(\d+)%?/, name: '爆擊傷害', isPercent: true },
+                        { regex: /(\d+)%?\s*爆擊傷害/, name: '爆擊傷害', isPercent: true },
+                        { regex: /爆擊傷害\s*(?:\+|:)?\s*(\d+)%?/, name: '爆擊傷害', isPercent: true },
                         
                         // HP/MP (covers "Max HP" and "Max Increased HP")
-                        { regex: /最大(?:增加)?\s*HP[^0-9]*(\d+)%/, name: '最大HP', isPercent: true },
-                        { regex: /最大(?:增加)?\s*MP[^0-9]*(\d+)%/, name: '最大MP', isPercent: true },
+                        { regex: /最大(?:增加)?\s*HP\s*(?:\+|:)?\s*(\d+)%/, name: '最大HP', isPercent: true },
+                        { regex: /最大(?:增加)?\s*MP\s*(?:\+|:)?\s*(\d+)%/, name: '最大MP', isPercent: true },
                         
                         // All Stat
-                        { regex: /(?:全屬性|所有屬性)[^0-9]*(\d+)/, name: '全屬性' },
+                        { regex: /(?:全屬性|所有屬性)\s*(?:\+|:)?\s*(\d+)/, name: '全屬性' },
                         
                         // Magic Attack
-                        { regex: /魔法攻擊力[^0-9]*(\d+)/, name: '魔法攻擊力' },
+                        { regex: /魔法攻擊力\s*(?:\+|:)?\s*(\d+)/, name: '魔法攻擊力' },
                         
                         // Attack Power (Exclude Boss/Magic)
-                        { regex: /攻擊力[^0-9]*(\d+)/, name: '攻擊力', exclude: ['Boss', 'BOSS', '魔法'] },
+                        { regex: /攻擊力\s*(?:\+|:)?\s*(\d+)/, name: '攻擊力', exclude: ['Boss', 'BOSS', '魔法'] },
                         
-                        // Exp
-                        { regex: /經驗值.*(\d+)%?/, name: '經驗值獲得量', isPercent: true },
+                        // Exp - Use non-greedy match to avoid consuming the number if it appears later
+                        { regex: /經驗值.*?(\d+)%?/, name: '經驗值獲得量', isPercent: true },
                         
                         // Status Resistance
-                        { regex: /狀態異常抗性[^0-9]*(\d+)/, name: '狀態異常抗性' },
+                        { regex: /狀態異常抗性\s*(?:\+|:)?\s*(\d+)/, name: '狀態異常抗性' },
                         
                         // Damage (Exclude Boss/Crit)
-                        { regex: /傷害[^0-9]*(\d+)%?/, name: '傷害', isPercent: true, exclude: ['Boss', 'BOSS', '爆擊'] },
+                        { regex: /(\d+)%?\s*傷害/, name: '傷害', isPercent: true, exclude: ['Boss', 'BOSS', '爆擊', '受到'] },
+                        { regex: /傷害\s*(?:\+|:)?\s*(\d+)%?/, name: '傷害', isPercent: true, exclude: ['Boss', 'BOSS', '爆擊', '受到'] },
                     ];
 
                     patterns.forEach(p => {
@@ -266,7 +271,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data }) => {
                         <span className="font-bold text-yellow-200 text-sm truncate block">{linkSkill.character_owned_link_skill.skill_name}</span>
                         <span className="text-[10px] bg-yellow-900/50 text-yellow-400 px-1 rounded border border-yellow-700/50">Own</span>
                     </div>
-                    <div className="text-[10px] leading-tight">
+                    <div className="text-xs leading-tight">
                         {linkSkill.character_owned_link_skill.skill_effect && (
                             <p className="text-green-400 mb-1 line-clamp-2" title={linkSkill.character_owned_link_skill.skill_effect}>
                                 {linkSkill.character_owned_link_skill.skill_effect.replace(/\\n/g, ' ')}
@@ -289,7 +294,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data }) => {
                   <div className="mb-1 pr-8">
                     <span className="font-bold text-slate-200 text-sm truncate block">{skill.skill_name}</span>
                   </div>
-                  <div className="text-[10px] leading-tight">
+                  <div className="text-xs leading-tight">
                     {skill.skill_effect && (
                         <p className="text-green-400 mb-1 line-clamp-2" title={skill.skill_effect}>
                             {skill.skill_effect.replace(/\\n/g, ' ')}
@@ -428,7 +433,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data }) => {
             {symbolEquipment.symbol.map((sym, idx) => (
               <div key={idx} className="bg-slate-900 p-2 rounded-lg border border-slate-700 flex flex-col items-center text-center relative overflow-hidden group">
                 <img src={sym.symbol_icon} alt={sym.symbol_name} className="w-8 h-8 mb-1 z-10" />
-                <div className="text-[10px] text-slate-300 leading-tight z-10">{sym.symbol_name}</div>
+                <div className="text-xs text-slate-300 leading-tight z-10">{sym.symbol_name}</div>
                 <div className="text-xs font-bold text-blue-400 z-10">Lv.{sym.symbol_level}</div>
                 <div className="absolute inset-0 bg-gradient-to-t from-blue-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
@@ -548,7 +553,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data }) => {
                   {set.total_set_count} 套裝
                 </span>
               </div>
-              <div className="text-[10px] text-slate-400 space-y-1">
+              <div className="text-xs text-slate-400 space-y-1">
                  {set.set_effect_info.map((info, i) => (
                    <div key={i} className="flex gap-2">
                      <span className="text-slate-500 w-8 shrink-0">{info.set_count}件:</span>
@@ -597,7 +602,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data }) => {
                       ) : (
                           <div className="w-8 h-8 mb-1 bg-slate-800 rounded flex items-center justify-center text-[10px] text-slate-600">?</div>
                       )}
-                      <div className="text-[10px] text-slate-400 mb-1 truncate w-full">{core.hexa_core_name}</div>
+                      <div className="text-xs text-slate-400 mb-1 truncate w-full">{core.hexa_core_name}</div>
                       <div className="text-xs font-bold text-purple-400">Lv.{core.hexa_core_level}</div>
                    </div>
                 );
@@ -622,7 +627,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data }) => {
                       ) : (
                           <div className="w-8 h-8 mb-1 bg-slate-800 rounded flex items-center justify-center text-[10px] text-slate-600">?</div>
                       )}
-                      <div className="text-[10px] text-slate-400 mb-1 truncate w-full">{core.v_core_name}</div>
+                      <div className="text-xs text-slate-400 mb-1 truncate w-full">{core.v_core_name}</div>
                       <div className="text-xs font-bold text-blue-400">Lv.{core.v_core_level} <span className="text-[9px] text-slate-500">({core.slot_level})</span></div>
                    </div>
                  );
