@@ -505,23 +505,23 @@ const App: React.FC = () => {
                           <img src={data.basic.character_image} alt="Character" className="w-[150%] h-[150%] object-cover mt-8" />
                       </div>
 
-                      <div className="flex items-center justify-center gap-2 mb-1">
-                        <h2 className="text-2xl font-bold text-white">{data.basic.character_name}</h2>
-                        <button 
-                          onClick={() => setShowShareModal(true)}
-                          className="p-1.5 text-slate-400 hover:text-indigo-400 hover:bg-indigo-900/30 rounded-full transition-colors"
-                          title="分享角色"
-                        >
-                          <Share2 className="w-4 h-4" />
-                        </button>
-                      </div>
+                      <h2 className="text-2xl font-bold text-white mb-1 text-center">{data.basic.character_name}</h2>
                       
                       <div className="flex flex-wrap justify-center gap-2 text-xs text-slate-400 mb-6">
                          <span className="flex items-center gap-1"><ThumbsUp className="w-3 h-3" /> {data.stat.pop || 0}</span>
                          <span className="text-slate-600">|</span>
                          <span>{data.basic.character_guild_name || '無公會'}</span>
                          <span className="text-slate-600">|</span>
-                         <span className="text-indigo-400">{data.basic.world_name}</span>
+                         <div className="flex items-center gap-1">
+                           <span className="text-indigo-400">{data.basic.world_name}</span>
+                           <button 
+                             onClick={() => setShowShareModal(true)}
+                             className="p-1 text-slate-400 hover:text-indigo-400 hover:bg-indigo-900/30 rounded-full transition-colors"
+                             title="分享角色"
+                           >
+                             <Share2 className="w-3 h-3" />
+                           </button>
+                         </div>
                       </div>
 
                       {/* Level & Class */}
