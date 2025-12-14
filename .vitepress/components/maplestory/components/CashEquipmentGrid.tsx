@@ -271,7 +271,7 @@ const CashEquipmentGrid: React.FC<CashEquipmentGridProps> = ({ cashEquipment, be
                 <CashSlot label="鞋子" item={findByKeywords(['鞋子', 'Shoes'])} tooltipSide="left" />
                 {/* Secondary Weapon / Shield if available in Cash Items? Usually not, but user asked for it */}
                 {/* Cash items usually don't have secondary unless it's a shield skin */}
-                <CashSlot label="副武" item={findByKeywords(['副武', 'Secondary', 'Shield'])} tooltipSide="left" />
+                <CashSlot label="副武" item={findByKeywords(['副武', '輔助武器', 'Secondary', 'Shield'])} tooltipSide="left" />
             </div>
          </div>
       </div>
