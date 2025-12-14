@@ -169,6 +169,8 @@ export interface CharacterUnion {
   date: string;
   union_level: number;
   union_grade: string;
+  union_artifact_level?: number;
+  union_artifact_exp?: number;
 }
 
 export interface CharacterUnionArtifact {
@@ -186,6 +188,9 @@ export interface CharacterUnionArtifact {
       crystal_option_name_3: string;
   }[];
   union_artifact_remain_ap: number;
+  union_artifact_level?: number;
+  level?: number; // Possible fallback field
+  union_artifact_exp?: number;
 }
 
 export interface CharacterPetEquipment {

@@ -61,6 +61,12 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data }) => {
     skill0, skill1, skill2, skill3, skill4, skillHyper, skill5, skill6 
   } = data;
 
+  // Debug: Log Union and Artifact data to check for missing fields
+  React.useEffect(() => {
+      if (union) console.log('Union Data:', union);
+      if (unionArtifact) console.log('Artifact Data:', unionArtifact);
+  }, [union, unionArtifact]);
+
   const findSkillIcon = (name: string) => {
       if (!name) return undefined;
       // Normalize name: remove " Node", split by "/"
@@ -332,7 +338,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data }) => {
                <div className="flex justify-between items-center bg-slate-800/50 p-3 rounded-lg">
                   <span className="text-slate-400">神器等級</span>
                   <span className="text-xl font-bold text-purple-400">
-                    {unionArtifact.union_artifact_crystal.reduce((acc, curr) => acc + curr.level, 0)}
+                    {unionArtifact?.union_artifact_level ?? unionArtifact?.level ?? union?.union_artifact_level ?? '-'}
                   </span>
                </div>
                <div className="grid grid-cols-2 gap-2">

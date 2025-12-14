@@ -5,29 +5,66 @@ import {
 
 const BASE_URL = 'https://open.api.nexon.com/maplestorytw/v1';
 
-const getYesterday = () => {
-  const date = new Date();
-  date.setDate(date.getDate() - 1);
-  return date.toISOString().split('T')[0];
+// Helper to get date in Taiwan timezone (UTC+8)
+const getTaiwanDate = (offsetDays = 0) => {
+  const now = new Date();
+  const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+  const twTimestamp = utc + (3600000 * 8); // UTC + 8 hours
+  const twDate = new Date(twTimestamp);
+  twDate.setUTCDate(twDate.getUTCDate() - offsetDays);
+  
+  const year = twDate.getUTCFullYear();
+  const month = String(twDate.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(twDate.getUTCDate()).padStart(2, '0');
+  
+  return `${year}-${month}-${day}`;
 };
 
-const getDateBefore = (days: number) => {
-  const date = new Date();
-  date.setDate(date.getDate() - days);
-  return date.toISOString().split('T')[0];
-};
+const getYesterday = () => getTaiwanDate(1);
+const getDateBefore = (days: number) => getTaiwanDate(days);
 
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Simple in-memory cache for OCID to save API calls
 const ocidCache: Record<string, string> = {};
 
+// Helper to determine the latest available data date
+const determineLatestDate = async (ocid: string, apiKey: string): Promise<string> => {
+    const headers = { 
+        'x-nxopen-api-key': apiKey, 
+        'accept': 'application/json',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+    };
+    // Try Today (0), Yesterday (1), Day Before (2)
+    for (const offset of [0, 1, 2]) {
+        const dateStr = getTaiwanDate(offset);
+        const url = `${BASE_URL}/character/basic?ocid=${ocid}&date=${dateStr}`;
+        try {
+            const res = await fetch(url, { headers, cache: 'no-store' });
+            if (res.ok) {
+                console.log(`[Date Probe] Found data for date: ${dateStr}`);
+                return dateStr;
+            }
+        } catch (e) {
+            console.warn(`[Date Probe] Failed to probe date ${dateStr}`, e);
+        }
+    }
+    return getTaiwanDate(1); // Fallback to yesterday
+};
+
 const fetchWithRetry = async (url: string, options: RequestInit, retries = 5, backoff = 2000): Promise<Response> => {
   let lastStatus: number | null = null;
+  // Ensure headers exist
+  const headers = new Headers(options.headers || {});
+  headers.set('Cache-Control', 'no-cache');
+  headers.set('Pragma', 'no-cache');
+  
+  const newOptions = { ...options, headers, cache: 'no-store' as RequestCache };
+
   for (let i = 0; i < retries; i++) {
     try {
-      // Add cache: 'no-store' to prevent browser caching of API responses
-      const res = await fetch(url, { ...options, cache: 'no-store' });
+      const res = await fetch(url, newOptions);
       lastStatus = res.status;
       if (res.ok) return res;
       
@@ -78,7 +115,7 @@ export const fetchCharacterData = async (characterName: string, apiKey: string):
     'accept': 'application/json'
   };
 
-  const dateParam = getYesterday();
+  // const dateParam = getYesterday(); // Removed, calculated dynamically later
   const date7DaysAgo = getDateBefore(8); // 7 days before yesterday
 
   // 1. Get OCID (Check cache first)
@@ -98,34 +135,37 @@ export const fetchCharacterData = async (characterName: string, apiKey: string):
     ocidCache[characterName] = ocid; // Cache it
   }
 
-  // 2. Fetch all details in batches to avoid Rate Limiting (429)
+  // 2. Determine the best date to fetch
+  const dateParam = await determineLatestDate(ocid, apiKey);
+
+  // 3. Fetch all details in batches to avoid Rate Limiting (429)
   // Add timestamp to prevent caching
   const timestamp = Date.now();
   const urls = [
-    `${BASE_URL}/character/basic?ocid=${ocid}&date=${dateParam}&_t=${timestamp}`,
-    `${BASE_URL}/character/stat?ocid=${ocid}&date=${dateParam}&_t=${timestamp}`,
-    `${BASE_URL}/character/item-equipment?ocid=${ocid}&date=${dateParam}&_t=${timestamp}`,
-    `${BASE_URL}/character/ability?ocid=${ocid}&date=${dateParam}&_t=${timestamp}`,
-    `${BASE_URL}/character/hyper-stat?ocid=${ocid}&date=${dateParam}&_t=${timestamp}`,
-    `${BASE_URL}/character/link-skill?ocid=${ocid}&date=${dateParam}&_t=${timestamp}`,
-    `${BASE_URL}/user/union?ocid=${ocid}&date=${dateParam}&_t=${timestamp}`,
-    `${BASE_URL}/user/union-artifact?ocid=${ocid}&date=${dateParam}&_t=${timestamp}`,
-    `${BASE_URL}/character/pet-equipment?ocid=${ocid}&date=${dateParam}&_t=${timestamp}`,
-    `${BASE_URL}/character/symbol-equipment?ocid=${ocid}&date=${dateParam}&_t=${timestamp}`,
-    `${BASE_URL}/character/set-effect?ocid=${ocid}&date=${dateParam}&_t=${timestamp}`,
-    `${BASE_URL}/character/vmatrix?ocid=${ocid}&date=${dateParam}&_t=${timestamp}`,
-    `${BASE_URL}/character/hexamatrix?ocid=${ocid}&date=${dateParam}&_t=${timestamp}`,
-    `${BASE_URL}/character/dojang?ocid=${ocid}&date=${dateParam}&_t=${timestamp}`,
-    `${BASE_URL}/character/skill?ocid=${ocid}&date=${dateParam}&character_skill_grade=5&_t=${timestamp}`,
-    `${BASE_URL}/character/skill?ocid=${ocid}&date=${dateParam}&character_skill_grade=6&_t=${timestamp}`,
-    `${BASE_URL}/character/skill?ocid=${ocid}&date=${dateParam}&character_skill_grade=0&_t=${timestamp}`,
-    `${BASE_URL}/character/skill?ocid=${ocid}&date=${dateParam}&character_skill_grade=1&_t=${timestamp}`,
-    `${BASE_URL}/character/skill?ocid=${ocid}&date=${dateParam}&character_skill_grade=2&_t=${timestamp}`,
-    `${BASE_URL}/character/skill?ocid=${ocid}&date=${dateParam}&character_skill_grade=3&_t=${timestamp}`,
-    `${BASE_URL}/character/skill?ocid=${ocid}&date=${dateParam}&character_skill_grade=4&_t=${timestamp}`,
-    `${BASE_URL}/character/basic?ocid=${ocid}&date=${date7DaysAgo}&_t=${timestamp}`,
-    `${BASE_URL}/character/popularity?ocid=${ocid}&date=${dateParam}&_t=${timestamp}`,
-    `${BASE_URL}/character/hexamatrix-stat?ocid=${ocid}&date=${dateParam}&_t=${timestamp}`,
+    `${BASE_URL}/character/basic?ocid=${ocid}&date=${dateParam}`,
+    `${BASE_URL}/character/stat?ocid=${ocid}&date=${dateParam}`,
+    `${BASE_URL}/character/item-equipment?ocid=${ocid}&date=${dateParam}`,
+    `${BASE_URL}/character/ability?ocid=${ocid}&date=${dateParam}`,
+    `${BASE_URL}/character/hyper-stat?ocid=${ocid}&date=${dateParam}`,
+    `${BASE_URL}/character/link-skill?ocid=${ocid}&date=${dateParam}`,
+    `${BASE_URL}/user/union?ocid=${ocid}&date=${dateParam}`,
+    `${BASE_URL}/user/union-artifact?ocid=${ocid}&date=${dateParam}`,
+    `${BASE_URL}/character/pet-equipment?ocid=${ocid}&date=${dateParam}`,
+    `${BASE_URL}/character/symbol-equipment?ocid=${ocid}&date=${dateParam}`,
+    `${BASE_URL}/character/set-effect?ocid=${ocid}&date=${dateParam}`,
+    `${BASE_URL}/character/vmatrix?ocid=${ocid}&date=${dateParam}`,
+    `${BASE_URL}/character/hexamatrix?ocid=${ocid}&date=${dateParam}`,
+    `${BASE_URL}/character/dojang?ocid=${ocid}&date=${dateParam}`,
+    `${BASE_URL}/character/skill?ocid=${ocid}&date=${dateParam}&character_skill_grade=5`,
+    `${BASE_URL}/character/skill?ocid=${ocid}&date=${dateParam}&character_skill_grade=6`,
+    `${BASE_URL}/character/skill?ocid=${ocid}&date=${dateParam}&character_skill_grade=0`,
+    `${BASE_URL}/character/skill?ocid=${ocid}&date=${dateParam}&character_skill_grade=1`,
+    `${BASE_URL}/character/skill?ocid=${ocid}&date=${dateParam}&character_skill_grade=2`,
+    `${BASE_URL}/character/skill?ocid=${ocid}&date=${dateParam}&character_skill_grade=3`,
+    `${BASE_URL}/character/skill?ocid=${ocid}&date=${dateParam}&character_skill_grade=4`,
+    `${BASE_URL}/character/basic?ocid=${ocid}&date=${date7DaysAgo}`,
+    `${BASE_URL}/character/popularity?ocid=${ocid}&date=${dateParam}`,
+    `${BASE_URL}/character/hexamatrix-stat?ocid=${ocid}&date=${dateParam}`,
   ];
 
   const responses: Response[] = [];

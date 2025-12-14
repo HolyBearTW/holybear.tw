@@ -404,11 +404,19 @@ const App: React.FC = () => {
              onFocus={() => setShowHistory(true)}
              onBlur={() => setTimeout(() => setShowHistory(false), 200)}
              placeholder="輸入角色名稱 (例如: 怪獸小熊)"
-             className="w-full bg-[#1a1d24] border border-slate-700 rounded-xl py-3 pl-12 pr-12 text-base focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition-all text-white placeholder:text-slate-600 shadow-lg"
+             className="w-full bg-[#1a1d24] border border-slate-700 rounded-xl py-3 pl-12 pr-24 text-base focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition-all text-white placeholder:text-slate-600 shadow-lg"
            />
-           <button type="submit" disabled={loading} className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
-           </button>
+           <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1 items-center">
+             {data && (
+                <div className="hidden sm:flex flex-col items-end mr-2 justify-center">
+                    <span className="text-[10px] text-slate-500 leading-none">資料日期</span>
+                    <span className="text-xs font-mono text-indigo-400 font-bold">{data.basic.date.split('T')[0]}</span>
+                </div>
+             )}
+             <button type="submit" disabled={loading} className="p-1.5 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
+             </button>
+           </div>
 
            {/* Search History Dropdown */}
            {showHistory && searchHistory.length > 0 && (
@@ -565,7 +573,7 @@ const App: React.FC = () => {
                          </div>
                          <div className="flex justify-between border-b border-slate-800/50 pb-1.5">
                             <span>神器等級</span>
-                            <span className="text-slate-300 font-mono">{data.unionArtifact?.union_artifact_crystal?.reduce((acc, curr) => acc + curr.level, 0) || 0}</span>
+                            <span className="text-slate-300 font-mono">{data.unionArtifact?.union_artifact_level ?? data.unionArtifact?.level ?? data.union?.union_artifact_level ?? 0}</span>
                          </div>
                          <div className="flex justify-between border-b border-slate-800/50 pb-1.5">
                             <span>武陵道場</span>
