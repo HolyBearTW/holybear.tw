@@ -20,7 +20,12 @@ interface BeautySlotProps {
 
 const BeautySlot: React.FC<BeautySlotProps> = ({ label, name, baseColor, mixColor, mixRate, hue, saturation, brightness }) => {
   const hasMix = mixRate && parseInt(mixRate) > 0;
-  const hasSkinDetails = hue !== undefined && saturation !== undefined && brightness !== undefined && (hue !== 0 || saturation !== 0 || brightness !== 0);
+  // Ensure values are numbers and at least one is non-zero to display details
+  const hasSkinDetails = 
+    typeof hue === 'number' && 
+    typeof saturation === 'number' && 
+    typeof brightness === 'number' && 
+    (hue !== 0 || saturation !== 0 || brightness !== 0);
   
   return (
     <div className="relative group z-0 hover:z-50">
@@ -43,7 +48,7 @@ const BeautySlot: React.FC<BeautySlotProps> = ({ label, name, baseColor, mixColo
               
               <div className="flex flex-col items-center gap-1">
                 <div className="flex justify-center gap-2 text-[10px]">
-                   <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">{baseColor}</span>
+                   {baseColor && <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">{baseColor}</span>}
                    {hasMix && (
                       <>
                         <span className="text-slate-500">+</span>
@@ -186,14 +191,14 @@ const CashEquipmentGrid: React.FC<CashEquipmentGridProps> = ({ cashEquipment, be
                 <img 
                   src={`${characterImage}${characterImage.includes('?') ? '&' : '?'}action=A06`} 
                   alt="Character" 
-                  className="relative z-10 drop-shadow-2xl scale-125 transform translate-y-[-10px]" 
+                  className="relative z-10 drop-shadow-2xl scale-125 transform translate-y-4" 
                 />
             ) : (
                 <div className="w-24 h-24 rounded-full bg-slate-800/50 mb-4" />
             )}
             
             {/* Beauty Slots */}
-            <div className="flex flex-col gap-2 mt-4 relative z-20 items-center">
+            <div className="flex flex-col gap-2 mt-12 relative z-20 items-center">
                 <div className="flex gap-2">
                    <BeautySlot 
                       label={beautyEquipment?.additional_character_hair ? (beautyEquipment?.character_class?.includes('神之子') ? "髮型 (Alpha)" : "髮型 (一般)") : "髮型"} 
