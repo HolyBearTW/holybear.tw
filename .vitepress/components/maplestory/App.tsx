@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Loader2, RefreshCw, AlertCircle, Wand2, ThumbsUp, Shield, Sword, Flame, Star, Zap, ChevronDown, ChevronUp, History, X, Settings, Crown, LogOut } from 'lucide-react';
+import { Search, Loader2, RefreshCw, AlertCircle, Wand2, ThumbsUp, Shield, Sword, Flame, Star, Zap, ChevronDown, ChevronUp, History, X, Settings, Crown, LogOut, Share2 } from 'lucide-react';
 import ApiKeyModal from './components/ApiKeyModal';
+import ShareModal from './components/ShareModal';
 import EquipmentGrid from './components/EquipmentGrid';
 import CharacterDetails from './components/CharacterDetails';
 import StatRadarChart from './components/StatRadarChart';
@@ -78,6 +79,8 @@ const App: React.FC = () => {
   const [showDetailStats, setShowDetailStats] = useState(false);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const initialSearchDone = useRef(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const aiResultRef = useRef<HTMLDivElement>(null);
 
@@ -146,6 +149,10 @@ const App: React.FC = () => {
       const result = await fetchCharacterData(targetName, targetKey);
       setData(result);
       addToHistory(targetName);
+      // Update URL hash
+      if (typeof window !== 'undefined') {
+        window.history.replaceState(null, '', `#${targetName}`);
+      }
     } catch (err: any) {
       console.error(err);
       setError(err.message || '發生非預期的錯誤，請檢查名稱或 API Key。');
@@ -165,6 +172,18 @@ const App: React.FC = () => {
     setAiAnalysis(result);
     setAnalyzing(false);
   };
+
+  // Handle URL hash for direct linking
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.hash && apiKey && !initialSearchDone.current) {
+      const hashName = decodeURIComponent(window.location.hash.substring(1));
+      if (hashName) {
+        setCharacterName(hashName);
+        handleSearch(undefined, hashName);
+        initialSearchDone.current = true;
+      }
+    }
+  }, [apiKey]);
 
   // Helper to extract specific stat values safely
   const getStatVal = (name: string): string => {
@@ -486,7 +505,16 @@ const App: React.FC = () => {
                           <img src={data.basic.character_image} alt="Character" className="w-[150%] h-[150%] object-cover mt-8" />
                       </div>
 
-                      <h2 className="text-2xl font-bold text-white mb-1 text-center">{data.basic.character_name}</h2>
+                      <div className="flex items-center justify-center gap-2 mb-1">
+                        <h2 className="text-2xl font-bold text-white">{data.basic.character_name}</h2>
+                        <button 
+                          onClick={() => setShowShareModal(true)}
+                          className="p-1.5 text-slate-400 hover:text-indigo-400 hover:bg-indigo-900/30 rounded-full transition-colors"
+                          title="分享角色"
+                        >
+                          <Share2 className="w-4 h-4" />
+                        </button>
+                      </div>
                       
                       <div className="flex flex-wrap justify-center gap-2 text-xs text-slate-400 mb-6">
                          <span className="flex items-center gap-1"><ThumbsUp className="w-3 h-3" /> {data.stat.pop || 0}</span>
@@ -718,6 +746,13 @@ const App: React.FC = () => {
 
           {/* Extended Details Section */}
           <CharacterDetails data={data} />
+
+          {showShareModal && (
+            <ShareModal 
+              characterName={data.basic.character_name} 
+              onClose={() => setShowShareModal(false)} 
+            />
+          )}
         </>
         )}
 

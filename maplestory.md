@@ -1,7 +1,7 @@
 ---
 layout: page
-title: 楓之谷戰力分析
-description: 楓之谷角色戰力分析工具，支援查詢角色裝備、能力值，並透過 AI 進行分析。
+title: 新楓之谷戰力分析
+description: 新楓之谷角色戰力分析工具，支援查詢台版角色裝備、能力值，並透過 AI 進行分析。
 ---
 
 <ClientOnly>
