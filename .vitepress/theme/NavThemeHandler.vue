@@ -42,8 +42,8 @@ const handleClick = (event: MouseEvent) => {
     for (const [displayName, themeId, icon] of backgroundThemes) {
       const themeHash = `#theme-${themeId}`
       
-      // 檢查 href 或文字內容是否匹配
-      if (href.includes(themeHash) || text.includes(icon) || text.includes(displayName)) {
+      // 檢查 href 是否匹配 (移除文字匹配以避免誤觸，例如側邊欄連結包含 emoji 時)
+      if (href.includes(themeHash)) {
         event.preventDefault()
         event.stopPropagation()
         changeTheme(themeId)
