@@ -44,7 +44,7 @@ const SLOT_DEFINITIONS: Record<string, { label: string, match: string[] }> = {
   'Secondary': { label: '副武', match: ['secondary', 'subweapon', 'shield', 'katara', '副武器', '盾牌', '輔助武器'] },
 };
 
-const Slot: React.FC<{ slotKey: string; item?: EquipmentItem }> = ({ slotKey, item }) => {
+const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'left' | 'right' }> = ({ slotKey, item, tooltipSide = 'left' }) => {
   const def = SLOT_DEFINITIONS[slotKey];
   
   // Special handling: If slotKey is not defined (e.g. spacer), return empty
@@ -75,6 +75,10 @@ const Slot: React.FC<{ slotKey: string; item?: EquipmentItem }> = ({ slotKey, it
     }
   }
 
+  const desktopPositionClass = tooltipSide === 'left'
+    ? 'md:right-full md:mr-1 md:left-auto'
+    : 'md:left-full md:ml-1 md:right-auto';
+
   return (
     <div className="relative z-0 hover:z-50 group">
       <div className={`w-10 h-10 sm:w-12 sm:h-12 ${bgColor} border-2 ${borderColor} rounded-md flex items-center justify-center relative overflow-hidden transition-all ${glow}`}>
@@ -98,8 +102,9 @@ const Slot: React.FC<{ slotKey: string; item?: EquipmentItem }> = ({ slotKey, it
       </div>
 
       {item && (
-        <div className="absolute z-[100] w-[280px] sm:w-[300px] animate-in fade-in duration-100 hidden group-hover:block
-                        top-full left-1/2 -translate-x-1/2 mt-2 md:top-0 md:left-auto md:right-14 md:mt-0">
+        <div className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[200] w-[90vw] max-w-[320px] max-h-[80vh] overflow-y-auto
+                        hidden group-hover:block animate-in fade-in zoom-in-95 duration-200 shadow-2xl rounded-xl
+                        md:absolute md:top-0 ${desktopPositionClass} md:translate-y-0 md:translate-x-0 md:w-[300px] md:mt-0 md:zoom-in-100 md:max-h-none md:overflow-visible`}>
            <EquipmentTooltip item={item} />
         </div>
       )}
@@ -168,13 +173,13 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, characterImage
       {/* Left Columns */}
       <div className="flex gap-2">
         <div className="flex flex-col gap-2">
-          {['Ring1', 'Ring2', 'Ring3', 'Ring4', 'Belt'].map(key => <Slot key={key} slotKey={key} item={findItem(key)} />)}
+          {['Ring1', 'Ring2', 'Ring3', 'Ring4', 'Belt'].map(key => <Slot key={key} slotKey={key} item={findItem(key)} tooltipSide="right" />)}
           <div className="mt-2">
-             <Slot slotKey="Pocket" item={findItem('Pocket')} />
+             <Slot slotKey="Pocket" item={findItem('Pocket')} tooltipSide="right" />
           </div>
         </div>
         <div className="flex flex-col gap-2">
-           {['Face', 'Eye', 'Earrings', 'Pendant2', 'Pendant'].map(key => <Slot key={key} slotKey={key} item={findItem(key)} />)}
+           {['Face', 'Eye', 'Earrings', 'Pendant2', 'Pendant'].map(key => <Slot key={key} slotKey={key} item={findItem(key)} tooltipSide="right" />)}
         </div>
       </div>
 
@@ -187,21 +192,21 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, characterImage
              <div className="w-24 h-24 rounded-full bg-slate-800/50" />
          )}
          <div className="flex gap-2 mt-8">
-            <Slot slotKey="Weapon" item={findItem('Weapon')} />
-            <Slot slotKey="Secondary" item={findItem('Secondary')} />
-            <Slot slotKey="Emblem" item={findItem('Emblem')} />
+            <Slot slotKey="Weapon" item={findItem('Weapon')} tooltipSide="right" />
+            <Slot slotKey="Secondary" item={findItem('Secondary')} tooltipSide="right" />
+            <Slot slotKey="Emblem" item={findItem('Emblem')} tooltipSide="left" />
          </div>
       </div>
 
       {/* Right Columns */}
       <div className="flex gap-2">
         <div className="flex flex-col gap-2">
-           {['Hat', 'Top', 'Bottom', 'Shoulder'].map(key => <Slot key={key} slotKey={key} item={findItem(key)} />)}
+           {['Hat', 'Top', 'Bottom', 'Shoulder'].map(key => <Slot key={key} slotKey={key} item={findItem(key)} tooltipSide="left" />)}
         </div>
          <div className="flex flex-col gap-2">
-           {['Cape', 'Gloves', 'Shoes', 'Medal', 'Heart'].map(key => <Slot key={key} slotKey={key} item={findItem(key)} />)}
+           {['Cape', 'Gloves', 'Shoes', 'Medal', 'Heart'].map(key => <Slot key={key} slotKey={key} item={findItem(key)} tooltipSide="left" />)}
            <div className="mt-2">
-              <Slot slotKey="Badge" item={findItem('Badge')} />
+              <Slot slotKey="Badge" item={findItem('Badge')} tooltipSide="left" />
            </div>
         </div>
       </div>

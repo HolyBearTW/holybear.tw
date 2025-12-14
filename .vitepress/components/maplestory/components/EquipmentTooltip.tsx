@@ -58,7 +58,7 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item }) => {
   }
 
   return (
-    <div className={`w-[300px] bg-[#1a1d24]/95 backdrop-blur-md border-2 ${potInfo.border} rounded-lg shadow-2xl overflow-hidden z-50 text-left pointer-events-none relative`}>
+    <div className={`w-full bg-[#1a1d24]/95 backdrop-blur-md border-2 ${potInfo.border} rounded-lg shadow-2xl overflow-hidden z-50 text-left pointer-events-none relative`}>
       {/* Header / Stars */}
       <div className="p-3 border-b border-slate-600/50 text-center relative bg-[#15171c]/50">
         {sfCount > 0 && (
