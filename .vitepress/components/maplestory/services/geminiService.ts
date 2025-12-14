@@ -204,7 +204,7 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
             }
 
             if (finalError.message?.includes('429') || finalError.status === 429) {
-                return "⚠️ AI 額度已達上限 (Rate Limit Exceeded)。請稍後再試，或更換 API Key。";
+                return "⚠️ **公用 AI 額度已達上限 (Rate Limit Exceeded)**\n\n因使用人數眾多，公用額度暫時耗盡。請點擊下方的「**設定模型 / API Key**」按鈕，填入您自己的 Google Gemini API Key 即可繼續免費使用。\n\n👉 [取得免費 API Key (Google AI Studio)](https://aistudio.google.com/app/apikey)";
             }
 
             return `AI Analysis Failed: ${finalError.message || finalError.toString()}. \n\nPlease check the browser console (F12) to see the list of available models for your API Key.`;
