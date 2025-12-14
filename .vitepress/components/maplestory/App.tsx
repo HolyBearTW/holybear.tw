@@ -72,6 +72,7 @@ const App: React.FC = () => {
   });
   const [showKeySettings, setShowKeySettings] = useState(false);
   const [characterName, setCharacterName] = useState('');
+  const [selectedDate, setSelectedDate] = useState<string>('');
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -147,7 +148,7 @@ const App: React.FC = () => {
 
     // REAL API CALL
     try {
-      const result = await fetchCharacterData(targetName, targetKey);
+      const result = await fetchCharacterData(targetName, targetKey, selectedDate || undefined);
       setData(result);
       addToHistory(targetName);
       // Update URL hash
@@ -396,6 +397,16 @@ const App: React.FC = () => {
            )}
         </div>
 
+        <div className="flex items-center gap-2 text-sm text-slate-400">
+          <span>指定日期 (選填):</span>
+          <input 
+            type="date" 
+            value={selectedDate} 
+            onChange={(e) => setSelectedDate(e.target.value)}
+            className="bg-[#1a1d24] border border-slate-700 rounded-lg px-3 py-1.5 text-white focus:outline-none focus:border-indigo-500"
+          />
+        </div>
+
         <form onSubmit={handleSearch} className="w-full max-w-2xl relative group">
            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-indigo-400 transition-colors" />
            <input 
@@ -605,7 +616,7 @@ const App: React.FC = () => {
                       <div className="mt-6 pt-4 border-t border-slate-800/50 text-[11px] text-slate-500 space-y-2">
                         <div className="flex gap-2 items-start">
                           <Info className="w-3.5 h-3.5 mt-0.5 shrink-0 text-slate-400" />
-                          <p className="leading-relaxed">資料來源為 Nexon Open API，數據為昨日的快照，每日 00:00 更新。若顯示舊資料請稍後或隔日再試。</p>
+                          <p className="leading-relaxed">資料來源為 Nexon Open API，數據為昨日的快照，每日凌晨 02:00 更新。若顯示舊資料請稍後或隔日再試。</p>
                         </div>
                         <div className="flex gap-2 items-start">
                           <Mail className="w-3.5 h-3.5 mt-0.5 shrink-0 text-slate-400" />

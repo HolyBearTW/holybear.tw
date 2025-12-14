@@ -48,7 +48,7 @@ export default defineConfig({
         ['meta', { name: 'twitter:card', content: 'summary' }],
         ['meta', { name: 'twitter:image', content: '/logo.png' }],
         // Nexon Analytics
-        ['script', { type: 'text/javascript', src: 'https://openapi.nexon.com/js/analytics.js?app_id=245338', async: '' }]
+        ['script', { type: 'text/javascript', src: 'https://openapi.nexon.com/js/analytics.js?app_id=245469', async: '' }]
     ],
     vite: {
         plugins: [gitMetaPlugin(), react()],

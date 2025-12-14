@@ -8,8 +8,10 @@ const BASE_URL = 'https://open.api.nexon.com/maplestorytw/v1';
 // Helper to get date in Taiwan timezone (UTC+8)
 const getTaiwanDate = (offsetDays = 0) => {
   const now = new Date();
-  const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-  const twTimestamp = utc + (3600000 * 8); // UTC + 8 hours
+  // Directly convert UTC timestamp to Taiwan time (UTC+8)
+  // We add 8 hours to the UTC timestamp, then read the UTC components of the new date object.
+  // This effectively gives us the date/time in Taiwan regardless of the user's local timezone.
+  const twTimestamp = now.getTime() + (3600000 * 8); 
   const twDate = new Date(twTimestamp);
   twDate.setUTCDate(twDate.getUTCDate() - offsetDays);
   
@@ -36,8 +38,10 @@ const determineLatestDate = async (ocid: string, apiKey: string): Promise<string
         'Cache-Control': 'no-cache',
         'Pragma': 'no-cache'
     };
-    // Try Today (0), Yesterday (1), Day Before (2)
-    for (const offset of [0, 1, 2]) {
+    // Try Today (0), Yesterday (1), Day Before (2), Day Before That (3)
+    // Some users report being able to fetch today's data, so we include offset 0.
+    // We handle 400 errors gracefully to fallback to previous days if today is not ready.
+    for (const offset of [0, 1, 2, 3]) {
         const dateStr = getTaiwanDate(offset);
         const url = `${BASE_URL}/character/basic?ocid=${ocid}&date=${dateStr}`;
         try {
@@ -45,12 +49,16 @@ const determineLatestDate = async (ocid: string, apiKey: string): Promise<string
             if (res.ok) {
                 console.log(`[Date Probe] Found data for date: ${dateStr}`);
                 return dateStr;
+            } else if (res.status === 400) {
+                // If 400, it's likely "Data preparing" (OPENAPI00009) or "Data missing"
+                // We just log a warning and continue to the next day
+                console.warn(`[Date Probe] Date ${dateStr} returned 400 (likely preparing). Trying previous day...`);
             }
         } catch (e) {
             console.warn(`[Date Probe] Failed to probe date ${dateStr}`, e);
         }
     }
-    return getTaiwanDate(1); // Fallback to yesterday
+    return getTaiwanDate(1); // Fallback to yesterday if all else fails
 };
 
 const fetchWithRetry = async (url: string, options: RequestInit, retries = 5, backoff = 2000): Promise<Response> => {
@@ -109,7 +117,7 @@ const fetchWithRetry = async (url: string, options: RequestInit, retries = 5, ba
   throw new Error(`Failed to fetch ${url} after ${retries} retries. Last Status: ${lastStatus}`);
 };
 
-export const fetchCharacterData = async (characterName: string, apiKey: string): Promise<DashboardData> => {
+export const fetchCharacterData = async (characterName: string, apiKey: string, specificDate?: string): Promise<DashboardData> => {
   const headers = {
     'x-nxopen-api-key': apiKey,
     'accept': 'application/json'
@@ -136,7 +144,12 @@ export const fetchCharacterData = async (characterName: string, apiKey: string):
   }
 
   // 2. Determine the best date to fetch
-  const dateParam = await determineLatestDate(ocid, apiKey);
+  // If specificDate is provided, use it directly. Otherwise, probe for the latest available data.
+  // This ensures we get "Today's" data if available (Instant Update), or fallback to Yesterday.
+  let dateParam = specificDate;
+  if (!dateParam) {
+      dateParam = await determineLatestDate(ocid, apiKey);
+  }
 
   // 3. Fetch all details in batches to avoid Rate Limiting (429)
   // Add timestamp to prevent caching
