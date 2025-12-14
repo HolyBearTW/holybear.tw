@@ -26,7 +26,8 @@ const fetchWithRetry = async (url: string, options: RequestInit, retries = 5, ba
   let lastStatus: number | null = null;
   for (let i = 0; i < retries; i++) {
     try {
-      const res = await fetch(url, options);
+      // Add cache: 'no-store' to prevent browser caching of API responses
+      const res = await fetch(url, { ...options, cache: 'no-store' });
       lastStatus = res.status;
       if (res.ok) return res;
       
@@ -98,31 +99,33 @@ export const fetchCharacterData = async (characterName: string, apiKey: string):
   }
 
   // 2. Fetch all details in batches to avoid Rate Limiting (429)
+  // Add timestamp to prevent caching
+  const timestamp = Date.now();
   const urls = [
-    `${BASE_URL}/character/basic?ocid=${ocid}&date=${dateParam}`,
-    `${BASE_URL}/character/stat?ocid=${ocid}&date=${dateParam}`,
-    `${BASE_URL}/character/item-equipment?ocid=${ocid}&date=${dateParam}`,
-    `${BASE_URL}/character/ability?ocid=${ocid}&date=${dateParam}`,
-    `${BASE_URL}/character/hyper-stat?ocid=${ocid}&date=${dateParam}`,
-    `${BASE_URL}/character/link-skill?ocid=${ocid}&date=${dateParam}`,
-    `${BASE_URL}/user/union?ocid=${ocid}&date=${dateParam}`,
-    `${BASE_URL}/user/union-artifact?ocid=${ocid}&date=${dateParam}`,
-    `${BASE_URL}/character/pet-equipment?ocid=${ocid}&date=${dateParam}`,
-    `${BASE_URL}/character/symbol-equipment?ocid=${ocid}&date=${dateParam}`,
-    `${BASE_URL}/character/set-effect?ocid=${ocid}&date=${dateParam}`,
-    `${BASE_URL}/character/vmatrix?ocid=${ocid}&date=${dateParam}`,
-    `${BASE_URL}/character/hexamatrix?ocid=${ocid}&date=${dateParam}`,
-    `${BASE_URL}/character/dojang?ocid=${ocid}&date=${dateParam}`,
-    `${BASE_URL}/character/skill?ocid=${ocid}&date=${dateParam}&character_skill_grade=5`,
-    `${BASE_URL}/character/skill?ocid=${ocid}&date=${dateParam}&character_skill_grade=6`,
-    `${BASE_URL}/character/skill?ocid=${ocid}&date=${dateParam}&character_skill_grade=0`,
-    `${BASE_URL}/character/skill?ocid=${ocid}&date=${dateParam}&character_skill_grade=1`,
-    `${BASE_URL}/character/skill?ocid=${ocid}&date=${dateParam}&character_skill_grade=2`,
-    `${BASE_URL}/character/skill?ocid=${ocid}&date=${dateParam}&character_skill_grade=3`,
-    `${BASE_URL}/character/skill?ocid=${ocid}&date=${dateParam}&character_skill_grade=4`,
-    `${BASE_URL}/character/basic?ocid=${ocid}&date=${date7DaysAgo}`,
-    `${BASE_URL}/character/popularity?ocid=${ocid}&date=${dateParam}`,
-    `${BASE_URL}/character/hexamatrix-stat?ocid=${ocid}&date=${dateParam}`,
+    `${BASE_URL}/character/basic?ocid=${ocid}&date=${dateParam}&_t=${timestamp}`,
+    `${BASE_URL}/character/stat?ocid=${ocid}&date=${dateParam}&_t=${timestamp}`,
+    `${BASE_URL}/character/item-equipment?ocid=${ocid}&date=${dateParam}&_t=${timestamp}`,
+    `${BASE_URL}/character/ability?ocid=${ocid}&date=${dateParam}&_t=${timestamp}`,
+    `${BASE_URL}/character/hyper-stat?ocid=${ocid}&date=${dateParam}&_t=${timestamp}`,
+    `${BASE_URL}/character/link-skill?ocid=${ocid}&date=${dateParam}&_t=${timestamp}`,
+    `${BASE_URL}/user/union?ocid=${ocid}&date=${dateParam}&_t=${timestamp}`,
+    `${BASE_URL}/user/union-artifact?ocid=${ocid}&date=${dateParam}&_t=${timestamp}`,
+    `${BASE_URL}/character/pet-equipment?ocid=${ocid}&date=${dateParam}&_t=${timestamp}`,
+    `${BASE_URL}/character/symbol-equipment?ocid=${ocid}&date=${dateParam}&_t=${timestamp}`,
+    `${BASE_URL}/character/set-effect?ocid=${ocid}&date=${dateParam}&_t=${timestamp}`,
+    `${BASE_URL}/character/vmatrix?ocid=${ocid}&date=${dateParam}&_t=${timestamp}`,
+    `${BASE_URL}/character/hexamatrix?ocid=${ocid}&date=${dateParam}&_t=${timestamp}`,
+    `${BASE_URL}/character/dojang?ocid=${ocid}&date=${dateParam}&_t=${timestamp}`,
+    `${BASE_URL}/character/skill?ocid=${ocid}&date=${dateParam}&character_skill_grade=5&_t=${timestamp}`,
+    `${BASE_URL}/character/skill?ocid=${ocid}&date=${dateParam}&character_skill_grade=6&_t=${timestamp}`,
+    `${BASE_URL}/character/skill?ocid=${ocid}&date=${dateParam}&character_skill_grade=0&_t=${timestamp}`,
+    `${BASE_URL}/character/skill?ocid=${ocid}&date=${dateParam}&character_skill_grade=1&_t=${timestamp}`,
+    `${BASE_URL}/character/skill?ocid=${ocid}&date=${dateParam}&character_skill_grade=2&_t=${timestamp}`,
+    `${BASE_URL}/character/skill?ocid=${ocid}&date=${dateParam}&character_skill_grade=3&_t=${timestamp}`,
+    `${BASE_URL}/character/skill?ocid=${ocid}&date=${dateParam}&character_skill_grade=4&_t=${timestamp}`,
+    `${BASE_URL}/character/basic?ocid=${ocid}&date=${date7DaysAgo}&_t=${timestamp}`,
+    `${BASE_URL}/character/popularity?ocid=${ocid}&date=${dateParam}&_t=${timestamp}`,
+    `${BASE_URL}/character/hexamatrix-stat?ocid=${ocid}&date=${dateParam}&_t=${timestamp}`,
   ];
 
   const responses: Response[] = [];
