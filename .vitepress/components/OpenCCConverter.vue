@@ -164,7 +164,14 @@ performConversion();
   line-height: 1.6; 
   margin-bottom: 0.5rem; /* 增加小間距 */
 }
-.converter-container { border: 1px solid var(--vp-c-divider); padding: 1.5rem; border-radius: 12px; background-color: var(--vp-c-bg-soft); }
+.converter-container { 
+  border: 1px solid var(--vp-c-divider); 
+  padding: 1.5rem; 
+  border-radius: 12px; 
+  background-color: var(--panel-glass-bg, rgba(255, 255, 255, 0.7));
+  color: var(--panel-text-color, var(--vp-c-text-1));
+  backdrop-filter: blur(10px);
+}
 .mode-selector h4 {
   display: flex;
   align-items: center;
@@ -202,7 +209,7 @@ performConversion();
   cursor: pointer;
   font-size: 14px;
   transition: all 0.2s ease;
-  color: black; /* 淺色模式下未選取時文字顏色保持為黑色 */
+  color: var(--vp-c-text-1); /* Use variable for text color */
 }
 .buttons-group button:hover:not(.active) {
   background: var(--vp-c-bg-mute);
@@ -210,31 +217,18 @@ performConversion();
 }
 .buttons-group button.active {
   background: var(--vp-c-brand);
-  color: black !important; /* 強制淺色模式下選取時文字顏色為黑色 */
+  color: black !important; /* Force black text for better contrast on brand color in BOTH modes */
   border-color: var(--vp-c-brand);
   font-weight: 600;
 }
 
-@media (prefers-color-scheme: dark) {
-  .buttons-group button {
-    color: var(--vp-c-text-1); /* 深色模式下未選取時文字顏色修正為主文字色 */
-  }
-  .buttons-group button.active {
-    color: var(--vp-c-bg); /* 深色模式下選取時文字顏色保持為背景色 */
-  }
-}
+/* Removed redundant dark mode overrides for inactive buttons since we use variables now */
+/* Active button text is now black in both modes, which works well with the bright brand color */
 
-.io-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
-  margin-top: 1.5rem;
+:global(.dark) .buttons-group button.active,
+:global(body.theme-christmas) .buttons-group button.active {
+  color: black !important; 
 }
-.io-grid.stacked {
-  grid-template-columns: 1fr;
-}
-
-.textarea-wrapper h4 { margin-bottom: 0.75rem; font-weight: 600; color: var(--vp-c-text-1); }
 textarea {
   width: 100%;
   padding: 12px;
@@ -244,17 +238,23 @@ textarea {
   resize: vertical;
   height: 200px;
   box-sizing: border-box;
-  background-color: var(--vp-c-bg-soft);
+  background-color: rgba(255, 255, 255, 0.3);
   color: var(--vp-c-text-1);
   word-wrap: break-word;
   overflow-wrap: break-word;
   white-space: pre-wrap; /* 保留換行並自動換行 */
 }
+
+:global(.dark) textarea,
+:global(body.theme-christmas) textarea {
+  background-color: rgba(0, 0, 0, 0.3) !important;
+}
 textarea:focus { border-color: var(--vp-c-brand); outline: none; }
+
 .result-box {
   width: 100%;
   height: 200px;
-  background-color: var(--vp-c-bg-soft);
+  background-color: rgba(255, 255, 255, 0.3);
   padding: 12px;
   border: 1px solid var(--vp-c-divider);
   border-radius: 8px;
@@ -267,6 +267,12 @@ textarea:focus { border-color: var(--vp-c-brand); outline: none; }
   overflow-wrap: break-word;
   white-space: pre-wrap; /* 保留換行並自動換行 */
 }
+
+:global(.dark) .result-box,
+:global(body.theme-christmas) .result-box {
+  background-color: rgba(0, 0, 0, 0.3) !important;
+}
+
 .result-box p { margin: 0; white-space: pre-wrap; word-wrap: break-word; }
 
 /* 複製按鈕樣式 */
@@ -278,7 +284,7 @@ textarea:focus { border-color: var(--vp-c-brand); outline: none; }
   cursor: pointer;
   font-size: 14px;
   transition: all 0.2s ease;
-  color: black;
+  color: var(--vp-c-text-1);
 }
 .copy-button:hover {
   background: var(--vp-c-bg-mute);
@@ -290,14 +296,7 @@ textarea:focus { border-color: var(--vp-c-brand); outline: none; }
   border-color: var(--vp-c-brand);
 }
 
-@media (prefers-color-scheme: dark) {
-  .copy-button {
-    color: var(--vp-c-text-1);
-  }
-  .copy-button:active {
-    color: var(--vp-c-bg);
-  }
-}
+/* Removed redundant dark mode overrides */
 
 @media (max-width: 768px) {
   .io-grid { grid-template-columns: 1fr; }
@@ -321,7 +320,7 @@ textarea:focus { border-color: var(--vp-c-brand); outline: none; }
   cursor: pointer;
   font-size: 14px;
   transition: all 0.2s ease;
-  color: black;
+  color: var(--vp-c-text-1);
 }
 .toggle-layout-button:hover {
   background: var(--vp-c-bg-mute);
@@ -333,12 +332,5 @@ textarea:focus { border-color: var(--vp-c-brand); outline: none; }
   border-color: var(--vp-c-brand);
 }
 
-@media (prefers-color-scheme: dark) {
-  .toggle-layout-button {
-    color: var(--vp-c-text-1);
-  }
-  .toggle-layout-button:active {
-    color: var(--vp-c-bg);
-  }
-}
+/* Removed redundant dark mode overrides */
 </style>

@@ -408,7 +408,7 @@ onMounted(() => {
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: var(--vp-c-bg);
+  background: transparent;
 }
 
 .preview-header {
@@ -418,7 +418,7 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: var(--vp-c-bg-soft);
+  background: transparent;
   flex-shrink: 0;
 }
 

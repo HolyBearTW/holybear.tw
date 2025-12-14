@@ -1,0 +1,218 @@
+import React, { useState } from 'react';
+import { EquipmentItem, CharacterEquipment } from '../types';
+import EquipmentTooltip from './EquipmentTooltip';
+
+interface EquipmentGridProps {
+  equipment: CharacterEquipment;
+  characterImage?: string;
+}
+
+// Visual Layout Definition
+// 'L' = Left Column, 'R' = Right Column, 'C' = Center (Character), 'B' = Bottom
+const SLOT_DEFINITIONS: Record<string, { label: string, match: string[] }> = {
+  // Rings
+  'Ring1': { label: '戒1', match: ['ring1', 'ring 1', 'ring i', '戒指1'] },
+  'Ring2': { label: '戒2', match: ['ring2', 'ring 2', 'ring ii', '戒指2'] },
+  'Ring3': { label: '戒3', match: ['ring3', 'ring 3', 'ring iii', '戒指3'] },
+  'Ring4': { label: '戒4', match: ['ring4', 'ring 4', 'ring iv', '戒指4'] },
+  
+  // Accessories (Left)
+  'Pocket': { label: '口袋', match: ['pocketitem', 'pocket', '口袋道具'] },
+  'Pendant': { label: '墜1', match: ['pendant', 'pendant1', 'pendant 1', '墜飾'] },
+  'Pendant2': { label: '墜2', match: ['pendant2', 'pendant 2', '墜飾2'] },
+  'Belt': { label: '腰帶', match: ['belt', '腰帶'] },
+  
+  // Armor/Accessories (Right)
+  'Hat': { label: '帽子', match: ['hat', 'cap', '帽子'] },
+  'Face': { label: '臉飾', match: ['faceaccessory', 'face', '臉飾', '臉部裝飾'] },
+  'Eye': { label: '眼飾', match: ['eyeaccessory', 'eye', '眼飾', '眼部裝飾'] },
+  'Top': { label: '上衣', match: ['top', 'overall', '上衣', '套服'] },
+  'Bottom': { label: '褲子', match: ['bottom', '褲子', '下褲', '褲/裙'] },
+  'Shoes': { label: '鞋子', match: ['shoes', 'shoe', '鞋子'] },
+  'Earrings': { label: '耳環', match: ['earrings', 'earring', '耳環'] },
+  'Shoulder': { label: '肩膀', match: ['shoulder', 'shoulderdecoration', '肩膀', '肩飾', '肩膀裝飾'] },
+  'Gloves': { label: '手套', match: ['gloves', 'glove', '手套'] },
+  'Cape': { label: '披風', match: ['cape', '披風'] },
+  
+  // Bottom/Misc
+  'Emblem': { label: '徽章', match: ['emblem', '能源', '徽章'] },
+  'Badge': { label: '胸章', match: ['badge', '胸章'] },
+  'Medal': { label: '勳章', match: ['medal', '勳章'] },
+  'Android': { label: '機器', match: ['android', '機器'] },
+  'Heart': { label: '心臟', match: ['mechanicalheart', 'heart', '機械心臟', '心臟', '機器心臟'] },
+  'Weapon': { label: '武器', match: ['weapon', '武器'] },
+  'Secondary': { label: '副武', match: ['secondary', 'subweapon', 'shield', 'katara', '副武器', '盾牌', '輔助武器'] },
+};
+
+const Slot: React.FC<{ slotKey: string; item?: EquipmentItem }> = ({ slotKey, item }) => {
+  const [showTooltip, setShowTooltip] = useState(false);
+  const def = SLOT_DEFINITIONS[slotKey];
+  
+  // Special handling: If slotKey is not defined (e.g. spacer), return empty
+  if (!def) return <div className="w-10 h-10 sm:w-11 sm:h-11 invisible" />;
+
+  let borderColor = 'border-slate-800';
+  let bgColor = 'bg-[#1a1d24]';
+  let glow = '';
+
+  if (item) {
+    const grade = item.potential_option_grade ? item.potential_option_grade.toLowerCase() : '';
+    
+    if (grade.includes('legendary') || grade.includes('傳說')) { 
+        borderColor = 'border-green-500'; 
+        glow = 'shadow-[0_0_10px_-2px_rgba(34,197,94,0.3)]'; 
+    }
+    else if (grade.includes('unique') || grade.includes('罕見')) { 
+        borderColor = 'border-yellow-500'; 
+    }
+    else if (grade.includes('epic') || grade.includes('稀有')) { 
+        borderColor = 'border-purple-500'; 
+    }
+    else if (grade.includes('rare') || grade.includes('特殊')) { 
+        borderColor = 'border-blue-500'; 
+    }
+    else { 
+        borderColor = 'border-slate-600'; 
+    }
+  }
+
+  return (
+    <div 
+      className="relative z-0 hover:z-50"
+      onMouseEnter={() => setShowTooltip(true)}
+      onMouseLeave={() => setShowTooltip(false)}
+    >
+      <div className={`w-10 h-10 sm:w-12 sm:h-12 ${bgColor} border-2 ${borderColor} rounded-md flex items-center justify-center relative overflow-hidden transition-all ${glow}`}>
+        {item ? (
+          <>
+            <img src={item.item_icon} alt={item.item_name} className="w-8 h-8 sm:w-9 sm:h-9 object-contain z-10" />
+            
+            {/* Tiny Grade Indicator (Corner) */}
+             {(item.potential_option_grade?.includes('Legendary') || item.potential_option_grade?.includes('傳說')) && <div className="absolute inset-0 bg-green-500/10 animate-pulse z-0" />}
+
+            {/* Starforce */}
+            {parseInt(item.starforce || '0') > 0 && (
+                <div className="absolute top-0 right-0 bg-yellow-500 text-black text-[9px] font-bold px-1 rounded-bl leading-none z-20 shadow-sm border-l border-b border-yellow-600">
+                    {item.starforce}
+                </div>
+            )}
+          </>
+        ) : (
+          <span className="text-[10px] text-slate-700 select-none font-medium">{def?.label}</span>
+        )}
+      </div>
+
+      {showTooltip && item && (
+        <div className="absolute top-0 right-14 w-[300px] z-[100] animate-in fade-in duration-100 hidden md:block">
+           <EquipmentTooltip item={item} />
+        </div>
+      )}
+    </div>
+  );
+};
+
+const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, characterImage }) => {
+  // Normalize string for comparison
+  const normalize = (s: string) => s.toLowerCase().replace(/\s+/g, '');
+
+  const findItem = (slotKey: string) => {
+    const def = SLOT_DEFINITIONS[slotKey];
+    if (!def) return undefined;
+    
+    // Exact search or fuzzy match
+    return equipment.item_equipment.find(item => {
+       const slot = normalize(item.item_equipment_slot);
+       const part = normalize(item.item_equipment_part);
+       return def.match.some(m => slot === normalize(m) || part === normalize(m));
+    });
+  };
+
+  const unmatchedItems = equipment.item_equipment.filter(item => {
+    const slot = normalize(item.item_equipment_slot);
+    const part = normalize(item.item_equipment_part);
+    return !Object.values(SLOT_DEFINITIONS).some(def => 
+        def.match.some(m => slot === normalize(m) || part === normalize(m))
+    );
+  });
+
+  // Debug log to console
+  // console.log('Unmatched Items:', unmatchedItems);
+  // console.log('All Items:', equipment.item_equipment);
+
+  // Debug: Check where each item is being mapped
+  /*
+  equipment.item_equipment.forEach(item => {
+      const slot = normalize(item.item_equipment_slot);
+      const part = normalize(item.item_equipment_part);
+      const matchedKeys = Object.keys(SLOT_DEFINITIONS).filter(key => {
+          const def = SLOT_DEFINITIONS[key];
+          return def.match.some(m => slot === normalize(m) || part === normalize(m));
+      });
+      console.log(`Item: ${item.item_name} (${slot}/${part}) => Matches: ${matchedKeys.join(', ')}`);
+  });
+  */
+
+  return (
+    <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner flex justify-center gap-6 relative">
+      {/* Background Decor */}
+      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-slate-700 to-transparent opacity-50" />
+      
+      {/* Debug: Unmatched Items */}
+      {unmatchedItems.length > 0 && (
+        <div className="absolute bottom-0 left-0 right-0 bg-black/90 text-[10px] text-red-300 p-2 max-h-24 overflow-y-auto z-[60] font-mono">
+            <p className="font-bold text-red-500 mb-1">Debug: 未匹配裝備 (請提供以下資訊以修復顯示)</p>
+            {unmatchedItems.map((item, i) => (
+                <div key={i} className="border-b border-white/10 py-0.5">
+                    {item.item_name} | Slot: [{item.item_equipment_slot}] | Part: [{item.item_equipment_part}]
+                </div>
+            ))}
+        </div>
+      )}
+      
+      {/* Left Columns */}
+      <div className="flex gap-2">
+        <div className="flex flex-col gap-2">
+          {['Ring1', 'Ring2', 'Ring3', 'Ring4', 'Belt'].map(key => <Slot key={key} slotKey={key} item={findItem(key)} />)}
+          <div className="mt-2">
+             <Slot slotKey="Pocket" item={findItem('Pocket')} />
+          </div>
+        </div>
+        <div className="flex flex-col gap-2">
+           {['Face', 'Eye', 'Earrings', 'Pendant2', 'Pendant'].map(key => <Slot key={key} slotKey={key} item={findItem(key)} />)}
+        </div>
+      </div>
+
+      {/* Center Character */}
+      <div className="w-32 flex flex-col items-center justify-center relative">
+         <div className="absolute inset-0 bg-slate-800/20 rounded-full blur-xl transform scale-75 translate-y-4"></div>
+         {characterImage ? (
+             <img src={characterImage} alt="Character" className="relative z-10 drop-shadow-2xl scale-125 transform translate-y-[-10px]" />
+         ) : (
+             <div className="w-24 h-24 rounded-full bg-slate-800/50" />
+         )}
+         <div className="flex gap-2 mt-8">
+            <Slot slotKey="Weapon" item={findItem('Weapon')} />
+            <Slot slotKey="Secondary" item={findItem('Secondary')} />
+            <Slot slotKey="Emblem" item={findItem('Emblem')} />
+         </div>
+      </div>
+
+      {/* Right Columns */}
+      <div className="flex gap-2">
+        <div className="flex flex-col gap-2">
+           {['Hat', 'Top', 'Bottom', 'Shoulder'].map(key => <Slot key={key} slotKey={key} item={findItem(key)} />)}
+        </div>
+         <div className="flex flex-col gap-2">
+           {['Cape', 'Gloves', 'Shoes', 'Medal', 'Heart'].map(key => <Slot key={key} slotKey={key} item={findItem(key)} />)}
+           <div className="mt-2">
+              <Slot slotKey="Badge" item={findItem('Badge')} />
+           </div>
+        </div>
+      </div>
+
+
+    </div>
+  );
+};
+
+export default EquipmentGrid;

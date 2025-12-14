@@ -1,0 +1,340 @@
+export interface NexonError {
+  error: {
+    name: string;
+    message: string;
+  };
+}
+
+export interface OcidResponse {
+  ocid: string;
+}
+
+export interface CharacterBasic {
+  character_name: string;
+  world_name: string;
+  character_gender: string;
+  character_class: string;
+  character_class_level: string;
+  character_level: number;
+  character_exp: number;
+  character_exp_rate: string;
+  character_guild_name: string;
+  character_image: string;
+  character_date_create?: string;
+  access_flag?: string; // Login status
+  liberation_quest_clear_flag?: string;
+}
+
+export interface FinalStat {
+  stat_name: string;
+  stat_value: string;
+}
+
+export interface CharacterStat {
+  date: string;
+  character_class: string;
+  final_stat: FinalStat[];
+  remain_ap: number;
+  pop?: number; // Popularity/Fame
+}
+
+export interface ItemOption {
+  str: string;
+  dex: string;
+  int: string;
+  luk: string;
+  max_hp: string;
+  max_mp: string;
+  attack_power: string;
+  magic_power: string;
+  armor: string;
+  speed: string;
+  jump: string;
+  boss_damage: string;
+  ignore_monster_armor: string;
+  all_stat: string;
+  damage: string;
+  equipment_level_decrease: number;
+  max_hp_rate: string;
+  max_mp_rate: string;
+}
+
+export interface EquipmentItem {
+  item_equipment_part: string;
+  item_equipment_slot: string;
+  item_name: string;
+  item_icon: string;
+  item_description: string;
+  item_shape_name: string;
+  item_shape_icon: string;
+  item_gender: string;
+  item_total_option: ItemOption;
+  item_base_option: ItemOption;
+  item_add_option: ItemOption; // Flame stats
+  item_etc_option: ItemOption; // Scroll stats
+  item_starforce_option: ItemOption; // Starforce stats
+  potential_option_grade: string;
+  additional_potential_option_grade: string;
+  potential_option_1: string;
+  potential_option_2: string;
+  potential_option_3: string;
+  additional_potential_option_1: string;
+  additional_potential_option_2: string;
+  additional_potential_option_3: string;
+  starforce: string;
+  starforce_scroll_flag: string;
+  item_level: number;
+  special_ring_level: number;
+  date_expire: string;
+}
+
+export interface CharacterEquipment {
+  item_equipment: EquipmentItem[];
+  title: {
+    title_name: string;
+    title_icon: string;
+    title_description: string;
+  } | null;
+}
+
+export interface AbilityInfo {
+  ability_no: string;
+  ability_grade: string;
+  ability_value: string;
+}
+
+export interface CharacterAbility {
+  date: string;
+  ability_grade: string;
+  ability_info: AbilityInfo[];
+  remain_fame: number;
+}
+
+export interface HyperStat {
+  stat_type: string;
+  stat_point: number;
+  stat_level: number;
+  stat_increase: string;
+}
+
+export interface CharacterHyperStat {
+  character_class: string;
+  hyper_stat_preset_1: HyperStat[];
+  hyper_stat_preset_1_remain_point: number;
+}
+
+export interface LinkSkill {
+  skill_name: string;
+  skill_description: string;
+  skill_level: number;
+  skill_effect: string;
+  skill_icon: string;
+}
+
+export interface CharacterLinkSkill {
+  character_link_skill: LinkSkill[];
+  character_owned_link_skill: LinkSkill;
+  character_link_skill_preset_1?: LinkSkill[];
+  character_link_skill_preset_2?: LinkSkill[];
+  character_link_skill_preset_3?: LinkSkill[];
+}
+
+export interface DashboardData {
+  basic: CharacterBasic;
+  stat: CharacterStat;
+  equipment: CharacterEquipment;
+  ability: CharacterAbility;
+  hyperStat: CharacterHyperStat;
+  linkSkill: CharacterLinkSkill;
+  union?: CharacterUnion;
+  unionArtifact?: CharacterUnionArtifact;
+  petEquipment?: CharacterPetEquipment;
+  symbolEquipment?: CharacterSymbolEquipment;
+  setEffect?: CharacterSetEffect;
+  vMatrix?: CharacterVMatrix;
+  hexaMatrix?: CharacterHexaMatrix;
+  hexaMatrixStat?: CharacterHexaMatrixStat;
+  skill0?: CharacterSkill;
+  skill1?: CharacterSkill;
+  skill2?: CharacterSkill;
+  skill3?: CharacterSkill;
+  skill4?: CharacterSkill;
+  skill5?: CharacterSkill;
+  skill6?: CharacterSkill;
+  dojo?: CharacterDojo;
+  lastUpdated: string; // Internal timestamp for display
+}
+
+export interface CharacterUnion {
+  date: string;
+  union_level: number;
+  union_grade: string;
+}
+
+export interface CharacterUnionArtifact {
+  date: string;
+  union_artifact_effect: {
+      name: string;
+      level: number;
+  }[];
+  union_artifact_crystal: {
+      name: string;
+      validity_date: string;
+      level: number;
+      crystal_option_name_1: string;
+      crystal_option_name_2: string;
+      crystal_option_name_3: string;
+  }[];
+  union_artifact_remain_ap: number;
+}
+
+export interface CharacterPetEquipment {
+  date: string;
+  pet_1_name?: string;
+  pet_1_nickname?: string;
+  pet_1_icon?: string;
+  pet_1_description?: string;
+  pet_1_equipment?: {
+      item_name: string;
+      item_icon: string;
+      item_description: string;
+  };
+  pet_1_auto_skill?: {
+      skill_1: string;
+      skill_1_icon: string;
+      skill_2: string;
+      skill_2_icon: string;
+  };
+  pet_2_name?: string;
+  pet_2_nickname?: string;
+  pet_2_icon?: string;
+  pet_2_description?: string;
+  pet_2_equipment?: {
+      item_name: string;
+      item_icon: string;
+      item_description: string;
+  };
+  pet_2_auto_skill?: {
+      skill_1: string;
+      skill_1_icon: string;
+      skill_2: string;
+      skill_2_icon: string;
+  };
+  pet_3_name?: string;
+  pet_3_nickname?: string;
+  pet_3_icon?: string;
+  pet_3_description?: string;
+  pet_3_equipment?: {
+      item_name: string;
+      item_icon: string;
+      item_description: string;
+  };
+  pet_3_auto_skill?: {
+      skill_1: string;
+      skill_1_icon: string;
+      skill_2: string;
+      skill_2_icon: string;
+  };
+}
+
+export interface CharacterSymbolEquipment {
+  date: string;
+  symbol: {
+      symbol_name: string;
+      symbol_icon: string;
+      symbol_description: string;
+      symbol_force: string;
+      symbol_level: number;
+      symbol_str: string;
+      symbol_dex: string;
+      symbol_int: string;
+      symbol_luk: string;
+      symbol_hp: string;
+      symbol_growth_count: number;
+      symbol_require_growth_count: number;
+  }[];
+}
+
+export interface CharacterSetEffect {
+  date: string;
+  set_effect: {
+      set_name: string;
+      total_set_count: number;
+      set_effect_info: {
+          set_count: number;
+          set_option: string;
+      }[];
+  }[];
+}
+
+export interface CharacterVMatrix {
+  date: string;
+  character_v_core_equipment: {
+      slot_id: string;
+      slot_level: number;
+      v_core_name: string;
+      v_core_type: string;
+      v_core_level: number;
+      v_core_skill_1: string;
+      v_core_skill_2: string;
+      v_core_skill_3: string;
+  }[];
+}
+
+export interface CharacterHexaMatrix {
+  date: string;
+  character_hexa_core_equipment: {
+      hexa_core_name: string;
+      hexa_core_level: number;
+      hexa_core_type: string;
+      linked_skill: {
+          hexa_skill_id: string;
+      }[];
+  }[];
+}
+
+export interface HexaStatCore {
+  slot_id: string;
+  main_stat_name: string;
+  sub_stat_name_1: string;
+  sub_stat_name_2: string;
+  main_stat_level: number;
+  sub_stat_level_1: number;
+  sub_stat_level_2: number;
+  stat_grade: number;
+}
+
+export interface CharacterHexaMatrixStat {
+  date: string;
+  character_class: string;
+  character_hexa_stat_core: HexaStatCore[];
+  character_hexa_stat_core_2: HexaStatCore[];
+  character_hexa_stat_core_3: HexaStatCore[];
+  preset_hexa_stat_core: HexaStatCore[];
+  preset_hexa_stat_core_2: HexaStatCore[];
+  preset_hexa_stat_core_3: HexaStatCore[];
+}
+
+export interface CharacterDojo {
+  date: string;
+  character_class: string;
+  world_name: string;
+  dojang_best_floor: number;
+  date_dojang_record: string;
+  dojang_best_time: number;
+}
+
+export interface Skill {
+  skill_name: string;
+  skill_description: string;
+  skill_level: number;
+  skill_effect: string;
+  skill_icon: string;
+}
+
+export interface CharacterSkill {
+  date: string;
+  character_class: string;
+  character_skill_grade: string;
+  character_skill: Skill[];
+}

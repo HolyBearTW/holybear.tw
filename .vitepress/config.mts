@@ -1,5 +1,7 @@
 /* import { defineConfig } from 'vitepress' */
 import {defineConfig} from '@lando/vitepress-theme-default-plus/config'
+import react from '@vitejs/plugin-react'
+import { fileURLToPath, URL } from 'node:url'
 import locales from './locales'
 import gitMetaPlugin from './git-meta'
 import sidebar from './sidebars/blog.sidebar'
@@ -47,7 +49,17 @@ export default defineConfig({
         ['meta', { name: 'twitter:image', content: '/logo.png' }]
     ],
     vite: {
-        plugins: [gitMetaPlugin()],
+        plugins: [gitMetaPlugin(), react()],
+        resolve: {
+            alias: {
+                react: fileURLToPath(new URL('../node_modules/react', import.meta.url)),
+                'react-dom': fileURLToPath(new URL('../node_modules/react-dom', import.meta.url)),
+            },
+            dedupe: ['react', 'react-dom'],
+        },
+        optimizeDeps: {
+            include: ['react', 'react-dom', 'react-dom/client'],
+        },
         server: {
             fs: {
                 // 嚴格限制可訪問的目錄
@@ -56,7 +68,7 @@ export default defineConfig({
                 deny: ['.env', '.env.*', '*.{pem,crt,key}', 'node_modules/**']
             },
             // 增加 CORS 限制
-            cors: true
+            cors: true,
         },
     },   
     // ✨ START: 整合所有 OG 標籤的最終邏輯 ✨

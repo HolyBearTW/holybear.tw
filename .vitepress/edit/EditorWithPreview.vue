@@ -936,15 +936,44 @@ onBeforeUnmount(() => {
   height: calc(100vh - var(--vp-nav-height, 64px)); /* Use CSS variable for nav height */
   display: flex;
   flex-direction: column;
-  background: var(--vp-c-bg);
+  background: var(--panel-glass-bg, rgba(255, 255, 255, 0.7));
+  color: var(--panel-text-color, var(--vp-c-text-1));
+  backdrop-filter: blur(10px);
   overflow: hidden;
+}
+
+/* Removed manual overrides as they are now handled by CSS variables in style.css */
+
+:global(body.theme-christmas) .markdown-editor-header h3,
+:global(body.theme-christmas) .history-title,
+:global(body.theme-christmas) .btn-text {
+  color: #e6f1ff !important;
+}
+
+:global(body.theme-christmas) .toolbar-btn {
+  color: #e6f1ff !important;
+  border-color: rgba(230, 241, 255, 0.3) !important;
+}
+
+:global(body.theme-christmas) .toolbar-btn:hover {
+  background: rgba(230, 241, 255, 0.1) !important;
+}
+
+:global(body.theme-christmas) .doc-title-input {
+  color: #e6f1ff !important;
+  background: rgba(0, 0, 0, 0.3) !important;
+  border-color: rgba(230, 241, 255, 0.3) !important;
+}
+
+:global(body.theme-christmas) .doc-title-input::placeholder {
+  color: rgba(230, 241, 255, 0.5) !important;
 }
 
 /* 頂部工具列 */
 .top-toolbar {
   height: 60px; /* Fixed height for consistency */
   padding: 0 1rem;
-  background: var(--vp-c-bg-soft);
+  background: transparent;
   border-bottom: 1px solid var(--vp-c-divider);
   display: flex;
   align-items: center;
@@ -1017,7 +1046,7 @@ onBeforeUnmount(() => {
   flex-wrap: wrap;
   gap: 0.5rem;
   padding: 0.75rem 1rem;
-  background: var(--vp-c-bg-soft);
+  background: transparent;
   border-bottom: 1px solid var(--vp-c-divider);
   transition: all 0.2s ease-out;
   flex-shrink: 0; /* Prevent from shrinking */
@@ -1028,7 +1057,7 @@ onBeforeUnmount(() => {
   flex: 1;
   min-width: 150px; /* Allow wrapping */
   padding: 0.5rem 0.75rem;
-  background: var(--vp-c-bg);
+  background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--vp-c-divider);
   border-radius: 6px;
   color: var(--vp-c-text-1);
@@ -1109,7 +1138,7 @@ onBeforeUnmount(() => {
 /* Markdown 編輯器 */
 .markdown-editor-header {
   height: 60px;
-  background: var(--vp-c-bg-soft);
+  background: transparent;
   border-bottom: 1px solid var(--vp-c-divider);
   display: flex;
   padding-left: 15px;
@@ -1137,7 +1166,7 @@ onBeforeUnmount(() => {
   flex: 1;
   width: 100%;
   padding: 1.5rem;
-  background: var(--vp-c-bg);
+  background: transparent;
   border: none;
   color: var(--vp-c-text-1);
   font-family: var(--vp-font-family-mono);
@@ -1307,7 +1336,7 @@ onBeforeUnmount(() => {
     width: 100%;
     height: calc(100% - var(--top-toolbar-mobile-height));
     z-index: 100;
-    background: var(--vp-c-bg);
+    background: transparent;
     box-shadow: 0 4px 20px rgba(0,0,0,0.2);
     transform: translateX(-100%);
     transition: transform 0.3s ease-out;
@@ -1388,8 +1417,18 @@ onBeforeUnmount(() => {
 }
 
 /* 暗色模式 */
-.dark .markdown-textarea {
-  background: var(--vp-c-bg-alt);
+:global(.dark) .markdown-textarea,
+:global(body.theme-christmas) .markdown-textarea {
+  background: transparent;
+  color: var(--vp-c-text-1);
+}
+
+:global(body.theme-christmas) .markdown-textarea {
+  color: #e6f1ff !important; /* 強制白色文字 */
+}
+
+:global(body.theme-christmas) .markdown-textarea::placeholder {
+  color: rgba(230, 241, 255, 0.5) !important;
 }
 
 /* Export Modal Styles */

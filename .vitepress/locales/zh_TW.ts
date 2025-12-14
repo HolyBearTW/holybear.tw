@@ -10,8 +10,9 @@ export default {
   { text: '技術文件', link: '/docs/' },
   { text: '贊助', link: 'https://paypal.me/holybear0610' },
   {
-    text: '實用工具',
+    text: '服務',
     items: [
+      { text: '🎮 楓之谷分析', link: '/maplestory' },
       { text: '📝 文章編輯器', link: '/editmd' },
       { text: '🔄 簡繁轉換器', link: '/converter' },
       { text: '🔗 短網址服務', link: 'https://go.holybear.tw/' }

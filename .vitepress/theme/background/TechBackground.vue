@@ -44,13 +44,13 @@ interface Hexagon {
 
 // 顏色配置
 const colors = computed(() => ({
-  node: isDark.value ? 'rgba(100, 200, 255, 0.6)' : 'rgba(80, 150, 220, 0.4)',
-  line: isDark.value ? 'rgba(100, 200, 255, 0.15)' : 'rgba(80, 150, 220, 0.1)',
-  dataFlow: isDark.value ? 'rgba(0, 255, 200, 0.8)' : 'rgba(0, 180, 150, 0.6)',
-  grid: isDark.value ? 'rgba(100, 150, 255, 0.1)' : 'rgba(100, 150, 200, 0.08)',
-  hexagon: isDark.value ? 'rgba(100, 200, 255, 0.08)' : 'rgba(80, 150, 220, 0.05)',
-  hexagonActive: isDark.value ? 'rgba(100, 200, 255, 0.25)' : 'rgba(80, 150, 220, 0.18)',
-  scanline: isDark.value ? 'rgba(0, 255, 200, 0.03)' : 'rgba(0, 180, 150, 0.02)'
+  node: isDark.value ? 'rgba(100, 200, 255, 0.9)' : 'rgba(80, 150, 220, 0.8)',
+  line: isDark.value ? 'rgba(100, 200, 255, 0.5)' : 'rgba(80, 150, 220, 0.4)',
+  dataFlow: isDark.value ? 'rgba(0, 255, 200, 1.0)' : 'rgba(0, 180, 150, 1.0)',
+  grid: isDark.value ? 'rgba(100, 150, 255, 0.3)' : 'rgba(100, 150, 200, 0.25)',
+  hexagon: isDark.value ? 'rgba(100, 200, 255, 0.15)' : 'rgba(80, 150, 220, 0.12)',
+  hexagonActive: isDark.value ? 'rgba(100, 200, 255, 0.4)' : 'rgba(80, 150, 220, 0.35)',
+  scanline: isDark.value ? 'rgba(0, 255, 200, 0.1)' : 'rgba(0, 180, 150, 0.08)'
 }))
 
 // 初始化 Plexus 節點

@@ -245,7 +245,7 @@ defineExpose({
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: var(--vp-c-bg);
+  background: transparent;
   border-right: 1px solid var(--vp-c-divider);
 }
 
@@ -257,7 +257,7 @@ defineExpose({
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: var(--vp-c-bg-soft);
+  background: transparent;
   flex-shrink: 0;
 }
 
@@ -305,7 +305,7 @@ defineExpose({
 .search-input {
   width: 100%;
   padding: 0.5rem 0.75rem 0.5rem 2rem;
-  background: var(--vp-c-bg-soft);
+  background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--vp-c-divider);
   border-radius: 6px;
   color: var(--vp-c-text-1);
@@ -329,7 +329,7 @@ defineExpose({
 .history-item {
   padding: 0.75rem;
   margin-bottom: 0.5rem;
-  background: var(--vp-c-bg-soft);
+  background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--vp-c-divider);
   border-radius: 6px;
   cursor: pointer;
@@ -463,7 +463,7 @@ defineExpose({
 .history-footer {
   padding: 0.75rem 1rem;
   border-top: 1px solid var(--vp-c-divider);
-  background: var(--vp-c-bg-soft);
+  background: transparent;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -498,19 +498,54 @@ defineExpose({
 }
 
 /* 暗色模式 */
-.dark .history-header {
-  background: var(--vp-c-bg-soft);
+:global(.dark) .history-header,
+:global(body.theme-christmas) .history-header {
+  background: transparent !important;
 }
 
-.dark .search-input {
-  background: var(--vp-c-bg-alt);
+:global(body.theme-christmas) .history-title {
+  color: var(--panel-text-color) !important;
 }
 
-.dark .history-item {
-  background: var(--vp-c-bg-alt);
+:global(.dark) .search-input,
+:global(body.theme-christmas) .search-input {
+  background: rgba(0, 0, 0, 0.2) !important;
+  color: var(--panel-text-color);
 }
 
-.dark .history-item:hover {
-  background: var(--vp-c-bg-soft);
+:global(body.theme-christmas) .search-input {
+  color: #e6f1ff !important;
+  border-color: rgba(230, 241, 255, 0.3) !important;
+}
+
+:global(body.theme-christmas) .search-input::placeholder {
+  color: rgba(230, 241, 255, 0.5) !important;
+}
+
+:global(.dark) .history-item,
+:global(body.theme-christmas) .history-item {
+  background: rgba(0, 0, 0, 0.2) !important;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+:global(body.theme-christmas) .history-item {
+  border-color: rgba(230, 241, 255, 0.2) !important;
+}
+
+:global(.dark) .history-item:hover,
+:global(body.theme-christmas) .history-item:hover {
+  background: rgba(0, 0, 0, 0.4) !important;
+}
+
+:global(body.theme-christmas) .item-title {
+  color: #e6f1ff !important;
+}
+
+:global(body.theme-christmas) .item-preview {
+  color: rgba(230, 241, 255, 0.7) !important;
+}
+
+:global(body.theme-christmas) .item-time {
+  color: rgba(230, 241, 255, 0.5) !important;
 }
 </style>

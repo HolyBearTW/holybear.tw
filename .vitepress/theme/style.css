@@ -48,9 +48,19 @@
 
   /* glass backdrop (default light) */
   --my-glass-bg: rgba(255, 255, 255, 0.1);
+  --panel-glass-bg: rgba(255, 255, 255, 0.15); /* Default Light Mode Panel Background - More transparent for glass effect */
+  --panel-text-color: var(--vp-c-text-1);
 }
 
 /* dark override for glass */
+html {
+  background-color: var(--vp-c-bg); /* Ensure html has background so body can be transparent */
+}
+
+body {
+  background-color: transparent !important; /* Allow z-index: -1 backgrounds to show in ALL modes */
+}
+
 html.dark body {
   --vp-c-brand: #00FFEE !important;
   --vp-c-brand-1: #00FFEE !important;
@@ -58,6 +68,14 @@ html.dark body {
   --vp-c-brand-3: #00FFEE !important;
   --vp-c-brand-soft: #00FFEE1A !important; /* 可用透明度 */
   --my-glass-bg: rgba(0, 0, 0, 0.3);
+  --panel-glass-bg: rgba(0, 0, 0, 0.4) !important; /* Dark Mode Panel Background */
+  --panel-text-color: var(--vp-c-text-1) !important;
+}
+
+/* Christmas Theme Override (Forces Dark Glass even in Light Mode) */
+body.theme-christmas {
+  --panel-glass-bg: rgba(0, 0, 0, 0.6) !important;
+  --panel-text-color: #e6f1ff !important;
 }
 
 /* ==================== 主題切換動畫與遮罩 ==================== */
@@ -917,3 +935,69 @@ html.dark .filter-btn {
 html.dark .button[aria-expanded="true"] .text {
   color: #00FFEE !important;
 }
+
+/* ==================== 聖誕節主題強制樣式 ==================== */
+/* 將樣式移至全域，確保在所有頁面（包含 layout: page）都能生效 */
+
+/* 1. 變數覆蓋 */
+body.theme-christmas {
+  --vp-c-brand: #d93025 !important;
+  --vp-c-brand-light: #e57373 !important;
+  --vp-c-bg: #0a192f !important;
+  --vp-c-text-1: #e6f1ff !important;
+}
+
+/* 2. 標題發光效果 */
+body.theme-christmas h1,
+body.theme-christmas h2,
+body.theme-christmas h3,
+body.theme-christmas h4,
+body.theme-christmas h5,
+body.theme-christmas h6 {
+  color: #f0c44c !important;
+  text-shadow: 0 0 2px #ffffff, 0 0 8px #f0c44c, 0 0 14px #d93025 !important;
+}
+
+/* 3. 導航欄背景 (關鍵修復) */
+body.theme-christmas .VPNav,
+body.theme-christmas .VPNavBar,
+body.theme-christmas header,
+body.theme-christmas .VPPage .VPNav,
+body.theme-christmas .VPPage .VPNavBar {
+  background: linear-gradient(rgba(18, 18, 18, 0.75), rgba(18, 18, 18, 0.75)), url('/image/christmas/christmas2.png') repeat-x 0% 0% !important;
+  background-size: auto 60px !important;
+  border-bottom: 2px solid rgb(240, 196, 76) !important;
+}
+
+/* 4. 部落格頁面特殊處理 */
+body.theme-christmas.is-blog-page .VPNav,
+body.theme-christmas.is-blog-page .VPNavBar,
+body.theme-christmas.is-blog-page header {
+  border-bottom: none !important;
+}
+
+/* 5. Logo 與 Hero 圖片替換 */
+body.theme-christmas .VPImage.logo {
+  content: url('/image/christmas/christmas.png');
+}
+body.theme-christmas .VPHero .image-container .VPImage {
+  content: url('/image/christmas/christmas.png');
+}
+
+/* 6. 強制背景透明 (關鍵修復) */
+/* 確保 VitePress 的主要容器背景透明，讓底層的聖誕背景顯示出來 */
+body.theme-christmas .VPContent,
+body.theme-christmas .VPPage,
+body.theme-christmas .VPDoc {
+  background-color: transparent !important;
+  background: transparent !important;
+}
+
+/* 針對特定頁面容器的透明化 */
+body.theme-christmas .container,
+body.theme-christmas .content,
+body.theme-christmas .content-container {
+  background-color: transparent !important;
+}
+
+

@@ -272,7 +272,9 @@ body.theme-christmas h6 {
 /* Nav Bar background */
 body.theme-christmas .VPNav,
 body.theme-christmas .VPNavBar,
-body.theme-christmas header {
+body.theme-christmas header,
+body.theme-christmas .VPPage .VPNav,
+body.theme-christmas .VPPage .VPNavBar {
   background: linear-gradient(rgba(18, 18, 18, 0.75), rgba(18, 18, 18, 0.75)), url('/image/christmas/christmas2.png') repeat-x 0% 0% !important;
   background-size: auto 60px !important;
   border-bottom: 2px solid rgb(240, 196, 76) !important;
