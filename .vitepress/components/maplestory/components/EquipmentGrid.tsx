@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { EquipmentItem, CharacterEquipment } from '../types';
 import EquipmentTooltip from './EquipmentTooltip';
 
@@ -45,7 +45,6 @@ const SLOT_DEFINITIONS: Record<string, { label: string, match: string[] }> = {
 };
 
 const Slot: React.FC<{ slotKey: string; item?: EquipmentItem }> = ({ slotKey, item }) => {
-  const [showTooltip, setShowTooltip] = useState(false);
   const def = SLOT_DEFINITIONS[slotKey];
   
   // Special handling: If slotKey is not defined (e.g. spacer), return empty
@@ -77,11 +76,7 @@ const Slot: React.FC<{ slotKey: string; item?: EquipmentItem }> = ({ slotKey, it
   }
 
   return (
-    <div 
-      className="relative z-0 hover:z-50"
-      onMouseEnter={() => setShowTooltip(true)}
-      onMouseLeave={() => setShowTooltip(false)}
-    >
+    <div className="relative z-0 hover:z-50 group">
       <div className={`w-10 h-10 sm:w-12 sm:h-12 ${bgColor} border-2 ${borderColor} rounded-md flex items-center justify-center relative overflow-hidden transition-all ${glow}`}>
         {item ? (
           <>
@@ -102,8 +97,9 @@ const Slot: React.FC<{ slotKey: string; item?: EquipmentItem }> = ({ slotKey, it
         )}
       </div>
 
-      {showTooltip && item && (
-        <div className="absolute top-0 right-14 w-[300px] z-[100] animate-in fade-in duration-100 hidden md:block">
+      {item && (
+        <div className="absolute z-[100] w-[280px] sm:w-[300px] animate-in fade-in duration-100 hidden group-hover:block
+                        top-full left-1/2 -translate-x-1/2 mt-2 md:top-0 md:left-auto md:right-14 md:mt-0">
            <EquipmentTooltip item={item} />
         </div>
       )}
