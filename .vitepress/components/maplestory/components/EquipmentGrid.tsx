@@ -154,9 +154,12 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, characterImage
   */
 
   return (
-    <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner flex justify-center gap-6 relative">
-      {/* Background Decor */}
-      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-slate-700 to-transparent opacity-50" />
+    <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner relative">
+      <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+         <span className="w-2 h-2 rounded-full bg-indigo-500"></span> 裝備 (Equipment)
+      </h3>
+
+      <div className="flex justify-center gap-6">
       
       {/* Debug: Unmatched Items */}
       {unmatchedItems.length > 0 && (
@@ -209,6 +212,7 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, characterImage
               <Slot slotKey="Badge" item={findItem('Badge')} tooltipSide="left" />
            </div>
         </div>
+      </div>
       </div>
 
 

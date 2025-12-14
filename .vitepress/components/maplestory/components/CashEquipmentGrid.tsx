@@ -1,0 +1,273 @@
+import React from 'react';
+import { CharacterCashItemEquipment, CashItemEquipmentPreset, CharacterBeautyEquipment } from '../types';
+
+interface CashEquipmentGridProps {
+  cashEquipment: CharacterCashItemEquipment;
+  beautyEquipment?: CharacterBeautyEquipment;
+  characterImage?: string;
+}
+
+interface BeautySlotProps {
+  label: string;
+  name?: string;
+  baseColor?: string;
+  mixColor?: string;
+  mixRate?: string;
+  hue?: number;
+  saturation?: number;
+  brightness?: number;
+}
+
+const BeautySlot: React.FC<BeautySlotProps> = ({ label, name, baseColor, mixColor, mixRate, hue, saturation, brightness }) => {
+  const hasMix = mixRate && parseInt(mixRate) > 0;
+  const hasSkinDetails = hue !== undefined && saturation !== undefined && brightness !== undefined && (hue !== 0 || saturation !== 0 || brightness !== 0);
+  
+  return (
+    <div className="relative group z-0 hover:z-50">
+      <div className={`w-10 h-10 sm:w-12 sm:h-12 bg-[#1a1d24] border-2 ${name ? 'border-pink-500/50' : 'border-slate-800'} rounded-md flex flex-col items-center justify-center relative overflow-hidden transition-all p-1`}>
+        {name ? (
+          <div className="text-[9px] sm:text-[10px] text-center leading-tight text-pink-200 break-words w-full overflow-hidden">
+             {name.replace('髮型', '').replace('臉型', '')}
+          </div>
+        ) : (
+          <span className="text-[10px] text-slate-700 select-none font-medium">{label.replace(' (Beta)', '').replace(' (變裝)', '')}</span>
+        )}
+      </div>
+
+      {name && (
+        <div className="absolute z-[100] w-[180px] animate-in fade-in duration-100 hidden group-hover:block
+                        bottom-full left-1/2 -translate-x-1/2 mb-2 pointer-events-none">
+           <div className="bg-[#1a1d24]/95 backdrop-blur-md border border-pink-500/30 rounded-lg shadow-xl p-3 text-center">
+              <div className="text-sm font-bold text-pink-300 mb-1">{label}</div>
+              <div className="text-xs text-white mb-2">{name}</div>
+              
+              <div className="flex flex-col items-center gap-1">
+                <div className="flex justify-center gap-2 text-[10px]">
+                   <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">{baseColor}</span>
+                   {hasMix && (
+                      <>
+                        <span className="text-slate-500">+</span>
+                        <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">{mixColor} ({mixRate}%)</span>
+                      </>
+                   )}
+                </div>
+                {hasSkinDetails && (
+                    <div className="text-[9px] text-slate-400 mt-1">
+                       H: {hue} / S: {saturation} / B: {brightness}
+                    </div>
+                )}
+              </div>
+           </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const CashSlot: React.FC<{ label: string; item?: CashItemEquipmentPreset; tooltipSide?: 'left' | 'right' }> = ({ label, item, tooltipSide = 'left' }) => {
+  
+  const desktopPositionClass = tooltipSide === 'left'
+    ? 'md:right-full md:mr-1 md:left-auto'
+    : 'md:left-full md:ml-1 md:right-auto';
+
+  return (
+    <div className="relative group z-0 hover:z-50">
+      <div className={`w-10 h-10 sm:w-12 sm:h-12 bg-[#1a1d24] border-2 ${item ? 'border-pink-500/50' : 'border-slate-800'} rounded-md flex items-center justify-center relative overflow-hidden transition-all`}>
+        {item ? (
+          <>
+            <img src={item.cash_item_icon} alt={item.cash_item_name} className="w-8 h-8 sm:w-9 sm:h-9 object-contain z-10" />
+          </>
+        ) : (
+          <span className="text-[10px] text-slate-700 select-none font-medium">{label}</span>
+        )}
+      </div>
+
+      {item && (
+        <div className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[200] w-[200px] 
+                        hidden group-hover:block animate-in fade-in zoom-in-95 duration-200
+                        md:absolute md:top-0 ${desktopPositionClass} md:translate-y-0 md:translate-x-0 md:mt-0 md:zoom-in-100`}>
+           <div className="bg-[#1a1d24]/95 backdrop-blur-md border border-pink-500/30 rounded-lg shadow-xl p-3 text-center">
+              <div className="text-sm font-bold text-pink-300 mb-1">{item.cash_item_name}</div>
+              <div className="text-[10px] text-slate-400">{item.cash_item_equipment_slot}</div>
+              {item.cash_item_option.length > 0 && (
+                  <div className="mt-2 pt-2 border-t border-slate-700/50 space-y-1">
+                      {item.cash_item_option.map((opt, i) => (
+                          <div key={i} className="text-[10px] text-slate-300">
+                            {opt.option_type}: {opt.option_value}
+                          </div>
+                      ))}
+                  </div>
+              )}
+           </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const CashEquipmentGrid: React.FC<CashEquipmentGridProps> = ({ cashEquipment, beautyEquipment, characterImage }) => {
+  // Determine which preset to show
+  const presetNo = cashEquipment.preset_no;
+
+  const getPresetItems = (
+    base: CashItemEquipmentPreset[], 
+    p1: CashItemEquipmentPreset[], 
+    p2: CashItemEquipmentPreset[], 
+    p3: CashItemEquipmentPreset[], 
+    currentPreset: number
+  ) => {
+    if (currentPreset === 1) return p1;
+    if (currentPreset === 2) return p2;
+    if (currentPreset === 3) return p3;
+    return base;
+  };
+
+  const mainItems = getPresetItems(
+    cashEquipment.cash_item_equipment_base,
+    cashEquipment.cash_item_equipment_preset_1,
+    cashEquipment.cash_item_equipment_preset_2,
+    cashEquipment.cash_item_equipment_preset_3,
+    presetNo
+  ) || [];
+
+  const additionalItems = getPresetItems(
+    cashEquipment.additional_cash_item_equipment_base,
+    cashEquipment.additional_cash_item_equipment_preset_1,
+    cashEquipment.additional_cash_item_equipment_preset_2,
+    cashEquipment.additional_cash_item_equipment_preset_3,
+    presetNo
+  ) || [];
+
+  let activeItems = [...mainItems, ...additionalItems];
+  
+  // Fallback for safety if everything is empty and no preset number
+  if (activeItems.length === 0 && !presetNo) {
+     activeItems = [...(cashEquipment.cash_item_equipment_base || []), ...(cashEquipment.additional_cash_item_equipment_base || [])];
+  }
+  
+  // Helper to find by multiple possible names
+  const findByKeywords = (keywords: string[]) => {
+      return activeItems.find(item => keywords.some(k => item.cash_item_equipment_slot === k || item.cash_item_equipment_slot.includes(k)));
+  };
+
+  // Helper to find all items by multiple possible names (for rings)
+  const findAllByKeywords = (keywords: string[]) => {
+      return activeItems.filter(item => keywords.some(k => item.cash_item_equipment_slot === k || item.cash_item_equipment_slot.includes(k)));
+  };
+
+  const rings = findAllByKeywords(['戒指', 'Ring']);
+
+  return (
+    <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner relative mt-4">
+      <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+         <span className="w-2 h-2 rounded-full bg-pink-500"></span> 時裝 (Cash Items)
+      </h3>
+      
+      <div className="flex justify-center gap-6">
+         {/* Left Column */}
+         <div className="flex gap-2">
+            <div className="flex flex-col gap-2">
+                <CashSlot label="戒指1" item={rings[0]} tooltipSide="right" />
+                <CashSlot label="戒指2" item={rings[1]} tooltipSide="right" />
+                <CashSlot label="戒指3" item={rings[2]} tooltipSide="right" />
+                <CashSlot label="戒指4" item={rings[3]} tooltipSide="right" />
+            </div>
+            <div className="flex flex-col gap-2">
+                <CashSlot label="臉飾" item={findByKeywords(['臉飾', 'Face'])} tooltipSide="right" />
+                <CashSlot label="眼飾" item={findByKeywords(['眼飾', 'Eye'])} tooltipSide="right" />
+                <CashSlot label="耳環" item={findByKeywords(['耳環', 'Earrings'])} tooltipSide="right" />
+            </div>
+         </div>
+
+         {/* Center Character & Beauty */}
+         <div className="w-32 flex flex-col items-center relative">
+            <div className="absolute top-0 inset-x-0 h-32 bg-pink-500/10 rounded-full blur-xl transform scale-75 translate-y-4"></div>
+            {characterImage ? (
+                <img 
+                  src={`${characterImage}${characterImage.includes('?') ? '&' : '?'}action=A06`} 
+                  alt="Character" 
+                  className="relative z-10 drop-shadow-2xl scale-125 transform translate-y-[-10px]" 
+                />
+            ) : (
+                <div className="w-24 h-24 rounded-full bg-slate-800/50 mb-4" />
+            )}
+            
+            {/* Beauty Slots */}
+            <div className="flex flex-col gap-2 mt-4 relative z-20 items-center">
+                <div className="flex gap-2">
+                   <BeautySlot 
+                      label={beautyEquipment?.additional_character_hair ? (beautyEquipment?.character_class?.includes('神之子') ? "髮型 (Alpha)" : "髮型 (一般)") : "髮型"} 
+                      name={beautyEquipment?.character_hair?.hair_name} 
+                      baseColor={beautyEquipment?.character_hair?.base_color}
+                      mixColor={beautyEquipment?.character_hair?.mix_color}
+                      mixRate={beautyEquipment?.character_hair?.mix_rate}
+                   />
+                   <BeautySlot 
+                      label={beautyEquipment?.additional_character_hair ? (beautyEquipment?.character_class?.includes('神之子') ? "臉型 (Alpha)" : "臉型 (一般)") : "臉型"} 
+                      name={beautyEquipment?.character_face?.face_name} 
+                      baseColor={beautyEquipment?.character_face?.base_color}
+                      mixColor={beautyEquipment?.character_face?.mix_color}
+                      mixRate={beautyEquipment?.character_face?.mix_rate}
+                   />
+                   <BeautySlot 
+                      label={beautyEquipment?.additional_character_hair ? (beautyEquipment?.character_class?.includes('神之子') ? "皮膚 (Alpha)" : "皮膚 (一般)") : "皮膚"} 
+                      name={beautyEquipment?.character_skin?.skin_name} 
+                      baseColor={beautyEquipment?.character_skin?.color_style} 
+                      hue={beautyEquipment?.character_skin?.hue}
+                      saturation={beautyEquipment?.character_skin?.saturation}
+                      brightness={beautyEquipment?.character_skin?.brightness}
+                   />
+                </div>
+
+                {beautyEquipment?.additional_character_hair && (
+                    <div className="flex gap-2 opacity-90">
+                       <BeautySlot 
+                          label={beautyEquipment?.character_class?.includes('神之子') ? "髮型 (Beta)" : "髮型 (變裝)"} 
+                          name={beautyEquipment?.additional_character_hair?.hair_name} 
+                          baseColor={beautyEquipment?.additional_character_hair?.base_color}
+                          mixColor={beautyEquipment?.additional_character_hair?.mix_color}
+                          mixRate={beautyEquipment?.additional_character_hair?.mix_rate}
+                       />
+                       <BeautySlot 
+                          label={beautyEquipment?.character_class?.includes('神之子') ? "臉型 (Beta)" : "臉型 (變裝)"} 
+                          name={beautyEquipment?.additional_character_face?.face_name} 
+                          baseColor={beautyEquipment?.additional_character_face?.base_color}
+                          mixColor={beautyEquipment?.additional_character_face?.mix_color}
+                          mixRate={beautyEquipment?.additional_character_face?.mix_rate}
+                       />
+                       <BeautySlot 
+                          label={beautyEquipment?.character_class?.includes('神之子') ? "皮膚 (Beta)" : "皮膚 (變裝)"} 
+                          name={beautyEquipment?.additional_character_skin?.skin_name} 
+                          baseColor={beautyEquipment?.additional_character_skin?.color_style} 
+                          hue={beautyEquipment?.additional_character_skin?.hue}
+                          saturation={beautyEquipment?.additional_character_skin?.saturation}
+                          brightness={beautyEquipment?.additional_character_skin?.brightness}
+                       />
+                    </div>
+                )}
+            </div>
+         </div>
+
+         {/* Right Column */}
+         <div className="flex gap-2">
+            <div className="flex flex-col gap-2">
+                <CashSlot label="帽子" item={findByKeywords(['帽子', 'Hat', 'Cap'])} tooltipSide="left" />
+                <CashSlot label="上衣" item={findByKeywords(['上衣', '套服', 'Top', 'Overall'])} tooltipSide="left" />
+                <CashSlot label="褲子" item={findByKeywords(['褲子', 'Bottom'])} tooltipSide="left" />
+                <CashSlot label="武器" item={findByKeywords(['武器', 'Weapon'])} tooltipSide="left" />
+            </div>
+            <div className="flex flex-col gap-2">
+                <CashSlot label="披風" item={findByKeywords(['披風', 'Cape'])} tooltipSide="left" />
+                <CashSlot label="手套" item={findByKeywords(['手套', 'Gloves'])} tooltipSide="left" />
+                <CashSlot label="鞋子" item={findByKeywords(['鞋子', 'Shoes'])} tooltipSide="left" />
+                {/* Secondary Weapon / Shield if available in Cash Items? Usually not, but user asked for it */}
+                {/* Cash items usually don't have secondary unless it's a shield skin */}
+                <CashSlot label="副武" item={findByKeywords(['副武', 'Secondary', 'Shield'])} tooltipSide="left" />
+            </div>
+         </div>
+      </div>
+    </div>
+  );
+};
+
+export default CashEquipmentGrid;

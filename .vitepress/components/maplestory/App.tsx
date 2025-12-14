@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Loader2, RefreshCw, AlertCircle, Wand2, ThumbsUp, Shield, Sword, Flame, Star, Zap, ChevronDown, ChevronUp, History, X, Settings, Crown, LogOut, Share2 } from 'lucide-react';
+import { Search, Loader2, RefreshCw, AlertCircle, Wand2, ThumbsUp, Shield, Sword, Flame, Star, Zap, ChevronDown, ChevronUp, History, X, Settings, Crown, LogOut, Share2, Info, Mail } from 'lucide-react';
 import ApiKeyModal from './components/ApiKeyModal';
 import ShareModal from './components/ShareModal';
 import EquipmentGrid from './components/EquipmentGrid';
+import CashEquipmentGrid from './components/CashEquipmentGrid';
 import CharacterDetails from './components/CharacterDetails';
 import StatRadarChart from './components/StatRadarChart';
 import { fetchCharacterData } from './services/nexonService';
@@ -599,12 +600,24 @@ const App: React.FC = () => {
                          {analyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
                          {aiAnalysis ? '重新分析' : 'AI 健檢'}
                        </button>
+                      
+                      {/* Notice / Disclaimer */}
+                      <div className="mt-6 pt-4 border-t border-slate-800/50 text-[11px] text-slate-500 space-y-2">
+                        <div className="flex gap-2 items-start">
+                          <Info className="w-3.5 h-3.5 mt-0.5 shrink-0 text-slate-400" />
+                          <p className="leading-relaxed">資料來源為 Nexon Open API，數據為昨日的快照，每日 00:00 更新。若顯示舊資料請稍後或隔日再試。</p>
+                        </div>
+                        <div className="flex gap-2 items-start">
+                          <Mail className="w-3.5 h-3.5 mt-0.5 shrink-0 text-slate-400" />
+                          <p className="leading-relaxed">若數值與遊戲內不符，請聯繫站長：<a href="mailto:holybear@holybear.tw" className="text-indigo-400 hover:underline hover:text-indigo-300 transition-colors">holybear@holybear.tw</a></p>
+                        </div>
+                      </div>
                    </div>
                </div>
             </div>
 
-            {/* COLUMN 2: Stats (Span 4) */}
-            <div className="lg:col-span-4 space-y-6">
+            {/* COLUMN 2: Stats (Span 5) */}
+            <div className="lg:col-span-5 space-y-6">
                <div className="bg-[#161b22] border border-slate-800 rounded-xl p-5 h-full flex flex-col">
                   <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                      <Sword className="w-4 h-4" /> 焦點屬性
@@ -695,9 +708,10 @@ const App: React.FC = () => {
                </div>
             </div>
 
-            {/* COLUMN 3: Equipment (Span 5) */}
-            <div className="lg:col-span-5 space-y-6">
+            {/* COLUMN 3: Equipment (Span 4) */}
+            <div className="lg:col-span-4 space-y-6">
                <EquipmentGrid equipment={data.equipment} characterImage={data.basic.character_image} />
+               {data.cashItemEquipment && <CashEquipmentGrid cashEquipment={data.cashItemEquipment} beautyEquipment={data.beautyEquipment} characterImage={data.basic.character_image} />}
             </div>
 
           </div>

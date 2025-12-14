@@ -161,6 +161,8 @@ export interface DashboardData {
   skill4?: CharacterSkill;
   skill5?: CharacterSkill;
   skill6?: CharacterSkill;
+  cashItemEquipment?: CharacterCashItemEquipment;
+  beautyEquipment?: CharacterBeautyEquipment;
   dojo?: CharacterDojo;
   lastUpdated: string; // Internal timestamp for display
 }
@@ -342,4 +344,89 @@ export interface CharacterSkill {
   character_class: string;
   character_skill_grade: string;
   character_skill: Skill[];
+}
+
+export interface CashItemOption {
+  option_type: string;
+  option_value: string;
+}
+
+export interface CashItemColoringPrism {
+  color_range: string;
+  hue: number;
+  saturation: number;
+  value: number;
+}
+
+export interface CashItemEquipmentPreset {
+  cash_item_equipment_part: string;
+  cash_item_equipment_slot: string;
+  cash_item_name: string;
+  cash_item_icon: string;
+  cash_item_description: string;
+  cash_item_option: CashItemOption[];
+  date_expire: string;
+  date_option_expire: string;
+  cash_item_label: string;
+  cash_item_coloring_prism: CashItemColoringPrism;
+  item_gender: string;
+}
+
+export interface CharacterCashItemEquipment {
+  date: string;
+  character_gender: string;
+  character_class: string;
+  preset_no: number;
+  cash_item_equipment_base: CashItemEquipmentPreset[];
+  cash_item_equipment_preset_1: CashItemEquipmentPreset[];
+  cash_item_equipment_preset_2: CashItemEquipmentPreset[];
+  cash_item_equipment_preset_3: CashItemEquipmentPreset[];
+  additional_cash_item_equipment_base: CashItemEquipmentPreset[];
+  additional_cash_item_equipment_preset_1: CashItemEquipmentPreset[];
+  additional_cash_item_equipment_preset_2: CashItemEquipmentPreset[];
+  additional_cash_item_equipment_preset_3: CashItemEquipmentPreset[];
+}
+
+export interface CharacterBeautyEquipment {
+  date: string;
+  character_gender: string;
+  character_class: string;
+  character_hair: {
+    hair_name: string;
+    base_color: string;
+    mix_color: string;
+    mix_rate: string;
+  };
+  character_face: {
+    face_name: string;
+    base_color: string;
+    mix_color: string;
+    mix_rate: string;
+  };
+  character_skin: {
+    skin_name: string;
+    color_style: string;
+    hue: number;
+    saturation: number;
+    brightness: number;
+  };
+  additional_character_hair: {
+    hair_name: string;
+    base_color: string;
+    mix_color: string;
+    mix_rate: string;
+  } | null;
+  additional_character_face: {
+    face_name: string;
+    base_color: string;
+    mix_color: string;
+    mix_rate: string;
+  } | null;
+  additional_character_skin: {
+    skin_name: string;
+    color_style: string;
+    hue: number;
+    saturation: number;
+    brightness: number;
+  } | null;
 }

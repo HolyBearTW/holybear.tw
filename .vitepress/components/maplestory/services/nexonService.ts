@@ -166,6 +166,8 @@ export const fetchCharacterData = async (characterName: string, apiKey: string):
     `${BASE_URL}/character/basic?ocid=${ocid}&date=${date7DaysAgo}`,
     `${BASE_URL}/character/popularity?ocid=${ocid}&date=${dateParam}`,
     `${BASE_URL}/character/hexamatrix-stat?ocid=${ocid}&date=${dateParam}`,
+    `${BASE_URL}/character/cashitem-equipment?ocid=${ocid}&date=${dateParam}`,
+    `${BASE_URL}/character/beauty-equipment?ocid=${ocid}&date=${dateParam}`,
   ];
 
   const responses: Response[] = [];
@@ -193,7 +195,7 @@ export const fetchCharacterData = async (characterName: string, apiKey: string):
     unionRes, artifactRes, petRes, symbolRes, setRes, vmatrixRes, hexaRes, dojoRes,
     skill5Res, skill6Res,
     skill0Res, skill1Res, skill2Res, skill3Res, skill4Res,
-    basic7DaysRes, popularityRes, hexaStatRes
+    basic7DaysRes, popularityRes, hexaStatRes, cashItemRes, beautyRes
   ] = responses;
 
   if (!basicRes.ok || !statRes.ok || !equipRes.ok) {
@@ -237,6 +239,8 @@ export const fetchCharacterData = async (characterName: string, apiKey: string):
   const skill4 = skill4Res?.ok ? await skill4Res.json() : undefined;
   const basic7Days = basic7DaysRes?.ok ? await basic7DaysRes.json() : undefined;
   const hexaMatrixStat = hexaStatRes?.ok ? await hexaStatRes.json() : undefined;
+  const cashItemEquipment = cashItemRes?.ok ? await cashItemRes.json() : undefined;
+  const beautyEquipment = beautyRes?.ok ? await beautyRes.json() : undefined;
   
   // Popularity
   if (popularityRes?.ok) {
@@ -278,6 +282,8 @@ export const fetchCharacterData = async (characterName: string, apiKey: string):
     skill3,
     skill4,
     character_basic_7days_ago: basic7Days,
+    cashItemEquipment,
+    beautyEquipment,
     lastUpdated
   };
 };
