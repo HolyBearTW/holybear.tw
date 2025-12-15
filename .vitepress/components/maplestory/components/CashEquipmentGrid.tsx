@@ -27,15 +27,28 @@ const BeautySlot: React.FC<BeautySlotProps> = ({ label, name, baseColor, mixColo
     typeof brightness === 'number' && 
     (hue !== 0 || saturation !== 0 || brightness !== 0);
   
+  let iconSrc = '';
+  if (label.includes('髮型')) iconSrc = '/image/theme/hair.png';
+  else if (label.includes('臉型')) iconSrc = '/image/theme/face.png';
+  else if (label.includes('皮膚')) iconSrc = '/image/theme/skin.png';
+
   return (
     <div className="relative group z-0 hover:z-50">
       <div className={`w-10 h-10 sm:w-12 sm:h-12 bg-[#1a1d24] border-2 ${name ? 'border-pink-500/50' : 'border-slate-800'} rounded-md flex flex-col items-center justify-center relative overflow-hidden transition-all p-1`}>
-        {name ? (
-          <div className="text-[9px] sm:text-[10px] text-center leading-tight text-pink-200 break-words w-full overflow-hidden">
-             {name.replace('髮型', '').replace('臉型', '')}
-          </div>
+        {iconSrc ? (
+           <img 
+             src={iconSrc} 
+             alt={label} 
+             className={`w-8 h-8 object-contain ${name ? 'opacity-100' : 'opacity-30 grayscale'}`} 
+           />
         ) : (
-          <span className="text-[10px] text-slate-700 select-none font-medium">{label.replace(' (Beta)', '').replace(' (變裝)', '')}</span>
+            name ? (
+              <div className="text-[9px] sm:text-[10px] text-center leading-tight text-pink-200 break-words w-full overflow-hidden">
+                 {name.replace('髮型', '').replace('臉型', '')}
+              </div>
+            ) : (
+              <span className="text-[10px] text-slate-700 select-none font-medium">{label.replace(' (Beta)', '').replace(' (變裝)', '')}</span>
+            )
         )}
       </div>
 
@@ -75,12 +88,25 @@ const CashSlot: React.FC<{ label: string; item?: CashItemEquipmentPreset; toolti
     ? 'md:right-full md:mr-1 md:left-auto'
     : 'md:left-full md:ml-1 md:right-auto';
 
+  // Check for coloring prism
+  const prism = item?.cash_item_coloring_prism;
+  // Some APIs might return empty object or all zeros if not dyed, check values
+  const hasPrism = prism && (prism.hue !== 0 || prism.saturation !== 0 || prism.value !== 0 || (prism.color_range && prism.color_range !== ''));
+
   return (
     <div className="relative group z-0 hover:z-50">
       <div className={`w-10 h-10 sm:w-12 sm:h-12 bg-[#1a1d24] border-2 ${item ? 'border-pink-500/50' : 'border-slate-800'} rounded-md flex items-center justify-center relative overflow-hidden transition-all`}>
         {item ? (
           <>
             <img src={item.cash_item_icon} alt={item.cash_item_name} className="w-8 h-8 sm:w-9 sm:h-9 object-contain z-10" />
+            {hasPrism && (
+               <img 
+                 src="/image/theme/cashitem.png" 
+                 alt="染色" 
+                 className="absolute bottom-[3px] left-[3px] w-3 h-3 z-20" 
+                 title="染色"
+               />
+            )}
           </>
         ) : (
           <span className="text-[10px] text-slate-700 select-none font-medium">{label}</span>
@@ -94,6 +120,20 @@ const CashSlot: React.FC<{ label: string; item?: CashItemEquipmentPreset; toolti
            <div className="bg-[#1a1d24]/95 backdrop-blur-md border border-pink-500/30 rounded-lg shadow-xl p-3 text-center">
               <div className="text-sm font-bold text-pink-300 mb-1">{item.cash_item_name}</div>
               <div className="text-[10px] text-slate-400">{item.cash_item_equipment_slot}</div>
+              
+              {hasPrism && (
+                 <div className="mt-2 pt-2 border-t border-slate-700/50">
+                    <div className="text-[10px] font-bold text-indigo-300 mb-1 flex items-center justify-center gap-1">
+                       <span className="w-2 h-2 bg-indigo-500 rounded-full"></span> 染色資訊
+                    </div>
+                    <div className="text-[9px] text-slate-400 grid grid-cols-3 gap-1">
+                       <div className="bg-slate-800/50 rounded px-1 py-0.5 border border-slate-700">色相: {prism.hue}</div>
+                       <div className="bg-slate-800/50 rounded px-1 py-0.5 border border-slate-700">飽和: {prism.saturation}</div>
+                       <div className="bg-slate-800/50 rounded px-1 py-0.5 border border-slate-700">亮度: {prism.value}</div>
+                    </div>
+                 </div>
+              )}
+
               {item.cash_item_option.length > 0 && (
                   <div className="mt-2 pt-2 border-t border-slate-700/50 space-y-1">
                       {item.cash_item_option.map((opt, i) => (

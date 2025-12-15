@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Loader2, RefreshCw, AlertCircle, Wand2, ThumbsUp, Shield, Sword, Flame, Star, Zap, ChevronDown, ChevronUp, History, X, Settings, Crown, LogOut, Share2, Info, Mail } from 'lucide-react';
+import { Search, Loader2, RefreshCw, AlertCircle, Wand2, ThumbsUp, Shield, Sword, Flame, Star, Zap, ChevronDown, ChevronUp, History, X, Settings, Crown, LogOut, Share2, Info, Mail, Globe } from 'lucide-react';
 import ApiKeyModal from './components/ApiKeyModal';
 import ShareModal from './components/ShareModal';
 import EquipmentGrid from './components/EquipmentGrid';
@@ -13,6 +13,18 @@ import { MOCK_DATA } from './constants';
 import MarkdownIt from 'markdown-it';
 
 const DEFAULT_GEMINI_KEY = import.meta.env.VITE_DEFAULT_GEMINI_KEY || '';
+
+const SERVER_ICONS: Record<string, string> = {
+  '艾麗亞': 'https://tw.hicdn.beanfun.com/beanfun/event/MapleStory/UnionWebRank/assets/img/ai_li_ya.png',
+  '普力特': 'https://tw.hicdn.beanfun.com/beanfun/event/MapleStory/UnionWebRank/assets/img/pu_li_te.png',
+  '琉德': 'https://tw.hicdn.beanfun.com/beanfun/event/MapleStory/UnionWebRank/assets/img/liu_de.png',
+  '優依娜': 'https://tw.hicdn.beanfun.com/beanfun/event/MapleStory/UnionWebRank/assets/img/you_yi_na.png',
+  '愛麗西亞': 'https://tw.hicdn.beanfun.com/beanfun/event/MapleStory/UnionWebRank/assets/img/ai_li_xi_ya.png',
+  '殺人鯨': 'https://tw.hicdn.beanfun.com/beanfun/event/MapleStory/UnionWebRank/assets/img/sha_ren_jing.png',
+  '賽蓮': 'https://tw.hicdn.beanfun.com/beanfun/event/MapleStory/UnionWebRank/assets/img/silien.png',
+  '米特拉': 'https://tw.hicdn.beanfun.com/beanfun/event/MapleStory/UnionWebRank/assets/img/reboot.png',
+  'Reboot': 'https://tw.hicdn.beanfun.com/beanfun/event/MapleStory/UnionWebRank/assets/img/reboot.png'
+};
 
 const getJobBackgroundMap = (jobName: string): string => {
   if (!jobName) return '100000000';
@@ -533,6 +545,11 @@ const App: React.FC = () => {
                          <span>{data.basic.character_guild_name || '無公會'}</span>
                          <span className="text-slate-600">|</span>
                          <div className="flex items-center gap-1">
+                           {SERVER_ICONS[data.basic.world_name] ? (
+                              <img src={SERVER_ICONS[data.basic.world_name]} alt={data.basic.world_name} className="w-4 h-4 object-contain" />
+                           ) : (
+                              <Globe className="w-3 h-3 text-indigo-400" />
+                           )}
                            <span className="text-indigo-400">{data.basic.world_name}</span>
                            <button 
                              onClick={() => setShowShareModal(true)}
