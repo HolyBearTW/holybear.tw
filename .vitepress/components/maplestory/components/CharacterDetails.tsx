@@ -127,44 +127,45 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data }) => {
              searchIn(skill1) || searchIn(skill0);
   };
 
-  const calculateHexaStatValue = (name: string, level: number): number => {
+  const calculateHexaStatValue = (name: string, level: number, isMain: boolean = false): number => {
     if (level === 0) return 0;
     
+    let units = level;
+    if (isMain && level <= 10) {
+        // Main Stat Curve: 1, 2, 3, 4, 6, 8, 10, 13, 16, 20
+        const curve = [0, 1, 2, 3, 4, 6, 8, 10, 13, 16, 20];
+        units = curve[level] || level;
+    }
+
+    // Unit Values
+    let unitValue = 0;
+
     // Main Stat (STR, DEX, INT, LUK, or "主要屬性")
     if (['STR', 'DEX', 'INT', 'LUK'].some(s => name.includes(s)) || name.includes('主要屬性')) {
-        if (level <= 10) return level * 100;
-        return 1000 + (level - 10) * 200;
+        unitValue = 100;
     }
-    
     // Boss Damage / IED (Case insensitive for 'boss')
-    if (name.toLowerCase().includes('boss') || name.includes('無視') || name.includes('防禦')) {
-        if (level <= 10) return level;
-        return 10 + (level - 10) * 2;
+    else if (name.toLowerCase().includes('boss') || name.includes('無視') || name.includes('防禦')) {
+        unitValue = 1;
     }
-
     // Critical Damage
-    if (name.includes('爆擊傷害') || name.includes('Critical Damage')) {
-        if (level <= 10) return level * 0.35;
-        return 3.5 + (level - 10) * 0.7;
+    else if (name.includes('爆擊傷害') || name.includes('Critical Damage')) {
+        unitValue = 0.35;
     }
-
     // Damage
-    if (name === '傷害' || name === 'Damage') {
-        if (level <= 10) return level * 0.75;
-        return 7.5 + (level - 10) * 1.5;
+    else if (name === '傷害' || name === 'Damage') {
+        unitValue = 0.75;
     }
-
     // Attack / Magic Attack
-    if (name.includes('攻擊力') || name.includes('Attack') || name.includes('魔法') || name.includes('魔力')) {
-        if (level <= 10) return level * 5;
-        return 50 + (level - 10) * 10;
+    else if (name.includes('攻擊力') || name.includes('Attack') || name.includes('魔法') || name.includes('魔力')) {
+        unitValue = 5;
     }
 
-    return 0;
+    return units * unitValue;
   };
 
-  const getHexaStatValue = (name: string, level: number) => {
-    const val = calculateHexaStatValue(name, level);
+  const getHexaStatValue = (name: string, level: number, isMain: boolean = false) => {
+    const val = calculateHexaStatValue(name, level, isMain);
     if (val === 0 && level > 0) return `Lv.${level}`;
     if (val === 0) return '';
 
@@ -698,12 +699,12 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data }) => {
 
                 cores.forEach(core => {
                     if (!core) return;
-                    const addStat = (name: string, level: number) => {
+                    const addStat = (name: string, level: number, isMain: boolean = false) => {
                         if (!name || level === 0) return;
-                        const val = calculateHexaStatValue(name, level);
+                        const val = calculateHexaStatValue(name, level, isMain);
                         totals[name] = (totals[name] || 0) + val;
                     };
-                    addStat(core.main_stat_name, core.main_stat_level);
+                    addStat(core.main_stat_name, core.main_stat_level, true);
                     addStat(core.sub_stat_name_1, core.sub_stat_level_1);
                     addStat(core.sub_stat_name_2, core.sub_stat_level_2);
                 });
@@ -783,7 +784,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data }) => {
                                     </div>
                                     <div className="flex justify-between items-center">
                                         <span className="text-sm text-white">{stat.main_stat_name.replace(/boss/gi, 'BOSS')}</span>
-                                        <span className="text-sm text-green-400 font-mono">{getHexaStatValue(stat.main_stat_name, stat.main_stat_level)}</span>
+                                        <span className="text-sm text-green-400 font-mono">{getHexaStatValue(stat.main_stat_name, stat.main_stat_level, true)}</span>
                                     </div>
                                     <div className="w-full h-1 bg-slate-800 mt-1 rounded-full overflow-hidden">
                                         <div className="h-full bg-purple-500" style={{ width: `${(stat.main_stat_level / 20) * 100}%` }}></div>
