@@ -196,88 +196,90 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data }) => {
 
             const totals: Record<string, number> = {};
             const addStat = (name: string, val: number) => {
-                totals[name] = (totals[name] || 0) + val;
+              totals[name] = (totals[name] || 0) + val;
             };
 
             allSkills.forEach(skill => {
-                // Skip conditional/active skills
-                if (CONDITIONAL_SKILLS.includes(skill.skill_name)) return;
+              // Skip conditional/active skills
+              if (CONDITIONAL_SKILLS.includes(skill.skill_name)) return;
+              // 排除狂狼勇士的連結技能（連續擊殺優勢）
+              if (skill.skill_name === '連續擊殺優勢' || skill.skill_name === '連續擊殺優勢（狂狼勇士）') return;
 
-                let matched = false;
-                // Prefer skill_effect as it usually contains the direct stat values
-                const desc = skill.skill_effect || skill.skill_description;
+              let matched = false;
+              // Prefer skill_effect as it usually contains the direct stat values
+              const desc = skill.skill_effect || skill.skill_description;
                 
-                if (desc) {
-                    // Regex patterns for common stats
-                    const patterns = [
-                        // Boss Damage (covers "Boss Damage" and "Boss Attack Power")
-                        { regex: /(?:Boss|BOSS).*(?:傷害|攻擊力)[^0-9]*(\d+)%?/i, name: 'BOSS 傷害', isPercent: true },
+              if (desc) {
+                // Regex patterns for common stats
+                const patterns = [
+                  // Boss Damage (covers "Boss Damage" and "Boss Attack Power")
+                  { regex: /(?:Boss|BOSS).*(?:傷害|攻擊力)[^0-9]*(\d+)%?/i, name: 'BOSS 傷害', isPercent: true },
                         
-                        // IED - Check for "10% Ignore Defense" first, then "Ignore Defense 10%"
-                        { regex: /(\d+)%?\s*無視.*防禦率/, name: '無視防禦率', isPercent: true },
-                        { regex: /無視.*防禦率\s*(?:\+|:)?\s*(\d+)%?/, name: '無視防禦率', isPercent: true },
+                  // IED - Check for "10% Ignore Defense" first, then "Ignore Defense 10%"
+                  { regex: /(\d+)%?\s*無視.*防禦率/, name: '無視防禦率', isPercent: true },
+                  { regex: /無視.*防禦率\s*(?:\+|:)?\s*(\d+)%?/, name: '無視防禦率', isPercent: true },
                         
-                        // Crit Rate (covers "Crit Rate" and "Crit Probability")
-                        { regex: /(\d+)%?\s*爆擊(?:機)?率/, name: '爆擊率', isPercent: true },
-                        { regex: /爆擊(?:機)?率\s*(?:\+|:)?\s*(\d+)%?/, name: '爆擊率', isPercent: true },
+                  // Crit Rate (covers "Crit Rate" and "Crit Probability")
+                  { regex: /(\d+)%?\s*爆擊(?:機)?率/, name: '爆擊率', isPercent: true },
+                  { regex: /爆擊(?:機)?率\s*(?:\+|:)?\s*(\d+)%?/, name: '爆擊率', isPercent: true },
                         
-                        // Crit Damage
-                        { regex: /(\d+)%?\s*爆擊傷害/, name: '爆擊傷害', isPercent: true },
-                        { regex: /爆擊傷害\s*(?:\+|:)?\s*(\d+)%?/, name: '爆擊傷害', isPercent: true },
+                  // Crit Damage
+                  { regex: /(\d+)%?\s*爆擊傷害/, name: '爆擊傷害', isPercent: true },
+                  { regex: /爆擊傷害\s*(?:\+|:)?\s*(\d+)%?/, name: '爆擊傷害', isPercent: true },
                         
-                        // HP/MP (covers "Max HP" and "Max Increased HP")
-                        { regex: /最大(?:增加)?\s*HP\s*(?:\+|:)?\s*(\d+)%/, name: '最大HP', isPercent: true },
-                        { regex: /最大(?:增加)?\s*MP\s*(?:\+|:)?\s*(\d+)%/, name: '最大MP', isPercent: true },
+                  // HP/MP (covers "Max HP" and "Max Increased HP")
+                  { regex: /最大(?:增加)?\s*HP\s*(?:\+|:)?\s*(\d+)%/, name: '最大HP', isPercent: true },
+                  { regex: /最大(?:增加)?\s*MP\s*(?:\+|:)?\s*(\d+)%/, name: '最大MP', isPercent: true },
                         
-                        // All Stat
-                        { regex: /(?:全屬性|所有屬性)\s*(?:\+|:)?\s*(\d+)/, name: '全屬性' },
+                  // All Stat
+                  { regex: /(?:全屬性|所有屬性)\s*(?:\+|:)?\s*(\d+)/, name: '全屬性' },
                         
-                        // Magic Attack
-                        { regex: /魔法攻擊力\s*(?:\+|:)?\s*(\d+)/, name: '魔法攻擊力' },
+                  // Magic Attack
+                  { regex: /魔法攻擊力\s*(?:\+|:)?\s*(\d+)/, name: '魔法攻擊力' },
                         
-                        // Attack Power (Exclude Boss/Magic)
-                        { regex: /攻擊力\s*(?:\+|:)?\s*(\d+)/, name: '攻擊力', exclude: ['Boss', 'BOSS', '魔法'] },
+                  // Attack Power (Exclude Boss/Magic)
+                  { regex: /攻擊力\s*(?:\+|:)?\s*(\d+)/, name: '攻擊力', exclude: ['Boss', 'BOSS', '魔法'] },
                         
-                        // Exp - Use non-greedy match to avoid consuming the number if it appears later
-                        { regex: /經驗值.*?(\d+)%?/, name: '經驗值獲得量', isPercent: true },
+                  // Exp - Use non-greedy match to avoid consuming the number if it appears later
+                  { regex: /經驗值.*?(\d+)%?/, name: '經驗值獲得量', isPercent: true },
                         
-                        // Status Resistance
-                        { regex: /狀態異常抗性\s*(?:\+|:)?\s*(\d+)/, name: '狀態異常抗性' },
+                  // Status Resistance
+                  { regex: /狀態異常抗性\s*(?:\+|:)?\s*(\d+)/, name: '狀態異常抗性' },
                         
-                        // Damage (Exclude Boss/Crit)
-                        { regex: /(\d+)%?\s*傷害/, name: '傷害', isPercent: true, exclude: ['Boss', 'BOSS', '爆擊', '受到'] },
-                        { regex: /傷害\s*(?:\+|:)?\s*(\d+)%?/, name: '傷害', isPercent: true, exclude: ['Boss', 'BOSS', '爆擊', '受到'] },
-                    ];
+                  // Damage (Exclude Boss/Crit)
+                  { regex: /(\d+)%?\s*傷害/, name: '傷害', isPercent: true, exclude: ['Boss', 'BOSS', '爆擊', '受到'] },
+                  { regex: /傷害\s*(?:\+|:)?\s*(\d+)%?/, name: '傷害', isPercent: true, exclude: ['Boss', 'BOSS', '爆擊', '受到'] },
+                ];
 
-                    patterns.forEach(p => {
-                        // Simple check to avoid matching "Boss Damage" when looking for "Damage"
-                        if (p.exclude && p.exclude.some(ex => desc.toLowerCase().includes(ex.toLowerCase()))) return;
+                patterns.forEach(p => {
+                  // Simple check to avoid matching "Boss Damage" when looking for "Damage"
+                  if (p.exclude && p.exclude.some(ex => desc.toLowerCase().includes(ex.toLowerCase()))) return;
 
-                        const match = desc.match(p.regex);
-                        if (match) {
-                            addStat(p.name, parseInt(match[1], 10));
-                            matched = true;
-                        }
-                    });
+                  const match = desc.match(p.regex);
+                  if (match) {
+                    addStat(p.name, parseInt(match[1], 10));
+                    matched = true;
+                  }
+                });
                     
-                    // Special case for "All Stats" if phrased differently or multiple stats in one line
-                    // e.g. "STR, DEX, INT, LUK +10" -> All Stats +10
-                    if (desc.includes('STR') && desc.includes('DEX') && desc.match(/\+(\d+)/)) {
-                         const match = desc.match(/\+(\d+)/);
-                         if (match) {
-                             addStat('全屬性', parseInt(match[1], 10));
-                             matched = true;
-                         }
-                    }
+                // Special case for "All Stats" if phrased differently or multiple stats in one line
+                // e.g. "STR, DEX, INT, LUK +10" -> All Stats +10
+                if (desc.includes('STR') && desc.includes('DEX') && desc.match(/\+(\d+)/)) {
+                   const match = desc.match(/\+(\d+)/);
+                   if (match) {
+                     addStat('全屬性', parseInt(match[1], 10));
+                     matched = true;
+                   }
                 }
+              }
 
-                // Fallback to lookup table
-                if (!matched && LINK_SKILL_DATA[skill.skill_name]) {
-                    const stats = LINK_SKILL_DATA[skill.skill_name](skill.skill_level);
-                    Object.entries(stats).forEach(([key, val]) => {
-                        addStat(key, val);
-                    });
-                }
+              // Fallback to lookup table
+              if (!matched && LINK_SKILL_DATA[skill.skill_name]) {
+                const stats = LINK_SKILL_DATA[skill.skill_name](skill.skill_level);
+                Object.entries(stats).forEach(([key, val]) => {
+                  addStat(key, val);
+                });
+              }
             });
 
             if (Object.keys(totals).length === 0) return null;
