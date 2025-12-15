@@ -472,7 +472,9 @@ const App: React.FC = () => {
              {data && (
                 <div className="hidden sm:flex flex-col items-end mr-2 justify-center">
                     <span className="text-[10px] text-slate-500 leading-none">資料日期</span>
-                    <span className="text-xs font-mono text-indigo-400 font-bold">{data.basic.date.split('T')[0]}</span>
+                    <span className="text-xs font-mono text-indigo-400 font-bold">
+                    {data.lastUpdated?.split(' ')[0] || new Date().toISOString().split('T')[0]}
+                    </span>
                 </div>
              )}
              <button type="submit" disabled={loading} className="p-1.5 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
