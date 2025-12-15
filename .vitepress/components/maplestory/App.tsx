@@ -614,14 +614,14 @@ const App: React.FC = () => {
                       
                       <div className="flex flex-wrap justify-center gap-2 text-xs text-slate-400 mb-6">
                          <span className="flex items-center gap-1"><ThumbsUp className="w-3 h-3" /> {data.stat.pop || 0}</span>
-                         <span className="text-slate-600">|</span>
-                         <span>{data.basic.character_guild_name || '無公會'}</span>
-                         <span className="text-slate-600">|</span>
-                         <div className="flex items-center gap-1">
+                         <span className="flex items-center text-slate-600">|</span>
+                         <span className="flex items-center">{data.basic.character_guild_name || '無公會'}</span>
+                         <span className="flex items-center text-slate-600">|</span>
+                         <span className="flex items-center gap-1">
                            {SERVER_ICONS[data.basic.world_name] ? (
-                              <img src={SERVER_ICONS[data.basic.world_name]} alt={data.basic.world_name} className="w-4 h-4 object-contain" />
+                              <img src={SERVER_ICONS[data.basic.world_name]} alt={data.basic.world_name} className="w-4 h-4 object-contain align-middle" />
                            ) : (
-                              <Globe className="w-3 h-3 text-indigo-400" />
+                              <Globe className="w-3 h-3 text-indigo-400 align-middle" />
                            )}
                            <span className="text-indigo-400">{data.basic.world_name}</span>
                            <button 
@@ -638,7 +638,7 @@ const App: React.FC = () => {
                            >
                              <Share2 className="w-3 h-3" />
                            </button>
-                         </div>
+                         </span>
                       </div>
 
                       {/* Level & Class */}
@@ -726,7 +726,7 @@ const App: React.FC = () => {
 
             {/* COLUMN 2: Stats (Span 5) */}
             <div className="lg:col-span-5 space-y-6">
-               <div className="bg-[#161b22] border border-slate-800 rounded-xl p-5 h-full flex flex-col">
+               <div className="bg-[#161b22] border border-slate-800 rounded-xl p-5 flex flex-col">
                   <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                      <Sword className="w-4 h-4" /> 焦點屬性
                   </h3>
@@ -784,42 +784,37 @@ const App: React.FC = () => {
                   </div>
 
                   {/* Inner Ability */}
-                  <div className="mb-6">
-                     <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                        <Zap className="w-4 h-4 text-yellow-500" /> 內在潛能
-                     </h3>
-                     <div className="space-y-2">
-                        {data.ability.ability_info.map((a, i) => (
-                           <div key={i} className={`p-2.5 rounded text-xs font-medium border ${getAbilityStyle(a.ability_grade)} shadow-sm`}>
-                              {a.ability_value}
-                           </div>
-                        ))}
-                     </div>
-                  </div>
-                  
-                  {/* Expandable Detail Stats */}
-                  <div className="mt-auto">
-                     <button 
-                        onClick={() => setShowDetailStats(!showDetailStats)}
-                        className="w-full flex items-center justify-center gap-2 py-2 text-xs font-bold text-slate-500 hover:text-indigo-400 hover:bg-indigo-900/10 rounded transition-colors"
-                     >
-                        {showDetailStats ? '收起詳細屬性' : '顯示詳細屬性'} 
-                        {showDetailStats ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                     </button>
-                     
-                     {showDetailStats && (
-                        <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-3 animate-in fade-in slide-in-from-top-1 bg-[#0d1117] p-3 rounded-lg border border-slate-800">
-                           {detailedStats.map((stat, i) => (
-                              <div key={i} className="flex justify-between items-center text-xs border-b border-slate-800/30 pb-1 last:border-0">
-                                 <span className="text-slate-500">{stat.label}</span>
-                                 <span className="text-slate-300 font-mono">
-                                    {stat.format ? stat.format(getStatVal(stat.key)) : getStatVal(stat.key)}
-                                    {stat.suffix || ''}
-                                 </span>
-                              </div>
-                           ))}
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                      <Zap className="w-4 h-4 text-yellow-500" /> 內在潛能
+                    </h3>
+                    <div className="space-y-2 mb-2">
+                      {data.ability.ability_info.map((a, i) => (
+                        <div key={i} className={`p-2.5 rounded text-xs font-medium border ${getAbilityStyle(a.ability_grade)} shadow-sm`}>
+                          {a.ability_value}
                         </div>
-                     )}
+                      ))}
+                    </div>
+                    <button 
+                      onClick={() => setShowDetailStats(!showDetailStats)}
+                      className="w-full flex items-center justify-center gap-2 py-2 text-xs font-bold text-slate-500 hover:text-indigo-400 hover:bg-indigo-900/10 rounded transition-colors"
+                    >
+                      {showDetailStats ? '收起詳細屬性' : '顯示詳細屬性'} 
+                      {showDetailStats ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                    </button>
+                    {showDetailStats && (
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-3 animate-in fade-in slide-in-from-top-1 bg-[#0d1117] p-3 rounded-lg border border-slate-800">
+                        {detailedStats.map((stat, i) => (
+                          <div key={i} className="flex justify-between items-center text-xs border-b border-slate-800/30 pb-1 last:border-0">
+                            <span className="text-slate-500">{stat.label}</span>
+                            <span className="text-slate-300 font-mono">
+                              {stat.format ? stat.format(getStatVal(stat.key)) : getStatVal(stat.key)}
+                              {stat.suffix || ''}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                </div>
             </div>

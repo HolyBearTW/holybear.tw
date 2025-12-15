@@ -93,15 +93,36 @@ const StatRadarChart: React.FC<StatRadarChartProps> = ({ data }) => {
     return { x, y };
   };
 
-  const dataPoints = stats.map((s, i) => getPoint(i, s.value, s.max));
+  // Animation: 進場時由中心展開
+  const [progress, setProgress] = React.useState(0);
+  React.useEffect(() => {
+    let frame: number;
+    let start: number | null = null;
+    const duration = 700; // ms
+    function animate(ts: number) {
+      if (start === null) start = ts;
+      const elapsed = ts - start;
+      const t = Math.min(elapsed / duration, 1);
+      setProgress(t);
+      if (t < 1) frame = requestAnimationFrame(animate);
+    }
+    setProgress(0);
+    frame = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
+  const dataPoints = stats.map((s, i) => {
+    // 動畫進場時，value 由 0~實際值
+    return getPoint(i, s.value * progress, s.max);
+  });
   const polyPoints = dataPoints.map(p => `${p.x},${p.y}`).join(' ');
 
   // Grid levels
   const levels = [0.2, 0.4, 0.6, 0.8, 1];
 
   return (
-    <div className="w-full flex flex-col items-center justify-center bg-[#0d1117]/50 rounded-lg border border-slate-800/50 p-4 mt-4">
-      <h4 className="text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">能力雷達圖</h4>
+    <div className="w-full">
+      <h4 className="text-xs font-bold text-yellow-300 mb-4 uppercase tracking-widest text-center">能力雷達圖</h4>
       <div className="relative w-[200px] h-[200px]">
         <svg width={size} height={size} className="overflow-visible">
           {/* Grid Lines */}
