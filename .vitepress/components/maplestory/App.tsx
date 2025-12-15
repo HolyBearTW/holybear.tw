@@ -713,7 +713,7 @@ const App: React.FC = () => {
                       <div className="mt-6 pt-4 border-t border-slate-800/50 text-[11px] text-slate-500 space-y-2">
                         <div className="flex gap-2 items-start">
                           <Info className="w-3.5 h-3.5 mt-0.5 shrink-0 text-slate-400" />
-                          <p className="leading-relaxed">資料來源為 Nexon Open API，數據為昨日的快照，每日凌晨 02:00 更新。若顯示舊資料請稍後或隔日再試。</p>
+                          <p className="leading-relaxed">資料來源為 Nexon Open API，所有數據皆為每 15 分鐘更新一次。 若顯示舊資料請稍後再試。</p>
                         </div>
                         <div className="flex gap-2 items-start">
                           <Mail className="w-3.5 h-3.5 mt-0.5 shrink-0 text-slate-400" />
