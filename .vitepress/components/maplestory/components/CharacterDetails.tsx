@@ -787,7 +787,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data }) => {
                                         <span className="text-sm text-green-400 font-mono">{getHexaStatValue(stat.main_stat_name, stat.main_stat_level, true)}</span>
                                     </div>
                                     <div className="w-full h-1 bg-slate-800 mt-1 rounded-full overflow-hidden">
-                                        <div className="h-full bg-purple-500" style={{ width: `${(stat.main_stat_level / 20) * 100}%` }}></div>
+                                        <div className="h-full bg-purple-500" style={{ width: `${(stat.main_stat_level / 10) * 100}%` }}></div>
                                     </div>
                                 </div>
 
