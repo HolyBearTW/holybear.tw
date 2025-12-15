@@ -155,7 +155,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data }) => {
     }
 
     // Attack / Magic Attack
-    if (name.includes('攻擊力') || name.includes('Attack') || name.includes('魔法')) {
+    if (name.includes('攻擊力') || name.includes('Attack') || name.includes('魔法') || name.includes('魔力')) {
         if (level <= 10) return level * 5;
         return 50 + (level - 10) * 10;
     }
