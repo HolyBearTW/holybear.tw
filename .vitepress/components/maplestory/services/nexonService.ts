@@ -65,8 +65,13 @@ const fetchWithRetry = async (url: string, options: RequestInit, retries = 3, ba
 
       // If 400 Bad Request (Invalid Parameter), usually means date is invalid or data not ready
       if (res.status === 400) {
-         const errBody = await res.text();
-         console.error(`Bad Request (400) on ${url}:`, errBody);
+         try {
+            const clone = res.clone();
+            const errBody = await clone.text();
+            console.error(`Bad Request (400) on ${url}:`, errBody);
+         } catch (e) {
+            console.warn(`Failed to read error body for ${url}`, e);
+         }
          return res; 
       }
 
@@ -107,8 +112,13 @@ export const fetchCharacterData = async (characterName: string, apiKey: string, 
     const ocidRes = await fetchWithRetry(ocidUrl, { headers });
     
     if (!ocidRes.ok) {
-       const errorData = await ocidRes.json();
-       throw new Error(errorData?.error?.message || 'Failed to fetch OCID. Name might be incorrect or API key invalid.');
+       try {
+          const errorData = await ocidRes.json();
+          console.warn('OCID Fetch Error:', errorData);
+       } catch (e) {
+          // Ignore
+       }
+       throw new Error('該角色在資料庫中找不到');
     }
     
     const ocidData: OcidResponse = await ocidRes.json();
