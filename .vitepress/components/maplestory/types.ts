@@ -82,6 +82,7 @@ export interface EquipmentItem {
   additional_potential_option_2: string;
   additional_potential_option_3: string;
   starforce: string;
+  scroll_upgrade: string;
   starforce_scroll_flag: string;
   item_level: number;
   special_ring_level: number;

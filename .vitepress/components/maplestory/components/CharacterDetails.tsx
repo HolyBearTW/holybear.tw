@@ -28,12 +28,53 @@ const LINK_SKILL_DATA: Record<string, (lv: number) => Record<string, number>> = 
   '自信': (lv) => ({ '無視防禦率': lv === 1 ? 5 : 10 }), // Hoyoung (IED is passive)
   '自信心': (lv) => ({ '無視防禦率': lv === 1 ? 5 : 10 }), // Hoyoung (Alias)
   '鋼鐵之牆': (lv) => ({ '最大HP': lv === 1 ? 5 : 10 }), // Kaiser (Iron Will)
-  '光之守護': (lv) => ({ '攻擊力': lv === 1 ? 10 : 15, '魔法攻擊力': lv === 1 ? 10 : 15 }), // Explorer Warrior (Wait, this is actually Cygnus? No, Cygnus is Cygnus Blessing. Explorer Warrior is Invincible Belief (HP regen). Wait, "光之守護" is usually Mihile (Knight's Watch)? No, Mihile is "守護者". "光之守護" might be a translation for something else or I made a mistake in previous turn. Let's check standard translations.
-  // "光之守護" -> Light's Guardian? 
-  // Actually, let's stick to what we know. Explorer Pirate is Pirate Blessing.
-  '海盜祝福': (lv) => ({ '全屬性': lv === 6 ? 70 : lv * 10, '最大HP': lv === 6 ? 15 : lv * 2, '最大MP': lv === 6 ? 15 : lv * 2 }), // Explorer Pirate
-  '西格諾斯祝福': (lv) => ({ '攻擊力': lv === 10 ? 25 : lv * 2, '魔法攻擊力': lv === 10 ? 25 : lv * 2, '狀態異常抗性': lv === 10 ? 15 : lv }), // Cygnus
-  '鋼鐵之志': (lv) => ({ '最大HP': lv === 1 ? 10 : 15 }), // Kaiser
+    '光之守護': (lv) => ({ '攻擊力': lv === 1 ? 10 : 15, '魔法攻擊力': lv === 1 ? 10 : 15 }), // Mihile (Knight's Watch) - Assuming this is the link skill
+    '海盜祝福': (lv) => ({ '全屬性': lv === 6 ? 70 : lv * 10, '最大HP': lv === 6 ? 15 : lv * 2, '最大MP': lv === 6 ? 15 : lv * 2 }), // Explorer Pirate
+    '西格諾斯祝福': (lv) => ({ '攻擊力': lv === 10 ? 25 : lv * 2, '魔法攻擊力': lv === 10 ? 25 : lv * 2, '狀態異常抗性': lv === 10 ? 15 : lv }), // Cygnus
+    '鋼鐵之志': (lv) => ({ '最大HP': lv === 1 ? 10 : 15 }), // Kaiser
+};
+
+// Helper Component for Tooltips (Mobile Click / Desktop Hover)
+const ItemWithTooltip: React.FC<{ 
+  icon?: string; 
+  name: string; 
+  level: number; 
+  sub?: string; 
+  borderColor?: string;
+  textColor?: string;
+}> = ({ icon, name, level, sub, borderColor = 'border-slate-700', textColor = 'text-blue-400' }) => {
+  const [isOpen, setIsOpen] = React.useState(false);
+
+  return (
+    <div 
+      className={`bg-slate-900 p-2 rounded-lg border ${borderColor} flex flex-col items-center text-center relative group cursor-pointer select-none`}
+      onClick={() => setIsOpen(!isOpen)}
+      onMouseLeave={() => setIsOpen(false)}
+    >
+      {icon ? (
+          <img src={icon} alt={name} className="w-8 h-8 mb-1 rounded z-10 object-contain" />
+      ) : (
+          <div className="w-8 h-8 mb-1 bg-slate-800 rounded flex items-center justify-center text-[10px] text-slate-600 z-10">?</div>
+      )}
+      
+      {/* Truncated Name */}
+      <div className="text-xs text-slate-300 leading-tight z-10 truncate w-full px-1">{name}</div>
+      
+      <div className={`text-xs font-bold ${textColor} z-10`}>
+        Lv.{level} {sub && <span className="text-[9px] text-slate-500">({sub})</span>}
+      </div>
+
+      {/* Tooltip */}
+      <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-[#1a1d24] border border-slate-600 rounded-lg shadow-2xl p-3 z-50 
+                      ${isOpen ? 'block' : 'hidden group-hover:block'} animate-in fade-in zoom-in-95 duration-200 pointer-events-none`}>
+         <div className="flex flex-col items-center">
+            {icon && <img src={icon} className="w-10 h-10 mb-2 bg-slate-800 rounded p-1" />}
+            <div className="text-sm font-bold text-white mb-1 break-words w-full leading-tight">{name}</div>
+            <div className={`text-xs font-bold ${textColor}`}>Lv.{level}</div>
+         </div>
+      </div>
+    </div>
+  );
 };
 
 // Skills to exclude from total stats (Active, Conditional, Stacking, etc.)
@@ -437,12 +478,12 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data }) => {
         {symbolEquipment && (
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
             {symbolEquipment.symbol.map((sym, idx) => (
-              <div key={idx} className="bg-slate-900 p-2 rounded-lg border border-slate-700 flex flex-col items-center text-center relative overflow-hidden group">
-                <img src={sym.symbol_icon} alt={sym.symbol_name} className="w-8 h-8 mb-1 z-10" />
-                <div className="text-xs text-slate-300 leading-tight z-10">{sym.symbol_name}</div>
-                <div className="text-xs font-bold text-blue-400 z-10">Lv.{sym.symbol_level}</div>
-                <div className="absolute inset-0 bg-gradient-to-t from-blue-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-              </div>
+              <ItemWithTooltip 
+                key={idx}
+                icon={sym.symbol_icon}
+                name={sym.symbol_name}
+                level={sym.symbol_level}
+              />
             ))}
           </div>
         )}
@@ -602,15 +643,14 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data }) => {
               {hexaMatrix.character_hexa_core_equipment.map((core, idx) => {
                 const icon = findSkillIcon(core.hexa_core_name);
                 return (
-                   <div key={idx} className="bg-slate-900 p-2 rounded border border-purple-900/30 flex flex-col items-center text-center" title={core.hexa_core_name}>
-                      {icon ? (
-                          <img src={icon} alt={core.hexa_core_name} className="w-8 h-8 mb-1 rounded" />
-                      ) : (
-                          <div className="w-8 h-8 mb-1 bg-slate-800 rounded flex items-center justify-center text-[10px] text-slate-600">?</div>
-                      )}
-                      <div className="text-xs text-slate-400 mb-1 truncate w-full">{core.hexa_core_name}</div>
-                      <div className="text-xs font-bold text-purple-400">Lv.{core.hexa_core_level}</div>
-                   </div>
+                   <ItemWithTooltip 
+                      key={idx}
+                      icon={icon}
+                      name={core.hexa_core_name}
+                      level={core.hexa_core_level}
+                      borderColor="border-purple-900/30"
+                      textColor="text-purple-400"
+                   />
                 );
               })}
             </div>
@@ -627,15 +667,14 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data }) => {
                  .map((core, idx) => {
                  const icon = findSkillIcon(core.v_core_name);
                  return (
-                   <div key={idx} className="bg-slate-900 p-2 rounded border border-slate-700 flex flex-col items-center text-center" title={core.v_core_name}>
-                      {icon ? (
-                          <img src={icon} alt={core.v_core_name} className="w-8 h-8 mb-1 rounded" />
-                      ) : (
-                          <div className="w-8 h-8 mb-1 bg-slate-800 rounded flex items-center justify-center text-[10px] text-slate-600">?</div>
-                      )}
-                      <div className="text-xs text-slate-400 mb-1 truncate w-full">{core.v_core_name}</div>
-                      <div className="text-xs font-bold text-blue-400">Lv.{core.v_core_level} <span className="text-[9px] text-slate-500">({core.slot_level})</span></div>
-                   </div>
+                   <ItemWithTooltip 
+                      key={idx}
+                      icon={icon}
+                      name={core.v_core_name}
+                      level={core.v_core_level}
+                      sub={core.slot_level.toString()}
+                      textColor="text-blue-400"
+                   />
                  );
                })}
             </div>

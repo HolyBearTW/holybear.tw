@@ -94,6 +94,7 @@ const App: React.FC = () => {
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [favorites, setFavorites] = useState<string[]>([]);
   const initialSearchDone = useRef(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const aiResultRef = useRef<HTMLDivElement>(null);
@@ -102,6 +103,10 @@ const App: React.FC = () => {
     const history = localStorage.getItem('maple_search_history');
     if (history) {
       setSearchHistory(JSON.parse(history));
+    }
+    const favs = localStorage.getItem('maple_favorites');
+    if (favs) {
+      setFavorites(JSON.parse(favs));
     }
   }, []);
 
@@ -128,7 +133,19 @@ const App: React.FC = () => {
     localStorage.setItem('maple_search_history', JSON.stringify(newHistory));
   };
 
-  const handleSearch = async (e?: React.FormEvent, overrideName?: string, overrideKey?: string) => {
+  const toggleFavorite = (e: React.MouseEvent, name: string) => {
+    e.stopPropagation();
+    let newFavs;
+    if (favorites.includes(name)) {
+      newFavs = favorites.filter(f => f !== name);
+    } else {
+      newFavs = [...favorites, name];
+    }
+    setFavorites(newFavs);
+    localStorage.setItem('maple_favorites', JSON.stringify(newFavs));
+  };
+
+  const handleSearch = async (e?: React.FormEvent, overrideName?: string, overrideKey?: string, skipHistoryPush?: boolean) => {
     if (e) e.preventDefault();
     
     const targetName = overrideName !== undefined ? overrideName : characterName;
@@ -164,8 +181,11 @@ const App: React.FC = () => {
       setData(result);
       addToHistory(targetName);
       // Update URL hash
-      if (typeof window !== 'undefined') {
-        window.history.replaceState(null, '', `#${targetName}`);
+      if (typeof window !== 'undefined' && !skipHistoryPush) {
+        const currentHash = decodeURIComponent(window.location.hash.substring(1));
+        if (currentHash !== targetName) {
+             window.history.pushState({ character: targetName }, '', `#${targetName}`);
+        }
       }
     } catch (err: any) {
       console.error(err);
@@ -187,16 +207,33 @@ const App: React.FC = () => {
     setAnalyzing(false);
   };
 
-  // Handle URL hash for direct linking
+  // Handle URL hash for direct linking & History Navigation
   useEffect(() => {
+    // Initial Load
     if (typeof window !== 'undefined' && window.location.hash && apiKey && !initialSearchDone.current) {
       const hashName = decodeURIComponent(window.location.hash.substring(1));
       if (hashName) {
         setCharacterName(hashName);
-        handleSearch(undefined, hashName);
+        handleSearch(undefined, hashName, undefined, true); // Skip pushState on initial load
         initialSearchDone.current = true;
       }
     }
+
+    // Popstate Listener (Back/Forward Button)
+    const handlePopState = (event: PopStateEvent) => {
+       const hashName = decodeURIComponent(window.location.hash.substring(1));
+       if (hashName) {
+          setCharacterName(hashName);
+          handleSearch(undefined, hashName, undefined, true); // Skip pushState when navigating history
+       } else {
+          // Back to empty state
+          setData(null);
+          setCharacterName('');
+       }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
   }, [apiKey]);
 
   // Helper to extract specific stat values safely
@@ -246,7 +283,8 @@ const App: React.FC = () => {
 
   const focusStatKeys = [
     '戰鬥力', '最終傷害', 'BOSS怪物傷害', '無視防禦率', '爆擊傷害', 
-    '攻擊力', '魔法攻擊力', '星力', '神秘力量', '真實之力'
+    '攻擊力', '魔法攻擊力', '星力', '神秘力量', '真實之力',
+    '傷害', '一般怪物傷害'
   ];
 
   const detailedStats = [
@@ -443,34 +481,67 @@ const App: React.FC = () => {
            </div>
 
            {/* Search History Dropdown */}
-           {showHistory && searchHistory.length > 0 && (
+           {(showHistory && (searchHistory.length > 0 || favorites.length > 0)) && (
              <div className="absolute top-full left-0 right-0 mt-2 bg-[#1a1d24] border border-slate-700 rounded-xl shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
-               <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700/50 bg-[#15171c]">
-                 <span className="text-xs font-bold text-slate-400 flex items-center gap-1"><History className="w-3 h-3" /> 搜尋紀錄</span>
-                 <button 
-                   type="button"
-                   onClick={() => { setSearchHistory([]); localStorage.removeItem('maple_search_history'); }}
-                   className="text-[10px] text-slate-500 hover:text-red-400 transition-colors"
-                 >
-                   清除全部
-                 </button>
-               </div>
-               {searchHistory.map((name, idx) => (
-                 <div 
-                   key={idx}
-                   onClick={() => { setCharacterName(name); handleSearch(undefined, name); }}
-                   className="px-4 py-3 text-sm text-slate-300 hover:bg-indigo-600/20 hover:text-indigo-300 cursor-pointer flex justify-between items-center group/item transition-colors"
-                 >
-                   <span>{name}</span>
-                   <button 
-                     type="button"
-                     onClick={(e) => removeFromHistory(e, name)}
-                     className="opacity-0 group-hover/item:opacity-100 p-1 hover:bg-slate-700 rounded text-slate-500 hover:text-red-400 transition-all"
-                   >
-                     <X className="w-3 h-3" />
-                   </button>
-                 </div>
-               ))}
+               
+               {/* Favorites Section */}
+               {favorites.length > 0 && (
+                 <>
+                   <div className="flex items-center justify-between px-4 py-2 border-b border-slate-700/50 bg-[#15171c]">
+                     <span className="text-xs font-bold text-yellow-400 flex items-center gap-1"><Star className="w-3 h-3 fill-yellow-400" /> 收藏角色</span>
+                   </div>
+                   {favorites.map((name, idx) => (
+                     <div 
+                       key={`fav-${idx}`}
+                       onClick={() => { setCharacterName(name); handleSearch(undefined, name); }}
+                       className="px-4 py-3 text-sm text-slate-300 hover:bg-indigo-600/20 hover:text-indigo-300 cursor-pointer flex justify-between items-center group/item transition-colors"
+                     >
+                       <span>{name}</span>
+                       <button 
+                         type="button"
+                         onClick={(e) => toggleFavorite(e, name)}
+                         className="opacity-0 group-hover/item:opacity-100 p-1 hover:bg-slate-700 rounded text-yellow-500 hover:text-yellow-400 transition-all"
+                         title="取消收藏"
+                       >
+                         <Star className="w-3 h-3 fill-yellow-500" />
+                       </button>
+                     </div>
+                   ))}
+                   {searchHistory.length > 0 && <div className="h-1 bg-slate-800"></div>}
+                 </>
+               )}
+
+               {/* History Section */}
+               {searchHistory.length > 0 && (
+                 <>
+                   <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700/50 bg-[#15171c]">
+                     <span className="text-xs font-bold text-slate-400 flex items-center gap-1"><History className="w-3 h-3" /> 搜尋紀錄</span>
+                     <button 
+                       type="button"
+                       onClick={() => { setSearchHistory([]); localStorage.removeItem('maple_search_history'); }}
+                       className="text-[10px] text-slate-500 hover:text-red-400 transition-colors"
+                     >
+                       清除全部
+                     </button>
+                   </div>
+                   {searchHistory.map((name, idx) => (
+                     <div 
+                       key={idx}
+                       onClick={() => { setCharacterName(name); handleSearch(undefined, name); }}
+                       className="px-4 py-3 text-sm text-slate-300 hover:bg-indigo-600/20 hover:text-indigo-300 cursor-pointer flex justify-between items-center group/item transition-colors"
+                     >
+                       <span>{name}</span>
+                       <button 
+                         type="button"
+                         onClick={(e) => removeFromHistory(e, name)}
+                         className="opacity-0 group-hover/item:opacity-100 p-1 hover:bg-slate-700 rounded text-slate-500 hover:text-red-400 transition-all"
+                       >
+                         <X className="w-3 h-3" />
+                       </button>
+                     </div>
+                   ))}
+                 </>
+               )}
              </div>
            )}
         </form>
@@ -551,6 +622,13 @@ const App: React.FC = () => {
                               <Globe className="w-3 h-3 text-indigo-400" />
                            )}
                            <span className="text-indigo-400">{data.basic.world_name}</span>
+                           <button 
+                             onClick={(e) => toggleFavorite(e, data.basic.character_name)}
+                             className={`p-1 rounded-full transition-colors ${favorites.includes(data.basic.character_name) ? 'text-yellow-400 hover:bg-yellow-900/30' : 'text-slate-400 hover:text-yellow-400 hover:bg-yellow-900/30'}`}
+                             title={favorites.includes(data.basic.character_name) ? "取消收藏" : "加入收藏"}
+                           >
+                             <Star className={`w-3 h-3 ${favorites.includes(data.basic.character_name) ? 'fill-yellow-400' : ''}`} />
+                           </button>
                            <button 
                              onClick={() => setShowShareModal(true)}
                              className="p-1 text-slate-400 hover:text-indigo-400 hover:bg-indigo-900/30 rounded-full transition-colors"
@@ -668,6 +746,14 @@ const App: React.FC = () => {
                      <div className="flex justify-between items-center text-sm border-b border-slate-800/50 pb-2">
                         <span className="flex items-center gap-2 text-slate-400"><Shield className="w-3.5 h-3.5 text-red-500" /> BOSS 傷害</span>
                         <span className="font-mono text-white">{getStatVal('Boss Damage')}%</span>
+                     </div>
+                     <div className="flex justify-between items-center text-sm border-b border-slate-800/50 pb-2">
+                        <span className="flex items-center gap-2 text-slate-400"><Sword className="w-3.5 h-3.5 text-red-400" /> 傷害</span>
+                        <span className="font-mono text-white">{getStatVal('傷害')}%</span>
+                     </div>
+                     <div className="flex justify-between items-center text-sm border-b border-slate-800/50 pb-2">
+                        <span className="flex items-center gap-2 text-slate-400"><Sword className="w-3.5 h-3.5 text-slate-400" /> 一般怪物傷害</span>
+                        <span className="font-mono text-white">{getStatVal('一般怪物傷害')}%</span>
                      </div>
                      <div className="flex justify-between items-center text-sm border-b border-slate-800/50 pb-2">
                         <span className="flex items-center gap-2 text-slate-400"><Shield className="w-3.5 h-3.5 text-blue-500" /> 無視防禦率</span>

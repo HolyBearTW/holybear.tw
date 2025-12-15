@@ -52,6 +52,7 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item }) => {
 
   // Starforce display logic
   const sfCount = parseInt(item.starforce || '0');
+  const scrollCount = parseInt(item.scroll_upgrade || '0');
   const stars = [];
   for(let i=0; i<sfCount; i++) {
       stars.push(i);
@@ -69,7 +70,7 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item }) => {
           </div>
         )}
         <h3 className={`text-base font-bold text-white relative z-10`}>
-           {item.item_name} {sfCount > 0 ? `(+${sfCount})` : ''}
+           {item.item_name} {scrollCount > 0 ? `(+${scrollCount})` : ''}
         </h3>
         {item.potential_option_grade && potInfo.label && (
           <p className="text-[10px] text-slate-400 mt-0.5">({potInfo.label}等級道具)</p>
