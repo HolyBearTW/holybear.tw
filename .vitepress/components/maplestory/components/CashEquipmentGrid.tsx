@@ -134,7 +134,7 @@ const CashSlot: React.FC<{ label: string; item?: CashItemEquipmentPreset; toolti
                  </div>
               )}
 
-              {item.cash_item_option.length > 0 && (
+              {item.cash_item_option && item.cash_item_option.length > 0 && (
                   <div className="mt-2 pt-2 border-t border-slate-700/50 space-y-1">
                       {item.cash_item_option.map((opt, i) => (
                           <div key={i} className="text-[10px] text-slate-300">

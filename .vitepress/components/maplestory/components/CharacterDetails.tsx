@@ -304,7 +304,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data }) => {
             );
         })()}
 
-        {linkSkill && (linkSkill.character_link_skill.length > 0 || linkSkill.character_owned_link_skill) ? (
+        {linkSkill && ((linkSkill.character_link_skill && linkSkill.character_link_skill.length > 0) || linkSkill.character_owned_link_skill) ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {/* Render Owned Skill First */}
             {linkSkill.character_owned_link_skill && (
@@ -618,7 +618,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data }) => {
         <SectionHeader icon={<Zap />} title="核心技能 (V/Hexa)" />
         
         {/* Hexa */}
-        {hexaMatrix && hexaMatrix.character_hexa_core_equipment.length > 0 && (
+        {hexaMatrix && hexaMatrix.character_hexa_core_equipment && hexaMatrix.character_hexa_core_equipment.length > 0 && (
           <div className="mb-6">
             <div className="flex justify-between items-end mb-2">
                 <h4 className="text-sm font-bold text-purple-400">HEXA 矩陣</h4>
@@ -658,7 +658,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data }) => {
         )}
 
         {/* V Matrix */}
-        {vMatrix && (
+        {vMatrix && vMatrix.character_v_core_equipment && (
           <div>
             <h4 className="text-sm font-bold text-blue-400 mb-2">V 矩陣</h4>
             <div className="grid grid-cols-4 gap-2">
