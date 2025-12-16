@@ -280,3 +280,78 @@ export const fetchCharacterData = async (characterName: string, apiKey: string, 
     lastUpdated
   };
 };
+
+/**
+ * 掃描過去 7 天的資料，找出戰鬥力 (Combat Power) 最高的那一天
+ * 用於解決玩家下線時穿著掉寶裝，導致查詢數據不準確的問題
+ */
+export const findBestDateInPastWeek = async (characterName: string, apiKey: string): Promise<{ date: string, combatPower: number } | null> => {
+  const headers = { 
+    'x-nxopen-api-key': apiKey, 
+    'accept': 'application/json' 
+  };
+
+  // 1. 取得 OCID (利用現有的 Cache 機制或重新 Fetch)
+  let ocid = ocidCache[characterName];
+  if (!ocid) {
+    const ocidUrl = `${BASE_URL}/id?character_name=${encodeURIComponent(characterName)}`;
+    try {
+      const res = await fetch(ocidUrl, { headers });
+      if (!res.ok) throw new Error('無法取得 OCID');
+      const data = await res.json();
+      ocid = data.ocid;
+      ocidCache[characterName] = ocid;
+    } catch (e) {
+      console.error('OCID fetch failed inside findBestDate', e);
+      throw new Error('無法找到該角色，請確認 ID 是否正確');
+    }
+  }
+
+  // 2. 產生過去 7 天的日期 (從昨天開始往前推 7 天，避開今天因為可能還沒結算)
+  // 範圍：昨天 (offset 1) ~ 7天前 (offset 7)
+  const dates = Array.from({ length: 7 }, (_, i) => getTaiwanDate(i + 1));
+  console.log('[BestRecord] Scanning dates:', dates);
+
+  // 3. 平行發送請求 (只查 Stat 輕量級 API)
+  // 使用 no-store 確保我們拿到的是伺服器最新狀態，不使用 retry 以加快速度
+  const requests = dates.map(async (date) => {
+    try {
+      const url = `${BASE_URL}/character/stat?ocid=${ocid}&date=${date}`;
+      const res = await fetch(url, { headers, cache: 'no-store' });
+      
+      if (!res.ok) return null; // 該日期可能沒資料或維修，直接跳過
+      
+      const data = await res.json();
+      
+      // 尋找戰鬥力欄位 (支援中英文 key)
+      const cpStat = data.final_stat.find((s: any) => s.stat_name === '戰鬥力' || s.stat_name === 'Combat Power');
+      
+      if (!cpStat) return null;
+
+      // 移除逗號並轉為數字
+      const combatPower = parseInt(cpStat.stat_value.replace(/,/g, ''), 10);
+      return { date, combatPower };
+    } catch (err) {
+      // 網路錯誤直接忽略該天
+      return null;
+    }
+  });
+
+  // 等待所有請求完成
+  const results = await Promise.all(requests);
+  
+  // 4. 過濾無效資料並排序 (戰鬥力由大到小)
+  const validRecords = results.filter(r => r !== null) as { date: string, combatPower: number }[];
+  
+  if (validRecords.length === 0) {
+    return null;
+  }
+
+  // 降序排列：最大的在 index 0
+  validRecords.sort((a, b) => b.combatPower - a.combatPower);
+  
+  const bestRecord = validRecords[0];
+  console.log(`[BestRecord] Found best record on ${bestRecord.date}: ${bestRecord.combatPower}`);
+  
+  return bestRecord;
+};

@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { CharacterCashItemEquipment, CashItemEquipmentPreset, CharacterBeautyEquipment } from '../types';
+import PresetSwitcher from './PresetSwitcher';
 
 interface CashEquipmentGridProps {
   cashEquipment: CharacterCashItemEquipment;
@@ -20,7 +21,6 @@ interface BeautySlotProps {
 
 const BeautySlot: React.FC<BeautySlotProps> = ({ label, name, baseColor, mixColor, mixRate, hue, saturation, brightness }) => {
   const hasMix = mixRate && parseInt(mixRate) > 0;
-  // Ensure values are numbers and at least one is non-zero to display details
   const hasSkinDetails = 
     typeof hue === 'number' && 
     typeof saturation === 'number' && 
@@ -42,13 +42,13 @@ const BeautySlot: React.FC<BeautySlotProps> = ({ label, name, baseColor, mixColo
              className={`w-8 h-8 object-contain ${name ? 'opacity-100' : 'opacity-30 grayscale'}`} 
            />
         ) : (
-            name ? (
-              <div className="text-[9px] sm:text-[10px] text-center leading-tight text-pink-200 break-words w-full overflow-hidden">
-                 {name.replace('髮型', '').replace('臉型', '')}
-              </div>
-            ) : (
-              <span className="text-[10px] text-slate-700 select-none font-medium">{label.replace(' (Beta)', '').replace(' (變裝)', '')}</span>
-            )
+           name ? (
+             <div className="text-[9px] sm:text-[10px] text-center leading-tight text-pink-200 break-words w-full overflow-hidden">
+                {name.replace('髮型', '').replace('臉型', '')}
+             </div>
+           ) : (
+             <span className="text-[10px] text-slate-700 select-none font-medium">{label.replace(' (Beta)', '').replace(' (變裝)', '')}</span>
+           )
         )}
       </div>
 
@@ -56,25 +56,25 @@ const BeautySlot: React.FC<BeautySlotProps> = ({ label, name, baseColor, mixColo
         <div className="absolute z-[100] w-[180px] animate-in fade-in duration-100 hidden group-hover:block
                         bottom-full left-1/2 -translate-x-1/2 mb-2 pointer-events-none">
            <div className="bg-[#1a1d24]/95 backdrop-blur-md border border-pink-500/30 rounded-lg shadow-xl p-3 text-center">
-              <div className="text-sm font-bold text-pink-300 mb-1">{label}</div>
-              <div className="text-xs text-white mb-2">{name}</div>
-              
-              <div className="flex flex-col items-center gap-1">
-                <div className="flex justify-center gap-2 text-[10px]">
-                   {baseColor && <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">{baseColor}</span>}
-                   {hasMix && (
-                      <>
-                        <span className="text-slate-500">+</span>
-                        <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">{mixColor} ({mixRate}%)</span>
-                      </>
-                   )}
-                </div>
-                {hasSkinDetails && (
-                    <div className="text-[9px] text-slate-400 mt-1">
-                       H: {hue} / S: {saturation} / B: {brightness}
-                    </div>
-                )}
-              </div>
+             <div className="text-sm font-bold text-pink-300 mb-1">{label}</div>
+             <div className="text-xs text-white mb-2">{name}</div>
+             
+             <div className="flex flex-col items-center gap-1">
+               <div className="flex justify-center gap-2 text-[10px]">
+                  {baseColor && <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">{baseColor}</span>}
+                  {hasMix && (
+                    <>
+                      <span className="text-slate-500">+</span>
+                      <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">{mixColor} ({mixRate}%)</span>
+                    </>
+                  )}
+               </div>
+               {hasSkinDetails && (
+                   <div className="text-[9px] text-slate-400 mt-1">
+                      H: {hue} / S: {saturation} / B: {brightness}
+                   </div>
+               )}
+             </div>
            </div>
         </div>
       )}
@@ -83,14 +83,11 @@ const BeautySlot: React.FC<BeautySlotProps> = ({ label, name, baseColor, mixColo
 };
 
 const CashSlot: React.FC<{ label: string; item?: CashItemEquipmentPreset; tooltipSide?: 'left' | 'right' }> = ({ label, item, tooltipSide = 'left' }) => {
-  
   const desktopPositionClass = tooltipSide === 'left'
     ? 'md:right-full md:mr-1 md:left-auto'
     : 'md:left-full md:ml-1 md:right-auto';
 
-  // Check for coloring prism
   const prism = item?.cash_item_coloring_prism;
-  // Some APIs might return empty object or all zeros if not dyed, check values
   const hasPrism = prism && (prism.hue !== 0 || prism.saturation !== 0 || prism.value !== 0 || (prism.color_range && prism.color_range !== ''));
 
   return (
@@ -100,12 +97,7 @@ const CashSlot: React.FC<{ label: string; item?: CashItemEquipmentPreset; toolti
           <>
             <img src={item.cash_item_icon} alt={item.cash_item_name} className="w-8 h-8 sm:w-9 sm:h-9 object-contain z-10" />
             {hasPrism && (
-               <img 
-                 src="/image/theme/cashitem.png" 
-                 alt="染色" 
-                 className="absolute bottom-[3px] left-[3px] w-3 h-3 z-20" 
-                 title="染色"
-               />
+               <img src="/image/theme/cashitem.png" alt="染色" className="absolute bottom-[3px] left-[3px] w-3 h-3 z-20" title="染色" />
             )}
           </>
         ) : (
@@ -118,31 +110,31 @@ const CashSlot: React.FC<{ label: string; item?: CashItemEquipmentPreset; toolti
                         hidden group-hover:block animate-in fade-in zoom-in-95 duration-200
                         md:absolute md:top-0 ${desktopPositionClass} md:translate-y-0 md:translate-x-0 md:mt-0 md:zoom-in-100`}>
            <div className="bg-[#1a1d24]/95 backdrop-blur-md border border-pink-500/30 rounded-lg shadow-xl p-3 text-center">
-              <div className="text-sm font-bold text-pink-300 mb-1">{item.cash_item_name}</div>
-              <div className="text-[10px] text-slate-400">{item.cash_item_equipment_slot}</div>
-              
-              {hasPrism && (
+             <div className="text-sm font-bold text-pink-300 mb-1">{item.cash_item_name}</div>
+             <div className="text-[10px] text-slate-400">{item.cash_item_equipment_slot}</div>
+             
+             {hasPrism && (
                  <div className="mt-2 pt-2 border-t border-slate-700/50">
-                    <div className="text-[10px] font-bold text-indigo-300 mb-1 flex items-center justify-center gap-1">
-                       <span className="w-2 h-2 bg-indigo-500 rounded-full"></span> 染色資訊
-                    </div>
-                    <div className="text-[9px] text-slate-400 grid grid-cols-3 gap-1">
-                       <div className="bg-slate-800/50 rounded px-1 py-0.5 border border-slate-700">色相: {prism.hue}</div>
-                       <div className="bg-slate-800/50 rounded px-1 py-0.5 border border-slate-700">飽和: {prism.saturation}</div>
-                       <div className="bg-slate-800/50 rounded px-1 py-0.5 border border-slate-700">亮度: {prism.value}</div>
-                    </div>
+                   <div className="text-[10px] font-bold text-indigo-300 mb-1 flex items-center justify-center gap-1">
+                      <span className="w-2 h-2 bg-indigo-500 rounded-full"></span> 染色資訊
+                   </div>
+                   <div className="text-[9px] text-slate-400 grid grid-cols-3 gap-1">
+                      <div className="bg-slate-800/50 rounded px-1 py-0.5 border border-slate-700">色相: {prism.hue}</div>
+                      <div className="bg-slate-800/50 rounded px-1 py-0.5 border border-slate-700">飽和: {prism.saturation}</div>
+                      <div className="bg-slate-800/50 rounded px-1 py-0.5 border border-slate-700">亮度: {prism.value}</div>
+                   </div>
                  </div>
-              )}
+             )}
 
-              {item.cash_item_option && item.cash_item_option.length > 0 && (
-                  <div className="mt-2 pt-2 border-t border-slate-700/50 space-y-1">
-                      {item.cash_item_option.map((opt, i) => (
-                          <div key={i} className="text-[10px] text-slate-300">
-                            {opt.option_type}: {opt.option_value}
-                          </div>
-                      ))}
-                  </div>
-              )}
+             {item.cash_item_option && item.cash_item_option.length > 0 && (
+                 <div className="mt-2 pt-2 border-t border-slate-700/50 space-y-1">
+                     {item.cash_item_option.map((opt, i) => (
+                         <div key={i} className="text-[10px] text-slate-300">
+                           {opt.option_type}: {opt.option_value}
+                         </div>
+                     ))}
+                 </div>
+             )}
            </div>
         </div>
       )}
@@ -151,20 +143,29 @@ const CashSlot: React.FC<{ label: string; item?: CashItemEquipmentPreset; toolti
 };
 
 const CashEquipmentGrid: React.FC<CashEquipmentGridProps> = ({ cashEquipment, beautyEquipment, characterImage }) => {
-  // Determine which preset to show
-  const presetNo = cashEquipment.preset_no;
+  const activePresetNo = cashEquipment.preset_no ? parseInt(cashEquipment.preset_no) : null;
+  
+  // 預設顯示 0 (現)，這樣最準確
+  const [selectedPreset, setSelectedPreset] = useState<number>(0);
+
+  useEffect(() => {
+    setSelectedPreset(0);
+  }, [cashEquipment]);
 
   const getPresetItems = (
     base: CashItemEquipmentPreset[], 
     p1: CashItemEquipmentPreset[], 
     p2: CashItemEquipmentPreset[], 
     p3: CashItemEquipmentPreset[], 
-    currentPreset: number
+    current: number
   ) => {
-    if (currentPreset === 1 && p1 && p1.length > 0) return p1;
-    if (currentPreset === 2 && p2 && p2.length > 0) return p2;
-    if (currentPreset === 3 && p3 && p3.length > 0) return p3;
-    return base;
+    // 0 就是 Base
+    if (current === 0) return base;
+    
+    if (current === 1) return p1 || [];
+    if (current === 2) return p2 || [];
+    if (current === 3) return p3 || [];
+    return []; 
   };
 
   const mainItems = getPresetItems(
@@ -172,30 +173,23 @@ const CashEquipmentGrid: React.FC<CashEquipmentGridProps> = ({ cashEquipment, be
     cashEquipment.cash_item_equipment_preset_1,
     cashEquipment.cash_item_equipment_preset_2,
     cashEquipment.cash_item_equipment_preset_3,
-    presetNo
-  ) || [];
+    selectedPreset
+  );
 
   const additionalItems = getPresetItems(
     cashEquipment.additional_cash_item_equipment_base,
     cashEquipment.additional_cash_item_equipment_preset_1,
     cashEquipment.additional_cash_item_equipment_preset_2,
     cashEquipment.additional_cash_item_equipment_preset_3,
-    presetNo
-  ) || [];
+    selectedPreset
+  );
 
-  let activeItems = [...mainItems, ...additionalItems];
+  let activeItems = [...(mainItems || []), ...(additionalItems || [])];
   
-  // Fallback for safety if everything is empty and no preset number
-  if (activeItems.length === 0 && !presetNo) {
-     activeItems = [...(cashEquipment.cash_item_equipment_base || []), ...(cashEquipment.additional_cash_item_equipment_base || [])];
-  }
-  
-  // Helper to find by multiple possible names
   const findByKeywords = (keywords: string[]) => {
       return activeItems.find(item => keywords.some(k => item.cash_item_equipment_slot === k || item.cash_item_equipment_slot.includes(k)));
   };
 
-  // Helper to find all items by multiple possible names (for rings)
   const findAllByKeywords = (keywords: string[]) => {
       return activeItems.filter(item => keywords.some(k => item.cash_item_equipment_slot === k || item.cash_item_equipment_slot.includes(k)));
   };
@@ -204,11 +198,20 @@ const CashEquipmentGrid: React.FC<CashEquipmentGridProps> = ({ cashEquipment, be
 
   return (
     <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner relative mt-4">
-      <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+      <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
          <span className="w-2 h-2 rounded-full bg-pink-500"></span> 時裝 (Cash Items)
       </h3>
       
-      <div className="flex justify-center gap-6">
+      {/* 這裡加入了 showBase={true} 以顯示 '現' 按鈕 */}
+      <PresetSwitcher 
+        currentPreset={selectedPreset}
+        onPresetChange={setSelectedPreset}
+        activePresetNo={activePresetNo || undefined}
+        label="時裝預設"
+        showBase={true} 
+      />
+      
+      <div className="flex justify-center gap-6 mt-4">
          {/* Left Column */}
          <div className="flex gap-2">
             <div className="flex flex-col gap-2">
@@ -237,7 +240,6 @@ const CashEquipmentGrid: React.FC<CashEquipmentGridProps> = ({ cashEquipment, be
                 <div className="w-24 h-24 rounded-full bg-slate-800/50 mb-4" />
             )}
             
-            {/* Beauty Slots */}
             <div className="flex flex-col gap-2 mt-12 relative z-20 items-center">
                 <div className="flex gap-2">
                    <BeautySlot 
@@ -272,14 +274,14 @@ const CashEquipmentGrid: React.FC<CashEquipmentGridProps> = ({ cashEquipment, be
                           baseColor={beautyEquipment?.additional_character_hair?.base_color}
                           mixColor={beautyEquipment?.additional_character_hair?.mix_color}
                           mixRate={beautyEquipment?.additional_character_hair?.mix_rate}
-                       />
+                        />
                        <BeautySlot 
                           label={beautyEquipment?.character_class?.includes('神之子') ? "臉型 (Beta)" : "臉型 (變裝)"} 
                           name={beautyEquipment?.additional_character_face?.face_name} 
                           baseColor={beautyEquipment?.additional_character_face?.base_color}
                           mixColor={beautyEquipment?.additional_character_face?.mix_color}
                           mixRate={beautyEquipment?.additional_character_face?.mix_rate}
-                       />
+                        />
                        <BeautySlot 
                           label={beautyEquipment?.character_class?.includes('神之子') ? "皮膚 (Beta)" : "皮膚 (變裝)"} 
                           name={beautyEquipment?.additional_character_skin?.skin_name} 
@@ -287,7 +289,7 @@ const CashEquipmentGrid: React.FC<CashEquipmentGridProps> = ({ cashEquipment, be
                           hue={beautyEquipment?.additional_character_skin?.hue}
                           saturation={beautyEquipment?.additional_character_skin?.saturation}
                           brightness={beautyEquipment?.additional_character_skin?.brightness}
-                       />
+                        />
                     </div>
                 )}
             </div>
@@ -309,8 +311,6 @@ const CashEquipmentGrid: React.FC<CashEquipmentGridProps> = ({ cashEquipment, be
                 <CashSlot label="披風" item={findByKeywords(['披風', 'Cape'])} tooltipSide="left" />
                 <CashSlot label="手套" item={findByKeywords(['手套', 'Gloves'])} tooltipSide="left" />
                 <CashSlot label="鞋子" item={findByKeywords(['鞋子', 'Shoes'])} tooltipSide="left" />
-                {/* Secondary Weapon / Shield if available in Cash Items? Usually not, but user asked for it */}
-                {/* Cash items usually don't have secondary unless it's a shield skin */}
                 <CashSlot label="副武" item={findByKeywords(['副武', '輔助武器', 'Secondary', 'Shield'])} tooltipSide="left" />
             </div>
          </div>

@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Loader2, RefreshCw, AlertCircle, Wand2, ThumbsUp, Shield, Sword, Flame, Star, Zap, ChevronDown, ChevronUp, History, X, Settings, Crown, LogOut, Share2, Info, Mail, Globe } from 'lucide-react';
+import { Search, Loader2, RefreshCw, AlertCircle, Wand2, ThumbsUp, Shield, Sword, Flame, Star, Zap, ChevronDown, ChevronUp, History, X, Settings, Crown, LogOut, Share2, Info, Mail, Globe, TrendingUp } from 'lucide-react';
 import ApiKeyModal from './components/ApiKeyModal';
 import ShareModal from './components/ShareModal';
 import EquipmentGrid from './components/EquipmentGrid';
 import CashEquipmentGrid from './components/CashEquipmentGrid';
 import CharacterDetails from './components/CharacterDetails';
 import StatRadarChart from './components/StatRadarChart';
-import { fetchCharacterData } from './services/nexonService';
+import PresetSwitcher from './components/PresetSwitcher';
+import { fetchCharacterData, findBestDateInPastWeek } from './services/nexonService';
 import { analyzeCharacter } from './services/geminiService';
 import { DashboardData } from './types';
 import { MOCK_DATA } from './constants';
@@ -66,19 +67,14 @@ const getJobBackgroundMap = (jobName: string): string => {
   // Pirate -> Nautilus (諾特勒斯)
   if (['海盜', '拳霸', '槍神', '重砲', '指拳手', '衝鋒隊長', '槍手', '墨玄', '蒼龍'].some(k => jobName.includes(k))) return '120000000';
 
-  // Bowman -> Henesys (弓箭手村) - Default
-  // if (['弓箭手', '箭神', '神射手', '開拓者'].some(k => jobName.includes(k))) return '100000000';
-
   return '100000000'; // Henesys (Default)
 };
 
 const App: React.FC = () => {
-  // Fix 1: 調整優先順序，優先讀取 localStorage
   const [apiKey, setApiKey] = useState<string | null>(() => {
-    return import.meta.env.VITE_NEXON_API_KEY || localStorage.getItem('nexon_api_key') || null;
+    return localStorage.getItem('nexon_api_key') || import.meta.env.VITE_NEXON_API_KEY || null;
   });
   
-  // Fix 1: 調整優先順序，優先讀取 localStorage，確保使用者設定的 Key 不會被預設 Key 覆蓋
   const [geminiKey, setGeminiKey] = useState<string | null>(() => {
     return localStorage.getItem('gemini_api_key') || import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_DEFAULT_GEMINI_KEY || null;
   });
@@ -91,6 +87,7 @@ const App: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isScanningBest, setIsScanningBest] = useState(false); 
   const [error, setError] = useState<string | null>(null);
   const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
@@ -103,6 +100,9 @@ const App: React.FC = () => {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const aiResultRef = useRef<HTMLDivElement>(null);
 
+  // 內在潛能預設狀態
+  const [abilityPreset, setAbilityPreset] = useState(1);
+
   useEffect(() => {
     const history = localStorage.getItem('maple_search_history');
     if (history) {
@@ -114,15 +114,19 @@ const App: React.FC = () => {
     }
   }, []);
 
-  // Scroll to AI result when analysis is ready
   useEffect(() => {
     if (aiAnalysis && aiResultRef.current) {
-      // Small delay to ensure DOM is rendered
       setTimeout(() => {
         aiResultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 100);
     }
   }, [aiAnalysis]);
+
+  useEffect(() => {
+    if (data?.ability?.preset_no) {
+      setAbilityPreset(parseInt(data.ability.preset_no));
+    }
+  }, [data]);
 
   const addToHistory = (name: string) => {
     const newHistory = [name, ...searchHistory.filter(h => h !== name)].slice(0, 5);
@@ -158,12 +162,12 @@ const App: React.FC = () => {
     if (!targetName.trim() || !targetKey || loading) return;
 
     setLoading(true);
+    setIsScanningBest(false);
     setError(null);
     setAiAnalysis(null);
     setData(null);
     setShowHistory(false);
 
-    // MOCK / DEMO MODE
     if (targetKey === 'DEMO_MODE') {
       setTimeout(() => {
         setData({ 
@@ -179,16 +183,14 @@ const App: React.FC = () => {
       return;
     }
 
-    // REAL API CALL
     try {
       const result = await fetchCharacterData(targetName, targetKey, selectedDate || undefined);
       setData(result);
       addToHistory(targetName);
-      // Update URL hash
       if (typeof window !== 'undefined' && !skipHistoryPush) {
         const currentHash = decodeURIComponent(window.location.hash.substring(1));
         if (currentHash !== targetName) {
-              window.history.pushState({ character: targetName }, '', `#${targetName}`);
+             window.history.pushState({ character: targetName }, '', `#${targetName}`);
         }
       }
     } catch (err: any) {
@@ -199,17 +201,54 @@ const App: React.FC = () => {
     }
   };
 
+  const handleBestSearch = async () => {
+    if (!characterName.trim() || !apiKey) return;
+    
+    setIsScanningBest(true);
+    setLoading(true);
+    setError(null);
+    setData(null);
+    setAiAnalysis(null);
+    setShowHistory(false);
+
+    try {
+      const bestRecord = await findBestDateInPastWeek(characterName, apiKey);
+
+      if (!bestRecord) {
+        throw new Error('過去七天內找不到該角色的有效資料 (可能未登入或資料庫維護中)');
+      }
+
+      setSelectedDate(bestRecord.date);
+
+      const result = await fetchCharacterData(characterName, apiKey, bestRecord.date);
+      
+      setData(result);
+      addToHistory(characterName);
+      
+      const currentHash = decodeURIComponent(window.location.hash.substring(1));
+      if (currentHash !== characterName) {
+           window.history.pushState({ character: characterName }, '', `#${characterName}`);
+      }
+
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || '搜尋巔峰紀錄失敗');
+    } finally {
+      setIsScanningBest(false);
+      setLoading(false);
+    }
+  };
+
   const handleAiAnalyze = async () => {
     if (!data) return;
     const keyToUse = geminiKey || DEFAULT_GEMINI_KEY;
     setAnalyzing(true);
-    setAiAnalysis(null); // Clear previous
-    setError(null); // Clear previous errors
+    setAiAnalysis(null);
+    setError(null);
 
     try {
       const result = await analyzeCharacter(data, keyToUse, geminiModel);
       
-      // Fix 2: 嚴格區分「額度用完」與「其他錯誤(如超時)」
       const isQuotaError = result && (
         result.includes('Rate Limit Exceeded') || 
         result.includes('429') || 
@@ -218,20 +257,16 @@ const App: React.FC = () => {
       );
 
       if (isQuotaError) {
-        // 只有明確是 429 或 Quota 錯誤才顯示這個特定錯誤
         setError('AI 額度已用完，請更換金鑰或稍後再試。');
         setAiAnalysis(null);
       } else if (!result || result.startsWith('AI Analysis Failed:')) {
-        // 其他錯誤（包含超時）顯示一般錯誤訊息
         const msg = result?.replace('AI Analysis Failed:', '').trim() || 'AI 分析連線逾時或失敗，請重試。';
         setError(msg); 
         setAiAnalysis(null);
       } else {
-        // 成功
         setAiAnalysis(result);
       }
     } catch (err: any) {
-      // 捕獲未預期的異常
       const errorMessage = err?.message || '';
       if (errorMessage.includes('429') || errorMessage.includes('Quota')) {
         setError('AI 額度已用完，請更換金鑰或稍後再試。');
@@ -244,26 +279,22 @@ const App: React.FC = () => {
     }
   };
 
-  // Handle URL hash for direct linking & History Navigation
   useEffect(() => {
-    // Initial Load
     if (typeof window !== 'undefined' && window.location.hash && apiKey && !initialSearchDone.current) {
       const hashName = decodeURIComponent(window.location.hash.substring(1));
       if (hashName) {
         setCharacterName(hashName);
-        handleSearch(undefined, hashName, undefined, true); // Skip pushState on initial load
+        handleSearch(undefined, hashName, undefined, true);
         initialSearchDone.current = true;
       }
     }
 
-    // Popstate Listener (Back/Forward Button)
     const handlePopState = (event: PopStateEvent) => {
        const hashName = decodeURIComponent(window.location.hash.substring(1));
        if (hashName) {
           setCharacterName(hashName);
-          handleSearch(undefined, hashName, undefined, true); // Skip pushState when navigating history
+          handleSearch(undefined, hashName, undefined, true);
        } else {
-          // Back to empty state
           setData(null);
           setCharacterName('');
        }
@@ -273,7 +304,6 @@ const App: React.FC = () => {
     return () => window.removeEventListener('popstate', handlePopState);
   }, [apiKey]);
 
-  // Helper to extract specific stat values safely
   const getStatVal = (name: string): string => {
     const map: Record<string, string> = {
       'Combat Power': '戰鬥力',
@@ -307,9 +337,7 @@ const App: React.FC = () => {
      return num.toLocaleString();
   };
 
-  // Color mapping for Inner Ability
   const getAbilityStyle = (grade: string) => {
-    // Check for both English and potential Chinese keys just in case
     const g = grade.toLowerCase();
     if (g.includes('legendary') || g.includes('傳說')) return 'border-green-600 bg-green-950/30 text-green-400';
     if (g.includes('unique') || g.includes('罕見')) return 'border-yellow-600 bg-yellow-950/30 text-yellow-400';
@@ -371,6 +399,24 @@ const App: React.FC = () => {
     { label: '召喚獸持續時間', key: '召喚獸持續時間增加', suffix: '%' },
   ].filter(stat => !focusStatKeys.includes(stat.key));
 
+  const getAbilityData = () => {
+    if (!data?.ability) return [];
+    const presetKey = `ability_preset_${abilityPreset}`;
+    const presetData = (data.ability as any)[presetKey];
+    
+    if (presetData && presetData.ability_info) {
+        return presetData.ability_info;
+    }
+    
+    if (data.ability.preset_no && parseInt(data.ability.preset_no) === abilityPreset) {
+        return data.ability.ability_info;
+    }
+
+    return [];
+  };
+
+  const currentAbilityInfo = getAbilityData();
+
   return (
     <div className="min-h-screen bg-transparent text-slate-200 font-sans pb-20">
       {!apiKey && (
@@ -403,10 +449,6 @@ const App: React.FC = () => {
             <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
               <Settings className="w-5 h-5 text-indigo-400" /> 設定 AI Key
             </h2>
-            <p className="text-sm text-slate-400 mb-4">
-              預設使用公共 Key，若遇到額度限制或想要更穩定的體驗，請輸入您自己的 Google Gemini API Key。
-            </p>
-            
             <div className="space-y-4 mb-6">
               <div>
                 <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">API Key</label>
@@ -418,15 +460,11 @@ const App: React.FC = () => {
                   onChange={(e) => {
                     const val = e.target.value.trim();
                     setGeminiKey(val || null);
-                    if (val) {
-                      localStorage.setItem('gemini_api_key', val);
-                    } else {
-                      localStorage.removeItem('gemini_api_key');
-                    }
+                    if (val) localStorage.setItem('gemini_api_key', val);
+                    else localStorage.removeItem('gemini_api_key');
                   }}
                 />
               </div>
-
               <div>
                 <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">AI 模型</label>
                 <select
@@ -444,7 +482,6 @@ const App: React.FC = () => {
                 </select>
               </div>
             </div>
-
             <div className="flex justify-end">
               <button 
                 onClick={() => setShowKeySettings(false)}
@@ -502,7 +539,7 @@ const App: React.FC = () => {
              onFocus={() => setShowHistory(true)}
              onBlur={() => setTimeout(() => setShowHistory(false), 200)}
              placeholder="輸入角色名稱 (例如: 怪獸小熊)"
-             className="w-full bg-[#1a1d24] border border-slate-700 rounded-xl py-3 pl-12 pr-24 text-base focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition-all text-white placeholder:text-slate-600 shadow-lg"
+             className="w-full bg-[#1a1d24] border border-slate-700 rounded-xl py-3 pl-12 pr-32 text-base focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition-all text-white placeholder:text-slate-600 shadow-lg"
            />
            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1 items-center">
              {data && (
@@ -513,34 +550,32 @@ const App: React.FC = () => {
                     </span>
                 </div>
              )}
-             <button type="submit" disabled={loading} className="p-1.5 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
+             <button type="submit" disabled={loading || isScanningBest} className="p-1.5 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                {loading && !isScanningBest ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
+             </button>
+             <div className="w-px h-6 bg-slate-700 mx-1"></div>
+             <button 
+               type="button" 
+               onClick={handleBestSearch}
+               disabled={loading || isScanningBest}
+               className="p-1.5 hover:bg-indigo-900/50 rounded-lg text-indigo-400 hover:text-indigo-300 transition-colors disabled:opacity-50 group/best relative"
+               title="自動搜尋近七日最高戰力"
+             >
+                {isScanningBest ? <Loader2 className="w-5 h-5 animate-spin" /> : <TrendingUp className="w-5 h-5" />}
              </button>
            </div>
-
-           {/* Search History Dropdown */}
+           
            {(showHistory && (searchHistory.length > 0 || favorites.length > 0)) && (
              <div className="absolute top-full left-0 right-0 mt-2 bg-[#1a1d24] border border-slate-700 rounded-xl shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
-               
-               {/* Favorites Section */}
                {favorites.length > 0 && (
                  <>
                    <div className="flex items-center justify-between px-4 py-2 border-b border-slate-700/50 bg-[#15171c]">
                      <span className="text-xs font-bold text-yellow-400 flex items-center gap-1"><Star className="w-3 h-3 fill-yellow-400" /> 收藏角色</span>
                    </div>
                    {favorites.map((name, idx) => (
-                     <div 
-                       key={`fav-${idx}`}
-                       onClick={() => { setCharacterName(name); handleSearch(undefined, name); }}
-                       className="px-4 py-3 text-sm text-slate-300 hover:bg-indigo-600/20 hover:text-indigo-300 cursor-pointer flex justify-between items-center group/item transition-colors"
-                     >
+                     <div key={`fav-${idx}`} onClick={() => { setCharacterName(name); handleSearch(undefined, name); }} className="px-4 py-3 text-sm text-slate-300 hover:bg-indigo-600/20 hover:text-indigo-300 cursor-pointer flex justify-between items-center group/item transition-colors">
                        <span>{name}</span>
-                       <button 
-                         type="button"
-                         onClick={(e) => toggleFavorite(e, name)}
-                         className="opacity-0 group-hover/item:opacity-100 p-1 hover:bg-slate-700 rounded text-yellow-500 hover:text-yellow-400 transition-all"
-                         title="取消收藏"
-                       >
+                       <button type="button" onClick={(e) => toggleFavorite(e, name)} className="opacity-0 group-hover/item:opacity-100 p-1 hover:bg-slate-700 rounded text-yellow-500 hover:text-yellow-400 transition-all">
                          <Star className="w-3 h-3 fill-yellow-500" />
                        </button>
                      </div>
@@ -548,34 +583,16 @@ const App: React.FC = () => {
                    {searchHistory.length > 0 && <div className="h-1 bg-slate-800"></div>}
                  </>
                )}
-
-               {/* History Section */}
                {searchHistory.length > 0 && (
                  <>
                    <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700/50 bg-[#15171c]">
                      <span className="text-xs font-bold text-slate-400 flex items-center gap-1"><History className="w-3 h-3" /> 搜尋紀錄</span>
-                     <button 
-                       type="button"
-                       onClick={() => { setSearchHistory([]); localStorage.removeItem('maple_search_history'); }}
-                       className="text-[10px] text-slate-500 hover:text-red-400 transition-colors"
-                     >
-                       清除全部
-                     </button>
+                     <button type="button" onClick={() => { setSearchHistory([]); localStorage.removeItem('maple_search_history'); }} className="text-[10px] text-slate-500 hover:text-red-400 transition-colors">清除全部</button>
                    </div>
                    {searchHistory.map((name, idx) => (
-                     <div 
-                       key={idx}
-                       onClick={() => { setCharacterName(name); handleSearch(undefined, name); }}
-                       className="px-4 py-3 text-sm text-slate-300 hover:bg-indigo-600/20 hover:text-indigo-300 cursor-pointer flex justify-between items-center group/item transition-colors"
-                     >
+                     <div key={idx} onClick={() => { setCharacterName(name); handleSearch(undefined, name); }} className="px-4 py-3 text-sm text-slate-300 hover:bg-indigo-600/20 hover:text-indigo-300 cursor-pointer flex justify-between items-center group/item transition-colors">
                        <span>{name}</span>
-                       <button 
-                         type="button"
-                         onClick={(e) => removeFromHistory(e, name)}
-                         className="opacity-0 group-hover/item:opacity-100 p-1 hover:bg-slate-700 rounded text-slate-500 hover:text-red-400 transition-all"
-                       >
-                         <X className="w-3 h-3" />
-                       </button>
+                       <button type="button" onClick={(e) => removeFromHistory(e, name)} className="opacity-0 group-hover/item:opacity-100 p-1 hover:bg-slate-700 rounded text-slate-500 hover:text-red-400 transition-all"><X className="w-3 h-3" /></button>
                      </div>
                    ))}
                  </>
@@ -589,107 +606,55 @@ const App: React.FC = () => {
         {loading && !data && (
            <div className="flex flex-col items-center py-40 animate-pulse">
               <Loader2 className="w-12 h-12 text-indigo-500 animate-spin mb-4" />
-              <p className="text-slate-500 font-medium">正在讀取角色資料...</p>
+              <p className="text-slate-500 font-medium">{isScanningBest ? '正在掃描過去七天數據，尋找最強狀態...' : '正在讀取角色資料...'}</p>
            </div>
         )}
 
-        {/* 只在非 AI 分析相關錯誤時顯示全頁錯誤區塊 */}
         {error && !(error.includes('AI 額度已用完') || error.includes('API Key 無效')) && (
            <div className="max-w-md mx-auto mt-20 p-6 bg-red-950/20 border border-red-900 rounded-xl text-center">
               <AlertCircle className="w-10 h-10 text-red-500 mx-auto mb-3" />
               <h3 className="text-red-400 font-bold mb-1">讀取失敗</h3>
               <p className="text-red-300/80 text-sm mb-4">{error}</p>
-              <div className="flex flex-col gap-2 justify-center sm:flex-row">
-                <button onClick={() => handleSearch()} className="px-4 py-2 bg-red-900/40 hover:bg-red-900/60 rounded text-white text-sm transition-colors">
-                  重試
-                </button>
-                {(error.includes('429') || error.includes('Rate limited')) && (
-                  <>
-                    <button 
-                      onClick={() => { setApiKey('DEMO_MODE'); setCharacterName('DemoHero'); handleSearch(undefined, 'DemoHero', 'DEMO_MODE'); }}
-                      className="px-4 py-2 bg-indigo-900/40 hover:bg-indigo-900/60 rounded text-white text-sm transition-colors"
-                    >
-                      切換至演示模式
-                    </button>
-                    <button 
-                      onClick={() => { setApiKey(null); localStorage.removeItem('nexon_api_key'); }}
-                      className="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded text-white text-sm transition-colors"
-                    >
-                      更換 API Key
-                    </button>
-                  </>
-                )}
-              </div>
+              <button onClick={() => handleSearch()} className="px-4 py-2 bg-red-900/40 hover:bg-red-900/60 rounded text-white text-sm transition-colors">重試</button>
            </div>
         )}
 
         {data && !loading && (
           <>
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            
-            {/* COLUMN 1: Profile & Meta (Span 3) */}
             <div className="lg:col-span-3 space-y-4">
                <div className="bg-[#161b22] border border-slate-800 rounded-xl overflow-hidden shadow-xl relative group">
-                  {/* Background Art - Dynamic based on Job */}
                   <div className="h-32 bg-slate-800 relative overflow-hidden">
-                      <div 
-                        className="absolute inset-0 bg-cover bg-center opacity-30 grayscale mix-blend-overlay transition-all duration-700 group-hover:scale-110 group-hover:opacity-40 group-hover:grayscale-0"
-                        style={{ backgroundImage: `url('https://maplestory.io/api/GMS/248/map/${getJobBackgroundMap(data.basic.character_class)}/render/back')` }}
-                      ></div>
+                      <div className="absolute inset-0 bg-cover bg-center opacity-30 grayscale mix-blend-overlay transition-all duration-700 group-hover:scale-110 group-hover:opacity-40 group-hover:grayscale-0" style={{ backgroundImage: `url('https://maplestory.io/api/GMS/248/map/${getJobBackgroundMap(data.basic.character_class)}/render/back')` }}></div>
                       <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#161b22]"></div>
                   </div>
-
                   <div className="px-5 relative -mt-16 flex flex-col items-center pb-5">
-                      {/* Avatar */}
                       <div className="w-32 h-32 rounded-full bg-[#0a0c10] border-4 border-[#1f242e] shadow-2xl overflow-hidden flex items-center justify-center mb-3 relative z-10 group-hover:scale-105 transition-transform duration-500">
                           <img src={data.basic.character_image} alt="Character" className="w-[150%] h-[150%] object-cover mt-8" />
                       </div>
-
                       <h2 className="text-2xl font-bold text-white mb-1 text-center">{data.basic.character_name}</h2>
-                      
                       <div className="flex flex-wrap justify-center gap-2 text-xs text-slate-400 mb-6">
                          <span className="flex items-center gap-1"><ThumbsUp className="w-3 h-3" /> {data.stat.pop || 0}</span>
                          <span className="flex items-center text-slate-600">|</span>
                          <span className="flex items-center">{data.basic.character_guild_name || '無公會'}</span>
                          <span className="flex items-center text-slate-600">|</span>
                          <span className="flex items-center gap-1">
-                           {SERVER_ICONS[data.basic.world_name] ? (
-                              <img src={SERVER_ICONS[data.basic.world_name]} alt={data.basic.world_name} className="w-4 h-4 object-contain align-middle" />
-                           ) : (
-                              <Globe className="w-3 h-3 text-indigo-400 align-middle" />
-                           )}
+                           {SERVER_ICONS[data.basic.world_name] ? <img src={SERVER_ICONS[data.basic.world_name]} alt={data.basic.world_name} className="w-4 h-4 object-contain align-middle" /> : <Globe className="w-3 h-3 text-indigo-400 align-middle" />}
                            <span className="text-indigo-400">{data.basic.world_name}</span>
-                           <button 
-                             onClick={(e) => toggleFavorite(e, data.basic.character_name)}
-                             className={`p-1 rounded-full transition-colors ${favorites.includes(data.basic.character_name) ? 'text-yellow-400 hover:bg-yellow-900/30' : 'text-slate-400 hover:text-yellow-400 hover:bg-yellow-900/30'}`}
-                             title={favorites.includes(data.basic.character_name) ? "取消收藏" : "加入收藏"}
-                           >
-                             <Star className={`w-3 h-3 ${favorites.includes(data.basic.character_name) ? 'fill-yellow-400' : ''}`} />
-                           </button>
-                           <button 
-                             onClick={() => setShowShareModal(true)}
-                             className="p-1 text-slate-400 hover:text-indigo-400 hover:bg-indigo-900/30 rounded-full transition-colors"
-                             title="分享角色"
-                           >
-                             <Share2 className="w-3 h-3" />
-                           </button>
                          </span>
                       </div>
-
-                      {/* Level & Class */}
+                      
                       <div className="w-full mb-4 p-3 bg-[#0d1117]/80 backdrop-blur-sm rounded-lg border border-slate-800">
                          <div className="flex justify-between items-baseline mb-1">
-                            <span className="text-sm font-bold text-white">{data.basic.character_class} <span className="text-xs font-normal text-slate-500">({data.basic.character_class_level === '6' ? '6轉' : data.basic.character_class_level + '轉'})</span></span>
+                            <span className="text-sm font-bold text-white">{data.basic.character_class}</span>
                             <span className="text-xs text-slate-500">{data.basic.character_exp_rate}%</span>
                          </div>
                          <div className="text-2xl font-mono font-bold text-white mb-2">LV. {data.basic.character_level}</div>
-                         {/* Exp Bar Visual */}
                          <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
                             <div className="h-full bg-gradient-to-r from-indigo-500 to-cyan-400" style={{ width: `${Math.min(parseFloat(data.basic.character_exp_rate), 100)}%` }} />
                          </div>
                       </div>
 
-                      {/* Meta Details */}
                       <div className="w-full space-y-2 text-xs text-slate-400 mb-6 bg-[#0d1117]/50 p-3 rounded-lg border border-slate-800/50">
                          <div className="flex justify-between border-b border-slate-800/50 pb-1.5">
                             <span>建立日期</span>
@@ -729,52 +694,26 @@ const App: React.FC = () => {
                          </div>
                       </div>
 
-                      {/* Radar Chart */}
-                      <div className="mb-6">
-                        <StatRadarChart data={data} />
-                      </div>
+                      <div className="mb-6"><StatRadarChart data={data} /></div>
 
-                      {/* AI Button */}
-                       <button 
-                        onClick={handleAiAnalyze}
-                        disabled={analyzing}
-                        className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold rounded-lg flex items-center justify-center gap-2 transition-all shadow-lg shadow-indigo-900/20 hover:translate-y-[-1px]"
-                       >
+                      <button onClick={handleAiAnalyze} disabled={analyzing} className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold rounded-lg flex items-center justify-center gap-2 transition-all shadow-lg shadow-indigo-900/20 hover:translate-y-[-1px]">
                          {analyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
                          {aiAnalysis ? '重新分析' : 'AI 健檢'}
-                       </button>
-                      
-                      {/* Notice / Disclaimer */}
-                      <div className="mt-6 pt-4 border-t border-slate-800/50 text-[11px] text-slate-500 space-y-2">
-                        <div className="flex gap-2 items-start">
-                          <Info className="w-3.5 h-3.5 mt-0.5 shrink-0 text-slate-400" />
-                          <p className="leading-relaxed">資料來源為 Nexon Open API，所有數據皆為每 15 分鐘更新一次。 若顯示舊資料請稍後再試。</p>
-                        </div>
-                        <div className="flex gap-2 items-start">
-                          <Mail className="w-3.5 h-3.5 mt-0.5 shrink-0 text-slate-400" />
-                          <p className="leading-relaxed">若數值與遊戲內不符，請聯繫站長：<a href="mailto:holybear@holybear.tw" className="text-indigo-400 hover:underline hover:text-indigo-300 transition-colors">holybear@holybear.tw</a></p>
-                        </div>
-                      </div>
+                      </button>
                    </div>
                </div>
             </div>
 
-            {/* COLUMN 2: Stats (Span 5) */}
             <div className="lg:col-span-5 space-y-6">
                <div className="bg-[#161b22] border border-slate-800 rounded-xl p-5 flex flex-col">
                   <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                      <Sword className="w-4 h-4" /> 焦點屬性
                   </h3>
-
-                  {/* Combat Power (Highlight) */}
                   <div className="bg-[#0d1117] border border-slate-700/50 rounded-lg p-3 mb-4">
                      <div className="text-xs text-slate-500 mb-1">戰鬥力</div>
-                     <div className="text-xl font-bold text-indigo-400 font-mono tracking-tight">
-                        {formatBigNumber(getStatVal('Combat Power'))}
-                     </div>
+                     <div className="text-xl font-bold text-indigo-400 font-mono tracking-tight">{formatBigNumber(getStatVal('Combat Power'))}</div>
                   </div>
-
-                  {/* Focus Stats List */}
+                  
                   <div className="space-y-3 mb-6">
                      <div className="flex justify-between items-center text-sm border-b border-slate-800/50 pb-2">
                         <span className="flex items-center gap-2 text-slate-400"><Flame className="w-3.5 h-3.5 text-orange-500" /> 最終傷害</span>
@@ -818,18 +757,30 @@ const App: React.FC = () => {
                      </div>
                   </div>
 
-                  {/* Inner Ability */}
                   <div>
                     <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
                       <Zap className="w-4 h-4 text-yellow-500" /> 內在潛能
                     </h3>
-                    <div className="space-y-2 mb-2">
-                      {data.ability.ability_info.map((a, i) => (
+                    
+                    <PresetSwitcher 
+                      currentPreset={abilityPreset}
+                      onPresetChange={setAbilityPreset}
+                      activePresetNo={data.ability.preset_no ? parseInt(data.ability.preset_no) : 1}
+                      label="潛能預設"
+                      showBase={false} 
+                    />
+
+                    <div className="space-y-2 mb-2 mt-2">
+                      {currentAbilityInfo.map((a: any, i: number) => (
                         <div key={i} className={`p-2.5 rounded text-xs font-medium border ${getAbilityStyle(a.ability_grade)} shadow-sm`}>
                           {a.ability_value}
                         </div>
                       ))}
+                      {currentAbilityInfo.length === 0 && (
+                        <div className="text-center text-slate-500 py-4 text-xs">此預設未配置潛能</div>
+                      )}
                     </div>
+
                     <button 
                       onClick={() => setShowDetailStats(!showDetailStats)}
                       className="w-full flex items-center justify-center gap-2 py-2 text-xs font-bold text-slate-500 hover:text-indigo-400 hover:bg-indigo-900/10 rounded transition-colors"
@@ -837,6 +788,7 @@ const App: React.FC = () => {
                       {showDetailStats ? '收起詳細屬性' : '顯示詳細屬性'} 
                       {showDetailStats ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                     </button>
+                    
                     {showDetailStats && (
                       <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-3 animate-in fade-in slide-in-from-top-1 bg-[#0d1117] p-3 rounded-lg border border-slate-800">
                         {detailedStats.map((stat, i) => (
@@ -854,18 +806,13 @@ const App: React.FC = () => {
                </div>
             </div>
 
-            {/* COLUMN 3: Equipment (Span 4) */}
             <div className="lg:col-span-4 space-y-6">
                <EquipmentGrid equipment={data.equipment} characterImage={data.basic.character_image} />
                {data.cashItemEquipment && <CashEquipmentGrid cashEquipment={data.cashItemEquipment} beautyEquipment={data.beautyEquipment} characterImage={data.basic.character_image} />}
             </div>
-
           </div>
 
-          {/* AI Response Area */}
-           {/* AI Response Area */}
-           {/* Fix 2: 修正顯示條件，只有在真正額度用完時才顯示特殊 UI */}
-           {(analyzing || aiAnalysis || (error && error.includes('AI 額度已用完'))) && (
+          {(analyzing || aiAnalysis || (error && error.includes('AI 額度已用完'))) && (
              <div ref={aiResultRef} className="bg-[#161b22] border border-indigo-500/30 rounded-xl p-5 animate-in fade-in slide-in-from-top-2 shadow-lg shadow-indigo-900/10 mt-6">
                <h3 className="text-indigo-400 font-bold text-base mb-3 flex items-center gap-2 border-b border-indigo-500/20 pb-2">
                  <Wand2 className="w-5 h-5" /> AI 角色分析報告
@@ -884,7 +831,6 @@ const App: React.FC = () => {
                    <button onClick={() => setShowKeySettings(true)} className="px-4 py-2 bg-red-900/40 hover:bg-red-900/60 rounded text-white text-sm transition-colors">設定模型 / API Key</button>
                  </div>
                ) : error ? (
-                 /* 一般錯誤顯示區 (包含超時) */
                  <div className="p-4 bg-red-950/20 border border-red-900/50 rounded-lg text-red-300 text-sm">
                     {error}
                  </div>
@@ -892,88 +838,25 @@ const App: React.FC = () => {
                  <div 
                    className="text-sm text-slate-300 leading-relaxed ai-markdown-content"
                    dangerouslySetInnerHTML={{ 
-                     __html: new MarkdownIt({ 
-                       html: true, 
-                       breaks: true,
-                       linkify: true
-                     }).render(aiAnalysis || '') 
+                     __html: new MarkdownIt({ html: true, breaks: true, linkify: true }).render(aiAnalysis || '') 
                    }}
                  />
                )}
-               <style>{`
-                 .ai-markdown-content ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 1em; }
-                 .ai-markdown-content ol { list-style-type: decimal; padding-left: 1.5em; margin-bottom: 1em; }
-                 .ai-markdown-content h1, .ai-markdown-content h2, .ai-markdown-content h3, .ai-markdown-content h4 { 
-                   font-weight: bold; 
-                   color: #818cf8; 
-                   margin-top: 1.2em; 
-                   margin-bottom: 0.6em; 
-                 }
-                 .ai-markdown-content p { margin-bottom: 0.8em; }
-                 .ai-markdown-content strong { color: #c7d2fe; font-weight: 700; }
-                 .ai-markdown-content li { margin-bottom: 0.3em; }
-                 .ai-markdown-content hr { border-color: #4f46e5; opacity: 0.3; margin: 1.5em 0; }
-                   .ai-markdown-content a {
-                     color: #60a5fa;
-                     text-decoration: none;
-                     transition: color 0.2s;
-                   }
-                   .ai-markdown-content a:hover {
-                     color: #2563eb;
-                   }
-                 /* Table Styles */
-                 .ai-markdown-content table { width: 100%; border-collapse: collapse; margin-bottom: 1em; font-size: 0.9em; }
-                 .ai-markdown-content th, .ai-markdown-content td { border: 1px solid #374151; padding: 8px 12px; text-align: left; }
-                 .ai-markdown-content th { background-color: #1e293b; color: #a5b4fc; font-weight: 600; }
-                 .ai-markdown-content tr:nth-child(even) { background-color: #1e293b; }
-                 .ai-markdown-content tr:hover { background-color: #334155; }
-               `}</style>
-               {!analyzing && aiAnalysis && (
-                 <div className="mt-4 pt-3 border-t border-indigo-500/20 flex justify-between items-center">
-                   <span className="text-[10px] text-slate-500">Generated by Google Gemini</span>
-                   <button 
-                    onClick={() => setShowKeySettings(true)}
-                    className={`text-[10px] flex items-center gap-1 transition-colors px-2 py-1 rounded 
-                      ${aiAnalysis?.includes('Rate Limit Exceeded') 
-                          ? 'bg-red-900/50 text-red-200 hover:bg-red-800 border border-red-500 animate-pulse font-bold shadow-[0_0_10px_rgba(239,68,68,0.5)]' 
-                          : 'text-indigo-400 hover:text-indigo-300 bg-indigo-950/30 hover:bg-indigo-900/50'}`}
-                   >
-                    <Settings className="w-3 h-3" />
-                    {aiAnalysis?.includes('Rate Limit Exceeded') ? '立即設定 API Key 以繼續使用' : '設定模型 / API Key'}
-                   </button>
-                 </div>
-               )}
              </div>
-           )}
-
-          {/* Extended Details Section */}
-          <CharacterDetails data={data} />
-
-          {showShareModal && (
-            <ShareModal 
-              characterName={data.basic.character_name} 
-              onClose={() => setShowShareModal(false)} 
-            />
           )}
-        </>
-        )}
 
-        {!data && !loading && !error && (
-          <div className="text-center">
-            <div className="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 opacity-50">
-              <Search className="w-8 h-8 text-slate-500" />
-            </div>
-            <h2 className="text-xl font-bold text-slate-300 mb-2">開始查詢</h2>
-            <p className="text-slate-500 max-w-sm mx-auto">輸入角色名稱，查看新楓之谷的詳細數據與裝備。</p>
-          </div>
+          <CharacterDetails data={data} />
+          {showShareModal && <ShareModal characterName={data.basic.character_name} onClose={() => setShowShareModal(false)} />}
+          </>
         )}
       </main>
-          {/* 更新日誌區塊：只在查詢前顯示 */}
           {(!data && !loading && !error) && (
             <div className="w-full max-w-2xl mx-auto my-8">
               <div className="vp-tip custom-vp-tip p-4 rounded-lg border-l-4 border-indigo-400 bg-indigo-50/90 text-indigo-900 dark:bg-[#23263a] dark:text-indigo-200 dark:border-indigo-500 shadow-sm">
                 <div className="font-bold mb-1 text-indigo-700 dark:text-indigo-300">更新日誌</div>
                 <ul className="list-disc pl-5 text-sm space-y-1">
+                  <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/17</span> 新增「預設」功能，適用於內在潛能、裝備、時裝、連結技能、極限屬性。</li>
+                  <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/17</span> 新增「七日巔峰搜尋」功能，自動掃描並載入本週最高戰力紀錄。</li>
                   <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/14</span> 首次發佈</li>
                 </ul>
               </div>

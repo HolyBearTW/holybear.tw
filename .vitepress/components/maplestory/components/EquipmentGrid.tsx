@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { EquipmentItem, CharacterEquipment } from '../types';
 import EquipmentTooltip from './EquipmentTooltip';
+import PresetSwitcher from './PresetSwitcher';
 
 interface EquipmentGridProps {
   equipment: CharacterEquipment;
@@ -113,22 +114,49 @@ const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'lef
 };
 
 const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, characterImage }) => {
+  // [重要修正] 防呆：如果 equipment 資料還沒進來，直接回傳 null，避免讀取 preset_no 崩潰
+  if (!equipment) {
+    return null; 
+  }
+
   // Normalize string for comparison
   const normalize = (s: string) => s.toLowerCase().replace(/\s+/g, '');
+
+  // 1. 取得當前生效預設，預設為 1
+  const activePresetNo = parseInt(equipment.preset_no || '1');
+  
+  // 2. UI 狀態：當前選擇的預設 (1, 2, 3)
+  const [selectedPreset, setSelectedPreset] = useState<number>(activePresetNo);
+
+  // 3. 當資料更新時，重置回生效預設
+  useEffect(() => {
+    if (equipment.preset_no) {
+      setSelectedPreset(parseInt(equipment.preset_no));
+    }
+  }, [equipment]);
+
+  // 4. 根據選擇取得該預設的資料列表
+  const getDisplayItems = () => {
+    const key = `item_equipment_preset_${selectedPreset}`;
+    // 因為 TypeScript index signature 問題，這裡用 any 強制轉型
+    return (equipment as any)[key] || [];
+  };
+
+  const displayItems = getDisplayItems();
 
   const findItem = (slotKey: string) => {
     const def = SLOT_DEFINITIONS[slotKey];
     if (!def) return undefined;
     
-    // Exact search or fuzzy match
-    return equipment.item_equipment.find(item => {
+    // 改為從 displayItems (當前選擇的預設) 中尋找
+    return displayItems.find((item: EquipmentItem) => {
        const slot = normalize(item.item_equipment_slot);
        const part = normalize(item.item_equipment_part);
        return def.match.some(m => slot === normalize(m) || part === normalize(m));
     });
   };
 
-  const unmatchedItems = equipment.item_equipment.filter(item => {
+  const unmatchedItems = displayItems.filter((item: EquipmentItem) => {
     const slot = normalize(item.item_equipment_slot);
     const part = normalize(item.item_equipment_part);
     return !Object.values(SLOT_DEFINITIONS).some(def => 
@@ -136,36 +164,28 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, characterImage
     );
   });
 
-  // Debug log to console
-  // console.log('Unmatched Items:', unmatchedItems);
-  // console.log('All Items:', equipment.item_equipment);
-
-  // Debug: Check where each item is being mapped
-  /*
-  equipment.item_equipment.forEach(item => {
-      const slot = normalize(item.item_equipment_slot);
-      const part = normalize(item.item_equipment_part);
-      const matchedKeys = Object.keys(SLOT_DEFINITIONS).filter(key => {
-          const def = SLOT_DEFINITIONS[key];
-          return def.match.some(m => slot === normalize(m) || part === normalize(m));
-      });
-      console.log(`Item: ${item.item_name} (${slot}/${part}) => Matches: ${matchedKeys.join(', ')}`);
-  });
-  */
-
   return (
     <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner relative">
       <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
          <span className="w-2 h-2 rounded-full bg-indigo-500"></span> 裝備 (Equipment)
       </h3>
 
-      <div className="flex justify-center gap-6">
+      {/* 加入預設切換器 */}
+      <PresetSwitcher 
+        currentPreset={selectedPreset}
+        onPresetChange={setSelectedPreset}
+        activePresetNo={activePresetNo}
+        label="裝備預設"
+        showBase={false} // 依照您的要求，一般裝備不顯示 "現(0)"
+      />
+
+      <div className="flex justify-center gap-6 mt-4">
       
-      {/* Debug: Unmatched Items */}
+      {/* Debug: Unmatched Items - 顯示未匹配的裝備以便除錯 */}
       {unmatchedItems.length > 0 && (
-        <div className="absolute bottom-0 left-0 right-0 bg-black/90 text-[10px] text-red-300 p-2 max-h-24 overflow-y-auto z-[60] font-mono">
-            <p className="font-bold text-red-500 mb-1">Debug: 未匹配裝備 (請提供以下資訊以修復顯示)</p>
-            {unmatchedItems.map((item, i) => (
+        <div className="absolute bottom-0 left-0 right-0 bg-black/90 text-[10px] text-red-300 p-2 max-h-24 overflow-y-auto z-[60] font-mono rounded-b-xl border-t border-red-900/50">
+            <p className="font-bold text-red-500 mb-1">Debug: 未匹配裝備</p>
+            {unmatchedItems.map((item: any, i: number) => (
                 <div key={i} className="border-b border-white/10 py-0.5">
                     {item.item_name} | Slot: [{item.item_equipment_slot}] | Part: [{item.item_equipment_part}]
                 </div>
@@ -173,7 +193,7 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, characterImage
         </div>
       )}
       
-      {/* Left Columns */}
+      {/* Left Columns (Accessories) */}
       <div className="flex gap-2">
         <div className="flex flex-col gap-2">
           {['Ring1', 'Ring2', 'Ring3', 'Ring4', 'Belt'].map(key => <Slot key={key} slotKey={key} item={findItem(key)} tooltipSide="right" />)}
@@ -201,7 +221,7 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, characterImage
          </div>
       </div>
 
-      {/* Right Columns */}
+      {/* Right Columns (Armor) */}
       <div className="flex gap-2">
         <div className="flex flex-col gap-2">
            {['Hat', 'Top', 'Bottom', 'Shoulder'].map(key => <Slot key={key} slotKey={key} item={findItem(key)} tooltipSide="left" />)}
@@ -214,7 +234,6 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, characterImage
         </div>
       </div>
       </div>
-
 
     </div>
   );
