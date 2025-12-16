@@ -73,12 +73,16 @@ const getJobBackgroundMap = (jobName: string): string => {
 };
 
 const App: React.FC = () => {
+  // Fix 1: 調整優先順序，優先讀取 localStorage
   const [apiKey, setApiKey] = useState<string | null>(() => {
     return import.meta.env.VITE_NEXON_API_KEY || localStorage.getItem('nexon_api_key') || null;
   });
+  
+  // Fix 1: 調整優先順序，優先讀取 localStorage，確保使用者設定的 Key 不會被預設 Key 覆蓋
   const [geminiKey, setGeminiKey] = useState<string | null>(() => {
-    return import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_DEFAULT_GEMINI_KEY || localStorage.getItem('gemini_api_key') || null;
+    return localStorage.getItem('gemini_api_key') || import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_DEFAULT_GEMINI_KEY || null;
   });
+
   const [geminiModel, setGeminiModel] = useState<string>(() => {
     return localStorage.getItem('gemini_model') || 'gemini-2.5-flash';
   });
@@ -184,7 +188,7 @@ const App: React.FC = () => {
       if (typeof window !== 'undefined' && !skipHistoryPush) {
         const currentHash = decodeURIComponent(window.location.hash.substring(1));
         if (currentHash !== targetName) {
-             window.history.pushState({ character: targetName }, '', `#${targetName}`);
+              window.history.pushState({ character: targetName }, '', `#${targetName}`);
         }
       }
     } catch (err: any) {
@@ -197,14 +201,47 @@ const App: React.FC = () => {
 
   const handleAiAnalyze = async () => {
     if (!data) return;
-    
-    // Use user's key if available, otherwise use default
     const keyToUse = geminiKey || DEFAULT_GEMINI_KEY;
-
     setAnalyzing(true);
-    const result = await analyzeCharacter(data, keyToUse, geminiModel);
-    setAiAnalysis(result);
-    setAnalyzing(false);
+    setAiAnalysis(null); // Clear previous
+    setError(null); // Clear previous errors
+
+    try {
+      const result = await analyzeCharacter(data, keyToUse, geminiModel);
+      
+      // Fix 2: 嚴格區分「額度用完」與「其他錯誤(如超時)」
+      const isQuotaError = result && (
+        result.includes('Rate Limit Exceeded') || 
+        result.includes('429') || 
+        result.includes('Resource has been exhausted') ||
+        result.includes('Quota exceeded')
+      );
+
+      if (isQuotaError) {
+        // 只有明確是 429 或 Quota 錯誤才顯示這個特定錯誤
+        setError('AI 額度已用完，請更換金鑰或稍後再試。');
+        setAiAnalysis(null);
+      } else if (!result || result.startsWith('AI Analysis Failed:')) {
+        // 其他錯誤（包含超時）顯示一般錯誤訊息
+        const msg = result?.replace('AI Analysis Failed:', '').trim() || 'AI 分析連線逾時或失敗，請重試。';
+        setError(msg); 
+        setAiAnalysis(null);
+      } else {
+        // 成功
+        setAiAnalysis(result);
+      }
+    } catch (err: any) {
+      // 捕獲未預期的異常
+      const errorMessage = err?.message || '';
+      if (errorMessage.includes('429') || errorMessage.includes('Quota')) {
+        setError('AI 額度已用完，請更換金鑰或稍後再試。');
+      } else {
+        setError(errorMessage || 'AI 分析發生未預期錯誤，請稍後再試。');
+      }
+      setAiAnalysis(null);
+    } finally {
+      setAnalyzing(false);
+    }
   };
 
   // Handle URL hash for direct linking & History Navigation
@@ -375,16 +412,15 @@ const App: React.FC = () => {
                 <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">API Key</label>
                 <input
                   type="password"
-                  defaultValue={geminiKey || ''}
+                  value={geminiKey || ''}
                   placeholder="貼上您的 Gemini API Key..."
                   className="w-full p-3 bg-slate-950 border border-slate-700 rounded-lg text-white focus:border-indigo-500 outline-none"
                   onChange={(e) => {
                     const val = e.target.value.trim();
+                    setGeminiKey(val || null);
                     if (val) {
-                      setGeminiKey(val);
                       localStorage.setItem('gemini_api_key', val);
                     } else {
-                      setGeminiKey(null);
                       localStorage.removeItem('gemini_api_key');
                     }
                   }}
@@ -557,17 +593,16 @@ const App: React.FC = () => {
            </div>
         )}
 
-        {error && (
+        {/* 只在非 AI 分析相關錯誤時顯示全頁錯誤區塊 */}
+        {error && !(error.includes('AI 額度已用完') || error.includes('API Key 無效')) && (
            <div className="max-w-md mx-auto mt-20 p-6 bg-red-950/20 border border-red-900 rounded-xl text-center">
               <AlertCircle className="w-10 h-10 text-red-500 mx-auto mb-3" />
               <h3 className="text-red-400 font-bold mb-1">讀取失敗</h3>
               <p className="text-red-300/80 text-sm mb-4">{error}</p>
-              
               <div className="flex flex-col gap-2 justify-center sm:flex-row">
                 <button onClick={() => handleSearch()} className="px-4 py-2 bg-red-900/40 hover:bg-red-900/60 rounded text-white text-sm transition-colors">
                   重試
                 </button>
-                
                 {(error.includes('429') || error.includes('Rate limited')) && (
                   <>
                     <button 
@@ -828,57 +863,88 @@ const App: React.FC = () => {
           </div>
 
           {/* AI Response Area */}
-          {aiAnalysis && (
+           {/* AI Response Area */}
+           {/* Fix 2: 修正顯示條件，只有在真正額度用完時才顯示特殊 UI */}
+           {(analyzing || aiAnalysis || (error && error.includes('AI 額度已用完'))) && (
              <div ref={aiResultRef} className="bg-[#161b22] border border-indigo-500/30 rounded-xl p-5 animate-in fade-in slide-in-from-top-2 shadow-lg shadow-indigo-900/10 mt-6">
-                <h3 className="text-indigo-400 font-bold text-base mb-3 flex items-center gap-2 border-b border-indigo-500/20 pb-2">
-                   <Wand2 className="w-5 h-5" /> AI 角色分析報告
-                </h3>
-                <div 
+               <h3 className="text-indigo-400 font-bold text-base mb-3 flex items-center gap-2 border-b border-indigo-500/20 pb-2">
+                 <Wand2 className="w-5 h-5" /> AI 角色分析報告
+               </h3>
+               {analyzing ? (
+                 <div className="flex flex-col items-center py-40 animate-pulse">
+                   <Loader2 className="w-12 h-12 text-indigo-500 animate-spin mb-4" />
+                   <p className="text-slate-500 font-medium">AI 分析中，請稍候...</p>
+                 </div>
+               ) : error && error.includes('AI 額度已用完') ? (
+                 <div className="flex flex-col items-center py-20 text-center">
+                   <AlertCircle className="w-10 h-10 text-red-500 mb-3" />
+                   <h3 className="text-red-400 font-bold mb-1">公用 AI 額度已達上限 (Rate Limit Exceeded)</h3>
+                   <p className="text-red-300/80 text-sm mb-4">因使用人數眾多，公用額度暫時耗盡。請點擊下方的「設定模型 / API Key」按鈕，填入您自己的 Google Gemini API Key 即可繼續免費使用。</p>
+                   <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="inline-block mb-4 px-4 py-2 bg-indigo-700 hover:bg-indigo-600 text-white text-xs font-bold rounded transition-colors">👉 取得免費 API Key (Google AI Studio)</a>
+                   <button onClick={() => setShowKeySettings(true)} className="px-4 py-2 bg-red-900/40 hover:bg-red-900/60 rounded text-white text-sm transition-colors">設定模型 / API Key</button>
+                 </div>
+               ) : error ? (
+                 /* 一般錯誤顯示區 (包含超時) */
+                 <div className="p-4 bg-red-950/20 border border-red-900/50 rounded-lg text-red-300 text-sm">
+                    {error}
+                 </div>
+               ) : (
+                 <div 
                    className="text-sm text-slate-300 leading-relaxed ai-markdown-content"
                    dangerouslySetInnerHTML={{ 
-                      __html: new MarkdownIt({ 
-                         html: true, 
-                         breaks: true,
-                         linkify: true
-                      }).render(aiAnalysis) 
+                     __html: new MarkdownIt({ 
+                       html: true, 
+                       breaks: true,
+                       linkify: true
+                     }).render(aiAnalysis || '') 
                    }}
-                />
-                <style>{`
-                   .ai-markdown-content ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 1em; }
-                   .ai-markdown-content ol { list-style-type: decimal; padding-left: 1.5em; margin-bottom: 1em; }
-                   .ai-markdown-content h1, .ai-markdown-content h2, .ai-markdown-content h3, .ai-markdown-content h4 { 
-                      font-weight: bold; 
-                      color: #818cf8; 
-                      margin-top: 1.2em; 
-                      margin-bottom: 0.6em; 
+                 />
+               )}
+               <style>{`
+                 .ai-markdown-content ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 1em; }
+                 .ai-markdown-content ol { list-style-type: decimal; padding-left: 1.5em; margin-bottom: 1em; }
+                 .ai-markdown-content h1, .ai-markdown-content h2, .ai-markdown-content h3, .ai-markdown-content h4 { 
+                   font-weight: bold; 
+                   color: #818cf8; 
+                   margin-top: 1.2em; 
+                   margin-bottom: 0.6em; 
+                 }
+                 .ai-markdown-content p { margin-bottom: 0.8em; }
+                 .ai-markdown-content strong { color: #c7d2fe; font-weight: 700; }
+                 .ai-markdown-content li { margin-bottom: 0.3em; }
+                 .ai-markdown-content hr { border-color: #4f46e5; opacity: 0.3; margin: 1.5em 0; }
+                   .ai-markdown-content a {
+                     color: #60a5fa;
+                     text-decoration: none;
+                     transition: color 0.2s;
                    }
-                   .ai-markdown-content p { margin-bottom: 0.8em; }
-                   .ai-markdown-content strong { color: #c7d2fe; font-weight: 700; }
-                   .ai-markdown-content li { margin-bottom: 0.3em; }
-                   .ai-markdown-content hr { border-color: #4f46e5; opacity: 0.3; margin: 1.5em 0; }
-                   
-                   /* Table Styles */
-                   .ai-markdown-content table { width: 100%; border-collapse: collapse; margin-bottom: 1em; font-size: 0.9em; }
-                   .ai-markdown-content th, .ai-markdown-content td { border: 1px solid #374151; padding: 8px 12px; text-align: left; }
-                   .ai-markdown-content th { background-color: #1e293b; color: #a5b4fc; font-weight: 600; }
-                   .ai-markdown-content tr:nth-child(even) { background-color: #1e293b; }
-                   .ai-markdown-content tr:hover { background-color: #334155; }
-                `}</style>
-                <div className="mt-4 pt-3 border-t border-indigo-500/20 flex justify-between items-center">
+                   .ai-markdown-content a:hover {
+                     color: #2563eb;
+                   }
+                 /* Table Styles */
+                 .ai-markdown-content table { width: 100%; border-collapse: collapse; margin-bottom: 1em; font-size: 0.9em; }
+                 .ai-markdown-content th, .ai-markdown-content td { border: 1px solid #374151; padding: 8px 12px; text-align: left; }
+                 .ai-markdown-content th { background-color: #1e293b; color: #a5b4fc; font-weight: 600; }
+                 .ai-markdown-content tr:nth-child(even) { background-color: #1e293b; }
+                 .ai-markdown-content tr:hover { background-color: #334155; }
+               `}</style>
+               {!analyzing && aiAnalysis && (
+                 <div className="mt-4 pt-3 border-t border-indigo-500/20 flex justify-between items-center">
                    <span className="text-[10px] text-slate-500">Generated by Google Gemini</span>
                    <button 
-                     onClick={() => setShowKeySettings(true)}
-                     className={`text-[10px] flex items-center gap-1 transition-colors px-2 py-1 rounded 
-                        ${aiAnalysis?.includes('Rate Limit Exceeded') 
-                            ? 'bg-red-900/50 text-red-200 hover:bg-red-800 border border-red-500 animate-pulse font-bold shadow-[0_0_10px_rgba(239,68,68,0.5)]' 
-                            : 'text-indigo-400 hover:text-indigo-300 bg-indigo-950/30 hover:bg-indigo-900/50'}`}
+                    onClick={() => setShowKeySettings(true)}
+                    className={`text-[10px] flex items-center gap-1 transition-colors px-2 py-1 rounded 
+                      ${aiAnalysis?.includes('Rate Limit Exceeded') 
+                          ? 'bg-red-900/50 text-red-200 hover:bg-red-800 border border-red-500 animate-pulse font-bold shadow-[0_0_10px_rgba(239,68,68,0.5)]' 
+                          : 'text-indigo-400 hover:text-indigo-300 bg-indigo-950/30 hover:bg-indigo-900/50'}`}
                    >
-                     <Settings className="w-3 h-3" />
-                     {aiAnalysis?.includes('Rate Limit Exceeded') ? '立即設定 API Key 以繼續使用' : '設定模型 / API Key'}
+                    <Settings className="w-3 h-3" />
+                    {aiAnalysis?.includes('Rate Limit Exceeded') ? '立即設定 API Key 以繼續使用' : '設定模型 / API Key'}
                    </button>
-                </div>
+                 </div>
+               )}
              </div>
-          )}
+           )}
 
           {/* Extended Details Section */}
           <CharacterDetails data={data} />
@@ -893,15 +959,34 @@ const App: React.FC = () => {
         )}
 
         {!data && !loading && !error && (
-           <div className="text-center mt-32 opacity-50">
-              <div className="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                 <Search className="w-8 h-8 text-slate-500" />
-              </div>
-              <h2 className="text-xl font-bold text-slate-300 mb-2">開始查詢</h2>
-              <p className="text-slate-500 max-w-sm mx-auto">輸入角色名稱，查看新楓之谷的詳細數據與裝備。</p>
-           </div>
+          <div className="text-center">
+            <div className="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 opacity-50">
+              <Search className="w-8 h-8 text-slate-500" />
+            </div>
+            <h2 className="text-xl font-bold text-slate-300 mb-2">開始查詢</h2>
+            <p className="text-slate-500 max-w-sm mx-auto">輸入角色名稱，查看新楓之谷的詳細數據與裝備。</p>
+          </div>
         )}
       </main>
+          {/* 更新日誌區塊：只在查詢前顯示 */}
+          {(!data && !loading && !error) && (
+            <div className="w-full max-w-2xl mx-auto my-8">
+              <div className="vp-tip custom-vp-tip p-4 rounded-lg border-l-4 border-indigo-400 bg-indigo-50/90 text-indigo-900 dark:bg-[#23263a] dark:text-indigo-200 dark:border-indigo-500 shadow-sm">
+                <div className="font-bold mb-1 text-indigo-700 dark:text-indigo-300">更新日誌</div>
+                <ul className="list-disc pl-5 text-sm space-y-1">
+                  <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/14</span> 首次發佈</li>
+                </ul>
+              </div>
+            </div>
+          )}
+          <style>{`
+            .custom-vp-tip {
+              background: linear-gradient(90deg, #e0e7ff 0%, #f0f5ff 100%);
+            }
+            .dark .custom-vp-tip {
+              background: linear-gradient(90deg, #23263a 0%, #1e2130 100%);
+            }
+          `}</style>
     </div>
   );
 };

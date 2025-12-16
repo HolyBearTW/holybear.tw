@@ -12,6 +12,12 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ onSave, onDemo, defaultNexonK
   const [nexonKey, setNexonKey] = useState(defaultNexonKey);
   const [geminiKey, setGeminiKey] = useState(defaultGeminiKey);
 
+  // Gemini Key 即時寫入 localStorage
+  const handleGeminiKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setGeminiKey(e.target.value);
+    localStorage.setItem('gemini_api_key', e.target.value);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (nexonKey.trim()) {
@@ -61,7 +67,7 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ onSave, onDemo, defaultNexonK
               <input
                 type="password"
                 value={geminiKey}
-                onChange={(e) => setGeminiKey(e.target.value)}
+                onChange={handleGeminiKeyChange}
                 placeholder="用於 AI 角色分析功能..."
                 className="w-full pl-10 pr-4 py-3 bg-slate-950 border border-slate-700 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent outline-none text-white transition-all"
               />

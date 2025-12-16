@@ -188,29 +188,35 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
             const text = typeof response.text === 'function' ? response.text() : response.text;
             return text || "Failed to generate analysis (Empty Response).";
         } catch (finalError: any) {
-            console.error("Gemini Error:", finalError);
-            
-            // 3. List available models to help user debug
-            try {
-                console.log("Attempting to list available models...");
-                const modelsResponse = await ai.models.list();
-                console.log("--- AVAILABLE GEMINI MODELS ---");
-                const models = [];
-                // @ts-ignore - Pager is async iterable
-                for await (const model of modelsResponse) {
-                    models.push(model);
-                }
-                console.table(models);
-                console.log("-------------------------------");
-            } catch (listError) {
-                console.warn("Failed to list models:", listError);
+          console.error("Gemini Error:", finalError);
+          // 3. List available models to help user debug
+          try {
+            console.log("Attempting to list available models...");
+            const modelsResponse = await ai.models.list();
+            console.log("--- AVAILABLE GEMINI MODELS ---");
+            const models = [];
+            // @ts-ignore - Pager is async iterable
+            for await (const model of modelsResponse) {
+              models.push(model);
             }
+            console.table(models);
+            console.log("-------------------------------");
+          } catch (listError) {
+            console.warn("Failed to list models:", listError);
+          }
 
-            if (finalError.message?.includes('429') || finalError.status === 429) {
-                return "⚠️ **公用 AI 額度已達上限 (Rate Limit Exceeded)**\n\n因使用人數眾多，公用額度暫時耗盡。請點擊下方的「**設定模型 / API Key**」按鈕，填入您自己的 Google Gemini API Key 即可繼續免費使用。\n\n👉 [取得免費 API Key (Google AI Studio)](https://aistudio.google.com/app/apikey)";
-            }
-
-            return `AI Analysis Failed: ${finalError.message || finalError.toString()}. \n\nPlease check the browser console (F12) to see the list of available models for your API Key.`;
+          // 明確處理 quota 錯誤
+          if (finalError.message?.includes('429') || finalError.status === 429) {
+            return "⚠️ **公用 AI 額度已達上限 (Rate Limit Exceeded)**\n\n因使用人數眾多，公用額度暫時耗盡。請點擊下方的「**立即設定 API Key 以繼續使用**」按鈕，填入您自己的 Google Gemini API Key 即可繼續免費使用。\n\n👉 [取得免費 API Key (Google AI Studio)](https://aistudio.google.com/app/apikey)";
+          }
+          // 處理 timeout/network error
+          if (finalError.code === 'ECONNABORTED' || finalError.message?.toLowerCase().includes('timeout')) {
+            return 'AI Analysis Failed: Timeout. 伺服器回應逾時，請稍後再試。';
+          }
+          if (finalError.message?.toLowerCase().includes('network')) {
+            return 'AI Analysis Failed: Network Error. 網路連線異常，請檢查您的網路或稍後再試。';
+          }
+          return `AI Analysis Failed: ${finalError.message || finalError.toString()}. \n\nPlease check the browser console (F12) to see the list of available models for your API Key.`;
         }
   }
 };
