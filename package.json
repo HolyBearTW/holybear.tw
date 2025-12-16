@@ -16,7 +16,7 @@
   "dependencies": {
     "@google/genai": "^1.33.0",
     "animejs": "^4.2.2",
-    "autoprefixer": "^10.4.22",
+    "autoprefixer": "^10.4.23",
     "chart.js": "^4.5.1",
     "firebase": "^12.6.0",
     "front-matter": "^4.0.2",
