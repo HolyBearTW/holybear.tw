@@ -528,13 +528,13 @@ const App: React.FC = () => {
              onFocus={() => setShowHistory(true)}
              onBlur={() => setTimeout(() => setShowHistory(false), 200)}
              placeholder="輸入角色名稱 (例如: 怪獸小熊)"
-             className="w-full bg-[#1a1d24] border border-slate-700 rounded-xl py-3 pl-12 pr-32 text-base focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition-all text-white placeholder:text-slate-600 shadow-lg"
+             className="w-full bg-[#1a1d24] border border-slate-700 rounded-xl py-3 pl-12 pr-24 sm:pr-32 text-sm sm:text-base focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition-all text-white placeholder:text-slate-600 shadow-lg"
            />
            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1 items-center">
              {data && (
-                <div className="hidden sm:flex flex-col items-end mr-2 justify-center">
-                    <span className="text-[10px] text-slate-500 leading-none">資料日期</span>
-                    <span className="text-xs font-mono text-indigo-400 font-bold">
+                <div className="flex flex-col items-end mr-2 justify-center min-w-[60px] sm:min-w-auto">
+                    <span className="text-[10px] text-slate-500 leading-none hidden sm:block">資料日期</span>
+                    <span className="text-[10px] sm:text-xs font-mono text-indigo-400 font-bold">
                     {data.lastUpdated?.split(' ')[0] || new Date().toISOString().split('T')[0]}
                     </span>
                 </div>
@@ -867,8 +867,8 @@ const App: React.FC = () => {
         )}
 
         {!data && !loading && !error && (
-          <div className="flex flex-col items-center justify-center min-h-[300px]">
-            <div className="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mb-4 opacity-50"><Search className="w-8 h-8 text-slate-500" /></div>
+          <div className="flex flex-col items-center mt-6">
+            <div className="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mb-3 opacity-50"><Search className="w-8 h-8 text-slate-500" /></div>
             <h2 className="text-xl font-bold text-slate-300 mb-2">開始查詢</h2>
             <p className="text-slate-500 max-w-sm text-center">輸入角色名稱，查看新楓之谷的詳細數據與裝備。</p>
           </div>
