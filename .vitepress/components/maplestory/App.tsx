@@ -30,44 +30,22 @@ const SERVER_ICONS: Record<string, string> = {
 const getJobBackgroundMap = (jobName: string): string => {
   if (!jobName) return '100000000';
   
-  // Cygnus
-  if (['皇家', '米哈逸', '聖魂', '烈焰', '破風', '暗夜', '閃雷'].some(k => jobName.includes(k))) return '130000000'; // Ereve
-  
-  // Resistance / Demon / Xenon
-  if (['反抗軍', '惡魔', '傑諾', '煉獄', '機甲', '狂豹', '爆拳'].some(k => jobName.includes(k))) return '310000000'; // Edelstein
-  
-  // Heroes
-  if (jobName.includes('精靈遊俠')) return '101050000'; // Elluel
-  if (jobName.includes('狂狼勇士')) return '140000000'; // Rien
-  if (jobName.includes('幻影俠盜')) return '915000000'; // Lumiere
-  if (jobName.includes('隱月')) return '410000000'; // Fox Point
-  
-  // Nova
-  if (['凱撒', '天使破壞者', '卡蒂娜', '凱恩'].some(k => jobName.includes(k))) return '400000000'; // Pantheon
-  
-  // Lef
-  if (['阿戴爾', '亞克', '伊利恩', '卡莉'].some(k => jobName.includes(k))) return '402000000'; // Ristonia
-  
-  // Zero
-  if (jobName.includes('神之子')) return '321000000'; // Mirror World
-  
-  // Kinesis
-  if (jobName.includes('凱內西斯')) return '331000000'; // Seoul
-
-  // Explorers (冒險家)
-  // Warrior -> Perion (勇士之村)
+  if (['皇家', '米哈逸', '聖魂', '烈焰', '破風', '暗夜', '閃雷'].some(k => jobName.includes(k))) return '130000000';
+  if (['反抗軍', '惡魔', '傑諾', '煉獄', '機甲', '狂豹', '爆拳'].some(k => jobName.includes(k))) return '310000000';
+  if (jobName.includes('精靈遊俠')) return '101050000';
+  if (jobName.includes('狂狼勇士')) return '140000000';
+  if (jobName.includes('幻影俠盜')) return '915000000';
+  if (jobName.includes('隱月')) return '410000000';
+  if (['凱撒', '天使破壞者', '卡蒂娜', '凱恩'].some(k => jobName.includes(k))) return '400000000';
+  if (['阿戴爾', '亞克', '伊利恩', '卡莉'].some(k => jobName.includes(k))) return '402000000';
+  if (jobName.includes('神之子')) return '321000000';
+  if (jobName.includes('凱內西斯')) return '331000000';
   if (['劍士', '英雄', '聖騎士', '黑騎士', '狂戰士', '十字軍', '騎士', '槍騎兵', '龍騎士'].some(k => jobName.includes(k))) return '102000000';
-  
-  // Magician -> Ellinia (魔法森林)
   if (['法師', '火毒', '冰雷', '主教', '巫師', '魔導士', '僧侶', '祭司', '琳恩', '幻獸師'].some(k => jobName.includes(k))) return '101000000';
-  
-  // Thief -> Kerning City (墮落城市)
   if (['盜賊', '夜使者', '暗影神偷', '影武者', '刺客', '暗殺者', '俠盜', '神偷'].some(k => jobName.includes(k))) return '103000000';
-  
-  // Pirate -> Nautilus (諾特勒斯)
   if (['海盜', '拳霸', '槍神', '重砲', '指拳手', '衝鋒隊長', '槍手', '墨玄', '蒼龍'].some(k => jobName.includes(k))) return '120000000';
 
-  return '100000000'; // Henesys (Default)
+  return '100000000';
 };
 
 const App: React.FC = () => {
@@ -426,7 +404,6 @@ const App: React.FC = () => {
           onSave={(nexonKey, geminiKey) => {
             setApiKey(nexonKey);
             localStorage.setItem('nexon_api_key', nexonKey);
-            
             if (geminiKey) {
               setGeminiKey(geminiKey);
               localStorage.setItem('gemini_api_key', geminiKey);
@@ -495,7 +472,18 @@ const App: React.FC = () => {
       )}
 
       {/* Search Section */}
-      <div className="max-w-[1600px] mx-auto px-6 pt-8 pb-4 flex flex-col items-center gap-6">
+      <div className="max-w-[1600px] mx-auto px-6 pt-8 pb-4 flex flex-col items-center gap-6 relative">
+        {/* NEW: 全域設定按鈕 (右上角) */}
+        <div className="absolute top-8 right-6">
+           <button 
+             onClick={() => setShowKeySettings(true)}
+             className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-full transition-colors flex items-center gap-2"
+             title="AI 與 API 設定"
+           >
+             <Settings className="w-5 h-5" />
+           </button>
+        </div>
+
         <div className="flex items-center gap-3">
            <div className="w-12 h-12 flex items-center justify-center">
               <img src="/image/theme/Maple_Icon.png" />
@@ -610,12 +598,17 @@ const App: React.FC = () => {
            </div>
         )}
 
-        {error && !(error.includes('AI 額度已用完') || error.includes('API Key 無效')) && (
+        {error && !(error.includes('AI') || error.includes('Quota')) && (
            <div className="max-w-md mx-auto mt-20 p-6 bg-red-950/20 border border-red-900 rounded-xl text-center">
               <AlertCircle className="w-10 h-10 text-red-500 mx-auto mb-3" />
               <h3 className="text-red-400 font-bold mb-1">讀取失敗</h3>
               <p className="text-red-300/80 text-sm mb-4">{error}</p>
-              <button onClick={() => handleSearch()} className="px-4 py-2 bg-red-900/40 hover:bg-red-900/60 rounded text-white text-sm transition-colors">重試</button>
+              <div className="flex flex-col gap-2 justify-center sm:flex-row">
+                <button onClick={() => handleSearch()} className="px-4 py-2 bg-red-900/40 hover:bg-red-900/60 rounded text-white text-sm transition-colors">重試</button>
+                {(error.includes('429') || error.includes('Rate limited')) && (
+                  <button onClick={() => { setApiKey('DEMO_MODE'); setCharacterName('DemoHero'); handleSearch(undefined, 'DemoHero', 'DEMO_MODE'); }} className="px-4 py-2 bg-indigo-900/40 hover:bg-indigo-900/60 rounded text-white text-sm transition-colors">切換至演示模式</button>
+                )}
+              </div>
            </div>
         )}
 
@@ -635,13 +628,15 @@ const App: React.FC = () => {
                       <h2 className="text-2xl font-bold text-white mb-1 text-center">{data.basic.character_name}</h2>
                       <div className="flex flex-wrap justify-center gap-2 text-xs text-slate-400 mb-6">
                          <span className="flex items-center gap-1"><ThumbsUp className="w-3 h-3" /> {data.stat.pop || 0}</span>
-                         <span className="flex items-center text-slate-600">|</span>
-                         <span className="flex items-center">{data.basic.character_guild_name || '無公會'}</span>
-                         <span className="flex items-center text-slate-600">|</span>
+                         <span className="text-slate-600">|</span>
+                         <span>{data.basic.character_guild_name || '無公會'}</span>
+                         <span className="text-slate-600">|</span>
                          <span className="flex items-center gap-1">
                            {SERVER_ICONS[data.basic.world_name] ? <img src={SERVER_ICONS[data.basic.world_name]} alt={data.basic.world_name} className="w-4 h-4 object-contain align-middle" /> : <Globe className="w-3 h-3 text-indigo-400 align-middle" />}
                            <span className="text-indigo-400">{data.basic.world_name}</span>
                          </span>
+                         <button onClick={() => toggleFavorite(undefined as any, data.basic.character_name)} className={`p-1 rounded-full ${favorites.includes(data.basic.character_name) ? 'text-yellow-400' : 'text-slate-400'}`}><Star className={`w-3 h-3 ${favorites.includes(data.basic.character_name) ? 'fill-yellow-400' : ''}`} /></button>
+                         <button onClick={() => setShowShareModal(true)} className="p-1 text-slate-400 hover:text-indigo-400"><Share2 className="w-3 h-3" /></button>
                       </div>
                       
                       <div className="w-full mb-4 p-3 bg-[#0d1117]/80 backdrop-blur-sm rounded-lg border border-slate-800">
@@ -812,42 +807,74 @@ const App: React.FC = () => {
             </div>
           </div>
 
-          {(analyzing || aiAnalysis || (error && error.includes('AI 額度已用完'))) && (
-             <div ref={aiResultRef} className="bg-[#161b22] border border-indigo-500/30 rounded-xl p-5 animate-in fade-in slide-in-from-top-2 shadow-lg shadow-indigo-900/10 mt-6">
+           {/* AI Response Area */}
+           {/* Fix: Always show container if we have result OR analyzing OR specific error. Button is now always visible inside. */}
+           <div ref={aiResultRef} className={`bg-[#161b22] border border-indigo-500/30 rounded-xl p-5 mt-6 shadow-lg transition-all ${!analyzing && !aiAnalysis && !error?.includes('AI') ? 'hidden' : 'block'}`}>
                <h3 className="text-indigo-400 font-bold text-base mb-3 flex items-center gap-2 border-b border-indigo-500/20 pb-2">
                  <Wand2 className="w-5 h-5" /> AI 角色分析報告
                </h3>
+               
                {analyzing ? (
-                 <div className="flex flex-col items-center py-40 animate-pulse">
-                   <Loader2 className="w-12 h-12 text-indigo-500 animate-spin mb-4" />
-                   <p className="text-slate-500 font-medium">AI 分析中，請稍候...</p>
-                 </div>
-               ) : error && error.includes('AI 額度已用完') ? (
-                 <div className="flex flex-col items-center py-20 text-center">
-                   <AlertCircle className="w-10 h-10 text-red-500 mb-3" />
-                   <h3 className="text-red-400 font-bold mb-1">公用 AI 額度已達上限 (Rate Limit Exceeded)</h3>
-                   <p className="text-red-300/80 text-sm mb-4">因使用人數眾多，公用額度暫時耗盡。請點擊下方的「設定模型 / API Key」按鈕，填入您自己的 Google Gemini API Key 即可繼續免費使用。</p>
-                   <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="inline-block mb-4 px-4 py-2 bg-indigo-700 hover:bg-indigo-600 text-white text-xs font-bold rounded transition-colors">👉 取得免費 API Key (Google AI Studio)</a>
-                   <button onClick={() => setShowKeySettings(true)} className="px-4 py-2 bg-red-900/40 hover:bg-red-900/60 rounded text-white text-sm transition-colors">設定模型 / API Key</button>
-                 </div>
-               ) : error ? (
-                 <div className="p-4 bg-red-950/20 border border-red-900/50 rounded-lg text-red-300 text-sm">
-                    {error}
+                 <div className="flex flex-col items-center py-20 animate-pulse">
+                   <Loader2 className="w-10 h-10 text-indigo-500 animate-spin mb-4" />
+                   <p className="text-slate-500 font-medium">AI 正在分析裝備與數據...</p>
                  </div>
                ) : (
-                 <div 
-                   className="text-sm text-slate-300 leading-relaxed ai-markdown-content"
-                   dangerouslySetInnerHTML={{ 
-                     __html: new MarkdownIt({ html: true, breaks: true, linkify: true }).render(aiAnalysis || '') 
-                   }}
-                 />
+                 <>
+                   {error && (error.includes('AI') || error.includes('Quota')) ? (
+                      <div className="p-4 bg-red-950/20 border border-red-900/50 rounded-lg text-red-300 text-sm mb-4">
+                        {error}
+                      </div>
+                   ) : aiAnalysis ? (
+                      <div 
+                        className="text-sm text-slate-300 leading-relaxed ai-markdown-content"
+                        dangerouslySetInnerHTML={{ 
+                          __html: new MarkdownIt({ html: true, breaks: true, linkify: true }).render(aiAnalysis || '') 
+                        }}
+                      />
+                   ) : null}
+
+                   {/* Footer Actions - ALWAYS Visible if container is visible */}
+                   <div className="mt-4 pt-3 border-t border-indigo-500/20 flex justify-between items-center">
+                     <span className="text-[10px] text-slate-500">Generated by Google Gemini</span>
+                     <button 
+                      onClick={() => setShowKeySettings(true)}
+                      className="text-[10px] flex items-center gap-1 transition-colors px-2 py-1 rounded text-indigo-400 hover:text-indigo-300 bg-indigo-950/30 hover:bg-indigo-900/50"
+                     >
+                      <Settings className="w-3 h-3" />
+                      設定模型 / API Key
+                     </button>
+                   </div>
+                 </>
                )}
-             </div>
-          )}
+               
+               {/* 修正後的 CSS: 增加對比度與強制顯示邊框 */}
+               <style>{`
+                 .ai-markdown-content ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 1em; }
+                 .ai-markdown-content ol { list-style-type: decimal; padding-left: 1.5em; margin-bottom: 1em; }
+                 .ai-markdown-content h1, .ai-markdown-content h2, .ai-markdown-content h3 { font-weight: bold; color: #818cf8; margin-top: 1.2em; margin-bottom: 0.6em; }
+                 .ai-markdown-content p { margin-bottom: 0.8em; }
+                 .ai-markdown-content strong { color: #c7d2fe; font-weight: 700; }
+                 .ai-markdown-content table { width: 100%; border-collapse: collapse; margin-bottom: 1em; font-size: 0.9em; }
+                 /* Fix: Lighter border color for visibility */
+                 .ai-markdown-content th, .ai-markdown-content td { border: 1px solid rgba(148, 163, 184, 0.4); padding: 8px 12px; text-align: left; }
+                 .ai-markdown-content th { background-color: #1e293b; color: #a5b4fc; font-weight: 600; }
+                 .ai-markdown-content tr:nth-child(even) { background-color: #1e293b; }
+                 .ai-markdown-content tr:hover { background-color: #334155; }
+               `}</style>
+           </div>
 
           <CharacterDetails data={data} />
           {showShareModal && <ShareModal characterName={data.basic.character_name} onClose={() => setShowShareModal(false)} />}
           </>
+        )}
+
+        {!data && !loading && !error && (
+          <div className="text-center">
+            <div className="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 opacity-50"><Search className="w-8 h-8 text-slate-500" /></div>
+            <h2 className="text-xl font-bold text-slate-300 mb-2">開始查詢</h2>
+            <p className="text-slate-500 max-w-sm mx-auto">輸入角色名稱，查看新楓之谷的詳細數據與裝備。</p>
+          </div>
         )}
       </main>
           {(!data && !loading && !error) && (
