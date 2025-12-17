@@ -249,7 +249,22 @@ export const fetchCharacterData = async (characterName: string, apiKey: string, 
       }
   }
 
-  const lastUpdated = new Date().toLocaleString('zh-TW', { hour12: false });
+  // === NEW DATE LOGIC ===
+  // 使用 API 回傳的 basic.date 作為資料真實日期，而非當下時間
+  // basic.date 格式通常為 "2025-12-17T00:00:00+09:00" 或 undefined
+  // 如果是查當天，dateParam 為 undefined，我們就顯示今天或 API 回傳的日期
+  // 如果是查歷史，dateParam 為 "YYYY-MM-DD"，我們就顯示該日期
+  let lastUpdated = specificDate; 
+  
+  if (!lastUpdated) {
+      // 如果沒有指定日期 (即時查詢)，嘗試使用 API 回傳的日期
+      if (basic.date) {
+          lastUpdated = basic.date.split('T')[0];
+      } else {
+          // 如果連 API 都沒給日期，只好用今天
+          lastUpdated = new Date().toISOString().split('T')[0];
+      }
+  }
 
   return {
     basic,
@@ -277,7 +292,7 @@ export const fetchCharacterData = async (characterName: string, apiKey: string, 
     character_basic_7days_ago: basic7Days,
     cashItemEquipment,
     beautyEquipment,
-    lastUpdated
+    lastUpdated // 現在這是一個 YYYY-MM-DD 字串
   };
 };
 
