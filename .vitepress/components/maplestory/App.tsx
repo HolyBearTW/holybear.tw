@@ -887,6 +887,7 @@ const App: React.FC = () => {
               <div className="vp-tip custom-vp-tip p-4 rounded-lg border-l-4 border-indigo-400 bg-indigo-50/90 text-indigo-900 dark:bg-[#23263a] dark:text-indigo-200 dark:border-indigo-500 shadow-sm">
                 <div className="font-bold mb-1 text-indigo-700 dark:text-indigo-300">更新日誌</div>
                 <ul className="list-disc pl-5 text-sm space-y-1">
+                  <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/18</span> 升級預設 AI 模型為 Gemini 3.0 Flash，並新增 Gemini 3.0 Pro 選項。</li>
                   <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/17</span> 新增「預設」功能，適用於內在潛能、裝備、時裝、連結技能、極限屬性。</li>
                   <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/17</span> 新增「七日巔峰搜尋」功能，自動掃描並載入本週最高戰力紀錄。</li>
                   <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/14</span> 首次發佈</li>
