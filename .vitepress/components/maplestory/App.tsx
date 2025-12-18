@@ -522,7 +522,6 @@ const App: React.FC = () => {
 
         <form onSubmit={handleSearch} className="w-full max-w-2xl relative group">
            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-indigo-400 transition-colors" />
-           {/* FIX: Mobile responsive input sizing and padding */}
            <input 
              ref={searchInputRef}
              value={characterName}
@@ -595,7 +594,7 @@ const App: React.FC = () => {
 
       <main className="max-w-[1600px] mx-auto p-6 mt-4">
         {loading && !data && (
-           <div className="flex flex-col items-center py-40 animate-pulse">
+           <div className="flex flex-col items-center justify-center min-h-[300px] animate-pulse">
               <Loader2 className="w-12 h-12 text-indigo-500 animate-spin mb-4" />
               <p className="text-slate-500 font-medium">{isScanningBest ? '正在掃描過去七天數據，尋找最強狀態...' : '正在讀取角色資料...'}</p>
            </div>
@@ -875,16 +874,16 @@ const App: React.FC = () => {
         )}
 
         {!data && !loading && !error && (
-          <div className="text-center">
-            <div className="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 opacity-50"><Search className="w-8 h-8 text-slate-500" /></div>
+          <div className="flex flex-col items-center mt-6">
+            <div className="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mb-3 opacity-50"><Search className="w-8 h-8 text-slate-500" /></div>
             <h2 className="text-xl font-bold text-slate-300 mb-2">開始查詢</h2>
-            <p className="text-slate-500 max-w-sm mx-auto">輸入角色名稱，查看新楓之谷的詳細數據與裝備。</p>
+            <p className="text-slate-500 max-w-sm text-center">輸入角色名稱，查看新楓之谷的詳細數據與裝備。</p>
           </div>
         )}
       </main>
           {(!data && !loading && !error) && (
-            <div className="w-full max-w-2xl mx-auto my-8">
-              <div className="vp-tip custom-vp-tip p-4 rounded-lg border-l-4 border-indigo-400 bg-indigo-50/90 text-indigo-900 dark:bg-[#23263a] dark:text-indigo-200 dark:border-indigo-500 shadow-sm">
+            <div className="my-8 flex justify-center">
+              <div className="vp-tip custom-vp-tip p-4 sm:p-6 rounded-lg border-l-4 border-indigo-400 bg-indigo-50/90 text-indigo-900 dark:bg-[#23263a] dark:text-indigo-200 dark:border-indigo-500 shadow-sm mx-auto">
                 <div className="font-bold mb-1 text-indigo-700 dark:text-indigo-300">更新日誌</div>
                 <ul className="list-disc pl-5 text-sm space-y-1">
                   <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/18</span> 升級預設 AI 模型為 Gemini 3.0 Flash，並新增 Gemini 3.0 Pro 選項。</li>
@@ -897,7 +896,60 @@ const App: React.FC = () => {
           )}
           <style>{`
             .custom-vp-tip {
-              background: linear-gradient(90deg, #e0e7ff 0%, #f0f5ff 100%);
+              background: rgba(0,255,238,0.12);
+              /* #00FFEE 主題色系 */
+              box-sizing: border-box;
+              max-width: 28rem;
+              margin-left: 1rem;
+              margin-right: 1rem;
+              padding-left: 1rem;
+              padding-right: 1rem;
+              display: block;
+              border-left: 4px solid #00FFEE;
+              color: #b8fff9;
+            }
+            @media (min-width: 640px) {
+              .custom-vp-tip {
+                max-width: 42rem;
+                margin-left: auto;
+                margin-right: auto;
+                padding-left: 1.5rem;
+                padding-right: 1.5rem;
+              }
+            }
+            .custom-vp-tip .font-bold {
+              color: #00FFEE;
+            }
+            .custom-vp-tip li {
+              color: #b8fff9;
+            }
+            .dark .custom-vp-tip {
+              background: rgba(0,255,238,0.18) !important;
+              border-left: 4px solid #00FFEE !important;
+              color: #99ffff !important;
+            }
+            .dark .custom-vp-tip .font-bold {
+              color: #00FFEE !important;
+            }
+            .dark .custom-vp-tip li {
+              color: #99ffff !important;
+            }
+            .custom-vp-tip .font-bold {
+              color: #0ea5e9;
+            }
+            .custom-vp-tip li {
+              color: #0369a1;
+            }
+            .dark .custom-vp-tip {
+              background: linear-gradient(90deg, #0f172a 0%, #164e63 100%);
+              border-left: 4px solid #38bdf8;
+              color: #bae6fd;
+            }
+            .dark .custom-vp-tip .font-bold {
+              color: #38bdf8;
+            }
+            .dark .custom-vp-tip li {
+              color: #bae6fd;
             }
             .dark .custom-vp-tip {
               background: linear-gradient(90deg, #23263a 0%, #1e2130 100%);
