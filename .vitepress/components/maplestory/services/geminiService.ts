@@ -37,7 +37,8 @@ const cleanDataForAI = (obj: any): any => {
   return obj;
 };
 
-export const analyzeCharacter = async (data: DashboardData, apiKey: string, modelId: string = 'gemini-2.5-flash'): Promise<string> => {
+// UPDATE: 預設值改為 gemini-3.0-flash
+export const analyzeCharacter = async (data: DashboardData, apiKey: string, modelId: string = 'gemini-3.0-flash'): Promise<string> => {
   if (!apiKey) {
     return "Gemini API Key is missing. Please provide a valid API Key.";
   }
