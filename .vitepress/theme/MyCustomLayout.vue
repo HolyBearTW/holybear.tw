@@ -518,7 +518,7 @@ onUnmounted(() => {
     <footer class="BlogVPFooter">
   <div class="container">
     <p class="message">AGPL-3.0 Licensed</p>
-    <p class="copyright">Copyright © 2025 聖小熊</p>
+    <p class="copyright">Copyright © 2025-2026 聖小熊</p>
   </div>
 </footer>
 </template>

@@ -802,6 +802,17 @@ const App: React.FC = () => {
                       </div>
                     )}
                   </div>
+                        {/* Notice / Disclaimer */}
+                        <div className="mt-6 pt-4 border-t border-slate-800/50 text-[11px] text-slate-500 space-y-2">
+                          <div className="flex gap-2 items-start">
+                            <Info className="w-3.5 h-3.5 mt-0.5 shrink-0 text-slate-400" />
+                            <p className="leading-relaxed">資料來源為 Nexon Open API，所有數據皆為每 15 分鐘更新一次。 若顯示舊資料請稍後再試。</p>
+                          </div>
+                          <div className="flex gap-2 items-start">
+                            <Mail className="w-3.5 h-3.5 mt-0.5 shrink-0 text-slate-400" />
+                            <p className="leading-relaxed">若數值與遊戲內不符，請聯繫站長：<a href="mailto:holybear@holybear.tw" className="text-indigo-400 hover:underline hover:text-indigo-300 transition-colors">holybear@holybear.tw</a></p>
+                          </div>
+                        </div>
                </div>
             </div>
 

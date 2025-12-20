@@ -49,7 +49,7 @@ export default {
     },
     footer: {
       message: 'AGPL-3.0 Licensed',
-      copyright: 'Copyright © 2025 聖小熊'
+      copyright: 'Copyright © 2025-2026 聖小熊'
     },
     notFound: {
       title: '找不到頁面',
