@@ -1,12 +1,119 @@
 import React, { useState, useEffect } from 'react';
 import { DashboardData } from '../types';
-import { Zap, Star, Crown, Layers, PawPrint, Hexagon, Sword } from 'lucide-react';
+import { Zap, Star, Crown, Layers, PawPrint, Hexagon, Sword, Info, CheckSquare, Square } from 'lucide-react';
 
 interface CharacterDetailsProps {
   data: DashboardData;
 }
 
-// 修改後的標題元件：支援內嵌預設按鈕 (1, 2, 3)，且移除了下方分隔線
+// --- 六轉核心設定檔 (含碎片與靈魂艾爾達消耗) ---
+const HEXA_SETTINGS = {
+  // 技能核心 (Skill Core)
+  SKILL: {
+    key: 'SKILL',
+    quantity: 1, 
+    keywords: ['skill', '技能'],
+    // 碎片消耗 (Lv1-30)
+    costs: [0, 30, 35, 40, 45, 50, 55, 60, 65, 200, 80, 90, 100, 110, 120, 130, 140, 150, 160, 350, 170, 180, 190, 200, 210, 220, 230, 240, 250, 500],
+    // 靈魂艾爾達消耗 (Lv1-30)
+    erdaCosts: [0, 1, 1, 1, 2, 2, 2, 3, 3, 10, 3, 3, 4, 4, 4, 4, 4, 4, 5, 15, 5, 5, 5, 5, 5, 6, 6, 6, 7, 20]
+  },
+  // 精通核心 (Mastery Core)
+  MASTERY: {
+    key: 'MASTERY',
+    quantity: 4, 
+    keywords: ['mastery', '精通'],
+    costs: [50, 15, 18, 20, 23, 25, 28, 30, 33, 100, 40, 45, 50, 55, 60, 65, 70, 75, 80, 175, 85, 90, 95, 100, 105, 110, 115, 120, 125, 250],
+    erdaCosts: [3, 1, 1, 1, 1, 1, 1, 2, 2, 5, 2, 2, 2, 2, 2, 2, 2, 2, 3, 8, 3, 3, 3, 3, 3, 3, 3, 3, 4, 10]
+  },
+  // 強化核心 (Enhancement Core)
+  ENHANCEMENT: {
+    key: 'ENHANCEMENT',
+    quantity: 4, 
+    keywords: ['enhancement', '強化'],
+    costs: [75, 23, 27, 30, 34, 38, 42, 45, 49, 150, 60, 68, 75, 83, 90, 98, 105, 113, 120, 263, 128, 135, 143, 150, 158, 165, 173, 180, 188, 375],
+    erdaCosts: [4, 1, 1, 1, 2, 2, 2, 3, 3, 8, 3, 3, 3, 3, 3, 3, 3, 3, 4, 12, 4, 4, 4, 4, 4, 5, 5, 5, 6, 15]
+  },
+  // 共用核心 (Common Core / Janus)
+  COMMON: {
+    key: 'COMMON',
+    quantity: 1, 
+    keywords: ['common', '共用'],
+    costs: [125, 38, 44, 50, 57, 63, 69, 75, 82, 300, 110, 124, 138, 152, 165, 179, 193, 207, 220, 525, 234, 248, 262, 275, 289, 303, 317, 330, 344, 750],
+    erdaCosts: [7, 2, 2, 2, 3, 3, 3, 5, 5, 14, 5, 5, 6, 6, 6, 6, 6, 6, 7, 17, 7, 7, 7, 7, 7, 9, 9, 9, 10, 20]
+  }
+};
+
+// 計算六轉進度 (自動化版 - 含剩餘消耗、亞努斯偵測與排除功能)
+const calculateHexaProgress = (hexaMatrix: any, includeJanus: boolean) => {
+  if (!hexaMatrix || !hexaMatrix.character_hexa_core_equipment) {
+    return { 
+      current: 0, 
+      total: 1, 
+      percent: 0, 
+      currentErda: 0,
+      remainingFragments: 0,
+      remainingErda: 0,
+      hasJanus: false
+    };
+  }
+
+  let totalFragmentsUsed = 0;
+  let totalErdaUsed = 0;
+  
+  let grandTotalFragments = 0;
+  let grandTotalErda = 0;
+  let hasJanus = false;
+
+  // 1. 計算分母 (理論畢業總需求)
+  Object.values(HEXA_SETTINGS).forEach(setting => {
+    // 如果不包含亞努斯，且當前設定是共用核心，則跳過
+    if (!includeJanus && setting.key === 'COMMON') return;
+
+    const costPerCore = setting.costs.reduce((a, b) => a + b, 0);
+    const erdaPerCore = setting.erdaCosts.reduce((a, b) => a + b, 0);
+    
+    grandTotalFragments += costPerCore * setting.quantity;
+    grandTotalErda += erdaPerCore * setting.quantity;
+  });
+
+  // 2. 計算分子 (實際已消耗)
+  hexaMatrix.character_hexa_core_equipment.forEach((core: any) => {
+    const level = parseInt(core.hexa_core_level, 10);
+    const type = (core.hexa_core_type || '').toLowerCase();
+    
+    // 偵測是否持有靈魂亞努斯 (共用核心) - 僅作標記用，不受 includeJanus 影響
+    if (HEXA_SETTINGS.COMMON.keywords.some(k => type.includes(k))) {
+      hasJanus = true;
+    }
+
+    let targetSetting = null;
+    if (HEXA_SETTINGS.SKILL.keywords.some(k => type.includes(k))) targetSetting = HEXA_SETTINGS.SKILL;
+    else if (HEXA_SETTINGS.MASTERY.keywords.some(k => type.includes(k))) targetSetting = HEXA_SETTINGS.MASTERY;
+    else if (HEXA_SETTINGS.ENHANCEMENT.keywords.some(k => type.includes(k))) targetSetting = HEXA_SETTINGS.ENHANCEMENT;
+    else if (HEXA_SETTINGS.COMMON.keywords.some(k => type.includes(k))) targetSetting = HEXA_SETTINGS.COMMON;
+
+    // 如果找到了設定，且 (要包含亞努斯 或者 該核心不是共用核心)
+    if (targetSetting && (includeJanus || targetSetting.key !== 'COMMON')) {
+      for (let i = 0; i < level; i++) {
+        totalFragmentsUsed += targetSetting.costs[i] || 0;
+        totalErdaUsed += targetSetting.erdaCosts[i] || 0;
+      }
+    }
+  });
+
+  return {
+    current: totalFragmentsUsed,
+    total: grandTotalFragments,
+    percent: grandTotalFragments === 0 ? 0 : (totalFragmentsUsed / grandTotalFragments) * 100,
+    currentErda: totalErdaUsed,
+    remainingFragments: grandTotalFragments - totalFragmentsUsed,
+    remainingErda: grandTotalErda - totalErdaUsed,
+    hasJanus: hasJanus
+  };
+};
+
+// 標題元件
 const SectionHeader: React.FC<{ 
   icon: React.ReactNode; 
   title: string; 
@@ -22,7 +129,6 @@ const SectionHeader: React.FC<{
       <h3 className="text-lg font-bold text-slate-200">{title}</h3>
     </div>
     
-    {/* 緊湊型預設按鈕 (只顯示 1, 2, 3) */}
     {presetState && (
       <div className="flex gap-1">
         {[1, 2, 3].map((num) => (
@@ -38,7 +144,6 @@ const SectionHeader: React.FC<{
             title={`預設 ${num}`}
           >
             {num}
-            {/* 綠點：標示遊戲內實際生效的預設 */}
             {presetState.active === num && (
                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 border-2 border-slate-900 rounded-full"></span>
             )}
@@ -49,7 +154,7 @@ const SectionHeader: React.FC<{
   </div>
 );
 
-// --- Link Skill Data Logic ---
+// Link Skill Data Logic
 const LINK_SKILL_DATA: Record<string, (lv: number) => Record<string, number>> = {
   '狂暴鬥氣': (lv) => ({ '傷害': lv * 5 }),
   '惡魔之怒': (lv) => ({ 'BOSS 傷害': lv === 1 ? 10 : 15 }),
@@ -123,6 +228,9 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data }) => {
     skill0, skill1, skill2, skill3, skill4, skillHyper, skill5, skill6,
     hyperStat 
   } = data;
+
+  // 狀態：是否包含靈魂亞努斯 (預設為 true)
+  const [includeJanus, setIncludeJanus] = useState(true);
 
   const findSkillIcon = (name: string) => {
       if (!name) return undefined;
@@ -278,16 +386,16 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data }) => {
         )}
         <div className="mt-4 grid grid-cols-2 gap-4">
            <div className="bg-slate-800/50 p-3 rounded text-center">
-              <div className="text-xs text-slate-400">神秘力量 (ARC)</div>
-              <div className="text-xl font-bold text-blue-400">
-                {data.stat.final_stat.find(s => s.stat_name === '神秘力量' || s.stat_name === 'Arcane Power')?.stat_value || 0}
-              </div>
+             <div className="text-xs text-slate-400">神秘力量 (ARC)</div>
+             <div className="text-xl font-bold text-blue-400">
+               {data.stat.final_stat.find(s => s.stat_name === '神秘力量' || s.stat_name === 'Arcane Power')?.stat_value || 0}
+             </div>
            </div>
            <div className="bg-slate-800/50 p-3 rounded text-center">
-              <div className="text-xs text-slate-400">真實力量 (AUT)</div>
-              <div className="text-xl font-bold text-orange-400">
-                {data.stat.final_stat.find(s => s.stat_name === '真實之力' || s.stat_name === 'Authentic Force')?.stat_value || 0}
-              </div>
+             <div className="text-xs text-slate-400">真實力量 (AUT)</div>
+             <div className="text-xl font-bold text-orange-400">
+               {data.stat.final_stat.find(s => s.stat_name === '真實之力' || s.stat_name === 'Authentic Force')?.stat_value || 0}
+             </div>
            </div>
         </div>
       </div>
@@ -328,14 +436,14 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data }) => {
                         <div className="p-3 flex gap-3 items-start">
                            <img src={petEquip.item_icon} className="w-10 h-10 bg-[#121418] rounded p-1" />
                            <div className="text-[10px] text-slate-300 leading-relaxed">
-                              {petEquip.item_description || '無說明'}
-                              {petEquip.item_option && Array.isArray(petEquip.item_option) && (
-                                <div className="mt-2 pt-2 border-t border-slate-700">
-                                  {petEquip.item_option.map((opt: any, i: number) => (
-                                    <div key={i} className="text-white">{opt.option_type}: +{opt.option_value}</div>
-                                  ))}
-                                </div>
-                              )}
+                             {petEquip.item_description || '無說明'}
+                             {petEquip.item_option && Array.isArray(petEquip.item_option) && (
+                               <div className="mt-2 pt-2 border-t border-slate-700">
+                                 {petEquip.item_option.map((opt: any, i: number) => (
+                                   <div key={i} className="text-white">{opt.option_type}: +{opt.option_value}</div>
+                                 ))}
+                               </div>
+                             )}
                            </div>
                         </div>
                       </div>
@@ -399,24 +507,64 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data }) => {
 
       {/* Skills (V/Hexa) */}
       <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner">
-        <SectionHeader icon={<Zap />} title="核心技能 (V/Hexa)" />
+        
+        {/* HEXA Section Header & Progress */}
         {hexaMatrix && hexaMatrix.character_hexa_core_equipment && hexaMatrix.character_hexa_core_equipment.length > 0 && (
           <div className="mb-6">
-            <div className="flex justify-between items-end mb-2">
-                <h4 className="text-sm font-bold text-purple-400">HEXA 矩陣</h4>
-                {(() => {
-                    const totalLevel = hexaMatrix.character_hexa_core_equipment.reduce((acc, curr) => acc + curr.hexa_core_level, 0);
-                    const maxLevel = hexaMatrix.character_hexa_core_equipment.length * 30;
-                    const progress = maxLevel > 0 ? (totalLevel / maxLevel) * 100 : 0;
-                    return (
-                        <div className="text-right">
-                            <div className="text-xs text-purple-300 font-mono">
-                                進度: {progress.toFixed(1)}% <span className="text-slate-500">({totalLevel}/{maxLevel})</span>
+            {(() => {
+                // 使用 state 中的 includeJanus 進行計算
+                const progress = calculateHexaProgress(hexaMatrix, includeJanus);
+                return (
+                    <div className="flex flex-col md:flex-row md:justify-between md:items-end mb-4 gap-4">
+                        {/* Left Side: Title & Janus Toggle */}
+                        <div>
+                            <SectionHeader icon={<Zap />} title="核心技能 (V/Hexa)" />
+                            
+                            <div className="flex items-center gap-3 mt-1">
+                              <h4 className="text-sm font-bold text-purple-400">HEXA 矩陣</h4>
+                              
+                              {/* 亞努斯計算切換按鈕 */}
+                              <button 
+                                onClick={() => setIncludeJanus(!includeJanus)}
+                                className={`
+                                  text-[10px] px-2 py-0.5 rounded border flex items-center gap-1 transition-all
+                                  ${includeJanus 
+                                    ? 'bg-purple-900/40 text-purple-300 border-purple-700/50 hover:bg-purple-900/60' 
+                                    : 'bg-slate-800 text-slate-500 border-slate-700 hover:bg-slate-700 hover:text-slate-400'}
+                                `}
+                                title={includeJanus ? "點擊以排除靈魂亞努斯計算" : "點擊以包含靈魂亞努斯計算"}
+                              >
+                                {includeJanus ? <CheckSquare className="w-3 h-3" /> : <Square className="w-3 h-3" />}
+                                {includeJanus ? '計算靈魂亞努斯' : '排除靈魂亞努斯'}
+                              </button>
                             </div>
                         </div>
-                    );
-                })()}
-            </div>
+
+                        {/* Right Side: Progress Stats */}
+                        <div className="text-right">
+                            {/* Line 1: Percentage & Fraction */}
+                            <div className="text-xs text-slate-400 font-mono mb-1">
+                                技能進度: <span className="text-white font-bold">{progress.percent.toFixed(1)}%</span> <span className="text-slate-500">({progress.current.toLocaleString()} / {progress.total.toLocaleString()} 碎片)</span>
+                            </div>
+                            
+                            {/* Line 2: Progress Bar */}
+                            <div className="w-full md:w-80 h-1.5 bg-slate-800 rounded-full overflow-hidden ml-auto mb-1.5 border border-slate-700">
+                                <div 
+                                    className="h-full bg-gradient-to-r from-purple-600 via-pink-500 to-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.6)]" 
+                                    style={{ width: `${Math.min(progress.percent, 100)}%` }} 
+                                />
+                            </div>
+
+                            {/* Line 3: Remaining Cost */}
+                            <div className="text-[10px] text-slate-400 font-mono bg-slate-900/50 inline-block px-2 py-1 rounded border border-slate-800">
+                                <span className="text-slate-500 mr-1">距離滿級還需:</span>
+                                <span className="text-purple-400 font-bold">{progress.remainingFragments.toLocaleString()}</span> 碎片 / 
+                                <span className="text-blue-400 font-bold ml-1">{progress.remainingErda.toLocaleString()}</span> 靈魂艾爾達
+                            </div>
+                        </div>
+                    </div>
+                );
+            })()}
             
             <div className="grid grid-cols-4 gap-2">
               {hexaMatrix.character_hexa_core_equipment.map((core, idx) => {
@@ -436,8 +584,13 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data }) => {
           </div>
         )}
 
+        {/* Fallback SectionHeader if no Hexa data */}
+        {(!hexaMatrix || !hexaMatrix.character_hexa_core_equipment || hexaMatrix.character_hexa_core_equipment.length === 0) && (
+             <SectionHeader icon={<Zap />} title="核心技能 (V/Hexa)" />
+        )}
+
         {vMatrix && vMatrix.character_v_core_equipment && (
-          <div>
+          <div className="mt-6">
             <h4 className="text-sm font-bold text-blue-400 mb-2">V 矩陣</h4>
             <div className="grid grid-cols-4 gap-2">
                {vMatrix.character_v_core_equipment
@@ -605,9 +758,6 @@ const LinkSkillSection = ({ linkSkill }: { linkSkill: any }) => {
   useEffect(() => setSelectedPreset(activePresetNo || 1), [linkSkill]);
 
   const getPresetSkills = () => {
-    // 連結技能比較特別，API 有給 "character_link_skill" (當前) 和 "preset_1~3"
-    // 如果選 1, 2, 3，就拿對應的。
-    // 因為這區塊只有 1,2,3 按鈕，我們直接映射
     return linkSkill[`character_link_skill_preset_${selectedPreset}`] || [];
   };
   

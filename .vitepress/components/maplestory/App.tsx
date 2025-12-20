@@ -810,7 +810,7 @@ const App: React.FC = () => {
                           </div>
                           <div className="flex gap-2 items-start">
                             <Mail className="w-3.5 h-3.5 mt-0.5 shrink-0 text-slate-400" />
-                            <p className="leading-relaxed">若數值與遊戲內不符，請聯繫站長：<a href="mailto:holybear@holybear.tw" className="text-indigo-400 hover:underline hover:text-indigo-300 transition-colors">holybear@holybear.tw</a></p>
+                            <p className="leading-relaxed">若數值與遊戲內不符，請聯繫站長聖小熊：<a href="mailto:holybear@holybear.tw" className="text-indigo-400 hover:underline hover:text-indigo-300 transition-colors">holybear@holybear.tw</a></p>
                           </div>
                         </div>
                </div>
@@ -897,6 +897,10 @@ const App: React.FC = () => {
               <div className="vp-tip custom-vp-tip p-4 sm:p-6 rounded-lg border-l-4 border-indigo-400 bg-indigo-50/90 text-indigo-900 dark:bg-[#23263a] dark:text-indigo-200 dark:border-indigo-500 shadow-sm mx-auto">
                 <div className="font-bold mb-1 text-indigo-700 dark:text-indigo-300">更新日誌</div>
                 <ul className="list-disc pl-5 text-sm space-y-1">
+                  <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/21</span> 重構核心技能區塊的 HEXA 矩陣進度演算法，並新增是否計算靈魂亞努斯選項。</li>
+                  <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/21</span> 時裝格子支援即時染色預覽。</li>
+                  <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/21</span> 滑鼠懸浮在時裝格子時也會顯示圖片預覽。</li>
+                  <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/18</span> 優化 AI 健檢回應速度，平均縮短 30% 回應時間。</li>
                   <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/18</span> 升級預設 AI 模型為 Gemini 3.0 Flash，並新增 Gemini 3.0 Pro 選項。</li>
                   <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/17</span> 新增「預設」功能，適用於內在潛能、裝備、時裝、連結技能、極限屬性。</li>
                   <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/17</span> 新增「七日巔峰搜尋」功能，自動掃描並載入本週最高戰力紀錄。</li>
