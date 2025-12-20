@@ -39,7 +39,7 @@ const SLOT_DEFINITIONS: Record<string, { label: string, match: string[] }> = {
   'Emblem': { label: '徽章', match: ['emblem', '能源', '徽章'] },
   'Badge': { label: '胸章', match: ['badge', '胸章'] },
   'Medal': { label: '勳章', match: ['medal', '勳章'] },
-  'Android': { label: '機器', match: ['android', '機器'] },
+  'Android': { label: '機器', match: ['android', '機器人'] },
   'Heart': { label: '心臟', match: ['mechanicalheart', 'heart', '機械心臟', '心臟', '機器心臟'] },
   'Weapon': { label: '武器', match: ['weapon', '武器'] },
   'Secondary': { label: '副武', match: ['secondary', 'subweapon', 'shield', 'katara', '副武器', '盾牌', '輔助武器'] },
@@ -223,15 +223,19 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, characterImage
 
       {/* Right Columns (Armor) */}
       <div className="flex gap-2">
-        <div className="flex flex-col gap-2">
-           {['Hat', 'Top', 'Bottom', 'Shoulder'].map(key => <Slot key={key} slotKey={key} item={findItem(key)} tooltipSide="left" />)}
-        </div>
-         <div className="flex flex-col gap-2">
-           {['Cape', 'Gloves', 'Shoes', 'Medal', 'Heart'].map(key => <Slot key={key} slotKey={key} item={findItem(key)} tooltipSide="left" />)}
-           <div className="mt-2">
+          <div className="flex flex-col gap-2">
+            {['Hat', 'Top', 'Bottom', 'Shoulder'].map(key => <Slot key={key} slotKey={key} item={findItem(key)} tooltipSide="left" />)}
+            {/* 機器人插在肩膀下方 */}
+            <Slot slotKey="Android" item={findItem('Android')} tooltipSide="left" />
+          </div>
+          <div className="flex flex-col gap-2">
+            {['Cape', 'Gloves', 'Shoes', 'Medal'].map(key => <Slot key={key} slotKey={key} item={findItem(key)} tooltipSide="left" />)}
+            {/* 心臟插在勳章下方 */}
+            <Slot slotKey="Heart" item={findItem('Heart')} tooltipSide="left" />
+            <div className="mt-2">
               <Slot slotKey="Badge" item={findItem('Badge')} tooltipSide="left" />
-           </div>
-        </div>
+            </div>
+          </div>
       </div>
       </div>
 

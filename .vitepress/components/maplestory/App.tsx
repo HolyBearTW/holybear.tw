@@ -898,6 +898,7 @@ const App: React.FC = () => {
                 <div className="font-bold mb-1 text-indigo-700 dark:text-indigo-300">更新日誌</div>
                 <ul className="list-disc pl-5 text-sm space-y-1">
                   <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/21</span> 重構核心技能區塊的 HEXA 矩陣進度演算法，並新增是否計算靈魂亞努斯選項。</li>
+                  <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/21</span> 新增機器人裝備欄位。</li>
                   <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/21</span> 時裝格子支援即時染色預覽。</li>
                   <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/21</span> 滑鼠懸浮在時裝格子時也會顯示圖片預覽。</li>
                   <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/18</span> 優化 AI 健檢回應速度，平均縮短 30% 回應時間。</li>
