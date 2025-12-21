@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { DashboardData } from '../types';
+import { DashboardData, CharacterAndroidEquipment } from '../types';
 import { Zap, Star, Crown, Layers, PawPrint, Hexagon, Sword, Info, CheckSquare, Square } from 'lucide-react';
+import EquipmentGrid from './EquipmentGrid';
 
 interface CharacterDetailsProps {
   data: DashboardData;
@@ -222,6 +223,9 @@ const ItemWithTooltip: React.FC<{
 };
 
 const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data }) => {
+    // 根據當前 preset_no，取得對應的 android_preset_X
+    const presetNo = data.equipment?.preset_no || 1;
+    const androidEquipment = data.androidEquipment?.[`android_preset_${presetNo}`] || data.androidEquipment?.android_preset_1;
   const { 
     union, unionArtifact, symbolEquipment, petEquipment, setEffect, 
     vMatrix, hexaMatrix, hexaMatrixStat, dojo, linkSkill, 
@@ -275,6 +279,13 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data }) => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
       
+
+      {/* 裝備格（含機器人） */}
+      {/* <div className="lg:col-span-2">
+        {console.log('androidEquipment for grid', androidEquipment)}
+        <EquipmentGrid equipment={data.equipment} characterImage={data.basic?.character_image} androidEquipment={androidEquipment} />
+      </div> */}
+
       {/* 連結技能 & 極限屬性 (左右並排) */}
       <LinkSkillSection linkSkill={linkSkill} />
       <HyperStatSection hyperStat={hyperStat} />

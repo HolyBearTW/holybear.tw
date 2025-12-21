@@ -431,3 +431,11 @@ export interface CharacterBeautyEquipment {
     brightness: number;
   } | null;
 }
+
+export interface CharacterAndroidEquipment {
+  date: string;
+  android_name: string;
+  android_nickname: string;
+  android_icon: string;
+  android_description: string;
+}

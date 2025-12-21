@@ -817,8 +817,8 @@ const App: React.FC = () => {
             </div>
 
             <div className="lg:col-span-4 space-y-6">
-               <EquipmentGrid equipment={data.equipment} characterImage={data.basic.character_image} />
-               {data.cashItemEquipment && <CashEquipmentGrid cashEquipment={data.cashItemEquipment} beautyEquipment={data.beautyEquipment} characterImage={data.basic.character_image} />}
+               <EquipmentGrid equipment={data.equipment} characterImage={data.basic.character_image} androidEquipment={data.androidEquipment?.[`android_preset_${data.equipment?.preset_no || 1}`] || data.androidEquipment?.android_preset_1} />
+              {data.cashItemEquipment && <CashEquipmentGrid cashEquipment={data.cashItemEquipment} beautyEquipment={data.beautyEquipment} characterImage={data.basic.character_image} />}
             </div>
           </div>
 

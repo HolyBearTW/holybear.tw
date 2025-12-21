@@ -1,6 +1,5 @@
 import { 
-  CharacterBasic, CharacterEquipment, CharacterStat, CharacterAbility, 
-  CharacterHyperStat, CharacterLinkSkill, DashboardData, OcidResponse 
+  CharacterBasic, CharacterEquipment, CharacterStat, DashboardData, OcidResponse
 } from '../types';
 
 const BASE_URL = 'https://open.api.nexon.com/maplestorytw/v1';
@@ -163,11 +162,11 @@ export const fetchCharacterData = async (characterName: string, apiKey: string, 
     `${BASE_URL}/character/skill?ocid=${ocid}&character_skill_grade=4${dateParam ? `&date=${dateParam}` : ''}`,
     // Historical comparison always needs a date
     `${BASE_URL}/character/basic?ocid=${ocid}&date=${date7DaysAgo}`,
-    
     buildUrl('/character/popularity', ocid, dateParam),
     buildUrl('/character/hexamatrix-stat', ocid, dateParam),
     buildUrl('/character/cashitem-equipment', ocid, dateParam),
     buildUrl('/character/beauty-equipment', ocid, dateParam),
+    buildUrl('/character/android-equipment', ocid, dateParam),
   ];
 
   const responses: Response[] = [];
@@ -194,7 +193,7 @@ export const fetchCharacterData = async (characterName: string, apiKey: string, 
     unionRes, artifactRes, petRes, symbolRes, setRes, vmatrixRes, hexaRes, dojoRes,
     skill5Res, skill6Res,
     skill0Res, skill1Res, skill2Res, skill3Res, skill4Res,
-    basic7DaysRes, popularityRes, hexaStatRes, cashItemRes, beautyRes
+    basic7DaysRes, popularityRes, hexaStatRes, cashItemRes, beautyRes, androidRes
   ] = responses;
 
   // Basic validation - if these fail, the whole dashboard is useless
@@ -236,6 +235,7 @@ export const fetchCharacterData = async (characterName: string, apiKey: string, 
   const hexaMatrixStat = await safeJson(hexaStatRes);
   const cashItemEquipment = await safeJson(cashItemRes);
   const beautyEquipment = await safeJson(beautyRes);
+  const androidEquipment = await safeJson(androidRes);
 
   // Popularity handling
   if (popularityRes && popularityRes.ok) {
@@ -292,7 +292,8 @@ export const fetchCharacterData = async (characterName: string, apiKey: string, 
     character_basic_7days_ago: basic7Days,
     cashItemEquipment,
     beautyEquipment,
-    lastUpdated // 現在這是一個 YYYY-MM-DD 字串
+    androidEquipment,
+    lastUpdated
   };
 };
 

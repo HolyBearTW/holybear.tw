@@ -3,9 +3,12 @@ import { EquipmentItem, CharacterEquipment } from '../types';
 import EquipmentTooltip from './EquipmentTooltip';
 import PresetSwitcher from './PresetSwitcher';
 
+import { CharacterAndroidEquipment } from '../types';
+
 interface EquipmentGridProps {
   equipment: CharacterEquipment;
   characterImage?: string;
+  androidEquipment?: CharacterAndroidEquipment;
 }
 
 // Visual Layout Definition
@@ -80,16 +83,20 @@ const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'lef
     ? 'md:right-full md:mr-1 md:left-auto'
     : 'md:left-full md:ml-1 md:right-auto';
 
+  // Slot Android: 改回和其他裝備一致，顯示圖片
+  // (這段其實可以省略，直接用下方 return 即可，保留以便未來擴充)
+  // 其他格維持原本渲染
+  // Android 格子強制不壓縮且顯示
+  // 強制 Android 格子在所有寬度都顯示且不壓縮
+const extraAndroidClass = slotKey === 'Android' ? 'flex-shrink-0 min-w-10 min-h-10 sm:min-w-12 sm:min-h-12' : '';
   return (
     <div className="relative z-0 hover:z-50 group">
-      <div className={`w-10 h-10 sm:w-12 sm:h-12 ${bgColor} border-2 ${borderColor} rounded-md flex items-center justify-center relative overflow-hidden transition-all ${glow}`}>
+      <div className={`w-10 h-10 sm:w-12 sm:h-12 h-full ${bgColor} border-2 ${borderColor} rounded-md flex items-center justify-center relative overflow-hidden transition-all ${glow} ${extraAndroidClass}`}>
         {item ? (
           <>
-            <img src={item.item_icon} alt={item.item_name} className="w-8 h-8 sm:w-9 sm:h-9 object-contain z-10" />
-            
+            <img src={item.item_icon} alt={item.item_name} className="w-8 h-8 sm:w-9 sm:h-9 object-contain z-10 m-auto" />
             {/* Tiny Grade Indicator (Corner) */}
              {(item.potential_option_grade?.includes('Legendary') || item.potential_option_grade?.includes('傳說')) && <div className="absolute inset-0 bg-green-500/10 animate-pulse z-0" />}
-
             {/* Starforce */}
             {parseInt(item.starforce || '0') > 0 && (
                 <div className="absolute top-0 right-0 bg-yellow-500 text-black text-[9px] font-bold px-1 rounded-bl leading-none z-20 shadow-sm border-l border-b border-yellow-600">
@@ -101,7 +108,6 @@ const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'lef
           <span className="text-[10px] text-slate-700 select-none font-medium">{def?.label}</span>
         )}
       </div>
-
       {item && (
         <div className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[200] w-[90vw] max-w-[320px] max-h-[80vh] overflow-y-auto
                         hidden group-hover:block animate-in fade-in zoom-in-95 duration-200 shadow-2xl rounded-xl
@@ -113,7 +119,7 @@ const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'lef
   );
 };
 
-const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, characterImage }) => {
+const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, characterImage, androidEquipment }) => {
   // [重要修正] 防呆：如果 equipment 資料還沒進來，直接回傳 null，避免讀取 preset_no 崩潰
   if (!equipment) {
     return null; 
@@ -147,13 +153,46 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, characterImage
   const findItem = (slotKey: string) => {
     const def = SLOT_DEFINITIONS[slotKey];
     if (!def) return undefined;
-    
-    // 改為從 displayItems (當前選擇的預設) 中尋找
-    return displayItems.find((item: EquipmentItem) => {
-       const slot = normalize(item.item_equipment_slot);
-       const part = normalize(item.item_equipment_part);
-       return def.match.some(m => slot === normalize(m) || part === normalize(m));
+    // 先從 displayItems (當前選擇的預設) 中尋找
+    const found = displayItems.find((item: EquipmentItem) => {
+      const slot = normalize(item.item_equipment_slot);
+      const part = normalize(item.item_equipment_part);
+      return def.match.some(m => slot === normalize(m) || part === normalize(m));
     });
+    // 如果沒找到且是 Android 格，且有 androidEquipment，手動組裝一個 EquipmentItem
+    if (!found && slotKey === 'Android' && androidEquipment && androidEquipment.android_name) {
+
+      return {
+        item_equipment_part: 'android',
+        item_equipment_slot: 'android',
+        item_name: androidEquipment.android_name,
+        item_icon: androidEquipment.android_icon,
+        item_description: androidEquipment.android_description,
+        item_shape_name: '',
+        item_shape_icon: '',
+        item_gender: '',
+        item_total_option: {} as any,
+        item_base_option: {} as any,
+        item_add_option: {} as any,
+        item_etc_option: {} as any,
+        item_starforce_option: {} as any,
+        potential_option_grade: '',
+        additional_potential_option_grade: '',
+        potential_option_1: '',
+        potential_option_2: '',
+        potential_option_3: '',
+        additional_potential_option_1: '',
+        additional_potential_option_2: '',
+        additional_potential_option_3: '',
+        starforce: '',
+        scroll_upgrade: '',
+        starforce_scroll_flag: '',
+        item_level: 0,
+        special_ring_level: 0,
+        date_expire: '',
+      };
+    }
+    return found;
   };
 
   const unmatchedItems = displayItems.filter((item: EquipmentItem) => {
@@ -164,6 +203,11 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, characterImage
     );
   });
 
+  // Slot Android debug
+  const androidItem = findItem('Android');
+  if (androidItem) {
+
+  }
   return (
     <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner relative">
       <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
@@ -225,12 +269,10 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, characterImage
       <div className="flex gap-2">
           <div className="flex flex-col gap-2">
             {['Hat', 'Top', 'Bottom', 'Shoulder'].map(key => <Slot key={key} slotKey={key} item={findItem(key)} tooltipSide="left" />)}
-            {/* 機器人插在肩膀下方 */}
             <Slot slotKey="Android" item={findItem('Android')} tooltipSide="left" />
           </div>
           <div className="flex flex-col gap-2">
             {['Cape', 'Gloves', 'Shoes', 'Medal'].map(key => <Slot key={key} slotKey={key} item={findItem(key)} tooltipSide="left" />)}
-            {/* 心臟插在勳章下方 */}
             <Slot slotKey="Heart" item={findItem('Heart')} tooltipSide="left" />
             <div className="mt-2">
               <Slot slotKey="Badge" item={findItem('Badge')} tooltipSide="left" />
