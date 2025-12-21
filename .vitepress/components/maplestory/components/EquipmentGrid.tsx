@@ -155,12 +155,7 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, characterImage
     if (!def) return undefined;
     // Pendant2 只做精確比對
     if (slotKey === 'Pendant2' || slotKey === 'Pendant') {
-      const debugItems = displayItems.map((item: EquipmentItem) => ({
-        slot: item.item_equipment_slot,
-        part: item.item_equipment_part,
-        name: item.item_name
-      }));
-      console.log(`[DEBUG] findItem(${slotKey})`, debugItems);
+      // ...existing code...
       if (slotKey === 'Pendant2' || slotKey === 'Pendant') {
         // 只比對 slot
         return displayItems.find((item: EquipmentItem) => {
