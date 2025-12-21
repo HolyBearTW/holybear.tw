@@ -24,7 +24,8 @@ const SERVER_ICONS: Record<string, string> = {
   '殺人鯨': 'https://tw.hicdn.beanfun.com/beanfun/event/MapleStory/UnionWebRank/assets/img/sha_ren_jing.png',
   '賽蓮': 'https://tw.hicdn.beanfun.com/beanfun/event/MapleStory/UnionWebRank/assets/img/silien.png',
   '米特拉': 'https://tw.hicdn.beanfun.com/beanfun/event/MapleStory/UnionWebRank/assets/img/reboot.png',
-  'Reboot': 'https://tw.hicdn.beanfun.com/beanfun/event/MapleStory/UnionWebRank/assets/img/reboot.png'
+  'Reboot': 'https://tw.hicdn.beanfun.com/beanfun/event/MapleStory/UnionWebRank/assets/img/reboot.png',
+  '挑戰者': '/image/theme/ChallengerServer.png'
 };
 
 const getJobBackgroundMap = (jobName: string): string => {
