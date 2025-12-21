@@ -242,10 +242,10 @@ const CashEquipmentGrid: React.FC<CashEquipmentGridProps> = ({ cashEquipment, be
          {/* Left Column */}
          <div className="flex gap-2">
             <div className="flex flex-col gap-2">
-                <CashSlot label="戒指1" item={rings[0]} tooltipSide="right" />
-                <CashSlot label="戒指2" item={rings[1]} tooltipSide="right" />
-                <CashSlot label="戒指3" item={rings[2]} tooltipSide="right" />
                 <CashSlot label="戒指4" item={rings[3]} tooltipSide="right" />
+                <CashSlot label="戒指3" item={rings[2]} tooltipSide="right" />
+                <CashSlot label="戒指2" item={rings[1]} tooltipSide="right" />
+                <CashSlot label="戒指1" item={rings[0]} tooltipSide="right" />
             </div>
             <div className="flex flex-col gap-2">
                 <CashSlot label="臉飾" item={findByKeywords(['臉飾', 'Face'])} tooltipSide="right" />
