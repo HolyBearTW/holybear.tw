@@ -6,7 +6,7 @@ interface PresetSwitcherProps {
   onPresetChange: (p: number) => void;
   activePresetNo?: number | string;
   label?: string;
-  showBase?: boolean; // 新增控制開關：是否顯示 0 (現)
+  showBase?: boolean; // 新增控制開關：是否顯示 0
 }
 
 const PresetSwitcher: React.FC<PresetSwitcherProps> = ({ 
@@ -47,7 +47,7 @@ const PresetSwitcher: React.FC<PresetSwitcherProps> = ({
               `}
               title={num === 0 ? "當前實際穿戴 (Base)" : `預設 ${num}`}
             >
-              {num === 0 ? "現" : num}
+              {num === 0 ? "0" : num}
               {/* 綠點邏輯：
                   1. 如果 activeNum 存在且等於 num -> 亮燈
                   2. 如果是時裝(0)且沒有 activeNum -> 視為 0 生效 -> 亮燈

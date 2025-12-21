@@ -173,48 +173,44 @@ const CashSlot: React.FC<{ label: string; item?: CashItemEquipmentPreset; toolti
 };
 
 const CashEquipmentGrid: React.FC<CashEquipmentGridProps> = ({ cashEquipment, beautyEquipment, characterImage }) => {
-  const activePresetNo = cashEquipment.preset_no ? parseInt(cashEquipment.preset_no) : null;
-  
-  // 預設顯示 0 (現)，這樣最準確
-  const [selectedPreset, setSelectedPreset] = useState<number>(0);
-
+  const activePresetNo = cashEquipment.preset_no ? parseInt(cashEquipment.preset_no) : 0;
+  // 初始預設：如果有指定預設，直接選定該預設，否則顯示現
+  const [selectedPreset, setSelectedPreset] = useState<number>(activePresetNo);
   useEffect(() => {
-    setSelectedPreset(0);
+    setSelectedPreset(activePresetNo);
   }, [cashEquipment]);
 
-  const getPresetItems = (
-    base: CashItemEquipmentPreset[], 
-    p1: CashItemEquipmentPreset[], 
-    p2: CashItemEquipmentPreset[], 
-    p3: CashItemEquipmentPreset[], 
-    current: number
-  ) => {
-    // 0 就是 Base
-    if (current === 0) return base;
-    
-    if (current === 1) return p1 || [];
-    if (current === 2) return p2 || [];
-    if (current === 3) return p3 || [];
-    return []; 
-  };
 
-  const mainItems = getPresetItems(
-    cashEquipment.cash_item_equipment_base,
-    cashEquipment.cash_item_equipment_preset_1,
-    cashEquipment.cash_item_equipment_preset_2,
-    cashEquipment.cash_item_equipment_preset_3,
-    selectedPreset
-  );
+  // 合併邏輯：以現有裝備為主，預設有資料才覆蓋
+  function mergePreset(base: CashItemEquipmentPreset[], preset?: CashItemEquipmentPreset[]) {
+    if (!preset || preset.length === 0) return base || [];
+    const slotMap = new Map((base || []).map(item => [item.cash_item_equipment_slot, item]));
+    for (const item of preset) {
+      if (item && item.cash_item_equipment_slot) {
+        slotMap.set(item.cash_item_equipment_slot, item);
+      }
+    }
+    return Array.from(slotMap.values());
+  }
 
-  const additionalItems = getPresetItems(
-    cashEquipment.additional_cash_item_equipment_base,
-    cashEquipment.additional_cash_item_equipment_preset_1,
-    cashEquipment.additional_cash_item_equipment_preset_2,
-    cashEquipment.additional_cash_item_equipment_preset_3,
-    selectedPreset
-  );
-
-  let activeItems = [...(mainItems || []), ...(additionalItems || [])];
+  let mainItems: CashItemEquipmentPreset[] = [];
+  let additionalItems: CashItemEquipmentPreset[] = [];
+  if (selectedPreset === 0) {
+    mainItems = cashEquipment.cash_item_equipment_base || [];
+    additionalItems = cashEquipment.additional_cash_item_equipment_base || [];
+  } else {
+    const preset =
+      selectedPreset === 1 ? cashEquipment.cash_item_equipment_preset_1 :
+      selectedPreset === 2 ? cashEquipment.cash_item_equipment_preset_2 :
+      selectedPreset === 3 ? cashEquipment.cash_item_equipment_preset_3 : [];
+    const addPreset =
+      selectedPreset === 1 ? cashEquipment.additional_cash_item_equipment_preset_1 :
+      selectedPreset === 2 ? cashEquipment.additional_cash_item_equipment_preset_2 :
+      selectedPreset === 3 ? cashEquipment.additional_cash_item_equipment_preset_3 : [];
+    mainItems = mergePreset(cashEquipment.cash_item_equipment_base || [], preset || []);
+    additionalItems = mergePreset(cashEquipment.additional_cash_item_equipment_base || [], addPreset || []);
+  }
+  let activeItems = [...mainItems, ...additionalItems];
   
   const findByKeywords = (keywords: string[]) => {
       return activeItems.find(item => keywords.some(k => item.cash_item_equipment_slot === k || item.cash_item_equipment_slot.includes(k)));
@@ -232,13 +228,14 @@ const CashEquipmentGrid: React.FC<CashEquipmentGridProps> = ({ cashEquipment, be
          <span className="w-2 h-2 rounded-full bg-pink-500"></span> 時裝 (Cash Items)
       </h3>
       
-      {/* 這裡加入了 showBase={true} 以顯示 '現' 按鈕 */}
+      {/* 這裡加入了 showBase={true} 以顯示 '0' 按鈕 */}
       <PresetSwitcher 
         currentPreset={selectedPreset}
         onPresetChange={setSelectedPreset}
         activePresetNo={activePresetNo || undefined}
         label="時裝預設"
-        showBase={true} 
+        showBase={true}
+        baseLabel={"0"}
       />
       
       <div className="flex justify-center gap-6 mt-4">
