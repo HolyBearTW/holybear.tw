@@ -22,8 +22,8 @@ const SLOT_DEFINITIONS: Record<string, { label: string, match: string[] }> = {
   
   // Accessories (Left)
   'Pocket': { label: '口袋', match: ['pocketitem', 'pocket', '口袋道具'] },
-  'Pendant': { label: '墜1', match: ['pendant', 'pendant1', 'pendant 1', '墜飾'] },
-  'Pendant2': { label: '墜2', match: ['pendant2', 'pendant 2', '墜飾2'] },
+  'Pendant': { label: '墜1', match: ['pendant', 'pendant1', '墜飾', '墜飾1', '項鍊', '項鍊1'] },
+  'Pendant2': { label: '墜2', match: ['pendant2', '墜飾2', '項鍊2'] },
   'Belt': { label: '腰帶', match: ['belt', '腰帶'] },
   
   // Armor/Accessories (Right)
@@ -153,15 +153,36 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, characterImage
   const findItem = (slotKey: string) => {
     const def = SLOT_DEFINITIONS[slotKey];
     if (!def) return undefined;
-    // 先從 displayItems (當前選擇的預設) 中尋找
-    const found = displayItems.find((item: EquipmentItem) => {
+    // Pendant2 只做精確比對
+    if (slotKey === 'Pendant2' || slotKey === 'Pendant') {
+      const debugItems = displayItems.map((item: EquipmentItem) => ({
+        slot: item.item_equipment_slot,
+        part: item.item_equipment_part,
+        name: item.item_name
+      }));
+      console.log(`[DEBUG] findItem(${slotKey})`, debugItems);
+      if (slotKey === 'Pendant2' || slotKey === 'Pendant') {
+        // 只比對 slot
+        return displayItems.find((item: EquipmentItem) => {
+          const slot = normalize(item.item_equipment_slot);
+          return def.match.includes(slot);
+        });
+      }
+    }
+    // 其他欄位：先精確比對，再模糊 fallback
+    const exact = displayItems.find((item: EquipmentItem) => {
+      const slot = normalize(item.item_equipment_slot);
+      const part = normalize(item.item_equipment_part);
+      return def.match.includes(slot) || def.match.includes(part);
+    });
+    if (exact) return exact;
+    const fuzzy = displayItems.find((item: EquipmentItem) => {
       const slot = normalize(item.item_equipment_slot);
       const part = normalize(item.item_equipment_part);
       return def.match.some(m => slot === normalize(m) || part === normalize(m));
     });
-    // 如果沒找到且是 Android 格，且有 androidEquipment，手動組裝一個 EquipmentItem
-    if (!found && slotKey === 'Android' && androidEquipment && androidEquipment.android_name) {
-
+    if (fuzzy) return fuzzy;
+    if (slotKey === 'Android' && androidEquipment && androidEquipment.android_name) {
       return {
         item_equipment_part: 'android',
         item_equipment_slot: 'android',
@@ -192,7 +213,7 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, characterImage
         date_expire: '',
       };
     }
-    return found;
+    return undefined;
   };
 
   const unmatchedItems = displayItems.filter((item: EquipmentItem) => {
@@ -240,7 +261,7 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, characterImage
       {/* Left Columns (Accessories) */}
       <div className="flex gap-2">
         <div className="flex flex-col gap-2">
-          {['Ring1', 'Ring2', 'Ring3', 'Ring4', 'Belt'].map(key => <Slot key={key} slotKey={key} item={findItem(key)} tooltipSide="right" />)}
+          {['Ring4', 'Ring3', 'Ring2', 'Ring1', 'Belt'].map(key => <Slot key={key} slotKey={key} item={findItem(key)} tooltipSide="right" />)}
           <div className="mt-2">
              <Slot slotKey="Pocket" item={findItem('Pocket')} tooltipSide="right" />
           </div>
