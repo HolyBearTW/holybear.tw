@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { DashboardData, CharacterAndroidEquipment } from '../types';
 import { Zap, Star, Crown, Layers, PawPrint, Hexagon, Sword, Info, CheckSquare, Square } from 'lucide-react';
 import EquipmentGrid from './EquipmentGrid';
+import ExpTrendChart from './ExpTrendChart';
 
 interface CharacterDetailsProps {
   data: DashboardData;
+  apiKey: string;
 }
 
 // --- 六轉核心設定檔 (含碎片與靈魂艾爾達消耗) ---
@@ -116,22 +118,20 @@ const calculateHexaProgress = (hexaMatrix: any, includeJanus: boolean) => {
 
 // 標題元件
 const SectionHeader: React.FC<{ 
-  icon: React.ReactNode; 
-  title: string; 
+  icon: React.ReactNode;
+  title: string;
   presetState?: {
     current: number;
     setCurrent: (n: number) => void;
     active?: number;
   }
-}> = ({ icon, title, presetState }) => (
-  <div className="flex items-center justify-between mb-4">
-    <div className="flex items-center gap-2">
-      <div className="text-yellow-500">{icon}</div>
-      <h3 className="text-lg font-bold text-slate-200">{title}</h3>
-    </div>
-    
+}>
+= ({ icon, title, presetState }) => (
+  <div className="flex items-center gap-2 mb-4">
+    <span className="text-yellow-500 flex-shrink-0">{icon}</span>
+    <h3 className="text-lg font-bold text-slate-200 flex-shrink-0">{title}</h3>
     {presetState && (
-      <div className="flex gap-1">
+      <div className="ml-2 flex gap-1">
         {[1, 2, 3].map((num) => (
           <button
             key={num}
@@ -222,7 +222,19 @@ const ItemWithTooltip: React.FC<{
   );
 };
 
-const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data }) => {
+const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => {
+  const [historyData, setHistoryData] = useState<any[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  useEffect(() => {
+    if (!data?.basic?.character_name || !apiKey) return;
+    setHistoryLoading(true);
+    import('../services/nexonService').then(({ fetchWeeklyHistory }) => {
+      fetchWeeklyHistory(data.basic.character_name, apiKey)
+        .then(history => setHistoryData(history || []))
+        .catch(err => console.error('History fetch failed', err))
+        .finally(() => setHistoryLoading(false));
+    });
+  }, [data?.basic?.character_name, apiKey]);
     // 根據當前 preset_no，取得對應的 android_preset_X
     const presetNo = data.equipment?.preset_no || 1;
     const androidEquipment = data.androidEquipment?.[`android_preset_${presetNo}`] || data.androidEquipment?.android_preset_1;
@@ -278,6 +290,21 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data }) => {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+
+      {/* 近7天經驗值趨勢 + 極限屬性區塊，並排 */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 col-span-2">
+        <div className="bg-[#161b22] p-6 rounded-xl min-w-0 h-full">
+          <SectionHeader icon={<Star className="w-5 h-5 text-green-400" />} title="近7天經驗值趨勢" />
+          <ExpTrendChart 
+            key={historyData.length}
+            historyData={historyData}
+            loading={historyLoading}
+          />
+        </div>
+        <div className="bg-[#161b22] p-6 rounded-xl min-w-0 h-full">
+          <HyperStatSection hyperStat={hyperStat} />
+        </div>
+      </div>
       
 
       {/* 裝備格（含機器人） */}
@@ -286,9 +313,8 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data }) => {
         <EquipmentGrid equipment={data.equipment} characterImage={data.basic?.character_image} androidEquipment={androidEquipment} />
       </div> */}
 
-      {/* 連結技能 & 極限屬性 (左右並排) */}
+      {/* 連結技能 */}
       <LinkSkillSection linkSkill={linkSkill} />
-      <HyperStatSection hyperStat={hyperStat} />
 
       {/* Union & Artifact */}
       <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner">
@@ -944,9 +970,9 @@ const HyperStatSection = ({ hyperStat }: { hyperStat: any }) => {
     .sort((a: any, b: any) => b.stat_level - a.stat_level);
 
   return (
-    <div className="bg-[#161b22] border border-slate-800 rounded-xl p-6 shadow-inner lg:col-span-2">
+    <>
       <SectionHeader 
-        icon={<Zap />} 
+        icon={<CheckSquare />} 
         title="極限屬性 (Hyper Stats)" 
         presetState={{
           current: selectedPreset,
@@ -956,7 +982,7 @@ const HyperStatSection = ({ hyperStat }: { hyperStat: any }) => {
       />
       <div className="flex justify-between items-center mb-4 px-1">
          <span className="text-xs text-slate-400 bg-slate-800 px-2 py-1 rounded border border-slate-700">
-            剩餘點數: <span className="text-indigo-400 font-mono font-bold">{getRemainPoints()}</span>
+           剩餘點數: <span className="text-indigo-400 font-mono font-bold">{getRemainPoints()}</span>
          </span>
       </div>
       
@@ -973,7 +999,7 @@ const HyperStatSection = ({ hyperStat }: { hyperStat: any }) => {
            </div>
         )}
       </div>
-    </div>
+    </>
   );
 };
 

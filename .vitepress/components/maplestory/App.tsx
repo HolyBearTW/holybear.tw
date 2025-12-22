@@ -633,6 +633,16 @@ const App: React.FC = () => {
                       <div className="flex flex-wrap justify-center items-center gap-2 text-xs text-slate-400 mb-6">
                          <span className="flex items-center gap-1"><ThumbsUp className="w-3 h-3" /> {data.stat.pop || 0}</span>
                          <span className="text-slate-600">|</span>
+                         <span className="flex items-center gap-1">
+                           {data.basic.character_gender === 'male' || data.basic.character_gender === '男' ? (
+                             <span style={{color:'#3b82f6'}}>♂</span>
+                           ) : data.basic.character_gender === 'female' || data.basic.character_gender === '女' ? (
+                             <span style={{color:'#f472b6'}}>♀</span>
+                           ) : (
+                             <span style={{color:'#64748b'}}>?</span>
+                           )}
+                         </span>
+                         <span className="text-slate-600">|</span>
                          <span>{data.basic.character_guild_name || '無公會'}</span>
                          <span className="text-slate-600">|</span>
                          <span className="flex items-center gap-1">
@@ -880,7 +890,10 @@ const App: React.FC = () => {
                `}</style>
            </div>
 
-          <CharacterDetails data={data} />
+          <CharacterDetails 
+           data={data} 
+           apiKey={apiKey || ''} // 傳入 apiKey
+          />
           {showShareModal && <ShareModal characterName={data.basic.character_name} onClose={() => setShowShareModal(false)} />}
           </>
         )}
@@ -898,6 +911,7 @@ const App: React.FC = () => {
               <div className="vp-tip custom-vp-tip p-4 sm:p-6 rounded-lg border-l-4 border-indigo-400 bg-indigo-50/90 text-indigo-900 dark:bg-[#23263a] dark:text-indigo-200 dark:border-indigo-500 shadow-sm mx-auto">
                 <div className="font-bold mb-1 text-indigo-700 dark:text-indigo-300">更新日誌</div>
                 <ul className="list-disc pl-5 text-sm space-y-1">
+                  <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/22</span> 新增近 7 天經驗值趨勢統計元件，用於視覺化經驗成長趨勢</li>
                   <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/21</span> 重構核心技能區塊的 HEXA 矩陣進度演算法，並新增是否計算靈魂亞努斯選項。</li>
                   <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/21</span> 新增機器人裝備欄位。</li>
                   <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/21</span> 時裝格子支援即時染色預覽。</li>
