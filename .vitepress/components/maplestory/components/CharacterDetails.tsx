@@ -41,7 +41,7 @@ const HEXA_SETTINGS = {
     quantity: 4, 
     keywords: ['enhancement', '強化'],
     costs: [75, 23, 27, 30, 34, 38, 42, 45, 49, 150, 60, 68, 75, 83, 90, 98, 105, 113, 120, 263, 128, 135, 143, 150, 158, 165, 173, 180, 188, 375],
-    erdaCosts: [4, 1, 1, 1, 2, 2, 2, 3, 3, 8, 3, 3, 3, 3, 3, 3, 3, 3, 4, 12, 4, 4, 4, 4, 5, 5, 5, 6, 15]
+    erdaCosts: [4, 1, 1, 1, 2, 2, 2, 3, 3, 8, 3, 3, 3, 3, 3, 3, 3, 3, 4, 12, 4, 4, 4, 4, 4, 5, 5, 5, 6, 15]
   },
   COMMON: {
     key: 'COMMON',
@@ -202,6 +202,10 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
     });
   }, [data?.basic?.character_name, apiKey]);
 
+  // 1. 還原 Android 裝備邏輯
+  const presetNo = data.equipment?.preset_no || 1;
+  const androidEquipment = data.androidEquipment?.[`android_preset_${presetNo}`] || data.androidEquipment?.android_preset_1;
+
   const { union, unionArtifact, symbolEquipment, petEquipment, setEffect, vMatrix, hexaMatrix, hexaMatrixStat, dojo, linkSkill, skill0, skill1, skill2, skill3, skill4, skillHyper, skill5, skill6, hyperStat } = data;
   const [includeJanus, setIncludeJanus] = useState(true);
 
@@ -242,11 +246,10 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
   };
 
   return (
-    // FIX: 使用 flex-col 在手機上強制垂直排列，只有在 lg (電腦版) 才切換為 grid 雙欄
+    // FIX: 使用 flex-col 強制手機垂直排列，lg 切換回 grid
     <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 mt-6">
 
-      {/* 近7天經驗值趨勢 + 極限屬性區塊，並排 */}
-      {/* 寬度設為 w-full 確保在 flex column 下佔滿寬度，電腦版佔 2 格 */}
+      {/* 近7天經驗值趨勢 + 極限屬性區塊 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full lg:col-span-2">
         <div className="bg-[#161b22] p-6 rounded-xl min-w-0 h-full">
           <SectionHeader icon={<Star className="w-5 h-5 text-green-400" />} title="近7天經驗值趨勢" />
@@ -257,12 +260,12 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
         </div>
       </div>
 
-      {/* 連結技能 - 強制 w-full 以防被擠壓，min-w-0 防止內容撐開 */}
+      {/* 連結技能 - w-full + min-w-0 */}
       <div className="w-full lg:col-span-2 min-w-0">
         <LinkSkillSection linkSkill={linkSkill} />
       </div>
 
-      {/* Union & Artifact - min-w-0 防止 flex 內的擠壓 */}
+      {/* Union & Artifact - w-full + min-w-0 */}
       <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0">
         <SectionHeader icon={<Layers />} title="聯盟 & 神器" />
         <div className="space-y-4">
@@ -302,6 +305,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
                {(() => {
                    const effects = unionArtifact.union_artifact_effect;
                    if (!effects || effects.length === 0) return null;
+                   
                    const getStatValue = (name: string, lv: number) => {
                        if (name.match(/(?:Boss|BOSS).*傷害/i) || name === '傷害' || name === 'Damage') return lv <= 5 ? lv : 5 + (lv - 5) * 2;
                        if (name.includes('無視') || name.includes('Ignore') || name.includes('加持') || name.includes('Buff') || name.includes('爆擊率') || name.includes('Crit Rate')) return lv * 2;
@@ -311,9 +315,25 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
                        if (name.includes('經驗值') || name.includes('Experience')) return lv <= 8 ? lv : 8 + (lv - 8) * 2;
                        return 0;
                    };
+                   
+                   // 2. 還原 Artifact 名稱處理邏輯
                    const getCleanName = (name: string) => {
+                       if (name.includes('全屬性')) return '全屬性';
+                       if (name.match(/(?:Boss|BOSS).*傷害/i)) return 'BOSS 傷害';
+                       if (name.includes('無視') && name.includes('防禦')) return '無視防禦率';
+                       if (name.includes('爆擊傷害')) return '爆擊傷害';
+                       if (name.includes('爆擊率') || name.includes('爆擊機率')) return '爆擊率';
+                       if ((name.includes('攻擊力') || name.includes('Attack')) && (name.includes('魔力') || name.includes('Magic'))) return '攻擊力 & 魔力';
+                       if (name.includes('攻擊力') || name.includes('Attack')) return '攻擊力';
+                       if (name.includes('魔力') || name.includes('Magic')) return '魔法攻擊力';
+                       if (name.includes('經驗值')) return '獲得經驗值';
+                       if (name.includes('Buff') || name.includes('加持')) return 'Buff 持續時間';
+                       if (name.includes('道具') || name.includes('掉落')) return '道具掉落率';
+                       if (name.includes('楓幣')) return '楓幣獲得量';
+                       if (name.includes('傷害')) return '傷害';
                        return name.replace(/[0-9.+\-%]/g, '').replace(/增加/g, '').trim();
                    };
+
                    return (
                        <div className="bg-purple-900/20 border border-purple-500/30 rounded-lg p-3 mt-2">
                            <h4 className="text-xs font-bold text-purple-300 mb-2 flex items-center gap-2"><Star className="w-3 h-3 text-purple-400" /> 神器效果總和</h4>
@@ -338,7 +358,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
         </div>
       </div>
 
-      {/* Symbols - min-w-0 */}
+      {/* Symbols - w-full + min-w-0 */}
       <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0">
         <SectionHeader icon={<Hexagon />} title="符文 & 力量" />
         {symbolEquipment && (
@@ -348,7 +368,6 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
             ))}
           </div>
         )}
-        {/* Symbol Summary */}
         {symbolEquipment && (() => {
           const parseApiNumber = (val: string | undefined | null): number => {
             if (!val) return 0;
@@ -410,7 +429,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
         })()}
       </div>
 
-      {/* Pets - min-w-0 */}
+      {/* Pets - w-full + min-w-0 */}
       <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0">
         <SectionHeader icon={<PawPrint />} title="寵物資訊" />
         {petEquipment ? (
@@ -439,7 +458,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
         ) : (<div className="text-slate-500 text-sm text-center py-4">無寵物資料</div>)}
       </div>
 
-      {/* Dojo - min-w-0 */}
+      {/* Dojo - w-full + min-w-0 */}
       <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0">
            <SectionHeader icon={<Sword />} title="武陵道場" />
            {dojo ? (
@@ -451,7 +470,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
            ) : (<div className="text-slate-500 text-sm text-center py-10">無武陵道場紀錄</div>)}
       </div>
 
-      {/* Set Effects - min-w-0 */}
+      {/* Set Effects - w-full + min-w-0 */}
       <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0">
         <SectionHeader icon={<Crown />} title="套裝效果" />
         <div className="space-y-3">
@@ -464,7 +483,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
         </div>
       </div>
 
-      {/* Skills (V/Hexa) - min-w-0 */}
+      {/* Skills (V/Hexa) - w-full + min-w-0 */}
       <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0">
         {hexaMatrix && hexaMatrix.character_hexa_core_equipment && hexaMatrix.character_hexa_core_equipment.length > 0 && (
           <div className="mb-6">
@@ -510,7 +529,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
         )}
       </div>
 
-      {/* HEXA Stats - min-w-0, w-full, lg:col-span-2 */}
+      {/* HEXA Stats - w-full + min-w-0 */}
       {hexaMatrixStat && (
         <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full lg:col-span-2 min-w-0">
             <SectionHeader icon={<Hexagon />} title="HEXA 屬性" />
