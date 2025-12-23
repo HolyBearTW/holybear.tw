@@ -43,7 +43,7 @@ const HEXA_SETTINGS = {
   COMMON: {
     key: 'COMMON', quantity: 1, keywords: ['common', '共用'],
     costs: [125, 38, 44, 50, 57, 63, 69, 75, 82, 300, 110, 124, 138, 152, 165, 179, 193, 207, 220, 525, 234, 248, 262, 275, 289, 303, 317, 330, 344, 750],
-    erdaCosts: [7, 2, 2, 2, 3, 3, 3, 5, 5, 14, 5, 5, 6, 6, 6, 6, 6, 6, 7, 17, 7, 7, 7, 7, 9, 9, 9, 10, 20]
+    erdaCosts: [7, 2, 2, 2, 3, 3, 3, 5, 5, 14, 5, 5, 6, 6, 6, 6, 6, 6, 7, 17, 7, 7, 7, 7, 7, 9, 9, 9, 10, 20]
   }
 };
 
@@ -315,7 +315,7 @@ const HyperStatSection = ({ hyperStat }: { hyperStat: any }) => {
             <div className="absolute top-0 right-0 bg-indigo-600/80 text-white text-[10px] px-2 py-0.5 rounded-bl font-bold backdrop-bl-sm">Lv.{stat.stat_level}</div>
             <span className="text-slate-300 whitespace-nowrap">{stat.stat_type}</span>
             {stat.stat_increase && (
-              <div className="text-xs text-green-400 font-mono mt-1">{typeof stat.stat_increase === 'string' && stat.stat_increase.match(/%$/) ? `+${stat.stat_increase}` : ["爆擊率","爆擊傷害","無視防禦率","BOSS傷害","傷害","全屬性","獲得經驗值"].some(k=>stat.stat_type.includes(k)) ? `+${stat.stat_increase}%` : `+${stat.stat_increase}`}</div>
+              <div className="text-xs text-green-400 font-mono mt-1">{typeof stat.stat_increase === 'string' && stat.stat_increase.match(/%$/) ? `${stat.stat_increase}` : ["爆擊率","爆擊傷害","無視防禦率","BOSS傷害","傷害","全屬性","獲得經驗值"].some(k=>stat.stat_type.includes(k)) ? `${stat.stat_increase}` : `${stat.stat_increase}`}</div>
             )}
           </div>
         ))}
