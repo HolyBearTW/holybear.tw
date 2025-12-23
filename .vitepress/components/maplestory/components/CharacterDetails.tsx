@@ -8,7 +8,7 @@ interface CharacterDetailsProps {
   apiKey: string;
 }
 
-// 神器水晶圖片對應表（直接寫在本檔案內）
+// 神器水晶圖片對應表
 const artifactCrystalImages = [
   '/image/theme/artifact/Artifact1.png', // 菇菇寶貝
   '/image/theme/artifact/Artifact2.png', // 綠水靈
@@ -20,19 +20,15 @@ const artifactCrystalImages = [
   '/image/theme/artifact/Artifact8.png', // 粉豆
 ];
 
-// --- 六轉核心設定檔 (含碎片與靈魂艾爾達消耗) ---
+// --- 六轉核心設定檔 ---
 const HEXA_SETTINGS = {
-  // 技能核心 (Skill Core)
   SKILL: {
     key: 'SKILL',
     quantity: 1, 
     keywords: ['skill', '技能'],
-    // 碎片消耗 (Lv1-30)
     costs: [0, 30, 35, 40, 45, 50, 55, 60, 65, 200, 80, 90, 100, 110, 120, 130, 140, 150, 160, 350, 170, 180, 190, 200, 210, 220, 230, 240, 250, 500],
-    // 靈魂艾爾達消耗 (Lv1-30)
     erdaCosts: [0, 1, 1, 1, 2, 2, 2, 3, 3, 10, 3, 3, 4, 4, 4, 4, 4, 4, 5, 15, 5, 5, 5, 5, 5, 6, 6, 6, 7, 20]
   },
-  // 精通核心 (Mastery Core)
   MASTERY: {
     key: 'MASTERY',
     quantity: 4, 
@@ -40,7 +36,6 @@ const HEXA_SETTINGS = {
     costs: [50, 15, 18, 20, 23, 25, 28, 30, 33, 100, 40, 45, 50, 55, 60, 65, 70, 75, 80, 175, 85, 90, 95, 100, 105, 110, 115, 120, 125, 250],
     erdaCosts: [3, 1, 1, 1, 1, 1, 1, 2, 2, 5, 2, 2, 2, 2, 2, 2, 2, 2, 3, 8, 3, 3, 3, 3, 3, 3, 3, 3, 4, 10]
   },
-  // 強化核心 (Enhancement Core)
   ENHANCEMENT: {
     key: 'ENHANCEMENT',
     quantity: 4, 
@@ -48,7 +43,6 @@ const HEXA_SETTINGS = {
     costs: [75, 23, 27, 30, 34, 38, 42, 45, 49, 150, 60, 68, 75, 83, 90, 98, 105, 113, 120, 263, 128, 135, 143, 150, 158, 165, 173, 180, 188, 375],
     erdaCosts: [4, 1, 1, 1, 2, 2, 2, 3, 3, 8, 3, 3, 3, 3, 3, 3, 3, 3, 4, 12, 4, 4, 4, 4, 4, 5, 5, 5, 6, 15]
   },
-  // 共用核心 (Common Core / Janus)
   COMMON: {
     key: 'COMMON',
     quantity: 1, 
@@ -58,48 +52,32 @@ const HEXA_SETTINGS = {
   }
 };
 
-// 計算六轉進度 (自動化版 - 含剩餘消耗、亞努斯偵測與排除功能)
 const calculateHexaProgress = (hexaMatrix: any, includeJanus: boolean) => {
   if (!hexaMatrix || !hexaMatrix.character_hexa_core_equipment) {
     return { 
-      current: 0, 
-      total: 1, 
-      percent: 0, 
-      currentErda: 0,
-      remainingFragments: 0,
-      remainingErda: 0,
-      hasJanus: false
+      current: 0, total: 1, percent: 0, currentErda: 0, remainingFragments: 0, remainingErda: 0, hasJanus: false
     };
   }
 
   let totalFragmentsUsed = 0;
   let totalErdaUsed = 0;
-   
   let grandTotalFragments = 0;
   let grandTotalErda = 0;
   let hasJanus = false;
 
-  // 1. 計算分母 (理論畢業總需求)
   Object.values(HEXA_SETTINGS).forEach(setting => {
-    // 如果不包含亞努斯，且當前設定是共用核心，則跳過
     if (!includeJanus && setting.key === 'COMMON') return;
-
     const costPerCore = setting.costs.reduce((a, b) => a + b, 0);
     const erdaPerCore = setting.erdaCosts.reduce((a, b) => a + b, 0);
-    
     grandTotalFragments += costPerCore * setting.quantity;
     grandTotalErda += erdaPerCore * setting.quantity;
   });
 
-  // 2. 計算分子 (實際已消耗)
   hexaMatrix.character_hexa_core_equipment.forEach((core: any) => {
     const level = parseInt(core.hexa_core_level, 10);
     const type = (core.hexa_core_type || '').toLowerCase();
     
-    // 偵測是否持有靈魂亞努斯 (共用核心) - 僅作標記用，不受 includeJanus 影響
-    if (HEXA_SETTINGS.COMMON.keywords.some(k => type.includes(k))) {
-      hasJanus = true;
-    }
+    if (HEXA_SETTINGS.COMMON.keywords.some(k => type.includes(k))) hasJanus = true;
 
     let targetSetting = null;
     if (HEXA_SETTINGS.SKILL.keywords.some(k => type.includes(k))) targetSetting = HEXA_SETTINGS.SKILL;
@@ -107,7 +85,6 @@ const calculateHexaProgress = (hexaMatrix: any, includeJanus: boolean) => {
     else if (HEXA_SETTINGS.ENHANCEMENT.keywords.some(k => type.includes(k))) targetSetting = HEXA_SETTINGS.ENHANCEMENT;
     else if (HEXA_SETTINGS.COMMON.keywords.some(k => type.includes(k))) targetSetting = HEXA_SETTINGS.COMMON;
 
-    // 如果找到了設定，且 (要包含亞努斯 或者 該核心不是共用核心)
     if (targetSetting && (includeJanus || targetSetting.key !== 'COMMON')) {
       for (let i = 0; i < level; i++) {
         totalFragmentsUsed += targetSetting.costs[i] || 0;
@@ -127,17 +104,11 @@ const calculateHexaProgress = (hexaMatrix: any, includeJanus: boolean) => {
   };
 };
 
-// 標題元件
 const SectionHeader: React.FC<{ 
   icon: React.ReactNode;
   title: string;
-  presetState?: {
-    current: number;
-    setCurrent: (n: number) => void;
-    active?: number;
-  }
-}>
-= ({ icon, title, presetState }) => (
+  presetState?: { current: number; setCurrent: (n: number) => void; active?: number; }
+}> = ({ icon, title, presetState }) => (
   <div className="flex items-center gap-2 mb-4">
     <span className="text-yellow-500 flex-shrink-0">{icon}</span>
     <h3 className="text-lg font-bold text-slate-200 flex-shrink-0">{title}</h3>
@@ -166,7 +137,6 @@ const SectionHeader: React.FC<{
   </div>
 );
 
-// Link Skill Data Logic
 const LINK_SKILL_DATA: Record<string, (lv: number) => Record<string, number>> = {
   '狂暴鬥氣': (lv) => ({ '傷害': lv * 5 }),
   '惡魔之怒': (lv) => ({ 'BOSS 傷害': lv === 1 ? 10 : 15 }),
@@ -195,34 +165,19 @@ const CONDITIONAL_SKILLS = [
 ];
 
 const ItemWithTooltip: React.FC<{ 
-  icon?: string; 
-  name: string; 
-  level: number; 
-  sub?: string; 
-  borderColor?: string;
-  textColor?: string;
+  icon?: string; name: string; level: number; sub?: string; borderColor?: string; textColor?: string;
 }> = ({ icon, name, level, sub, borderColor = 'border-slate-700', textColor = 'text-blue-400' }) => {
   const [isOpen, setIsOpen] = useState(false);
-
   return (
     <div 
       className={`bg-slate-900 p-2 rounded-lg border ${borderColor} flex flex-col items-center text-center relative group cursor-pointer select-none`}
       onClick={() => setIsOpen(!isOpen)}
       onMouseLeave={() => setIsOpen(false)}
     >
-      {icon ? (
-          <img src={icon} alt={name} className="w-8 h-8 mb-1 rounded z-10 object-contain" />
-      ) : (
-          <div className="w-8 h-8 mb-1 bg-slate-800 rounded flex items-center justify-center text-[10px] text-slate-600 z-10">?</div>
-      )}
-      
+      {icon ? <img src={icon} alt={name} className="w-8 h-8 mb-1 rounded z-10 object-contain" /> : <div className="w-8 h-8 mb-1 bg-slate-800 rounded flex items-center justify-center text-[10px] text-slate-600 z-10">?</div>}
       <div className="text-xs text-slate-300 leading-tight z-10 truncate w-full px-1">{name}</div>
-      <div className={`text-xs font-bold ${textColor} z-10`}>
-        Lv.{level} {sub && <span className="text-[9px] text-slate-500">({sub})</span>}
-      </div>
-
-      <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-[#1a1d24] border border-slate-600 rounded-lg shadow-2xl p-3 z-50 
-                      ${isOpen ? 'block' : 'hidden group-hover:block'} animate-in fade-in zoom-in-95 duration-200 pointer-events-none`}>
+      <div className={`text-xs font-bold ${textColor} z-10`}>Lv.{level} {sub && <span className="text-[9px] text-slate-500">({sub})</span>}</div>
+      <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-[#1a1d24] border border-slate-600 rounded-lg shadow-2xl p-3 z-50 ${isOpen ? 'block' : 'hidden group-hover:block'} animate-in fade-in zoom-in-95 duration-200 pointer-events-none`}>
          <div className="flex flex-col items-center">
             {icon && <img src={icon} className="w-10 h-10 mb-2 bg-slate-800 rounded p-1" />}
             <div className="text-sm font-bold text-white mb-1 break-words w-full leading-tight">{name}</div>
@@ -246,17 +201,9 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
         .finally(() => setHistoryLoading(false));
     });
   }, [data?.basic?.character_name, apiKey]);
-    // 根據當前 preset_no，取得對應的 android_preset_X
-    const presetNo = data.equipment?.preset_no || 1;
-    const androidEquipment = data.androidEquipment?.[`android_preset_${presetNo}`] || data.androidEquipment?.android_preset_1;
-  const { 
-    union, unionArtifact, symbolEquipment, petEquipment, setEffect, 
-    vMatrix, hexaMatrix, hexaMatrixStat, dojo, linkSkill, 
-    skill0, skill1, skill2, skill3, skill4, skillHyper, skill5, skill6,
-    hyperStat 
-  } = data;
 
-  // 狀態：是否包含靈魂亞努斯 (預設為 true)
+  const { union, unionArtifact, symbolEquipment, petEquipment, setEffect, vMatrix, hexaMatrix, hexaMatrixStat, dojo, linkSkill, skill0, skill1, skill2, skill3, skill4, skillHyper, skill5, skill6, hyperStat } = data;
+
   const [includeJanus, setIncludeJanus] = useState(true);
 
   const findSkillIcon = (name: string) => {
@@ -268,9 +215,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
           if (!found) found = skills.character_skill.find((s: any) => cleanName.includes(s.skill_name) || s.skill_name.includes(cleanName));
           return found?.skill_icon;
       };
-      return searchIn(skill6) || searchIn(skill5) || searchIn(skillHyper) || 
-             searchIn(skill4) || searchIn(skill3) || searchIn(skill2) || 
-             searchIn(skill1) || searchIn(skill0);
+      return searchIn(skill6) || searchIn(skill5) || searchIn(skillHyper) || searchIn(skill4) || searchIn(skill3) || searchIn(skill2) || searchIn(skill1) || searchIn(skill0);
   };
 
   const calculateHexaStatValue = (name: string, level: number, isMain: boolean = false): number => {
@@ -293,9 +238,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
     const val = calculateHexaStatValue(name, level, isMain);
     if (val === 0 && level > 0) return `Lv.${level}`;
     if (val === 0) return '';
-    const isPercent = name.toLowerCase().includes('boss') || name.includes('無視') || name.includes('防禦') || 
-                      name.includes('爆擊傷害') || name.includes('Critical') || 
-                      name === '傷害' || name === 'Damage';
+    const isPercent = name.toLowerCase().includes('boss') || name.includes('無視') || name.includes('防禦') || name.includes('爆擊傷害') || name.includes('Critical') || name === '傷害' || name === 'Damage';
     return isPercent ? `+${val.toFixed(2)}%` : `+${val}`;
   };
 
@@ -306,11 +249,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 col-span-2">
         <div className="bg-[#161b22] p-6 rounded-xl min-w-0 h-full">
           <SectionHeader icon={<Star className="w-5 h-5 text-green-400" />} title="近7天經驗值趨勢" />
-          <ExpTrendChart 
-            key={historyData.length}
-            historyData={historyData}
-            loading={historyLoading}
-          />
+          <ExpTrendChart key={historyData.length} historyData={historyData} loading={historyLoading} />
         </div>
         <div className="bg-[#161b22] p-6 rounded-xl min-w-0 h-full">
           <HyperStatSection hyperStat={hyperStat} />
@@ -342,16 +281,12 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
                     {unionArtifact?.union_artifact_level ?? unionArtifact?.level ?? union?.union_artifact_level ?? '-'}
                   </span>
                </div>
-               {/* FIX: grid-cols-2 改為 grid-cols-1 sm:grid-cols-2 以適應手機版面 */}
+               {/* FIX: Artifact List: grid-cols-1 on mobile, sm:grid-cols-2 */}
                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                  {unionArtifact.union_artifact_crystal.map((crystal, idx) => (
                            <div key={idx} className="bg-slate-900/50 p-2 rounded border border-slate-700 text-xs flex flex-row items-center min-h-[90px]">
                              <div className="flex-shrink-0 w-16 h-16 flex items-center justify-center">
-                               <img
-                                 src={artifactCrystalImages[idx]}
-                                 alt={crystal.name}
-                                 className="w-16 h-16 object-contain rounded bg-slate-800 border border-purple-400/40"
-                               />
+                               <img src={artifactCrystalImages[idx]} alt={crystal.name} className="w-16 h-16 object-contain rounded bg-slate-800 border border-purple-400/40" />
                              </div>
                              <div className="flex-1 ml-2">
                                <div className="text-purple-300 font-bold mb-1">{crystal.name} Lv.{crystal.level}</div>
@@ -366,7 +301,6 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
                {(() => {
                    const effects = unionArtifact.union_artifact_effect;
                    if (!effects || effects.length === 0) return null;
-
                    const getStatValue = (name: string, lv: number) => {
                        if (name.match(/(?:Boss|BOSS).*傷害/i) || name === '傷害' || name === 'Damage') return lv <= 5 ? lv : 5 + (lv - 5) * 2;
                        if (name.includes('無視') || name.includes('Ignore') || name.includes('加持') || name.includes('Buff') || name.includes('爆擊率') || name.includes('Crit Rate')) return lv * 2;
@@ -376,7 +310,6 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
                        if (name.includes('經驗值') || name.includes('Experience')) return lv <= 8 ? lv : 8 + (lv - 8) * 2;
                        return 0;
                    };
-
                    const getCleanName = (name: string) => {
                        if (name.includes('全屬性')) return '全屬性';
                        if (name.match(/(?:Boss|BOSS).*傷害/i)) return 'BOSS 傷害';
@@ -399,7 +332,8 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
                            <h4 className="text-xs font-bold text-purple-300 mb-2 flex items-center gap-2">
                                <Star className="w-3 h-3 text-purple-400" /> 神器效果總和
                            </h4>
-                           <div className="grid grid-cols-2 gap-2">
+                           {/* FIX: Artifact Effects: grid-cols-1 on mobile */}
+                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                {effects.map((eff, idx) => {
                                    const val = getStatValue(eff.name, eff.level);
                                    if (val === 0) return null;
@@ -425,54 +359,32 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
       <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner">
         <SectionHeader icon={<Hexagon />} title="符文 & 力量" />
         {symbolEquipment && (
-          // FIX: 加入 sm:grid-cols-4，手機版預設 grid-cols-3
+          // FIX: grid-cols-3 on mobile (icons are small), sm:grid-cols-4
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
             {symbolEquipment.symbol.map((sym, idx) => (
-              <ItemWithTooltip 
-                key={idx}
-                icon={sym.symbol_icon}
-                name={sym.symbol_name}
-                level={sym.symbol_level}
-              />
+              <ItemWithTooltip key={idx} icon={sym.symbol_icon} name={sym.symbol_name} level={sym.symbol_level} />
             ))}
           </div>
         )}
-{/* summary block: 符文裝備總合 + 額外加成顯示 */}
+{/* summary block */}
 {symbolEquipment && (() => {
-
-  // 安全轉換字串為數字
   const parseApiNumber = (val: string | undefined | null): number => {
     if (!val) return 0;
     const cleanVal = String(val).replace(/[^0-9.-]/g, '');
     const num = Number(cleanVal);
     return isNaN(num) ? 0 : num;
   };
-
   const symbols = symbolEquipment.symbol || [];
-
-  // --- 1. 計算裝備提供的數值 (Equipment Sum) ---
   let arcData = { force: 0, stat: 0 };
   let autData = { force: 0, stat: 0 };
   let rates = { drop: 0, meso: 0, exp: 0 };
-
   symbols.forEach(sym => {
     const force = parseApiNumber(sym.symbol_force);
     const name = sym.symbol_name || '';
-
-    // 屬性總合
-    const currentStatTotal = 
-      parseApiNumber(sym.symbol_str) +
-      parseApiNumber(sym.symbol_dex) +
-      parseApiNumber(sym.symbol_int) +
-      parseApiNumber(sym.symbol_luk) +
-      parseApiNumber(sym.symbol_hp);
-
-    // 累加特殊倍率
+    const currentStatTotal = parseApiNumber(sym.symbol_str) + parseApiNumber(sym.symbol_dex) + parseApiNumber(sym.symbol_int) + parseApiNumber(sym.symbol_luk) + parseApiNumber(sym.symbol_hp);
     rates.drop += parseApiNumber(sym.symbol_drop_ratestring || sym.symbol_drop_rate);
     rates.meso += parseApiNumber(sym.symbol_meso_ratestring || sym.symbol_meso_rate);
     rates.exp += parseApiNumber(sym.symbol_exp_ratestring || sym.symbol_exp_rate);
-
-    // 分類邏輯
     if (name.includes('神秘') || name.includes('祕法') || name.includes('Arcane')) {
       arcData.force += force;
       arcData.stat += currentStatTotal;
@@ -481,20 +393,12 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
       autData.stat += currentStatTotal;
     }
   });
-
-  // --- 2. 取得遊戲內最終數值 (Final Stat) ---
-  // 從 data.stat 中尋找對應的最終能力值
   const finalArcStat = data?.stat?.final_stat?.find((s: any) => s.stat_name === '神秘力量' || s.stat_name === 'Arcane Power');
   const finalAutStat = data?.stat?.final_stat?.find((s: any) => s.stat_name === '真實之力' || s.stat_name === 'Authentic Force');
-
   const finalArcValue = parseApiNumber(finalArcStat?.stat_value);
   const finalAutValue = parseApiNumber(finalAutStat?.stat_value);
-
-  // --- 3. 計算差額 (Diff) ---
-  // 差額 = 最終數值 - 裝備數值 (如果小於0則顯示0)
   const arcDiff = Math.max(0, finalArcValue - arcData.force);
   const autDiff = Math.max(0, finalAutValue - autData.force);
-
   const hasRates = rates.drop > 0 || rates.meso > 0 || rates.exp > 0;
 
   return (
@@ -502,81 +406,48 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
       <h4 className="text-xs font-bold text-slate-300 mb-4 flex items-center gap-2">
         <Hexagon className="w-4 h-4 text-slate-400" /> 符文詳細統計
       </h4>
-
+      {/* Symbols Summary: Already grid-cols-1 md:grid-cols-2, looks fine */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        
-        {/* --- ARC 區塊 (紫色) --- */}
+        {/* ARC */}
         <div className="bg-purple-900/20 border border-purple-500/30 rounded-lg p-4 flex flex-col justify-start min-h-[100px]">
           <div className="text-purple-300 font-bold text-sm mb-3 flex items-center gap-2">
              <div className="w-2 h-2 rounded-full bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.8)]"></div>
              ARC (神秘力量)
           </div>
-          
-          {/* 力量顯示：裝備數值 + 額外加成 */}
           <div className="flex justify-between items-end mb-2">
              <span className="text-slate-400 text-xs">力量總和</span>
              <div className="flex items-baseline gap-1">
                 <span className="text-2xl font-bold text-white font-mono">{arcData.force.toLocaleString()}</span>
-                {arcDiff > 0 && (
-                  <span className="text-xs font-bold text-green-400 font-mono" title={`來自公會技能/極限屬性/稱號: +${arcDiff}`}>
-                    +{arcDiff}
-                  </span>
-                )}
+                {arcDiff > 0 && <span className="text-xs font-bold text-green-400 font-mono" title={`來自公會技能/極限屬性/稱號: +${arcDiff}`}>+{arcDiff}</span>}
              </div>
           </div>
-          
           <div className="flex justify-between items-end border-t border-purple-500/20 pt-2 mt-auto">
              <span className="text-slate-500 text-xs">屬性加成</span>
              <span className="text-sm font-bold text-purple-400 font-mono">+{arcData.stat.toLocaleString()}</span>
           </div>
         </div>
-
-        {/* --- AUT 區塊 (青色) --- */}
+        {/* AUT */}
         <div className="bg-cyan-900/20 border border-cyan-500/30 rounded-lg p-4 flex flex-col justify-start min-h-[100px]">
           <div className="text-cyan-300 font-bold text-sm mb-3 flex items-center gap-2">
              <div className="w-2 h-2 rounded-full bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.8)]"></div>
              AUT (真實力量)
           </div>
-          
-          {/* 力量顯示：裝備數值 + 額外加成 */}
           <div className="flex justify-between items-end mb-2">
              <span className="text-slate-400 text-xs">力量總和</span>
              <div className="flex items-baseline gap-1">
                 <span className="text-2xl font-bold text-white font-mono">{autData.force.toLocaleString()}</span>
-                {autDiff > 0 && (
-                  <span className="text-xs font-bold text-green-400 font-mono" title={`來自公會技能/極限屬性/稱號: +${autDiff}`}>
-                    +{autDiff}
-                  </span>
-                )}
+                {autDiff > 0 && <span className="text-xs font-bold text-green-400 font-mono" title={`來自公會技能/極限屬性/稱號: +${autDiff}`}>+{autDiff}</span>}
              </div>
           </div>
-          
           <div className="flex justify-between items-end">
              <span className="text-slate-500 text-xs">屬性加成</span>
              <span className="text-sm font-bold text-cyan-400 font-mono">+{autData.stat.toLocaleString()}</span>
           </div>
-
-          {/* 倍率區塊 (維持不變) */}
           {hasRates && (
             <div className="mt-3 pt-2 border-t border-cyan-500/30 flex flex-col gap-1">
-              {rates.drop > 0 && (
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-400 text-xs">道具掉落率</span>
-                  <span className="font-mono text-sm font-bold text-green-400">+{rates.drop}%</span>
-                </div>
-              )}
-              {rates.meso > 0 && (
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-400 text-xs">楓幣獲得量</span>
-                  <span className="font-mono text-sm font-bold text-green-400">+{rates.meso}%</span>
-                </div>
-              )}
-              {rates.exp > 0 && (
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-400 text-xs">經驗值獲得量</span>
-                  <span className="font-mono text-sm font-bold text-yellow-400">+{rates.exp}%</span>
-                </div>
-              )}
+              {rates.drop > 0 && <div className="flex justify-between items-center"><span className="text-slate-400 text-xs">道具掉落率</span><span className="font-mono text-sm font-bold text-green-400">+{rates.drop}%</span></div>}
+              {rates.meso > 0 && <div className="flex justify-between items-center"><span className="text-slate-400 text-xs">楓幣獲得量</span><span className="font-mono text-sm font-bold text-green-400">+{rates.meso}%</span></div>}
+              {rates.exp > 0 && <div className="flex justify-between items-center"><span className="text-slate-400 text-xs">經驗值獲得量</span><span className="font-mono text-sm font-bold text-yellow-400">+{rates.exp}%</span></div>}
             </div>
           )}
         </div>
@@ -616,18 +487,14 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
                     <div className="relative group/equip shrink-0">
                       <img src={petEquip.item_icon} alt={petEquip.item_name} className="w-8 h-8 bg-slate-800 rounded p-0.5 border border-slate-600 cursor-help" />
                       <div className="absolute bottom-full right-0 mb-2 w-64 bg-[#1a1d24] border border-slate-600 rounded-lg shadow-2xl p-0 z-50 hidden group-hover/equip:block overflow-hidden">
-                        <div className="bg-[#15171c] p-2 border-b border-slate-700">
-                           <div className="text-xs font-bold text-white text-center">{petEquip.item_name}</div>
-                        </div>
+                        <div className="bg-[#15171c] p-2 border-b border-slate-700"><div className="text-xs font-bold text-white text-center">{petEquip.item_name}</div></div>
                         <div className="p-3 flex gap-3 items-start">
                            <img src={petEquip.item_icon} className="w-10 h-10 bg-[#121418] rounded p-1" />
                            <div className="text-[10px] text-slate-300 leading-relaxed">
                              {petEquip.item_description || '無說明'}
                              {petEquip.item_option && Array.isArray(petEquip.item_option) && (
                                <div className="mt-2 pt-2 border-t border-slate-700">
-                                 {petEquip.item_option.map((opt: any, i: number) => (
-                                   <div key={i} className="text-white">{opt.option_type}: +{opt.option_value}</div>
-                                 ))}
+                                 {petEquip.item_option.map((opt: any, i: number) => (<div key={i} className="text-white">{opt.option_type}: +{opt.option_value}</div>))}
                                </div>
                              )}
                            </div>
@@ -650,20 +517,14 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
            {dojo ? (
              <div className="flex flex-col gap-3">
                 <div className="flex justify-between items-center bg-slate-900/50 p-3 rounded-lg border border-slate-700">
-                   <span className="text-slate-400 text-sm">最高樓層</span>
-                   <span className="text-xl font-bold text-red-400">{dojo.dojang_best_floor}F</span>
+                   <span className="text-slate-400 text-sm">最高樓層</span><span className="text-xl font-bold text-red-400">{dojo.dojang_best_floor}F</span>
                 </div>
                 <div className="flex justify-between items-center bg-slate-900/50 p-3 rounded-lg border border-slate-700">
-                   <span className="text-slate-400 text-sm">通關時間</span>
-                   <span className="text-lg font-bold text-slate-200">{Math.floor(dojo.dojang_best_time / 60)}分 {dojo.dojang_best_time % 60}秒</span>
+                   <span className="text-slate-400 text-sm">通關時間</span><span className="text-lg font-bold text-slate-200">{Math.floor(dojo.dojang_best_time / 60)}分 {dojo.dojang_best_time % 60}秒</span>
                 </div>
-                <div className="text-right text-xs text-slate-500 mt-1">
-                   紀錄日期: {dojo.date_dojang_record ? dojo.date_dojang_record.split('T')[0] : '-'}
-                </div>
+                <div className="text-right text-xs text-slate-500 mt-1">紀錄日期: {dojo.date_dojang_record ? dojo.date_dojang_record.split('T')[0] : '-'}</div>
              </div>
-           ) : (
-             <div className="text-slate-500 text-sm text-center py-10">無武陵道場紀錄</div>
-           )}
+           ) : (<div className="text-slate-500 text-sm text-center py-10">無武陵道場紀錄</div>)}
       </div>
 
       {/* Set Effects */}
@@ -674,16 +535,11 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
             <div key={idx} className="bg-slate-900/50 p-3 rounded border border-slate-700">
               <div className="flex justify-between items-center mb-2">
                 <span className="font-bold text-green-400">{set.set_name}</span>
-                <span className="text-xs bg-green-900/30 text-green-300 px-2 py-0.5 rounded-full">
-                  {set.total_set_count} 套裝
-                </span>
+                <span className="text-xs bg-green-900/30 text-green-300 px-2 py-0.5 rounded-full">{set.total_set_count} 套裝</span>
               </div>
               <div className="text-xs text-slate-400 space-y-1">
                   {set.set_effect_info.map((info, i) => (
-                    <div key={i} className="flex gap-2">
-                      <span className="text-slate-500 w-8 shrink-0">{info.set_count}件:</span>
-                      <span>{info.set_option}</span>
-                    </div>
+                    <div key={i} className="flex gap-2"><span className="text-slate-500 w-8 shrink-0">{info.set_count}件:</span><span>{info.set_option}</span></div>
                   ))}
               </div>
             </div>
@@ -693,31 +549,19 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
 
       {/* Skills (V/Hexa) */}
       <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner">
-        
-        {/* HEXA Section Header & Progress */}
         {hexaMatrix && hexaMatrix.character_hexa_core_equipment && hexaMatrix.character_hexa_core_equipment.length > 0 && (
           <div className="mb-6">
             {(() => {
-                // 使用 state 中的 includeJanus 進行計算
                 const progress = calculateHexaProgress(hexaMatrix, includeJanus);
                 return (
                     <div className="flex flex-col md:flex-row md:justify-between md:items-end mb-4 gap-4">
-                        {/* Left Side: Title & Janus Toggle */}
                         <div>
                             <SectionHeader icon={<Zap />} title="核心技能 (V/Hexa)" />
-                            
                             <div className="flex items-center gap-3 mt-1">
                               <h4 className="text-sm font-bold text-purple-400">HEXA 矩陣</h4>
-                              
-                              {/* 亞努斯計算切換按鈕 */}
                               <button 
                                 onClick={() => setIncludeJanus(!includeJanus)}
-                                className={`
-                                  text-[10px] px-2 py-0.5 rounded border flex items-center gap-1 transition-all
-                                  ${includeJanus 
-                                    ? 'bg-purple-900/40 text-purple-300 border-purple-700/50 hover:bg-purple-900/60' 
-                                    : 'bg-slate-800 text-slate-500 border-slate-700 hover:bg-slate-700 hover:text-slate-400'}
-                                `}
+                                className={`text-[10px] px-2 py-0.5 rounded border flex items-center gap-1 transition-all ${includeJanus ? 'bg-purple-900/40 text-purple-300 border-purple-700/50 hover:bg-purple-900/60' : 'bg-slate-800 text-slate-500 border-slate-700 hover:bg-slate-700 hover:text-slate-400'}`}
                                 title={includeJanus ? "點擊以排除靈魂亞努斯計算" : "點擊以包含靈魂亞努斯計算"}
                               >
                                 {includeJanus ? <CheckSquare className="w-3 h-3" /> : <Square className="w-3 h-3" />}
@@ -725,75 +569,44 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
                               </button>
                             </div>
                         </div>
-
-                        {/* Right Side: Progress Stats */}
                         <div className="text-right">
-                            {/* Line 1: Percentage & Fraction */}
                             <div className="text-xs text-slate-400 font-mono mb-1">
                                 技能進度: <span className="text-white font-bold">{progress.percent.toFixed(1)}%</span> <span className="text-slate-500">({progress.current.toLocaleString()} / {progress.total.toLocaleString()} 碎片)</span>
                             </div>
-                            
-                            {/* Line 2: Progress Bar */}
                             <div className="w-full md:w-80 h-1.5 bg-slate-800 rounded-full overflow-hidden ml-auto mb-1.5 border border-slate-700">
-                                <div 
-                                    className="h-full bg-gradient-to-r from-purple-600 via-pink-500 to-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.6)]" 
-                                    style={{ width: `${Math.min(progress.percent, 100)}%` }} 
-                                />
+                                <div className="h-full bg-gradient-to-r from-purple-600 via-pink-500 to-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.6)]" style={{ width: `${Math.min(progress.percent, 100)}%` }} />
                             </div>
-
-                            {/* Line 3: Remaining Cost */}
                             <div className="text-[10px] text-slate-400 font-mono bg-slate-900/50 inline-block px-2 py-1 rounded border border-slate-800">
-                                <span className="text-slate-500 mr-1">距離滿級還需:</span>
-                                <span className="text-purple-400 font-bold">{progress.remainingFragments.toLocaleString()}</span> 碎片 / 
-                                <span className="text-blue-400 font-bold ml-1">{progress.remainingErda.toLocaleString()}</span> 靈魂艾爾達
+                                <span className="text-slate-500 mr-1">距離滿級還需:</span><span className="text-purple-400 font-bold">{progress.remainingFragments.toLocaleString()}</span> 碎片 / <span className="text-blue-400 font-bold ml-1">{progress.remainingErda.toLocaleString()}</span> 靈魂艾爾達
                             </div>
                         </div>
                     </div>
                 );
             })()}
             
-            {/* FIX: grid-cols-4 改為 grid-cols-3 sm:grid-cols-4 以適應手機版面 */}
+            {/* FIX: grid-cols-3 on mobile, sm:grid-cols-4 */}
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
               {hexaMatrix.character_hexa_core_equipment.map((core, idx) => {
                 const icon = findSkillIcon(core.hexa_core_name);
                 return (
-                   <ItemWithTooltip 
-                      key={idx}
-                      icon={icon}
-                      name={core.hexa_core_name}
-                      level={core.hexa_core_level}
-                      borderColor="border-purple-900/30"
-                      textColor="text-purple-400"
-                   />
+                   <ItemWithTooltip key={idx} icon={icon} name={core.hexa_core_name} level={core.hexa_core_level} borderColor="border-purple-900/30" textColor="text-purple-400" />
                 );
               })}
             </div>
           </div>
         )}
-
-        {/* Fallback SectionHeader if no Hexa data */}
         {(!hexaMatrix || !hexaMatrix.character_hexa_core_equipment || hexaMatrix.character_hexa_core_equipment.length === 0) && (
              <SectionHeader icon={<Zap />} title="核心技能 (V/Hexa)" />
         )}
-
         {vMatrix && vMatrix.character_v_core_equipment && (
           <div className="mt-6">
             <h4 className="text-sm font-bold text-blue-400 mb-2">V 矩陣</h4>
-            {/* FIX: grid-cols-4 改為 grid-cols-3 sm:grid-cols-4 以適應手機版面 */}
+            {/* FIX: grid-cols-3 on mobile, sm:grid-cols-4 */}
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-               {vMatrix.character_v_core_equipment
-                 .sort((a, b) => b.slot_level - a.slot_level)
-                 .map((core, idx) => {
+               {vMatrix.character_v_core_equipment.sort((a, b) => b.slot_level - a.slot_level).map((core, idx) => {
                  const icon = findSkillIcon(core.v_core_name);
                  return (
-                   <ItemWithTooltip 
-                      key={idx}
-                      icon={icon}
-                      name={core.v_core_name}
-                      level={core.v_core_level}
-                      sub={core.slot_level.toString()}
-                      textColor="text-blue-400"
-                   />
+                   <ItemWithTooltip key={idx} icon={icon} name={core.v_core_name} level={core.v_core_level} sub={core.slot_level.toString()} textColor="text-blue-400" />
                  );
                })}
             </div>
@@ -805,15 +618,9 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
       {hexaMatrixStat && (
         <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner lg:col-span-2">
             <SectionHeader icon={<Hexagon />} title="HEXA 屬性" />
-            
             {(() => {
                 const totals: Record<string, number> = {};
-                const cores = [
-                    hexaMatrixStat.character_hexa_stat_core?.[0],
-                    hexaMatrixStat.character_hexa_stat_core_2?.[0],
-                    hexaMatrixStat.character_hexa_stat_core_3?.[0]
-                ].filter(Boolean);
-
+                const cores = [hexaMatrixStat.character_hexa_stat_core?.[0], hexaMatrixStat.character_hexa_stat_core_2?.[0], hexaMatrixStat.character_hexa_stat_core_3?.[0]].filter(Boolean);
                 cores.forEach(core => {
                     if (!core) return;
                     const addStat = (name: string, level: number, isMain: boolean = false) => {
@@ -825,26 +632,20 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
                     addStat(core.sub_stat_name_1, core.sub_stat_level_1);
                     addStat(core.sub_stat_name_2, core.sub_stat_level_2);
                 });
-
                 if (Object.keys(totals).length === 0) return null;
-
                 return (
                     <div className="bg-purple-900/20 border border-purple-500/30 rounded-lg p-4 mb-6">
                         <h4 className="text-sm font-bold text-purple-300 mb-3 flex items-center gap-2">
                             <Star className="w-4 h-4 text-yellow-400" /> 屬性總和
                         </h4>
-                        {/* FIX: 加入 grid-cols-1 sm:grid-cols-2 */}
+                        {/* FIX: grid-cols-1 on mobile, sm:grid-cols-2 */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                             {Object.entries(totals).map(([name, val], idx) => {
-                                const isPercent = name.toLowerCase().includes('boss') || name.includes('無視') || name.includes('防禦') || 
-                                                  name.includes('爆擊傷害') || name.includes('Critical') || 
-                                                  name === '傷害' || name === 'Damage';
+                                const isPercent = name.toLowerCase().includes('boss') || name.includes('無視') || name.includes('防禦') || name.includes('爆擊傷害') || name.includes('Critical') || name === '傷害' || name === 'Damage';
                                 return (
                                     <div key={name} className="bg-slate-900/50 px-3 py-2 rounded border border-purple-500/20 flex justify-between items-center">
                                         <span className="text-xs text-slate-300">{name.replace(/boss/gi, 'BOSS')}</span>
-                                        <span className="text-sm font-bold text-green-400 font-mono">
-                                            +{isPercent ? val.toFixed(2) + '%' : val}
-                                        </span>
+                                        <span className="text-sm font-bold text-green-400 font-mono">+{isPercent ? val.toFixed(2) + '%' : val}</span>
                                     </div>
                                 );
                             })}
@@ -869,63 +670,32 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
                             </div>
                         );
                     }
-
                     return (
                         <div key={coreIndex} className="bg-slate-900/80 p-4 rounded-lg border border-purple-500/30 relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 bg-purple-600 text-white text-[10px] px-2 py-0.5 rounded-bl font-bold">
-                                階級 {stat.stat_grade}
-                            </div>
+                            <div className="absolute top-0 right-0 bg-purple-600 text-white text-[10px] px-2 py-0.5 rounded-bl font-bold">階級 {stat.stat_grade}</div>
                             <div className="flex items-center gap-3 mb-3">
-                                <div className="w-10 h-10 rounded bg-slate-800 flex items-center justify-center border border-purple-500/50 shadow-[0_0_10px_rgba(168,85,247,0.2)]">
-                                    <Hexagon className="w-6 h-6 text-purple-400" />
-                                </div>
+                                <div className="w-10 h-10 rounded bg-slate-800 flex items-center justify-center border border-purple-500/50 shadow-[0_0_10px_rgba(168,85,247,0.2)]"><Hexagon className="w-6 h-6 text-purple-400" /></div>
                                 <div>
                                     <div className="text-sm font-bold text-purple-300">HEXA 屬性核心 {coreIndex + 1}</div>
                                     <div className="text-xs text-slate-500">欄位 {stat.slot_id}</div>
                                 </div>
                             </div>
-                            
                             <div className="space-y-2">
                                 <div className="bg-slate-950/50 p-2 rounded border border-slate-800">
-                                    <div className="flex justify-between items-center mb-1">
-                                        <span className="text-xs text-slate-300 font-bold">MAIN STAT</span>
-                                        <span className="text-xs font-bold text-purple-400">Lv.{stat.main_stat_level}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-sm text-white">{stat.main_stat_name.replace(/boss/gi, 'BOSS')}</span>
-                                        <span className="text-sm text-green-400 font-mono">{getHexaStatValue(stat.main_stat_name, stat.main_stat_level, true)}</span>
-                                    </div>
-                                    <div className="w-full h-1 bg-slate-800 mt-1 rounded-full overflow-hidden">
-                                        <div className="h-full bg-purple-500" style={{ width: `${(stat.main_stat_level / 10) * 100}%` }}></div>
-                                    </div>
+                                    <div className="flex justify-between items-center mb-1"><span className="text-xs text-slate-300 font-bold">MAIN STAT</span><span className="text-xs font-bold text-purple-400">Lv.{stat.main_stat_level}</span></div>
+                                    <div className="flex justify-between items-center"><span className="text-sm text-white">{stat.main_stat_name.replace(/boss/gi, 'BOSS')}</span><span className="text-sm text-green-400 font-mono">{getHexaStatValue(stat.main_stat_name, stat.main_stat_level, true)}</span></div>
+                                    <div className="w-full h-1 bg-slate-800 mt-1 rounded-full overflow-hidden"><div className="h-full bg-purple-500" style={{ width: `${(stat.main_stat_level / 10) * 100}%` }}></div></div>
                                 </div>
-
                                 <div className="grid grid-cols-1 gap-2">
                                     <div className="bg-slate-950/50 p-2 rounded border border-slate-800">
-                                        <div className="flex justify-between items-center mb-1">
-                                            <span className="text-[10px] text-slate-400 font-bold">ADDITIONAL STAT</span>
-                                            <span className="text-xs font-bold text-blue-400">Lv.{stat.sub_stat_level_1}</span>
-                                        </div>
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-xs text-slate-200">{stat.sub_stat_name_1.replace(/boss/gi, 'BOSS')}</span>
-                                            <span className="text-xs text-green-400 font-mono">{getHexaStatValue(stat.sub_stat_name_1, stat.sub_stat_level_1)}</span>
-                                        </div>
-                                        <div className="w-full h-1 bg-slate-800 mt-1 rounded-full overflow-hidden">
-                                            <div className="h-full bg-blue-500" style={{ width: `${(stat.sub_stat_level_1 / 10) * 100}%` }}></div>
-                                        </div>
+                                        <div className="flex justify-between items-center mb-1"><span className="text-[10px] text-slate-400 font-bold">ADDITIONAL STAT</span><span className="text-xs font-bold text-blue-400">Lv.{stat.sub_stat_level_1}</span></div>
+                                        <div className="flex justify-between items-center"><span className="text-xs text-slate-200">{stat.sub_stat_name_1.replace(/boss/gi, 'BOSS')}</span><span className="text-xs text-green-400 font-mono">{getHexaStatValue(stat.sub_stat_name_1, stat.sub_stat_level_1)}</span></div>
+                                        <div className="w-full h-1 bg-slate-800 mt-1 rounded-full overflow-hidden"><div className="h-full bg-blue-500" style={{ width: `${(stat.sub_stat_level_1 / 10) * 100}%` }}></div></div>
                                     </div>
                                     <div className="bg-slate-950/50 p-2 rounded border border-slate-800">
-                                        <div className="flex justify-between items-center mb-1">
-                                            <span className="text-[10px] text-slate-400 font-bold">ADDITIONAL STAT</span>
-                                            <span className="text-xs font-bold text-blue-400">Lv.{stat.sub_stat_level_2}</span>
-                                        </div>
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-xs text-slate-200">{stat.sub_stat_name_2.replace(/boss/gi, 'BOSS')}</span>
-                                            <span className="text-xs text-green-400 font-mono">{getHexaStatValue(stat.sub_stat_name_2, stat.sub_stat_level_2)}</span>
-                                        </div>
-                                        <div className="w-full h-1 bg-slate-800 mt-1 rounded-full overflow-hidden">
-                                            <div className="h-full bg-blue-500" style={{ width: `${(stat.sub_stat_level_2 / 10) * 100}%` }}></div>
-                                        </div>
+                                        <div className="flex justify-between items-center mb-1"><span className="text-[10px] text-slate-400 font-bold">ADDITIONAL STAT</span><span className="text-xs font-bold text-blue-400">Lv.{stat.sub_stat_level_2}</span></div>
+                                        <div className="flex justify-between items-center"><span className="text-xs text-slate-200">{stat.sub_stat_name_2.replace(/boss/gi, 'BOSS')}</span><span className="text-xs text-green-400 font-mono">{getHexaStatValue(stat.sub_stat_name_2, stat.sub_stat_level_2)}</span></div>
+                                        <div className="w-full h-1 bg-slate-800 mt-1 rounded-full overflow-hidden"><div className="h-full bg-blue-500" style={{ width: `${(stat.sub_stat_level_2 / 10) * 100}%` }}></div></div>
                                     </div>
                                 </div>
                             </div>
@@ -943,29 +713,17 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
 const LinkSkillSection = ({ linkSkill }: { linkSkill: any }) => {
   const activePresetNo = parseInt(linkSkill.preset_no || '1');
   const [selectedPreset, setSelectedPreset] = useState(activePresetNo || 1);
-
   useEffect(() => setSelectedPreset(activePresetNo || 1), [linkSkill]);
-
-  const getPresetSkills = () => {
-    return linkSkill[`character_link_skill_preset_${selectedPreset}`] || [];
-  };
-   
+  const getPresetSkills = () => { return linkSkill[`character_link_skill_preset_${selectedPreset}`] || []; };
   const ownedSkill = linkSkill.character_owned_link_skill;
   const currentSkills = getPresetSkills();
-
-  // Calculate Link Skill Totals for current preset
   const totals: Record<string, number> = {};
-  const addStat = (name: string, val: number) => {
-    totals[name] = (totals[name] || 0) + val;
-  };
-
+  const addStat = (name: string, val: number) => { totals[name] = (totals[name] || 0) + val; };
   const skillsToCalculate = [...currentSkills];
   if (ownedSkill) skillsToCalculate.unshift(ownedSkill);
-
   skillsToCalculate.forEach(skill => {
       if (CONDITIONAL_SKILLS.includes(skill.skill_name)) return;
       if (skill.skill_name === '連續擊殺優勢' || skill.skill_name === '連續擊殺優勢（狂狼勇士）') return;
-
       let matched = false;
       const desc = skill.skill_effect || skill.skill_description;
       if (desc) {
@@ -986,25 +744,16 @@ const LinkSkillSection = ({ linkSkill }: { linkSkill: any }) => {
               { regex: /(\d+)%?\s*傷害/, name: '傷害', exclude: ['Boss', 'BOSS', '爆擊', '受到'] },
               { regex: /傷害\s*(?:\+|:)?\s*(\d+)%?/, name: '傷害', exclude: ['Boss', 'BOSS', '爆擊', '受到'] },
           ];
-
           patterns.forEach(p => {
               if (p.exclude && p.exclude.some(ex => desc.toLowerCase().includes(ex.toLowerCase()))) return;
               const match = desc.match(p.regex);
-              if (match) {
-                  addStat(p.name, parseInt(match[1], 10));
-                  matched = true;
-              }
+              if (match) { addStat(p.name, parseInt(match[1], 10)); matched = true; }
           });
-
           if (desc.includes('STR') && desc.includes('DEX') && desc.match(/\+(\d+)/)) {
               const match = desc.match(/\+(\d+)/);
-              if (match) {
-                  addStat('全屬性', parseInt(match[1], 10));
-                  matched = true;
-              }
+              if (match) { addStat('全屬性', parseInt(match[1], 10)); matched = true; }
           }
       }
-
       if (!matched && LINK_SKILL_DATA[skill.skill_name]) {
           const stats = LINK_SKILL_DATA[skill.skill_name](skill.skill_level);
           Object.entries(stats).forEach(([key, val]) => addStat(key, val));
@@ -1013,30 +762,20 @@ const LinkSkillSection = ({ linkSkill }: { linkSkill: any }) => {
 
   return (
     <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner lg:col-span-2">
-      <SectionHeader 
-        icon={<Zap />} 
-        title="連結技能 (Link Skills)" 
-        presetState={{
-          current: selectedPreset,
-          setCurrent: setSelectedPreset,
-          active: activePresetNo
-        }}
-      />
-       
+      <SectionHeader icon={<Zap />} title="連結技能 (Link Skills)" presetState={{ current: selectedPreset, setCurrent: setSelectedPreset, active: activePresetNo }} />
       {Object.keys(totals).length > 0 && (
         <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-4 mb-6">
             <h4 className="text-sm font-bold text-yellow-300 mb-3 flex items-center gap-2">
                 <Star className="w-4 h-4 text-yellow-400" /> 連結技能總和 (估算)
             </h4>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            {/* FIX: grid-cols-1 on mobile, sm:grid-cols-2 */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                 {Object.entries(totals).map(([name, val], idx) => {
                     const isPercent = ['BOSS 傷害', '無視防禦率', '爆擊率', '爆擊傷害', '最大HP', '最大MP', '獲得經驗值', '傷害'].includes(name);
                     return (
                         <div key={idx} className="bg-slate-900/50 px-3 py-2 rounded border border-yellow-500/20 flex justify-between items-center">
                             <span className="text-xs text-slate-300">{name}</span>
-                            <span className="text-sm font-bold text-green-400 font-mono">
-                                +{isPercent ? val + '%' : val}
-                            </span>
+                            <span className="text-sm font-bold text-green-400 font-mono">+{isPercent ? val + '%' : val}</span>
                         </div>
                     );
                 })}
@@ -1044,14 +783,11 @@ const LinkSkillSection = ({ linkSkill }: { linkSkill: any }) => {
             <div className="mt-2 text-[10px] text-slate-500 text-right">* 數值為文字分析估算，可能包含部分誤差或未列入特殊效果</div>
         </div>
       )}
-
       {((currentSkills && currentSkills.length > 0) || ownedSkill) ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {ownedSkill && (
               <div className="bg-slate-900/50 p-3 rounded-lg border border-yellow-500/50 flex gap-3 items-start relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 bg-yellow-600/80 text-white text-[10px] px-2 py-0.5 rounded-bl font-bold backdrop-blur-sm">
-                      Lv.{ownedSkill.skill_level}
-                  </div>
+                  <div className="absolute top-0 right-0 bg-yellow-600/80 text-white text-[10px] px-2 py-0.5 rounded-bl font-bold backdrop-blur-sm">Lv.{ownedSkill.skill_level}</div>
                   <img src={ownedSkill.skill_icon} alt={ownedSkill.skill_name} className="w-10 h-10 rounded bg-slate-800 p-1 shrink-0" />
                   <div className="flex-1 min-w-0">
                   <div className="mb-1 pr-8 flex items-center gap-2">
@@ -1059,45 +795,27 @@ const LinkSkillSection = ({ linkSkill }: { linkSkill: any }) => {
                       <span className="text-[10px] bg-yellow-900/50 text-yellow-400 px-1 rounded border border-yellow-700/50">Own</span>
                   </div>
                   <div className="text-xs leading-tight">
-                      {ownedSkill.skill_effect && (
-                          <p className="text-green-400 mb-1 line-clamp-2" title={ownedSkill.skill_effect}>
-                              {ownedSkill.skill_effect.replace(/\\n/g, ' ')}
-                          </p>
-                      )}
-                      <p className="text-slate-400 line-clamp-2" title={ownedSkill.skill_description}>
-                          {ownedSkill.skill_description.replace(/\\n/g, ' ')}
-                      </p>
+                      {ownedSkill.skill_effect && <p className="text-green-400 mb-1 line-clamp-2" title={ownedSkill.skill_effect}>{ownedSkill.skill_effect.replace(/\\n/g, ' ')}</p>}
+                      <p className="text-slate-400 line-clamp-2" title={ownedSkill.skill_description}>{ownedSkill.skill_description.replace(/\\n/g, ' ')}</p>
                   </div>
                   </div>
               </div>
           )}
           {currentSkills.map((skill: any, idx: number) => (
             <div key={idx} className="bg-slate-900/50 p-3 rounded-lg border border-slate-700 flex gap-3 items-start relative overflow-hidden group">
-              <div className="absolute top-0 right-0 bg-yellow-600/80 text-white text-[10px] px-2 py-0.5 rounded-bl font-bold backdrop-blur-sm">
-                  Lv.{skill.skill_level}
-              </div>
+              <div className="absolute top-0 right-0 bg-yellow-600/80 text-white text-[10px] px-2 py-0.5 rounded-bl font-bold backdrop-blur-sm">Lv.{skill.skill_level}</div>
               <img src={skill.skill_icon} alt={skill.skill_name} className="w-10 h-10 rounded bg-slate-800 p-1 shrink-0" />
               <div className="flex-1 min-w-0">
-                <div className="mb-1 pr-8">
-                  <span className="font-bold text-slate-200 text-sm truncate block">{skill.skill_name}</span>
-                </div>
+                <div className="mb-1 pr-8"><span className="font-bold text-slate-200 text-sm truncate block">{skill.skill_name}</span></div>
                 <div className="text-xs leading-tight">
-                  {skill.skill_effect && (
-                      <p className="text-green-400 mb-1 line-clamp-2" title={skill.skill_effect}>
-                          {skill.skill_effect.replace(/\\n/g, ' ')}
-                      </p>
-                  )}
-                  <p className="text-slate-400 line-clamp-2" title={skill.skill_description}>
-                      {skill.skill_description.replace(/\\n/g, ' ')}
-                  </p>
+                  {skill.skill_effect && <p className="text-green-400 mb-1 line-clamp-2" title={skill.skill_effect}>{skill.skill_effect.replace(/\\n/g, ' ')}</p>}
+                  <p className="text-slate-400 line-clamp-2" title={skill.skill_description}>{skill.skill_description.replace(/\\n/g, ' ')}</p>
                 </div>
               </div>
             </div>
           ))}
         </div>
-      ) : (
-        <div className="text-slate-500 text-sm text-center py-4">無連結技能資料</div>
-      )}
+      ) : (<div className="text-slate-500 text-sm text-center py-4">無連結技能資料</div>)}
     </div>
   );
 };
@@ -1106,22 +824,10 @@ const LinkSkillSection = ({ linkSkill }: { linkSkill: any }) => {
 const HyperStatSection = ({ hyperStat }: { hyperStat: any }) => {
   const activePresetNo = parseInt(hyperStat.preset_no || '1');
   const [selectedPreset, setSelectedPreset] = useState(activePresetNo || 1);
-
   useEffect(() => setSelectedPreset(activePresetNo || 1), [hyperStat]);
-
-  const getPresetStats = () => {
-    return hyperStat[`hyper_stat_preset_${selectedPreset}`] || [];
-  };
-
-  const getRemainPoints = () => {
-    return hyperStat[`hyper_stat_preset_${selectedPreset}_remain_point`] || 0;
-  };
-
-  const activeStats = getPresetStats()
-    .filter((stat: any) => stat.stat_level > 0)
-    .sort((a: any, b: any) => b.stat_level - a.stat_level);
-
-  // 極限屬性加成對照表（簡化版，依實際遊戲可再補充）
+  const getPresetStats = () => { return hyperStat[`hyper_stat_preset_${selectedPreset}`] || []; };
+  const getRemainPoints = () => { return hyperStat[`hyper_stat_preset_${selectedPreset}_remain_point`] || 0; };
+  const activeStats = getPresetStats().filter((stat: any) => stat.stat_level > 0).sort((a: any, b: any) => b.stat_level - a.stat_level);
   const hyperStatValueTable: Record<string, (lv: number) => string | number> = {
     'STR': lv => lv <= 5 ? lv * 30 : 150 + (lv - 5) * 35,
     'DEX': lv => lv <= 5 ? lv * 30 : 150 + (lv - 5) * 35,
@@ -1139,51 +845,26 @@ const HyperStatSection = ({ hyperStat }: { hyperStat: any }) => {
     '傷害': lv => lv <= 5 ? lv * 3 : 15 + (lv - 5) * 4,
     '獲得經驗值': lv => lv * 0.5,
   };
-
-  // 取得加成顯示
   const getHyperStatValue = (type: string, lv: number) => {
     const key = Object.keys(hyperStatValueTable).find(k => type.includes(k));
     if (!key) return '';
     const val = hyperStatValueTable[key](lv);
-    // 百分比屬性
-    if (["爆擊率","爆擊傷害","無視防禦率","BOSS傷害","傷害","全屬性","獲得經驗值"].some(k=>type.includes(k))) {
-      return `+${val}%`;
-    }
+    if (["爆擊率","爆擊傷害","無視防禦率","BOSS傷害","傷害","全屬性","獲得經驗值"].some(k=>type.includes(k))) return `+${val}%`;
     return `+${val}`;
   };
 
   return (
     <>
-      <SectionHeader 
-        icon={<CheckSquare />} 
-        title="極限屬性 (Hyper Stats)" 
-        presetState={{
-          current: selectedPreset,
-          setCurrent: setSelectedPreset,
-          active: activePresetNo
-        }}
-      />
-      <div className="flex justify-between items-center mb-4 px-1">
-         <span className="text-xs text-slate-400 bg-slate-800 px-2 py-1 rounded border border-slate-700">
-           剩餘點數: <span className="text-indigo-400 font-mono font-bold">{getRemainPoints()}</span>
-         </span>
-      </div>
-       
+      <SectionHeader icon={<CheckSquare />} title="極限屬性 (Hyper Stats)" presetState={{ current: selectedPreset, setCurrent: setSelectedPreset, active: activePresetNo }} />
+      <div className="flex justify-between items-center mb-4 px-1"><span className="text-xs text-slate-400 bg-slate-800 px-2 py-1 rounded border border-slate-700">剩餘點數: <span className="text-indigo-400 font-mono font-bold">{getRemainPoints()}</span></span></div>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 mt-4">
         {activeStats.map((stat: any, idx: number) => (
           <div key={idx} className="flex justify-between items-center bg-[#0d1117] px-3 py-2 rounded text-sm border border-slate-700/50 hover:border-indigo-500/50 transition-colors">
-            <span className="text-slate-300 whitespace-nowrap">
-              {stat.stat_type}
-              <span className="font-bold text-green-400 font-mono ml-1">{getHyperStatValue(stat.stat_type, stat.stat_level)}</span>
-            </span>
+            <span className="text-slate-300 whitespace-nowrap">{stat.stat_type}<span className="font-bold text-green-400 font-mono ml-1">{getHyperStatValue(stat.stat_type, stat.stat_level)}</span></span>
             <span className="font-bold text-indigo-400 font-mono whitespace-nowrap">Lv.{stat.stat_level}</span>
           </div>
         ))}
-        {activeStats.length === 0 && (
-           <div className="col-span-full text-center text-slate-500 py-6 bg-[#0d1117] rounded-lg border border-slate-800 border-dashed text-sm">
-             此預設未配置屬性
-           </div>
-        )}
+        {activeStats.length === 0 && <div className="col-span-full text-center text-slate-500 py-6 bg-[#0d1117] rounded-lg border border-slate-800 border-dashed text-sm">此預設未配置屬性</div>}
       </div>
     </>
   );
