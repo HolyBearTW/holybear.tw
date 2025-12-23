@@ -328,36 +328,34 @@ const HyperStatSection = ({ hyperStat }: { hyperStat: any }) => {
 // [修正後] 冠軍卡片 (使用 maplestorytw 路徑)
 const ChampionCard: React.FC<{ champ: any; apiKey: string }> = ({ champ, apiKey }) => {
     const [image, setImage] = useState<string | undefined>(champ.character_image);
+    const [championLevel, setChampionLevel] = useState<number | undefined>(champ.champion_level);
     const bgImage = getChampionBgImage(champ.champion_class);
 
     useEffect(() => {
-        if (image || !champ.champion_name || !apiKey) return;
+      if ((image && championLevel) || !champ.champion_name || !apiKey) return;
 
-        const fetchImg = async () => {
-            try {
-                // 修正：使用 maplestorytw (TMS) 路徑
-                const idRes = await fetch(`https://open.api.nexon.com/maplestorytw/v1/id?character_name=${encodeURIComponent(champ.champion_name)}`, { 
-                    headers: { 'x-nxopen-api-key': apiKey } 
-                });
-                
-                if (!idRes.ok) {
-                    console.warn(`Fetch ID failed for ${champ.champion_name}: ${idRes.status}`);
-                    return;
-                }
-
-                const idData = await idRes.json();
-                if (idData.ocid) {
-                    // 修正：使用 maplestorytw (TMS) 路徑
-                    const basicRes = await fetch(`https://open.api.nexon.com/maplestorytw/v1/character/basic?ocid=${idData.ocid}`, { 
-                        headers: { 'x-nxopen-api-key': apiKey } 
-                    });
-                    const basicData = await basicRes.json();
-                    if (basicData.character_image) setImage(basicData.character_image);
-                }
-            } catch (e) { console.error("API Error:", e); }
-        };
-        fetchImg();
-    }, [champ.champion_name, apiKey, image]);
+      const fetchImgAndLevel = async () => {
+        try {
+          const idRes = await fetch(`https://open.api.nexon.com/maplestorytw/v1/id?character_name=${encodeURIComponent(champ.champion_name)}`, { 
+            headers: { 'x-nxopen-api-key': apiKey } 
+          });
+          if (!idRes.ok) {
+            console.warn(`Fetch ID failed for ${champ.champion_name}: ${idRes.status}`);
+            return;
+          }
+          const idData = await idRes.json();
+          if (idData.ocid) {
+            const basicRes = await fetch(`https://open.api.nexon.com/maplestorytw/v1/character/basic?ocid=${idData.ocid}`, { 
+              headers: { 'x-nxopen-api-key': apiKey } 
+            });
+            const basicData = await basicRes.json();
+            if (basicData.character_image) setImage(basicData.character_image);
+            if (basicData.character_level) setChampionLevel(Number(basicData.character_level));
+          }
+        } catch (e) { console.error("API Error:", e); }
+      };
+      fetchImgAndLevel();
+    }, [champ.champion_name, apiKey, image, championLevel]);
 
     const hasStat = (keyword: string) => {
       return champ.champion_badge_info.some((b: any) => 
@@ -389,7 +387,9 @@ const ChampionCard: React.FC<{ champ: any; apiKey: string }> = ({ champ, apiKey 
           <div className="flex flex-col items-center gap-1.5 w-full">
             <div className="text-base font-bold text-center text-slate-100 w-full truncate px-2 drop-shadow-sm">{champ.champion_name}</div>
             <div className="flex items-center gap-2 text-[11px] text-slate-400 bg-[#1a1d24]/90 px-3 py-1 rounded-full backdrop-blur-md border border-slate-700/50 shadow-sm">
-              <span className="font-mono">Lv.260+</span><span className="w-px h-3 bg-slate-600"></span><span>{champ.champion_class}</span>
+              <span className="font-mono">Lv.{championLevel ?? '-'}</span>
+              <span className="w-px h-3 bg-slate-600"></span>
+              <span>{champ.champion_class}</span>
             </div>
           </div>
         </div>
@@ -503,9 +503,9 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
                </div>
                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                  {unionArtifact.union_artifact_crystal.map((crystal, idx) => (
-                           <div key={idx} className="bg-slate-900/50 p-2 rounded border border-slate-700 text-xs flex flex-row items-center min-h-[90px]">
+                           <div key={idx} className="bg-slate-900/50 p-2 rounded-lg border border-slate-700 text-xs flex flex-row items-center min-h-[90px]">
                              <div className="flex-shrink-0 w-16 h-16 flex items-center justify-center">
-                               <img src={artifactCrystalImages[idx]} alt={crystal.name} className="w-16 h-16 object-contain rounded bg-slate-800 border border-purple-400/40" />
+                               <img src={artifactCrystalImages[idx]} alt={crystal.name} className="w-16 h-16 object-contain rounded-lg bg-slate-800 border border-purple-400/40" />
                              </div>
                              <div className="flex-1 ml-2">
                                <div className="text-purple-300 font-bold mb-1">{crystal.name} Lv.{crystal.level}</div>
