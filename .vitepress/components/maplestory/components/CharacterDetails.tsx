@@ -370,10 +370,10 @@ const ChampionCard: React.FC<{ champ: any; apiKey: string }> = ({ champ, apiKey 
     );
   
     return (
-      <div className="bg-[#0f1216] rounded-xl p-4 relative overflow-hidden min-h-[280px] border border-slate-800 shadow-md group hover:border-slate-600 transition-all flex flex-col justify-between">
+      <div className="bg-[#0e141e] rounded-xl p-4 relative overflow-hidden min-h-[280px] border border-slate-800 shadow-md group hover:border-slate-600 transition-all flex flex-col justify-between">
         <div className="absolute inset-0 w-full h-full pointer-events-none">
             <img src={`${CHAMPION_PATH}/${bgImage}`} alt="Background" className="w-full h-full object-cover opacity-30 transition-transform duration-500 group-hover:scale-110" />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0f1216] via-[#0f1216]/50 to-transparent"></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0e141e] via-[#0e141e]/50 to-transparent"></div>
         </div>
         <div className="absolute top-3 left-4 z-10"><span className="font-bold text-lg text-slate-300 tracking-wider drop-shadow-md">{champ.champion_grade}</span></div>
         <div className="relative z-10 flex flex-col items-center gap-3 pt-6 h-full flex-1">
