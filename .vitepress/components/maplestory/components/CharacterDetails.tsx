@@ -41,14 +41,14 @@ const HEXA_SETTINGS = {
     quantity: 4, 
     keywords: ['enhancement', '強化'],
     costs: [75, 23, 27, 30, 34, 38, 42, 45, 49, 150, 60, 68, 75, 83, 90, 98, 105, 113, 120, 263, 128, 135, 143, 150, 158, 165, 173, 180, 188, 375],
-    erdaCosts: [4, 1, 1, 1, 2, 2, 2, 3, 3, 8, 3, 3, 3, 3, 3, 3, 3, 3, 4, 12, 4, 4, 4, 4, 5, 5, 5, 6, 15]
+    erdaCosts: [4, 1, 1, 1, 2, 2, 2, 3, 3, 8, 3, 3, 3, 3, 3, 3, 3, 3, 4, 12, 4, 4, 4, 4, 4, 5, 5, 5, 6, 15]
   },
   COMMON: {
     key: 'COMMON',
     quantity: 1, 
     keywords: ['common', '共用'],
     costs: [125, 38, 44, 50, 57, 63, 69, 75, 82, 300, 110, 124, 138, 152, 165, 179, 193, 207, 220, 525, 234, 248, 262, 275, 289, 303, 317, 330, 344, 750],
-    erdaCosts: [7, 2, 2, 2, 3, 3, 3, 5, 5, 14, 5, 5, 6, 6, 6, 6, 6, 6, 7, 17, 7, 7, 7, 7, 9, 9, 9, 10, 20]
+    erdaCosts: [7, 2, 2, 2, 3, 3, 3, 5, 5, 14, 5, 5, 6, 6, 6, 6, 6, 6, 7, 17, 7, 7, 7, 7, 7, 9, 9, 9, 10, 20]
   }
 };
 
@@ -202,7 +202,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
     });
   }, [data?.basic?.character_name, apiKey]);
 
-  // 邏輯保留：Android 裝備變數 (目前未在下方 JSX 中使用)
+  // 1. 還原 Android 裝備邏輯
   const presetNo = data.equipment?.preset_no || 1;
   const androidEquipment = data.androidEquipment?.[`android_preset_${presetNo}`] || data.androidEquipment?.android_preset_1;
 
@@ -246,11 +246,10 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
   };
 
   return (
-    // FIX: 最外層容器設定 - 手機版強制 flex-col (單欄垂直)，電腦版 lg 轉為 grid (雙欄)
+    // FIX: 使用 flex-col 強制手機垂直排列，lg 切換回 grid
     <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 mt-6">
 
       {/* 近7天經驗值趨勢 + 極限屬性區塊 */}
-      {/* w-full: 確保在 flex-col 下佔滿寬度。 lg:col-span-2: 電腦版佔滿兩格 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full lg:col-span-2">
         <div className="bg-[#161b22] p-6 rounded-xl min-w-0 h-full">
           <SectionHeader icon={<Star className="w-5 h-5 text-green-400" />} title="近7天經驗值趨勢" />
@@ -261,12 +260,12 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
         </div>
       </div>
 
-      {/* 連結技能 - w-full 確保不被擠壓 */}
+      {/* 連結技能 - w-full + min-w-0 */}
       <div className="w-full lg:col-span-2 min-w-0">
         <LinkSkillSection linkSkill={linkSkill} />
       </div>
 
-      {/* Union & Artifact */}
+      {/* Union & Artifact - w-full + min-w-0 */}
       <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0">
         <SectionHeader icon={<Layers />} title="聯盟 & 神器" />
         <div className="space-y-4">
@@ -288,8 +287,6 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
                     {unionArtifact?.union_artifact_level ?? unionArtifact?.level ?? union?.union_artifact_level ?? '-'}
                   </span>
                </div>
-               
-               {/* FIX: 神器水晶列表 - 手機版單欄 (grid-cols-1)，sm 以上雙欄 */}
                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                  {unionArtifact.union_artifact_crystal.map((crystal, idx) => (
                            <div key={idx} className="bg-slate-900/50 p-2 rounded border border-slate-700 text-xs flex flex-row items-center min-h-[90px]">
@@ -305,8 +302,6 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
                            </div>
                  ))}
                </div>
-               
-               {/* 神器效果統計 */}
                {(() => {
                    const effects = unionArtifact.union_artifact_effect;
                    if (!effects || effects.length === 0) return null;
@@ -321,6 +316,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
                        return 0;
                    };
                    
+                   // 2. 還原 Artifact 名稱處理邏輯
                    const getCleanName = (name: string) => {
                        if (name.includes('全屬性')) return '全屬性';
                        if (name.match(/(?:Boss|BOSS).*傷害/i)) return 'BOSS 傷害';
@@ -341,8 +337,6 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
                    return (
                        <div className="bg-purple-900/20 border border-purple-500/30 rounded-lg p-3 mt-2">
                            <h4 className="text-xs font-bold text-purple-300 mb-2 flex items-center gap-2"><Star className="w-3 h-3 text-purple-400" /> 神器效果總和</h4>
-                           
-                           {/* FIX: 效果列表 - 手機版單欄，避免文字重疊 */}
                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                {effects.map((eff, idx) => {
                                    const val = getStatValue(eff.name, eff.level);
@@ -364,11 +358,10 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
         </div>
       </div>
 
-      {/* Symbols */}
+      {/* Symbols - w-full + min-w-0 */}
       <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0">
         <SectionHeader icon={<Hexagon />} title="符文 & 力量" />
         {symbolEquipment && (
-          // FIX: 符文列表 - 手機版 3 欄，sm 以上 4 欄
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
             {symbolEquipment.symbol.map((sym, idx) => (
               <ItemWithTooltip key={idx} icon={sym.symbol_icon} name={sym.symbol_name} level={sym.symbol_level} />
@@ -436,7 +429,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
         })()}
       </div>
 
-      {/* Pets */}
+      {/* Pets - w-full + min-w-0 */}
       <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0">
         <SectionHeader icon={<PawPrint />} title="寵物資訊" />
         {petEquipment ? (
@@ -465,7 +458,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
         ) : (<div className="text-slate-500 text-sm text-center py-4">無寵物資料</div>)}
       </div>
 
-      {/* Dojo */}
+      {/* Dojo - w-full + min-w-0 */}
       <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0">
            <SectionHeader icon={<Sword />} title="武陵道場" />
            {dojo ? (
@@ -477,7 +470,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
            ) : (<div className="text-slate-500 text-sm text-center py-10">無武陵道場紀錄</div>)}
       </div>
 
-      {/* Set Effects */}
+      {/* Set Effects - w-full + min-w-0 */}
       <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0">
         <SectionHeader icon={<Crown />} title="套裝效果" />
         <div className="space-y-3">
@@ -490,7 +483,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
         </div>
       </div>
 
-      {/* Skills (V/Hexa) */}
+      {/* Skills (V/Hexa) - w-full + min-w-0 */}
       <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0">
         {hexaMatrix && hexaMatrix.character_hexa_core_equipment && hexaMatrix.character_hexa_core_equipment.length > 0 && (
           <div className="mb-6">
@@ -516,7 +509,6 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
                     </div>
                 );
             })()}
-            {/* FIX: 核心技能列表 - 手機版 3 欄，sm 以上 4 欄 */}
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
               {hexaMatrix.character_hexa_core_equipment.map((core, idx) => (
                    <ItemWithTooltip key={idx} icon={findSkillIcon(core.hexa_core_name)} name={core.hexa_core_name} level={core.hexa_core_level} borderColor="border-purple-900/30" textColor="text-purple-400" />
@@ -528,7 +520,6 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
         {vMatrix && vMatrix.character_v_core_equipment && (
           <div className="mt-6">
             <h4 className="text-sm font-bold text-blue-400 mb-2">V 矩陣</h4>
-            {/* FIX: V 矩陣 - 手機版 3 欄，sm 以上 4 欄 */}
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                {vMatrix.character_v_core_equipment.sort((a, b) => b.slot_level - a.slot_level).map((core, idx) => (
                    <ItemWithTooltip key={idx} icon={findSkillIcon(core.v_core_name)} name={core.v_core_name} level={core.v_core_level} sub={core.slot_level.toString()} textColor="text-blue-400" />
@@ -560,7 +551,6 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
                 return (
                     <div className="bg-purple-900/20 border border-purple-500/30 rounded-lg p-4 mb-6">
                         <h4 className="text-sm font-bold text-purple-300 mb-3 flex items-center gap-2"><Star className="w-4 h-4 text-yellow-400" /> 屬性總和</h4>
-                        {/* FIX: Hexa 屬性總和 - 手機版單欄 */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                             {Object.entries(totals).map(([name, val], idx) => {
                                 const isPercent = name.toLowerCase().includes('boss') || name.includes('無視') || name.includes('防禦') || name.includes('爆擊傷害') || name.includes('Critical') || name === '傷害' || name === 'Damage';
@@ -680,13 +670,12 @@ const LinkSkillSection = ({ linkSkill }: { linkSkill: any }) => {
   });
 
   return (
-    // FIX: 連結技能區塊 - 手機版強制 min-w-0
+    // FIX: 這裡的 container 必須有 bg 和 border，且設定 min-w-0
     <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0 h-full">
       <SectionHeader icon={<Zap />} title="連結技能 (Link Skills)" presetState={{ current: selectedPreset, setCurrent: setSelectedPreset, active: activePresetNo }} />
       {Object.keys(totals).length > 0 && (
         <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-4 mb-6">
             <h4 className="text-sm font-bold text-yellow-300 mb-3 flex items-center gap-2"><Star className="w-4 h-4 text-yellow-400" /> 連結技能總和 (估算)</h4>
-            {/* FIX: 連結技能總和 - 手機版單欄 */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                 {Object.entries(totals).map(([name, val], idx) => {
                     const isPercent = ['BOSS 傷害', '無視防禦率', '爆擊率', '爆擊傷害', '最大HP', '最大MP', '獲得經驗值', '傷害'].includes(name);
