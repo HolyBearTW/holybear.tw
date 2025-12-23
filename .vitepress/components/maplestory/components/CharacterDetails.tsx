@@ -435,153 +435,154 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
             ))}
           </div>
         )}
-{/* summary block: 符文裝備總合 + 額外加成顯示 */}
-{symbolEquipment && (() => {
-
-  // 安全轉換字串為數字
-  const parseApiNumber = (val: string | undefined | null): number => {
-    if (!val) return 0;
-    const cleanVal = String(val).replace(/[^0-9.-]/g, '');
-    const num = Number(cleanVal);
-    return isNaN(num) ? 0 : num;
-  };
-
-  const symbols = symbolEquipment.symbol || [];
-
-  // --- 1. 計算裝備提供的數值 (Equipment Sum) ---
-  let arcData = { force: 0, stat: 0 };
-  let autData = { force: 0, stat: 0 };
-  let rates = { drop: 0, meso: 0, exp: 0 };
-
-  symbols.forEach(sym => {
-    const force = parseApiNumber(sym.symbol_force);
-    const name = sym.symbol_name || '';
-
-    // 屬性總合
-    const currentStatTotal = 
-      parseApiNumber(sym.symbol_str) +
-      parseApiNumber(sym.symbol_dex) +
-      parseApiNumber(sym.symbol_int) +
-      parseApiNumber(sym.symbol_luk) +
-      parseApiNumber(sym.symbol_hp);
-
-    // 累加特殊倍率
-    rates.drop += parseApiNumber(sym.symbol_drop_ratestring || sym.symbol_drop_rate);
-    rates.meso += parseApiNumber(sym.symbol_meso_ratestring || sym.symbol_meso_rate);
-    rates.exp += parseApiNumber(sym.symbol_exp_ratestring || sym.symbol_exp_rate);
-
-    // 分類邏輯
-    if (name.includes('神秘') || name.includes('祕法') || name.includes('Arcane')) {
-      arcData.force += force;
-      arcData.stat += currentStatTotal;
-    } else if (name.includes('真實') || name.includes('異常') || name.includes('Authentic')) { 
-      autData.force += force;
-      autData.stat += currentStatTotal;
-    }
-  });
-
-  // --- 2. 取得遊戲內最終數值 (Final Stat) ---
-  // 從 data.stat 中尋找對應的最終能力值
-  const finalArcStat = data?.stat?.final_stat?.find((s: any) => s.stat_name === '神秘力量' || s.stat_name === 'Arcane Power');
-  const finalAutStat = data?.stat?.final_stat?.find((s: any) => s.stat_name === '真實之力' || s.stat_name === 'Authentic Force');
-
-  const finalArcValue = parseApiNumber(finalArcStat?.stat_value);
-  const finalAutValue = parseApiNumber(finalAutStat?.stat_value);
-
-  // --- 3. 計算差額 (Diff) ---
-  // 差額 = 最終數值 - 裝備數值 (如果小於0則顯示0)
-  const arcDiff = Math.max(0, finalArcValue - arcData.force);
-  const autDiff = Math.max(0, finalAutValue - autData.force);
-
-  const hasRates = rates.drop > 0 || rates.meso > 0 || rates.exp > 0;
-
-  return (
-    <div className="bg-[#161b22] p-4 rounded-xl border border-slate-800 shadow-inner mt-4">
-      <h4 className="text-xs font-bold text-slate-300 mb-4 flex items-center gap-2">
-        <Hexagon className="w-4 h-4 text-slate-400" /> 符文詳細統計
-      </h4>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         
-        {/* --- ARC 區塊 (紫色) --- */}
-        <div className="bg-purple-900/20 border border-purple-500/30 rounded-lg p-4 flex flex-col justify-start min-h-[100px]">
-          <div className="text-purple-300 font-bold text-sm mb-3 flex items-center gap-2">
-             <div className="w-2 h-2 rounded-full bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.8)]"></div>
-             ARC (神秘力量)
-          </div>
-          
-          {/* 力量顯示：裝備數值 + 額外加成 */}
-          <div className="flex justify-between items-end mb-2">
-             <span className="text-slate-400 text-xs">力量總和</span>
-             <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-bold text-white font-mono">{arcData.force.toLocaleString()}</span>
-                {arcDiff > 0 && (
-                  <span className="text-xs font-bold text-green-400 font-mono" title={`來自公會技能/極限屬性/稱號: +${arcDiff}`}>
-                    +{arcDiff}
-                  </span>
-                )}
-             </div>
-          </div>
-          
-          <div className="flex justify-between items-end border-t border-purple-500/20 pt-2 mt-auto">
-             <span className="text-slate-500 text-xs">屬性加成</span>
-             <span className="text-sm font-bold text-purple-400 font-mono">+{arcData.stat.toLocaleString()}</span>
-          </div>
-        </div>
+        {/* summary block: 符文裝備總合 + 額外加成顯示 */}
+        {symbolEquipment && (() => {
 
-        {/* --- AUT 區塊 (青色) --- */}
-        <div className="bg-cyan-900/20 border border-cyan-500/30 rounded-lg p-4 flex flex-col justify-start min-h-[100px]">
-          <div className="text-cyan-300 font-bold text-sm mb-3 flex items-center gap-2">
-             <div className="w-2 h-2 rounded-full bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.8)]"></div>
-             AUT (真實力量)
-          </div>
-          
-          {/* 力量顯示：裝備數值 + 額外加成 */}
-          <div className="flex justify-between items-end mb-2">
-             <span className="text-slate-400 text-xs">力量總和</span>
-             <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-bold text-white font-mono">{autData.force.toLocaleString()}</span>
-                {autDiff > 0 && (
-                  <span className="text-xs font-bold text-green-400 font-mono" title={`來自公會技能/極限屬性/稱號: +${autDiff}`}>
-                    +{autDiff}
-                  </span>
-                )}
-             </div>
-          </div>
-          
-          <div className="flex justify-between items-end">
-             <span className="text-slate-500 text-xs">屬性加成</span>
-             <span className="text-sm font-bold text-cyan-400 font-mono">+{autData.stat.toLocaleString()}</span>
-          </div>
+          // 安全轉換字串為數字
+          const parseApiNumber = (val: string | undefined | null): number => {
+            if (!val) return 0;
+            const cleanVal = String(val).replace(/[^0-9.-]/g, '');
+            const num = Number(cleanVal);
+            return isNaN(num) ? 0 : num;
+          };
 
-          {/* 倍率區塊 (維持不變) */}
-          {hasRates && (
-            <div className="mt-3 pt-2 border-t border-cyan-500/30 flex flex-col gap-1">
-              {rates.drop > 0 && (
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-400 text-xs">道具掉落率</span>
-                  <span className="font-mono text-sm font-bold text-green-400">+{rates.drop}%</span>
+          const symbols = symbolEquipment.symbol || [];
+
+          // --- 1. 計算裝備提供的數值 (Equipment Sum) ---
+          let arcData = { force: 0, stat: 0 };
+          let autData = { force: 0, stat: 0 };
+          let rates = { drop: 0, meso: 0, exp: 0 };
+
+          symbols.forEach(sym => {
+            const force = parseApiNumber(sym.symbol_force);
+            const name = sym.symbol_name || '';
+
+            // 屬性總合
+            const currentStatTotal = 
+              parseApiNumber(sym.symbol_str) +
+              parseApiNumber(sym.symbol_dex) +
+              parseApiNumber(sym.symbol_int) +
+              parseApiNumber(sym.symbol_luk) +
+              parseApiNumber(sym.symbol_hp);
+
+            // 累加特殊倍率
+            rates.drop += parseApiNumber(sym.symbol_drop_ratestring || sym.symbol_drop_rate);
+            rates.meso += parseApiNumber(sym.symbol_meso_ratestring || sym.symbol_meso_rate);
+            rates.exp += parseApiNumber(sym.symbol_exp_ratestring || sym.symbol_exp_rate);
+
+            // 分類邏輯
+            if (name.includes('神秘') || name.includes('祕法') || name.includes('Arcane')) {
+              arcData.force += force;
+              arcData.stat += currentStatTotal;
+            } else if (name.includes('真實') || name.includes('異常') || name.includes('Authentic')) { 
+              autData.force += force;
+              autData.stat += currentStatTotal;
+            }
+          });
+
+          // --- 2. 取得遊戲內最終數值 (Final Stat) ---
+          // 從 data.stat 中尋找對應的最終能力值
+          const finalArcStat = data?.stat?.final_stat?.find((s: any) => s.stat_name === '神秘力量' || s.stat_name === 'Arcane Power');
+          const finalAutStat = data?.stat?.final_stat?.find((s: any) => s.stat_name === '真實之力' || s.stat_name === 'Authentic Force');
+
+          const finalArcValue = parseApiNumber(finalArcStat?.stat_value);
+          const finalAutValue = parseApiNumber(finalAutStat?.stat_value);
+
+          // --- 3. 計算差額 (Diff) ---
+          // 差額 = 最終數值 - 裝備數值 (如果小於0則顯示0)
+          const arcDiff = Math.max(0, finalArcValue - arcData.force);
+          const autDiff = Math.max(0, finalAutValue - autData.force);
+
+          const hasRates = rates.drop > 0 || rates.meso > 0 || rates.exp > 0;
+
+          return (
+            <div className="bg-[#161b22] p-4 rounded-xl border border-slate-800 shadow-inner mt-4">
+              <h4 className="text-xs font-bold text-slate-300 mb-4 flex items-center gap-2">
+                <Hexagon className="w-4 h-4 text-slate-400" /> 符文詳細統計
+              </h4>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
+                {/* --- ARC 區塊 (紫色) --- */}
+                <div className="bg-purple-900/20 border border-purple-500/30 rounded-lg p-4 flex flex-col justify-start min-h-[100px]">
+                  <div className="text-purple-300 font-bold text-sm mb-3 flex items-center gap-2">
+                     <div className="w-2 h-2 rounded-full bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.8)]"></div>
+                     ARC (神秘力量)
+                  </div>
+                  
+                  {/* 力量顯示：裝備數值 + 額外加成 */}
+                  <div className="flex justify-between items-end mb-2">
+                     <span className="text-slate-400 text-xs">力量總和</span>
+                     <div className="flex items-baseline gap-1">
+                        <span className="text-2xl font-bold text-white font-mono">{arcData.force.toLocaleString()}</span>
+                        {arcDiff > 0 && (
+                          <span className="text-xs font-bold text-green-400 font-mono" title={`來自公會技能/極限屬性/稱號: +${arcDiff}`}>
+                            +{arcDiff}
+                          </span>
+                        )}
+                     </div>
+                  </div>
+                  
+                  <div className="flex justify-between items-end border-t border-purple-500/20 pt-2 mt-auto">
+                     <span className="text-slate-500 text-xs">屬性加成</span>
+                     <span className="text-sm font-bold text-purple-400 font-mono">+{arcData.stat.toLocaleString()}</span>
+                  </div>
                 </div>
-              )}
-              {rates.meso > 0 && (
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-400 text-xs">楓幣獲得量</span>
-                  <span className="font-mono text-sm font-bold text-green-400">+{rates.meso}%</span>
+
+                {/* --- AUT 區塊 (青色) --- */}
+                <div className="bg-cyan-900/20 border border-cyan-500/30 rounded-lg p-4 flex flex-col justify-start min-h-[100px]">
+                  <div className="text-cyan-300 font-bold text-sm mb-3 flex items-center gap-2">
+                     <div className="w-2 h-2 rounded-full bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.8)]"></div>
+                     AUT (真實力量)
+                  </div>
+                  
+                  {/* 力量顯示：裝備數值 + 額外加成 */}
+                  <div className="flex justify-between items-end mb-2">
+                     <span className="text-slate-400 text-xs">力量總和</span>
+                     <div className="flex items-baseline gap-1">
+                        <span className="text-2xl font-bold text-white font-mono">{autData.force.toLocaleString()}</span>
+                        {autDiff > 0 && (
+                          <span className="text-xs font-bold text-green-400 font-mono" title={`來自公會技能/極限屬性/稱號: +${autDiff}`}>
+                            +{autDiff}
+                          </span>
+                        )}
+                     </div>
+                  </div>
+                  
+                  <div className="flex justify-between items-end">
+                     <span className="text-slate-500 text-xs">屬性加成</span>
+                     <span className="text-sm font-bold text-cyan-400 font-mono">+{autData.stat.toLocaleString()}</span>
+                  </div>
+
+                  {/* 倍率區塊 */}
+                  {hasRates && (
+                    <div className="mt-3 pt-2 border-t border-cyan-500/30 flex flex-col gap-1">
+                      {rates.drop > 0 && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-slate-400 text-xs">道具掉落率</span>
+                          <span className="font-mono text-sm font-bold text-green-400">+{rates.drop}%</span>
+                        </div>
+                      )}
+                      {rates.meso > 0 && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-slate-400 text-xs">楓幣獲得量</span>
+                          <span className="font-mono text-sm font-bold text-green-400">+{rates.meso}%</span>
+                        </div>
+                      )}
+                      {rates.exp > 0 && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-slate-400 text-xs">經驗值獲得量</span>
+                          <span className="font-mono text-sm font-bold text-yellow-400">+{rates.exp}%</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
-              )}
-              {rates.exp > 0 && (
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-400 text-xs">經驗值獲得量</span>
-                  <span className="font-mono text-sm font-bold text-yellow-400">+{rates.exp}%</span>
-                </div>
-              )}
+              </div>
             </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-})()}
+          );
+        })()}
       </div>
 
       {/* Pets */}
