@@ -1,13 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { DashboardData, CharacterAndroidEquipment } from '../types';
+import { DashboardData } from '../types';
 import { Zap, Star, Crown, Layers, PawPrint, Hexagon, Sword, Info, CheckSquare, Square } from 'lucide-react';
-import EquipmentGrid from './EquipmentGrid';
 import ExpTrendChart from './ExpTrendChart';
 
 interface CharacterDetailsProps {
   data: DashboardData;
   apiKey: string;
 }
+
+// 神器水晶圖片對應表（直接寫在本檔案內）
+const artifactCrystalImages = [
+  '/image/theme/artifact/Artifact1.png', // 菇菇寶貝
+  '/image/theme/artifact/Artifact2.png', // 綠水靈
+  '/image/theme/artifact/Artifact3.png', // 刺菇菇
+  '/image/theme/artifact/Artifact4.png', // 木妖
+  '/image/theme/artifact/Artifact5.png', // 石巨人
+  '/image/theme/artifact/Artifact6.png', // 巴洛古
+  '/image/theme/artifact/Artifact7.png', // 殘暴炎魔
+  '/image/theme/artifact/Artifact8.png', // 粉豆
+];
 
 // --- 六轉核心設定檔 (含碎片與靈魂艾爾達消耗) ---
 const HEXA_SETTINGS = {
@@ -63,7 +74,7 @@ const calculateHexaProgress = (hexaMatrix: any, includeJanus: boolean) => {
 
   let totalFragmentsUsed = 0;
   let totalErdaUsed = 0;
-  
+   
   let grandTotalFragments = 0;
   let grandTotalErda = 0;
   let hasJanus = false;
@@ -166,7 +177,7 @@ const LINK_SKILL_DATA: Record<string, (lv: number) => Record<string, number>> = 
   '精靈集中': (lv) => ({ 'BOSS 傷害': lv === 1 ? 4 : 7, '爆擊率': lv === 1 ? 4 : 7, '最大HP': lv === 1 ? 3 : 4, '最大MP': lv === 1 ? 3 : 4 }),
   '混合邏輯': (lv) => ({ '全屬性': lv === 1 ? 5 : 10 }),
   '致命的本能': (lv) => ({ '爆擊率': lv === 1 ? 10 : 15 }),
-  '精靈的祝福': (lv) => ({ '經驗值獲得量': lv === 1 ? 10 : 15 }),
+  '精靈的祝福': (lv) => ({ '獲得經驗值': lv === 1 ? 10 : 15 }),
   '自然之友': (lv) => ({ '傷害': lv === 1 ? 3 : 5 }),
   '自信': (lv) => ({ '無視防禦率': lv === 1 ? 5 : 10 }),
   '自信心': (lv) => ({ '無視防禦率': lv === 1 ? 5 : 10 }),
@@ -305,13 +316,6 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
           <HyperStatSection hyperStat={hyperStat} />
         </div>
       </div>
-      
-
-      {/* 裝備格（含機器人） */}
-      {/* <div className="lg:col-span-2">
-        {console.log('androidEquipment for grid', androidEquipment)}
-        <EquipmentGrid equipment={data.equipment} characterImage={data.basic?.character_image} androidEquipment={androidEquipment} />
-      </div> */}
 
       {/* 連結技能 */}
       <LinkSkillSection linkSkill={linkSkill} />
@@ -329,7 +333,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
               </div>
             </div>
           )}
-          
+           
           {unionArtifact && (
             <div className="space-y-2">
                <div className="flex justify-between items-center bg-slate-800/50 p-3 rounded-lg">
@@ -338,14 +342,24 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
                     {unionArtifact?.union_artifact_level ?? unionArtifact?.level ?? union?.union_artifact_level ?? '-'}
                   </span>
                </div>
-               <div className="grid grid-cols-2 gap-2">
+               {/* FIX: grid-cols-2 改為 grid-cols-1 sm:grid-cols-2 以適應手機版面 */}
+               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                  {unionArtifact.union_artifact_crystal.map((crystal, idx) => (
-                   <div key={idx} className="bg-slate-900/50 p-2 rounded border border-slate-700 text-xs">
-                     <div className="text-purple-300 font-bold mb-1">{crystal.name} Lv.{crystal.level}</div>
-                     <div className="text-slate-500">{crystal.crystal_option_name_1}</div>
-                     <div className="text-slate-500">{crystal.crystal_option_name_2}</div>
-                     <div className="text-slate-500">{crystal.crystal_option_name_3}</div>
-                   </div>
+                           <div key={idx} className="bg-slate-900/50 p-2 rounded border border-slate-700 text-xs flex flex-row items-center min-h-[90px]">
+                             <div className="flex-shrink-0 w-16 h-16 flex items-center justify-center">
+                               <img
+                                 src={artifactCrystalImages[idx]}
+                                 alt={crystal.name}
+                                 className="w-16 h-16 object-contain rounded bg-slate-800 border border-purple-400/40"
+                               />
+                             </div>
+                             <div className="flex-1 ml-2">
+                               <div className="text-purple-300 font-bold mb-1">{crystal.name} Lv.{crystal.level}</div>
+                               <div className="text-slate-500">{crystal.crystal_option_name_1}</div>
+                               <div className="text-slate-500">{crystal.crystal_option_name_2}</div>
+                               <div className="text-slate-500">{crystal.crystal_option_name_3}</div>
+                             </div>
+                           </div>
                  ))}
                </div>
 
@@ -372,7 +386,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
                        if ((name.includes('攻擊力') || name.includes('Attack')) && (name.includes('魔力') || name.includes('Magic'))) return '攻擊力 & 魔力';
                        if (name.includes('攻擊力') || name.includes('Attack')) return '攻擊力';
                        if (name.includes('魔力') || name.includes('Magic')) return '魔法攻擊力';
-                       if (name.includes('經驗值')) return '經驗值獲得量';
+                       if (name.includes('經驗值')) return '獲得經驗值';
                        if (name.includes('Buff') || name.includes('加持')) return 'Buff 持續時間';
                        if (name.includes('道具') || name.includes('掉落')) return '道具掉落率';
                        if (name.includes('楓幣')) return '楓幣獲得量';
@@ -407,9 +421,11 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
       </div>
 
       {/* Symbols */}
+
       <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner">
         <SectionHeader icon={<Hexagon />} title="符文 & 力量" />
         {symbolEquipment && (
+          // FIX: 加入 sm:grid-cols-4，手機版預設 grid-cols-3
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
             {symbolEquipment.symbol.map((sym, idx) => (
               <ItemWithTooltip 
@@ -421,20 +437,153 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
             ))}
           </div>
         )}
-        <div className="mt-4 grid grid-cols-2 gap-4">
-           <div className="bg-slate-800/50 p-3 rounded text-center">
-             <div className="text-xs text-slate-400">神秘力量 (ARC)</div>
-             <div className="text-xl font-bold text-blue-400">
-               {data.stat.final_stat.find(s => s.stat_name === '神秘力量' || s.stat_name === 'Arcane Power')?.stat_value || 0}
+{/* summary block: 符文裝備總合 + 額外加成顯示 */}
+{symbolEquipment && (() => {
+
+  // 安全轉換字串為數字
+  const parseApiNumber = (val: string | undefined | null): number => {
+    if (!val) return 0;
+    const cleanVal = String(val).replace(/[^0-9.-]/g, '');
+    const num = Number(cleanVal);
+    return isNaN(num) ? 0 : num;
+  };
+
+  const symbols = symbolEquipment.symbol || [];
+
+  // --- 1. 計算裝備提供的數值 (Equipment Sum) ---
+  let arcData = { force: 0, stat: 0 };
+  let autData = { force: 0, stat: 0 };
+  let rates = { drop: 0, meso: 0, exp: 0 };
+
+  symbols.forEach(sym => {
+    const force = parseApiNumber(sym.symbol_force);
+    const name = sym.symbol_name || '';
+
+    // 屬性總合
+    const currentStatTotal = 
+      parseApiNumber(sym.symbol_str) +
+      parseApiNumber(sym.symbol_dex) +
+      parseApiNumber(sym.symbol_int) +
+      parseApiNumber(sym.symbol_luk) +
+      parseApiNumber(sym.symbol_hp);
+
+    // 累加特殊倍率
+    rates.drop += parseApiNumber(sym.symbol_drop_ratestring || sym.symbol_drop_rate);
+    rates.meso += parseApiNumber(sym.symbol_meso_ratestring || sym.symbol_meso_rate);
+    rates.exp += parseApiNumber(sym.symbol_exp_ratestring || sym.symbol_exp_rate);
+
+    // 分類邏輯
+    if (name.includes('神秘') || name.includes('祕法') || name.includes('Arcane')) {
+      arcData.force += force;
+      arcData.stat += currentStatTotal;
+    } else if (name.includes('真實') || name.includes('異常') || name.includes('Authentic')) { 
+      autData.force += force;
+      autData.stat += currentStatTotal;
+    }
+  });
+
+  // --- 2. 取得遊戲內最終數值 (Final Stat) ---
+  // 從 data.stat 中尋找對應的最終能力值
+  const finalArcStat = data?.stat?.final_stat?.find((s: any) => s.stat_name === '神秘力量' || s.stat_name === 'Arcane Power');
+  const finalAutStat = data?.stat?.final_stat?.find((s: any) => s.stat_name === '真實之力' || s.stat_name === 'Authentic Force');
+
+  const finalArcValue = parseApiNumber(finalArcStat?.stat_value);
+  const finalAutValue = parseApiNumber(finalAutStat?.stat_value);
+
+  // --- 3. 計算差額 (Diff) ---
+  // 差額 = 最終數值 - 裝備數值 (如果小於0則顯示0)
+  const arcDiff = Math.max(0, finalArcValue - arcData.force);
+  const autDiff = Math.max(0, finalAutValue - autData.force);
+
+  const hasRates = rates.drop > 0 || rates.meso > 0 || rates.exp > 0;
+
+  return (
+    <div className="bg-[#161b22] p-4 rounded-xl border border-slate-800 shadow-inner mt-4">
+      <h4 className="text-xs font-bold text-slate-300 mb-4 flex items-center gap-2">
+        <Hexagon className="w-4 h-4 text-slate-400" /> 符文詳細統計
+      </h4>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        
+        {/* --- ARC 區塊 (紫色) --- */}
+        <div className="bg-purple-900/20 border border-purple-500/30 rounded-lg p-4 flex flex-col justify-start min-h-[100px]">
+          <div className="text-purple-300 font-bold text-sm mb-3 flex items-center gap-2">
+             <div className="w-2 h-2 rounded-full bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.8)]"></div>
+             ARC (神秘力量)
+          </div>
+          
+          {/* 力量顯示：裝備數值 + 額外加成 */}
+          <div className="flex justify-between items-end mb-2">
+             <span className="text-slate-400 text-xs">力量總和</span>
+             <div className="flex items-baseline gap-1">
+                <span className="text-2xl font-bold text-white font-mono">{arcData.force.toLocaleString()}</span>
+                {arcDiff > 0 && (
+                  <span className="text-xs font-bold text-green-400 font-mono" title={`來自公會技能/極限屬性/稱號: +${arcDiff}`}>
+                    +{arcDiff}
+                  </span>
+                )}
              </div>
-           </div>
-           <div className="bg-slate-800/50 p-3 rounded text-center">
-             <div className="text-xs text-slate-400">真實力量 (AUT)</div>
-             <div className="text-xl font-bold text-orange-400">
-               {data.stat.final_stat.find(s => s.stat_name === '真實之力' || s.stat_name === 'Authentic Force')?.stat_value || 0}
-             </div>
-           </div>
+          </div>
+          
+          <div className="flex justify-between items-end border-t border-purple-500/20 pt-2 mt-auto">
+             <span className="text-slate-500 text-xs">屬性加成</span>
+             <span className="text-sm font-bold text-purple-400 font-mono">+{arcData.stat.toLocaleString()}</span>
+          </div>
         </div>
+
+        {/* --- AUT 區塊 (青色) --- */}
+        <div className="bg-cyan-900/20 border border-cyan-500/30 rounded-lg p-4 flex flex-col justify-start min-h-[100px]">
+          <div className="text-cyan-300 font-bold text-sm mb-3 flex items-center gap-2">
+             <div className="w-2 h-2 rounded-full bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.8)]"></div>
+             AUT (真實力量)
+          </div>
+          
+          {/* 力量顯示：裝備數值 + 額外加成 */}
+          <div className="flex justify-between items-end mb-2">
+             <span className="text-slate-400 text-xs">力量總和</span>
+             <div className="flex items-baseline gap-1">
+                <span className="text-2xl font-bold text-white font-mono">{autData.force.toLocaleString()}</span>
+                {autDiff > 0 && (
+                  <span className="text-xs font-bold text-green-400 font-mono" title={`來自公會技能/極限屬性/稱號: +${autDiff}`}>
+                    +{autDiff}
+                  </span>
+                )}
+             </div>
+          </div>
+          
+          <div className="flex justify-between items-end">
+             <span className="text-slate-500 text-xs">屬性加成</span>
+             <span className="text-sm font-bold text-cyan-400 font-mono">+{autData.stat.toLocaleString()}</span>
+          </div>
+
+          {/* 倍率區塊 (維持不變) */}
+          {hasRates && (
+            <div className="mt-3 pt-2 border-t border-cyan-500/30 flex flex-col gap-1">
+              {rates.drop > 0 && (
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-400 text-xs">道具掉落率</span>
+                  <span className="font-mono text-sm font-bold text-green-400">+{rates.drop}%</span>
+                </div>
+              )}
+              {rates.meso > 0 && (
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-400 text-xs">楓幣獲得量</span>
+                  <span className="font-mono text-sm font-bold text-green-400">+{rates.meso}%</span>
+                </div>
+              )}
+              {rates.exp > 0 && (
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-400 text-xs">經驗值獲得量</span>
+                  <span className="font-mono text-sm font-bold text-yellow-400">+{rates.exp}%</span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+})()}
       </div>
 
       {/* Pets */}
@@ -603,7 +752,8 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
                 );
             })()}
             
-            <div className="grid grid-cols-4 gap-2">
+            {/* FIX: grid-cols-4 改為 grid-cols-3 sm:grid-cols-4 以適應手機版面 */}
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
               {hexaMatrix.character_hexa_core_equipment.map((core, idx) => {
                 const icon = findSkillIcon(core.hexa_core_name);
                 return (
@@ -629,7 +779,8 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
         {vMatrix && vMatrix.character_v_core_equipment && (
           <div className="mt-6">
             <h4 className="text-sm font-bold text-blue-400 mb-2">V 矩陣</h4>
-            <div className="grid grid-cols-4 gap-2">
+            {/* FIX: grid-cols-4 改為 grid-cols-3 sm:grid-cols-4 以適應手機版面 */}
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                {vMatrix.character_v_core_equipment
                  .sort((a, b) => b.slot_level - a.slot_level)
                  .map((core, idx) => {
@@ -682,7 +833,8 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
                         <h4 className="text-sm font-bold text-purple-300 mb-3 flex items-center gap-2">
                             <Star className="w-4 h-4 text-yellow-400" /> 屬性總和
                         </h4>
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                        {/* FIX: 加入 grid-cols-1 sm:grid-cols-2 */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                             {Object.entries(totals).map(([name, val], idx) => {
                                 const isPercent = name.toLowerCase().includes('boss') || name.includes('無視') || name.includes('防禦') || 
                                                   name.includes('爆擊傷害') || name.includes('Critical') || 
@@ -797,7 +949,7 @@ const LinkSkillSection = ({ linkSkill }: { linkSkill: any }) => {
   const getPresetSkills = () => {
     return linkSkill[`character_link_skill_preset_${selectedPreset}`] || [];
   };
-  
+   
   const ownedSkill = linkSkill.character_owned_link_skill;
   const currentSkills = getPresetSkills();
 
@@ -829,7 +981,7 @@ const LinkSkillSection = ({ linkSkill }: { linkSkill: any }) => {
               { regex: /(?:全屬性|所有屬性)\s*(?:\+|:)?\s*(\d+)/, name: '全屬性' },
               { regex: /魔法攻擊力\s*(?:\+|:)?\s*(\d+)/, name: '魔法攻擊力' },
               { regex: /攻擊力\s*(?:\+|:)?\s*(\d+)/, name: '攻擊力', exclude: ['Boss', 'BOSS', '魔法'] },
-              { regex: /經驗值.*?(\d+)%?/, name: '經驗值獲得量' },
+              { regex: /經驗值.*?(\d+)%?/, name: '獲得經驗值' },
               { regex: /狀態異常抗性\s*(?:\+|:)?\s*(\d+)/, name: '狀態異常抗性' },
               { regex: /(\d+)%?\s*傷害/, name: '傷害', exclude: ['Boss', 'BOSS', '爆擊', '受到'] },
               { regex: /傷害\s*(?:\+|:)?\s*(\d+)%?/, name: '傷害', exclude: ['Boss', 'BOSS', '爆擊', '受到'] },
@@ -870,7 +1022,7 @@ const LinkSkillSection = ({ linkSkill }: { linkSkill: any }) => {
           active: activePresetNo
         }}
       />
-      
+       
       {Object.keys(totals).length > 0 && (
         <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-4 mb-6">
             <h4 className="text-sm font-bold text-yellow-300 mb-3 flex items-center gap-2">
@@ -878,7 +1030,7 @@ const LinkSkillSection = ({ linkSkill }: { linkSkill: any }) => {
             </h4>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                 {Object.entries(totals).map(([name, val], idx) => {
-                    const isPercent = ['BOSS 傷害', '無視防禦率', '爆擊率', '爆擊傷害', '最大HP', '最大MP', '經驗值獲得量', '傷害'].includes(name);
+                    const isPercent = ['BOSS 傷害', '無視防禦率', '爆擊率', '爆擊傷害', '最大HP', '最大MP', '獲得經驗值', '傷害'].includes(name);
                     return (
                         <div key={idx} className="bg-slate-900/50 px-3 py-2 rounded border border-yellow-500/20 flex justify-between items-center">
                             <span className="text-xs text-slate-300">{name}</span>
@@ -969,6 +1121,37 @@ const HyperStatSection = ({ hyperStat }: { hyperStat: any }) => {
     .filter((stat: any) => stat.stat_level > 0)
     .sort((a: any, b: any) => b.stat_level - a.stat_level);
 
+  // 極限屬性加成對照表（簡化版，依實際遊戲可再補充）
+  const hyperStatValueTable: Record<string, (lv: number) => string | number> = {
+    'STR': lv => lv <= 5 ? lv * 30 : 150 + (lv - 5) * 35,
+    'DEX': lv => lv <= 5 ? lv * 30 : 150 + (lv - 5) * 35,
+    'INT': lv => lv <= 5 ? lv * 30 : 150 + (lv - 5) * 35,
+    'LUK': lv => lv <= 5 ? lv * 30 : 150 + (lv - 5) * 35,
+    'HP': lv => lv <= 5 ? lv * 250 : 1250 + (lv - 5) * 275,
+    'MP': lv => lv <= 5 ? lv * 250 : 1250 + (lv - 5) * 275,
+    '全屬性': lv => lv <= 5 ? lv * 10 : 50 + (lv - 5) * 20,
+    '攻擊力': lv => lv <= 5 ? lv * 3 : 15 + (lv - 5) * 4,
+    '魔法攻擊力': lv => lv <= 5 ? lv * 3 : 15 + (lv - 5) * 4,
+    '爆擊率': lv => lv <= 5 ? lv * 1 : 5 + (lv - 5) * 2,
+    '爆擊傷害': lv => lv <= 5 ? lv * 1 : 5 + (lv - 5) * 2,
+    '無視防禦率': lv => lv <= 5 ? lv * 3 : 15 + (lv - 5) * 4,
+    'BOSS傷害': lv => lv <= 5 ? lv * 3 : 15 + (lv - 5) * 4,
+    '傷害': lv => lv <= 5 ? lv * 3 : 15 + (lv - 5) * 4,
+    '獲得經驗值': lv => lv * 0.5,
+  };
+
+  // 取得加成顯示
+  const getHyperStatValue = (type: string, lv: number) => {
+    const key = Object.keys(hyperStatValueTable).find(k => type.includes(k));
+    if (!key) return '';
+    const val = hyperStatValueTable[key](lv);
+    // 百分比屬性
+    if (["爆擊率","爆擊傷害","無視防禦率","BOSS傷害","傷害","全屬性","獲得經驗值"].some(k=>type.includes(k))) {
+      return `+${val}%`;
+    }
+    return `+${val}`;
+  };
+
   return (
     <>
       <SectionHeader 
@@ -985,12 +1168,15 @@ const HyperStatSection = ({ hyperStat }: { hyperStat: any }) => {
            剩餘點數: <span className="text-indigo-400 font-mono font-bold">{getRemainPoints()}</span>
          </span>
       </div>
-      
+       
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 mt-4">
         {activeStats.map((stat: any, idx: number) => (
           <div key={idx} className="flex justify-between items-center bg-[#0d1117] px-3 py-2 rounded text-sm border border-slate-700/50 hover:border-indigo-500/50 transition-colors">
-            <span className="text-slate-300">{stat.stat_type}</span>
-            <span className="font-bold text-indigo-400 font-mono">Lv.{stat.stat_level}</span>
+            <span className="text-slate-300 whitespace-nowrap">
+              {stat.stat_type}
+              <span className="font-bold text-green-400 font-mono ml-1">{getHyperStatValue(stat.stat_type, stat.stat_level)}</span>
+            </span>
+            <span className="font-bold text-indigo-400 font-mono whitespace-nowrap">Lv.{stat.stat_level}</span>
           </div>
         ))}
         {activeStats.length === 0 && (
