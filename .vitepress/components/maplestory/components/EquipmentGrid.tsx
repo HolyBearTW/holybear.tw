@@ -52,7 +52,7 @@ const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'lef
   const def = SLOT_DEFINITIONS[slotKey];
   
   // Special handling: If slotKey is not defined (e.g. spacer), return empty
-  if (!def) return <div className="w-10 h-10 sm:w-11 sm:h-11 invisible" />;
+  if (!def) return <div className="w-10 h-10 sm:w-12 sm:h-12 invisible flex-shrink-0" />;
 
   let borderColor = 'border-slate-800';
   let bgColor = 'bg-[#1a1d24]';
@@ -83,15 +83,13 @@ const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'lef
     ? 'md:right-full md:mr-1 md:left-auto'
     : 'md:left-full md:ml-1 md:right-auto';
 
-  // Slot Android: 改回和其他裝備一致，顯示圖片
-  // (這段其實可以省略，直接用下方 return 即可，保留以便未來擴充)
-  // 其他格維持原本渲染
-  // Android 格子強制不壓縮且顯示
-  // 強制 Android 格子在所有寬度都顯示且不壓縮
-const extraAndroidClass = slotKey === 'Android' ? 'flex-shrink-0 min-w-10 min-h-10 sm:min-w-12 sm:min-h-12' : '';
   return (
     <div className="relative z-0 hover:z-50 group">
-      <div className={`w-10 h-10 sm:w-12 sm:h-12 h-full ${bgColor} border-2 ${borderColor} rounded-md flex items-center justify-center relative overflow-hidden transition-all ${glow} ${extraAndroidClass}`}>
+      {/* FIXED: 
+          1. 移除 h-full (避免被父容器高度影響導致變扁)
+          2. 加入 flex-shrink-0 (防止在 flex 容器中被擠壓)
+      */}
+      <div className={`w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0 ${bgColor} border-2 ${borderColor} rounded-md flex items-center justify-center relative overflow-hidden transition-all ${glow}`}>
         {item ? (
           <>
             <img src={item.item_icon} alt={item.item_name} className="w-8 h-8 sm:w-9 sm:h-9 object-contain z-10 m-auto" />
@@ -120,7 +118,7 @@ const extraAndroidClass = slotKey === 'Android' ? 'flex-shrink-0 min-w-10 min-h-
 };
 
 const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, characterImage, androidEquipment }) => {
-  // [重要修正] 防呆：如果 equipment 資料還沒進來，直接回傳 null，避免讀取 preset_no 崩潰
+  // 防呆：如果 equipment 資料還沒進來，直接回傳 null
   if (!equipment) {
     return null; 
   }
@@ -153,17 +151,16 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, characterImage
   const findItem = (slotKey: string) => {
     const def = SLOT_DEFINITIONS[slotKey];
     if (!def) return undefined;
+    
     // Pendant2 只做精確比對
     if (slotKey === 'Pendant2' || slotKey === 'Pendant') {
-      // ...existing code...
-      if (slotKey === 'Pendant2' || slotKey === 'Pendant') {
         // 只比對 slot
         return displayItems.find((item: EquipmentItem) => {
           const slot = normalize(item.item_equipment_slot);
           return def.match.includes(slot);
         });
-      }
     }
+    
     // 其他欄位：先精確比對，再模糊 fallback
     const exact = displayItems.find((item: EquipmentItem) => {
       const slot = normalize(item.item_equipment_slot);
@@ -171,12 +168,14 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, characterImage
       return def.match.includes(slot) || def.match.includes(part);
     });
     if (exact) return exact;
+    
     const fuzzy = displayItems.find((item: EquipmentItem) => {
       const slot = normalize(item.item_equipment_slot);
       const part = normalize(item.item_equipment_part);
       return def.match.some(m => slot === normalize(m) || part === normalize(m));
     });
     if (fuzzy) return fuzzy;
+    
     if (slotKey === 'Android' && androidEquipment && androidEquipment.android_name) {
       return {
         item_equipment_part: 'android',
@@ -219,11 +218,6 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, characterImage
     );
   });
 
-  // Slot Android debug
-  const androidItem = findItem('Android');
-  if (androidItem) {
-
-  }
   return (
     <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner relative">
       <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
@@ -236,7 +230,7 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, characterImage
         onPresetChange={setSelectedPreset}
         activePresetNo={activePresetNo}
         label="裝備預設"
-        showBase={false} // 依照您的要求，一般裝備不顯示 "現(0)"
+        showBase={false}
       />
 
       <div className="flex justify-center gap-6 mt-4">
