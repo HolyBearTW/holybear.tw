@@ -151,6 +151,7 @@ export const fetchCharacterData = async (characterName: string, apiKey: string, 
     buildUrl('/character/link-skill', ocid, dateParam),
     buildUrl('/user/union', ocid, dateParam),
     buildUrl('/user/union-artifact', ocid, dateParam),
+    buildUrl('/user/union-champion', ocid, dateParam),
     buildUrl('/character/pet-equipment', ocid, dateParam),
     buildUrl('/character/symbol-equipment', ocid, dateParam),
     buildUrl('/character/set-effect', ocid, dateParam),
@@ -194,7 +195,7 @@ export const fetchCharacterData = async (characterName: string, apiKey: string, 
 
   const [
     basicRes, statRes, equipRes, abilityRes, hyperRes, linkRes,
-    unionRes, artifactRes, petRes, symbolRes, setRes, vmatrixRes, hexaRes, dojoRes,
+    unionRes, artifactRes, unionChampionRes, petRes, symbolRes, setRes, vmatrixRes, hexaRes, dojoRes,
     skill5Res, skill6Res,
     skill0Res, skill1Res, skill2Res, skill3Res, skill4Res,
     basic7DaysRes, popularityRes, hexaStatRes, cashItemRes, beautyRes, androidRes
@@ -217,6 +218,7 @@ export const fetchCharacterData = async (characterName: string, apiKey: string, 
   const linkSkill = await safeJson(linkRes, { character_link_skill: [] });
   const union = await safeJson(unionRes);
   const unionArtifact = await safeJson(artifactRes);
+  const unionChampion = await safeJson(unionChampionRes);
   const petEquipment = await safeJson(petRes);
   const symbolEquipment = await safeJson(symbolRes);
   const setEffect = await safeJson(setRes);
@@ -258,7 +260,7 @@ export const fetchCharacterData = async (characterName: string, apiKey: string, 
   }
 
   return {
-    basic, stat, equipment, ability, hyperStat, linkSkill, union, unionArtifact,
+    basic, stat, equipment, ability, hyperStat, linkSkill, union, unionArtifact, unionChampion,
     petEquipment, symbolEquipment, setEffect, vMatrix, hexaMatrix, hexaMatrixStat,
     dojo, skill5, skill6, skill0, skill1, skill2, skill3, skill4,
     character_basic_7days_ago: basic7Days,

@@ -250,10 +250,7 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, characterImage
       {/* Left Columns (Accessories) */}
       <div className="flex gap-2">
         <div className="flex flex-col gap-2">
-          {['Ring4', 'Ring3', 'Ring2', 'Ring1', 'Belt'].map(key => <Slot key={key} slotKey={key} item={findItem(key)} tooltipSide="right" />)}
-          <div className="mt-2">
-             <Slot slotKey="Pocket" item={findItem('Pocket')} tooltipSide="right" />
-          </div>
+          {['Ring4', 'Ring3', 'Ring2', 'Ring1', 'Belt', 'Pocket'].map(key => <Slot key={key} slotKey={key} item={findItem(key)} tooltipSide="right" />)}
         </div>
         <div className="flex flex-col gap-2">
            {['Face', 'Eye', 'Earrings', 'Pendant2', 'Pendant'].map(key => <Slot key={key} slotKey={key} item={findItem(key)} tooltipSide="right" />)}
@@ -282,11 +279,7 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, characterImage
             <Slot slotKey="Android" item={findItem('Android')} tooltipSide="left" />
           </div>
           <div className="flex flex-col gap-2">
-            {['Cape', 'Gloves', 'Shoes', 'Medal'].map(key => <Slot key={key} slotKey={key} item={findItem(key)} tooltipSide="left" />)}
-            <Slot slotKey="Heart" item={findItem('Heart')} tooltipSide="left" />
-            <div className="mt-2">
-              <Slot slotKey="Badge" item={findItem('Badge')} tooltipSide="left" />
-            </div>
+            {['Cape', 'Gloves', 'Shoes', 'Medal', 'Heart', 'Badge'].map(key => <Slot key={key} slotKey={key} item={findItem(key)} tooltipSide="left" />)}
           </div>
       </div>
       </div>

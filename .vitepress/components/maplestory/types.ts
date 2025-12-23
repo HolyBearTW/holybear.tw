@@ -149,6 +149,7 @@ export interface DashboardData {
   linkSkill: CharacterLinkSkill;
   union?: CharacterUnion;
   unionArtifact?: CharacterUnionArtifact;
+  unionChampion?: CharacterUnionChampion;
   petEquipment?: CharacterPetEquipment;
   symbolEquipment?: CharacterSymbolEquipment;
   setEffect?: CharacterSetEffect;
@@ -194,6 +195,24 @@ export interface CharacterUnionArtifact {
   union_artifact_level?: number;
   level?: number; // Possible fallback field
   union_artifact_exp?: number;
+}
+
+export interface UnionChampionBadge {
+  stat: string;
+}
+
+export interface UnionChampionInfo {
+  champion_name: string;
+  champion_slot: number;
+  champion_grade: string;
+  champion_class: string;
+  champion_badge_info: UnionChampionBadge[];
+}
+
+export interface CharacterUnionChampion {
+  date: string;
+  union_champion: UnionChampionInfo[];
+  champion_badge_total_info: UnionChampionBadge[];
 }
 
 export interface CharacterPetEquipment {

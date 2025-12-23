@@ -911,9 +911,10 @@ const App: React.FC = () => {
               <div className="vp-tip custom-vp-tip p-4 sm:p-6 rounded-lg border-l-4 border-indigo-400 bg-indigo-50/90 text-indigo-900 dark:bg-[#23263a] dark:text-indigo-200 dark:border-indigo-500 shadow-sm mx-auto">
                 <div className="font-bold mb-1 text-indigo-700 dark:text-indigo-300">更新日誌</div>
                 <ul className="list-disc pl-5 text-sm space-y-1">
-                  <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/23</span> 優化符文總和計算區塊，顯示詳細的屬性加成，並為每個聯盟神器增加對應圖示。</li>
+                  <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/23</span> 新增聯盟冠軍區域，並調整極限屬性計算方式及手機版顯示方式。</li>
+                  <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/23</span> 優化符文總和計算區域，顯示詳細的屬性加成，並為每個聯盟神器增加對應圖示。</li>
                   <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/22</span> 新增近 7 天經驗值趨勢統計元件，用於視覺化經驗成長趨勢。</li>
-                  <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/21</span> 重構核心技能區塊的 HEXA 矩陣進度演算法，並新增是否計算靈魂亞努斯選項。</li>
+                  <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/21</span> 重構核心技能區域的 HEXA 矩陣進度演算法，並新增是否計算靈魂亞努斯選項。</li>
                   <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/21</span> 新增機器人裝備欄位。</li>
                   <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/21</span> 時裝格子支援即時染色預覽。</li>
                   <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/21</span> 滑鼠懸浮在時裝格子時也會顯示圖片預覽。</li>
