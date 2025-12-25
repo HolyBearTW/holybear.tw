@@ -7,11 +7,12 @@ import CashEquipmentGrid from './components/CashEquipmentGrid';
 import CharacterDetails from './components/CharacterDetails';
 import StatRadarChart from './components/StatRadarChart';
 import PresetSwitcher from './components/PresetSwitcher';
-import { fetchCharacterData, findBestDateInPastWeek } from './services/nexonService';
+import { fetchCharacterData, findBestDateInPastWeek, fetchWeeklyHistory } from './services/nexonService';
 import { analyzeCharacter } from './services/geminiService';
 import { DashboardData } from './types';
 import { MOCK_DATA } from './constants';
 import MarkdownIt from 'markdown-it';
+import { calculateWeeklyGrowth } from './components/ExpTrendChart';
 
 const DEFAULT_GEMINI_KEY = import.meta.env.VITE_DEFAULT_GEMINI_KEY || '';
 
@@ -31,20 +32,46 @@ const SERVER_ICONS: Record<string, string> = {
 const getJobBackgroundMap = (jobName: string): string => {
   if (!jobName) return '100000000';
   
+  // 1. 皇家騎士團
   if (['皇家', '米哈逸', '聖魂', '烈焰', '破風', '暗夜', '閃雷'].some(k => jobName.includes(k))) return '130000000';
+  
+  // 2. 末日反抗軍
   if (['反抗軍', '惡魔', '傑諾', '煉獄', '機甲', '狂豹', '爆拳'].some(k => jobName.includes(k))) return '310000000';
+  
+  // 3. 英雄團
+  if (jobName.includes('夜光')) return '101000200';
   if (jobName.includes('精靈遊俠')) return '101050000';
   if (jobName.includes('狂狼勇士')) return '140000000';
   if (jobName.includes('幻影俠盜')) return '915000000';
+  if (jobName.includes('龍魔導士')) return '100030102';
   if (jobName.includes('隱月')) return '410000000';
-  if (['凱撒', '天使破壞者', '卡蒂娜', '凱恩'].some(k => jobName.includes(k))) return '400000000';
+  
+  // 4. 阿尼馬
+  if (jobName.includes('虎影')) return '410000200';
+  if (jobName.includes('菈菈')) return '410004003';
+  if (jobName.includes('蓮')) return '102000000';
+  
+  // 5. 超新星 (凱撒、天破、卡蒂娜、凱殷)
+  if (['凱撒', '天使破壞者', '卡蒂娜', '凱殷'].some(k => jobName.includes(k))) return '400000000';
+  
+  // 6. 亥雷普 (阿戴爾、亞克、伊利恩、卡莉)
   if (['阿戴爾', '亞克', '伊利恩', '卡莉'].some(k => jobName.includes(k))) return '402000000';
+  
+  // 7. 特殊職業 (神之子、凱內西斯)
   if (jobName.includes('神之子')) return '321000000';
   if (jobName.includes('凱內西斯')) return '331000000';
+  
+  // 8. 冒險家 - 劍士
   if (['劍士', '英雄', '聖騎士', '黑騎士', '狂戰士', '十字軍', '騎士', '槍騎兵', '龍騎士'].some(k => jobName.includes(k))) return '102000000';
-  if (['法師', '火毒', '冰雷', '主教', '巫師', '魔導士', '僧侶', '祭司', '琳恩', '幻獸師'].some(k => jobName.includes(k))) return '101000000';
+  
+  // 9. 冒險家 - 法師 (含琳恩)
+  if (['法師', '火、毒', '冰、雷', '主教', '巫師', '魔導士', '僧侶', '祭司', '琳恩', '幻獸師'].some(k => jobName.includes(k))) return '101000000';
+  
+  // 10. 冒險家 - 盜賊
   if (['盜賊', '夜使者', '暗影神偷', '影武者', '刺客', '暗殺者', '俠盜', '神偷'].some(k => jobName.includes(k))) return '103000000';
-  if (['海盜', '拳霸', '槍神', '重砲', '指拳手', '衝鋒隊長', '槍手', '墨玄', '蒼龍'].some(k => jobName.includes(k))) return '120000000';
+  
+  // 11. 冒險家 - 海盜
+  if (['海盜', '拳霸', '槍神', '重砲', '墨玄'].some(k => jobName.includes(k))) return '120000000';
 
   return '100000000';
 };
@@ -75,6 +102,7 @@ const App: React.FC = () => {
   const [showHistory, setShowHistory] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [favorites, setFavorites] = useState<string[]>([]);
+  const [historyData, setHistoryData] = useState<any[]>([]);
   const initialSearchDone = useRef(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const aiResultRef = useRef<HTMLDivElement>(null);
@@ -106,6 +134,13 @@ const App: React.FC = () => {
       setAbilityPreset(parseInt(data.ability.preset_no));
     }
   }, [data]);
+
+  useEffect(() => {
+    if (!data?.basic?.character_name || !apiKey) return;
+    fetchWeeklyHistory(data.basic.character_name, apiKey)
+      .then(history => setHistoryData(history || []))
+      .catch(() => setHistoryData([]));
+  }, [data?.basic?.character_name, apiKey]);
 
   const addToHistory = (name: string) => {
     const newHistory = [name, ...searchHistory.filter(h => h !== name)].slice(0, 5);
@@ -674,17 +709,11 @@ const App: React.FC = () => {
                             <span>近7日登入</span>
                             <span className="text-green-400 font-bold">true</span>
                          </div>
-                         <div className="flex justify-between border-b border-slate-800/50 pb-1.5">
-                            <span>七日成長</span>
-                            <span className="text-slate-300 font-mono">
-                              {(() => {
-                                 if (!data.character_basic_7days_ago) return '- %';
-                                 const levelDiff = data.basic.character_level - data.character_basic_7days_ago.character_level;
-                                 if (levelDiff > 0) return `+${levelDiff} Lv`;
-                                 const expDiff = parseFloat(data.basic.character_exp_rate) - parseFloat(data.character_basic_7days_ago.character_exp_rate);
-                                 return `${expDiff >= 0 ? '+' : ''}${expDiff.toFixed(3)}%`;
-                              })()}
-                            </span>
+                         <div className="flex items-center justify-between border-b border-slate-800/50 pb-1.5">
+                           <span className="whitespace-nowrap">七日成長</span>
+                           <span className="text-slate-300 font-mono text-right w-24">
+                            {calculateWeeklyGrowth(historyData)}
+                           </span>
                          </div>
                          <div className="flex justify-between border-b border-slate-800/50 pb-1.5">
                             <span>聯盟戰地</span>

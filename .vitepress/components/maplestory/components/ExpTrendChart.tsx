@@ -25,30 +25,10 @@ const ExpTrendChart: React.FC<ExpTrendChartProps> = ({ historyData, loading }) =
   const containerRef = useRef<HTMLDivElement>(null);
 
   // === 成長率計算 ===
-  let growth = "0";
+  const growthStr = calculateWeeklyGrowth(historyData);
   let isPositive = true;
-
-  if (historyData && historyData.length >= 2) {
-    const start = historyData[0];
-    const end = historyData[historyData.length - 1];
-    
-    let levelDiff = end.level - start.level;
-    
-    // 防呆：等級沒變但經驗掉很多 -> 視為升級
-    if (levelDiff === 0 && (end.expRate - start.expRate) < -40) {
-       levelDiff = 1;
-    }
-
-    let rawGrowth = 0;
-    if (levelDiff > 0) {
-      rawGrowth = (levelDiff * 100) + end.expRate - start.expRate;
-    } else {
-      rawGrowth = end.expRate - start.expRate;
-    }
-
-    growth = rawGrowth.toFixed(3);
-    isPositive = rawGrowth >= -0.001; 
-  }
+  if (growthStr.startsWith('+')) isPositive = true;
+  if (growthStr.startsWith('-')) isPositive = false;
   // =================
 
   useEffect(() => {
@@ -85,11 +65,9 @@ const ExpTrendChart: React.FC<ExpTrendChartProps> = ({ historyData, loading }) =
     <div className="w-full">
       {/* 1. 移除外層 Card 樣式，改為透明 */}
       {/* 2. 移除大標題，只保留成長率數據，並縮小放在右上角或上方 */}
-      <div className="flex justify-end mb-2">
-         <span className="text-xs text-slate-400 mr-2">近 7 日成長:</span>
-         <span className={`text-xs font-mono font-bold ${isPositive ? 'text-green-400' : 'text-red-400'}`}>
-            {isPositive ? '+' : ''}{growth}%
-         </span>
+      <div className="flex items-center justify-end mb-2 gap-2">
+        <span className="text-xs text-slate-400 whitespace-nowrap">近 7 日成長</span>
+        <span className={`font-bold text-right w-20 ${isPositive ? 'text-green-400' : 'text-red-400'}`}>{growthStr}</span>
       </div>
 
       <div ref={containerRef} style={{ width: '100%', height: 150, minHeight: 150 }}>
@@ -132,5 +110,29 @@ const ExpTrendChart: React.FC<ExpTrendChartProps> = ({ historyData, loading }) =
     </div>
   );
 };
+
+/**
+ * 統一七日成長計算邏輯
+ * @param historyData 由 fetchWeeklyHistory 取得的陣列
+ * @returns 七日成長字串（+Lv 或 +%）
+ */
+export function calculateWeeklyGrowth(historyData: any[]): string {
+  if (!historyData || historyData.length < 2) return '- %';
+  const start = historyData[0];
+  const end = historyData[historyData.length - 1];
+  let levelDiff = end.level - start.level;
+  // 防呆：等級沒變但經驗掉很多 -> 視為升級
+  if (levelDiff === 0 && (end.expRate - start.expRate) < -40) {
+    levelDiff = 1;
+  }
+  let rawGrowth = 0;
+  if (levelDiff > 0) {
+    rawGrowth = (levelDiff * 100) + end.expRate - start.expRate;
+    return `+${levelDiff} Lv`;
+  } else {
+    rawGrowth = end.expRate - start.expRate;
+    return `${rawGrowth >= 0 ? '+' : ''}${rawGrowth.toFixed(3)}%`;
+  }
+}
 
 export default ExpTrendChart;
