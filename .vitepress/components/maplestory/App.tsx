@@ -943,7 +943,7 @@ const App: React.FC = () => {
                   <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/23</span> 新增聯盟冠軍區域，並調整極限屬性計算方式及手機版顯示方式。</li>
                   <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/23</span> 優化符文總和計算區域，顯示詳細的屬性加成，並為每個聯盟神器增加對應圖示。</li>
                   <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/22</span> 新增近 7 天經驗值趨勢統計元件，用於視覺化經驗成長趨勢。</li>
-                  <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/21</span> 重構核心技能區域的 HEXA 矩陣進度演算法，並新增是否計算靈魂亞努斯選項。</li>
+                  <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/21</span> 重構核心技能區域的 HEXA 矩陣進度演算法，並新增是否計算靈魂雅努斯選項。</li>
                   <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/21</span> 新增機器人裝備欄位。</li>
                   <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/21</span> 時裝格子支援即時染色預覽。</li>
                   <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/21</span> 滑鼠懸浮在時裝格子時也會顯示圖片預覽。</li>

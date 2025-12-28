@@ -710,7 +710,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
                               <h4 className="text-sm font-bold text-purple-400">HEXA 矩陣</h4>
                               <button onClick={() => setIncludeJanus(!includeJanus)} className={`text-[10px] px-2 py-0.5 rounded border flex items-center gap-1 transition-all ${includeJanus ? 'bg-purple-900/40 text-purple-300 border-purple-700/50 hover:bg-purple-900/60' : 'bg-slate-800 text-slate-500 border-slate-700 hover:bg-slate-700 hover:text-slate-400'}`}>
                                 {includeJanus ? <CheckSquare className="w-3 h-3" /> : <Square className="w-3 h-3" />}
-                                {includeJanus ? '計算靈魂亞努斯' : '排除靈魂亞努斯'}
+                                {includeJanus ? '計算靈魂雅努斯' : '排除靈魂雅努斯'}
                               </button>
                             </div>
                         </div>
