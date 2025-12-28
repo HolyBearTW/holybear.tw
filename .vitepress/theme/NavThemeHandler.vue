@@ -56,8 +56,11 @@ const handleClick = (event: MouseEvent) => {
 // 處理 hash 變化
 const handleHashChange = () => {
   const hash = window.location.hash
-  console.log('Hash 變化:', hash)
-  
+  if (hash) {
+    console.log('Hash 變化:', hash)
+  }
+  // 僅當 hash 有帶 #theme- 才處理
+  if (!hash.startsWith('#theme-')) return
   // 遍歷所有主題配置，檢查 hash 是否匹配
   for (const [_, themeId] of backgroundThemes) {
     if (hash === `#theme-${themeId}`) {
