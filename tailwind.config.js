@@ -2,6 +2,7 @@
 export default {
   content: [
     "./.vitepress/components/maplestory/**/*.{js,ts,jsx,tsx}",
+    "./.vitepress/components/**/*.vue",
   ],
   theme: {
     extend: {

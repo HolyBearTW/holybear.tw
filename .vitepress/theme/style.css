@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* ==========================================================================
    優化後 CSS（整合 & 去重）
    變更重點：合併 :root 變數，移除重複樣式，分組相關區塊，保留必要覆蓋 (!important)
