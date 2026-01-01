@@ -503,7 +503,7 @@ onUnmounted(() => {
             </button>
             <div class="text-xs text-muted text-center mb-4">分解任意生肖可獲得 1 點精華<br>(馬、羊、猴 不會被一鍵分解)</div>
             
-            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-[400px] overflow-y-auto custom-scrollbar pr-1">
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
               <div v-for="(count, name) in counts" :key="name" class="border border-divider rounded p-2 flex flex-col items-center bg-white dark:bg-gray-800">
                 <div class="text-2xl mb-1">{{ ZODIAC_ICONS[name] }}</div>
                 <div class="font-bold text-sm">{{ name }}</div>
