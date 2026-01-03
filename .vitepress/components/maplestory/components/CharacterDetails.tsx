@@ -837,7 +837,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               
               {/* Left Column: 冠軍角色卡片 */}
-              <div className="space-y-4">
+              <div className="flex flex-col gap-4">
                 <h3 className="font-semibold text-sm flex items-center gap-2 text-slate-400">
                   <User className="w-4 h-4" /> 冠軍角色
                 </h3>
@@ -853,11 +853,11 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
               </div>
 
               {/* Right Column: 冠軍徽章效果列表 */}
-              <div className="space-y-4">
+              <div className="flex flex-col gap-4">
                 <h3 className="font-semibold text-sm flex items-center gap-2 text-slate-400">
                   <Layers className="w-4 h-4" /> 冠軍徽章效果
                 </h3>
-                <div className="space-y-2 bg-slate-900/30 p-4 rounded-lg border border-slate-800">
+                <div className="flex flex-col gap-2 bg-slate-900/30 p-4 rounded-lg border border-slate-800">
                     {unionChampion.champion_badge_total_info && unionChampion.champion_badge_total_info.length > 0 ? (
                         unionChampion.champion_badge_total_info.map((info: any, idx: number) => {
                             const parts = info.stat.split(/(\d+(?:\.\d+)?(?:%|)?)/); 

@@ -9,7 +9,7 @@ import NewYearEvent from '/.vitepress/components/NewYearEvent.vue'
 </script>
 
 <ClientOnly>
-  <div class="max-w-4xl mx-auto px-4 py-8">
+  <div class="max-w-[1200px] mx-auto px-4 py-8">
     <NewYearEvent />
   </div>
 </ClientOnly>

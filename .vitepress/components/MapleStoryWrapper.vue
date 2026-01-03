@@ -7,7 +7,6 @@ import { onMounted, onBeforeUnmount } from 'vue'
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './maplestory/App'
-import './maplestory/index.css'
 
 let root = null
 

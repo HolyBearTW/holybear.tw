@@ -1,6 +1,5 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss/theme.css";
+@import "tailwindcss/utilities.css";
 
 /* ==========================================================================
    優化後 CSS（整合 & 去重）
@@ -939,6 +938,13 @@ html.dark .filter-btn {
 html.dark .button[aria-expanded="true"] .text {
   color: #00FFEE !important;
 }
+/* 按鈕文字大小 */
+button, input, optgroup, select, textarea {
+  font-family: inherit;
+  font-size: 100%;
+  line-height: 1.15;
+  margin: 0;
+}
 
 /* ==================== 聖誕節主題強制樣式 ==================== */
 /* 將樣式移至全域，確保在所有頁面（包含 layout: page）都能生效 */
@@ -1003,5 +1009,3 @@ body.theme-christmas .content,
 body.theme-christmas .content-container {
   background-color: transparent !important;
 }
-
-
