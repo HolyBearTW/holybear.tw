@@ -18,6 +18,7 @@ export default defineConfig({
     srcExclude: ['README.md'],
     // 啟用 cleanUrls，移除路由中的 .html 後綴
     cleanUrls: true,
+    appearance: 'dark',
     head: [
         ['meta', { name: 'theme-color', content: '#00FFEE' }],
         // Favicon 完整配置 - 支援各種設備和搜尋引擎
@@ -240,7 +241,6 @@ export default defineConfig({
     // ✨ END: 整合所有 OG 標籤的最終邏輯 ✨
 
         themeConfig: {
-        appearance: 'dark',
         logo: '/logo.png',
         outline: {
             level: [2, 3], // 默認顯示 H2 和 H3 標題
