@@ -41,7 +41,7 @@ export default defineConfig({
         ['meta', { property: 'og:description', content: '聖小熊的個人網站，收錄 HyperOS 模組、技術筆記與開發心得，專注於 Android 客製化與開源創作分享。' }],
         ['meta', { property: 'og:image', content: '/logo.png' }],
         ['meta', { property: 'og:type', content: 'website' }],
-        ['meta', { property: 'og:url', content: 'https://holybear.tw' }],
+        ['meta', { property: 'og:url', content: 'https://holybear.tw/' }],
         ['meta', { property: 'og:site_name', content: '聖小熊的秘密基地' }],
         ['meta', { property: 'og:locale', content: 'zh_TW' }],
         // Twitter Card
@@ -81,7 +81,7 @@ export default defineConfig({
             if (relativePath == null) return head;
 
             // --- 常數與路徑正規化 ---
-            const siteUrl = 'https://holybear.tw';
+            const siteUrl = 'https://holybear.tw/';
             const normalizedPath = ('/' + String(relativePath).replace(/\\/g, '/'))
                 .replace(/\.md$/, '')
                 .replace(/\/index$/, '/')
@@ -157,7 +157,7 @@ export default defineConfig({
                     return {
                         "@type": "Person",
                         "name": isEnglish ? "holybear.tw" : "聖小熊的秘密基地",
-                        "url": "https://holybear.tw"
+                        "url": "https://holybear.tw/"
                     };
                 };
 
@@ -210,6 +210,7 @@ export default defineConfig({
                     "@context": "https://schema.org",
                     "@type": "WebSite",
                     "name": siteName,
+                    "alternateName": ["聖小熊", "HolyBear"],
                     "url": siteUrl,
                     "description": pageDescription,
                     "author": authorsArray.length === 1 ? authorsArray[0] : authorsArray
