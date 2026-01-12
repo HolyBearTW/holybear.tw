@@ -19,16 +19,23 @@ export default {
             // 匹配 /blog/xxxx、/en/blog/xxxx、/docs/xxxx 文章頁（不是列表頁）
             return /^\/(en\/)?blog\/(?!$|index|index-new)[\w-]+/.test(path) || /^\/docs\/[\w-]+/.test(path);
         }
-        function forceBlogClass() {
-            // 保留原有 class，確保最多只有一個 is-blog-page
-            const cls = document.body.className.split(' ').filter(c => c && c !== 'is-blog-page');
+        function updateBodyClasses() {
+            // 保留原有 class，確保最多只有一個 is-blog-page / is-home-page
+            const cls = document.body.className.split(' ').filter(c => c && c !== 'is-blog-page' && c !== 'is-home-page');
+            
             if (isBlogPage(window.location.pathname)) {
                 cls.push('is-blog-page');
             }
+
+            // 檢查是否存在 .VPHome 元素來判斷是否為首頁
+            if (document.querySelector('.VPHome')) {
+                cls.push('is-home-page');
+            }
+
             document.body.className = cls.join(' ');
         }
-        forceBlogClass();
-        setInterval(forceBlogClass, 200);
+        updateBodyClasses();
+        setInterval(updateBodyClasses, 200);
 
 
 
