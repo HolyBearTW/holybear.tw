@@ -107,6 +107,9 @@ const App: React.FC = () => {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const aiResultRef = useRef<HTMLDivElement>(null);
 
+  // 更新日誌展開狀態
+  const [showUpdateLog, setShowUpdateLog] = useState(false);
+
   // 內在潛能預設狀態
   const [abilityPreset, setAbilityPreset] = useState(1);
 
@@ -937,21 +940,36 @@ const App: React.FC = () => {
       </main>
           {(!data && !loading && !error) && (
             <div className="my-8 flex justify-center">
-              <div className="vp-tip custom-vp-tip p-4 sm:p-6 rounded-lg border-l-4 border-indigo-400 bg-indigo-50/90 text-indigo-900 dark:bg-[#23263a] dark:text-indigo-200 dark:border-indigo-500 shadow-sm mx-auto">
-                <div className="font-bold mb-1 text-indigo-700 dark:text-indigo-300">更新日誌</div>
-                <ul className="list-disc pl-5 text-sm space-y-1">
-                  <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/23</span> 新增聯盟冠軍區域，並調整極限屬性計算方式及手機版顯示方式。</li>
-                  <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/23</span> 優化符文總和計算區域，顯示詳細的屬性加成，並為每個聯盟神器增加對應圖示。</li>
-                  <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/22</span> 新增近 7 天經驗值趨勢統計元件，用於視覺化經驗成長趨勢。</li>
-                  <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/21</span> 重構核心技能區域的 HEXA 矩陣進度演算法，並新增是否計算靈魂雅努斯選項。</li>
-                  <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/21</span> 新增機器人裝備欄位。</li>
-                  <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/21</span> 時裝格子支援即時染色預覽。</li>
-                  <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/21</span> 滑鼠懸浮在時裝格子時也會顯示圖片預覽。</li>
-                  <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/18</span> 優化 AI 健檢回應速度，平均縮短 30% 回應時間。</li>
-                  <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/18</span> 升級預設 AI 模型為 Gemini 3.0 Flash，並新增 Gemini 3.0 Pro 選項。</li>
-                  <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/17</span> 新增「預設」功能，適用於內在潛能、裝備、時裝、連結技能、極限屬性。</li>
-                  <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/17</span> 新增「七日巔峰搜尋」功能，自動掃描並載入本週最高戰力紀錄。</li>
-                  <li><span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">2025/12/14</span> 首次發佈</li>
+              <div className="vp-tip custom-vp-tip p-4 sm:p-6 rounded-lg border-l-4 border-indigo-400 bg-indigo-50/90 text-indigo-900 dark:bg-[#23263a] dark:text-indigo-200 dark:border-indigo-500 shadow-sm mx-auto transition-all duration-300">
+                <div 
+                  className="font-bold mb-1 text-indigo-700 dark:text-indigo-300 flex justify-between items-center cursor-pointer select-none"
+                  onClick={() => setShowUpdateLog(!showUpdateLog)}
+                >
+                  <span className="font-bold">更新日誌 {showUpdateLog ? '' : '(近期)'}</span>
+                  {showUpdateLog ? <ChevronUp className="w-4 h-4 ml-2 opacity-70" /> : <ChevronDown className="w-4 h-4 ml-2 opacity-70" />}
+                </div>
+                <ul className="list-disc pl-5 text-sm space-y-1 mt-3 animate-in fade-in slide-in-from-top-1">
+                  {[
+                    { date: '2026/01/13', content: '新增 Tooltip 智慧定位功能以改善使用者體驗，並新增手機版可預覽裝備資訊。' },
+                    { date: '2025/12/23', content: '新增聯盟冠軍區域，並調整極限屬性計算方式及手機版顯示方式。' },
+                    { date: '2025/12/23', content: '優化符文總和計算區域，顯示詳細的屬性加成，並為每個聯盟神器增加對應圖示。' },
+                    { date: '2025/12/22', content: '新增近 7 天經驗值趨勢統計元件，用於視覺化經驗成長趨勢。' },
+                    { date: '2025/12/21', content: '重構核心技能區域的 HEXA 矩陣進度演算法，並新增是否計算靈魂雅努斯選項。' },
+                    { date: '2025/12/21', content: '新增機器人裝備欄位。' },
+                    { date: '2025/12/21', content: '時裝格子支援即時染色預覽。' },
+                    { date: '2025/12/21', content: '滑鼠懸浮在時裝格子時也會顯示圖片預覽。' },
+                    { date: '2025/12/18', content: '優化 AI 健檢回應速度，平均縮短 30% 回應時間。' },
+                    { date: '2025/12/18', content: '升級預設 AI 模型為 Gemini 3.0 Flash，並新增 Gemini 3.0 Pro 選項。' },
+                    { date: '2025/12/17', content: '新增「預設」功能，適用於內在潛能、裝備、時裝、連結技能、極限屬性。' },
+                    { date: '2025/12/17', content: '新增「七日巔峰搜尋」功能，自動掃描並載入本週最高戰力紀錄。' },
+                    { date: '2025/12/14', content: '首次發佈' },
+                  ]
+                  .slice(0, showUpdateLog ? undefined : 5)
+                  .map((item, idx) => (
+                    <li key={idx}>
+                      <span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">{item.date}</span> {item.content}
+                    </li>
+                  ))}
                 </ul>
               </div>
             </div>

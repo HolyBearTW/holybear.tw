@@ -70,9 +70,10 @@ const ExpTrendChart: React.FC<ExpTrendChartProps> = ({ historyData, loading }) =
         <span className={`font-bold text-right w-20 ${isPositive ? 'text-green-400' : 'text-red-400'}`}>{growthStr}</span>
       </div>
 
-      <div ref={containerRef} style={{ width: '100%', height: 150, minHeight: 150 }}>
+      <div ref={containerRef} style={{ width: '100%', height: 150, minHeight: 150 }} className="outline-none [&_.recharts-wrapper]:outline-none [&_.recharts-surface]:outline-none focus:outline-none [&:focus-visible]:outline-none">
         {chartWidth > 0 && (
           <BarChart 
+            className="outline-none focus:outline-none"
             width={chartWidth} 
             height={150} 
             data={historyData} 

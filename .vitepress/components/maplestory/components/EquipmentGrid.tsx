@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { EquipmentItem, CharacterEquipment } from '../types';
 import EquipmentTooltip from './EquipmentTooltip';
 import PresetSwitcher from './PresetSwitcher';
@@ -48,8 +48,50 @@ const SLOT_DEFINITIONS: Record<string, { label: string, match: string[] }> = {
   'Secondary': { label: '副武', match: ['secondary', 'subweapon', 'shield', 'katara', '副武器', '盾牌', '輔助武器'] },
 };
 
-const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'left' | 'right' }> = ({ slotKey, item, tooltipSide = 'left' }) => {
+const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'left' | 'right'; mobileDir?: 'up' | 'down' }> = ({ slotKey, item, tooltipSide = 'left', mobileDir = 'down' }) => {
   const def = SLOT_DEFINITIONS[slotKey];
+  const [isOpen, setIsOpen] = useState(false);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const [adjustStyle, setAdjustStyle] = useState<React.CSSProperties>({}); // 防止超出螢幕
+
+  // 智慧定位：確保 Tooltip 不會超出左右邊界 (透過 left 修正中心點，保留 transform 動畫)
+  useLayoutEffect(() => {
+    if (isOpen && tooltipRef.current) {
+        const tooltipEl = tooltipRef.current;
+        const parentEl = tooltipEl.parentElement;
+        
+        if (parentEl) {
+            const parentRect = parentEl.getBoundingClientRect();
+            const tooltipWidth = tooltipEl.getBoundingClientRect().width; // 或使用 offsetWidth
+            
+            const vw = Math.min(window.innerWidth, document.documentElement.clientWidth || window.innerWidth);
+            const padding = 10; 
+
+            // 計算目前的邊界 (假設它是置中的)
+            const parentCenter = parentRect.left + parentRect.width / 2;
+            const currentLeft = parentCenter - tooltipWidth / 2;
+            const currentRight = parentCenter + tooltipWidth / 2;
+
+            let shiftX = 0;
+
+            if (currentLeft < padding) {
+                // 左側超出：需要向右移
+                shiftX = padding - currentLeft;
+            } 
+            else if (currentRight > vw - padding) {
+                // 右側超出：需要向左移 (數值為負)
+                shiftX = (vw - padding) - currentRight;
+            } 
+
+            if (shiftX !== 0) {
+                // 原本是 left-1/2 (50%)，我們加上偏移量
+                setAdjustStyle({ left: `calc(50% + ${shiftX}px)` });
+            } else {
+                setAdjustStyle({});
+            }
+        }
+    }
+  }, [isOpen]);
   
   // Special handling: If slotKey is not defined (e.g. spacer), return empty
   if (!def) return <div className="w-10 h-10 sm:w-12 sm:h-12 invisible flex-shrink-0" />;
@@ -83,8 +125,17 @@ const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'lef
     ? 'md:right-full md:mr-1 md:left-auto'
     : 'md:left-full md:ml-1 md:right-auto';
 
+  // Mobile position logic
+  const mobilePositionClass = mobileDir === 'up'
+    ? 'bottom-full mb-2 md:bottom-auto md:mb-0'
+    : 'top-full mt-2 md:mt-0'; // 'down'
+
   return (
-    <div className="relative z-0 hover:z-50 group">
+    <div 
+      className={`relative z-0 group ${isOpen ? 'z-[100]' : 'hover:z-50'}`} // Fix: High Z-Index on toggle
+      onClick={() => setIsOpen(!isOpen)}
+      onMouseLeave={() => setIsOpen(false)}
+    >
       {/* FIXED: 
           1. 移除 h-full (避免被父容器高度影響導致變扁)
           2. 加入 flex-shrink-0 (防止在 flex 容器中被擠壓)
@@ -107,9 +158,14 @@ const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'lef
         )}
       </div>
       {item && (
-        <div className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[200] w-[90vw] max-w-[320px] max-h-[80vh] overflow-y-auto
-                        hidden group-hover:block animate-in fade-in zoom-in-95 duration-200 shadow-2xl rounded-xl
-                        md:absolute md:top-0 ${desktopPositionClass} md:translate-y-0 md:translate-x-0 md:w-[300px] md:mt-0 md:zoom-in-100 md:max-h-none md:overflow-visible`}>
+        <div 
+            ref={tooltipRef}
+            style={adjustStyle}
+            className={`absolute left-1/2 -translate-x-1/2 z-[200] w-[300px] max-w-[90vw]
+                        ${isOpen ? 'block' : 'hidden group-hover:block'} animate-in fade-in zoom-in-95 duration-200 shadow-2xl rounded-xl
+                        ${mobilePositionClass}
+                        md:absolute md:top-0 ${desktopPositionClass} md:translate-y-0 md:translate-x-0 md:w-[300px] md:zoom-in-100 md:max-h-none md:overflow-visible`}
+        >
            <EquipmentTooltip item={item} />
         </div>
       )}
@@ -250,10 +306,10 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, characterImage
       {/* Left Columns (Accessories) */}
       <div className="flex gap-2">
         <div className="flex flex-col gap-2">
-          {['Ring4', 'Ring3', 'Ring2', 'Ring1', 'Belt', 'Pocket'].map(key => <Slot key={key} slotKey={key} item={findItem(key)} tooltipSide="right" />)}
+          {['Ring4', 'Ring3', 'Ring2', 'Ring1', 'Belt', 'Pocket'].map((key, idx) => <Slot key={key} slotKey={key} item={findItem(key)} tooltipSide="right" mobileDir={idx < 3 ? 'down' : 'up'} />)}
         </div>
         <div className="flex flex-col gap-2">
-           {['Face', 'Eye', 'Earrings', 'Pendant2', 'Pendant'].map(key => <Slot key={key} slotKey={key} item={findItem(key)} tooltipSide="right" />)}
+           {['Face', 'Eye', 'Earrings', 'Pendant2', 'Pendant'].map((key, idx) => <Slot key={key} slotKey={key} item={findItem(key)} tooltipSide="right" mobileDir={idx < 2 ? 'down' : 'up'} />)}
         </div>
       </div>
 
@@ -266,20 +322,20 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, characterImage
              <div className="w-24 h-24 rounded-full bg-slate-800/50" />
          )}
          <div className="flex gap-2 mt-8">
-            <Slot slotKey="Weapon" item={findItem('Weapon')} tooltipSide="right" />
-            <Slot slotKey="Secondary" item={findItem('Secondary')} tooltipSide="right" />
-            <Slot slotKey="Emblem" item={findItem('Emblem')} tooltipSide="left" />
+            <Slot slotKey="Weapon" item={findItem('Weapon')} tooltipSide="right" mobileDir="up" />
+            <Slot slotKey="Secondary" item={findItem('Secondary')} tooltipSide="right" mobileDir="up" />
+            <Slot slotKey="Emblem" item={findItem('Emblem')} tooltipSide="left" mobileDir="up" />
          </div>
       </div>
 
       {/* Right Columns (Armor) */}
       <div className="flex gap-2">
           <div className="flex flex-col gap-2">
-            {['Hat', 'Top', 'Bottom', 'Shoulder'].map(key => <Slot key={key} slotKey={key} item={findItem(key)} tooltipSide="left" />)}
-            <Slot slotKey="Android" item={findItem('Android')} tooltipSide="left" />
+            {['Hat', 'Top', 'Bottom', 'Shoulder'].map((key, idx) => <Slot key={key} slotKey={key} item={findItem(key)} tooltipSide="left" mobileDir={idx < 2 ? 'down' : 'up'} />)}
+            <Slot slotKey="Android" item={findItem('Android')} tooltipSide="left" mobileDir="up" />
           </div>
           <div className="flex flex-col gap-2">
-            {['Cape', 'Gloves', 'Shoes', 'Medal', 'Heart', 'Badge'].map(key => <Slot key={key} slotKey={key} item={findItem(key)} tooltipSide="left" />)}
+            {['Cape', 'Gloves', 'Shoes', 'Medal', 'Heart', 'Badge'].map((key, idx) => <Slot key={key} slotKey={key} item={findItem(key)} tooltipSide="left" mobileDir={idx < 3 ? 'down' : 'up'} />)}
           </div>
       </div>
       </div>

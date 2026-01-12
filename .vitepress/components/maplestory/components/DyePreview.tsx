@@ -133,36 +133,30 @@ const DyePreview: React.FC<DyePreviewProps> = (props) => {
 
         // --- 核心運算 ---
 
-        // A. Hue (色相): [修正] 改回旋轉模式 (h0 + hue)
-        // 這樣對講機就會保持原本的綠色基底，而不是變成紅色
+        // A. Hue (色相): 旋轉 (Rotation)
         let h = (h0 + hue) % 360;
         if (h < 0) h += 360;
 
-        // B. Saturation (飽和度): 強制顯色
-        let s = s0 + uSaturation;
-        // 如果使用者有增加飽和度 (uSaturation > 0)
-        if (uSaturation > 0) {
-            // 對於高光部分 (閃電)，強制讓飽和度至少有 0.5
-            // 這樣原本白白的閃電就會吃進顏色，顯示出旋轉後的 Hue
-            if (origin_v > 0.5) {
-                s = Math.max(s, 0.5);
-            }
-        }
+        // B. Saturation (飽和度): 乘法 (Multiplicative)
+        // MapleStory 的飽和度調整通常是乘法運算
+        // +100 (uSaturation=1) => 2x 飽和度
+        // -100 (uSaturation=-1) => 0x 飽和度 (黑白)
+        let s = s0 * (1 + uSaturation);
         s = Math.max(0, Math.min(1, s));
 
-        // C. Value (亮度): 變暗 + 防死黑
+        // C. Value (亮度): 加法 (Additive)
+        // 使用加法可以同時調整暗部與亮部，這符合遊戲內 "亮度" 選項的行為 (可以把黑變灰)
+        // 但要注意避免過度曝光，通常這部分會直接截斷 (Clamp)
         let v = v0 + uValue; 
-        
-        // [防死黑機制]
-        // 使用飽和度來 "撐住" 亮度，讓深色不至於變成純黑
-        // 係數 0.15 經過測試能呈現出漂亮的深綠色
+        v = Math.max(0, Math.min(1, v));
+
+        // [防死黑機制] - 如果需要可以保留，但標準算法通常不包含此步驟
+        /*
         if (uSaturation > 0) {
             let floor = uSaturation * 0.15;
             v = Math.max(v, floor);
         }
-
-        // 3. 確保不破圖
-        v = Math.max(0, Math.min(1, v));
+        */
 
         // 4. 轉回 RGB
         let [nr, ng, nb] = hsvToRgb(h, s, v);

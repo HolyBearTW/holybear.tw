@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { CharacterCashItemEquipment, CashItemEquipmentPreset, CharacterBeautyEquipment } from '../types';
 import PresetSwitcher from './PresetSwitcher';
 import DyePreview from './DyePreview';
@@ -21,6 +21,45 @@ interface BeautySlotProps {
 }
 
 const BeautySlot: React.FC<BeautySlotProps> = ({ label, name, baseColor, mixColor, mixRate, hue, saturation, brightness }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const [adjustStyle, setAdjustStyle] = useState<React.CSSProperties>({}); // 防止超出螢幕
+
+  // 智慧定位：確保 Tooltip 不會超出左右邊界 (透過 left 修正中心點，保留 transform 動畫)
+  useLayoutEffect(() => {
+    if (isOpen && tooltipRef.current) {
+        const tooltipEl = tooltipRef.current;
+        const parentEl = tooltipEl.parentElement;
+        
+        if (parentEl) {
+            const parentRect = parentEl.getBoundingClientRect();
+            const tooltipWidth = tooltipEl.getBoundingClientRect().width;
+            
+            const vw = Math.min(window.innerWidth, document.documentElement.clientWidth || window.innerWidth);
+            const padding = 10; 
+
+            const parentCenter = parentRect.left + parentRect.width / 2;
+            const currentLeft = parentCenter - tooltipWidth / 2;
+            const currentRight = parentCenter + tooltipWidth / 2;
+
+            let shiftX = 0;
+
+            if (currentLeft < padding) {
+                shiftX = padding - currentLeft;
+            } 
+            else if (currentRight > vw - padding) {
+                shiftX = (vw - padding) - currentRight;
+            } 
+
+            if (shiftX !== 0) {
+                setAdjustStyle({ left: `calc(50% + ${shiftX}px)` });
+            } else {
+                setAdjustStyle({});
+            }
+        }
+    }
+  }, [isOpen]);
+
   const hasMix = mixRate && parseInt(mixRate) > 0;
   const hasSkinDetails = 
     typeof hue === 'number' && 
@@ -33,8 +72,15 @@ const BeautySlot: React.FC<BeautySlotProps> = ({ label, name, baseColor, mixColo
   else if (label.includes('臉型')) iconSrc = '/image/theme/face.png';
   else if (label.includes('皮膚')) iconSrc = '/image/theme/skin.png';
 
+  // Beauty slots are typically at the top, so we show tooltip BELOW by default
+  const mobileTooltipClass = 'top-full mt-2';
+
   return (
-    <div className="relative group z-0 hover:z-50">
+    <div 
+      className={`relative group ${isOpen ? 'z-[100]' : 'z-0 hover:z-50'}`}
+      onClick={() => setIsOpen(!isOpen)}
+      onMouseLeave={() => setIsOpen(false)}
+    >
       <div className={`w-10 h-10 sm:w-12 sm:h-12 bg-[#1a1d24] border-2 ${name ? 'border-pink-500/50' : 'border-slate-800'} rounded-md flex flex-col items-center justify-center relative overflow-hidden transition-all p-1`}>
         {iconSrc ? (
            <img 
@@ -54,8 +100,12 @@ const BeautySlot: React.FC<BeautySlotProps> = ({ label, name, baseColor, mixColo
       </div>
 
       {name && (
-        <div className="absolute z-[100] w-[180px] animate-in fade-in duration-100 hidden group-hover:block
-                        bottom-full left-1/2 -translate-x-1/2 mb-2 pointer-events-none">
+        <div 
+            ref={tooltipRef}
+            style={adjustStyle}
+            className={`absolute left-1/2 -translate-x-1/2 z-[200] w-[180px] animate-in fade-in duration-100 ${isOpen ? 'block' : 'hidden group-hover:block'}
+                        ${mobileTooltipClass} bottom-auto`}
+        >
            <div className="bg-[#1a1d24]/95 backdrop-blur-md border border-pink-500/30 rounded-lg shadow-xl p-3 text-center">
              <div className="text-sm font-bold text-pink-300 mb-1">{label}</div>
              <div className="text-xs text-white mb-2">{name}</div>
@@ -83,7 +133,46 @@ const BeautySlot: React.FC<BeautySlotProps> = ({ label, name, baseColor, mixColo
   );
 };
 
-const CashSlot: React.FC<{ label: string; item?: CashItemEquipmentPreset; tooltipSide?: 'left' | 'right' }> = ({ label, item, tooltipSide = 'left' }) => {
+const CashSlot: React.FC<{ label: string; item?: CashItemEquipmentPreset; tooltipSide?: 'left' | 'right'; mobileDir?: 'up' | 'down' }> = ({ label, item, tooltipSide = 'left', mobileDir = 'down' }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const [adjustStyle, setAdjustStyle] = useState<React.CSSProperties>({}); // 防止超出螢幕
+
+  // 智慧定位：確保 Tooltip 不會超出左右邊界 (透過 left 修正中心點，保留 transform 動畫)
+  useLayoutEffect(() => {
+    if (isOpen && tooltipRef.current) {
+        const tooltipEl = tooltipRef.current;
+        const parentEl = tooltipEl.parentElement;
+        
+        if (parentEl) {
+            const parentRect = parentEl.getBoundingClientRect();
+            const tooltipWidth = tooltipEl.getBoundingClientRect().width;
+            
+            const vw = Math.min(window.innerWidth, document.documentElement.clientWidth || window.innerWidth);
+            const padding = 10; 
+
+            const parentCenter = parentRect.left + parentRect.width / 2;
+            const currentLeft = parentCenter - tooltipWidth / 2;
+            const currentRight = parentCenter + tooltipWidth / 2;
+
+            let shiftX = 0;
+
+            if (currentLeft < padding) {
+                shiftX = padding - currentLeft;
+            } 
+            else if (currentRight > vw - padding) {
+                shiftX = (vw - padding) - currentRight;
+            } 
+
+            if (shiftX !== 0) {
+                setAdjustStyle({ left: `calc(50% + ${shiftX}px)` });
+            } else {
+                setAdjustStyle({});
+            }
+        }
+    }
+  }, [isOpen]);
+
   const desktopPositionClass = tooltipSide === 'left'
     ? 'md:right-full md:mr-1 md:left-auto'
     : 'md:left-full md:ml-1 md:right-auto';
@@ -91,8 +180,17 @@ const CashSlot: React.FC<{ label: string; item?: CashItemEquipmentPreset; toolti
   const prism = item?.cash_item_coloring_prism;
   const hasPrism = prism && (prism.hue !== 0 || prism.saturation !== 0 || prism.value !== 0 || (prism.color_range && prism.color_range !== ''));
 
+  // Mobile position logic
+  const mobilePositionClass = mobileDir === 'up'
+    ? 'bottom-full mb-2 md:bottom-auto md:mb-0'
+    : 'top-full mt-2 md:mt-0';
+
   return (
-    <div className="relative group z-0 hover:z-50">
+    <div 
+      className={`relative group ${isOpen ? 'z-[100]' : 'z-0 hover:z-50'}`}
+      onClick={() => setIsOpen(!isOpen)}
+      onMouseLeave={() => setIsOpen(false)}
+    >
       {/* 1. 格子本體 (Slot) */}
       <div className={`w-10 h-10 sm:w-12 sm:h-12 bg-[#1a1d24] border-2 ${item ? 'border-pink-500/50' : 'border-slate-800'} rounded-md flex items-center justify-center relative overflow-hidden transition-all`}>
         {item ? (
@@ -119,9 +217,14 @@ const CashSlot: React.FC<{ label: string; item?: CashItemEquipmentPreset; toolti
 
       {/* 2. 懸浮視窗 (Tooltip) */}
       {item && (
-        <div className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[200] w-[200px] 
-                        hidden group-hover:block animate-in fade-in zoom-in-95 duration-200
-                        md:absolute md:top-0 ${desktopPositionClass} md:translate-y-0 md:translate-x-0 md:mt-0 md:zoom-in-100`}>
+        <div 
+            ref={tooltipRef}
+            style={adjustStyle}
+            className={`absolute left-1/2 -translate-x-1/2 z-[200] w-[200px] 
+                        ${isOpen ? 'block' : 'hidden group-hover:block'} animate-in fade-in zoom-in-95 duration-200
+                        ${mobilePositionClass}
+                        md:absolute md:top-0 ${desktopPositionClass} md:translate-y-0 md:translate-x-0 md:mt-0 md:zoom-in-100`}
+        >
            <div className="bg-[#1a1d24]/95 backdrop-blur-md border border-pink-500/30 rounded-lg shadow-xl p-3 text-center">
              <div className="text-sm font-bold text-pink-300 mb-1">{item.cash_item_name}</div>
              <div className="text-[10px] text-slate-400">{item.cash_item_equipment_slot}</div>
@@ -242,15 +345,15 @@ const CashEquipmentGrid: React.FC<CashEquipmentGridProps> = ({ cashEquipment, be
          {/* Left Column */}
          <div className="flex gap-2">
             <div className="flex flex-col gap-2">
-                <CashSlot label="戒指4" item={rings[3]} tooltipSide="right" />
-                <CashSlot label="戒指3" item={rings[2]} tooltipSide="right" />
-                <CashSlot label="戒指2" item={rings[1]} tooltipSide="right" />
-                <CashSlot label="戒指1" item={rings[0]} tooltipSide="right" />
+                <CashSlot label="戒指4" item={rings[3]} tooltipSide="right" mobileDir="down" />
+                <CashSlot label="戒指3" item={rings[2]} tooltipSide="right" mobileDir="down" />
+                <CashSlot label="戒指2" item={rings[1]} tooltipSide="right" mobileDir="up" />
+                <CashSlot label="戒指1" item={rings[0]} tooltipSide="right" mobileDir="up" />
             </div>
             <div className="flex flex-col gap-2">
-                <CashSlot label="臉飾" item={findByKeywords(['臉飾', 'Face'])} tooltipSide="right" />
-                <CashSlot label="眼飾" item={findByKeywords(['眼飾', 'Eye'])} tooltipSide="right" />
-                <CashSlot label="耳環" item={findByKeywords(['耳環', 'Earrings'])} tooltipSide="right" />
+                <CashSlot label="臉飾" item={findByKeywords(['臉飾', 'Face'])} tooltipSide="right" mobileDir="down" />
+                <CashSlot label="眼飾" item={findByKeywords(['眼飾', 'Eye'])} tooltipSide="right" mobileDir="up" />
+                <CashSlot label="耳環" item={findByKeywords(['耳環', 'Earrings'])} tooltipSide="right" mobileDir="up" />
             </div>
          </div>
 
@@ -325,20 +428,20 @@ const CashEquipmentGrid: React.FC<CashEquipmentGridProps> = ({ cashEquipment, be
          {/* Right Column */}
          <div className="flex gap-2">
             <div className="flex flex-col gap-2">
-                <CashSlot label="帽子" item={findByKeywords(['帽子', 'Hat', 'Cap'])} tooltipSide="left" />
-                <CashSlot label="上衣" item={findByKeywords(['上衣', '套服', 'Top', 'Overall'])} tooltipSide="left" />
-                <CashSlot label="褲子" item={findByKeywords(['褲子', 'Bottom'])} tooltipSide="left" />
+                <CashSlot label="帽子" item={findByKeywords(['帽子', 'Hat', 'Cap'])} tooltipSide="left" mobileDir="down" />
+                <CashSlot label="上衣" item={findByKeywords(['上衣', '套服', 'Top', 'Overall'])} tooltipSide="left" mobileDir="down" />
+                <CashSlot label="褲子" item={findByKeywords(['褲子', 'Bottom'])} tooltipSide="left" mobileDir="up" />
                 <CashSlot label="武器" item={activeItems.find(item => 
                    (item.cash_item_equipment_slot === '武器' || item.cash_item_equipment_slot === 'Weapon') && 
                    !item.cash_item_equipment_slot.includes('Secondary') && 
                    !item.cash_item_equipment_slot.includes('Shield')
-                )} tooltipSide="left" />
+                )} tooltipSide="left" mobileDir="up" />
             </div>
             <div className="flex flex-col gap-2">
-                <CashSlot label="披風" item={findByKeywords(['披風', 'Cape'])} tooltipSide="left" />
-                <CashSlot label="手套" item={findByKeywords(['手套', 'Gloves'])} tooltipSide="left" />
-                <CashSlot label="鞋子" item={findByKeywords(['鞋子', 'Shoes'])} tooltipSide="left" />
-                <CashSlot label="副武" item={findByKeywords(['副武', '輔助武器', 'Secondary', 'Shield'])} tooltipSide="left" />
+                <CashSlot label="披風" item={findByKeywords(['披風', 'Cape'])} tooltipSide="left" mobileDir="down" />
+                <CashSlot label="手套" item={findByKeywords(['手套', 'Gloves'])} tooltipSide="left" mobileDir="down" />
+                <CashSlot label="鞋子" item={findByKeywords(['鞋子', 'Shoes'])} tooltipSide="left" mobileDir="up" />
+                <CashSlot label="副武" item={findByKeywords(['副武', '輔助武器', 'Secondary', 'Shield'])} tooltipSide="left" mobileDir="up" />
             </div>
          </div>
       </div>

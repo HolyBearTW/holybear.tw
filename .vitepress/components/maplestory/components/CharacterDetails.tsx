@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { DashboardData } from '../types';
 import { 
   Zap, Star, Crown, Layers, PawPrint, Hexagon, Sword, Info, 
@@ -168,16 +168,62 @@ const ItemWithTooltip: React.FC<{
   icon?: string; name: string; level: number; sub?: string; borderColor?: string; textColor?: string;
 }> = ({ icon, name, level, sub, borderColor = 'border-slate-700', textColor = 'text-blue-400' }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const [adjustStyle, setAdjustStyle] = useState<React.CSSProperties>({});
+
+  // 智慧定位：確保 Tooltip 不會超出左右邊界 (透過 left 偏移修正，保留 transform 動畫)
+  useLayoutEffect(() => {
+    if (isOpen && tooltipRef.current) {
+        const tooltipEl = tooltipRef.current;
+        const parentEl = tooltipEl.parentElement;
+        
+        if (parentEl) {
+            const parentRect = parentEl.getBoundingClientRect();
+            const tooltipRect = tooltipEl.getBoundingClientRect();
+            const tooltipWidth = tooltipRect.width;
+            
+            const vw = Math.min(window.innerWidth, document.documentElement.clientWidth || window.innerWidth);
+            const padding = 10; 
+
+            // 假設初始位置為置中
+            const currentLeft = tooltipRect.left;
+            const currentRight = tooltipRect.right;
+
+            let shiftX = 0;
+
+            if (currentLeft < padding) {
+                // 左邊超出 -> 往右移
+                shiftX = padding - currentLeft;
+            } else if (currentRight > vw - padding) {
+                // 右邊超出 -> 往左移
+                shiftX = (vw - padding) - currentRight;
+            }
+
+            if (shiftX !== 0) {
+                 // 使用 calc(50% + shiftX) 來修正位置，同時保留 -translate-x-1/2 的效果
+                 // 原本 left-1/2 是 50%，現在我們加上偏移量
+                 setAdjustStyle({ left: `calc(50% + ${shiftX}px)` });
+            } else {
+                 setAdjustStyle({});
+            }
+        }
+    }
+  }, [isOpen]);
+
   return (
     <div 
-      className={`bg-slate-900 p-2 rounded-lg border ${borderColor} flex flex-col items-center text-center relative group cursor-pointer select-none`}
+      className={`bg-slate-900 p-2 rounded-lg border ${borderColor} flex flex-col items-center text-center relative group cursor-pointer select-none ${isOpen ? 'z-[100]' : 'z-0 hover:z-50'}`}
       onClick={() => setIsOpen(!isOpen)}
       onMouseLeave={() => setIsOpen(false)}
     >
       {icon ? <img src={icon} alt={name} className="w-8 h-8 mb-1 rounded z-10 object-contain" /> : <div className="w-8 h-8 mb-1 bg-slate-800 rounded flex items-center justify-center text-[10px] text-slate-600 z-10">?</div>}
       <div className="text-xs text-slate-300 leading-tight z-10 truncate w-full px-1">{name}</div>
       <div className={`text-xs font-bold ${textColor} z-10`}>Lv.{level} {sub && <span className="text-[9px] text-slate-500">({sub})</span>}</div>
-      <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-[#1a1d24] border border-slate-600 rounded-lg shadow-2xl p-3 z-50 ${isOpen ? 'block' : 'hidden group-hover:block'} animate-in fade-in zoom-in-95 duration-200 pointer-events-none`}>
+      <div 
+        ref={tooltipRef}
+        style={adjustStyle}
+        className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-[#1a1d24] border border-slate-600 rounded-lg shadow-2xl p-3 z-[200] ${isOpen ? 'block' : 'hidden group-hover:block'} animate-in fade-in zoom-in-95 duration-200 pointer-events-none`}
+      >
          <div className="flex flex-col items-center">
             {icon && <img src={icon} className="w-10 h-10 mb-2 bg-slate-800 rounded p-1" />}
             <div className="text-sm font-bold text-white mb-1 break-words w-full leading-tight">{name}</div>
@@ -407,6 +453,91 @@ const ChampionCard: React.FC<{ champ: any; apiKey: string }> = ({ champ, apiKey 
 // ---------------------------
 // 4. 主元件 CharacterDetails
 // ---------------------------
+
+// [新增] 寵物裝備顯示 (支援手機點擊)
+const PetEquipDisplay: React.FC<{ equip: any }> = ({ equip }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const [adjustStyle, setAdjustStyle] = useState<React.CSSProperties>({});
+
+  // 智慧定位：確保 Tooltip 不會超出左右邊界 (透過 right 偏移修正，保留預設 positioning)
+  useLayoutEffect(() => {
+    if (isOpen && tooltipRef.current) {
+        const tooltipEl = tooltipRef.current;
+        const parentEl = tooltipEl.parentElement;
+        
+        if (parentEl) {
+            // const parentRect = parentEl.getBoundingClientRect(); // Unused
+            const tooltipRect = tooltipEl.getBoundingClientRect();
+            
+            const vw = Math.min(window.innerWidth, document.documentElement.clientWidth || window.innerWidth);
+            const padding = 10; 
+
+            const currentLeft = tooltipRect.left;
+            const currentRight = tooltipRect.right;
+
+            let shiftX = 0;
+
+            if (currentLeft < padding) {
+                 shiftX = padding - currentLeft; // 向右移
+            } else if (currentRight > vw - padding) {
+                 shiftX = (vw - padding) - currentRight; // 向左移
+            }
+
+            if (shiftX !== 0) {
+                 // 預設為 right-0。
+                 // 向右移 (shiftX > 0) -> right 應該變小 (負值)
+                 // 向左移 (shiftX < 0) -> right 應該變大 (正值)
+                 // newRight = 0 - shiftX
+                 setAdjustStyle({ right: `${-shiftX}px` });
+            } else {
+                 setAdjustStyle({});
+            }
+        }
+    }
+  }, [isOpen]);
+
+  if (!equip) return null;
+  
+  return (
+    <div 
+        className={`relative group/equip shrink-0 ${isOpen ? 'z-[100]' : 'z-0 hover:z-50'}`}
+        onClick={() => setIsOpen(!isOpen)}
+        onMouseLeave={() => setIsOpen(false)}
+    >
+        <img src={equip.item_icon} className="w-8 h-8 bg-slate-800 rounded p-0.5 border border-slate-600 cursor-pointer" />
+        
+        {/* Tooltip */}
+        <div 
+            ref={tooltipRef} 
+            style={adjustStyle}
+            className={`absolute bottom-full right-0 mb-2 w-48 bg-[#1a1d24] border border-slate-600 rounded-lg shadow-2xl p-3 z-[200] 
+                        ${isOpen ? 'block' : 'hidden group-hover/equip:block'} animate-in fade-in zoom-in-95 duration-200 pointer-events-none
+                        md:bottom-full md:right-0 md:mb-2`}
+        >
+            <div className="flex flex-col items-center">
+                <img src={equip.item_icon} className="w-10 h-10 mb-2 bg-slate-800 rounded p-1" />
+                <div className="text-sm font-bold text-white mb-1 break-words w-full leading-tight text-center">{equip.item_name}</div>
+                <div className="text-[10px] text-slate-400">寵物裝備</div>
+                {(equip.scroll_upgrade > 0) && (
+                     <div className="w-full mt-2 pt-2 border-t border-slate-700/50 text-xs text-slate-300 text-center">
+                        <div className="text-yellow-400">強化次數: {equip.scroll_upgrade}</div>
+                     </div>
+                )}
+                {equip.item_option && equip.item_option.length > 0 && (
+                     <div className="w-full mt-2 pt-2 border-t border-slate-700/50 text-xs text-slate-300 text-center space-y-0.5">
+                        {equip.item_option.map((opt: any, idx: number) => (
+                             <div key={idx}>
+                                {opt.option_type === '攻擊力' ? '攻擊力' : opt.option_type === '魔法攻擊力' ? '魔力' : opt.option_type} : +{opt.option_value}
+                             </div>
+                        ))}
+                     </div>
+                )}
+            </div>
+        </div>
+    </div>
+  );
+};
 
 const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => {
   const [historyData, setHistoryData] = useState<any[]>([]);
@@ -661,9 +792,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
                     <div className="font-bold text-slate-200 text-sm truncate">{petNick || petName}</div>
                     {petAuto && <div className="flex gap-1 mt-1">{petAuto.skill_1_icon && <img src={petAuto.skill_1_icon} className="w-4 h-4" />}{petAuto.skill_2_icon && <img src={petAuto.skill_2_icon} className="w-4 h-4" />}</div>}
                   </div>
-                  {petEquip && (
-                    <div className="relative group/equip shrink-0"><img src={petEquip.item_icon} className="w-8 h-8 bg-slate-800 rounded p-0.5 border border-slate-600" /></div>
-                  )}
+                  {petEquip && <PetEquipDisplay equip={petEquip} />}
                 </div>
               );
             })}
