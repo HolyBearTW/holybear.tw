@@ -258,7 +258,7 @@ html:not(.dark) .VPHome .VPButton.alt:hover {
 .VPLink.link.pager-link,
 .VPLink.link.pager-link.next,
 .VPLink.link.pager-link.prev {
-  @apply !backdrop-blur-[20px] !bg-white/70 dark:!bg-[#1e1e1e]/70;
+  @apply !backdrop-blur-[20px] !bg-white/70;
   border-radius: 16px;
   box-shadow: 0 2px 12px 0 rgba(0,0,0,0.10);
   border: 1.5px solid var(--vp-c-divider, #e0e0e0);
@@ -269,6 +269,7 @@ html.dark .pager-link,
 html.dark .VPLink.link.pager-link,
 html.dark .VPLink.link.pager-link.next,
 html.dark .VPLink.link.pager-link.prev {
+  @apply !bg-[#1e1e1e]/70;
   border: 1.5px solid var(--vp-c-divider, #333);
 }
 .pager-link:hover,
@@ -439,7 +440,7 @@ input[type="range"]::-moz-range-thumb {
 
 /* Aside container (外觀) */
 .VPDocAsideOutline {
-  @apply !backdrop-blur-[20px] !bg-white/70 dark:!bg-[#1e1e1e]/70;
+  @apply !backdrop-blur-[20px] !bg-white/70;
   border-radius: 18px !important;
   padding: 16px 18px !important;
   margin-bottom: 1.5em !important;
@@ -448,6 +449,7 @@ input[type="range"]::-moz-range-thumb {
   transition: background 0.3s;
 }
 html.dark .VPDocAsideOutline {
+  @apply !bg-[#1e1e1e]/70;
   border: 1.5px solid var(--vp-c-divider, #333) !important;
 }
 .VPDocAsideOutline .outline-items { border-radius: 12px !important; background: transparent !important; }
@@ -490,14 +492,14 @@ body {
   background-color: transparent !important;
 }
 
-/* 一般頁面 (非首頁) 的導航列 - 改用 Tailwind @apply 確保生產環境構建正確 */
+/* 一般頁面 (非首頁) 的導航列 - 分拆 Light/Dark 規則，避免 @apply dark: 生成不可預期的選擇器 */
 body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar {
-  @apply !backdrop-blur-[20px] !bg-white/70 dark:!bg-[#1e1e1e]/70 !border-b !border-black/5 dark:!border-white/5;
+  @apply !backdrop-blur-[20px] !bg-white/70 !border-b !border-black/5;
 }
 
-/* 深色模式 override - @apply 已經處理了 dark: 前綴，這裡只需保留特殊權重覆蓋 */
+/* 深色模式 override */
 html.dark body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar {
-  @apply !bg-[#1e1e1e]/70 !shadow-sm;
+  @apply !bg-[#1e1e1e]/70 !border-white/5 !shadow-sm;
 }
 
 /* -----------------------------------------------------------------
@@ -505,12 +507,12 @@ html.dark body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar {
    ----------------------------------------------------------------- */
 body:has(.VPHome) .VPNavBar:not(.top),
 body.is-home-page .VPNavBar:not(.top) {
-  @apply !backdrop-blur-[20px] !bg-white/70 dark:!bg-[#1e1e1e]/70 !border-b !border-black/5 dark:!border-white/5;
+  @apply !backdrop-blur-[20px] !bg-white/70 !border-b !border-black/5;
 }
 
 html.dark body:has(.VPHome) .VPNavBar:not(.top),
 html.dark body.is-home-page .VPNavBar:not(.top) {
-  @apply !bg-[#1e1e1e]/70;
+  @apply !bg-[#1e1e1e]/70 !border-white/5;
 }
 
 /* 首頁頂部：全透明 */
@@ -524,7 +526,7 @@ body.is-home-page .VPNavBar.top {
 
 /* -------------------- Sidebar 修復 -------------------- */
 body .VPSidebar {
-  @apply !backdrop-blur-[20px] !bg-white/70 dark:!bg-[#1e1e1e]/70;
+  @apply !backdrop-blur-[20px] !bg-white/70;
 }
 
 html.dark body .VPSidebar {
@@ -540,7 +542,11 @@ html:not(.dark) body .VPSidebar.open {
 
 /* 手機選單背景 - 強制修復 */
 .VPNavScreen {
-  @apply !backdrop-blur-[20px] !bg-white/85 dark:!bg-[#1e1e1e]/85;
+  @apply !backdrop-blur-[20px] !bg-white/85;
+}
+
+html.dark .VPNavScreen {
+  @apply !bg-[#1e1e1e]/85;
 }
 
 /* Curtain 處理（避免遮罩擋住模糊） */
@@ -918,10 +924,10 @@ body:not(:has(.VPHome)):not(.is-home-page) .VPLocalNav {
 
 /* 語言選單背景 */
 .VPMenu {
-  @apply !backdrop-blur-[30px] !bg-white/70 dark:!bg-[#1e1e1e]/70;
+  @apply !backdrop-blur-[30px] !bg-white/70;
 }
 html.dark .VPMenu {
-/* background: rgba(35, 35, 35, 0.7) !important; 深色模式已由 @apply 處理 */
+  @apply !bg-[#1e1e1e]/70;
 }
 
 /* 首頁與文章列表 box 背景 */
@@ -929,7 +935,7 @@ html.dark .VPMenu {
 .stat-card,
 .author-contribution-section,
 .filter-btn {
-  @apply !backdrop-blur-[1px] !bg-white/50 dark:!bg-[#1e1e1e]/40;
+  @apply !backdrop-blur-[1px] !bg-white/50;
   border-radius: 18px !important;
   box-shadow: 0 2px 12px rgba(0,0,0,0.08) !important;
 }
@@ -937,7 +943,7 @@ html.dark .VPLink.no-icon.VPFeature,
 html.dark .stat-card,
 html.dark .author-contribution-section,
 html.dark .filter-btn {
-  /* background: rgba(30, 30, 30, 0.38) !important;  深色 已由 @apply 處理 */
+  @apply !bg-[#1e1e1e]/40;
 }
 .VPDocAside, .VPDocSidebar {
   display: block !important;
