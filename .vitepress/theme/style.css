@@ -140,8 +140,7 @@ html body:has(.theme-transition-overlay) .VPLocalNav::before,
 html body:has(.theme-transition-overlay) .VPLocalNav::after {
   background-color: transparent !important;
   background: transparent !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
+  @apply !backdrop-blur-none;
   transition: none !important;
   border-bottom-color: transparent !important;
   border-color: transparent !important;
@@ -259,10 +258,8 @@ html:not(.dark) .VPHome .VPButton.alt:hover {
 .VPLink.link.pager-link,
 .VPLink.link.pager-link.next,
 .VPLink.link.pager-link.prev {
-  background: rgba(255,255,255,0.72) !important;
+  @apply !backdrop-blur-[20px] !bg-white/70 dark:!bg-[#1e1e1e]/70;
   border-radius: 16px;
-  backdrop-filter: blur(20px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
   box-shadow: 0 2px 12px 0 rgba(0,0,0,0.10);
   border: 1.5px solid var(--vp-c-divider, #e0e0e0);
   transition: background 0.3s, box-shadow 0.3s;
@@ -272,7 +269,6 @@ html.dark .pager-link,
 html.dark .VPLink.link.pager-link,
 html.dark .VPLink.link.pager-link.next,
 html.dark .VPLink.link.pager-link.prev {
-  background: rgba(30,30,30,0.72) !important;
   border: 1.5px solid var(--vp-c-divider, #333);
 }
 .pager-link:hover,
@@ -443,19 +439,15 @@ input[type="range"]::-moz-range-thumb {
 
 /* Aside container (外觀) */
 .VPDocAsideOutline {
+  @apply !backdrop-blur-[20px] !bg-white/70 dark:!bg-[#1e1e1e]/70;
   border-radius: 18px !important;
-  background: rgba(255,255,255,0.72) !important;
   padding: 16px 18px !important;
   margin-bottom: 1.5em !important;
   border: 1.5px solid var(--vp-c-divider, #e0e0e0) !important;
   overflow: hidden;
-  backdrop-filter: blur(20px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
   transition: background 0.3s;
-  transform: translateZ(0); /* 強制 GPU */
 }
 html.dark .VPDocAsideOutline {
-  background: rgba(30,30,30,0.72) !important;
   border: 1.5px solid var(--vp-c-divider, #333) !important;
 }
 .VPDocAsideOutline .outline-items { border-radius: 12px !important; background: transparent !important; }
@@ -548,12 +540,7 @@ html:not(.dark) body .VPSidebar.open {
 
 /* 手機選單背景 - 強制修復 */
 .VPNavScreen {
-  background-color: rgba(255, 255, 255, 0.85) !important; /* 手機版背景稍微不透明一點 */
-  backdrop-filter: blur(20px) !important;
-  -webkit-backdrop-filter: blur(20px) !important;
-}
-html.dark .VPNavScreen {
-  background-color: rgba(30, 30, 30, 0.85) !important;
+  @apply !backdrop-blur-[20px] !bg-white/85 dark:!bg-[#1e1e1e]/85;
 }
 
 /* Curtain 處理（避免遮罩擋住模糊） */
@@ -565,12 +552,10 @@ body:not(:has(.VPHome)):not(.is-home-page) .VPSidebar .curtain {
 
 /* ==================== DocSearch / Navbar 搜尋按鈕 ==================== */
 .DocSearch-Button {
+  @apply !backdrop-blur-[30px] !bg-white/10;
   border: none !important;
   outline: none !important;
   box-shadow: none !important;
-  background-color: rgba(255, 255, 255, 0.01) !important;
-  backdrop-filter: blur(30px) !important;
-  -webkit-backdrop-filter: blur(30px) !important;
 }
 .DocSearch-Button:hover,
 .DocSearch-Button:focus {
@@ -600,8 +585,8 @@ body:not(:has(.VPHome)):not(.is-home-page) .VPSidebar .curtain {
     position: static;
     top: auto;
     left: auto;
-    transform: none;
-    backdrop-filter: blur(0px) !important;
+    transform: none; 
+    @apply !backdrop-blur-none;
   }
   .DocSearch-Button:hover,
   .DocSearch-Button:focus { background-color: transparent !important; border: none !important; outline: none !important; box-shadow: none !important; }
@@ -667,9 +652,7 @@ body:not(:has(.VPHome)):not(.is-home-page) .VPSidebar .curtain {
 
 /* 非首頁時，強制保持透明以顯示模糊效果 */
 body:not(:has(.VPHome)):not(.is-home-page) .VPNavScreen {
-  background-color: rgba(255, 255, 255, 0.01) !important;
-  backdrop-filter: blur(20px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  @apply !backdrop-blur-[20px] !bg-white/1;
 }
 
 .VPNavScreen .VPNavScreenMenu .VPNavScreenMenuLink {
@@ -739,7 +722,7 @@ body:not(:has(.VPHome)):not(.is-home-page) .VPNavScreen {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255,255,255,0.12);
+  @apply backdrop-blur-[18px] bg-white/10;
   border-radius: 14px; /* 與其他按鈕一致 */
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   margin: 0.5em 0;
@@ -748,8 +731,6 @@ body:not(:has(.VPHome)):not(.is-home-page) .VPNavScreen {
   font-weight: 600;
   color: var(--vp-c-text-1);
   transition: background 0.2s, box-shadow 0.2s, color 0.2s;
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
 }
 .VPNavScreenAppearance.appearance .text {
   position: static;
@@ -813,8 +794,7 @@ body:not(:has(.VPHome)):not(.is-home-page) .VPNavScreen {
   font-size: 1.08em;
   margin: 0.5em 0;
   transition: background 0.2s, box-shadow 0.2s;
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+  @apply backdrop-blur-[18px];
 }
 .VPNavScreenMenuGroup > .button:hover {
   background: rgba(0,255,238,0.18);
@@ -906,10 +886,7 @@ body.is-home-page .VPNavBar::after {
 
 /* VPLocalNav 高斯模糊效果 */
 body:not(:has(.VPHome)):not(.is-home-page) .VPLocalNav {
-  background: rgba(255, 255, 255, 0.01) !important;
-  background-color: rgba(255, 255, 255, 0.01) !important;
-  backdrop-filter: blur(8px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(8px) saturate(180%) !important;
+  @apply !backdrop-blur-[8px] !bg-white/1;
 }
 
 /* 確保右側目錄（On this page）過長文字以省略號顯示，並且占滿可用空間 */
@@ -941,12 +918,10 @@ body:not(:has(.VPHome)):not(.is-home-page) .VPLocalNav {
 
 /* 語言選單背景 */
 .VPMenu {
-background: rgba(255, 255, 255, 0.7) !important; /* 淺色模式 */
-backdrop-filter: blur(30px) !important;
--webkit-backdrop-filter: blur(30px) !important;
+  @apply !backdrop-blur-[30px] !bg-white/70 dark:!bg-[#1e1e1e]/70;
 }
 html.dark .VPMenu {
-background: rgba(35, 35, 35, 0.7) !important; /* 深色模式 */
+/* background: rgba(35, 35, 35, 0.7) !important; 深色模式已由 @apply 處理 */
 }
 
 /* 首頁與文章列表 box 背景 */
@@ -954,8 +929,7 @@ background: rgba(35, 35, 35, 0.7) !important; /* 深色模式 */
 .stat-card,
 .author-contribution-section,
 .filter-btn {
-  background: rgba(255, 255, 255, 0.48) !important; /* 淺色 */
-  backdrop-filter: blur(1px) !important;
+  @apply !backdrop-blur-[1px] !bg-white/50 dark:!bg-[#1e1e1e]/40;
   border-radius: 18px !important;
   box-shadow: 0 2px 12px rgba(0,0,0,0.08) !important;
 }
@@ -963,7 +937,7 @@ html.dark .VPLink.no-icon.VPFeature,
 html.dark .stat-card,
 html.dark .author-contribution-section,
 html.dark .filter-btn {
-  background: rgba(30, 30, 30, 0.38) !important;    /* 深色 */
+  /* background: rgba(30, 30, 30, 0.38) !important;  深色 已由 @apply 處理 */
 }
 .VPDocAside, .VPDocSidebar {
   display: block !important;
