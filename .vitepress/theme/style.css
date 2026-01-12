@@ -498,18 +498,14 @@ body {
   background-color: transparent !important;
 }
 
-/* 一般頁面 (非首頁) 的導航列 */
+/* 一般頁面 (非首頁) 的導航列 - 改用 Tailwind @apply 確保生產環境構建正確 */
 body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar {
-  background-color: rgba(255, 255, 255, 0.7) !important;
-  backdrop-filter: blur(20px) !important;
-  -webkit-backdrop-filter: blur(20px) !important;
-  border-bottom: 1px solid rgba(0,0,0,0.05); /* 添加邊框輔助視覺 */
+  @apply !backdrop-blur-[20px] !bg-white/70 dark:!bg-[#1e1e1e]/70 !border-b !border-black/5 dark:!border-white/5;
 }
 
-/* 深色模式 override */
+/* 深色模式 override - @apply 已經處理了 dark: 前綴，這裡只需保留特殊權重覆蓋 */
 html.dark body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar {
-  background-color: rgba(30, 30, 30, 0.7) !important;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  @apply !bg-[#1e1e1e]/70 !shadow-sm;
 }
 
 /* -----------------------------------------------------------------
@@ -517,16 +513,12 @@ html.dark body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar {
    ----------------------------------------------------------------- */
 body:has(.VPHome) .VPNavBar:not(.top),
 body.is-home-page .VPNavBar:not(.top) {
-  background-color: rgba(255, 255, 255, 0.7) !important;
-  backdrop-filter: blur(20px) !important;
-  -webkit-backdrop-filter: blur(20px) !important;
-  border-bottom: 1px solid rgba(0,0,0,0.05);
+  @apply !backdrop-blur-[20px] !bg-white/70 dark:!bg-[#1e1e1e]/70 !border-b !border-black/5 dark:!border-white/5;
 }
 
 html.dark body:has(.VPHome) .VPNavBar:not(.top),
 html.dark body.is-home-page .VPNavBar:not(.top) {
-  background-color: rgba(30, 30, 30, 0.7) !important;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  @apply !bg-[#1e1e1e]/70;
 }
 
 /* 首頁頂部：全透明 */
@@ -540,20 +532,18 @@ body.is-home-page .VPNavBar.top {
 
 /* -------------------- Sidebar 修復 -------------------- */
 body .VPSidebar {
-  background-color: rgba(255, 255, 255, 0.7) !important;
-  backdrop-filter: blur(20px) !important;
-  -webkit-backdrop-filter: blur(20px) !important;
+  @apply !backdrop-blur-[20px] !bg-white/70 dark:!bg-[#1e1e1e]/70;
 }
 
 html.dark body .VPSidebar {
-  background-color: rgba(30, 30, 30, 0.7) !important;
+  @apply !bg-[#1e1e1e]/70;
 }
 
 html.dark body .VPSidebar.open {
-   background-color: rgba(30, 30, 30, 0.9) !important;
+  @apply !bg-[#1e1e1e]/90;
 }
 html:not(.dark) body .VPSidebar.open {
-  background-color: rgba(255, 255, 255, 0.9) !important;
+  @apply !bg-white/90;
 }
 
 /* 手機選單背景 - 強制修復 */
