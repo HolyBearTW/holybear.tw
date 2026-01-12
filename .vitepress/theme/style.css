@@ -168,8 +168,8 @@ html * {
 }
 
 /* Patch: 保守的 pseudo 層級，避免被 stacking context 擋住 */
-body:has(.VPHome)::before,
-body:has(.VPHome)::after {
+body.is-home-page::before,
+body.is-home-page::after {
   content: '';
   position: fixed;
   inset: 0;
@@ -178,9 +178,9 @@ body:has(.VPHome)::after {
 }
 
 /* 確保首頁重要內容層在背景之上 */
-body:has(.VPHome) .VPNavBar,
-body:has(.VPHome) .VPContent,
-body:has(.VPHome) .VPFooter {
+body.is-home-page .VPNavBar,
+body.is-home-page .VPContent,
+body.is-home-page .VPFooter {
   position: relative;
   z-index: 1;
 }
@@ -192,11 +192,11 @@ body:has(.VPHome) .VPFooter {
 }
 
 /* 確保首頁內容層在背景之上（不被背景遮蓋） */
-body:has(.VPHome) .VPNavBar,
-body:has(.VPHome) .VPFooter,
-body:has(.VPHome) .VPContent,
-body:has(.VPHome) .VPHero,
-body:has(.VPHome) .VPHomeHero {
+body.is-home-page .VPNavBar,
+body.is-home-page .VPFooter,
+body.is-home-page .VPContent,
+body.is-home-page .VPHero,
+body.is-home-page .VPHomeHero {
   position: relative;
   z-index: 1;
   background-color: transparent !important;
@@ -471,49 +471,65 @@ html.dark .VPDocAsideOutline {
 
 /* ==================== Sidebar / Nav backdrop glass 統一處理 ==================== */
 body { --vp-nav-bg-color: transparent; --vp-sidebar-bg-color: transparent; --vp-local-nav-bg-color: transparent; }
-body:not(:has(.VPHome)) .VPNav,
-body:not(:has(.VPHome)) .VPNavBar { background: rgba(255, 255, 255, 0.01) !important; box-shadow: none !important; }
+
+/* 針對非首頁：同時檢查 JS class (.is-home-page) 與 DOM 結構 (:has(.VPHome)) */
+body:not(:has(.VPHome)):not(.is-home-page) .VPNav,
+body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar {
+  background: rgba(255, 255, 255, 0.01) !important; /* 改用極低透明度強制觸發渲染層 */
+  box-shadow: none !important;
+}
 
 body .VPSidebar {
   background: var(--my-glass-bg) !important;
   box-shadow: 0 4px 16px rgba(33, 150, 243, 0.1), 0 0 0 1px rgba(255,255,255,0.1) inset !important;
   transition: background 0.5s cubic-bezier(0.4,0,0.2,1), background-color 0.5s cubic-bezier(0.4,0,0.2,1);
-  }
-  html:not(.dark) body .VPSidebar.open {
-    background: rgba(255,255,255,0.85) !important;
+}
+html:not(.dark) body .VPSidebar.open {
+  background: rgba(255,255,255,0.85) !important;
 }
 
-/* 導航欄背景 */
-body.is-blog-page:not(:has(.VPHome)) .VPNavBar .content-body {
+/* 導航欄背景：部落格頁面 */
+body.is-blog-page:not(:has(.VPHome)):not(.is-home-page) .VPNavBar .content-body {
   backdrop-filter: blur(8px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(8px) saturate(180%) !important;
   background-color: rgba(255, 255, 255, 0.01) !important;
 }
 
-body:not(.is-blog-page):not(:has(.VPHome)) .VPNavBar {
+/* 導航欄背景：一般頁面（非首頁、非部落格） */
+body:not(.is-blog-page):not(:has(.VPHome)):not(.is-home-page) .VPNavBar {
   backdrop-filter: blur(8px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(8px) saturate(180%) !important;
   background-color: rgba(255, 255, 255, 0.01) !important;
 }
 
 @media (max-width: 959px) {
-body:not(:has(.VPHome)) .VPNavBarTitle.has-sidebar,
-body:not(:has(.VPHome)) .wrapper {
-  background-color: rgba(255, 255, 255, 0.01) !important;
-  backdrop-filter: blur(8px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(8px) saturate(180%) !important;
+  body:not(:has(.VPHome)):not(.is-home-page) .VPNavBarTitle.has-sidebar,
+  body:not(:has(.VPHome)):not(.is-home-page) .wrapper {
+    background-color: rgba(255, 255, 255, 0.01) !important;
+    backdrop-filter: blur(8px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(8px) saturate(180%) !important;
   }
 }
 
-/* 首頁導航透明/模糊行為 */
-body:has(.VPHome) .VPNavBar:not(.top) {
+/* 首頁導航：透明/模糊行為 */
+/* 支援兩種判定方式：CSS :has 或 JS .is-home-page */
+body:has(.VPHome) .VPNavBar:not(.top),
+body.is-home-page .VPNavBar:not(.top) {
   backdrop-filter: blur(12px) !important;
   -webkit-backdrop-filter: blur(12px) !important;
-  background-color: rgba(255, 255, 255, 0.01) !important; /* Fix: 使用極低透明度觸發線上版模糊渲染 */
+  background-color: rgba(255, 255, 255, 0.01) !important;
 }
 
-/* curtain 處理（避免遮罩擋住模糊） */
-body:not(:has(.VPHome)) .VPSidebar .curtain {
+/* 首頁導航：頂部狀態 (top) 保持全透明 */
+body:has(.VPHome) .VPNavBar.top,
+body.is-home-page .VPNavBar.top {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background-color: transparent !important;
+}
+
+/* Curtain 處理（避免遮罩擋住模糊） */
+body:not(:has(.VPHome)):not(.is-home-page) .VPSidebar .curtain {
   background: transparent !important;
   box-shadow: none !important;
   z-index: 0 !important;
@@ -620,7 +636,7 @@ body:not(:has(.VPHome)) .VPSidebar .curtain {
 }
 
 /* 非首頁時，使用 VitePress 預設的導航欄背景色 */
-body:not(:has(.VPHome)) .VPNavScreen {
+body:not(:has(.VPHome)):not(.is-home-page) .VPNavScreen {
   background-color: var(--vp-nav-bg-color) !important;
 }
 
@@ -843,22 +859,13 @@ html { scroll-behavior: smooth; }
 body:not(.is-blog-page) .divider,
 body:not(.is-blog-page) .divider-line {
 display: none !important;
-/*
-    position: relative !important;
-    left: 50% !important;
-    right: 50% !important;
-    width: 100vw !important;
-    max-width: none !important;
-    margin-left: -50vw !important;
-    margin-right: -50vw !important;
-    padding: 0 !important;
-    box-sizing: border-box !important;
-*/
 }
 
 /* 備選（如果上面沒被命中）——更具體選擇器，強制移除 navbar 的偽元素線 */
 body:has(.VPHome) .VPNavBar::before,
-body:has(.VPHome) .VPNavBar::after {
+body:has(.VPHome) .VPNavBar::after,
+body.is-home-page .VPNavBar::before,
+body.is-home-page .VPNavBar::after {
   display: none !important;
   height: 0 !important;
   background: none !important;
@@ -866,7 +873,7 @@ body:has(.VPHome) .VPNavBar::after {
 }
 
 /* VPLocalNav 高斯模糊效果 */
-body:not(:has(.VPHome)) .VPLocalNav {
+body:not(:has(.VPHome)):not(.is-home-page) .VPLocalNav {
   background: rgba(255, 255, 255, 0.01) !important;
   background-color: rgba(255, 255, 255, 0.01) !important;
   backdrop-filter: blur(8px) saturate(180%) !important;
@@ -1013,3 +1020,4 @@ body.theme-christmas .content,
 body.theme-christmas .content-container {
   background-color: transparent !important;
 }
+
