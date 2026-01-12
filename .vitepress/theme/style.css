@@ -478,29 +478,20 @@ body {
   --vp-local-nav-bg-color: transparent !important; 
 }
 
-/* 確保 .VPNav 容器本身無背景/無陰影，避免疊加 */
-.VPNav {
-  background-color: transparent !important;
-  box-shadow: none !important;
-}
-
-/* 確保 .VPNavBar 內部容器無背景，將效果集中在 .VPNavBar 上 */
-.VPNavBar .container,
-.VPNavBar .wrapper,
-.VPNavBar .content,
-.VPNavBar .content-body {
-  background-color: transparent !important;
-  background: transparent !important;
-}
-
 /* -----------------------------------------------------------------
-   核心修復：使用稍微可見的透明度 (0.6/0.5) 確保玻璃感
+   核心修復：使用稍微可見的透明度確保玻璃感
    太低的透明度 (0.01) 在某些瀏覽器會導致 backdrop-filter 失效
+   新增：確保 Nav 內部所有可能的背景層都被移除
    ----------------------------------------------------------------- */
+
+.VPNav, .VPNavBar, .VPNavBar > .container, .VPNavBar > .wrapper {
+  background: transparent !important;
+  background-color: transparent !important;
+}
 
 /* 一般頁面 (非首頁) 的導航列 */
 body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar {
-  background-color: rgba(255, 255, 255, 0.6) !important; /* 淺色模式：稍微顯白的玻璃 */
+  background-color: rgba(255, 255, 255, 0.72) !important; /* 提升透明度到 0.72 確保視覺 */
   backdrop-filter: blur(20px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
   box-shadow: 0 1px 8px rgba(0, 0, 0, 0.05) !important;
@@ -510,17 +501,16 @@ body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar {
 
 /* 深色模式 override */
 html.dark body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar {
-  background-color: rgba(30, 30, 30, 0.6) !important; /* 深色模式：深色玻璃 */
+  background-color: rgba(30, 30, 30, 0.72) !important;
   box-shadow: 0 1px 8px rgba(0, 0, 0, 0.2) !important;
 }
-
 
 /* -----------------------------------------------------------------
    首頁導航：透明/模糊行為 (滾動後)
    ----------------------------------------------------------------- */
 body:has(.VPHome) .VPNavBar:not(.top),
 body.is-home-page .VPNavBar:not(.top) {
-  background-color: rgba(255, 255, 255, 0.6) !important;
+  background-color: rgba(255, 255, 255, 0.72) !important;
   backdrop-filter: blur(20px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05) !important;
@@ -529,7 +519,7 @@ body.is-home-page .VPNavBar:not(.top) {
 
 html.dark body:has(.VPHome) .VPNavBar:not(.top),
 html.dark body.is-home-page .VPNavBar:not(.top) {
-  background-color: rgba(30, 30, 30, 0.6) !important;
+  background-color: rgba(30, 30, 30, 0.72) !important;
 }
 
 /* 首頁頂部：全透明 */
@@ -539,6 +529,27 @@ body.is-home-page .VPNavBar.top {
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
   box-shadow: none !important;
+}
+
+/* -------------------- Sidebar 修復 (之前遺漏了 backdrop-filter) -------------------- */
+body .VPSidebar {
+  background-color: rgba(255, 255, 255, 0.72) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05), 1px 0 0 0 var(--vp-c-divider) inset !important;
+  transition: transform 0.3s ease;
+}
+
+html.dark body .VPSidebar {
+  background-color: rgba(30, 30, 30, 0.72) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2), 1px 0 0 0 var(--vp-c-divider) inset !important;
+}
+
+html.dark body .VPSidebar.open {
+   background-color: rgba(30, 30, 30, 0.85) !important;
+}
+html:not(.dark) body .VPSidebar.open {
+  background-color: rgba(255, 255, 255, 0.85) !important;
 }
 
 /* 手機選單背景 - 強制修復 */
