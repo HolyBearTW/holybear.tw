@@ -472,7 +472,7 @@ html.dark .VPDocAsideOutline {
 /* ==================== Sidebar / Nav backdrop glass 統一處理 ==================== */
 body { --vp-nav-bg-color: transparent; --vp-sidebar-bg-color: transparent; --vp-local-nav-bg-color: transparent; }
 body:not(:has(.VPHome)) .VPNav,
-body:not(:has(.VPHome)) .VPNavBar { background: transparent !important; box-shadow: none !important; }
+body:not(:has(.VPHome)) .VPNavBar { background: rgba(255, 255, 255, 0.01) !important; box-shadow: none !important; }
 
 body .VPSidebar {
   background: var(--my-glass-bg) !important;
@@ -485,28 +485,31 @@ body .VPSidebar {
 
 /* 導航欄背景 */
 body.is-blog-page:not(:has(.VPHome)) .VPNavBar .content-body {
-  backdrop-filter: blur(4px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(4px) saturate(180%) !important;
+  backdrop-filter: blur(8px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(8px) saturate(180%) !important;
+  background-color: rgba(255, 255, 255, 0.01) !important;
 }
 
 body:not(.is-blog-page):not(:has(.VPHome)) .VPNavBar {
-  backdrop-filter: blur(4px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(4px) saturate(180%) !important;
+  backdrop-filter: blur(8px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(8px) saturate(180%) !important;
+  background-color: rgba(255, 255, 255, 0.01) !important;
 }
 
 @media (max-width: 959px) {
 body:not(:has(.VPHome)) .VPNavBarTitle.has-sidebar,
 body:not(:has(.VPHome)) .wrapper {
-  backdrop-filter: blur(4px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(4px) saturate(180%) !important;
+  background-color: rgba(255, 255, 255, 0.01) !important;
+  backdrop-filter: blur(8px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(8px) saturate(180%) !important;
   }
 }
 
 /* 首頁導航透明/模糊行為 */
 body:has(.VPHome) .VPNavBar:not(.top) {
-  backdrop-filter: blur(8px) !important;
-  -webkit-backdrop-filter: blur(8px) !important;
-  background-color: var(--vp-nav-bg-color, rgba(255,255,255,0.55)) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  background-color: rgba(255, 255, 255, 0.01) !important; /* Fix: 使用極低透明度觸發線上版模糊渲染 */
 }
 
 /* curtain 處理（避免遮罩擋住模糊） */
@@ -521,8 +524,9 @@ body:not(:has(.VPHome)) .VPSidebar .curtain {
   border: none !important;
   outline: none !important;
   box-shadow: none !important;
-  background-color: transparent !important;
+  background-color: rgba(255, 255, 255, 0.01) !important;
   backdrop-filter: blur(30px) !important;
+  -webkit-backdrop-filter: blur(30px) !important;
 }
 .DocSearch-Button:hover,
 .DocSearch-Button:focus {
@@ -610,7 +614,7 @@ body:not(:has(.VPHome)) .VPSidebar .curtain {
 /* ==================== 手機選單與語言選單置中 ==================== */
 /* 手機版選單背景：與導航欄同步 */
 .VPNavScreen {
-  background-color: transparent !important;
+  background-color: rgba(255, 255, 255, 0.01) !important;
   backdrop-filter: blur(8px) !important;
   -webkit-backdrop-filter: blur(8px) !important;
 }
@@ -863,10 +867,10 @@ body:has(.VPHome) .VPNavBar::after {
 
 /* VPLocalNav 高斯模糊效果 */
 body:not(:has(.VPHome)) .VPLocalNav {
-  background: transparent !important;
-  background-color: transparent !important;
-  backdrop-filter: blur(4px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(4px) saturate(180%) !important;
+  background: rgba(255, 255, 255, 0.01) !important;
+  background-color: rgba(255, 255, 255, 0.01) !important;
+  backdrop-filter: blur(8px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(8px) saturate(180%) !important;
 }
 
 /* 確保右側目錄（On this page）過長文字以省略號顯示，並且占滿可用空間 */
