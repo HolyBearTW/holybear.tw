@@ -258,7 +258,7 @@ html:not(.dark) .VPHome .VPButton.alt:hover {
 .VPLink.link.pager-link,
 .VPLink.link.pager-link.next,
 .VPLink.link.pager-link.prev {
-  @apply !backdrop-blur-[20px] !bg-white/70;
+  @apply !backdrop-blur-[8px] !bg-white/70;
   border-radius: 16px;
   box-shadow: 0 2px 12px 0 rgba(0,0,0,0.10);
   border: 1.5px solid var(--vp-c-divider, #e0e0e0);
@@ -440,7 +440,7 @@ input[type="range"]::-moz-range-thumb {
 
 /* Aside container (外觀) */
 .VPDocAsideOutline {
-  @apply !backdrop-blur-[20px] !bg-white/70;
+  @apply !backdrop-blur-[8px] !bg-white/70;
   border-radius: 18px !important;
   padding: 16px 18px !important;
   margin-bottom: 1.5em !important;
@@ -494,7 +494,7 @@ body {
 
 /* 一般頁面 (非首頁) 的導航列 - 分拆 Light/Dark 規則，避免 @apply dark: 生成不可預期的選擇器 */
 body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar {
-  @apply !backdrop-blur-[20px] !bg-white/70 !border-b !border-black/5;
+  @apply !backdrop-blur-[8px] !bg-white/70 !border-b !border-black/5;
 }
 
 /* 深色模式 override */
@@ -507,7 +507,7 @@ html.dark body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar {
    ----------------------------------------------------------------- */
 body:has(.VPHome) .VPNavBar:not(.top),
 body.is-home-page .VPNavBar:not(.top) {
-  @apply !backdrop-blur-[20px] !bg-white/70 !border-b !border-black/5;
+  @apply !backdrop-blur-[8px] !bg-white/70 !border-b !border-black/5;
 }
 
 html.dark body:has(.VPHome) .VPNavBar:not(.top),
@@ -526,7 +526,7 @@ body.is-home-page .VPNavBar.top {
 
 /* -------------------- Sidebar 修復 -------------------- */
 body .VPSidebar {
-  @apply !backdrop-blur-[20px] !bg-white/70;
+  @apply !backdrop-blur-[8px] !bg-white/70;
 }
 
 html.dark body .VPSidebar {
@@ -542,7 +542,7 @@ html:not(.dark) body .VPSidebar.open {
 
 /* 手機選單背景 - 強制修復 */
 .VPNavScreen {
-  @apply !backdrop-blur-[20px] !bg-white/85;
+  @apply !backdrop-blur-[8px] !bg-white/85;
 }
 
 html.dark .VPNavScreen {
@@ -558,7 +558,7 @@ body:not(:has(.VPHome)):not(.is-home-page) .VPSidebar .curtain {
 
 /* ==================== DocSearch / Navbar 搜尋按鈕 ==================== */
 .DocSearch-Button {
-  @apply !backdrop-blur-[30px] !bg-white/10;
+  @apply !backdrop-blur-[16px] !bg-white/10;
   border: none !important;
   outline: none !important;
   box-shadow: none !important;
@@ -650,7 +650,7 @@ body:not(:has(.VPHome)):not(.is-home-page) .VPSidebar .curtain {
 /* 手機版選單背景：與導航欄同步 */
 .VPNavScreen {
   background-color: rgba(255, 255, 255, 0.01) !important;
-  backdrop-filter: blur(20px) saturate(180%) !important;
+  backdrop-filter: blur(8px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
   transform: translate3d(0, 0, 0);
   will-change: backdrop-filter;
@@ -658,7 +658,7 @@ body:not(:has(.VPHome)):not(.is-home-page) .VPSidebar .curtain {
 
 /* 非首頁時，強制保持透明以顯示模糊效果 */
 body:not(:has(.VPHome)):not(.is-home-page) .VPNavScreen {
-  @apply !backdrop-blur-[20px] !bg-white/1;
+  @apply !backdrop-blur-[8px] !bg-white/1;
 }
 
 .VPNavScreen .VPNavScreenMenu .VPNavScreenMenuLink {
@@ -728,7 +728,7 @@ body:not(:has(.VPHome)):not(.is-home-page) .VPNavScreen {
   display: flex;
   align-items: center;
   justify-content: center;
-  @apply backdrop-blur-[18px] bg-white/10;
+  @apply backdrop-blur-[8px] bg-white/10;
   border-radius: 14px; /* 與其他按鈕一致 */
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   margin: 0.5em 0;
@@ -800,7 +800,7 @@ body:not(:has(.VPHome)):not(.is-home-page) .VPNavScreen {
   font-size: 1.08em;
   margin: 0.5em 0;
   transition: background 0.2s, box-shadow 0.2s;
-  @apply backdrop-blur-[18px];
+  @apply backdrop-blur-[8px];
 }
 .VPNavScreenMenuGroup > .button:hover {
   background: rgba(0,255,238,0.18);
@@ -924,7 +924,7 @@ body:not(:has(.VPHome)):not(.is-home-page) .VPLocalNav {
 
 /* 語言選單背景 */
 .VPMenu {
-  @apply !backdrop-blur-[30px] !bg-white/70;
+  @apply !backdrop-blur-[16px] !bg-white/70;
 }
 html.dark .VPMenu {
   @apply !bg-[#1e1e1e]/70;
