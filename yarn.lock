@@ -936,10 +936,10 @@
   resolved "https://registry.npmjs.org/@firebase/webchannel-wrapper/-/webchannel-wrapper-1.0.5.tgz"
   integrity sha512-+uGNN7rkfn41HLO0vekTFhTxk61eKa8mTpRGLO0QSqlQdKvIoGAvLp3ppdVIWbTGYJWM6Kp0iN+PjMIOcnVqTw==
 
-"@google/genai@^1.36.0":
-  version "1.36.0"
-  resolved "https://registry.yarnpkg.com/@google/genai/-/genai-1.36.0.tgz#73259598fdfe8f8bd1cbd87e4d23b70636d32891"
-  integrity sha512-f4S31aVi5G6U1phMKTaNqpik+sfsU1Z25QW3sGyCjtzNj1/0SnCEfWU0Gyq0iR4pjCsaqeeZtSfzHYW3OcEWUQ==
+"@google/genai@^1.37.0":
+  version "1.37.0"
+  resolved "https://registry.yarnpkg.com/@google/genai/-/genai-1.37.0.tgz#923be134e4c34078e0e1473a6d9b38d01a901b0e"
+  integrity sha512-of85LwNqretPhBHHEljUY05OSsQVUPyw5n1RdNkUpKR36kgHq7CVVEGY4GplVbFaqbdT3DXfLSv5B/Avbe5vXw==
   dependencies:
     google-auth-library "^10.3.0"
     protobufjs "^7.5.4"
