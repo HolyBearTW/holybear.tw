@@ -950,6 +950,7 @@ const App: React.FC = () => {
                 </div>
                 <ul className="list-disc pl-5 text-sm space-y-1 mt-3 animate-in fade-in slide-in-from-top-1">
                   {[
+                    { date: '2026/01/17', content: '因應推出上升技能，調整 HEXA 六轉技能設定。' },
                     { date: '2026/01/17', content: '將蒼刃傳授與紫扇傳授加入至連結技能黑名單，避免誤將其條件數值或觸發後的數值計入常駐總和中。' },
                     { date: '2026/01/13', content: '新增 Tooltip 智慧定位功能以改善使用者體驗，並新增手機版可預覽裝備資訊。' },
                     { date: '2025/12/23', content: '新增聯盟冠軍區域，並調整極限屬性計算方式及手機版顯示方式。' },

@@ -24,9 +24,11 @@ const artifactCrystalImages = [
 
 const CHAMPION_PATH = '/image/theme/unionChampion';
 
+// HEXA 六轉技能設定
+
 const HEXA_SETTINGS = {
   SKILL: {
-    key: 'SKILL', quantity: 1, keywords: ['skill', '技能'],
+    key: 'SKILL', quantity: 2, keywords: ['skill', '技能'],
     costs: [0, 30, 35, 40, 45, 50, 55, 60, 65, 200, 80, 90, 100, 110, 120, 130, 140, 150, 160, 350, 170, 180, 190, 200, 210, 220, 230, 240, 250, 500],
     erdaCosts: [0, 1, 1, 1, 2, 2, 2, 3, 3, 10, 3, 3, 4, 4, 4, 4, 4, 4, 5, 15, 5, 5, 5, 5, 5, 6, 6, 6, 7, 20]
   },
