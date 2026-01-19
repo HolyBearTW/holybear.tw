@@ -12,7 +12,7 @@
     "tailwindcss": "^4.1.18",
     "vitepress": "^2.0.0-alpha.15",
     "vitepress-plugin-auto-sidebar": "^1.4.0",
-    "vue": "^3.5.26"
+    "vue": "^3.5.27"
   },
   "dependencies": {
     "@google/genai": "^1.37.0",
