@@ -30,7 +30,7 @@
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "react-is": "^19.2.3",
-    "recharts": "^3.6.0",
+    "recharts": "^3.7.0",
     "three": "^0.182.0",
     "turndown": "^7.2.2",
     "vue-chartjs": "^5.3.3",
