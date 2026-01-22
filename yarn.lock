@@ -1948,10 +1948,10 @@ algoliasearch@^5.14.2:
     "@algolia/requester-fetch" "5.44.0"
     "@algolia/requester-node-http" "5.44.0"
 
-animejs@^4.3.1:
-  version "4.3.1"
-  resolved "https://registry.yarnpkg.com/animejs/-/animejs-4.3.1.tgz#cccb92d6e9add122507071ef2e665d81d54297fc"
-  integrity sha512-SoGEV+Bn2/YM7nCzZSBpFQvy5fB/r8FF3Myzqz48LPRjYH02QthwZHps98eMxWASKG21mRvMqgmcJNHUoCz7gg==
+animejs@^4.3.3:
+  version "4.3.3"
+  resolved "https://registry.yarnpkg.com/animejs/-/animejs-4.3.3.tgz#f6a6cb55accaad8f4e5aedf2b99f32f8293845ad"
+  integrity sha512-Yd4NGnGQ3KEjt+u5fPy7Xx2BhiTQOgweTGiefecWIqjRjwi5/QzxhdTtJKr5xxVDzBQVvI3qq7yp0Cp0VfQwYg==
 
 ansi-regex@^5.0.1:
   version "5.0.1"
