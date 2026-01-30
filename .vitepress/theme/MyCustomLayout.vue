@@ -198,9 +198,35 @@ onUnmounted(() => {
 
     const { frontmatter, page, locale, lang } = useData()
 
-    const isHomePage = computed(() =>
-        page.value && (page.value.path === '/' || page.value.path === '/index.html')
-    )
+    const fallbackImg = '/blog_no_image.svg'
+
+    // 原始文章數據 (複製自 blog/index.md 的邏輯)
+    const rawPosts = computed(() => {
+        const isEn = lang.value === 'en'
+        const prefix = isEn ? '/en/blog/' : '/blog/'
+
+        return allPosts.filter(post => 
+            post.frontmatter?.blog === true &&                // 1. 必須標記為 blog
+            post.url.startsWith(prefix) &&                    // 2. 根據語言選擇路徑
+            post.frontmatter?.image &&                        // 3. 關鍵：必須有寫 image 欄位
+            post.frontmatter?.image.trim() !== '' &&          // 4. 確保 image 不是空白字串
+            !post.url.endsWith('/index') &&                   // 5. 排除 index (通用)
+            !['/blog/index-new', '/blog/blog_list'].includes(post.url) // 6. 排除其他特定頁面
+        ).map(post => ({
+            ...post,
+            image: post.frontmatter?.image || fallbackImg, 
+            tags: Array.isArray(post.frontmatter?.tags) ? post.frontmatter?.tags : [],
+            category: Array.isArray(post.frontmatter?.category) ? post.frontmatter?.category : []
+        }))
+    })
+
+    const isHomePage = computed(() => {
+        // 使用 relativePath 準確判斷是否為根目錄首頁 (含多語言)
+        // 排除 blog/index.md 這種也使用 home layout 的頁面
+        if (!page.value) return false
+        const p = page.value.relativePath
+        return p === 'index.md' || p === 'zh_TW/index.md' || p === 'en/index.md'
+    })
 
     const currentTitle = computed(() =>
         frontmatter.value
@@ -473,6 +499,15 @@ onUnmounted(() => {
         <template #layout-top>
             <NavThemeHandler />
         </template>
+        <!-- Home Page: Carousel between Hero and Features -->
+        <template #home-features-before>
+            <div v-if="isHomePage" class="VPFeatures VPHomeFeatures" style="padding-top: 0 !important; padding-bottom: 2rem !important; display: flex; justify-content: center;">
+                <div class="container home-carousel-container">
+                    <HeroSection :posts="rawPosts" />
+                </div>
+            </div>
+        </template>
+
         <template #doc-before>
             <div v-if="!isHomePage" class="blog-post-header-injected">
                 <h1 class="blog-post-title">{{ currentTitle }}</h1>
@@ -1181,5 +1216,19 @@ body.is-blog-page .BlogVPFooter {
   top: 0;
   width: 100%;
   pointer-events: none;
+}
+
+/* Home Page Hero Section Wrapper - Removed as we now use VPFeatures container */
+
+.home-carousel-container {
+  margin: 0 auto;
+  max-width: 1150px !important; /* 強制覆蓋預設 container 寬度 */
+  width: 100%;
+}
+
+@media (max-width: 1150px) {
+  .home-carousel-container {
+  max-width: 95% !important; /* 強制覆蓋預設 container 寬度 */
+  }
 }
 </style>
