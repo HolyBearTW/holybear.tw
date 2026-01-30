@@ -40,7 +40,6 @@ import {
 
 ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale)
 
-
 // 狀態管理
 // 從 localStorage 讀取使用者偏好的顯示模式，預設為 grid
 const savedViewMode = (typeof localStorage !== 'undefined' && localStorage.getItem('blog-view-mode')) as 'grid' | 'list' | null
@@ -151,22 +150,17 @@ const onImgError = (e: Event) => {
 
 // 原始文章數據
 const rawPosts = computed(() => {
-  const blogPosts = allPosts.filter(post => Boolean(post) && post.url.startsWith('/blog/'))
-  
-  return blogPosts.filter(post => {
-    // 排除 blog 首頁和索引頁面
-    const excludedUrls = [
-      '/blog/',
-      '/blog/index',
-      '/blog/index-new',
-      '/blog/blog_list'
-    ]
-    return !excludedUrls.includes(post.url)
-  }).map(post => ({
+  return allPosts.filter(post => 
+    post.frontmatter?.blog === true &&                // 1. 必須標記為 blog
+    post.url.startsWith('/blog/') &&                  // 2. 必須是中文日誌路徑
+    post.frontmatter?.image &&                        // 3. 關鍵：必須有寫 image 欄位
+    post.frontmatter?.image.trim() !== '' &&          // 4. 確保 image 不是空白字串
+    !['/blog/index', '/blog/index-new', '/blog/blog_list'].includes(post.url) // 5. 排除索引頁
+  ).map(post => ({
     ...post,
-    image: post.image || fallbackImg,
-    tags: Array.isArray(post.tags) ? post.tags : (Array.isArray(post.tag) ? post.tag : (post.tag ? [post.tag] : [])),
-    category: Array.isArray(post.category) ? post.category : (post.category ? [post.category] : [])
+    image: post.frontmatter?.image || fallbackImg, 
+    tags: Array.isArray(post.frontmatter?.tags) ? post.frontmatter?.tags : [],
+    category: Array.isArray(post.frontmatter?.category) ? post.frontmatter?.category : []
   }))
 })
 
@@ -397,7 +391,13 @@ watch(isOldVersion, (newValue) => {
 </script>
 
 <ClientOnly>
-<div class="blog-container">
+  <!-- 將 HeroSection 移出 blog-container 以便獨立控制寬度 -->
+  <div class="hero-wrapper">
+    <HeroSection :posts="rawPosts" />
+  </div>
+
+  <div class="blog-container">
+    <!-- 已移除內部的 HeroSection -->
   <!-- 儀表板控制面板 - 三欄佈局 -->
   <div class="dashboard-panel">
     <!-- 左側：文章統計 -->
@@ -2146,6 +2146,31 @@ body.blog-index-page [class*="content-container"] {
   border-top: none !important;
   box-shadow: none !important;
   outline: none !important;
+}
+</style>
+
+<style scoped>
+.blog-container {
+  padding-top: 0 !important; /* 消除頂部間距 */
+  margin-top: 0;             /* 下方內容與 Hero 的間距由 Hero 決定 */
+}
+
+.hero-wrapper {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem 2rem 0 2rem; /* 給予適當的左右間距，順便給上方空間 */
+}
+
+@media (max-width: 768px) {
+  .hero-wrapper {
+    padding: 1rem 1rem 0 1rem;
+  }
+}
+
+/* 針對 HeroSection 的微調 */
+.hero-section {
+  margin-top: 0;
+  margin-bottom: 2rem;
 }
 </style>
 

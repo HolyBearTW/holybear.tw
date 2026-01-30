@@ -510,6 +510,7 @@ onUnmounted(() => {
         </template>
         <template #doc-after>
             <ClientOnly>
+                <ShareButtons />
                 <VotePanel />
                 <GiscusComments />
             </ClientOnly>

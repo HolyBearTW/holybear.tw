@@ -69,7 +69,7 @@ const LINK_SKILL_DATA: Record<string, (lv: number) => Record<string, number>> = 
 };
 
 const CONDITIONAL_SKILLS = [
-    '靈魂契約', '實戰的知識', '盜賊的狡詐', '集中狂攻', 
+    '靈魂契約', '實戰的知識', '小偷的狡詐', '集中狂攻', 
     '戰鬥的流動', '無我', '貴族', '事前準備', '天賦', 
     '不屈的信念', '自由精神', '連續擊殺優勢', '輪之堅持', '光之守護',
     '蒼刃傳授', '紫扇傳授'
