@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@google/genai": "^1.38.0",
-    "animejs": "^4.3.4",
+    "animejs": "^4.3.5",
     "autoprefixer": "^10.4.23",
     "chart.js": "^4.5.1",
     "date-fns": "^4.1.0",
