@@ -153,15 +153,22 @@ const rawPosts = computed(() => {
   return allPosts.filter(post => 
     post.frontmatter?.blog === true &&                // 1. 必須標記為 blog
     post.url.startsWith('/blog/') &&                  // 2. 必須是中文日誌路徑
-    post.frontmatter?.image &&                        // 3. 關鍵：必須有寫 image 欄位
-    post.frontmatter?.image.trim() !== '' &&          // 4. 確保 image 不是空白字串
-    !['/blog/index', '/blog/index-new', '/blog/blog_list'].includes(post.url) // 5. 排除索引頁
+    !['/blog/index', '/blog/index-new', '/blog/blog_list'].includes(post.url) // 3. 排除索引頁
   ).map(post => ({
     ...post,
-    image: post.frontmatter?.image || fallbackImg, 
+    image: post.frontmatter?.image || fallbackImg,
     tags: Array.isArray(post.frontmatter?.tags) ? post.frontmatter?.tags : [],
     category: Array.isArray(post.frontmatter?.category) ? post.frontmatter?.category : []
   }))
+})
+
+// 輪播圖專用數據：過濾掉沒有圖片的文章
+const carouselPosts = computed(() => {
+  return rawPosts.value.filter(post => 
+    post.image !== fallbackImg && // 使用 fallbackImg 的就是原本沒圖片的
+    post.frontmatter?.image && 
+    post.frontmatter.image.trim() !== ''
+  )
 })
 
 // 過濾邏輯
@@ -393,7 +400,7 @@ watch(isOldVersion, (newValue) => {
 <ClientOnly>
   <!-- 將 HeroSection 移出 blog-container 以便獨立控制寬度 -->
   <div class="hero-wrapper">
-    <HeroSection :posts="rawPosts" />
+    <HeroSection :posts="carouselPosts" />
   </div>
 
   <div class="blog-container">
