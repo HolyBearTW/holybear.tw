@@ -4,6 +4,8 @@ import './style.css';
 import OpenCCConverter from '../components/OpenCCConverter.vue';
 import Spoiler from './Spoiler.vue';
 import { THEME_STORAGE_KEY } from './background/themes';
+import ShareButtons from '../components/ShareButtons.vue';
+import HeroSection from '../components/HeroSection.vue';
 
 export default {
     extends: VPLTheme,
@@ -11,6 +13,8 @@ export default {
     enhanceApp({ router, app }) {
         app.component('OpenCCConverter', OpenCCConverter);
         app.component('Spoiler', Spoiler);
+        app.component('ShareButtons', ShareButtons);
+        app.component('HeroSection', HeroSection);
 
         if (typeof document === 'undefined') return; // SSR 階段直接跳過
 
