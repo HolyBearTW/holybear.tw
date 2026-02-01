@@ -278,55 +278,61 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
     ]
   };
 
-  try {
-    // Try requested model first
-    const response = await ai.models.generateContent({
-      model: modelId,
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      config
-    });
-    const text = typeof response.text === 'function' ? response.text() : response.text;
-    if (!text) throw new Error("Empty Response from Gemini (text is null)");
-    return text;
-  } catch (error: any) {
-    console.warn(`Gemini Model (${modelId}) failed: ${error.message}, trying fallback...`);
+  // 定義模型嘗試清單 (這解決了使用者指定不存在模型或 API 暫時錯誤的問題)
+  // 優先順序: 指定模型 -> 2.0 Flash (Preview) -> 1.5 Pro (最強) -> 1.5 Flash (最快)
+  let modelsToTry = [modelId];
+  
+  // 如果是使用者指定了 "gemini-3.0-flash"，保持原樣嘗試，
+  // 但為了保險起見，我們將其加入 fallback 列表
+  if (modelId === 'gemini-3.0-flash') {
+      // 確保 3.0 失敗時會嘗試 2.0 和 1.5
+      modelsToTry.push('gemini-2.0-flash-exp', 'gemini-1.5-pro', 'gemini-1.5-flash');
+  } else {
+      // 加入強大的備用模型
+      modelsToTry.push('gemini-2.0-flash-exp', 'gemini-1.5-pro', 'gemini-1.5-flash');
+  }
+  // 去除重複並過濾掉空值
+  modelsToTry = [...new Set(modelsToTry)].filter(Boolean);
+
+  let lastError: any = null;
+
+  for (const model of modelsToTry) {
     try {
-        // Fallback to 2.0 (Stable)
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.0-flash',
-            contents: [{ role: 'user', parts: [{ text: prompt }] }],
-            config
-        });
-        const text = typeof response.text === 'function' ? response.text() : response.text;
-        if (!text) throw new Error("Empty Response from Gemini 2.0");
-        return text;
-    } catch (fallbackError: any) {
-        console.warn(`Gemini 2.0 Flash failed: ${fallbackError.message}, trying gemini-1.5-flash...`);
-        try {
-            // Fallback 2: gemini-1.5-flash (Fast & Stable)
-            const response = await ai.models.generateContent({
-                model: 'gemini-1.5-flash',
-                contents: [{ role: 'user', parts: [{ text: prompt }] }],
-                config
-            });
-            const text = typeof response.text === 'function' ? response.text() : response.text;
-            if (!text) throw new Error("Empty Response from Gemini 1.5");
-            return text;
-        } catch (finalError: any) {
-          console.error("Gemini Error:", finalError);
-          // 明確處理 quota 錯誤
-          if (finalError.message?.includes('429') || finalError.status === 429) {
-            return "⚠️ **公用 AI 額度已達上限 (Rate Limit Exceeded)**\n\n因使用人數眾多，公用額度暫時耗盡。請點擊下方的「**立即設定 API Key 以繼續使用**」按鈕，填入您自己的 Google Gemini API Key 即可繼續免費使用。\n\n👉 [取得免費 API Key (Google AI Studio)](https://aistudio.google.com/app/apikey)";
-          }
-          // 處理 timeout/network error
-          if (finalError.code === 'ECONNABORTED' || finalError.message?.toLowerCase().includes('timeout')) {
-            return 'AI Analysis Failed: Timeout. 伺服器回應逾時，請稍後再試。';
-          }
-          if (finalError.message?.toLowerCase().includes('network')) {
-            return 'AI Analysis Failed: Network Error. 網路連線異常，請檢查您的網路或稍後再試。';
-          }
-          return `AI Analysis Failed: ${finalError.message || finalError.toString()}. \n\nPlease check the browser console (F12) to see the list of available models for your API Key.`;
-        }
+      console.log(`Trying Gemini Model: ${model}`);
+      // @ts-ignore
+      const response = await ai.models.generateContent({
+        model: model,
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        config
+      });
+      
+      const text = typeof response.text === 'function' ? response.text() : response.text;
+      if (!text) throw new Error(`Empty Response from ${model}`);
+      return text;
+
+    } catch (error: any) {
+      console.warn(`Gemini Model (${model}) failed: ${error.message}`);
+      lastError = error;
+      // Continue to next model
     }
   }
+
+  // 若全部失敗，處理最後一個錯誤
+  const finalError = lastError;
+  console.error("All Gemini Models Failed. Final Error:", finalError);
+  
+  if (finalError) {
+      if (finalError.message?.includes('429') || finalError.status === 429) {
+        return "⚠️ **公用 AI 額度已達上限 (Rate Limit Exceeded)**\n\n因使用人數眾多，公用額度暫時耗盡。請點擊下方的「**立即設定 API Key 以繼續使用**」按鈕，填入您自己的 Google Gemini API Key 即可繼續免費使用。\n\n👉 [取得免費 API Key (Google AI Studio)](https://aistudio.google.com/app/apikey)";
+      }
+      if (finalError.code === 'ECONNABORTED' || finalError.message?.toLowerCase().includes('timeout')) {
+        return 'AI Analysis Failed: Timeout. 伺服器回應逾時，請稍後再試。';
+      }
+      if (finalError.message?.toLowerCase().includes('network')) {
+        return 'AI Analysis Failed: Network Error. 網路連線異常，請檢查您的網路或稍後再試。';
+      }
+      return `AI Analysis Failed: ${finalError.message || finalError.toString()}. \n\n(Tried models: ${modelsToTry.join(', ')})`;
+  }
+  
+  return "AI Analysis Failed: Unknown Error.";
 };
