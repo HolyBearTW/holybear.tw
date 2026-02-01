@@ -58,7 +58,15 @@ export default defineConfig({
             dedupe: ['react', 'react-dom'],
         },
         optimizeDeps: {
-            include: ['react', 'react-dom', 'react-dom/client'],
+            include: [
+                'react', 
+                'react-dom', 
+                'react-dom/client',
+                'lucide-react',
+                'markdown-it',
+                'recharts',
+                '@google/genai'
+            ],
         },
         server: {
             fs: {

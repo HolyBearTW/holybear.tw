@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Search, Loader2, RefreshCw, AlertCircle, Wand2, ThumbsUp, Shield, Sword, Flame, Star, Zap, ChevronDown, ChevronUp, History, X, Settings, Crown, LogOut, Share2, Info, Mail, Globe, TrendingUp } from 'lucide-react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { Search, Loader2, RefreshCw, AlertCircle, Wand2, ThumbsUp, Shield, Sword, Flame, Star, Zap, ChevronDown, ChevronUp, History, X, Settings, Crown, LogOut, Share2, Info, Mail, Globe, TrendingUp, Sparkles } from 'lucide-react';
 import ApiKeyModal from './components/ApiKeyModal';
 import ShareModal from './components/ShareModal';
 import EquipmentGrid from './components/EquipmentGrid';
@@ -113,6 +113,21 @@ const App: React.FC = () => {
 
   // 內在潛能預設狀態
   const [abilityPreset, setAbilityPreset] = useState(1);
+
+  // 判斷是否為「突破極限」的高分 (分數 > 10)
+  const isHighScore = useMemo(() => {
+    if (!aiAnalysis) return false;
+    // 寬鬆匹配: 支援 "11分" "11.5 分" 甚至 "Score: 11" 等格式
+    // 優先抓取 "戰力評級" 後面的數字，若無則嘗試抓取任意 "XX分" 的最高值
+    const ratingMatch = aiAnalysis.match(/戰力評級[^0-9]*(\d+(\.\d+)?)/);
+    if (ratingMatch) {
+      return parseFloat(ratingMatch[1]) > 10;
+    }
+    // Fallback: 掃描所有 "XX分" 取最大值 (避免抓到日期)
+    const allScores = [...aiAnalysis.matchAll(/(\d+(\.\d+)?)分/g)].map(m => parseFloat(m[1]));
+    const maxScore = Math.max(0, ...allScores.filter(s => s < 20)); // 過濾掉年份等大數字
+    return maxScore > 10;
+  }, [aiAnalysis]);
 
   // 計時器效果
   useEffect(() => {
@@ -881,9 +896,46 @@ const App: React.FC = () => {
 
            {/* AI Response Area */}
            {/* Fix: Always show container if we have result OR analyzing OR specific error. Button is now always visible inside. */}
-           <div ref={aiResultRef} className={`bg-[#161b22] border border-indigo-500/30 rounded-xl p-5 mt-6 shadow-lg transition-all ${!analyzing && !aiAnalysis && !error?.includes('AI') ? 'hidden' : 'block'}`}>
-               <h3 className="text-indigo-400 font-bold text-base mb-3 flex items-center gap-2 border-b border-indigo-500/20 pb-2">
-                 <Wand2 className="w-5 h-5" /> AI 角色分析報告
+           <div ref={aiResultRef} className={`relative transition-all duration-700 ${!analyzing && !aiAnalysis && !error?.includes('AI') ? 'hidden' : 'block'} 
+             ${isHighScore ? 'bg-gradient-to-br from-[#1c1f33] to-[#2a1b3d] border-2 border-amber-400/50 shadow-[0_0_40px_rgba(251,191,36,0.15)]' : 'bg-[#161b22] border border-indigo-500/30 shadow-lg'} 
+             rounded-xl p-5 mt-6`}>
+               
+               {/* High Score Background Glow */}
+               {isHighScore && (
+                 <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-xl z-0">
+                   <div className="absolute -top-10 -right-10 w-40 h-40 bg-yellow-400/20 blur-[50px] rounded-full animate-pulse z-0" />
+                   <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-amber-400/20 blur-[50px] rounded-full animate-pulse z-0" />
+                 </div>
+               )}
+
+               <h3 className={`relative font-bold text-base mb-3 flex items-center justify-between border-b pb-2 ${isHighScore ? 'text-amber-400 border-amber-500/30' : 'text-indigo-400 border-indigo-500/20'}`}>
+                 <div className="flex items-center gap-2 relative z-10">
+                    {isHighScore ? (
+                        <div className="relative">
+                            <Crown className="w-5 h-5 text-amber-400 animate-pulse" />
+                            <div className="absolute -top-1 -right-1 animate-[ping_1.5s_infinite]"><Star className="w-2 h-2 text-yellow-200" fill="currentColor" /></div>
+                        </div>
+                    ) : <Wand2 className="w-5 h-5" />} 
+                    
+                    <span className="relative">
+                        {isHighScore ? 'AI 權威戰力評鑑 (突破極限)' : 'AI 角色分析報告'}
+                        {isHighScore && (
+                            <>
+                                <div className="absolute -top-3 -right-4 animate-[bounce_2s_infinite]"><Sparkles className="w-4 h-4 text-yellow-300" /></div>
+                                <div className="absolute -bottom-2 -left-2 rotate-12 animate-pulse"><Star className="w-2 h-2 text-amber-500" fill="currentColor"/></div>
+                                <div className="absolute top-1/2 -right-8 -translate-y-1/2 animate-[spin_4s_linear_infinite]"><Sparkles className="w-3 h-3 text-yellow-100" /></div>
+                                <div className="absolute -top-4 left-1/2 animate-[pulse_1s_infinite]"><Star className="w-1.5 h-1.5 text-yellow-200" /></div>
+                            </>
+                        )}
+                    </span>
+                 </div>
+                 {isHighScore && (
+                     <div className="flex gap-0.5 opacity-80">
+                         {[...Array(5)].map((_, i) => (
+                             <Star key={i} className="w-3 h-3 text-amber-400 animate-[bounce_1.5s_infinite]" style={{ animationDelay: `${i * 0.1}s` }} fill="currentColor" />
+                         ))}
+                     </div>
+                 )}
                </h3>
                
                {analyzing ? (

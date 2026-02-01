@@ -37,7 +37,7 @@ const cleanDataForAI = (obj: any): any => {
   return obj;
 };
 
-// UPDATE: 預設值改為 gemini-3.0-flash
+// UPDATE: 預設值改為 gemini-3.0-flash (使用者指定)
 export const analyzeCharacter = async (data: DashboardData, apiKey: string, modelId: string = 'gemini-3.0-flash'): Promise<string> => {
   if (!apiKey) {
     return "Gemini API Key is missing. Please provide a valid API Key.";
@@ -49,7 +49,7 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
   // 2. 為了讓 AI 更精準，我們還是保留你原本的手動提取邏輯作為「摘要」
   // 這樣 AI 會先看到重點，再看詳細 JSON
   const relevantStats = data.stat.final_stat
-    .filter(s => ['STR', 'DEX', 'INT', 'LUK', 'HP', 'Combat Power', 'Boss Damage', 'Ignore Defense Rate', 'Final Damage', 'Critical Damage'].includes(s.stat_name) || ['戰鬥力', 'BOSS怪物傷害', '無視防禦率', '最終傷害', '爆擊傷害'].includes(s.stat_name))
+    .filter(s => ['STR', 'DEX', 'INT', 'LUK', 'HP', 'Combat Power', 'Boss Damage', 'Ignore Defense Rate', 'Final Damage', 'Critical Damage', 'Item Drop Rate', 'Mesos Obtain'].includes(s.stat_name) || ['戰鬥力', 'BOSS怪物傷害', '無視防禦率', '最終傷害', '爆擊傷害', '道具掉落率', '楓幣獲得量'].includes(s.stat_name))
     .map(s => `${s.stat_name}: ${s.stat_value}`)
     .join(', ');
 
@@ -103,19 +103,35 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
     請依據提供的角色數據，進行嚴格且符合當前版本環境（Meta）的強度分析。
 
     --- 【當前遊戲環境設定 (Meta Context)】 ---
+    0. **【優先檢測】練功裝備判定 (Farming Gear Check)：**
+       請優先檢查面板數據中的 **「道具掉落率 (Item Drop Rate)」** 與 **「楓幣獲得量 (Mesos Obtain)」**。
+       *   **若任一數值超過 100% (或兩者相加超過 150%)**：
+           請判斷該玩家穿著「練功/打寶裝備」，而非「打王裝備」。
+           **請直接拒絕評分**，並僅回覆：「⚠️ **檢測到您目前穿著練功/打寶裝備 (掉寶/楓幣率過高)**。為了獲得準確的戰力評估，請更換為全輸出的『打王裝備 (Bossing Gear)』後再重新進行分析。」
+           **(請勿輸出任何分數、戰力評級或 BOSS 建議)**。
+       *   若數值正常，請繼續進行以下分析。
+
     1. **武器/能源階級：** 認定「命運武器」為目前最強武器；「米特拉的憤怒」為目前最強能源（漆黑裝備），其次是「創世武器 (Genesis)」，再來是「神秘冥界 (Arcane)」。
     2. **防具階級：** 「永恆裝備 (Eternal)」為頂標，其次是「滅龍騎士盔甲 (Dragon Knight/Breath of Divinity set)」，再來是神秘冥界。
     3. **特殊道具判定：** * **塔戒 (Seed Rings) / MX-131 / 黑翼胸章：** 此類裝備無法衝星與洗潛能（MX-131/黑翼為胸章），顯示「0星/無潛能」為正常現象。只要裝備清單中包含此類道具，即代表該玩家具備高階配裝觀念，請直接視為「加分項目」並給予正面評價。
        * **VIP 胸章：** 這是極稀有的絕版道具，且是**唯一可以上潛能與衝星 (最高5星)** 的胸章。若玩家擁有此裝備且有潛能，請給予極高評價。
+       * **內在潛能 (Inner Ability)：** **第 2、3 排潛能「罕見 (Unique)」即為正常達標** (打王低標)，切勿要求這些欄位必須是傳說 (Legendary)，因為那通常需要高額現金道具且非必要。但**屬性內容必須實用** (如：異常狀態增傷/無視冷卻/BOSS傷害/爆擊率/加持時間等) 才算合格；若為廢屬性 (如防禦/跳躍) 則屬配置不當。
     4. **技能等級標準：**
        - **六轉 (HEXA/VI)：** 技能名稱常帶有「VI」後綴。滿等 30 級。**Lv 1~9 為初期，Lv 10~19 為中階，Lv 20+ 為高階。** 請勿將六轉技能等級（如 Lv.5）誤判為過低，這在六轉系統中屬於正常過渡期。
        - **五轉 (V 矩陣)：** 單顆核心滿等 25 級。若看到 V 矩陣核心等級較低，可能是新練的核心，或是額外的技能點，請優先依據「六轉技能」是否存在來判斷機體強度。
     5. **台版特色：** 分析時請務必考量 TMS 特有道具（如：天上的氣息、MX-131、黑翼胸章、女武神之心、培羅德套裝）以及高階卷軸（V卷、X卷）與星力（22星為高標）的加成影響。
-    6. **評分標準 (需綜合考量 裝備/ARC/AUT/等級)：** 
-       - **1-4分 (新手/回鍋)：** 湊齊深淵/航海，等級 < 260，ARC 成長中，無 AUT。
-       - **5-7分 (中階玩家)：** 神秘套裝/培羅德/17星，等級 260+ (已六轉)，ARC 達標黑魔法師 (1320)，AUT 起步 (賽爾尼溫/阿爾克斯)。
-       - **8-9分 (高階玩家)：** 滅龍或永恆混搭/22星/雙傳說/漆黑BOSS裝備/創世解放，等級 275+ (桃源境以上)，AUT 充足 (350~500+)。
-       - **10分 (頂尖神人)：** **22 星為絕對低標**，戰力需 **10 億 (1B) 以上** (頂尖玩家甚至達 20~30 億)，命運武器解放/光輝BOSS裝備，等級 285+ (卡爾西溫/塔拉哈特)，AUT 極高 (600~700+)。
+    6. **評分標準 (C級 ~ SSS+級 / 突破制評分)：** 
+       請嚴格根據「面板戰鬥力 (Combat Power)」進行分級，**切勿自行腦補「有效戰力」而將分數打過高**。
+       *註：即便裝備再好，若面板戰鬥力未達標，仍不可給予該階級的分數 (例如：2.5億戰力不可評為 SS 級)。*
+
+       - **C 級 (新手/回鍋 | 1-4 分)：** 湊齊深淵/航海，等級 < 260，ARC 成長中，無 AUT。
+       - **B 級 (中階玩家 | 5-7 分)：** 神秘套裝/培羅德/10星，等級 260+ (已六轉)，ARC 達標黑魔法師 (1320)，AUT 起步 (賽爾尼溫/阿爾克斯)。
+       - **A 級 (高階玩家 | 8-9 分)：** 滅龍或永恆混搭/主潛能傳說/漆黑BOSS裝備/創世解放，等級 275+ (桃源境以上)，AUT 充足 (350~500+)。
+       - **S 級 (頂尖強者 | 10 分)：** **戰力 1 億以上** (約普通卡洛斯門檻)。創世武器解放、17 星為標配，等級 280+。
+       - **S+ 級 (卓越超群 | 10.5 分)：** **戰力 4 億以上** (可單吃終極史烏)。
+       - **SS 級 (超凡入聖 | 11-12 分)：** **戰力 5 億以上** (可單吃混沌卡洛斯)。**必須嚴格達到 5 億才可給予此階級**。22 星為標配，附加潛能傳說，命運武器解放，光輝裝備，AUT 高標 (600+)。
+       - **SSS 級 (絕世神人 | 13-14 分)：** **戰力 10 億 - 19.9 億**。頂級配置，全伺服器前段班。
+       - **SSS+ 級 (傳說再世 | 15 分)：** **戰力 20 億以上**。理論頂點，無懈可擊 (單吃極限難度)。
 
     7. **高階 BOSS 屬性需求表 (ARC & AUT)：**
        **[ARC (秘法符文) 區域]**
@@ -185,7 +201,7 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
 
     11. **BOSS 單人通關最低戰力需求表 (單位: 戰鬥力):**
         *此為理論最低單吃門檻 (Minimum Solo Requirement)，若要穩通建議高於此標準。*
-        - **史烏:** 普通 150萬 / 困難 1000萬 / 終極 2億
+        - **史烏:** 普通 150萬 / 困難 1000萬 / 終極 4億
         - **戴米安:** 普通 500萬 / 困難 1500萬
         - **露希妲:** 簡單 300萬 / 普通 1000萬 / 困難 2700萬
         - **威爾:** 簡單 500萬 / 普通 1000萬 / 困難 3200萬
@@ -223,7 +239,7 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
 
     請依照以下四點要求，輸出您的分析結果：
 
-    1.  **戰力評級：** 根據上述【當前遊戲環境設定】，給予 **1 到 10 分** 的「綜合戰鬥力評級」。請簡述給分理由。
+    1.  **戰力評級：** 請輸出 **「分數 (階級)」** (例如：8.5分 (A級 - 高階玩家))，並簡述給分理由。
 
     2.  **BOSS 攻略建議 (關鍵指標)：** 請根據角色的「戰鬥力」、「無視防禦」、「BOSS傷害」與「ARC/AUT」，依序評估以下高階 BOSS 的攻略可能性。
         **必須使用表格呈現 (Markdown Table)**，欄位包含：[BOSS名稱] | [難度] | [建議 (輕鬆/勉強/組隊/不足)] | [關鍵短評]。
@@ -269,9 +285,10 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
       config
     });
     const text = typeof response.text === 'function' ? response.text() : response.text;
-    return text || "Failed to generate analysis (Empty Response). Check console for details.";
+    if (!text) throw new Error("Empty Response from Gemini (text is null)");
+    return text;
   } catch (error: any) {
-    console.warn(`Gemini Model (${modelId}) failed, trying fallback...`, error.message);
+    console.warn(`Gemini Model (${modelId}) failed: ${error.message}, trying fallback...`);
     try {
         // Fallback to 2.0 (Stable)
         const response = await ai.models.generateContent({
@@ -280,18 +297,20 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
             config
         });
         const text = typeof response.text === 'function' ? response.text() : response.text;
-        return text || "Failed to generate analysis (Empty Response).";
+        if (!text) throw new Error("Empty Response from Gemini 2.0");
+        return text;
     } catch (fallbackError: any) {
-        console.warn("Gemini 2.0 Flash failed, trying gemini-flash-latest...", fallbackError.message);
+        console.warn(`Gemini 2.0 Flash failed: ${fallbackError.message}, trying gemini-1.5-flash...`);
         try {
-            // Fallback 2: latest alias
+            // Fallback 2: gemini-1.5-flash (Fast & Stable)
             const response = await ai.models.generateContent({
-                model: 'gemini-flash-latest',
+                model: 'gemini-1.5-flash',
                 contents: [{ role: 'user', parts: [{ text: prompt }] }],
                 config
             });
             const text = typeof response.text === 'function' ? response.text() : response.text;
-            return text || "Failed to generate analysis (Empty Response).";
+            if (!text) throw new Error("Empty Response from Gemini 1.5");
+            return text;
         } catch (finalError: any) {
           console.error("Gemini Error:", finalError);
           // 明確處理 quota 錯誤
