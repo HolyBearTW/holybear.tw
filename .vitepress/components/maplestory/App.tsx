@@ -103,6 +103,7 @@ const App: React.FC = () => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [historyData, setHistoryData] = useState<any[]>([]);
+  const [elapsedTime, setElapsedTime] = useState(0); // AI 分析計時器
   const initialSearchDone = useRef(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const aiResultRef = useRef<HTMLDivElement>(null);
@@ -112,6 +113,19 @@ const App: React.FC = () => {
 
   // 內在潛能預設狀態
   const [abilityPreset, setAbilityPreset] = useState(1);
+
+  // 計時器效果
+  useEffect(() => {
+    let interval: any;
+    if (analyzing) {
+      interval = setInterval(() => {
+        setElapsedTime(prev => prev + 1);
+      }, 1000);
+    } else {
+      setElapsedTime(0);
+    }
+    return () => clearInterval(interval);
+  }, [analyzing]);
 
   useEffect(() => {
     const history = localStorage.getItem('maple_search_history');
@@ -274,7 +288,7 @@ const App: React.FC = () => {
       );
 
       if (isQuotaError) {
-        setError('AI 額度已用完，請更換金鑰或稍後再試。');
+        setError('⚠️ **AI 額度已達上限 (Rate Limit Exceeded)**\n\nAI 額度暫時耗盡。請點擊下方的「**立即設定 API Key 以繼續使用**」按鈕，填入或更換另一組您自己的 Google Gemini API Key 即可繼續免費使用。\n\n👉 [取得免費 API Key (Google AI Studio)](https://aistudio.google.com/app/apikey)');
         setAiAnalysis(null);
       } else if (!result || result.startsWith('AI Analysis Failed:')) {
         const msg = result?.replace('AI Analysis Failed:', '').trim() || 'AI 分析連線逾時或失敗，請重試。';
@@ -286,7 +300,7 @@ const App: React.FC = () => {
     } catch (err: any) {
       const errorMessage = err?.message || '';
       if (errorMessage.includes('429') || errorMessage.includes('Quota')) {
-        setError('AI 額度已用完，請更換金鑰或稍後再試。');
+        setError('⚠️ **AI 額度已達上限 (Rate Limit Exceeded)**\n\nAI 額度暫時耗盡。請點擊下方的「**立即設定 API Key 以繼續使用**」按鈕，填入或更換另一組您自己的 Google Gemini API Key 即可繼續免費使用。\n\n👉 [取得免費 API Key (Google AI Studio)](https://aistudio.google.com/app/apikey)');
       } else {
         setError(errorMessage || 'AI 分析發生未預期錯誤，請稍後再試。');
       }
@@ -876,6 +890,9 @@ const App: React.FC = () => {
                  <div className="flex flex-col items-center py-20 animate-pulse">
                    <Loader2 className="w-10 h-10 text-indigo-500 animate-spin mb-4" />
                    <p className="text-slate-500 font-medium">AI 正在分析裝備與數據...</p>
+                   <p className="text-indigo-300/70 text-sm mt-3 font-mono bg-indigo-950/20 px-4 py-1.5 rounded-full border border-indigo-500/20">
+                     已耗時: <span className="text-indigo-400 font-bold">{elapsedTime}</span> 秒 <span className="text-slate-600 mx-1">|</span> 預計等待: 15~35 秒
+                   </p>
                  </div>
                ) : (
                  <>
