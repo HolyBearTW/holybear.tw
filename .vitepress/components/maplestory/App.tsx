@@ -967,6 +967,7 @@ const App: React.FC = () => {
                 </div>
                 <ul className="list-disc pl-5 text-sm space-y-1 mt-3 animate-in fade-in slide-in-from-top-1">
                   {[
+                    { date: '2026/02/01', content: '大幅優化 AI 分析準確度，新增 ARC/AUT 與等級增減傷判定公式、調整 BOSS 戰力需求標準。此外，分析時新增計時器與預估等待時間顯示。' },
                     { date: '2026/01/17', content: '因應推出上升技能，調整 HEXA 六轉技能設定。' },
                     { date: '2026/01/17', content: '將蒼刃傳授與紫扇傳授加入至連結技能黑名單，避免誤將其條件數值或觸發後的數值計入常駐總和中。' },
                     { date: '2026/01/13', content: '新增 Tooltip 智慧定位功能以改善使用者體驗，並新增手機版可預覽裝備資訊。' },
