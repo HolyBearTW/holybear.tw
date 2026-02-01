@@ -943,7 +943,7 @@ const App: React.FC = () => {
                    <Loader2 className="w-10 h-10 text-indigo-500 animate-spin mb-4" />
                    <p className="text-slate-500 font-medium">AI 正在分析裝備與數據...</p>
                    <p className="text-indigo-300/70 text-sm mt-3 font-mono bg-indigo-950/20 px-4 py-1.5 rounded-full border border-indigo-500/20">
-                     已耗時: <span className="text-indigo-400 font-bold">{elapsedTime}</span> 秒 <span className="text-slate-600 mx-1">|</span> 預計等待: 15~35 秒
+                     已耗時: <span className="text-indigo-400 font-bold">{elapsedTime}</span> 秒 <span className="text-slate-600 mx-1">|</span> 預計等待: 30~120 秒
                    </p>
                  </div>
                ) : (
