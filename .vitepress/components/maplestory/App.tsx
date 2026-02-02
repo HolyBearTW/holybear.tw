@@ -512,7 +512,7 @@ const App: React.FC = () => {
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">AI 模型</label>
-                <select
+                  <select
                   value={geminiModel}
                   onChange={(e) => {
                     setGeminiModel(e.target.value);
@@ -520,12 +520,17 @@ const App: React.FC = () => {
                   }}
                   className="w-full p-3 bg-slate-950 border border-slate-700 rounded-lg text-white focus:border-indigo-500 outline-none appearance-none"
                 >
-                  <option value="gemini-3.0-flash">Gemini 3.0 Flash (最新預設 / 極速)</option>
-                  <option value="gemini-3.0-pro">Gemini 3.0 Pro (最強推論 / 穩定)</option>
-                  <option value="gemini-2.5-flash">Gemini 2.5 Flash (舊版穩定)</option>
-                  <option value="gemini-2.0-flash">Gemini 2.0 Flash (經典)</option>
-                  <option value="gemini-2.5-pro">Gemini 2.5 Pro (舊版高階)</option>
-                  <option value="gemini-3-pro-preview">Gemini 3.0 Pro Preview (預覽)</option>
+                  {/* 3.0 系列 (最新技術 / v1beta) */}
+                  <option value="gemini-3.0-flash">Gemini 3.0 Flash (最新預設 / 極速 - Preview)</option>
+                  <option value="gemini-3.0-pro-preview">Gemini 3.0 Pro (最強推論 - Preview)</option>
+                  
+                  {/* 2.5 系列 (目前最穩定的生產環境版本 / v1) */}
+                  <option value="gemini-2.5-flash">Gemini 2.5 Flash (穩定首選)</option>
+                  <option value="gemini-2.5-pro">Gemini 2.5 Pro (生產級別)</option>
+                  
+                  {/* 1.5 系列 (舊版相容 / v1) */}
+                  <option value="gemini-1.5-flash">Gemini 1.5 Flash (舊版相容)</option>
+                  <option value="gemini-1.5-pro">Gemini 1.5 Pro (舊版高階)</option>
                 </select>
               </div>
             </div>
