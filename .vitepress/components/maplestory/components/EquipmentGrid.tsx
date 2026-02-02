@@ -53,7 +53,26 @@ const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'lef
   const def = SLOT_DEFINITIONS[slotKey];
   const [isOpen, setIsOpen] = useState(false);
   const tooltipRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null); // 用於偵測點擊外部
   const [adjustStyle, setAdjustStyle] = useState<React.CSSProperties>({}); // 防止超出螢幕
+
+  // 點擊外部關閉視窗 (Click Outside Listener)
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (isOpen && containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    
+    // 只在開啟時監聽
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
 
   // 智慧定位：確保 Tooltip 不會超出左右邊界 (透過 left 修正中心點，保留 transform 動畫)
   useLayoutEffect(() => {
@@ -133,6 +152,7 @@ const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'lef
 
   return (
     <div 
+      ref={containerRef}
       className={`relative z-0 group ${isOpen ? 'z-[100]' : 'hover:z-50'}`} // Fix: High Z-Index on toggle
       onClick={() => setIsOpen(!isOpen)}
     >
