@@ -333,9 +333,9 @@ export const fetchWeeklyHistory = async (characterName: string, apiKey: string) 
   }
 
   // 1. 初始請求
-  const rawData = new Array(7).fill(null);
+  const rawData = new Array(8).fill(null);
   const requests = [];
-  for (let i = 0; i < 7; i++) { 
+  for (let i = 0; i < 8; i++) { 
     requests.push((async () => {
       try {
         const queryDate = getTaiwanDate(i);
@@ -380,12 +380,12 @@ export const fetchWeeklyHistory = async (characterName: string, apiKey: string) 
   });
 
   // 2. 執行「線性插值」修補，並強制修正小數位數
-  for (let i = 6; i >= 0; i--) {
+  for (let i = 7; i >= 0; i--) {
       const current = rawData[i];
 
       if (!current || !current.success) {
           let prevValid = null;
-          for (let p = i + 1; p < 7; p++) {
+          for (let p = i + 1; p < 8; p++) {
               if (rawData[p] && rawData[p].success) {
                   prevValid = rawData[p];
                   break;

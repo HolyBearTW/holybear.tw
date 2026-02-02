@@ -97,7 +97,7 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
   // Logic: 
   // If Genesis/Eternal/Zero weapon -> Old simple style (no max limit check, just render filled)
   // Else -> New grid style (Top 15, Bottom 15, empty slots shown)
-  const isSpecialWeapon = (item.item_name.includes('創世') || item.item_name.includes('永恆') || item.item_name.includes('琉璃') || item.item_name.includes('琉德')); // Includes some Zero weapons for safety
+  const isSpecialWeapon = (item.item_name.includes('創世') || item.item_name.includes('命運')); // Includes some Zero weapons for safety
   
   // Calculate max stars
   let maxStars = 30; // Default max to 30 as per user request
@@ -245,13 +245,34 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
   const renderStars = () => {
       if (sfCount === 0) return null;
 
+      const is25Star = sfCount >= 25; // 25星特效
+
       // Grid Style (Grid)
       const row1Max = 15;
       const row2Max = 30; // Max allowed display is 30
       
       return (
-        <div className="flex flex-col items-center gap-1 mb-2 px-2">
-            <div className="flex justify-center gap-0.5">
+        <div className="flex flex-col items-center gap-1 mb-2 px-2 relative">
+             {/* 25星閃耀特效 (25 Star Special Effect - Ultra) */}
+             {is25Star && (
+                <div className="absolute inset-0 z-0 text-yellow-300 select-none pointer-events-none">
+                  {/* 背景強烈發光 (High Light Glow) */}
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-yellow-500/30 blur-xl rounded-full animate-pulse"></div>
+                  
+                  {/* 動態符號星星群 (Dynamic Symbols) - 收斂範圍至框內 */}
+                  <span className="absolute -top-3 -left-2 text-xl animate-bounce drop-shadow-[0_0_8px_rgba(255,215,0,0.8)]" style={{ animationDuration: '1.2s' }}>★</span>
+                  <span className="absolute -top-5 left-1/2 text-xs text-yellow-100 animate-ping" style={{ animationDuration: '2.5s' }}>✦</span>
+                  <span className="absolute -top-2 -right-3 text-lg animate-bounce delay-100 drop-shadow-[0_0_8px_gold]" style={{ animationDuration: '1.5s' }}>★</span>
+                  
+                  <span className="absolute top-1/2 -left-5 text-sm animate-pulse delay-75 text-white drop-shadow-md">☆</span>
+                  <span className="absolute top-1/3 -right-6 text-lg animate-bounce delay-300 text-yellow-200 drop-shadow-[0_0_6px_orange]">★</span>
+                  
+                  <span className="absolute -bottom-3 left-0 text-xs animate-ping delay-500 text-white">✦</span>
+                  <span className="absolute -bottom-1 -right-2 text-base animate-pulse delay-200 drop-shadow-lg">☆</span>
+                  <span className="absolute top-0 right-1/3 text-[8px] animate-ping delay-700 text-white">✦</span>
+                </div>
+             )}
+            <div className={`flex justify-center gap-0.5 relative z-10 ${is25Star ? 'drop-shadow-[0_0_12px_rgba(255,215,0,0.8)]' : ''}`}>
                 {(() => {
                     const rowStars = [];
                     // Limit logic:
