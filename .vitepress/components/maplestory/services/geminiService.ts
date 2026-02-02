@@ -36,8 +36,8 @@ const cleanDataForAI = (obj: any): any => {
   return obj;
 };
 
-// UPDATE: 預設值改為 gemini-3.0-flash
-export const analyzeCharacter = async (data: DashboardData, apiKey: string, modelId: string = 'gemini-3.0-flash'): Promise<string> => {
+// UPDATE: 預設值改為 gemini-3-flash
+export const analyzeCharacter = async (data: DashboardData, apiKey: string, modelId: string = 'gemini-3-flash-preview'): Promise<string> => {
   if (!apiKey) {
     return "Gemini API Key is missing. Please provide a valid API Key.";
   }
@@ -262,14 +262,23 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
   `;
 
   // === 修正開始: 重新定義模型列表與錯誤優先級 ===
+  
+  // 1. 強制過濾：若傳入 gemini-2.0-flash (可能來自舊緩存)，直接升級為 2.5，避免觸發 2.0 額度錯誤
+  const effectiveModel = modelId === 'gemini-2.0-flash' ? 'gemini-2.5-flash' : modelId;
 
-  let modelsToTry = [modelId];
-  if (modelId.includes('3.0')) {
+  let modelsToTry = [effectiveModel];
+
+  if (effectiveModel.includes('3.0')) {
       modelsToTry = ['gemini-3-flash-preview', 'gemini-2.5-flash'];
   } else {
       modelsToTry.push('gemini-2.5-flash');
   }
+  
+  // 2. 去除重複並過濾空值
   modelsToTry = [...new Set(modelsToTry)].filter(Boolean);
+  
+  // 3. 再次確保清單中沒有 2.0 (雙重保險)
+  modelsToTry = modelsToTry.filter(m => m !== 'gemini-2.0-flash');
 
   let lastError: any = null;
   // 關鍵新增：用來暫存「額度滿」的錯誤，因為它的優先級比「找不到模型」高

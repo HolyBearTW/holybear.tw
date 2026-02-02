@@ -86,7 +86,7 @@ const App: React.FC = () => {
   });
 
   const [geminiModel, setGeminiModel] = useState<string>(() => {
-    return localStorage.getItem('gemini_model') || 'gemini-3.0-flash';
+    return localStorage.getItem('gemini_model') || 'gemini-3-flash-preview';
   });
   const [showKeySettings, setShowKeySettings] = useState(false);
   const [characterName, setCharacterName] = useState('');
