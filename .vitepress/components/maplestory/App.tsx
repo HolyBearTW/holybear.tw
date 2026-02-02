@@ -154,12 +154,12 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (aiAnalysis && aiResultRef.current) {
+    if ((aiAnalysis || analyzing) && aiResultRef.current) {
       setTimeout(() => {
         aiResultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 100);
     }
-  }, [aiAnalysis]);
+  }, [aiAnalysis, analyzing]);
 
   useEffect(() => {
     if (data?.ability?.preset_no) {
@@ -303,7 +303,7 @@ const App: React.FC = () => {
       );
 
       if (isQuotaError) {
-        setError('⚠️ **AI 額度已達上限 (Rate Limit Exceeded)**\n\nAI 額度暫時耗盡。請點擊下方的「**立即設定 API Key 以繼續使用**」按鈕，填入或更換另一組您自己的 Google Gemini API Key 即可繼續免費使用。\n\n👉 [取得免費 API Key (Google AI Studio)](https://aistudio.google.com/app/apikey)');
+        setError('⚠️ **AI 額度已達上限 (Rate Limit Exceeded)**\n\nAI 額度暫時耗盡。請點擊下方的「**設定模型 / API Key**」按鈕，填入或更換另一組您自己的 Google Gemini API Key 即可繼續免費使用。\n\n👉 [取得免費 API Key (Google AI Studio)](https://aistudio.google.com/app/apikey)');
         setAiAnalysis(null);
       } else if (!result || result.startsWith('AI Analysis Failed:')) {
         const msg = result?.replace('AI Analysis Failed:', '').trim() || 'AI 分析連線逾時或失敗，請重試。';
@@ -315,7 +315,7 @@ const App: React.FC = () => {
     } catch (err: any) {
       const errorMessage = err?.message || '';
       if (errorMessage.includes('429') || errorMessage.includes('Quota')) {
-        setError('⚠️ **AI 額度已達上限 (Rate Limit Exceeded)**\n\nAI 額度暫時耗盡。請點擊下方的「**立即設定 API Key 以繼續使用**」按鈕，填入或更換另一組您自己的 Google Gemini API Key 即可繼續免費使用。\n\n👉 [取得免費 API Key (Google AI Studio)](https://aistudio.google.com/app/apikey)');
+        setError('⚠️ **AI 額度已達上限 (Rate Limit Exceeded)**\n\nAI 額度暫時耗盡。請點擊下方的「**設定模型 / API Key**」按鈕，填入或更換另一組您自己的 Google Gemini API Key 即可繼續免費使用。\n\n👉 [取得免費 API Key (Google AI Studio)](https://aistudio.google.com/app/apikey)');
       } else {
         setError(errorMessage || 'AI 分析發生未預期錯誤，請稍後再試。');
       }
@@ -463,6 +463,25 @@ const App: React.FC = () => {
 
   const currentAbilityInfo = getAbilityData();
 
+  const getModelDisplayName = (id: string) => {
+    // 3.0 系列
+    if (id.includes('3-flash-preview')) return 'Gemini 3.0 Flash (最新極速)';
+    if (id.includes('3-pro-preview')) return 'Gemini 3.0 Pro (最新高階)';
+    
+    // 2.5 系列
+    if (id.includes('2.5-flash')) return 'Gemini 2.5 Flash (穩定首選)';
+    if (id.includes('2.5-pro')) return 'Gemini 2.5 Pro (生產級別)';
+    
+    return id; // 未知型號直接顯示 ID
+  };
+
+  const getEstimatedWaitTime = (id: string) => {
+    if (id.includes('flash-preview')) return '15~30';
+    if (id.includes('flash')) return '15~30';
+    if (id.includes('pro')) return '30~60';
+    return '15~45';
+  };
+
   return (
     <div className="min-h-screen bg-transparent text-slate-200 font-sans pb-20">
       {!apiKey && (
@@ -511,8 +530,8 @@ const App: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">AI 模型</label>
-                  <select
+              <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">AI 模型</label>
+                <select
                   value={geminiModel}
                   onChange={(e) => {
                     setGeminiModel(e.target.value);
@@ -520,17 +539,10 @@ const App: React.FC = () => {
                   }}
                   className="w-full p-3 bg-slate-950 border border-slate-700 rounded-lg text-white focus:border-indigo-500 outline-none appearance-none"
                 >
-                  {/* 3.0 系列 (最新技術 / v1beta) */}
-                  <option value="gemini-3.0-flash">Gemini 3.0 Flash (最新預設 / 極速 - Preview)</option>
-                  <option value="gemini-3.0-pro-preview">Gemini 3.0 Pro (最強推論 - Preview)</option>
-                  
-                  {/* 2.5 系列 (目前最穩定的生產環境版本 / v1) */}
+                  <option value="gemini-3-flash-preview">Gemini 3.0 Flash (最新預設 / 極速)</option>
+                  <option value="gemini-3-pro-preview">Gemini 3.0 Pro (最新高階 / 需付費)</option>
                   <option value="gemini-2.5-flash">Gemini 2.5 Flash (穩定首選)</option>
-                  <option value="gemini-2.5-pro">Gemini 2.5 Pro (生產級別)</option>
-                  
-                  {/* 1.5 系列 (舊版相容 / v1) */}
-                  <option value="gemini-1.5-flash">Gemini 1.5 Flash (舊版相容)</option>
-                  <option value="gemini-1.5-pro">Gemini 1.5 Pro (舊版高階)</option>
+                  <option value="gemini-2.5-pro">Gemini 2.5 Pro (舊版高階 / 需付費)</option>
                 </select>
               </div>
             </div>
@@ -894,7 +906,12 @@ const App: React.FC = () => {
             </div>
 
             <div className="lg:col-span-4 space-y-6">
-               <EquipmentGrid equipment={data.equipment} characterImage={data.basic.character_image} androidEquipment={data.androidEquipment?.[`android_preset_${data.equipment?.preset_no || 1}`] || data.androidEquipment?.android_preset_1} />
+               <EquipmentGrid 
+                 equipment={data.equipment} 
+                 setEffect={data.setEffect}
+                 characterImage={data.basic.character_image} 
+                 androidEquipment={data.androidEquipment?.[`android_preset_${data.equipment?.preset_no || 1}`] || data.androidEquipment?.android_preset_1} 
+               />
               {data.cashItemEquipment && <CashEquipmentGrid cashEquipment={data.cashItemEquipment} beautyEquipment={data.beautyEquipment} characterImage={data.basic.character_image} />}
             </div>
           </div>
@@ -947,17 +964,27 @@ const App: React.FC = () => {
                  <div className="flex flex-col items-center py-20 animate-pulse">
                    <Loader2 className="w-10 h-10 text-indigo-500 animate-spin mb-4" />
                    <p className="text-slate-500 font-medium">AI 正在分析裝備與數據...</p>
+                   <p className="text-xs text-indigo-400 mt-2 font-bold tracking-wide flex items-center gap-1">
+                      <Sparkles className="w-3 h-3" /> 
+                      正在使用 {getModelDisplayName(geminiModel)}
+                   </p>
                    <p className="text-indigo-300/70 text-sm mt-3 font-mono bg-indigo-950/20 px-4 py-1.5 rounded-full border border-indigo-500/20">
-                     已耗時: <span className="text-indigo-400 font-bold">{elapsedTime}</span> 秒 <span className="text-slate-600 mx-1">|</span> 預計等待: 30~120 秒
+                     已耗時: <span className="text-indigo-400 font-bold">{elapsedTime}</span> 秒 <span className="text-slate-600 mx-1">|</span> 預計等待: {getEstimatedWaitTime(geminiModel)} 秒
                    </p>
                  </div>
                ) : (
                  <>
                    {error && (error.includes('AI') || error.includes('Quota')) ? (
-                      <div className="p-4 bg-red-950/20 border border-red-900/50 rounded-lg text-red-300 text-sm mb-4">
-                        {error}
-                      </div>
-                   ) : aiAnalysis ? (
+  <div className="p-4 bg-red-950/20 border border-red-900/50 rounded-lg text-red-300 text-sm mb-4">
+    {/* 加入 Markdown 渲染與 CSS 樣式修正 */}
+    <div 
+      className="leading-relaxed [&>p]:mb-2 [&>ul]:list-disc [&>ul]:pl-5 [&>a]:underline [&>a]:font-bold"
+      dangerouslySetInnerHTML={{ 
+        __html: new MarkdownIt({ html: true, breaks: true, linkify: true }).render(error) 
+      }} 
+    />
+  </div>
+) : aiAnalysis ? (
                       <div 
                         className="text-sm text-slate-300 leading-relaxed ai-markdown-content"
                         dangerouslySetInnerHTML={{ 
@@ -1024,6 +1051,7 @@ const App: React.FC = () => {
                 </div>
                 <ul className="list-disc pl-5 text-sm space-y-1 mt-3 animate-in fade-in slide-in-from-top-1">
                   {[
+                    { date: '2026/02/02', content: '修正 Gemini 3 模型名稱錯誤導致分析失敗。優化裝備顯示方式，新增更多資訊(裝備等級、職業、套裝效果)。' },
                     { date: '2026/02/01', content: '大幅優化 AI 分析準確度，新增 ARC/AUT 與等級增減傷判定公式、調整 BOSS 戰力需求標準。此外，分析時新增計時器與預估等待時間顯示。' },
                     { date: '2026/01/17', content: '因應推出上升技能，調整 HEXA 六轉技能設定。' },
                     { date: '2026/01/17', content: '將蒼刃傳授與紫扇傳授加入至連結技能黑名單，避免誤將其條件數值或觸發後的數值計入常駐總和中。' },

@@ -1,12 +1,15 @@
 import React from 'react';
-import { EquipmentItem, ItemOption } from '../types';
+import { EquipmentItem, ItemOption, CharacterSetEffect } from '../types';
 import { Star } from 'lucide-react';
 
 interface EquipmentTooltipProps {
   item: EquipmentItem;
+  setEffect?: CharacterSetEffect;
+  characterJob?: string;
+  slotType?: string;
 }
 
-const StatLine: React.FC<{ label: string; base: string; add: string; etc: string; star: string; total: string }> = ({ label, base, add, etc, star, total }) => {
+const StatLine: React.FC<{ label: string; base: string; add: string; etc: string; star: string; total: string; isPercent?: boolean }> = ({ label, base, add, etc, star, total, isPercent }) => {
   if (total === '0' || !total) return null;
 
   const baseVal = parseInt(base || '0');
@@ -17,18 +20,19 @@ const StatLine: React.FC<{ label: string; base: string; add: string; etc: string
 
   // Calculate breakdown string: (Base + Flame + Scroll/Star)
   const hasBreakdown = addVal > 0 || blueVal > 0;
+  const suffix = isPercent ? '%' : '';
   
   return (
     <div className="flex items-center text-[11px] leading-tight mb-1">
       <span className="text-slate-300 w-24 shrink-0 font-medium">{label}:</span>
       <div className="flex-1">
-        <span className="text-white">+{total}</span>
+        <span className="text-white">+{total}{suffix}</span>
         {hasBreakdown && (
           <span className="text-xs ml-1">
             (
-            <span className="text-white">{baseVal}</span>
-            {addVal > 0 && <span className="text-green-400"> + {addVal}</span>}
-            {blueVal > 0 && <span className="text-blue-400"> + {blueVal}</span>}
+            <span className="text-white">{baseVal}{suffix}</span>
+            {addVal > 0 && <span className="text-green-400"> + {addVal}{suffix}</span>}
+            {blueVal > 0 && <span className="text-blue-400"> + {blueVal}{suffix}</span>}
             )
           </span>
         )}
@@ -37,7 +41,43 @@ const StatLine: React.FC<{ label: string; base: string; add: string; etc: string
   );
 };
 
-const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item }) => {
+const formatDescription = (desc: string) => {
+  if (!desc) return '';
+  let res = desc;
+  
+  // 原因說明：
+  // 這是因為 Nexon API 返回的原始資料中，某些特定字串（如「功能」）出現了編碼錯誤或使用了特殊的控制字元。
+  // 這些字元在轉碼 UTF-8 時變成了「弁」開頭的亂碼序列。
+  // 這種情況常見於遊戲內的部分固定說明文字。
+  
+  // 1. 針對常見的 "道具專用功能" 亂碼進行通用修復
+  // 捕捉: "道具專用" + (亂碼) + "Lv."
+  // 目的: 修復如 "道具專用弁□ALv.300" -> "道具專用功能，Lv.300"
+  res = res.replace(/道具專用[^\x00-\xff]{1,5}[A-Za-z]?Lv\./g, '道具專用功能，Lv.');
+
+  // 2. 針對「弁」字開頭的亂碼進行廣泛替換
+  // 已知模式: 弁A, 弁□A, 弁?A
+  // 將其替換為 "功能，"
+  res = res.replace(/弁.{1,2}A/g, '功能，');
+  
+  // 3. 殘餘處理: 如果只有 "弁" 加上非 ASCII 字元
+  res = res.replace(/弁[^\x00-\xff]/g, '功能');
+
+  // 4. 針對其他已知缺字/亂碼模式進行修復 (基於用回報)
+  res = res
+    .replace(/□使/g, '即使')
+    .replace(/極□相似/g, '極為相似')
+    .replace(/按□後/g, '按鈕後')
+    .replace(/功能C/g, '功能。')
+    .replace(/才能□動/g, '才能啟動');
+  
+  // 5. 清理可能的顏色標籤 (如 #cOrange#) 如果有的話
+  // res = res.replace(/#[a-zA-Z]+#/g, ''); 
+
+  return res;
+};
+
+const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, characterJob, slotType }) => {
   const getPotGradeInfo = (grade: string) => {
     const g = grade ? grade.toLowerCase() : '';
     if (g.includes('legendary') || g.includes('傳說')) return { color: 'text-green-400', border: 'border-green-500', label: '傳說', char: 'L' };
@@ -53,22 +93,223 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item }) => {
   // Starforce display logic
   const sfCount = parseInt(item.starforce || '0');
   const scrollCount = parseInt(item.scroll_upgrade || '0');
-  const stars = [];
-  for(let i=0; i<sfCount; i++) {
-      stars.push(i);
+  
+  // Logic: 
+  // If Genesis/Eternal/Zero weapon -> Old simple style (no max limit check, just render filled)
+  // Else -> New grid style (Top 15, Bottom 15, empty slots shown)
+  const isSpecialWeapon = (item.item_name.includes('創世') || item.item_name.includes('永恆') || item.item_name.includes('琉璃') || item.item_name.includes('琉德')); // Includes some Zero weapons for safety
+  
+  // Calculate max stars
+  let maxStars = 30; // Default max to 30 as per user request
+  // Use base_equipment_level as fallback for item_level
+  const itemLevel = item.item_base_option?.base_equipment_level || item.item_level || 0;
+  const level = parseInt(String(itemLevel), 10);
+  
+  if (level > 0) {
+      if (level >= 138) maxStars = 30; // UPDATED to 30
+      else if (level >= 128) maxStars = 20;
+      else if (level >= 118) maxStars = 15;
+      else if (level >= 108) maxStars = 10;
+      else if (level >= 95) maxStars = 8;
+      else maxStars = 5;
   }
 
+  // If actual stars exceed max (e.g. data error or superior assumption wrong), extend max
+  if (sfCount > maxStars) maxStars = sfCount;
+
+  // Improved Job Detection Logic
+  const getJobDisplay = () => {
+    const name = String(item.item_name || '');
+
+    // 1. Explicit Job Keywords (Specific Mappings + General Keywords)
+    // Priority: Specific Mappings > General Keywords
+    if (name.includes('小偷') || name.includes('鷹眼暗殺者') || name.includes('高貴的暗殺者') || name.includes('黃蜘蛛暗殺者') || name.includes('月讀命') || name.includes('雷本魂') || name.includes('塔蘭特萊卡翁') || name.includes('克拉班')) return '盜賊';
+    if (name.includes('魔導士') || name.includes('黃蜘蛛敦威治') || name.includes('天鈿女') || name.includes('龍尾巴') || name.includes('塔蘭特赫密士')) return '法師';
+    if (name.includes('鷹眼漫遊者') || name.includes('高貴的漫遊者') || name.includes('黃蜘蛛漫遊者') || name.includes('須佐之男') || name.includes('俠客圖斯') || name.includes('塔蘭特亞泰爾')) return '海盜';
+    if (name.includes('黃蜘蛛守護者') || name.includes('大山積神') || name.includes('帕爾困') || name.includes('塔蘭特喀戎星')) return '弓箭手';
+    if (name.includes('黃蜘蛛戰士') || name.includes('天照') || name.includes('獅子心形') || name.includes('塔蘭特海亞蒂絲')) return '劍士';
+
+    // General Keywords
+    if (name.includes('劍士') || name.includes('戰士')) return '劍士';
+    if (name.includes('法師')) return '法師';
+    if (name.includes('弓箭手') || name.includes('弓手')) return '弓箭手';
+    if (name.includes('盜賊')) return '盜賊';
+    if (name.includes('海盜')) return '海盜';
+
+    // 2. High Level Weapon/Secondary/Emblem Logic (Level >= 30)
+    // If no specific job keyword found above, check if it's W/S/E and use characterJob
+    const slotLower = (item.item_equipment_slot || '').toLowerCase();
+    const partLower = (item.item_equipment_part || '').toLowerCase();
+    
+    const isWeapon = slotLower.includes('weapon') || partLower.includes('武器');
+    const isEmblem = slotLower.includes('emblem') || partLower.includes('能源') || partLower.includes('徽章');
+    const isSecondary = 
+        slotLower.includes('secondary') || slotLower.includes('subweapon') || 
+        slotLower.includes('shield') || slotLower.includes('katara') || 
+        partLower.includes('副武器') || partLower.includes('輔助武器') || partLower.includes('盾牌') ||
+        ['orb', 'book', 'fan', 'card', 'soul', 'controller', 'mass', 'essence', 'whistle', 'ballast', 'warp', 'relic', 'jewel', 'document', 'arrow'].some(k => slotLower.includes(k));
+
+    // Trust the Grid: If slotType is provided (Weapon, Secondary, Emblem), treat as such
+    const isGridTarget = slotType === 'Weapon' || slotType === 'Secondary' || slotType === 'Emblem';
+
+    if ((isGridTarget || isWeapon || isSecondary || isEmblem) && level >= 30 && characterJob) {
+        return characterJob;
+    }
+
+    // 3. Default
+    return '共用';
+  };
+
+  // Set Effect Logic
+  // Sort: Prioritize Eternal (永恆) to ensure Lucky Items (Genesis/Destiny) match it first
+  // This addresses the user request to let Eternal logic take precedence for "Genesis"(創世) and "Destiny"(命運) items.
+  const sortedSets = setEffect?.set_effect ? [...setEffect.set_effect].sort((a, b) => {
+      const isEternalA = a.set_name.includes('永恆');
+      const isEternalB = b.set_name.includes('永恆');
+      return (isEternalA === isEternalB) ? 0 : (isEternalA ? -1 : 1);
+  }) : [];
+
+  const matchedSet = sortedSets.find(s => {
+      const setName = s.set_name;
+      const itemName = item.item_name;
+
+      // 1. Smart Name Matching (Auto-detect)
+      // Removes "Set", "Effect" AND Job Names from the Set Name to find the core series name.
+      // Example: "神秘之影盜賊套裝" -> Remove "套裝", "盜賊" -> Core: "神秘之影"
+      // Item: "神秘之影手套" -> Contains "神秘之影" -> MATCH!
+      let coreName = setName
+          .replace(/套裝|套組|效果/g, '') // Remove generics
+          // Remove Job Classes (Commonly appear in set names but not always in item names)
+          .replace(/劍士|戰士|法師|魔導士|弓箭手|弓手|盜賊|刺客|海盜|通用/g, '') 
+          .trim();
+      
+      // If the core name is too short (e.g. just 1 char left), it's risky to match. Default to 2 chars.
+      if (coreName.length >= 2 && itemName.includes(coreName)) return true;
+
+      // 2. Fallback Dictionaries for sets with completely different item names
+      
+      // Root Abyss (深淵) - Set name: "深淵xxx", Item names: "Highness", etc.
+      if (setName.includes('深淵') || setName.includes('露塔必思') || setName.includes('根源')) {
+          if (['黃蜘蛛', '鷹眼', '高貴的暗殺者', '高貴的漫遊者', '夫尼爾', '創世', '命運'].some(k => itemName.includes(k))) return true;
+      }
+
+      // 神祕冥界 - Set name: "神祕xxx", etc.
+      if (setName.includes('神祕冥界') || setName.includes('冥界幽靈')) {
+          if (['神祕冥界', '冥界幽靈', '創世', '命運'].some(k => itemName.includes(k))) return true;
+      }
+
+      //永恆, etc.
+      if (setName.includes('永恆') || setName.includes('埃特爾納')) {
+          if (['永恆', '埃特爾納', '創世', '命運'].some(k => itemName.includes(k))) return true;
+      }
+
+      //七曜, etc.
+      if (setName.includes('七曜')) {
+          if (['七曜', '怪物公園'].some(k => itemName.includes(k))) return true;
+      }
+
+      // Pitch Boss (漆黑BOSS)
+      if (setName.includes('漆黑')) {
+          const keywords = [
+             '米特拉', '創世徽章', '創世的胸章', '夢幻腰帶', '夢幻的腰帶', '巨大的恐怖', '痛苦的根源', '苦痛的根源', 
+             '狂暴', '全面控制', '黑心', '黑色心臟', '魔導書', '指揮官', '口紅', '魔力的眼罩', '眼罩'
+          ];
+          if (keywords.some(k => itemName.includes(k))) return true;
+      }
+
+      // Dawn Boss (黎明BOSS)
+      if (setName.includes('黎明')) {
+          const keywords = ['暮光', '破日', '破曉', '星耀', '黎明守護者天使', '守護天使', '艾斯特拉', '史萊姆'];
+          if (keywords.some(k => itemName.includes(k))) return true;
+      }
+
+      // Boss Accessory (首領飾品)
+      if (setName.includes('首領')) {
+           const keywords = [
+             '凝聚', '水中信紙', '憤怒', '戴米安', '銀花', '高貴伊菲亞', '高貴的伊菲亞',
+             '惡魔', '金花', '水晶溫突', '水晶溫杜斯', '地獄巴洛古', '支配者', '天上', '大魔', '粉紅聖杯',
+             '戴雅希杜斯', '拉圖斯標誌', '黑豆標記', '梅克奈特墜飾', '地獄火耳環',
+             '金花草腰帶', '闇黑龍王', '皇家暗黑合金', '永生之石', '殘暴炎魔的腰帶', '守護者天使戒指'
+           ];
+           if (keywords.some(k => itemName.includes(k))) return true;
+      }
+
+      // Sweetwater (波賽頓)
+      if (setName.includes('波賽頓')) {
+          if (itemName.includes('波賽頓')) return true;
+      }
+      
+      return false;
+  });
+
+  const renderStars = () => {
+      if (sfCount === 0) return null;
+
+      // Grid Style (Grid)
+      const row1Max = 15;
+      const row2Max = 30; // Max allowed display is 30
+      
+      return (
+        <div className="flex flex-col items-center gap-1 mb-2 px-2">
+            <div className="flex justify-center gap-0.5">
+                {(() => {
+                    const rowStars = [];
+                    // Limit logic:
+                    // Special Weapon: EXACTLY sfCount (so no empty stars)
+                    // Normal Weapon: maxStars (shows empty stars up to max)
+                    const limit = isSpecialWeapon ? sfCount : maxStars;
+
+                    for (let i = 0; i < row1Max; i++) {
+                        if (i >= limit) break;
+                        const isFilled = i < sfCount;
+                        const isGap = i > 0 && i % 5 === 0;
+                        rowStars.push(
+                           <div key={i} className={`${isGap ? 'ml-3' : ''}`}>
+                             <Star 
+                                className={`w-3 h-3 ${isFilled ? 'fill-yellow-400 text-yellow-500 drop-shadow-[0_0_2px_rgba(250,204,21,0.6)]' : 'text-slate-600'}`} 
+                                fill={isFilled ? "currentColor" : "none"}
+                                strokeWidth={isFilled ? 0 : 1.5}
+                             />
+                           </div>
+                        );
+                    }
+                    return rowStars;
+                })()}
+            </div>
+            {(() => {
+                const limit = isSpecialWeapon ? sfCount : maxStars;
+                if (limit <= row1Max) return null;
+
+                const rowStars = [];
+                for (let i = row1Max; i < row2Max; i++) {
+                    if (i >= limit) break;
+                    const isFilled = i < sfCount;
+                    const isGap = i > row1Max && (i - row1Max) % 5 === 0;
+                    rowStars.push(
+                        <div key={i} className={`${isGap ? 'ml-3' : ''}`}>
+                             <Star 
+                                className={`w-3 h-3 ${isFilled ? 'fill-yellow-400 text-yellow-500 drop-shadow-[0_0_2px_rgba(250,204,21,0.6)]' : 'text-slate-600'}`} 
+                                fill={isFilled ? "currentColor" : "none"}
+                                strokeWidth={isFilled ? 0 : 1.5}
+                             />
+                        </div>
+                    );
+                }
+                return (
+                    <div className="flex justify-center gap-0.5">
+                        {rowStars}
+                    </div>
+                );
+            })()}
+        </div>
+      );
+  };
+  
   return (
     <div className={`w-full bg-[#1a1d24]/95 backdrop-blur-md border-2 ${potInfo.border} rounded-lg shadow-2xl overflow-hidden z-50 text-left pointer-events-none relative`}>
       {/* Header / Stars */}
       <div className="p-3 border-b border-slate-600/50 text-center relative bg-[#15171c]/50">
-        {sfCount > 0 && (
-          <div className="flex flex-wrap justify-center gap-0.5 mb-2 px-2">
-             {stars.map((_, i) => (
-                <Star key={i} className={`w-2.5 h-2.5 fill-yellow-400 text-yellow-500 ${i !== 0 && i % 5 === 0 ? 'ml-1' : ''}`} />
-             ))}
-          </div>
-        )}
+        {renderStars()}
         <h3 className={`text-base font-bold text-white relative z-10`}>
            {item.item_name} {scrollCount > 0 ? `(+${scrollCount})` : ''}
         </h3>
@@ -85,6 +326,27 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item }) => {
          </div>
       </div>
 
+      {/* Basic Info (Job & Level) - Inferred */}
+      <div className="p-3 border-b border-slate-600/50 relative z-10 space-y-1">
+          <div className="flex items-center text-[11px] leading-tight">
+             <span className="text-slate-400 w-24 shrink-0 font-medium text-left">裝備職業</span>
+             <span className="text-white">
+                {getJobDisplay()}
+             </span>
+          </div>
+          <div className="flex items-center text-[11px] leading-tight">
+             <span className="text-slate-400 w-24 shrink-0 font-medium text-left">要求等級</span>
+             <span className="text-white">Lv. {itemLevel}</span>
+          </div>
+          {/* Set Effect Summary Line */}
+           {matchedSet && (
+              <div className="flex items-center text-[11px] leading-tight text-green-400">
+                  <span className="text-slate-400 w-24 shrink-0 font-medium text-left text-green-400">套組效果</span>
+                  <span>{matchedSet.set_name} ({matchedSet.total_set_count})</span>
+              </div>
+           )}
+      </div>
+
       {/* Stats Section */}
       <div className="p-3 space-y-1 border-b border-slate-600/50 relative z-10 bg-transparent">
          {/* Categories */}
@@ -98,9 +360,9 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item }) => {
            <StatLine label="最大 MP" base={item.item_base_option.max_mp} add={item.item_add_option.max_mp} etc={item.item_etc_option.max_mp} star={item.item_starforce_option.max_mp} total={item.item_total_option.max_mp} />
            <StatLine label="攻擊力" base={item.item_base_option.attack_power} add={item.item_add_option.attack_power} etc={item.item_etc_option.attack_power} star={item.item_starforce_option.attack_power} total={item.item_total_option.attack_power} />
            <StatLine label="魔法攻擊力" base={item.item_base_option.magic_power} add={item.item_add_option.magic_power} etc={item.item_etc_option.magic_power} star={item.item_starforce_option.magic_power} total={item.item_total_option.magic_power} />
-           <StatLine label="BOSS 傷害" base={item.item_base_option.boss_damage} add={item.item_add_option.boss_damage} etc={item.item_etc_option.boss_damage} star="0" total={item.item_total_option.boss_damage} />
-           <StatLine label="無視防禦率" base={item.item_base_option.ignore_monster_armor} add={item.item_add_option.ignore_monster_armor} etc={item.item_etc_option.ignore_monster_armor} star="0" total={item.item_total_option.ignore_monster_armor} />
-           <StatLine label="全屬性%" base={item.item_base_option.all_stat} add={item.item_add_option.all_stat} etc={item.item_etc_option.all_stat} star="0" total={item.item_total_option.all_stat} />
+           <StatLine label="BOSS 傷害" base={item.item_base_option.boss_damage} add={item.item_add_option.boss_damage} etc={item.item_etc_option.boss_damage} star="0" total={item.item_total_option.boss_damage} isPercent />
+           <StatLine label="無視防禦率" base={item.item_base_option.ignore_monster_armor} add={item.item_add_option.ignore_monster_armor} etc={item.item_etc_option.ignore_monster_armor} star="0" total={item.item_total_option.ignore_monster_armor} isPercent />
+           <StatLine label="全屬性%" base={item.item_base_option.all_stat} add={item.item_add_option.all_stat} etc={item.item_etc_option.all_stat} star="0" total={item.item_total_option.all_stat} isPercent />
          </div>
       </div>
 
@@ -137,11 +399,48 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item }) => {
            </div>
         </div>
       )}
+
+      {/* Soul Weapon */}
+      {item.soul_name && (
+        <div className={`p-3 relative z-10 ${item.additional_potential_option_grade ? 'border-t border-slate-600/50' : ''}`}>
+           <div className="flex items-center gap-1.5 text-xs font-bold mb-1 text-red-400">
+              <div className="w-5 h-5 rounded border border-red-500 flex items-center justify-center text-[10px] bg-slate-800">
+                  魂
+              </div>
+              <span>靈魂寶珠</span>
+           </div>
+           <div className="text-xs space-y-0.5 text-white pl-1">
+              <p className="font-bold text-red-400">{item.soul_name}</p>
+              {item.soul_option && <p>{item.soul_option}</p>}
+           </div>
+        </div>
+      )}
       
+      {/* Set Effect Details (Full List) */}
+      {matchedSet && matchedSet.set_option_full && (
+        <div className="p-3 border-t border-slate-600/50 relative z-10">
+            <h4 className="text-sm font-bold text-green-400 mb-2">{matchedSet.set_name}</h4>
+            <div className="space-y-2">
+                {matchedSet.set_option_full.map((opt, idx) => {
+                    // Check if this tier is active
+                    const isActive = (matchedSet.total_set_count || 0) >= opt.set_count;
+                    return (
+                        <div key={idx} className={`${isActive ? 'text-white' : 'text-slate-500'} text-xs`}>
+                            <p className="font-bold mb-0.5">{opt.set_count}套裝效果</p>
+                            <div className="pl-1 leading-relaxed whitespace-pre-wrap">
+                                {opt.set_option}
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+      )}
+
       {/* Footer */}
       {item.item_description && (
-        <div className="bg-[#121418]/50 p-2 text-[11px] text-slate-400 text-center relative z-10 border-t border-slate-700 leading-relaxed">
-          {item.item_description}
+        <div className="bg-[#121418]/50 p-2 text-xs text-slate-400 text-left relative z-10 border-t border-slate-700 leading-relaxed whitespace-pre-wrap break-words">
+          {formatDescription(item.item_description)}
         </div>
       )}
     </div>

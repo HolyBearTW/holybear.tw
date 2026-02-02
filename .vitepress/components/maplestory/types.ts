@@ -87,15 +87,27 @@ export interface EquipmentItem {
   item_level: number;
   special_ring_level: number;
   date_expire: string;
+  soul_name?: string;
+  soul_option?: string;
 }
 
 export interface CharacterEquipment {
+  date: string;
+  character_gender: string;
+  character_class: string;
+  preset_no: number;
   item_equipment: EquipmentItem[];
   title: {
     title_name: string;
     title_icon: string;
     title_description: string;
   } | null;
+  // Presets
+  item_equipment_preset_1?: EquipmentItem[];
+  item_equipment_preset_2?: EquipmentItem[];
+  item_equipment_preset_3?: EquipmentItem[];
+  dragon_equipment?: EquipmentItem[];
+  mechanic_equipment?: EquipmentItem[];
 }
 
 export interface AbilityInfo {
