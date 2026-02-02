@@ -59,6 +59,8 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
   const artifactLevel = data.unionArtifact?.union_artifact_level ?? data.union?.union_artifact_level ?? 0;
   const unionInfo = `聯盟等級: ${data.union?.union_level || 0}, 神器等級: ${artifactLevel}`;
 
+  const isChallengerServer = data.basic.world_name === '挑戰者' || data.basic.world_name.includes('挑戰者');
+
   const hexaSkills = data.hexaMatrix?.character_hexa_core_equipment?.length 
     ? data.hexaMatrix.character_hexa_core_equipment.map(s => `${s.hexa_core_name} Lv.${s.hexa_core_level}`).join(', ')
     : '無六轉技能';
@@ -101,7 +103,15 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
     請依據提供的角色數據，進行嚴格且符合當前版本環境（Meta）的強度分析。
 
     --- 【當前遊戲環境設定 (Meta Context)】 ---
-    0. **【優先檢測】練功裝備判定 (Farming Gear Check)：**
+    0. **【特例檢測】挑戰者伺服器判定 (Challenger Server Check)：**
+       ${isChallengerServer 
+         ? `**注意：該角色位於「挑戰者伺服器」。此為特殊活動伺服器，擁有強大的被動 Buff 能力 (如高額無視防禦、BOSS傷害)，不需要依賴聯盟戰地與聯盟神器。** 
+            - **請完全忽略「聯盟戰地」與「聯盟神器」的檢核** (即使很低或為0也是正常的)。
+            - 由於伺服器 Buff 強大，可以視為該角色自帶額外戰鬥力，**請將其 BOSS 攻略能力適度上調 (比一般伺服器更容易打王)。**` 
+         : `此為一般伺服器角色，請正常檢核「聯盟戰地」與「聯盟神器」是否達標。`
+       }
+
+    0.5. **【優先檢測】練功裝備判定 (Farming Gear Check)：**
        請優先檢查面板數據中的 **「道具掉落率 (Item Drop Rate)」** 與 **「楓幣獲得量 (Mesos Obtain)」**。
        *   **若任一數值超過 100% (或兩者相加超過 150%)**：
            請判斷該玩家穿著「練功/打寶裝備」，而非「打王裝備」。
