@@ -123,7 +123,7 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
 
     // 1. Explicit Job Keywords (Specific Mappings + General Keywords)
     // Priority: Specific Mappings > General Keywords
-    if (name.includes('小偷') || name.includes('鷹眼暗殺者') || name.includes('高貴的暗殺者') || name.includes('黃蜘蛛暗殺者') || name.includes('月讀命') || name.includes('雷本魂') || name.includes('塔蘭特萊卡翁') || name.includes('克拉班')) return '盜賊';
+    if (name.includes('小偷') || name.includes('鷹眼暗殺者') || name.includes('高貴的暗殺者') || name.includes('黃蜘蛛暗殺者') || name.includes('月讀命') || name.includes('雷本魂') || name.includes('塔蘭特萊卡翁')) return '盜賊';
     if (name.includes('魔導士') || name.includes('黃蜘蛛敦威治') || name.includes('天鈿女') || name.includes('龍尾巴') || name.includes('塔蘭特赫密士')) return '法師';
     if (name.includes('鷹眼漫遊者') || name.includes('高貴的漫遊者') || name.includes('黃蜘蛛漫遊者') || name.includes('須佐之男') || name.includes('俠客圖斯') || name.includes('塔蘭特亞泰爾')) return '海盜';
     if (name.includes('黃蜘蛛守護者') || name.includes('大山積神') || name.includes('帕爾困') || name.includes('塔蘭特喀戎星')) return '弓箭手';
@@ -190,17 +190,22 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
       
       // Root Abyss (深淵) - Set name: "深淵xxx", Item names: "Highness", etc.
       if (setName.includes('深淵') || setName.includes('露塔必思') || setName.includes('根源')) {
-          if (['黃蜘蛛', '鷹眼', '高貴的暗殺者', '高貴的漫遊者', '夫尼爾', '創世', '命運'].some(k => itemName.includes(k))) return true;
+          if (['6型', '7型', '黃蜘蛛', '鷹眼', '高貴的暗殺者', '高貴的漫遊者', '高貴的守護者', '夫尼爾', '創世', '命運'].some(k => itemName.includes(k))) return true;
+      }
+
+      // 航海師 - Set name: "航海師xxx", etc.
+      if (setName.includes('航海師')) {
+          if (['8型', '航海師', '創世', '命運'].some(k => itemName.includes(k))) return true;
       }
 
       // 神祕冥界 - Set name: "神祕xxx", etc.
       if (setName.includes('神祕冥界') || setName.includes('冥界幽靈')) {
-          if (['神祕冥界', '冥界幽靈', '創世', '命運'].some(k => itemName.includes(k))) return true;
+          if (['神祕冥界', '冥界幽靈', '9型', '創世', '命運'].some(k => itemName.includes(k))) return true;
       }
 
       //永恆, etc.
-      if (setName.includes('永恆') || setName.includes('埃特爾納')) {
-          if (['永恆', '埃特爾納', '創世', '命運'].some(k => itemName.includes(k))) return true;
+      if (setName.includes('永恆')) {
+          if (['永恆', '創世', '命運'].some(k => itemName.includes(k))) return true;
       }
 
       //七曜, etc.
@@ -211,32 +216,27 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
       // Pitch Boss (漆黑BOSS)
       if (setName.includes('漆黑')) {
           const keywords = [
-             '米特拉', '創世徽章', '創世的胸章', '夢幻腰帶', '夢幻的腰帶', '巨大的恐怖', '痛苦的根源', '苦痛的根源', 
-             '狂暴', '全面控制', '黑心', '黑色心臟', '魔導書', '指揮官', '口紅', '魔力的眼罩', '眼罩'
+             '米特拉的憤怒', '創世的胸章', '夢幻的腰帶', '巨大的恐怖', '苦痛的根源', 
+             '全面控制', '黑心', '魔導書', '指揮官力量', '口紅控制器', '魔力的眼罩'
           ];
           if (keywords.some(k => itemName.includes(k))) return true;
       }
 
       // Dawn Boss (黎明BOSS)
       if (setName.includes('黎明')) {
-          const keywords = ['暮光', '破日', '破曉', '星耀', '黎明守護者天使', '守護天使', '艾斯特拉', '史萊姆'];
+          const keywords = ['暮光', '破曉', '星耀', '黎明守護者天使'];
           if (keywords.some(k => itemName.includes(k))) return true;
       }
 
       // Boss Accessory (首領飾品)
       if (setName.includes('首領')) {
            const keywords = [
-             '凝聚', '水中信紙', '憤怒', '戴米安', '銀花', '高貴伊菲亞', '高貴的伊菲亞',
-             '惡魔', '金花', '水晶溫突', '水晶溫杜斯', '地獄巴洛古', '支配者', '天上', '大魔', '粉紅聖杯',
+             '凝聚力量', '水中信紙', '銀花戒指', '高貴的伊菲亞',
+             '金花草腰帶', '水晶溫杜斯', '支配者', '粉紅聖杯',
              '戴雅希杜斯', '拉圖斯標誌', '黑豆標記', '梅克奈特墜飾', '地獄火耳環',
              '金花草腰帶', '闇黑龍王', '皇家暗黑合金', '永生之石', '殘暴炎魔的腰帶', '守護者天使戒指'
            ];
            if (keywords.some(k => itemName.includes(k))) return true;
-      }
-
-      // Sweetwater (波賽頓)
-      if (setName.includes('波賽頓')) {
-          if (itemName.includes('波賽頓')) return true;
       }
       
       return false;
