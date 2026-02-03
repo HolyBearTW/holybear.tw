@@ -2,31 +2,6 @@
 # yarn lockfile v1
 
 
-"@ai-sdk/gateway@2.0.29":
-  version "2.0.29"
-  resolved "https://registry.npmjs.org/@ai-sdk/gateway/-/gateway-2.0.29.tgz"
-  integrity sha512-1b7E9F/B5gex/1uCkhs+sGIbH0KsZOItHnNz3iY5ir+nc4ZUA6WOU5Cu2w1USlc+3UVbhf+H+iNLlxVjLe4VvQ==
-  dependencies:
-    "@ai-sdk/provider" "2.0.1"
-    "@ai-sdk/provider-utils" "3.0.20"
-    "@vercel/oidc" "3.1.0"
-
-"@ai-sdk/provider-utils@3.0.20":
-  version "3.0.20"
-  resolved "https://registry.npmjs.org/@ai-sdk/provider-utils/-/provider-utils-3.0.20.tgz"
-  integrity sha512-iXHVe0apM2zUEzauqJwqmpC37A5rihrStAih5Ks+JE32iTe4LZ58y17UGBjpQQTCRw9YxMeo2UFLxLpBluyvLQ==
-  dependencies:
-    "@ai-sdk/provider" "2.0.1"
-    "@standard-schema/spec" "^1.0.0"
-    eventsource-parser "^3.0.6"
-
-"@ai-sdk/provider@2.0.1":
-  version "2.0.1"
-  resolved "https://registry.npmjs.org/@ai-sdk/provider/-/provider-2.0.1.tgz"
-  integrity sha512-KCUwswvsC5VsW2PWFqF8eJgSCu5Ysj7m1TxiHTVA6g7k360bk0RNQENT8KTMAYEs+8fWPD3Uu4dEmzGHc+jGng==
-  dependencies:
-    json-schema "^0.4.0"
-
 "@algolia/abtesting@1.10.0":
   version "1.10.0"
   resolved "https://registry.npmjs.org/@algolia/abtesting/-/abtesting-1.10.0.tgz"
@@ -1115,11 +1090,6 @@
     "@nodelib/fs.scandir" "2.1.5"
     fastq "^1.6.0"
 
-"@opentelemetry/api@1.9.0":
-  version "1.9.0"
-  resolved "https://registry.npmjs.org/@opentelemetry/api/-/api-1.9.0.tgz"
-  integrity sha512-3giAOQvZiH5F9bMlMiv8+GSPMeqg0dbaeo58/0SlA9sxSqZhnUtxzX9/2FzyhS9sWQf5S0GJE0AKBrFqjpeYcg==
-
 "@parcel/watcher-android-arm64@2.5.1":
   version "2.5.1"
   resolved "https://registry.yarnpkg.com/@parcel/watcher-android-arm64/-/watcher-android-arm64-2.5.1.tgz#507f836d7e2042f798c7d07ad19c3546f9848ac1"
@@ -1765,11 +1735,6 @@
   resolved "https://registry.npmjs.org/@ungap/structured-clone/-/structured-clone-1.3.0.tgz"
   integrity sha512-WmoN8qaIAo7WTYWbAZuG8PYEhn5fkz7dZrqTBZ7dtt//lL2Gwms1IcnQ5yHqjDfX8Ft5j4YzDM23f87zBfDe9g==
 
-"@vercel/oidc@3.1.0":
-  version "3.1.0"
-  resolved "https://registry.npmjs.org/@vercel/oidc/-/oidc-3.1.0.tgz"
-  integrity sha512-Fw28YZpRnA3cAHHDlkt7xQHiJ0fcL+NRcIqsocZQUSmbzeIKRpwttJjik5ZGanXP+vlA4SbTg+AbA3bP363l+w==
-
 "@vitejs/plugin-react@^5.1.3":
   version "5.1.3"
   resolved "https://registry.yarnpkg.com/@vitejs/plugin-react/-/plugin-react-5.1.3.tgz#05eba092cc89a6ff89668d3f62258e2c5a8a9122"
@@ -1932,16 +1897,6 @@ agent-base@^7.1.2:
   version "7.1.4"
   resolved "https://registry.npmjs.org/agent-base/-/agent-base-7.1.4.tgz"
   integrity sha512-MnA+YT8fwfJPgBx3m60MNqakm30XOkyIoH1y6huTQvC0PwZG7ki8NacLBcrPbNoo8vEZy7Jpuk7+jMO+CUovTQ==
-
-ai@^5.0.18:
-  version "5.0.123"
-  resolved "https://registry.npmjs.org/ai/-/ai-5.0.123.tgz"
-  integrity sha512-V3Imb0tg0pHCa6a/VsoW/FZpT07mwUw/4Hj6nexJC1Nvf1eyKQJyaYVkl+YTLnA8cKQSUkoarKhXWbFy4CSgjw==
-  dependencies:
-    "@ai-sdk/gateway" "2.0.29"
-    "@ai-sdk/provider" "2.0.1"
-    "@ai-sdk/provider-utils" "3.0.20"
-    "@opentelemetry/api" "1.9.0"
 
 algoliasearch-helper@3.27.0:
   version "3.27.0"
@@ -2612,11 +2567,6 @@ eventemitter3@^5.0.1:
   resolved "https://registry.npmjs.org/eventemitter3/-/eventemitter3-5.0.1.tgz"
   integrity sha512-GWkBvjiSZK87ELrYOSESUYeVIc9mvLLf/nXalMOS5dYrgZq9o5OVkbZAVM06CVxYsCwH9BDZFPlQTlPA1j4ahA==
 
-eventsource-parser@^3.0.6:
-  version "3.0.6"
-  resolved "https://registry.npmjs.org/eventsource-parser/-/eventsource-parser-3.0.6.tgz"
-  integrity sha512-Vo1ab+QXPzZ4tCa8SwIHJFaSzy4R6SHf7BY79rFBDf0idraZWAkYrDjDj8uWaSm3S2TK+hJ7/t1CEmZ7jXw+pg==
-
 extend-shallow@^2.0.1:
   version "2.0.1"
   resolved "https://registry.npmjs.org/extend-shallow/-/extend-shallow-2.0.1.tgz"
@@ -3072,32 +3022,30 @@ indent-string@^4.0.0:
   resolved "https://registry.npmjs.org/indent-string/-/indent-string-4.0.0.tgz"
   integrity sha512-EdDDZu4A2OyIK7Lr/2zG+w5jmbuk1DVBnEwREQvBzspBJkCEbRa8GxU1lghYcaGJCnRWibjDXlq779X1/y5xwg==
 
-instantsearch-ui-components@0.17.0:
-  version "0.17.0"
-  resolved "https://registry.npmjs.org/instantsearch-ui-components/-/instantsearch-ui-components-0.17.0.tgz"
-  integrity sha512-hx9GhWfBVEpOUt617WoFipgyDEPvd2awM6snOF2K//ddFLrpsgG9sOCa9re4/b3i3WQvEiottOXx0eqjHI0Z7g==
+instantsearch-ui-components@0.17.1:
+  version "0.17.1"
+  resolved "https://registry.yarnpkg.com/instantsearch-ui-components/-/instantsearch-ui-components-0.17.1.tgz#76ec84232a922868345e9074f535cb331fd5e247"
+  integrity sha512-uOn39sNs9ukK0N6pklVdxbE5dapIdSJmkh/WJPPtOe4bpnvLzzvvexQYpUJ9vy1xQJMaQcAoPMoMKfBXwUA29A==
   dependencies:
     "@babel/runtime" "^7.27.6"
-    ai "^5.0.18"
     markdown-to-jsx "^7.7.15"
     zod "^3.25.76 || ^4"
     zod-to-json-schema "3.24.6"
 
-instantsearch.js@4.87.0:
-  version "4.87.0"
-  resolved "https://registry.npmjs.org/instantsearch.js/-/instantsearch.js-4.87.0.tgz"
-  integrity sha512-xJy6RkgSGfb28I4zwya5yrOIkUoUS6xk/HDSmT/11yUzvk7XqYVMz2yoz7lITk/fSiKpikU+m/Wi9RWFUs72bw==
+instantsearch.js@4.87.1:
+  version "4.87.1"
+  resolved "https://registry.yarnpkg.com/instantsearch.js/-/instantsearch.js-4.87.1.tgz#54aa788748f834c0ca6e41ff2e403afedb3ec5f6"
+  integrity sha512-KkOSosDPnCXZg5QNZ6AnW+wWJaTsK0kXzUyr4/ugGE/Tm5Fn5D08yC9RFT4JxlvDJw+re0ov1xBbWKBcBn8XuA==
   dependencies:
     "@algolia/events" "^4.0.1"
     "@types/dom-speech-recognition" "^0.0.1"
     "@types/google.maps" "^3.55.12"
     "@types/hogan.js" "^3.0.0"
     "@types/qs" "^6.5.3"
-    ai "^5.0.18"
     algoliasearch-helper "3.27.0"
     hogan.js "^3.0.2"
     htm "^3.0.0"
-    instantsearch-ui-components "0.17.0"
+    instantsearch-ui-components "0.17.1"
     preact "^10.10.0"
     qs "^6.5.1"
     react ">= 0.14.0"
@@ -3224,11 +3172,6 @@ json-parse-even-better-errors@^2.3.0:
   version "2.3.1"
   resolved "https://registry.npmjs.org/json-parse-even-better-errors/-/json-parse-even-better-errors-2.3.1.tgz"
   integrity sha512-xyFwyhro/JEof6Ghe2iz2NcXoj2sloNsWr/XsERDK/oiPCfaNhl5ONfp+jQdAZRQQ0IJWNzH9zIZF7li91kh2w==
-
-json-schema@^0.4.0:
-  version "0.4.0"
-  resolved "https://registry.npmjs.org/json-schema/-/json-schema-0.4.0.tgz"
-  integrity sha512-es94M3nTIfsEPisRafak+HDLfHXnKBhV3vU5eqPcS3flIWqcxJWgXHXiey3YrpaNsanY5ei1VoYEbOzijuq9BA==
 
 json5@^2.2.3:
   version "2.2.3"
@@ -4730,13 +4673,13 @@ vue-chartjs@^5.3.3:
   resolved "https://registry.npmjs.org/vue-chartjs/-/vue-chartjs-5.3.3.tgz"
   integrity sha512-jqxtL8KZ6YJ5NTv6XzrzLS7osyegOi28UGNZW0h9OkDL7Sh1396ht4Dorh04aKrl2LiSalQ84WtqiG0RIJb0tA==
 
-vue-instantsearch@^4.23.0:
-  version "4.23.0"
-  resolved "https://registry.npmjs.org/vue-instantsearch/-/vue-instantsearch-4.23.0.tgz"
-  integrity sha512-FA+E9d2C600/UWgHnm1aK1X/t5eZ5gKlnPCdA+XICZYmxWdK867SDVHES5VzbcoP13hSFQkIVH+uFZAXdpa4bA==
+vue-instantsearch@^4.23.1:
+  version "4.23.1"
+  resolved "https://registry.yarnpkg.com/vue-instantsearch/-/vue-instantsearch-4.23.1.tgz#acb69cb831c12bab001547620f663e31a9a7ebe6"
+  integrity sha512-5nu1cwsjjmOe/768SLxiOk9WiWlai4TJZ78i7rYmqYAMeEG9dRGy32qGPvl2SVVpaowaR1f9mixU4nIgGxP/Ug==
   dependencies:
-    instantsearch-ui-components "0.17.0"
-    instantsearch.js "4.87.0"
+    instantsearch-ui-components "0.17.1"
+    instantsearch.js "4.87.1"
     mitt "^2.1.0"
 
 vue@^3.4.15, vue@^3.5.27:
