@@ -7,7 +7,8 @@ const copied = ref(false)
 
 const share = (platform) => {
   const url = window.location.href
-  const title = page.value.title + ' | ' + siteTitle.value
+  // Fix: Use document.title to avoid duplicate site title concatenation
+  const title = document.title || (page.value.title + ' | ' + siteTitle.value)
   const links = {
     facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
     twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}`,
