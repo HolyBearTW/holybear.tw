@@ -205,6 +205,7 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
 
       //永恆, etc.
       if (setName.includes('永恆')) {
+          if (itemName.includes('永恆火焰戒指') || itemName.includes('永恆勇士')) return false;
           if (['永恆', '創世', '命運'].some(k => itemName.includes(k))) return true;
       }
 
@@ -214,7 +215,7 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
       }
 
       // Pitch Boss (漆黑BOSS)
-      if (setName.includes('漆黑')) {
+      if (setName.includes('漆黑BOSS')) {
           const keywords = [
              '米特拉的憤怒', '創世的胸章', '夢幻的腰帶', '巨大的恐怖', '苦痛的根源', 
              '全面控制', '黑心', '魔導書', '指揮官力量', '口紅控制器', '魔力的眼罩'
@@ -223,13 +224,13 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
       }
 
       // Dawn Boss (黎明BOSS)
-      if (setName.includes('黎明')) {
+      if (setName.includes('黎明的BOSS')) {
           const keywords = ['暮光', '破曉', '星耀', '黎明守護者天使'];
           if (keywords.some(k => itemName.includes(k))) return true;
       }
 
       // Boss Accessory (首領飾品)
-      if (setName.includes('首領')) {
+      if (setName.includes('首領飾品')) {
            const keywords = [
              '凝聚力量', '水中信紙', '銀花戒指', '高貴的伊菲亞',
              '金花草腰帶', '水晶溫杜斯', '支配者', '粉紅聖杯',

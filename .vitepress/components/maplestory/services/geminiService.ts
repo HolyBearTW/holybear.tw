@@ -36,6 +36,27 @@ const cleanDataForAI = (obj: any): any => {
   return obj;
 };
 
+// === Helper: 安全提取 Stream Chunk 文字 (兼容不同 SDK 版本) ===
+const extractTextFromChunk = (chunk: any): string => {
+  try {
+    // 1. 優先嘗試官方標準方法 (若是函式 - 舊版 SDK)
+    if (typeof chunk.text === 'function') {
+      return chunk.text();
+    }
+    // 2. 其次嘗試直接屬性 (若是字串 - 新版 SDK / @google/genai)
+    if (typeof chunk.text === 'string') {
+      return chunk.text;
+    }
+    // 3. 最後嘗試深層解析 (若為原始 JSON 結構)
+    if (chunk.candidates && chunk.candidates[0] && chunk.candidates[0].content && chunk.candidates[0].content.parts) {
+      return chunk.candidates[0].content.parts[0].text || '';
+    }
+    return '';
+  } catch (e) {
+    return '';
+  }
+};
+
 // UPDATE: 預設值改為 gemini-3-flash
 export const analyzeCharacter = async (data: DashboardData, apiKey: string, modelId: string = 'gemini-3-flash-preview'): Promise<string> => {
   if (!apiKey) {
@@ -44,6 +65,21 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
 
   // 1. 資料前處理
   const simpleData = cleanDataForAI(data);
+
+  // 1.5. 【代碼層攔截】練功裝備判定
+  const getStatValue = (names: string[]): number => {
+    const stat = data.stat.final_stat.find(s => names.includes(s.stat_name));
+    if (!stat || !stat.stat_value) return 0;
+    return parseFloat(stat.stat_value.replace(/[^0-9.]/g, '')) || 0;
+  };
+
+  const dropRate = getStatValue(['Item Drop Rate', '道具掉落率']);
+  const mesoRate = getStatValue(['Mesos Obtain', '楓幣獲得量']);
+
+  // 觸發條件：掉寶 > 100 或 兩者相加 > 150 (考慮基礎掉寶通常是 0~20% 不等，超過 100 肯定是穿裝)
+  if (dropRate > 100 || (dropRate + mesoRate) > 150) {
+    return `⚠️ **檢測到您目前穿著練功/打寶裝備 (掉寶/楓幣率過高)**\n\n系統偵測到您的掉寶率為 ${dropRate}%，這會導致戰力評估嚴重失準。\n為了獲得準確的戰力評估，請更換為全輸出的『打王裝備 (Bossing Gear)』後再重新進行分析。`;
+  }
 
   // 2. 提取摘要 (保留)
   const relevantStats = data.stat.final_stat
@@ -110,14 +146,6 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
             - 由於伺服器 Buff 強大，可以視為該角色自帶額外戰鬥力，**請將其 BOSS 攻略能力適度上調 (比一般伺服器更容易打王)。**` 
          : `此為一般伺服器角色，請正常檢核「聯盟戰地」與「聯盟神器」是否達標。`
        }
-
-    0.5. **【優先檢測】練功裝備判定 (Farming Gear Check)：**
-       請優先檢查面板數據中的 **「道具掉落率 (Item Drop Rate)」** 與 **「楓幣獲得量 (Mesos Obtain)」**。
-       *   **若任一數值超過 100% (或兩者相加超過 150%)**：
-           請判斷該玩家穿著「練功/打寶裝備」，而非「打王裝備」。
-           **請直接拒絕評分**，並僅回覆：「⚠️ **檢測到您目前穿著練功/打寶裝備 (掉寶/楓幣率過高)**。為了獲得準確的戰力評估，請更換為全輸出的『打王裝備 (Bossing Gear)』後再重新進行分析。」
-           **(請勿輸出任何分數、戰力評級或 BOSS 建議)**。
-       *   若數值正常，請繼續進行以下分析。
 
     1. **武器/能源階級：** 認定「命運武器」為目前最強武器；「米特拉的憤怒」為目前最強能源（漆黑裝備），其次是「創世武器 (Genesis)」，再來是「神秘冥界 (Arcane)」。
     2. **防具階級：** 「永恆裝備 (Eternal)」為頂標，其次是「滅龍騎士盔甲 (Dragon Knight/Breath of Divinity set)」，再來是神秘冥界。
@@ -224,8 +252,15 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
         - **黑魔法師:** 困難 6500萬 / 終極 7億
         - **賽蓮:** 普通 5000萬 / 困難 8500萬 / 終極 8.5億
         - **卡洛斯:** 簡單 3500萬 / 普通 1.2億 / 混沌 5.5億 / 終極 22億
+        - **最初的敵對者:** 簡單 1億 / 普通 4億 / 困難 15億
         - **咖凌:** 簡單 1億 / 普通 4.3億 / 困難 20億 / 終極 50億
         - **林波:** 普通 7億 / 困難 18億
+
+    **【⚠️ 絕對邏輯運算守則 (Strict Logic Gate)】**
+    在進行「BOSS 攻略建議」分析時，請務必執行以下邏輯檢查，嚴禁違反：
+    1. **戰力硬門檻：** 請拿玩家的「面板戰鬥力」與上述「BOSS 單人通關最低戰力需求表」進行數值比對。
+    2. **禁止越級：** 若玩家戰鬥力 **低於** 表格中的門檻，**絕對禁止** 評價為「穩通」、「碾壓」或「單吃」。必須誠實標註為「戰力不足，建議組隊」或「極限挑戰」。
+    3. **權重優先級：** 「戰力門檻」的權重 > 「等級壓制」或「TMS裝備加成」。即便等級高、裝備好，只要面板戰力沒到，就不算穩通。
 
     --- 角色摘要 (Summary) ---
     角色名稱：${data.basic.character_name} (等級 ${data.basic.character_level} / 職業：${data.basic.character_class})
@@ -256,9 +291,12 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
 
     2.  **BOSS 攻略建議 (關鍵指標)：** 
         *   **直接建立 Markdown 表格**，**切勿在此重複列出角色數據**。
-        *   表頭格式：| BOSS名稱 | 難度 | 建議 | 關鍵短評 |
-        *   請包含所有列出的高階 BOSS (從賽蓮到巴德利斯)。
-        *   若內容過長，請精簡「關鍵短評」文字，以確保表格能完整輸出。
+        *   表頭格式：| BOSS名稱 | 最高可單吃難度 | 建議 | 關鍵短評 |
+        *   **完整列表強制要求：** 表格必須包含 **第 11 點「BOSS 單人通關最低戰力需求表」中的所有 BOSS (從史烏到林波)**，嚴禁缺漏任何一隻 (Do not cherry-pick)。
+        *   **內容填寫規則：** 
+            - **最高可單吃難度**：請根據戰力門檻找出該玩家能單吃的「最高難度」（例如：若戰力可打困難但無法打終極，則填寫「困難」）。
+            - 若連最低難度都無法單吃（戰力未達標），請填寫該 BOSS 的最低難度並在建議欄標註「戰力不足」。
+        *   請精簡「關鍵短評」文字，以確保表格能完整輸出。
 
     3.  **提升建議 (針對 TMS 環境)：** 提出 **2 項具體且高投資報酬率** 的傷害提升建議。
         * 請全方位檢視「短版」 (例如：裝備雖強但 ARC/AUT 不足、或六轉技能等級過低、聯盟戰地太低等)。
@@ -301,7 +339,7 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
       console.log(`Trying Gemini Model: ${currentModel}`);
 
       // @ts-ignore
-      const response = await ai.models.generateContent({
+      const response = await ai.models.generateContentStream({
         model: currentModel,
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
         config: {
@@ -316,10 +354,22 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
         }
       });
       
-      const text = typeof response.text === 'function' ? response.text() : response.text;
-      if (!text) throw new Error(`Empty Response from ${currentModel}`);
+      let fullText = '';
       
-      return text + `\n\n_(Analysis performed by: **${currentModel}**)_`;
+      // 兼容性修正：檢查 response 是否有 .stream 屬性，若無則視 response 本身為 AsyncIterable (適配 @google/genai 新版 SDK)
+      // @ts-ignore
+      const stream = response.stream || response;
+
+      for await (const chunk of stream) {
+        const chunkText = extractTextFromChunk(chunk);
+        if (chunkText) {
+          fullText += chunkText;
+        }
+      }
+
+      if (!fullText) throw new Error(`Empty Response from ${currentModel}`);
+      
+      return fullText + `\n\n_(Gemini 模型： **${currentModel}**)_`;
 
     } catch (error: any) {
       const cleanMsg = extractErrorMessage(error);
