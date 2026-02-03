@@ -18,16 +18,6 @@ export default {
 
         if (typeof document === 'undefined') return; // SSR 階段直接跳過
         
-        // --- 0. 緊急修復：強制清理所有主題 Class --- 
-        // 這會在 Vue 掛載前執行，確保清除任何來自靜態 HTML 的殘留樣式
-        // 這樣即使 HTML 髒了，用戶一進來也會馬上被清洗乾淨
-        const knownThemes = ['theme-tech', 'theme-christmas', 'theme-halloween', 'theme-gaming', 'theme-animated', 'theme-gravityfield', 'theme-slow3dfly', 'theme-halo', 'theme-hyperos', 'theme-hyperos2'];
-        knownThemes.forEach(t => {
-            if (document.body.classList.contains(t)) {
-                document.body.classList.remove(t);
-            }
-        });
-
         // 恢復 is-blog-page 判斷，只加在文章內頁（不是首頁、index-new等列表頁）
         function isBlogPage(path: string) {
             // 匹配 /blog/xxxx、/en/blog/xxxx、/docs/xxxx 文章頁（不是列表頁）

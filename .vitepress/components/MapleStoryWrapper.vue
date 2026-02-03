@@ -16,14 +16,6 @@ onMounted(() => {
     root = ReactDOM.createRoot(container)
     root.render(React.createElement(App))
   }
-
-  // Ensure Christmas theme is applied if it's the current theme
-  if (typeof window !== 'undefined') {
-    const savedTheme = localStorage.getItem('vitepress-background-theme') || 'christmas'
-    if (savedTheme === 'christmas') {
-      document.body.classList.add('theme-christmas')
-    }
-  }
 })
 
 onBeforeUnmount(() => {
