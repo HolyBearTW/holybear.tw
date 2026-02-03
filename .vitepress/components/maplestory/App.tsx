@@ -317,7 +317,8 @@ const App: React.FC = () => {
       if (errorMessage.includes('429') || errorMessage.includes('Quota')) {
         setError('⚠️ **AI 額度已達上限 (Rate Limit Exceeded)**\n\nAI 額度暫時耗盡。請點擊下方的「**設定模型 / API Key**」按鈕，填入或更換另一組您自己的 Google Gemini API Key 即可繼續免費使用。\n\n👉 [取得免費 API Key (Google AI Studio)](https://aistudio.google.com/app/apikey)');
       } else {
-        setError(errorMessage || 'AI 分析發生未預期錯誤，請稍後再試。');
+        // 強制加上 AI 前綴，確保顯示在下方分析區塊
+        setError(`⚠️ **AI 分析錯誤**\n\n${errorMessage || '發生未預期的連線錯誤，請稍後再試。'}`);
       }
       setAiAnalysis(null);
     } finally {

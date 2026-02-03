@@ -4,16 +4,26 @@ import { DashboardData } from "../types";
 // === Helper: 錯誤訊息美化 ===
 const extractErrorMessage = (error: any): string => {
   if (!error) return 'Unknown Error';
+  
+  // 優先檢查 axios 或 fetch 錯誤物件結構
+  if (error.response?.data?.error?.message) {
+    return error.response.data.error.message;
+  }
+  
   let msg = error.message || error.toString();
+
+  // 1. 嘗試解析隱藏在文字中的 JSON 錯誤
   try {
-    if (msg.includes('{') && msg.includes('}')) {
-      const jsonStart = msg.indexOf('{');
-      const jsonEnd = msg.lastIndexOf('}') + 1;
+    const jsonStart = msg.indexOf('{');
+    const jsonEnd = msg.lastIndexOf('}') + 1;
+    if (jsonStart !== -1 && jsonEnd > jsonStart) {
       const jsonStr = msg.substring(jsonStart, jsonEnd);
       const parsed = JSON.parse(jsonStr);
       if (parsed.error && parsed.error.message) return parsed.error.message;
+      if (parsed.message) return parsed.message;
     }
   } catch (e) {}
+  
   return msg;
 };
 
@@ -76,9 +86,11 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
   const dropRate = getStatValue(['Item Drop Rate', '道具掉落率']);
   const mesoRate = getStatValue(['Mesos Obtain', '楓幣獲得量']);
 
-  // 觸發條件：掉寶 > 100 或 兩者相加 > 150 (考慮基礎掉寶通常是 0~20% 不等，超過 100 肯定是穿裝)
-  if (dropRate > 100 || (dropRate + mesoRate) > 150) {
-    return `⚠️ **檢測到您目前穿著練功/打寶裝備 (掉寶/楓幣率過高)**\n\n系統偵測到您的掉寶率為 ${dropRate}%，這會導致戰力評估嚴重失準。\n為了獲得準確的戰力評估，請更換為全輸出的『打王裝備 (Bossing Gear)』後再重新進行分析。`;
+  // 觸發條件：掉寶 > 150 或 楓幣 > 150
+  // 因應「豪華真實符文 (Luxury Authentic Force)」與神器系統可能提供約 50%~100% 的常駐掉寶/楓幣率，
+  // 故將門檻大幅放寬至 150%，只有超過此數值才判定為特地穿著打寶/打錢裝。
+  if (dropRate > 150 || mesoRate > 150) {
+    return `⚠️ **檢測到您目前穿著練功/打寶裝備 (掉寶/楓幣率過高)**\n\n系統偵測到您的掉寶率為 ${dropRate}% / 楓幣率為 ${mesoRate}%，已超過打王裝備的合理判斷範圍 (150%)。\n\n**註：已自動扣除豪華真實符文與神器的預估被動數值**，但您的數值仍過高，這會導致戰力評估失準。\n請更換為全輸出的『打王裝備 (Bossing Gear)』後再重新進行分析。`;
   }
 
   // 2. 提取摘要 (保留)
@@ -292,9 +304,11 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
     2.  **BOSS 攻略建議 (關鍵指標)：** 
         *   **直接建立 Markdown 表格**，**切勿在此重複列出角色數據**。
         *   表頭格式：| BOSS名稱 | 最高可單吃難度 | 建議 | 關鍵短評 |
-        *   **完整列表強制要求：** 表格必須包含 **第 11 點「BOSS 單人通關最低戰力需求表」中的所有 BOSS (從史烏到林波)**，嚴禁缺漏任何一隻 (Do not cherry-pick)。
+        *   **完整列表強制要求：** 表格必須包含以下 **14 隻** BOSS，嚴禁遺漏或截斷：
+             **史烏、戴米安、露希妲、威爾、戴斯克、頓凱爾、真‧希拉、守護天使綠水靈、黑魔法師、賽蓮、卡洛斯、最初的敵對者、燦爛的兇星、咖凌、林波**。
+             (即使玩家戰力很低，也必須列出所有 BOSS 並標註「戰力不足」。請勿偷懶只列出幾隻。)
         *   **內容填寫規則：** 
-            - **最高可單吃難度**：請根據戰力門檻找出該玩家能單吃的「最高難度」（例如：若戰力可打困難但無法打終極，則填寫「困難」）。
+            - **最高可單吃難度**：請根據戰力門檻找出該玩家能單吃的「最高難度」。
             - 若連最低難度都無法單吃（戰力未達標），請填寫該 BOSS 的最低難度並在建議欄標註「戰力不足」。
         *   請精簡「關鍵短評」文字，以確保表格能完整輸出。
 
@@ -302,10 +316,13 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
         * 請全方位檢視「短版」 (例如：裝備雖強但 ARC/AUT 不足、或六轉技能等級過低、聯盟戰地太低等)。
 
     4.  **點評：** 用一句簡短、幽默且帶有「楓之谷老玩家梗」的話語來吐槽或稱讚他的狀態 (例如提到炸裝、廣播、搶圖、肝帝、練等狂人等文化)。
+    
+    5.  **結束標記：** 請在分析結束時輸出一行「--- Analysis Complete ---」。
 
     **【嚴格輸出格式控制】**
     *   **No Intro:** 禁止輸出「根據您的數據...」、「這是一份分析...」等廢話。
     *   **No Loops:** 禁止重複輸出已經寫過的章節。
+    *   **Complete Output:** 必須完整輸出上述所有對應章節，絕對不可中斷。
     *   **Structure:** 必須嚴格遵守 1 -> 2 -> 3 -> 4 的順序。
   `;
 
@@ -331,28 +348,46 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
   let lastError: any = null;
   // 關鍵新增：用來暫存「額度滿」的錯誤，因為它的優先級比「找不到模型」高
   let quotaError: any = null; 
+  // 新增：伺服器過載標記
+  let serverOverloadedError: any = null;
 
   const ai = new GoogleGenAI({ apiKey });
+
+  // Helper: 帶超時的 Promise Wrapper
+  const withTimeout = (promise: Promise<any>, ms: number, modelName: string) => {
+    return Promise.race([
+        promise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error(`TIMEOUT: Model ${modelName} did not respond within ${ms/1000} seconds`)), ms))
+    ]);
+  };
 
   for (const currentModel of modelsToTry) {
     try {
       console.log(`Trying Gemini Model: ${currentModel}`);
+      
+      // 根據模型調整超時時間：應使用者要求延長等待時間
+      // Preview 模型給予 60 秒，穩定版模型給予 90 秒
+      const TIMEOUT_MS = currentModel.includes('preview') ? 60000 : 90000;
 
       // @ts-ignore
-      const response = await ai.models.generateContentStream({
-        model: currentModel,
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        config: {
-            maxOutputTokens: 8192,
-            temperature: 0.7,
-            safetySettings: [
-                { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
-                { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
-                { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
-                { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
-            ]
-        }
-      });
+      const response = await withTimeout(
+        ai.models.generateContentStream({
+            model: currentModel,
+            contents: [{ role: 'user', parts: [{ text: prompt }] }],
+            config: {
+                maxOutputTokens: 16384, // 增加 Token 上限以避免截斷 (原 8192)
+                temperature: 0.7,
+                safetySettings: [
+                    { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+                    { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+                    { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+                    { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+                ]
+            }
+        }), 
+        TIMEOUT_MS, 
+        currentModel
+      );
       
       let fullText = '';
       
@@ -378,27 +413,50 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
       // === 關鍵邏輯：優先捕捉 429 錯誤 ===
       if (cleanMsg.includes('429') || cleanMsg.includes('Quota') || cleanMsg.includes('exhausted')) {
           quotaError = error; // 抓到了！這是最有價值的錯誤
+      } else if (cleanMsg.includes('503') || cleanMsg.includes('overloaded') || cleanMsg.includes('UNAVAILABLE') || cleanMsg.includes('TIMEOUT')) {
+          serverOverloadedError = error; // 抓到了！伺服器忙碌或超時
       }
       
       lastError = error;
     }
   }
 
-  // 錯誤處理：優先檢查是否有遇過 Quota Error
-  const finalError = quotaError || lastError; // 如果有 Quota Error，優先用它！
-  const errorMsg = extractErrorMessage(finalError);
-  console.error("All Gemini Models Failed. Final Error:", errorMsg);
+  // 錯誤處理：優先檢查是否有遇過 Quota Error，其次是 Overloaded Error
+  const finalError = quotaError || serverOverloadedError || lastError; 
   
   if (finalError) {
+      const errorMsg = extractErrorMessage(finalError);
+      console.error("All Gemini Models Failed. Final Error:", errorMsg);
+
       if (errorMsg.includes('429') || errorMsg.includes('Quota') || errorMsg.includes('exhausted')) {
         return "⚠️ **AI 額度已達上限 (Rate Limit Exceeded)**\n\n因使用人數眾多，公用額度暫時耗盡。請稍等 1 分鐘後再試，或更換您自己的 Google Gemini API Key。";
       }
-      
-      if (errorMsg.includes('404') || errorMsg.includes('not found')) {
-         return `AI Analysis Failed: Model Not Found. \n\n(系統無法連接 AI 模型，請稍後再試。錯誤代碼: ${errorMsg})`;
+
+      if (errorMsg.includes('503') || errorMsg.includes('overloaded') || errorMsg.includes('UNAVAILABLE')) {
+        return "AI Analysis Failed: ⚠️ **AI 伺服器忙碌中 (Server Overloaded)**\n\nGoogle Gemini 伺服器目前負載過高，暫時無法回應。請稍等 30 秒後再試，或嘗試切換至較穩定的 gemini-2.5-flash 模型。";
       }
 
-      return `AI Analysis Failed: ${errorMsg}. \n\n(Tried models: ${modelsToTry.join(', ')})`;
+      if (errorMsg.includes('TIMEOUT')) {
+         return "AI Analysis Failed: ⚠️ **AI 分析連線逾時 (Timeout)**\n\n等待 AI 回應時間過長，系統已自動中止連線。建議您稍後再試，或檢查您的網路連線。";
+      }
+
+      if (errorMsg.includes('API key not valid') || errorMsg.includes('API_KEY_INVALID') || errorMsg.includes('invalid authentication credentials')) {
+        return "AI Analysis Failed: ⚠️ **AI 分析失敗：API Key 無效**\n\n您輸入的 API Key 無法使用，可能已失效或複製錯誤。\n請確認 Key 是否正確，或[取得新的免費 API Key](https://aistudio.google.com/app/apikey)。";
+      }
+
+      if (errorMsg.includes('User location is not supported')) {
+         return "AI Analysis Failed: ⚠️ **AI 分析失敗：地區不支援**\n\nGoogle Gemini 目前不支援您所在的地區 (或 VPN IP)。";
+      }
+
+      if (errorMsg.includes('Permission denied')) {
+         return "AI Analysis Failed: ⚠️ **AI 分析失敗：權限不足**\n\n您的 API Key 沒有權限存取此模型，請檢查 Google Cloud Console 設定。";
+      }
+      
+      if (errorMsg.includes('404') || errorMsg.includes('not found')) {
+         return `AI Analysis Failed: ⚠️ **AI 分析失敗：找不到模型**\n\n系統無法連接 AI 模型 (${modelsToTry.join(', ')})。\n通常是因為 Google 暫時下架了舊模型，請嘗試切換其他模型。`;
+      }
+
+      return `AI Analysis Failed: ⚠️ **AI 分析發生未預期錯誤**\n\n錯誤訊息: ${errorMsg}\n\n(Tried models: ${modelsToTry.join(', ')})`;
   }
   
   return "AI Analysis Failed: Unknown Error.";
