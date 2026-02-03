@@ -24,22 +24,19 @@ export default {
             return /^\/(en\/)?blog\/(?!$|index|index-new)[\w-]+/.test(path) || /^\/docs\/[\w-]+/.test(path);
         }
         function updateBodyClasses() {
-            // 保留原有 class，確保最多只有一個 is-blog-page / is-home-page
-            const cls = document.body.className.split(' ').filter(c => c && c !== 'is-blog-page' && c !== 'is-home-page');
+            const isBlog = isBlogPage(window.location.pathname);
+            const isHome = !!document.querySelector('.VPHome');
             
-            if (isBlogPage(window.location.pathname)) {
-                cls.push('is-blog-page');
-            }
+            // 使用 classList 操作，避免覆蓋其他 themes class (如 theme-christmas)
+            if (isBlog) document.body.classList.add('is-blog-page');
+            else document.body.classList.remove('is-blog-page');
 
-            // 檢查是否存在 .VPHome 元素來判斷是否為首頁
-            if (document.querySelector('.VPHome')) {
-                cls.push('is-home-page');
-            }
-
-            document.body.className = cls.join(' ');
+            if (isHome) document.body.classList.add('is-home-page');
+            else document.body.classList.remove('is-home-page');
         }
         updateBodyClasses();
-        setInterval(updateBodyClasses, 200);
+        // 降低頻率減輕負擔，並確保不與 theme 切換衝突
+        setInterval(updateBodyClasses, 500);
 
 
 
