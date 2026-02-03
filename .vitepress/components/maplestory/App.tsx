@@ -613,7 +613,7 @@ const App: React.FC = () => {
              onChange={(e) => setCharacterName(e.target.value)}
              onFocus={() => setShowHistory(true)}
              onBlur={() => setTimeout(() => setShowHistory(false), 200)}
-             placeholder="輸入角色名稱 (例如: 怪獸小熊)"
+             placeholder="輸入角色名稱"
              className="w-full bg-[#1a1d24] border border-slate-700 rounded-xl py-3 pl-12 pr-20 sm:pr-32 text-sm sm:text-base focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition-all text-white placeholder:text-slate-600 shadow-lg"
            />
            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1 items-center">
