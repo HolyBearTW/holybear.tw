@@ -385,11 +385,12 @@ const App: React.FC = () => {
 
   const getAbilityStyle = (grade: string) => {
     const g = grade.toLowerCase();
-    if (g.includes('legendary') || g.includes('傳說')) return 'border-green-600 bg-green-50/50 text-green-600 dark:bg-green-950/30 dark:text-green-400';
-    if (g.includes('unique') || g.includes('罕見')) return 'border-yellow-600 bg-yellow-50/50 text-yellow-600 dark:bg-yellow-950/30 dark:text-yellow-400';
-    if (g.includes('epic') || g.includes('稀有')) return 'border-purple-600 bg-purple-50/50 text-purple-600 dark:bg-purple-950/30 dark:text-purple-400';
-    if (g.includes('rare') || g.includes('特殊')) return 'border-blue-600 bg-blue-50/50 text-blue-600 dark:bg-blue-950/30 dark:text-blue-400';
-    return 'border-slate-200 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300';
+    // 強制使用深色模式樣式，避免在淺色模式下出現白底或顏色不協調
+    if (g.includes('legendary') || g.includes('傳說')) return 'border-green-500 bg-green-950/40 text-green-400';
+    if (g.includes('unique') || g.includes('罕見')) return 'border-yellow-500 bg-yellow-950/40 text-yellow-400';
+    if (g.includes('epic') || g.includes('稀有')) return 'border-purple-500 bg-purple-950/40 text-purple-400';
+    if (g.includes('rare') || g.includes('特殊')) return 'border-blue-500 bg-blue-950/40 text-blue-400';
+    return 'border-slate-700 bg-slate-800 text-slate-300';
   };
 
   const focusStatKeys = [
