@@ -25,7 +25,8 @@ import GravityFieldSimulation from './background/GravityFieldSimulation.vue'
 import { 
   defaultTheme, 
   THEME_STORAGE_KEY, 
-  THEME_CHANGE_EVENT 
+  THEME_CHANGE_EVENT,
+  getAllThemeIds
 } from './background/themes'
 
 const { isDark } = useData()
@@ -138,8 +139,10 @@ const handleThemeChange = (event: Event) => {
 const updateBodyClass = (theme: string) => {
   if (typeof document === 'undefined') return
   
-    // 移除所有主題 class（包含萬聖節與重力場主題）
-    document.body.classList.remove('theme-animated', 'theme-tech', 'theme-gaming', 'theme-slow3dfly', 'theme-halo', 'theme-hyperos', 'theme-hyperos2', 'theme-none', 'theme-christmas', 'theme-halloween', 'theme-gravityfield')
+    // 動態獲取並移除所有主題 class
+    const allThemeIds = getAllThemeIds()
+    const allThemeClasses = allThemeIds.map(id => `theme-${id}`)
+    document.body.classList.remove(...allThemeClasses)
   
   // 添加當前主題 class
   if (theme && theme !== 'none') {

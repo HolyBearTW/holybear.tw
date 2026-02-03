@@ -292,12 +292,25 @@ transformPageData(pageData) {
     return pageData;
 },
 
-    transformHtml: (_, id, { pageData }) => {
+    transformHtml: (code, id, { pageData }) => {
+        // 1. 處理 canonicalUrl
         if (id.endsWith('.html')) {
             const canonicalUrl = pageData?.frontmatter?.canonicalUrl || '';
             if (canonicalUrl) {
                 pageData.frontmatter.canonicalUrl = canonicalUrl.replace(/\.html$/, '');
             }
+        }
+        
+        // 2. 清理 HTML body class
+        // 避免構建環境或快取導致 theme-christmas 等主題 class 被寫入靜態檔案
+        if (id.endsWith('.html')) {
+            return code.replace(/(<body[^>]*class=")([^"]*)(")/, (match, prefix, classList, suffix) => {
+                // 過濾掉所有 theme- 開頭的 class
+                const newClassList = classList.split(' ')
+                    .filter(c => !c.startsWith('theme-'))
+                    .join(' ');
+                return `${prefix}${newClassList}${suffix}`;
+            });
         }
     },
 })
