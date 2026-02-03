@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useData, withBase } from 'vitepress'
 import { Swiper, SwiperSlide } from 'swiper/vue'
 import { Autoplay, Navigation, Pagination } from 'swiper/modules'
@@ -14,6 +14,12 @@ const props = defineProps({
 })
 
 const { lang } = useData()
+const mounted = ref(false)
+
+onMounted(() => {
+  mounted.value = true
+})
+
 const carouselPosts = computed(() => props.posts.slice(0, 10))
 
 const getImageUrl = (image) => {
@@ -35,7 +41,7 @@ const modules = [Autoplay, Navigation, Pagination]
 </script>
 
 <template>
-  <section v-if="carouselPosts.length > 0" class="hero-section">
+  <section v-if="mounted && carouselPosts.length > 0" class="hero-section">
     <div class="carousel-container">
       <swiper
         :modules="modules"

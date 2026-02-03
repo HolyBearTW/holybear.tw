@@ -9,7 +9,7 @@ import TelegramRoseBotDocsSidebar from './sidebars/Telegram-Rose-Bot-docs.sideba
 import VitepressBlogDocsSidebar from './sidebars/Vitepress-Blog-docs-sidebar.ts'
 import SpoilerComponentDocsSidebar from './sidebars/spoiler-component-docs-sidebar.ts'
 
-export default defineConfig({
+const config = defineConfig({
     ignoreDeadLinks: true,
     title: '聖小熊的秘密基地',
     base: '/',
@@ -51,10 +51,14 @@ export default defineConfig({
     vite: {
         plugins: [gitMetaPlugin(), react()],
         resolve: {
-            alias: {
-                react: fileURLToPath(new URL('../node_modules/react', import.meta.url)),
-                'react-dom': fileURLToPath(new URL('../node_modules/react-dom', import.meta.url)),
-            },
+            alias: [
+                {
+                    find: /^.*\/VPAlgoliaSearchBox\.vue$/, 
+                    replacement: fileURLToPath(new URL('../node_modules/vitepress/dist/client/theme-default/components/VPAlgoliaSearchBox.vue', import.meta.url))
+                },
+                { find: 'react', replacement: fileURLToPath(new URL('../node_modules/react', import.meta.url)) },
+                { find: 'react-dom', replacement: fileURLToPath(new URL('../node_modules/react-dom', import.meta.url)) },
+            ],
             dedupe: ['react', 'react-dom'],
         },
         optimizeDeps: {
@@ -297,3 +301,12 @@ transformPageData(pageData) {
         }
     },
 })
+
+// 為了讓舊版主題也能正常運作，將 search.options 自動同步給 algolia
+// 這樣您就只需要維護 search 配置，而不需要重複兩次
+// if (config.themeConfig?.search?.provider === 'algolia') {
+    // @ts-ignore
+//     config.themeConfig.algolia = config.themeConfig.search.options
+// }
+
+export default config
