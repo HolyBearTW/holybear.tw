@@ -179,7 +179,11 @@ const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'lef
       <div className={`w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0 ${bgColor} border-2 ${borderColor} rounded-md flex items-center justify-center relative overflow-hidden ${glow}`}>
         {item ? (
           <>
-            <img src={displayIcon} alt={item.item_name} className="w-full h-full object-contain p-1 z-10" />
+            <img 
+              src={displayIcon} 
+              alt={item.item_name} 
+              className={`max-w-full max-h-full object-contain z-10 ${['Gem', 'Pocket', 'Badge', 'Ring1', 'Ring2', 'Ring3', 'Ring4'].includes(slotKey) ? 'translate-x-[1px] translate-y-[1px]' : ''}`} 
+            />
             {(item.potential_option_grade?.includes('Legendary') || item.potential_option_grade?.includes('傳說')) && <div className="absolute inset-0 bg-green-500/10 animate-pulse z-0" />}
             {parseInt(item.starforce || '0') > 0 && (
                 <div className="absolute top-0 right-0 bg-yellow-500 text-black text-[9px] font-bold px-1 rounded-bl leading-none z-20 shadow-sm border-l border-b border-yellow-600">
