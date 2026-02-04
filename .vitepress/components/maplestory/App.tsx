@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Search, Loader2, RefreshCw, AlertCircle, Wand2, ThumbsUp, Shield, Sword, Flame, Star, Zap, ChevronDown, ChevronUp, History, X, Settings, Crown, LogOut, Share2, Info, Mail, Globe, TrendingUp, Sparkles } from 'lucide-react';
+import { Search, Loader2, RefreshCw, AlertCircle, AlertTriangle, ArrowRight, Wand2, ThumbsUp, Shield, Sword, Flame, Star, Zap, ChevronDown, ChevronUp, History, X, Settings, Crown, LogOut, Share2, Info, Mail, Globe, TrendingUp, Sparkles } from 'lucide-react';
 import ApiKeyModal from './components/ApiKeyModal';
 import ShareModal from './components/ShareModal';
 import EquipmentGrid from './components/EquipmentGrid';
@@ -104,6 +104,7 @@ const App: React.FC = () => {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [historyData, setHistoryData] = useState<any[]>([]);
   const [elapsedTime, setElapsedTime] = useState(0); // AI 分析計時器
+  const [dropRateWarningData, setDropRateWarningData] = useState<{ drop: number, meso: number } | null>(null);
   const initialSearchDone = useRef(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const aiResultRef = useRef<HTMLDivElement>(null);
@@ -285,16 +286,32 @@ const App: React.FC = () => {
     }
   };
 
-  const handleAiAnalyze = async () => {
+  const handleAiAnalyze = async (overrideIgnoreWarnings?: boolean | any) => {
     if (!data) return;
+    const ignoreWarnings = typeof overrideIgnoreWarnings === 'boolean' ? overrideIgnoreWarnings : false;
+    
     const keyToUse = geminiKey || DEFAULT_GEMINI_KEY;
+    
+    // Always clear warning data when starting a new analysis (whether forced or not)
+    setDropRateWarningData(null);    
+
     setAnalyzing(true);
     setAiAnalysis(null);
     setError(null);
 
     try {
-      const result = await analyzeCharacter(data, keyToUse, geminiModel);
+      const result = await analyzeCharacter(data, keyToUse, geminiModel, ignoreWarnings);
       
+      if (result && result.startsWith('WARNING_DROP_RATE_TOO_HIGH')) {
+        const [_, drop, meso] = result.split('|');
+        setDropRateWarningData({ 
+            drop: parseFloat(drop) || 0, 
+            meso: parseFloat(meso) || 0
+        });
+        setAnalyzing(false);
+        return;
+      }
+
       const isQuotaError = result && (
         result.includes('Rate Limit Exceeded') || 
         result.includes('429') || 
@@ -919,8 +936,8 @@ const App: React.FC = () => {
           </div>
 
            {/* AI Response Area */}
-           {/* Fix: Always show container if we have result OR analyzing OR specific error. Button is now always visible inside. */}
-           <div ref={aiResultRef} className={`relative transition-all duration-700 ${!analyzing && !aiAnalysis && !error?.includes('AI') ? 'hidden' : 'block'} 
+           {/* Fix: Always show container if we have result OR analyzing OR specific error OR warning. Button is now always visible inside. */}
+           <div ref={aiResultRef} className={`relative transition-all duration-700 ${!analyzing && !aiAnalysis && !error?.includes('AI') && !dropRateWarningData ? 'hidden' : 'block'} 
              ${isHighScore ? 'bg-gradient-to-br from-[#1c1f33] to-[#2a1b3d] border-2 border-amber-400/50 shadow-[0_0_40px_rgba(251,191,36,0.15)]' : 'bg-[#161b22] border border-indigo-500/30 shadow-lg'} 
              rounded-xl p-5 mt-6`}>
                
@@ -973,6 +990,37 @@ const App: React.FC = () => {
                    <p className="text-indigo-300/70 text-sm mt-3 font-mono bg-indigo-950/20 px-4 py-1.5 rounded-full border border-indigo-500/20">
                      已耗時: <span className="text-indigo-400 font-bold">{elapsedTime}</span> 秒 <span className="text-slate-600 mx-1">|</span> 預計等待: {getEstimatedWaitTime(geminiModel)} 秒
                    </p>
+                 </div>
+               ) : dropRateWarningData ? (
+                 <div className="p-5 bg-yellow-950/20 border border-yellow-600/50 rounded-lg text-yellow-200 mb-4 animate-in fade-in slide-in-from-bottom-2">
+                     <h4 className="font-bold text-lg mb-2 flex items-center gap-2">
+                        <AlertTriangle className="w-5 h-5 text-yellow-500" />
+                        檢測到您目前穿著練功/打寶裝備
+                     </h4>
+                     <p className="text-slate-300 mb-4 text-sm leading-relaxed">
+                        系統偵測到您的掉寶率為 <span className="text-yellow-400 font-bold">{dropRateWarningData.drop}%</span> / 
+                        楓幣率為 <span className="text-yellow-400 font-bold">{dropRateWarningData.meso}%</span>，已超過打王裝備的合理判斷範圍 (150%)。
+                        <br/><br/>
+                        <span className="text-slate-400 text-xs">
+                            註：已自動扣除豪華真實符文與神器的預估被動數值，但數值仍過高。
+                            這會導致戰力評估失準，建議更換為全輸出的『打王裝備 (Bossing Gear)』後再重新進行分析。
+                        </span>
+                     </p>
+                     <div className="flex gap-3">
+                         <button 
+                            onClick={() => setDropRateWarningData(null)}
+                            className="px-4 py-2 bg-slate-700/50 hover:bg-slate-700/80 text-slate-300 rounded text-sm transition-colors"
+                         >
+                             取消 (更換裝備)
+                         </button>
+                         <button 
+                            onClick={() => handleAiAnalyze(true)}
+                            className="px-4 py-2 bg-yellow-600/20 hover:bg-yellow-600/40 border border-yellow-600/50 text-yellow-200 rounded text-sm transition-colors flex items-center gap-2"
+                         >
+                             仍然繼續分析
+                             <ArrowRight className="w-4 h-4" />
+                         </button>
+                     </div>
                  </div>
                ) : (
                  <>
@@ -1065,7 +1113,7 @@ const App: React.FC = () => {
                 </div>
                 <ul className="list-disc pl-5 text-sm space-y-1 mt-3 animate-in fade-in slide-in-from-top-1">
                   {[
-                    { date: '2026/02/04', content: '新增圖騰與寶玉裝備欄位並加入 AI 判斷範圍，並改善 AI 分析戰力時的判斷方式；新增顯示裝備套裝效果選項，可自由顯示或隱藏套裝詳細屬性。' },                  
+                    { date: '2026/02/04', content: '新增圖騰與寶玉裝備欄位並加入 AI 判斷範圍，並改善 AI 分析戰力時的判斷方式；新增顯示裝備套裝效果選項，可自由顯示或隱藏套裝詳細屬性；改善分析角色時的掉寶率警告機制，可選擇忽略警告並繼續分析。' },                  
                     { date: '2026/02/03', content: '修復 AI 分析因串流格式問題導致的失敗；新增「重新分析」按鈕。大幅優化 BOSS 攻略建議邏輯，強制執行戰力硬門檻檢查並列出完整 BOSS 清單，避免越級誤判。' },
                     { date: '2026/02/02', content: '修正 Gemini 3 模型名稱錯誤導致分析失敗。優化裝備顯示方式，新增更多資訊(裝備等級、職業、套裝效果)。' },
                     { date: '2026/02/01', content: '大幅優化 AI 分析準確度，新增 ARC/AUT 與等級增減傷判定公式、調整 BOSS 戰力需求標準。此外，分析時新增計時器與預估等待時間顯示。' },

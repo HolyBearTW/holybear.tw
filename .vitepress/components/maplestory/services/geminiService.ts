@@ -68,7 +68,7 @@ const extractTextFromChunk = (chunk: any): string => {
 };
 
 // UPDATE: 預設值改為 gemini-3-flash
-export const analyzeCharacter = async (data: DashboardData, apiKey: string, modelId: string = 'gemini-3-flash-preview'): Promise<string> => {
+export const analyzeCharacter = async (data: DashboardData, apiKey: string, modelId: string = 'gemini-3-flash-preview', ignoreWarnings: boolean = false): Promise<string> => {
   if (!apiKey) {
     return "Gemini API Key is missing. Please provide a valid API Key.";
   }
@@ -89,8 +89,8 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
   // 觸發條件：掉寶 > 150 或 楓幣 > 150
   // 因應「豪華真實符文 (Luxury Authentic Force)」與神器系統可能提供約 50%~100% 的常駐掉寶/楓幣率，
   // 故將門檻大幅放寬至 150%，只有超過此數值才判定為特地穿著打寶/打錢裝。
-  if (dropRate > 150 || mesoRate > 150) {
-    return `⚠️ **檢測到您目前穿著練功/打寶裝備 (掉寶/楓幣率過高)**\n\n系統偵測到您的掉寶率為 ${dropRate}% / 楓幣率為 ${mesoRate}%，已超過打王裝備的合理判斷範圍 (150%)。\n\n**註：已自動扣除豪華真實符文與神器的預估被動數值**，但您的數值仍過高，這會導致戰力評估失準。\n請更換為全輸出的『打王裝備 (Bossing Gear)』後再重新進行分析。`;
+  if (!ignoreWarnings && (dropRate > 150 || mesoRate > 150)) {
+    return `WARNING_DROP_RATE_TOO_HIGH|${dropRate}|${mesoRate}`;
   }
 
   // 2. 提取摘要 (保留)
