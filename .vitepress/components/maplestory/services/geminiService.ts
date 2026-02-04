@@ -142,13 +142,52 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
       item.item_name.includes('永恆') ||
       item.item_name.includes('滅龍')
     )
-    .slice(0, 20)
-    .map(item => `${item.item_equipment_slot}: ${item.item_name} (${item.starforce}星, ${item.potential_option_grade || '無潛能'}${item.special_ring_level ? ', 塔戒Lv.' + item.special_ring_level : ''})`)
-    .join('; ');
+    .slice(0, 30) // 放寬數量限制，確保漆黑/塔戒等不被截斷
+    .map(item => {
+      let info = `[${item.item_equipment_slot}] ${item.item_name}`;
+      
+      // 1. 基本資訊 (星力/等級/塔戒)
+      const baseDetails = [];
+      if (item.starforce && item.starforce !== '0') baseDetails.push(`${item.starforce}星`);
+      if (item.special_ring_level) baseDetails.push(`塔戒Lv.${item.special_ring_level}`);
+      if (item.soul_name) baseDetails.push(`靈魂:${item.soul_name}`);
+      if (baseDetails.length > 0) info += ` (${baseDetails.join(', ')})`;
+
+      // 2. 潛能階級
+      const potGrade = item.potential_option_grade;
+      const addPotGrade = item.additional_potential_option_grade;
+      if (potGrade || addPotGrade) {
+        info += ` | 階級: ${potGrade || '無'}/${addPotGrade || '無'}`;
+      }
+
+      // 3. 詳細潛能 (主潛+附加) - 讓 AI 看到完整數據
+      const mainLines = [item.potential_option_1, item.potential_option_2, item.potential_option_3].filter(Boolean);
+      const addLines = [item.additional_potential_option_1, item.additional_potential_option_2, item.additional_potential_option_3].filter(Boolean);
+      
+      if (mainLines.length > 0) info += ` | 主潛: ${mainLines.join(' / ')}`;
+      if (addLines.length > 0) info += ` | 附加: ${addLines.join(' / ')}`;
+
+      // 4. 武器類顯示總攻
+      if (['Weapon', 'Sub Weapon'].includes(item.item_equipment_slot)) {
+         info += ` | 總攻: ${item.item_total_option.attack_power || 0} / 總魔: ${item.item_total_option.magic_power || 0}`;
+      }
+
+      return info;
+    })
+    .join('\n    '); // 使用換行符號讓每個裝備獨立一行，方便 AI 閱讀
 
   const prompt = `
     您是一位《新楓之谷》（TMS 台灣伺服器）的頂尖理論計算專家與骨灰級玩家。
     請依據提供的角色數據，進行嚴格且符合當前版本環境（Meta）的強度分析。
+    
+    **【重要語言規範】**
+    1. **全繁體中文輸出：** 請全程使用 **台灣繁體中文 (Traditional Chinese)** 回答。
+    2. **術語在地化：** 所有遊戲術語（如裝備名稱、屬性、BOSS名）**必須使用 TMS 官方譯名**，嚴禁使用 GMS (英文) 或 CMS (簡體) 用語。
+       - (X) Attack Power -> (O) 攻擊力
+       - (X) Ignore Defense -> (O) 無視防禦
+       - (X) Boss Damage -> (O) BOSS傷害
+       - (X) Pitch Boss -> (O) 漆黑BOSS
+    3. **禁止晶晶體：** 除非是常見縮寫 (如 ARC, AUT)，否則請勿中英夾雜。
 
     --- 【當前遊戲環境設定 (Meta Context)】 ---
     0. **【特例檢測】挑戰者伺服器判定 (Challenger Server Check)：**

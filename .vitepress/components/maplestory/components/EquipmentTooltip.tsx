@@ -7,6 +7,7 @@ interface EquipmentTooltipProps {
   setEffect?: CharacterSetEffect;
   characterJob?: string;
   slotType?: string;
+  showSetEffect?: boolean;
 }
 
 const StatLine: React.FC<{ label: string; base: string; add: string; etc: string; star: string; total: string; isPercent?: boolean }> = ({ label, base, add, etc, star, total, isPercent }) => {
@@ -77,7 +78,7 @@ const formatDescription = (desc: string) => {
   return res;
 };
 
-const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, characterJob, slotType }) => {
+const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, characterJob, slotType, showSetEffect }) => {
   const getPotGradeInfo = (grade: string) => {
     const g = grade ? grade.toLowerCase() : '';
     if (g.includes('legendary') || g.includes('傳說')) return { color: 'text-green-400', border: 'border-green-500', label: '傳說', char: 'L' };
@@ -333,7 +334,9 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
       <div className="p-3 border-b border-slate-600/50 text-center relative bg-[#15171c]/50">
         {renderStars()}
         <h3 className={`text-base font-bold text-white relative z-10`}>
-           {item.item_name} {scrollCount > 0 ? `(+${scrollCount})` : ''}
+           {item.item_name}
+           {item.special_ring_level > 0 && <span className="text-orange-400 ml-1">Lv.{item.special_ring_level}</span>}
+           {scrollCount > 0 ? ` (+${scrollCount})` : ''}
         </h3>
         {item.potential_option_grade && potInfo.label && (
           <p className="text-[10px] text-slate-400 mt-0.5">({potInfo.label}等級道具)</p>
@@ -439,17 +442,30 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
       )}
       
       {/* Set Effect Details (Full List) */}
-      {matchedSet && matchedSet.set_option_full && (
-        <div className="p-3 border-t border-slate-600/50 relative z-10">
-            <h4 className="text-sm font-bold text-green-400 mb-2">{matchedSet.set_name}</h4>
+      {showSetEffect && matchedSet && matchedSet.set_effect_info && (
+        <div className="p-3 border-t border-slate-600/50 relative z-10 transition-all duration-300">
+            <div className="flex justify-between items-center mb-2">
+                <h4 className="text-sm font-bold text-green-400">{matchedSet.set_name}</h4>
+                <span className="text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded border border-slate-700">
+                   {matchedSet.total_set_count}件效果生效中
+                </span>
+            </div>
             <div className="space-y-2">
-                {matchedSet.set_option_full.map((opt, idx) => {
+                {matchedSet.set_effect_info.map((opt, idx) => {
                     // Check if this tier is active
-                    const isActive = (matchedSet.total_set_count || 0) >= opt.set_count;
+                    // API returns active effects in set_effect_info. 
+                    // Usually we display all potential effects here for a "Tooltip", but the API only gives what is ACTIVE.
+                    // If we only have active ones, we just display them.
+                    // Ideally a tooltip shows ALL tiers (grayed out if inactive), but we lack data for inactive tiers from this specific API response if it only returns active ones.
+                    // However, `set_effect` typically returns the set info struct which MIGHT contain all info if parsed from a static DB, but here it seems to come from API.
+                    // Assuming set_effect_info contains what the user has.
+                    
+                    // Wait, if set_effect_info ONLY contains active effects (e.g. 2, 3, 4 sets), we can just list them.
+                    const isActive = true; 
                     return (
                         <div key={idx} className={`${isActive ? 'text-white' : 'text-slate-500'} text-xs`}>
-                            <p className="font-bold mb-0.5">{opt.set_count}套裝效果</p>
-                            <div className="pl-1 leading-relaxed whitespace-pre-wrap">
+                            <p className="font-bold mb-0.5 text-orange-300">{opt.set_count}套裝效果</p>
+                            <div className="pl-1 leading-relaxed whitespace-pre-wrap text-[11px] text-slate-300">
                                 {opt.set_option}
                             </div>
                         </div>

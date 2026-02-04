@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { EquipmentItem, CharacterEquipment, CharacterSetEffect } from '../types';
 import EquipmentTooltip from './EquipmentTooltip';
 import PresetSwitcher from './PresetSwitcher';
+import { Square, CheckSquare } from 'lucide-react'; // 新增 import
 
 import { CharacterAndroidEquipment } from '../types';
 
@@ -49,7 +50,7 @@ const SLOT_DEFINITIONS: Record<string, { label: string, match: string[] }> = {
   'Secondary': { label: '副武', match: ['secondary', 'subweapon', 'shield', 'katara', '副武器', '盾牌', '輔助武器'] },
 };
 
-const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'left' | 'right'; mobileDir?: 'up' | 'down'; setEffect?: CharacterSetEffect; characterJob?: string }> = ({ slotKey, item, tooltipSide = 'left', mobileDir = 'down', setEffect, characterJob }) => {
+const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'left' | 'right'; mobileDir?: 'up' | 'down'; setEffect?: CharacterSetEffect; characterJob?: string; showSetEffect?: boolean }> = ({ slotKey, item, tooltipSide = 'left', mobileDir = 'down', setEffect, characterJob, showSetEffect }) => {
   const def = SLOT_DEFINITIONS[slotKey];
   const [isOpen, setIsOpen] = useState(false);
   const tooltipRef = useRef<HTMLDivElement>(null);
@@ -153,14 +154,14 @@ const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'lef
   return (
     <div 
       ref={containerRef}
-      className={`relative z-0 group ${isOpen ? 'z-[100]' : 'hover:z-50'}`} // Fix: High Z-Index on toggle
+      className={`relative z-0 group ${isOpen ? 'z-[100]' : 'hover:z-50'} !transform-none !transition-none !translate-y-0 !m-0`} // Fix: High Z-Index on toggle
       onClick={() => setIsOpen(!isOpen)}
     >
       {/* FIXED: 
           1. 移除 h-full (避免被父容器高度影響導致變扁)
           2. 加入 flex-shrink-0 (防止在 flex 容器中被擠壓)
       */}
-      <div className={`w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0 ${bgColor} border-2 ${borderColor} rounded-md flex items-center justify-center relative overflow-hidden transition-all ${glow}`}>
+      <div className={`w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0 ${bgColor} border-2 ${borderColor} rounded-md flex items-center justify-center relative overflow-hidden ${glow}`}>
         {item ? (
           <>
             <img src={item.item_icon} alt={item.item_name} className="w-8 h-8 sm:w-9 sm:h-9 object-contain z-10 m-auto" />
@@ -182,11 +183,11 @@ const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'lef
             ref={tooltipRef}
             style={adjustStyle}
             className={`absolute left-1/2 -translate-x-1/2 z-[200] w-[300px] max-w-[90vw]
-                        ${isOpen ? 'block' : 'hidden group-hover:block'} animate-in fade-in zoom-in-95 duration-200 shadow-2xl rounded-xl
+                        ${isOpen ? 'block' : 'hidden group-hover:block'} animate-in fade-in duration-200 shadow-2xl rounded-xl
                         ${mobilePositionClass}
-                        md:absolute md:top-0 ${desktopPositionClass} md:translate-y-0 md:translate-x-0 md:w-[300px] md:zoom-in-100 md:max-h-none md:overflow-visible`}
+                        md:absolute md:top-0 ${desktopPositionClass} md:translate-y-0 md:translate-x-0 md:w-[300px] md:max-h-none md:overflow-visible`}
         >
-           <EquipmentTooltip item={item} setEffect={setEffect} characterJob={characterJob} slotType={slotKey} />
+           <EquipmentTooltip item={item} setEffect={setEffect} characterJob={characterJob} slotType={slotKey} showSetEffect={showSetEffect} />
         </div>
       )}
     </div>
@@ -208,6 +209,8 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, setEffect, cha
   
   // 2. UI 狀態：當前選擇的預設 (1, 2, 3)
   const [selectedPreset, setSelectedPreset] = useState<number>(activePresetNo);
+  // 新增：顯示套裝效果開關
+  const [showSetEffect, setShowSetEffect] = useState(false);
 
   // 3. 當資料更新時，重置回生效預設
   useEffect(() => {
@@ -308,6 +311,15 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, setEffect, cha
         activePresetNo={activePresetNo}
         label="裝備預設"
         showBase={false}
+        extraControls={
+          <button 
+             onClick={() => setShowSetEffect(!showSetEffect)} 
+             className={`text-[10px] px-2 py-0.5 rounded border flex items-center gap-1 transition-all ${showSetEffect ? 'bg-purple-900/40 text-purple-300 border-purple-700/50 hover:bg-purple-900/60' : 'bg-slate-800 text-slate-500 border-slate-700 hover:bg-slate-700 hover:text-slate-400'}`}
+          >
+             {showSetEffect ? <CheckSquare className="w-3 h-3" /> : <Square className="w-3 h-3" />}
+             顯示詳細套裝效果
+          </button>
+        }
       />
 
       <div className="flex justify-center gap-6 mt-4">
@@ -326,10 +338,10 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, setEffect, cha
       {/* Left Columns (Accessories) */}
       <div className="flex gap-2">
         <div className="flex flex-col gap-2">
-          {['Ring4', 'Ring3', 'Ring2', 'Ring1', 'Belt', 'Pocket'].map((key, idx) => <Slot key={key} slotKey={key} item={findItem(key)} tooltipSide="right" mobileDir={idx < 3 ? 'down' : 'up'} setEffect={setEffect} characterJob={characterJob} />)}
+          {['Ring4', 'Ring3', 'Ring2', 'Ring1', 'Belt', 'Pocket'].map((key, idx) => <Slot key={key} slotKey={key} item={findItem(key)} tooltipSide="right" mobileDir={idx < 3 ? 'down' : 'up'} setEffect={setEffect} characterJob={characterJob} showSetEffect={showSetEffect} />)}
         </div>
         <div className="flex flex-col gap-2">
-           {['Face', 'Eye', 'Earrings', 'Pendant2', 'Pendant'].map((key, idx) => <Slot key={key} slotKey={key} item={findItem(key)} tooltipSide="right" mobileDir={idx < 2 ? 'down' : 'up'} setEffect={setEffect} characterJob={characterJob} />)}
+           {['Face', 'Eye', 'Earrings', 'Pendant2', 'Pendant'].map((key, idx) => <Slot key={key} slotKey={key} item={findItem(key)} tooltipSide="right" mobileDir={idx < 2 ? 'down' : 'up'} setEffect={setEffect} characterJob={characterJob} showSetEffect={showSetEffect} />)}
         </div>
       </div>
 
@@ -342,20 +354,20 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, setEffect, cha
              <div className="w-24 h-24 rounded-full bg-slate-800/50" />
          )}
          <div className="flex gap-2 mt-8">
-            <Slot slotKey="Weapon" item={findItem('Weapon')} tooltipSide="right" mobileDir="up" setEffect={setEffect} characterJob={characterJob} />
-            <Slot slotKey="Secondary" item={findItem('Secondary')} tooltipSide="right" mobileDir="up" setEffect={setEffect} characterJob={characterJob} />
-            <Slot slotKey="Emblem" item={findItem('Emblem')} tooltipSide="left" mobileDir="up" setEffect={setEffect} characterJob={characterJob} />
+            <Slot slotKey="Weapon" item={findItem('Weapon')} tooltipSide="right" mobileDir="up" setEffect={setEffect} characterJob={characterJob} showSetEffect={showSetEffect} />
+            <Slot slotKey="Secondary" item={findItem('Secondary')} tooltipSide="right" mobileDir="up" setEffect={setEffect} characterJob={characterJob} showSetEffect={showSetEffect} />
+            <Slot slotKey="Emblem" item={findItem('Emblem')} tooltipSide="left" mobileDir="up" setEffect={setEffect} characterJob={characterJob} showSetEffect={showSetEffect} />
          </div>
       </div>
 
       {/* Right Columns (Armor) */}
       <div className="flex gap-2">
           <div className="flex flex-col gap-2">
-            {['Hat', 'Top', 'Bottom', 'Shoulder'].map((key, idx) => <Slot key={key} slotKey={key} item={findItem(key)} tooltipSide="left" mobileDir={idx < 2 ? 'down' : 'up'} setEffect={setEffect} characterJob={characterJob} />)}
-            <Slot slotKey="Android" item={findItem('Android')} tooltipSide="left" mobileDir="up" setEffect={setEffect} characterJob={characterJob} />
+            {['Hat', 'Top', 'Bottom', 'Shoulder'].map((key, idx) => <Slot key={key} slotKey={key} item={findItem(key)} tooltipSide="left" mobileDir={idx < 2 ? 'down' : 'up'} setEffect={setEffect} characterJob={characterJob} showSetEffect={showSetEffect} />)}
+            <Slot slotKey="Android" item={findItem('Android')} tooltipSide="left" mobileDir="up" setEffect={setEffect} characterJob={characterJob} showSetEffect={showSetEffect} />
           </div>
           <div className="flex flex-col gap-2">
-            {['Cape', 'Gloves', 'Shoes', 'Medal', 'Heart', 'Badge'].map((key, idx) => <Slot key={key} slotKey={key} item={findItem(key)} tooltipSide="left" mobileDir={idx < 3 ? 'down' : 'up'} setEffect={setEffect} characterJob={characterJob} />)}
+            {['Cape', 'Gloves', 'Shoes', 'Medal', 'Heart', 'Badge'].map((key, idx) => <Slot key={key} slotKey={key} item={findItem(key)} tooltipSide="left" mobileDir={idx < 3 ? 'down' : 'up'} setEffect={setEffect} characterJob={characterJob} showSetEffect={showSetEffect} />)}
           </div>
       </div>
       </div>

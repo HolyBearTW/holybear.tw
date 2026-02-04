@@ -7,6 +7,7 @@ interface PresetSwitcherProps {
   activePresetNo?: number | string;
   label?: string;
   showBase?: boolean; // 新增控制開關：是否顯示 0
+  extraControls?: React.ReactNode;
 }
 
 const PresetSwitcher: React.FC<PresetSwitcherProps> = ({ 
@@ -14,7 +15,8 @@ const PresetSwitcher: React.FC<PresetSwitcherProps> = ({
   onPresetChange, 
   activePresetNo,
   label = "預設",
-  showBase = false // 預設不顯示 0，只有時裝才開啟
+  showBase = false, // 預設不顯示 0，只有時裝才開啟
+  extraControls
 }) => {
   const activeNum = activePresetNo ? parseInt(String(activePresetNo)) : 0;
   
@@ -32,31 +34,34 @@ const PresetSwitcher: React.FC<PresetSwitcherProps> = ({
               生效中: 預設 {activeNum}
             </span>
           )}
+          {extraControls}
         </span>
         
-        <div className="flex gap-1">
-          {buttons.map((num) => (
-            <button
-              key={num}
-              onClick={() => onPresetChange(num)}
-              className={`
-                w-8 h-8 rounded-md text-sm font-bold transition-all flex items-center justify-center relative
-                ${currentPreset === num 
-                  ? 'bg-indigo-600 text-white shadow-[0_0_10px_rgba(79,70,229,0.4)] border border-indigo-400' 
-                  : 'bg-slate-800 text-slate-500 hover:bg-slate-700 hover:text-slate-300 border border-slate-700'}
-              `}
-              title={num === 0 ? "當前實際穿戴 (Base)" : `預設 ${num}`}
-            >
-              {num === 0 ? "0" : num}
-              {/* 綠點邏輯：
-                  1. 如果 activeNum 存在且等於 num -> 亮燈
-                  2. 如果是時裝(0)且沒有 activeNum -> 視為 0 生效 -> 亮燈
-              */}
-              {((activeNum === num) || (num === 0 && !activeNum && showBase)) && (
-                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-green-500 border-2 border-slate-900 rounded-full"></span>
-              )}
-            </button>
-          ))}
+        <div className="flex items-center gap-3">
+          <div className="flex gap-1">
+            {buttons.map((num) => (
+              <button
+                key={num}
+                onClick={() => onPresetChange(num)}
+                className={`
+                  w-8 h-8 rounded-md text-sm font-bold transition-all flex items-center justify-center relative
+                  ${currentPreset === num 
+                    ? 'bg-indigo-600 text-white shadow-[0_0_10px_rgba(79,70,229,0.4)] border border-indigo-400' 
+                    : 'bg-slate-800 text-slate-500 hover:bg-slate-700 hover:text-slate-300 border border-slate-700'}
+                `}
+                title={num === 0 ? "當前實際穿戴 (Base)" : `預設 ${num}`}
+              >
+                {num === 0 ? "0" : num}
+                {/* 綠點邏輯：
+                    1. 如果 activeNum 存在且等於 num -> 亮燈
+                    2. 如果是時裝(0)且沒有 activeNum -> 視為 0 生效 -> 亮燈
+                */}
+                {((activeNum === num) || (num === 0 && !activeNum && showBase)) && (
+                  <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-green-500 border-2 border-slate-900 rounded-full"></span>
+                )}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
       

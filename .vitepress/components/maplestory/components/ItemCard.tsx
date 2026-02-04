@@ -38,6 +38,7 @@ const ItemCard: React.FC<ItemCardProps> = ({ item }) => {
         <div className="overflow-hidden">
           <h4 className={`text-sm font-bold truncate ${hasPot ? potColorClass.split(' ')[1] : 'text-slate-200'}`}>
             {item.item_name}
+            {item.special_ring_level > 0 && <span className="text-xs ml-1 text-orange-400">Lv.{item.special_ring_level}</span>}
           </h4>
           <p className="text-xs text-slate-500 truncate">{item.item_equipment_slot}</p>
           
