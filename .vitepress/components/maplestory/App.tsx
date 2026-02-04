@@ -1065,6 +1065,7 @@ const App: React.FC = () => {
                 </div>
                 <ul className="list-disc pl-5 text-sm space-y-1 mt-3 animate-in fade-in slide-in-from-top-1">
                   {[
+                    { date: '2026/02/04', content: '新增圖騰與寶玉裝備欄位並加入 AI 判斷範圍，並改善 AI 分析戰力時的判斷方式；新增顯示裝備套裝效果選項，可自由顯示或隱藏套裝詳細屬性。' },                  
                     { date: '2026/02/03', content: '修復 AI 分析因串流格式問題導致的失敗；新增「重新分析」按鈕。大幅優化 BOSS 攻略建議邏輯，強制執行戰力硬門檻檢查並列出完整 BOSS 清單，避免越級誤判。' },
                     { date: '2026/02/02', content: '修正 Gemini 3 模型名稱錯誤導致分析失敗。優化裝備顯示方式，新增更多資訊(裝備等級、職業、套裝效果)。' },
                     { date: '2026/02/01', content: '大幅優化 AI 分析準確度，新增 ARC/AUT 與等級增減傷判定公式、調整 BOSS 戰力需求標準。此外，分析時新增計時器與預估等待時間顯示。' },

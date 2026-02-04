@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { EquipmentItem, CharacterEquipment, CharacterSetEffect } from '../types';
 import EquipmentTooltip from './EquipmentTooltip';
 import PresetSwitcher from './PresetSwitcher';
-import { Square, CheckSquare } from 'lucide-react'; // 新增 import
+import { Square, CheckSquare } from 'lucide-react';
 
 import { CharacterAndroidEquipment } from '../types';
 
@@ -14,7 +14,6 @@ interface EquipmentGridProps {
 }
 
 // Visual Layout Definition
-// 'L' = Left Column, 'R' = Right Column, 'C' = Center (Character), 'B' = Bottom
 const SLOT_DEFINITIONS: Record<string, { label: string, match: string[] }> = {
   // Rings
   'Ring1': { label: '戒1', match: ['ring1', 'ring 1', 'ring i', '戒指1'] },
@@ -24,8 +23,8 @@ const SLOT_DEFINITIONS: Record<string, { label: string, match: string[] }> = {
   
   // Accessories (Left)
   'Pocket': { label: '口袋', match: ['pocketitem', 'pocket', '口袋道具'] },
-  'Pendant': { label: '墜1', match: ['pendant', 'pendant1', '墜飾', '墜飾1', '項鍊', '項鍊1'] },
-  'Pendant2': { label: '墜2', match: ['pendant2', '墜飾2', '項鍊2'] },
+  'Pendant': { label: '墜1', match: ['pendant', 'pendant1', '墜飾1', '項鍊', '項鍊1'] }, // 注意：這邊只留標準墜飾
+  'Pendant2': { label: '墜2', match: ['pendant2', '項鍊2'] },
   'Belt': { label: '腰帶', match: ['belt', '腰帶'] },
   
   // Armor/Accessories (Right)
@@ -48,126 +47,140 @@ const SLOT_DEFINITIONS: Record<string, { label: string, match: string[] }> = {
   'Heart': { label: '心臟', match: ['mechanicalheart', 'heart', '機械心臟', '心臟', '機器心臟'] },
   'Weapon': { label: '武器', match: ['weapon', '武器'] },
   'Secondary': { label: '副武', match: ['secondary', 'subweapon', 'shield', 'katara', '副武器', '盾牌', '輔助武器'] },
+  
+  // TMS Special Slots
+  'Totem1': { label: '圖騰', match: ['totem1'] }, // 讓 findItem 處理特殊邏輯
+  'Totem2': { label: '圖騰', match: ['totem2'] },
+  'Totem3': { label: '圖騰', match: ['totem3'] },
+  'Gem': { label: '寶玉', match: ['gem'] }, // 讓 findItem 處理特殊邏輯
+};
+
+// Custom Totem Image Mapping
+// 使用者待填寫對應名稱
+const TOTEM_MAPPING = [
+  { name: '姆嗚圖騰', path: '/image/theme/maplestory_character/totem1.png' },
+  { name: '彩虹月石寶石圖騰', path: '/image/theme/maplestory_character/totem2.png' },
+  { name: '真和真圖騰', path: '/image/theme/maplestory_character/totem3.png' },
+  { name: '真阿克婭圖騰', path: '/image/theme/maplestory_character/totem4.png' },
+  { name: '真惠惠圖騰', path: '/image/theme/maplestory_character/totem5.png' },
+  { name: '真達克妮絲圖騰', path: '/image/theme/maplestory_character/totem6.png' },
+  { name: '勇敢挑戰者的圖騰', path: '/image/theme/maplestory_character/totem7.png' },
+  { name: '赤之寶石圖騰', path: '/image/theme/maplestory_character/totem8.png' },
+  { name: '綠之寶石圖騰', path: '/image/theme/maplestory_character/totem9.png' },
+  { name: '青之寶石圖騰', path: '/image/theme/maplestory_character/totem10.png' },
+  { name: '黃之寶石圖騰', path: '/image/theme/maplestory_character/totem11.png' },
+  { name: '五個碎片的橘子樂園圖騰', path: '/image/theme/maplestory_character/totem12.png' },
+  { name: '超越的圖騰', path: '/image/theme/maplestory_character/totem13.png' },
+  { name: '醫院長圖騰', path: '/image/theme/maplestory_character/totem14.png' },
+  { name: '女護士圖騰', path: '/image/theme/maplestory_character/totem15.png' },
+  { name: '輔助人員圖騰', path: '/image/theme/maplestory_character/totem16.png' },
+  { name: '小筱精靈圖騰', path: '/image/theme/maplestory_character/totem17.png' },
+  { name: '拉尼亞的美味便當圖騰', path: '/image/theme/maplestory_character/totem18.png' },
+  { name: '異界的西格諾斯圖騰', path: '/image/theme/maplestory_character/totem19.png' },
+  { name: '輪迴碑石', path: '/image/theme/maplestory_character/totem20.png' },
+  { name: '古代石板複製品', path: '/image/theme/maplestory_character/totem21.png' },
+  { name: '貝奧武夫的痕跡', path: '/image/theme/maplestory_character/totem22.png' },
+  { name: '萬事的痕跡', path: '/image/theme/maplestory_character/totem23.png' },
+  { name: '阿德勒的痕跡', path: '/image/theme/maplestory_character/totem24.png' },
+  { name: '柏林的痕跡', path: '/image/theme/maplestory_character/totem25.png' },
+];
+
+const resolveItemIcon = (item: EquipmentItem | undefined, slotKey: string): string | undefined => {
+  if (!item) return undefined;
+  
+  // 1. Gem always uses custom icon
+  if (slotKey === 'Gem') {
+    return '/image/theme/maplestory_character/gem.png';
+  }
+
+  // 2. Totems check mapping
+  if (['Totem1', 'Totem2', 'Totem3'].includes(slotKey)) {
+    const match = TOTEM_MAPPING.find(m => m.name === item.item_name);
+    if (match) return match.path;
+  }
+
+  // 3. Fallback to API icon
+  return item.item_icon;
 };
 
 const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'left' | 'right'; mobileDir?: 'up' | 'down'; setEffect?: CharacterSetEffect; characterJob?: string; showSetEffect?: boolean }> = ({ slotKey, item, tooltipSide = 'left', mobileDir = 'down', setEffect, characterJob, showSetEffect }) => {
   const def = SLOT_DEFINITIONS[slotKey];
   const [isOpen, setIsOpen] = useState(false);
   const tooltipRef = useRef<HTMLDivElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null); // 用於偵測點擊外部
-  const [adjustStyle, setAdjustStyle] = useState<React.CSSProperties>({}); // 防止超出螢幕
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [adjustStyle, setAdjustStyle] = useState<React.CSSProperties>({});
 
-  // 點擊外部關閉視窗 (Click Outside Listener)
+  // Resolve Icon logic moved here to be shared with Tooltip
+  const displayIcon = resolveItemIcon(item, slotKey);
+  // Create a display item with the resolved icon to pass to Tooltip
+  const displayItem = item ? { ...item, item_icon: displayIcon } : undefined;
+
+  // Click Outside Listener
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (isOpen && containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     };
-    
-    // 只在開啟時監聽
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    if (isOpen) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
 
-  // 智慧定位：確保 Tooltip 不會超出左右邊界 (透過 left 修正中心點，保留 transform 動畫)
+  // Smart Tooltip Positioning
   useLayoutEffect(() => {
     if (isOpen && tooltipRef.current) {
         const tooltipEl = tooltipRef.current;
         const parentEl = tooltipEl.parentElement;
-        
         if (parentEl) {
             const parentRect = parentEl.getBoundingClientRect();
-            const tooltipWidth = tooltipEl.getBoundingClientRect().width; // 或使用 offsetWidth
-            
+            const tooltipWidth = tooltipEl.getBoundingClientRect().width;
             const vw = Math.min(window.innerWidth, document.documentElement.clientWidth || window.innerWidth);
             const padding = 10; 
-
-            // 計算目前的邊界 (假設它是置中的)
             const parentCenter = parentRect.left + parentRect.width / 2;
             const currentLeft = parentCenter - tooltipWidth / 2;
             const currentRight = parentCenter + tooltipWidth / 2;
-
             let shiftX = 0;
-
-            if (currentLeft < padding) {
-                // 左側超出：需要向右移
-                shiftX = padding - currentLeft;
-            } 
-            else if (currentRight > vw - padding) {
-                // 右側超出：需要向左移 (數值為負)
-                shiftX = (vw - padding) - currentRight;
-            } 
-
-            if (shiftX !== 0) {
-                // 原本是 left-1/2 (50%)，我們加上偏移量
-                setAdjustStyle({ left: `calc(50% + ${shiftX}px)` });
-            } else {
-                setAdjustStyle({});
-            }
+            if (currentLeft < padding) shiftX = padding - currentLeft;
+            else if (currentRight > vw - padding) shiftX = (vw - padding) - currentRight;
+            if (shiftX !== 0) setAdjustStyle({ left: `calc(50% + ${shiftX}px)` });
+            else setAdjustStyle({});
         }
     }
   }, [isOpen]);
   
-  // Special handling: If slotKey is not defined (e.g. spacer), return empty
   if (!def) return <div className="w-10 h-10 sm:w-12 sm:h-12 invisible flex-shrink-0" />;
 
+  // Restore style variables logic
   let borderColor = 'border-slate-800';
   let bgColor = 'bg-[#1a1d24]';
   let glow = '';
 
   if (item) {
     const grade = item.potential_option_grade ? item.potential_option_grade.toLowerCase() : '';
-    
     if (grade.includes('legendary') || grade.includes('傳說')) { 
         borderColor = 'border-green-500'; 
         glow = 'shadow-[0_0_10px_-2px_rgba(34,197,94,0.3)]'; 
     }
-    else if (grade.includes('unique') || grade.includes('罕見')) { 
-        borderColor = 'border-yellow-500'; 
-    }
-    else if (grade.includes('epic') || grade.includes('稀有')) { 
-        borderColor = 'border-purple-500'; 
-    }
-    else if (grade.includes('rare') || grade.includes('特殊')) { 
-        borderColor = 'border-blue-500'; 
-    }
-    else { 
-        borderColor = 'border-slate-600'; 
-    }
+    else if (grade.includes('unique') || grade.includes('罕見')) { borderColor = 'border-yellow-500'; }
+    else if (grade.includes('epic') || grade.includes('稀有')) { borderColor = 'border-purple-500'; }
+    else if (grade.includes('rare') || grade.includes('特殊')) { borderColor = 'border-blue-500'; }
+    else { borderColor = 'border-slate-600'; }
   }
 
-  const desktopPositionClass = tooltipSide === 'left'
-    ? 'md:right-full md:mr-1 md:left-auto'
-    : 'md:left-full md:ml-1 md:right-auto';
-
-  // Mobile position logic
-  const mobilePositionClass = mobileDir === 'up'
-    ? 'bottom-full mb-2 md:bottom-auto md:mb-0'
-    : 'top-full mt-2 md:mt-0'; // 'down'
+  const desktopPositionClass = tooltipSide === 'left' ? 'md:right-full md:mr-1 md:left-auto' : 'md:left-full md:ml-1 md:right-auto';
+  const mobilePositionClass = mobileDir === 'up' ? 'bottom-full mb-2 md:bottom-auto md:mb-0' : 'top-full mt-2 md:mt-0';
 
   return (
     <div 
       ref={containerRef}
-      className={`relative z-0 group ${isOpen ? 'z-[100]' : 'hover:z-50'} !transform-none !transition-none !translate-y-0 !m-0`} // Fix: High Z-Index on toggle
+      className={`relative z-0 group ${isOpen ? 'z-[100]' : 'hover:z-50'} !transform-none !transition-none !translate-y-0 !m-0`}
       onClick={() => setIsOpen(!isOpen)}
     >
-      {/* FIXED: 
-          1. 移除 h-full (避免被父容器高度影響導致變扁)
-          2. 加入 flex-shrink-0 (防止在 flex 容器中被擠壓)
-      */}
       <div className={`w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0 ${bgColor} border-2 ${borderColor} rounded-md flex items-center justify-center relative overflow-hidden ${glow}`}>
         {item ? (
           <>
-            <img src={item.item_icon} alt={item.item_name} className="w-8 h-8 sm:w-9 sm:h-9 object-contain z-10 m-auto" />
-            {/* Tiny Grade Indicator (Corner) */}
-             {(item.potential_option_grade?.includes('Legendary') || item.potential_option_grade?.includes('傳說')) && <div className="absolute inset-0 bg-green-500/10 animate-pulse z-0" />}
-            {/* Starforce */}
+            <img src={displayIcon} alt={item.item_name} className="w-full h-full object-contain p-1 z-10" />
+            {(item.potential_option_grade?.includes('Legendary') || item.potential_option_grade?.includes('傳說')) && <div className="absolute inset-0 bg-green-500/10 animate-pulse z-0" />}
             {parseInt(item.starforce || '0') > 0 && (
                 <div className="absolute top-0 right-0 bg-yellow-500 text-black text-[9px] font-bold px-1 rounded-bl leading-none z-20 shadow-sm border-l border-b border-yellow-600">
                     {item.starforce}
@@ -178,7 +191,7 @@ const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'lef
           <span className="text-[10px] text-slate-700 select-none font-medium">{def?.label}</span>
         )}
       </div>
-      {item && (
+      {displayItem && (
         <div 
             ref={tooltipRef}
             style={adjustStyle}
@@ -187,7 +200,7 @@ const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'lef
                         ${mobilePositionClass}
                         md:absolute md:top-0 ${desktopPositionClass} md:translate-y-0 md:translate-x-0 md:w-[300px] md:max-h-none md:overflow-visible`}
         >
-           <EquipmentTooltip item={item} setEffect={setEffect} characterJob={characterJob} slotType={slotKey} showSetEffect={showSetEffect} />
+           <EquipmentTooltip item={displayItem} setEffect={setEffect} characterJob={characterJob} slotType={slotKey} showSetEffect={showSetEffect} />
         </div>
       )}
     </div>
@@ -195,53 +208,112 @@ const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'lef
 };
 
 const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, setEffect, characterImage, androidEquipment }) => {
-  // 防呆：如果 equipment 資料還沒進來，直接回傳 null
-  if (!equipment) {
-    return null; 
-  }
+  if (!equipment) return null; 
   const characterJob = equipment.character_class;
-
-  // Normalize string for comparison
   const normalize = (s: string) => s.toLowerCase().replace(/\s+/g, '');
-
-  // 1. 取得當前生效預設，預設為 1
-  const activePresetNo = parseInt(equipment.preset_no || '1');
   
-  // 2. UI 狀態：當前選擇的預設 (1, 2, 3)
+  // 使用 preset_no 或預設為 1
+  const activePresetNo = parseInt(equipment.preset_no || '1');
   const [selectedPreset, setSelectedPreset] = useState<number>(activePresetNo);
-  // 新增：顯示套裝效果開關
   const [showSetEffect, setShowSetEffect] = useState(false);
 
-  // 3. 當資料更新時，重置回生效預設
   useEffect(() => {
     if (equipment.preset_no) {
       setSelectedPreset(parseInt(equipment.preset_no));
     }
   }, [equipment]);
 
-  // 4. 根據選擇取得該預設的資料列表
+  // 取得顯示的裝備列表 (fallback 到 item_equipment 以防 preset 為空)
   const getDisplayItems = () => {
-    const key = `item_equipment_preset_${selectedPreset}`;
-    // 因為 TypeScript index signature 問題，這裡用 any 強制轉型
-    return (equipment as any)[key] || [];
+    const presetKey = `item_equipment_preset_${selectedPreset}`;
+    const presetItems = (equipment as any)[presetKey];
+    
+    // 如果選擇的預設就是當前生效的預設，優先使用 item_equipment (因為它最準確包含所有生效效果)
+    if (selectedPreset === activePresetNo && equipment.item_equipment && equipment.item_equipment.length > 0) {
+        return equipment.item_equipment;
+    }
+    
+    return presetItems && presetItems.length > 0 ? presetItems : (equipment.item_equipment || []);
   };
 
   const displayItems = getDisplayItems();
 
+  // ---------------------------------------------------------
+  // 核心邏輯修正：針對 TMS 特殊欄位進行強制配對
+  // ---------------------------------------------------------
   const findItem = (slotKey: string) => {
     const def = SLOT_DEFINITIONS[slotKey];
     if (!def) return undefined;
-    
-    // Pendant2 只做精確比對
-    if (slotKey === 'Pendant2' || slotKey === 'Pendant') {
-        // 只比對 slot
-        return displayItems.find((item: EquipmentItem) => {
-          const slot = normalize(item.item_equipment_slot);
-          return def.match.includes(slot);
+
+    const activeItems = equipment.item_equipment || [];
+
+    // 1. 特殊處理：寶玉 (Gem)
+    // 寶玉在 API 中 Slot 是 "墜飾"，所以不能只靠 Slot 找，必須檢查名稱包含 "寶玉"
+    if (slotKey === 'Gem') {
+        const predicate = (item: EquipmentItem) => item.item_name.includes('寶玉');
+        const activeItem = activeItems.find(predicate);
+        if (activeItem) return activeItem;
+
+        return displayItems.find(predicate);
+    }
+
+    // 2. 特殊處理：墜飾 (Pendant / Pendant2)
+    // 必須排除掉 "寶玉"，否則會顯示重複
+    if (slotKey === 'Pendant' || slotKey === 'Pendant2') {
+        // 先過濾掉寶玉
+        const pendants = displayItems.filter((item: EquipmentItem) => !item.item_name.includes('寶玉'));
+        
+        // Pendant2 (第二個墜飾) 通常 slot 叫 '墜飾2'
+        if (slotKey === 'Pendant2') {
+            return pendants.find((item: EquipmentItem) => normalize(item.item_equipment_slot) === '墜飾2' || normalize(item.item_equipment_slot) === 'pendant2');
+        }
+        
+        // Pendant (第一個墜飾)
+        return pendants.find((item: EquipmentItem) => {
+             const s = normalize(item.item_equipment_slot);
+             return s === '墜飾' || s === 'pendant' || s === '墜飾1';
         });
     }
+
+    // 3. 特殊處理：圖騰 (Totem 1/2/3) - 針對 TMS 的怪異 Slot 名稱
+    if (slotKey === 'Totem1') {
+        const predicate = (item: EquipmentItem) => item.item_equipment_slot === '馴服的怪物' || normalize(item.item_equipment_slot) === 'tamedmonster' || item.item_equipment_slot === 'Totem 1' || item.item_equipment_slot === '圖騰1';
+        const activeItem = activeItems.find(predicate);
+        if (activeItem) return activeItem;
+        return displayItems.find(predicate);
+    }
+    if (slotKey === 'Totem2') {
+        const predicate = (item: EquipmentItem) => item.item_equipment_slot === '馬鞍' || normalize(item.item_equipment_slot) === 'saddle' || item.item_equipment_slot === 'Totem 2' || item.item_equipment_slot === '圖騰2';
+        const activeItem = activeItems.find(predicate);
+        if (activeItem) return activeItem;
+        return displayItems.find(predicate);
+    }
+    if (slotKey === 'Totem3') {
+        const predicate = (item: EquipmentItem) => item.item_equipment_slot === '怪物裝備' || normalize(item.item_equipment_slot) === 'monsterequipment' || item.item_equipment_slot === 'Totem 3' || item.item_equipment_slot === '圖騰3';
+        const activeItem = activeItems.find(predicate);
+        if (activeItem) return activeItem;
+        return displayItems.find(predicate);
+    }
+
+    // 4. 一般裝備處理 (Android 特殊處理)
+    if (slotKey === 'Android' && androidEquipment && androidEquipment.android_name) {
+      return {
+        item_equipment_part: 'android',
+        item_equipment_slot: 'android',
+        item_name: androidEquipment.android_name,
+        item_icon: androidEquipment.android_icon,
+        item_description: androidEquipment.android_description,
+        // ... (補齊其他必要欄位以防 TS 報錯)
+        item_shape_name: '', item_shape_icon: '', item_gender: '',
+        item_total_option: {} as any, item_base_option: {} as any, item_add_option: {} as any, item_etc_option: {} as any, item_starforce_option: {} as any,
+        potential_option_grade: '', additional_potential_option_grade: '',
+        potential_option_1: '', potential_option_2: '', potential_option_3: '',
+        additional_potential_option_1: '', additional_potential_option_2: '', additional_potential_option_3: '',
+        starforce: '', scroll_upgrade: '', starforce_scroll_flag: '', item_level: 0, special_ring_level: 0, date_expire: '',
+      };
+    }
     
-    // 其他欄位：先精確比對，再模糊 fallback
+    // 5. 其他標準欄位：先精確比對，再模糊比對
     const exact = displayItems.find((item: EquipmentItem) => {
       const slot = normalize(item.item_equipment_slot);
       const part = normalize(item.item_equipment_part);
@@ -254,49 +326,8 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, setEffect, cha
       const part = normalize(item.item_equipment_part);
       return def.match.some(m => slot === normalize(m) || part === normalize(m));
     });
-    if (fuzzy) return fuzzy;
-    
-    if (slotKey === 'Android' && androidEquipment && androidEquipment.android_name) {
-      return {
-        item_equipment_part: 'android',
-        item_equipment_slot: 'android',
-        item_name: androidEquipment.android_name,
-        item_icon: androidEquipment.android_icon,
-        item_description: androidEquipment.android_description,
-        item_shape_name: '',
-        item_shape_icon: '',
-        item_gender: '',
-        item_total_option: {} as any,
-        item_base_option: {} as any,
-        item_add_option: {} as any,
-        item_etc_option: {} as any,
-        item_starforce_option: {} as any,
-        potential_option_grade: '',
-        additional_potential_option_grade: '',
-        potential_option_1: '',
-        potential_option_2: '',
-        potential_option_3: '',
-        additional_potential_option_1: '',
-        additional_potential_option_2: '',
-        additional_potential_option_3: '',
-        starforce: '',
-        scroll_upgrade: '',
-        starforce_scroll_flag: '',
-        item_level: 0,
-        special_ring_level: 0,
-        date_expire: '',
-      };
-    }
-    return undefined;
+    return fuzzy;
   };
-
-  const unmatchedItems = displayItems.filter((item: EquipmentItem) => {
-    const slot = normalize(item.item_equipment_slot);
-    const part = normalize(item.item_equipment_part);
-    return !Object.values(SLOT_DEFINITIONS).some(def => 
-        def.match.some(m => slot === normalize(m) || part === normalize(m))
-    );
-  });
 
   return (
     <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner relative">
@@ -304,7 +335,6 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, setEffect, cha
          <span className="w-2 h-2 rounded-full bg-indigo-500"></span> 裝備 (Equipment)
       </h3>
 
-      {/* 加入預設切換器 */}
       <PresetSwitcher 
         currentPreset={selectedPreset}
         onPresetChange={setSelectedPreset}
@@ -324,47 +354,47 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, setEffect, cha
 
       <div className="flex justify-center gap-6 mt-4">
       
-      {/* Debug: Unmatched Items - 顯示未匹配的裝備以便除錯 */}
-      {unmatchedItems.length > 0 && (
-        <div className="absolute bottom-0 left-0 right-0 bg-black/90 text-[10px] text-red-300 p-2 max-h-24 overflow-y-auto z-[60] font-mono rounded-b-xl border-t border-red-900/50">
-            <p className="font-bold text-red-500 mb-1">Debug: 未匹配裝備</p>
-            {unmatchedItems.map((item: any, i: number) => (
-                <div key={i} className="border-b border-white/10 py-0.5">
-                    {item.item_name} | Slot: [{item.item_equipment_slot}] | Part: [{item.item_equipment_part}]
-                </div>
-            ))}
-        </div>
-      )}
       {/* Left Columns (Accessories) */}
       <div className="flex gap-2">
         <div className="flex flex-col gap-2">
           {['Ring4', 'Ring3', 'Ring2', 'Ring1', 'Belt', 'Pocket'].map((key, idx) => <Slot key={key} slotKey={key} item={findItem(key)} tooltipSide="right" mobileDir={idx < 3 ? 'down' : 'up'} setEffect={setEffect} characterJob={characterJob} showSetEffect={showSetEffect} />)}
         </div>
         <div className="flex flex-col gap-2">
-           {['Face', 'Eye', 'Earrings', 'Pendant2', 'Pendant'].map((key, idx) => <Slot key={key} slotKey={key} item={findItem(key)} tooltipSide="right" mobileDir={idx < 2 ? 'down' : 'up'} setEffect={setEffect} characterJob={characterJob} showSetEffect={showSetEffect} />)}
+           {['Face', 'Eye', 'Earrings', 'Pendant2', 'Pendant'].map((key, idx) => <Slot key={key} slotKey={key} item={findItem(key)} tooltipSide="right" mobileDir={idx < 3 ? 'down' : 'up'} setEffect={setEffect} characterJob={characterJob} showSetEffect={showSetEffect} />)}
         </div>
       </div>
 
       {/* Center Character */}
-      <div className="w-32 flex flex-col items-center justify-center relative">
-         <div className="absolute inset-0 bg-slate-800/20 rounded-full blur-xl transform scale-75 translate-y-4"></div>
-         {characterImage ? (
-             <img src={characterImage} alt="Character" className="relative z-10 drop-shadow-2xl scale-125 transform translate-y-[-10px]" />
-         ) : (
-             <div className="w-24 h-24 rounded-full bg-slate-800/50" />
-         )}
-         <div className="flex gap-2 mt-8">
-            <Slot slotKey="Weapon" item={findItem('Weapon')} tooltipSide="right" mobileDir="up" setEffect={setEffect} characterJob={characterJob} showSetEffect={showSetEffect} />
-            <Slot slotKey="Secondary" item={findItem('Secondary')} tooltipSide="right" mobileDir="up" setEffect={setEffect} characterJob={characterJob} showSetEffect={showSetEffect} />
-            <Slot slotKey="Emblem" item={findItem('Emblem')} tooltipSide="left" mobileDir="up" setEffect={setEffect} characterJob={characterJob} showSetEffect={showSetEffect} />
+      <div className="w-32 flex flex-col items-center justify-start relative gap-2">
+         <div className="absolute top-10 w-24 h-24 bg-slate-800/20 rounded-full blur-xl transform scale-150"></div>
+         <div className="h-[184px] sm:h-[216px] flex items-center justify-center w-full relative z-20">
+            {characterImage ? (
+                <img src={characterImage} alt="Character" className="relative z-10 drop-shadow-2xl scale-[1.35] transform translate-y-2 origin-bottom pointer-events-none" />
+            ) : (
+                <div className="w-24 h-24 rounded-full bg-slate-800/50 relative z-10" />
+            )}
+         </div>
+
+         {/* Weapon Row */}
+         <div className="flex flex-col gap-2 items-center w-full">
+            <div className="flex gap-2">
+               <Slot slotKey="Weapon" item={findItem('Weapon')} tooltipSide="right" mobileDir="up" setEffect={setEffect} characterJob={characterJob} showSetEffect={showSetEffect} />
+               <Slot slotKey="Secondary" item={findItem('Secondary')} tooltipSide="right" mobileDir="up" setEffect={setEffect} characterJob={characterJob} showSetEffect={showSetEffect} />
+               <Slot slotKey="Emblem" item={findItem('Emblem')} tooltipSide="left" mobileDir="up" setEffect={setEffect} characterJob={characterJob} showSetEffect={showSetEffect} />
+            </div>
+            {/* Totem/Gem Row */}
+            <div className="flex gap-2">
+               <Slot slotKey="Totem1" item={findItem('Totem1')} tooltipSide="right" mobileDir="up" setEffect={setEffect} characterJob={characterJob} showSetEffect={showSetEffect} />
+               <Slot slotKey="Totem2" item={findItem('Totem2')} tooltipSide="right" mobileDir="up" setEffect={setEffect} characterJob={characterJob} showSetEffect={showSetEffect} />
+               <Slot slotKey="Totem3" item={findItem('Totem3')} tooltipSide="right" mobileDir="up" setEffect={setEffect} characterJob={characterJob} showSetEffect={showSetEffect} />
+            </div>
          </div>
       </div>
 
       {/* Right Columns (Armor) */}
       <div className="flex gap-2">
           <div className="flex flex-col gap-2">
-            {['Hat', 'Top', 'Bottom', 'Shoulder'].map((key, idx) => <Slot key={key} slotKey={key} item={findItem(key)} tooltipSide="left" mobileDir={idx < 2 ? 'down' : 'up'} setEffect={setEffect} characterJob={characterJob} showSetEffect={showSetEffect} />)}
-            <Slot slotKey="Android" item={findItem('Android')} tooltipSide="left" mobileDir="up" setEffect={setEffect} characterJob={characterJob} showSetEffect={showSetEffect} />
+            {['Hat', 'Top', 'Bottom', 'Shoulder', 'Android', 'Gem'].map((key, idx) => <Slot key={key} slotKey={key} item={findItem(key)} tooltipSide="left" mobileDir={idx < 3 ? 'down' : 'up'} setEffect={setEffect} characterJob={characterJob} showSetEffect={showSetEffect} />)}
           </div>
           <div className="flex flex-col gap-2">
             {['Cape', 'Gloves', 'Shoes', 'Medal', 'Heart', 'Badge'].map((key, idx) => <Slot key={key} slotKey={key} item={findItem(key)} tooltipSide="left" mobileDir={idx < 3 ? 'down' : 'up'} setEffect={setEffect} characterJob={characterJob} showSetEffect={showSetEffect} />)}

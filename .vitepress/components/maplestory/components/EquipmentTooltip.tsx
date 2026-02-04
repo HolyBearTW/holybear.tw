@@ -346,7 +346,11 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
       {/* Main Image */}
       <div className="p-4 flex justify-center border-b border-slate-600/50 bg-[#121418]/50 relative">
          <div className="relative z-10">
-            <img src={item.item_icon} alt={item.item_name} className="w-16 h-16 object-contain scale-110 drop-shadow-lg" />
+            <img 
+               src={item.item_icon} 
+               alt={item.item_name} 
+               className="w-16 h-16 object-contain scale-110 drop-shadow-lg" 
+            />
             <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-12 h-1 bg-black/50 blur-sm rounded-[50%]" />
          </div>
       </div>

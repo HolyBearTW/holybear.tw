@@ -130,6 +130,20 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
       item.item_equipment_slot === 'Weapon' || 
       item.item_equipment_slot === 'Sub Weapon' || 
       item.item_equipment_slot === 'Emblem' || 
+      
+      // TMS 特殊欄位 (官方 Slot 名稱)
+      item.item_equipment_slot === '馴服的怪物' || item.item_equipment_slot === 'Tamed Monster' || // Totem 1
+      item.item_equipment_slot === '馬鞍' || item.item_equipment_slot === 'Saddle' ||             // Totem 2
+      item.item_equipment_slot === '怪物裝備' || item.item_equipment_slot === 'Monster Equipment' || // Totem 3
+      
+      // 兼容可能出現的舊名稱或 API 變體
+      item.item_equipment_slot === 'Totem 1' || 
+      item.item_equipment_slot === 'Totem 2' ||
+      item.item_equipment_slot === 'Totem 3' ||
+      
+      item.item_name.includes('寶玉') || // 寶玉通常在 Pendant 欄位，靠名稱抓
+      item.item_name.includes('圖騰') || // 額外保險
+      
       parseInt(item.starforce) > 17 || 
       item.potential_option_grade === 'Legendary' ||
       item.item_name.includes('規範') || 
@@ -142,9 +156,15 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
       item.item_name.includes('永恆') ||
       item.item_name.includes('滅龍')
     )
-    .slice(0, 30) // 放寬數量限制，確保漆黑/塔戒等不被截斷
+    .slice(0, 40) // 放寬數量限制，確保能包含圖騰寶玉後不被截斷
     .map(item => {
-      let info = `[${item.item_equipment_slot}] ${item.item_name}`;
+      // 針對「寶玉」進行特殊顯示名稱處理，避免 AI 混淆
+      let displaySlot = item.item_equipment_slot;
+      if (item.item_name.includes('寶玉') && (displaySlot === 'Pendant' || displaySlot === '墜飾')) {
+         displaySlot = 'Gem'; // 強制改名為 Gem (寶玉)
+      }
+      
+      let info = `[${displaySlot}] ${item.item_name}`;
       
       // 1. 基本資訊 (星力/等級/塔戒)
       const baseDetails = [];
