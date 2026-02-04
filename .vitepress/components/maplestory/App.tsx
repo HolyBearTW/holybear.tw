@@ -104,6 +104,7 @@ const App: React.FC = () => {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [historyData, setHistoryData] = useState<any[]>([]);
   const [elapsedTime, setElapsedTime] = useState(0); // AI 分析計時器
+  const [progressMessage, setProgressMessage] = useState<string>(''); // AI 分析進度訊息
   const [dropRateWarningData, setDropRateWarningData] = useState<{ drop: number, meso: number } | null>(null);
   const initialSearchDone = useRef(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -294,13 +295,16 @@ const App: React.FC = () => {
     
     // Always clear warning data when starting a new analysis (whether forced or not)
     setDropRateWarningData(null);    
+    setProgressMessage('');
 
     setAnalyzing(true);
     setAiAnalysis(null);
     setError(null);
 
     try {
-      const result = await analyzeCharacter(data, keyToUse, geminiModel, ignoreWarnings);
+      const result = await analyzeCharacter(data, keyToUse, geminiModel, ignoreWarnings, (msg) => {
+          setProgressMessage(msg);
+      });
       
       if (result && result.startsWith('WARNING_DROP_RATE_TOO_HIGH')) {
         const [_, drop, meso] = result.split('|');
@@ -495,9 +499,9 @@ const App: React.FC = () => {
   };
 
   const getEstimatedWaitTime = (id: string) => {
-    if (id.includes('flash-preview')) return '15~30';
-    if (id.includes('flash')) return '15~30';
-    if (id.includes('pro')) return '30~60';
+    if (id.includes('flash-preview')) return '30~90';
+    if (id.includes('flash')) return '30~90';
+    if (id.includes('pro')) return '60~90';
     return '15~45';
   };
 
@@ -987,6 +991,11 @@ const App: React.FC = () => {
                       <Sparkles className="w-3 h-3" /> 
                       正在使用 {getModelDisplayName(geminiModel)}
                    </p>
+                   {progressMessage && (
+                       <p className="text-xs text-amber-400/80 mt-1 animate-pulse">
+                         {progressMessage}
+                       </p>
+                   )}
                    <p className="text-indigo-300/70 text-sm mt-3 font-mono bg-indigo-950/20 px-4 py-1.5 rounded-full border border-indigo-500/20">
                      已耗時: <span className="text-indigo-400 font-bold">{elapsedTime}</span> 秒 <span className="text-slate-600 mx-1">|</span> 預計等待: {getEstimatedWaitTime(geminiModel)} 秒
                    </p>

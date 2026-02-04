@@ -68,7 +68,7 @@ const extractTextFromChunk = (chunk: any): string => {
 };
 
 // UPDATE: 預設值改為 gemini-3-flash
-export const analyzeCharacter = async (data: DashboardData, apiKey: string, modelId: string = 'gemini-3-flash-preview', ignoreWarnings: boolean = false): Promise<string> => {
+export const analyzeCharacter = async (data: DashboardData, apiKey: string, modelId: string = 'gemini-3-flash-preview', ignoreWarnings: boolean = false, onProgress?: (msg: string) => void): Promise<string> => {
   if (!apiKey) {
     return "Gemini API Key is missing. Please provide a valid API Key.";
   }
@@ -440,10 +440,11 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
   for (const currentModel of modelsToTry) {
     try {
       console.log(`Trying Gemini Model: ${currentModel}`);
+      onProgress?.(`正在嘗試連線 ${currentModel.replace('gemini-', '')} 模型...`);
       
       // 根據模型調整超時時間：應使用者要求延長等待時間
-      // Preview 模型給予 60 秒，穩定版模型給予 90 秒
-      const TIMEOUT_MS = currentModel.includes('preview') ? 60000 : 90000;
+      // Preview 模型與穩定版模型皆統一給予 90 秒
+      const TIMEOUT_MS = 90000;
 
       // @ts-ignore
       const response = await withTimeout(
@@ -486,6 +487,8 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
       const cleanMsg = extractErrorMessage(error);
       console.warn(`Gemini Model (${currentModel}) failed: ${cleanMsg}`);
       
+      onProgress?.(`⚠️ ${currentModel.replace('gemini-', '')} 連線失敗/額度滿，正在切換備用模型...`);
+
       // === 關鍵邏輯：優先捕捉 429 錯誤 ===
       if (cleanMsg.includes('429') || cleanMsg.includes('Quota') || cleanMsg.includes('exhausted')) {
           quotaError = error; // 抓到了！這是最有價值的錯誤
