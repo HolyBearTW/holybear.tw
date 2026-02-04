@@ -202,12 +202,12 @@ const CashSlot: React.FC<{ label: string; item?: CashItemEquipmentPreset; toolti
                     hue={prism.hue} 
                     saturation={prism.saturation} 
                     value={prism.value} 
-                    className="w-8 h-8 sm:w-9 sm:h-9 object-contain z-10 bg-transparent"
+                    className="max-w-full max-h-full object-contain z-10 bg-transparent translate-x-[1px] translate-y-[1px]"
                 />
                 <img src="/image/theme/cashitem.png" alt="染色" className="absolute bottom-[3px] left-[3px] w-3 h-3 z-20" title="染色" />
               </>
             ) : (
-              <img src={item.cash_item_icon} alt={item.cash_item_name} className="w-8 h-8 sm:w-9 sm:h-9 object-contain z-10" />
+              <img src={item.cash_item_icon} alt={item.cash_item_name} className="max-w-full max-h-full object-contain z-10 translate-x-[1px] translate-y-[1px]" />
             )}
           </>
         ) : (
