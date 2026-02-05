@@ -8,6 +8,7 @@ interface PresetSwitcherProps {
   label?: string;
   showBase?: boolean; // 新增控制開關：是否顯示 0
   extraControls?: React.ReactNode;
+  className?: string;
 }
 
 const PresetSwitcher: React.FC<PresetSwitcherProps> = ({ 
@@ -16,7 +17,8 @@ const PresetSwitcher: React.FC<PresetSwitcherProps> = ({
   activePresetNo,
   label = "預設",
   showBase = false, // 預設不顯示 0，只有時裝才開啟
-  extraControls
+  extraControls,
+  className = ''
 }) => {
   const activeNum = activePresetNo ? parseInt(String(activePresetNo)) : 0;
   
@@ -24,27 +26,39 @@ const PresetSwitcher: React.FC<PresetSwitcherProps> = ({
   const buttons = showBase ? [0, 1, 2, 3] : [1, 2, 3];
 
   return (
-    <div className="flex flex-col gap-2 mb-4 bg-slate-900/50 p-3 rounded-lg border border-slate-700/50">
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <span className="text-sm font-bold text-slate-300 flex items-center gap-2">
-          {label}切換
-          {activeNum > 0 && (
-            <span className="text-[10px] bg-green-900/40 text-green-400 px-2 py-0.5 rounded border border-green-800 flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-              生效中: 預設 {activeNum}
-            </span>
-          )}
-          {extraControls}
-        </span>
+    <div className={`flex flex-col gap-2 mb-4 bg-slate-900/50 p-3 rounded-lg border border-slate-700/50 ${className}`}>
+      <div className="flex justify-between items-center gap-1">
         
-        <div className="flex items-center gap-3">
-          <div className="flex gap-1">
+        {/* Left Side: Label and Badge/Extra */}
+        <div className="flex items-center gap-2 min-w-0">
+            {/* Label */}
+            <span className="text-sm font-bold text-slate-300 whitespace-nowrap">{label}切換</span>
+            
+            {/* Column: Badge + Extra */}
+            <div className="flex flex-col gap-1 items-start min-w-0">
+               {/* Badge Row */}
+               <div className="flex items-center">
+                  {activeNum > 0 ? (
+                    <span className="text-[10px] leading-none bg-green-900/40 text-green-400 px-2 py-0.5 rounded border border-green-800 flex items-center gap-1 whitespace-nowrap">
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shrink-0"></span>
+                        <span>生效中: 預設 {activeNum}</span>
+                    </span>
+                  ) : null}
+               </div>
+
+               {/* Extra Controls */}
+               {extraControls && <div>{extraControls}</div>}
+            </div>
+        </div>
+
+        {/* Right Side: Buttons */}
+        <div className="flex gap-1 shrink-0 ml-auto pl-1">
             {buttons.map((num) => (
               <button
                 key={num}
                 onClick={() => onPresetChange(num)}
                 className={`
-                  w-8 h-8 rounded-md text-sm font-bold transition-all flex items-center justify-center relative
+                  w-8 h-8 rounded-md text-sm font-bold transition-all flex items-center justify-center relative flex-shrink-0
                   ${currentPreset === num 
                     ? 'bg-indigo-600 text-white shadow-[0_0_10px_rgba(79,70,229,0.4)] border border-indigo-400' 
                     : 'bg-slate-800 text-slate-500 hover:bg-slate-700 hover:text-slate-300 border border-slate-700'}
@@ -61,7 +75,6 @@ const PresetSwitcher: React.FC<PresetSwitcherProps> = ({
                 )}
               </button>
             ))}
-          </div>
         </div>
       </div>
       

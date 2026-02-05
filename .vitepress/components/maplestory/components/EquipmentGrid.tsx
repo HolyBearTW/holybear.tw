@@ -364,6 +364,7 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, setEffect, cha
         activePresetNo={activePresetNo}
         label="裝備預設"
         showBase={false}
+        className="-mx-3 sm:mx-0"
         extraControls={
           <button 
              onClick={() => setShowSetEffect(!showSetEffect)} 

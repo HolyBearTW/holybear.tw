@@ -339,6 +339,7 @@ const CashEquipmentGrid: React.FC<CashEquipmentGridProps> = ({ cashEquipment, be
         label="時裝預設"
         showBase={true}
         baseLabel={"0"}
+        className="-mx-3 sm:mx-0"
       />
       
       <div className="flex justify-center gap-6 mt-4">
