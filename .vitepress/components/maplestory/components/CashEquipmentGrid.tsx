@@ -363,6 +363,16 @@ const CashEquipmentGrid: React.FC<CashEquipmentGridProps> = ({ cashEquipment, be
 
   const rings = findAllByKeywords(['戒指', 'Ring']);
 
+  const showAdditionalBeauty = 
+    beautyEquipment?.additional_character_hair?.hair_name && 
+    (
+      beautyEquipment?.character_class?.includes('神之子') || 
+      beautyEquipment?.character_class?.includes('天使破壞者') || 
+      beautyEquipment?.additional_character_hair?.hair_name !== beautyEquipment?.character_hair?.hair_name ||
+      beautyEquipment?.additional_character_face?.face_name !== beautyEquipment?.character_face?.face_name ||
+      beautyEquipment?.additional_character_skin?.skin_name !== beautyEquipment?.character_skin?.skin_name
+    );
+
   return (
     <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner relative mt-4">
       <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
@@ -412,21 +422,21 @@ const CashEquipmentGrid: React.FC<CashEquipmentGridProps> = ({ cashEquipment, be
             <div className="flex flex-col gap-2 mt-12 relative z-20 items-center">
                 <div className="flex gap-2">
                    <BeautySlot 
-                      label={beautyEquipment?.additional_character_hair ? (beautyEquipment?.character_class?.includes('神之子') ? "髮型 (Alpha)" : "髮型 (一般)") : "髮型"} 
+                      label={showAdditionalBeauty ? (beautyEquipment?.character_class?.includes('神之子') ? "髮型 (Alpha)" : "髮型 (一般)") : "髮型"} 
                       name={beautyEquipment?.character_hair?.hair_name} 
                       baseColor={beautyEquipment?.character_hair?.base_color}
                       mixColor={beautyEquipment?.character_hair?.mix_color}
                       mixRate={beautyEquipment?.character_hair?.mix_rate}
                    />
                    <BeautySlot 
-                      label={beautyEquipment?.additional_character_hair ? (beautyEquipment?.character_class?.includes('神之子') ? "臉型 (Alpha)" : "臉型 (一般)") : "臉型"} 
+                      label={showAdditionalBeauty ? (beautyEquipment?.character_class?.includes('神之子') ? "臉型 (Alpha)" : "臉型 (一般)") : "臉型"} 
                       name={beautyEquipment?.character_face?.face_name} 
                       baseColor={beautyEquipment?.character_face?.base_color}
                       mixColor={beautyEquipment?.character_face?.mix_color}
                       mixRate={beautyEquipment?.character_face?.mix_rate}
                    />
                    <BeautySlot 
-                      label={beautyEquipment?.additional_character_hair ? (beautyEquipment?.character_class?.includes('神之子') ? "皮膚 (Alpha)" : "皮膚 (一般)") : "皮膚"} 
+                      label={showAdditionalBeauty ? (beautyEquipment?.character_class?.includes('神之子') ? "皮膚 (Alpha)" : "皮膚 (一般)") : "皮膚"} 
                       name={beautyEquipment?.character_skin?.skin_name} 
                       baseColor={beautyEquipment?.character_skin?.color_style} 
                       hue={beautyEquipment?.character_skin?.hue}
@@ -435,7 +445,7 @@ const CashEquipmentGrid: React.FC<CashEquipmentGridProps> = ({ cashEquipment, be
                    />
                 </div>
 
-                {beautyEquipment?.additional_character_hair && (
+                {showAdditionalBeauty && (
                     <div className="flex gap-2 opacity-90">
                        <BeautySlot 
                           label={beautyEquipment?.character_class?.includes('神之子') ? "髮型 (Beta)" : "髮型 (變裝)"} 
