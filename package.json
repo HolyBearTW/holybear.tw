@@ -15,7 +15,7 @@
     "vue": "^3.5.27"
   },
   "dependencies": {
-    "@google/genai": "^1.39.0",
+    "@google/generative-ai": "^0.24.1",
     "animejs": "^4.3.5",
     "autoprefixer": "^10.4.24",
     "chart.js": "^4.5.1",

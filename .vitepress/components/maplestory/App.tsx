@@ -306,6 +306,8 @@ const App: React.FC = () => {
           setProgressMessage(msg);
       });
       
+      console.log("[App.tsx] Analyze Result Received (Length):", result?.length);
+
       if (result && result.startsWith('WARNING_DROP_RATE_TOO_HIGH')) {
         const [_, drop, meso] = result.split('|');
         setDropRateWarningData({ 
@@ -316,14 +318,19 @@ const App: React.FC = () => {
         return;
       }
 
+      // 檢查是否為 Gemini Service 回傳的特定錯誤訊息
       const isQuotaError = result && (
         result.includes('Rate Limit Exceeded') || 
-        result.includes('429') || 
         result.includes('Resource has been exhausted') ||
         result.includes('Quota exceeded')
       );
 
-      if (isQuotaError) {
+      // 只有當回傳的「錯誤訊息」真的很短時，才去檢查 '429' 關鍵字
+      // 避免因為分析內容 (如戰鬥力數值) 剛好包含 '429' 而導致誤判
+      // 正常的分析報告長度通常 > 1000
+      const isShortErrorWith429 = result && result.length < 500 && result.includes('429');
+
+      if (isQuotaError || isShortErrorWith429) {
         setError('⚠️ **AI 額度已達上限 (Rate Limit Exceeded)**\n\nAI 額度暫時耗盡。請點擊下方的「**設定模型 / API Key**」按鈕，填入或更換另一組您自己的 Google Gemini API Key 即可繼續免費使用。\n\n👉 [取得免費 API Key (Google AI Studio)](https://aistudio.google.com/app/apikey)');
         setAiAnalysis(null);
       } else if (!result || result.startsWith('AI Analysis Failed:')) {
@@ -1121,7 +1128,7 @@ const App: React.FC = () => {
                   {showUpdateLog ? <ChevronUp className="w-4 h-4 ml-2 opacity-70" /> : <ChevronDown className="w-4 h-4 ml-2 opacity-70" />}
                 </div>
                 <ul className="list-disc pl-5 text-sm space-y-1 mt-3 animate-in fade-in slide-in-from-top-1">
-                  {[
+                  {[                
                     { date: '2026/02/05', content: '將圖騰、武器、副武器、能源、寶玉的 Tooltip 全部設為顯示在左側。' },
                     { date: '2026/02/05', content: '修正裝備 Tooltip 在視窗邊緣溢出的問題，並修正滑鼠懸浮與點擊時位置不一致的異常。' },
                     { date: '2026/02/04', content: '新增圖騰與寶玉裝備欄位並加入 AI 判斷範圍，並改善 AI 分析戰力時的判斷方式；新增顯示裝備套裝效果選項，可自由顯示或隱藏套裝詳細屬性；改善分析角色時的掉寶率警告機制，可選擇忽略警告並繼續分析。' },                  

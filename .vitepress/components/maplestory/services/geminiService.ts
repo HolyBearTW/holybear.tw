@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { DashboardData } from "../types";
 
 // === Helper: 錯誤訊息美化 ===
@@ -53,7 +53,7 @@ const extractTextFromChunk = (chunk: any): string => {
     if (typeof chunk.text === 'function') {
       return chunk.text();
     }
-    // 2. 其次嘗試直接屬性 (若是字串 - 新版 SDK / @google/genai)
+    // 2. 其次嘗試直接屬性
     if (typeof chunk.text === 'string') {
       return chunk.text;
     }
@@ -207,6 +207,7 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
        - (X) Ignore Defense -> (O) 無視防禦
        - (X) Boss Damage -> (O) BOSS傷害
        - (X) Pitch Boss -> (O) 漆黑BOSS
+       - **塔戒 (Seed Ring) 命名規範：** **禁止使用縮寫（如 RoR4, WJ4）**。請務必使用完整中文名稱 (例如：規範戒指 Lv4、武器泡泡 Lv4)。
     3. **禁止晶晶體：** 除非是常見縮寫 (如 ARC, AUT)，否則請勿中英夾雜。
 
     --- 【當前遊戲環境設定 (Meta Context)】 ---
@@ -219,9 +220,13 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
        }
 
     0-1. **【特例檢測】職業強度修正 (Class Balance Adjustment)：**
-       **「陰陽師 (Kanna)」、「劍豪 (Hayato)」、「墨玄 (Mo Xuan)」** 為現行版本 **T0 級別強勢職業**。
+       **「陰陽師 (Kanna)」、「劍豪 (Hayato)」、「墨玄 (Mo Xuan)」、「琳恩 (Lynn)」** 為現行版本 **T0 級別強勢職業**。
        - 由於技能倍率/機制過於強大，**請適度下調其戰力檢核標準 (Combat Power Standard)**。 
        - 意即：即便戰力稍低於上述「BOSS 單人通關最低戰力需求表」或「評級標準」，仍可判定為達標/通關。
+
+       **【注意】關於「蓮」的職業識別：**
+       - 如果看到職業欄位顯示 **「蓮」**，這就是新職業。
+       - **絕對不是** 劍豪 (Hayato)、也不是阿戴爾、琳恩或幻獸師。請務必將「蓮」正確識別。
 
     1. **武器/能源階級：** 認定「命運武器」為目前最強武器；「米特拉的憤怒」為目前最強能源（漆黑裝備），其次是「創世武器 (Genesis)」，再來是「神秘冥界 (Arcane)」。
        * **重要規則：** **創世/命運武器是固定素質，無法強化 (卷軸/星力)，僅能洗潛能、附加潛能以及星火和靈魂寶珠。** 請勿因其未衝卷或星力低而給予負評。
@@ -427,7 +432,7 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
   // 新增：伺服器過載標記
   let serverOverloadedError: any = null;
 
-  const ai = new GoogleGenAI({ apiKey });
+  // const ai = new GoogleGenAI({ apiKey }); // Removed to fix hidden error
 
   // Helper: 帶超時的 Promise Wrapper
   const withTimeout = (promise: Promise<any>, ms: number, modelName: string) => {
@@ -442,25 +447,31 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
       console.log(`Trying Gemini Model: ${currentModel}`);
       onProgress?.(`正在嘗試連線 ${currentModel.replace('gemini-', '')} 模型...`);
       
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({ 
+        model: currentModel,
+        safetySettings: [
+            { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+        ]
+      });
+
       // 根據模型調整超時時間：應使用者要求延長等待時間
       // Preview 模型與穩定版模型皆統一給予 90 秒
       const TIMEOUT_MS = 90000;
+      
+      const generationConfig = {
+          maxOutputTokens: 16384, // 增加 Token 上限以避免截斷 (原 8192)
+          temperature: 0.7,
+      };
 
       // @ts-ignore
-      const response = await withTimeout(
-        ai.models.generateContentStream({
-            model: currentModel,
+      const result = await withTimeout(
+        model.generateContentStream({
             contents: [{ role: 'user', parts: [{ text: prompt }] }],
-            config: {
-                maxOutputTokens: 16384, // 增加 Token 上限以避免截斷 (原 8192)
-                temperature: 0.7,
-                safetySettings: [
-                    { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
-                    { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
-                    { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
-                    { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
-                ]
-            }
+            generationConfig
         }), 
         TIMEOUT_MS, 
         currentModel
@@ -468,12 +479,14 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
       
       let fullText = '';
       
-      // 兼容性修正：檢查 response 是否有 .stream 屬性，若無則視 response 本身為 AsyncIterable (適配 @google/genai 新版 SDK)
-      // @ts-ignore
-      const stream = response.stream || response;
-
-      for await (const chunk of stream) {
-        const chunkText = extractTextFromChunk(chunk);
+      for await (const chunk of result.stream) {
+        let chunkText = '';
+        try {
+            chunkText = chunk.text();
+        } catch (e) { 
+            // 某些 Block 情況下 text() 會噴錯
+        }
+        
         if (chunkText) {
           fullText += chunkText;
         }
@@ -485,7 +498,13 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
 
     } catch (error: any) {
       const cleanMsg = extractErrorMessage(error);
-      console.warn(`Gemini Model (${currentModel}) failed: ${cleanMsg}`);
+      
+      // 使用 console.error 確保在控制台顯示紅色錯誤 (使用者可能過濾了 warn)
+      console.error(`[Gemini Error] Model: ${currentModel} Failed`);
+      console.error(`[Gemini Error] Details: ${cleanMsg}`);
+      console.error('--- RAW ERROR OBJECT ---');
+      console.dir(error); 
+      console.error('------------------------');
       
       onProgress?.(`⚠️ ${currentModel.replace('gemini-', '')} 連線失敗/額度滿，正在切換備用模型...`);
 
@@ -497,6 +516,9 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
       }
       
       lastError = error;
+      
+      // 等待1秒再試下一個
+      await new Promise(r => setTimeout(r, 1000));
     }
   }
 

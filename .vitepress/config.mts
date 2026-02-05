@@ -68,8 +68,7 @@ const config = defineConfig({
                 'react-dom/client',
                 'lucide-react',
                 'markdown-it',
-                'recharts',
-                '@google/genai'
+                'recharts'
             ],
         },
         server: {
