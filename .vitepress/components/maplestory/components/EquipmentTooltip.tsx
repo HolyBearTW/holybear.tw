@@ -212,7 +212,7 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
 
       //七曜, etc.
       if (setName.includes('七曜')) {
-          if (['七曜', '七日的胸章', '怪物公園'].some(k => itemName.includes(k))) return true;
+          if (['七曜', '七日的胸章', '七日怪物公園看守者'].some(k => itemName.includes(k))) return true;
       }
 
       // Pitch Boss (漆黑BOSS)
