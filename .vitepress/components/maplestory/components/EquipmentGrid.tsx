@@ -402,15 +402,15 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, setEffect, cha
          {/* Weapon Row */}
          <div className="flex flex-col gap-2 items-center w-full">
             <div className="flex gap-2">
-               <Slot slotKey="Weapon" item={findItem('Weapon')} tooltipSide="right" mobileDir="up" setEffect={setEffect} characterJob={characterJob} showSetEffect={showSetEffect} />
-               <Slot slotKey="Secondary" item={findItem('Secondary')} tooltipSide="right" mobileDir="up" setEffect={setEffect} characterJob={characterJob} showSetEffect={showSetEffect} />
+               <Slot slotKey="Weapon" item={findItem('Weapon')} tooltipSide="left" mobileDir="up" setEffect={setEffect} characterJob={characterJob} showSetEffect={showSetEffect} />
+               <Slot slotKey="Secondary" item={findItem('Secondary')} tooltipSide="left" mobileDir="up" setEffect={setEffect} characterJob={characterJob} showSetEffect={showSetEffect} />
                <Slot slotKey="Emblem" item={findItem('Emblem')} tooltipSide="left" mobileDir="up" setEffect={setEffect} characterJob={characterJob} showSetEffect={showSetEffect} />
             </div>
             {/* Totem/Gem Row */}
             <div className="flex gap-2">
-               <Slot slotKey="Totem1" item={findItem('Totem1')} tooltipSide="right" mobileDir="up" setEffect={setEffect} characterJob={characterJob} showSetEffect={showSetEffect} />
-               <Slot slotKey="Totem2" item={findItem('Totem2')} tooltipSide="right" mobileDir="up" setEffect={setEffect} characterJob={characterJob} showSetEffect={showSetEffect} />
-               <Slot slotKey="Totem3" item={findItem('Totem3')} tooltipSide="right" mobileDir="up" setEffect={setEffect} characterJob={characterJob} showSetEffect={showSetEffect} />
+               <Slot slotKey="Totem1" item={findItem('Totem1')} tooltipSide="left" mobileDir="up" setEffect={setEffect} characterJob={characterJob} showSetEffect={showSetEffect} />
+               <Slot slotKey="Totem2" item={findItem('Totem2')} tooltipSide="left" mobileDir="up" setEffect={setEffect} characterJob={characterJob} showSetEffect={showSetEffect} />
+               <Slot slotKey="Totem3" item={findItem('Totem3')} tooltipSide="left" mobileDir="up" setEffect={setEffect} characterJob={characterJob} showSetEffect={showSetEffect} />
             </div>
          </div>
       </div>
