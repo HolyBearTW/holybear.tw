@@ -189,7 +189,7 @@ const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'lef
   return (
     <div 
       ref={containerRef}
-      className={`relative z-0 group ${isOpen ? 'z-[100]' : 'hover:z-50'} !transform-none !transition-none !translate-y-0 !m-0`}
+      className={`relative group ${showTooltip ? 'z-[100]' : 'z-0'} !transform-none !transition-none !translate-y-0 !m-0`}
       onClick={() => setIsOpen(!isOpen)}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
