@@ -106,6 +106,7 @@ const resolveItemIcon = (item: EquipmentItem | undefined, slotKey: string): stri
 const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'left' | 'right'; mobileDir?: 'up' | 'down'; setEffect?: CharacterSetEffect; characterJob?: string; showSetEffect?: boolean }> = ({ slotKey, item, tooltipSide = 'left', mobileDir = 'down', setEffect, characterJob, showSetEffect }) => {
   const def = SLOT_DEFINITIONS[slotKey];
   const [isOpen, setIsOpen] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [adjustStyle, setAdjustStyle] = useState<React.CSSProperties>({});
@@ -126,15 +127,28 @@ const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'lef
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
 
+  const showTooltip = isOpen || isHovered;
+
   // Smart Tooltip Positioning
   useLayoutEffect(() => {
-    if (isOpen && tooltipRef.current) {
+    if (showTooltip && tooltipRef.current) {
+        // Tailwind md breakpoint is 768px.
+        // The side-positioning logic (md:right-full etc) is generally safe on desktop.
+        // This adjustment logic assumes centered positioning, which conflicts with side positioning.
+        // So we disable it on desktop.
+        // HOWEVER, if the user reports difference between clicl/hover, we must ensure logic runs consistently.
+        const vw = Math.min(window.innerWidth, document.documentElement.clientWidth || window.innerWidth);
+        if (vw >= 768) {
+             setAdjustStyle({});
+             return;
+        }
+
         const tooltipEl = tooltipRef.current;
         const parentEl = tooltipEl.parentElement;
         if (parentEl) {
             const parentRect = parentEl.getBoundingClientRect();
             const tooltipWidth = tooltipEl.getBoundingClientRect().width;
-            const vw = Math.min(window.innerWidth, document.documentElement.clientWidth || window.innerWidth);
+            
             const padding = 10; 
             const parentCenter = parentRect.left + parentRect.width / 2;
             const currentLeft = parentCenter - tooltipWidth / 2;
@@ -146,7 +160,7 @@ const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'lef
             else setAdjustStyle({});
         }
     }
-  }, [isOpen]);
+  }, [showTooltip]);
   
   if (!def) return <div className="w-10 h-10 sm:w-12 sm:h-12 invisible flex-shrink-0" />;
 
@@ -168,13 +182,17 @@ const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'lef
   }
 
   const desktopPositionClass = tooltipSide === 'left' ? 'md:right-full md:mr-1 md:left-auto' : 'md:left-full md:ml-1 md:right-auto';
-  const mobilePositionClass = mobileDir === 'up' ? 'bottom-full mb-2 md:bottom-auto md:mb-0' : 'top-full mt-2 md:mt-0';
+  // If item is in bottom section (mobileDir='up'), align bottom edges on desktop too (md:bottom-0). Otherwise align tops (md:top-0).
+  const desktopVerticalClass = mobileDir === 'up' ? 'md:bottom-0 md:top-auto md:mb-0' : 'md:top-0 md:bottom-auto md:mt-0';
+  const mobilePositionClass = mobileDir === 'up' ? 'bottom-full mb-2' : 'top-full mt-2';
 
   return (
     <div 
       ref={containerRef}
       className={`relative z-0 group ${isOpen ? 'z-[100]' : 'hover:z-50'} !transform-none !transition-none !translate-y-0 !m-0`}
       onClick={() => setIsOpen(!isOpen)}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       <div className={`w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0 ${bgColor} border-2 ${borderColor} rounded-md flex items-center justify-center relative overflow-hidden ${glow}`}>
         {item ? (
@@ -199,10 +217,11 @@ const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'lef
         <div 
             ref={tooltipRef}
             style={adjustStyle}
+            // Use showTooltip state instead of group-hover:block to ensure JS positioning logic runs consistently
             className={`absolute left-1/2 -translate-x-1/2 z-[200] w-[300px] max-w-[90vw]
-                        ${isOpen ? 'block' : 'hidden group-hover:block'} animate-in fade-in duration-200 shadow-2xl rounded-xl
+                        ${showTooltip ? 'block' : 'hidden'} animate-in fade-in duration-200 shadow-2xl rounded-xl
                         ${mobilePositionClass}
-                        md:absolute md:top-0 ${desktopPositionClass} md:translate-y-0 md:translate-x-0 md:w-[300px] md:max-h-none md:overflow-visible`}
+                        md:absolute ${desktopVerticalClass} ${desktopPositionClass} md:translate-y-0 md:translate-x-0 md:w-[300px] md:max-h-none md:overflow-visible`}
         >
            <EquipmentTooltip item={displayItem} setEffect={setEffect} characterJob={characterJob} slotType={slotKey} showSetEffect={showSetEffect} />
         </div>
