@@ -24,9 +24,21 @@ const BeautySlot: React.FC<BeautySlotProps> = ({ label, name, baseColor, mixColo
   const [isOpen, setIsOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const tooltipRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [adjustStyle, setAdjustStyle] = useState<React.CSSProperties>({}); // 防止超出螢幕
 
   const showTooltip = isOpen || isHovered;
+
+  // Click Outside Listener
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (isOpen && containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen]);
 
   // 智慧定位：確保 Tooltip 不會超出左右邊界 (透過 left 修正中心點，保留 transform 動畫)
   useLayoutEffect(() => {
@@ -80,6 +92,7 @@ const BeautySlot: React.FC<BeautySlotProps> = ({ label, name, baseColor, mixColo
 
   return (
     <div 
+      ref={containerRef}
       className={`relative group ${showTooltip ? 'z-[100]' : 'z-0'}`}
     >
       <div 
@@ -143,9 +156,21 @@ const CashSlot: React.FC<{ label: string; item?: CashItemEquipmentPreset; toolti
   const [isOpen, setIsOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const tooltipRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [adjustStyle, setAdjustStyle] = useState<React.CSSProperties>({}); // 防止超出螢幕
 
   const showTooltip = isOpen || isHovered;
+
+  // Click Outside Listener
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (isOpen && containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen]);
 
   // 智慧定位：確保 Tooltip 不會超出左右邊界 (透過 left 修正中心點，保留 transform 動畫)
   useLayoutEffect(() => {
@@ -196,6 +221,7 @@ const CashSlot: React.FC<{ label: string; item?: CashItemEquipmentPreset; toolti
 
   return (
     <div 
+      ref={containerRef}
       className={`relative group ${showTooltip ? 'z-[100]' : 'z-0'}`}
     >
       {/* 1. 格子本體 (Slot) */}
