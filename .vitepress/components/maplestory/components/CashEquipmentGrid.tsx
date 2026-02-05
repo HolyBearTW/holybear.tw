@@ -22,12 +22,15 @@ interface BeautySlotProps {
 
 const BeautySlot: React.FC<BeautySlotProps> = ({ label, name, baseColor, mixColor, mixRate, hue, saturation, brightness }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const [adjustStyle, setAdjustStyle] = useState<React.CSSProperties>({}); // 防止超出螢幕
 
+  const showTooltip = isOpen || isHovered;
+
   // 智慧定位：確保 Tooltip 不會超出左右邊界 (透過 left 修正中心點，保留 transform 動畫)
   useLayoutEffect(() => {
-    if (isOpen && tooltipRef.current) {
+    if (showTooltip && tooltipRef.current) {
         const tooltipEl = tooltipRef.current;
         const parentEl = tooltipEl.parentElement;
         
@@ -77,11 +80,14 @@ const BeautySlot: React.FC<BeautySlotProps> = ({ label, name, baseColor, mixColo
 
   return (
     <div 
-      className={`relative group ${isOpen ? 'z-[100]' : 'z-0 hover:z-50'}`}
-      onClick={() => setIsOpen(!isOpen)}
-      onMouseLeave={() => setIsOpen(false)}
+      className={`relative group ${showTooltip ? 'z-[100]' : 'z-0'}`}
     >
-      <div className={`w-10 h-10 sm:w-12 sm:h-12 bg-[#1a1d24] border-2 ${name ? 'border-pink-500/50' : 'border-slate-800'} rounded-md flex flex-col items-center justify-center relative overflow-hidden transition-all p-1`}>
+      <div 
+        className={`w-10 h-10 sm:w-12 sm:h-12 bg-[#1a1d24] border-2 ${name ? 'border-pink-500/50' : 'border-slate-800'} rounded-md flex flex-col items-center justify-center relative overflow-hidden transition-all p-1 cursor-pointer`}
+        onClick={(e) => { e.stopPropagation(); setIsOpen(!isOpen); }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
         {iconSrc ? (
            <img 
              src={iconSrc} 
@@ -103,7 +109,7 @@ const BeautySlot: React.FC<BeautySlotProps> = ({ label, name, baseColor, mixColo
         <div 
             ref={tooltipRef}
             style={adjustStyle}
-            className={`absolute left-1/2 -translate-x-1/2 z-[200] w-[180px] animate-in fade-in duration-100 ${isOpen ? 'block' : 'hidden group-hover:block'}
+            className={`absolute left-1/2 -translate-x-1/2 z-[200] w-[180px] animate-in fade-in duration-100 ${showTooltip ? 'block' : 'hidden'}
                         ${mobileTooltipClass} bottom-auto`}
         >
            <div className="bg-[#1a1d24]/95 backdrop-blur-md border border-pink-500/30 rounded-lg shadow-xl p-3 text-center">
@@ -135,12 +141,15 @@ const BeautySlot: React.FC<BeautySlotProps> = ({ label, name, baseColor, mixColo
 
 const CashSlot: React.FC<{ label: string; item?: CashItemEquipmentPreset; tooltipSide?: 'left' | 'right'; mobileDir?: 'up' | 'down' }> = ({ label, item, tooltipSide = 'left', mobileDir = 'down' }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const [adjustStyle, setAdjustStyle] = useState<React.CSSProperties>({}); // 防止超出螢幕
 
+  const showTooltip = isOpen || isHovered;
+
   // 智慧定位：確保 Tooltip 不會超出左右邊界 (透過 left 修正中心點，保留 transform 動畫)
   useLayoutEffect(() => {
-    if (isOpen && tooltipRef.current) {
+    if (showTooltip && tooltipRef.current) {
         const tooltipEl = tooltipRef.current;
         const parentEl = tooltipEl.parentElement;
         
@@ -187,12 +196,15 @@ const CashSlot: React.FC<{ label: string; item?: CashItemEquipmentPreset; toolti
 
   return (
     <div 
-      className={`relative group ${isOpen ? 'z-[100]' : 'z-0 hover:z-50'}`}
-      onClick={() => setIsOpen(!isOpen)}
-      onMouseLeave={() => setIsOpen(false)}
+      className={`relative group ${showTooltip ? 'z-[100]' : 'z-0'}`}
     >
       {/* 1. 格子本體 (Slot) */}
-      <div className={`w-10 h-10 sm:w-12 sm:h-12 bg-[#1a1d24] border-2 ${item ? 'border-pink-500/50' : 'border-slate-800'} rounded-md flex items-center justify-center relative overflow-hidden transition-all`}>
+      <div 
+        className={`w-10 h-10 sm:w-12 sm:h-12 bg-[#1a1d24] border-2 ${item ? 'border-pink-500/50' : 'border-slate-800'} rounded-md flex items-center justify-center relative overflow-hidden transition-all cursor-pointer`}
+        onClick={(e) => { e.stopPropagation(); setIsOpen(!isOpen); }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
         {item ? (
           <>
             {hasPrism ? (
@@ -221,7 +233,7 @@ const CashSlot: React.FC<{ label: string; item?: CashItemEquipmentPreset; toolti
             ref={tooltipRef}
             style={adjustStyle}
             className={`absolute left-1/2 -translate-x-1/2 z-[200] w-[200px] 
-                        ${isOpen ? 'block' : 'hidden group-hover:block'} animate-in fade-in zoom-in-95 duration-200
+                        ${showTooltip ? 'block' : 'hidden'} animate-in fade-in zoom-in-95 duration-200
                         ${mobilePositionClass}
                         md:absolute md:top-0 ${desktopPositionClass} md:translate-y-0 md:translate-x-0 md:mt-0 md:zoom-in-100`}
         >
