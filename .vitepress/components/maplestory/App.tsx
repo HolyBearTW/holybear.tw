@@ -506,9 +506,9 @@ const App: React.FC = () => {
   };
 
   const getEstimatedWaitTime = (id: string) => {
-    if (id.includes('flash-preview')) return '30~90';
-    if (id.includes('flash')) return '30~90';
-    if (id.includes('pro')) return '60~90';
+    if (id.includes('flash-preview')) return '30~120';
+    if (id.includes('flash')) return '30~120';
+    if (id.includes('pro')) return '60~120';
     return '15~45';
   };
 

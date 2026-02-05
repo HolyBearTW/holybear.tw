@@ -251,6 +251,10 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
          * **主屬性 Lv.8+** 已屬頂尖運氣/重金打造。
          * 分析時請勿因為屬性核心未滿級而給予負面評價。
        - **五轉 (V 矩陣)：** 單顆核心滿等 25 級。若看到 V 矩陣核心等級較低，可能是新練的核心，或是額外的技能點，請優先依據「六轉技能」是否存在來判斷機體強度。
+       - **聯盟神器 (Union Artifact)：** **請注意「神器等級」滿等並非 Lv.50 (50等僅為單顆水晶上限)。** 
+         * 玩家的神器等級通常會隨著水晶數量與等級加總而更高 (例如 Lv.60+)。
+         * **切勿看到 Lv.40~50 就判定為滿等**；該等級僅屬中階水準。
+
     5. **台版特色：** 分析時請務必考量 TMS 特有道具（如：天上的氣息、MX-131、黑翼胸章、女武神之心、培羅德套裝）以及高階卷軸（星彩卷、黑卷、救世卷、命運卷、V卷）與星力（22星為高標）的加成影響。
     6. **評分標準 (C級 ~ SSS+級 / 突破制評分)：** 
        請嚴格根據「面板戰鬥力 (Combat Power)」進行分級，**切勿自行腦補「有效戰力」而將分數打過高**。
@@ -463,8 +467,8 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
       });
 
       // 根據模型調整超時時間：應使用者要求延長等待時間
-      // Preview 模型與穩定版模型皆統一給予 90 秒
-      const TIMEOUT_MS = 90000;
+      // Preview 模型與穩定版模型皆統一給予 180 秒 (3分鐘) 以避免 3.0 模型思考過久導致 Timeout
+      const TIMEOUT_MS = 180000;
       
       const generationConfig = {
           maxOutputTokens: 16384, // 增加 Token 上限以避免截斷 (原 8192)
