@@ -182,8 +182,8 @@ const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'lef
   }
 
   const desktopPositionClass = tooltipSide === 'left' ? 'md:right-full md:mr-1 md:left-auto' : 'md:left-full md:ml-1 md:right-auto';
-  // If item is in bottom section (mobileDir='up'), align bottom edges on desktop too (md:bottom-0). Otherwise align tops (md:top-0).
-  const desktopVerticalClass = mobileDir === 'up' ? 'md:bottom-0 md:top-auto md:mb-0' : 'md:top-0 md:bottom-auto md:mt-0';
+  // Use centered vertical alignment for desktop to handle long tooltips nicely as requested
+  const desktopVerticalClass = 'md:top-1/2 md:-translate-y-1/2 md:bottom-auto md:mt-0 md:mb-0';
   const mobilePositionClass = mobileDir === 'up' ? 'bottom-full mb-2' : 'top-full mt-2';
 
   return (
@@ -221,7 +221,7 @@ const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'lef
             className={`absolute left-1/2 -translate-x-1/2 z-[200] w-[300px] max-w-[90vw]
                         ${showTooltip ? 'block' : 'hidden'} animate-in fade-in duration-200 shadow-2xl rounded-xl
                         ${mobilePositionClass}
-                        md:absolute ${desktopVerticalClass} ${desktopPositionClass} md:translate-y-0 md:translate-x-0 md:w-[300px] md:max-h-none md:overflow-visible`}
+                        md:absolute ${desktopVerticalClass} ${desktopPositionClass} md:translate-x-0 md:w-[300px] md:max-h-none md:overflow-visible`}
         >
            <EquipmentTooltip item={displayItem} setEffect={setEffect} characterJob={characterJob} slotType={slotKey} showSetEffect={showSetEffect} />
         </div>
