@@ -212,7 +212,7 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
 
       //七曜, etc.
       if (setName.includes('七曜')) {
-          if (['七曜', '怪物公園'].some(k => itemName.includes(k))) return true;
+          if (['七曜', '七日的胸章', '怪物公園'].some(k => itemName.includes(k))) return true;
       }
 
       // Pitch Boss (漆黑BOSS)
@@ -220,6 +220,14 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
           const keywords = [
              '米特拉的憤怒', '創世的胸章', '夢幻的腰帶', '巨大的恐怖', '苦痛的根源', 
              '全面控制', '黑心', '魔導書', '指揮官力量', '口紅控制器', '魔力的眼罩'
+          ];
+          if (keywords.some(k => itemName.includes(k))) return true;
+      }
+
+      // 光輝Boss套裝
+      if (setName.includes('光輝Boss')) {
+          const keywords = [
+             '根源的耳語', '死亡之誓', '不朽的遺產'
           ];
           if (keywords.some(k => itemName.includes(k))) return true;
       }
