@@ -356,7 +356,7 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
       </div>
 
       {/* Basic Info (Job & Level) - Inferred */}
-      <div className="p-3 border-b border-slate-600/50 relative z-10 space-y-1">
+      <div className={`p-3 ${slotType === 'Puzzle' ? '' : 'border-b border-slate-600/50'} relative z-10 space-y-1`}>
           <div className="flex items-center text-[11px] leading-tight">
              <span className="text-slate-400 w-24 shrink-0 font-medium text-left">裝備職業</span>
              <span className="text-white">
@@ -377,6 +377,7 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
       </div>
 
       {/* Stats Section */}
+      {slotType !== 'Puzzle' && (
       <div className="p-3 space-y-1 border-b border-slate-600/50 relative z-10 bg-transparent">
          {/* Categories */}
          <div className="space-y-0.5">
@@ -394,6 +395,7 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
            <StatLine label="全屬性%" base={item.item_base_option.all_stat} add={item.item_add_option.all_stat} etc={item.item_etc_option.all_stat} star="0" total={item.item_total_option.all_stat} isPercent />
          </div>
       </div>
+      )}
 
       {/* Potentials */}
       {item.potential_option_grade && (

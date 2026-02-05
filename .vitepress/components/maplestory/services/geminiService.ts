@@ -196,6 +196,10 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
     })
     .join('\n    '); // 使用換行符號讓每個裝備獨立一行，方便 AI 閱讀
 
+  // [新增] 拼圖判定 Logic
+  const puzzle = data.set_effect?.set_effect?.find(s => s.set_name.includes('拼圖'));
+  const puzzleInfo = puzzle ? `\n    [拼圖] ${puzzle.set_name}` : '';
+
   const prompt = `
     您是一位《新楓之谷》（TMS 台灣伺服器）的頂尖理論計算專家與骨灰級玩家。
     請依據提供的角色數據，進行嚴格且符合當前版本環境（Meta）的強度分析。
@@ -364,7 +368,7 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
     - 五轉 (V矩陣)：${vSkills}
 
     【關鍵裝備摘要】
-    ${topItems}
+    ${topItems}${puzzleInfo}
 
     --- 完整詳細數據 (Full JSON) ---
     (已過濾圖片與冗餘資訊，請參考此處進行深度分析)

@@ -53,6 +53,7 @@ const SLOT_DEFINITIONS: Record<string, { label: string, match: string[] }> = {
   'Totem2': { label: '圖騰', match: ['totem2'] },
   'Totem3': { label: '圖騰', match: ['totem3'] },
   'Gem': { label: '寶玉', match: ['gem'] }, // 讓 findItem 處理特殊邏輯
+  'Puzzle': { label: '拼圖', match: ['puzzle', '拼圖'] },
 };
 
 // Custom Totem Image Mapping
@@ -88,6 +89,11 @@ const TOTEM_MAPPING = [
 const resolveItemIcon = (item: EquipmentItem | undefined, slotKey: string): string | undefined => {
   if (!item) return undefined;
   
+  // 0. Puzzle uses custom icon
+  if (slotKey === 'Puzzle') {
+      return '/image/theme/maplestory_character/puzzle.png';
+  }
+
   // 1. Gem always uses custom icon
   if (slotKey === 'Gem') {
     return '/image/theme/maplestory_character/gem.png';
@@ -223,7 +229,7 @@ const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'lef
                         ${mobilePositionClass}
                         md:absolute ${desktopVerticalClass} ${desktopPositionClass} md:translate-x-0 md:w-[300px] md:max-h-none md:overflow-visible`}
         >
-           <EquipmentTooltip item={displayItem} setEffect={setEffect} characterJob={characterJob} slotType={slotKey} showSetEffect={showSetEffect} />
+           <EquipmentTooltip item={displayItem} setEffect={setEffect} characterJob={characterJob} slotType={slotKey} showSetEffect={slotKey === 'Puzzle' ? true : showSetEffect} />
         </div>
       )}
     </div>
@@ -318,6 +324,27 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, setEffect, cha
         return displayItems.find(predicate);
     }
 
+    // 拼圖處理: 從 Set Effect 猜測
+    if (slotKey === 'Puzzle') {
+        const foundSet = setEffect?.set_effect?.find(s => s.set_name.includes('拼圖'));
+        if (foundSet) {
+             return {
+                item_equipment_part: 'puzzle',
+                item_equipment_slot: 'Puzzle',
+                item_name: foundSet.set_name,
+                item_icon: '/image/theme/maplestory_character/puzzle.png', 
+                item_description: '由套組效果判定的拼圖道具',
+                // Dummy values to satisfy type
+                item_shape_name: '', item_shape_icon: '', item_gender: '',
+                item_total_option: {} as any, item_base_option: {} as any, item_add_option: {} as any, item_etc_option: {} as any, item_starforce_option: {} as any,
+                potential_option_grade: '', additional_potential_option_grade: '',
+                potential_option_1: '', potential_option_2: '', potential_option_3: '',
+                additional_potential_option_1: '', additional_potential_option_2: '', additional_potential_option_3: '',
+                starforce: '', scroll_upgrade: '', starforce_scroll_flag: '', item_level: 0, special_ring_level: 0, date_expire: '',
+             } as EquipmentItem;
+        }
+    }
+
     // 4. 一般裝備處理 (Android 特殊處理)
     if (slotKey === 'Android' && androidEquipment && androidEquipment.android_name) {
       return {
@@ -371,7 +398,7 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, setEffect, cha
              className={`text-[10px] px-2 py-0.5 rounded border flex items-center gap-1 transition-all ${showSetEffect ? 'bg-purple-900/40 text-purple-300 border-purple-700/50 hover:bg-purple-900/60' : 'bg-slate-800 text-slate-500 border-slate-700 hover:bg-slate-700 hover:text-slate-400'}`}
           >
              {showSetEffect ? <CheckSquare className="w-3 h-3" /> : <Square className="w-3 h-3" />}
-             顯示詳細套裝效果
+             詳細套裝效果
           </button>
         }
       />
@@ -384,7 +411,7 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, setEffect, cha
           {['Ring4', 'Ring3', 'Ring2', 'Ring1', 'Belt', 'Pocket'].map((key, idx) => <Slot key={key} slotKey={key} item={findItem(key)} tooltipSide="right" mobileDir={idx < 3 ? 'down' : 'up'} setEffect={setEffect} characterJob={characterJob} showSetEffect={showSetEffect} />)}
         </div>
         <div className="flex flex-col gap-2">
-           {['Face', 'Eye', 'Earrings', 'Pendant2', 'Pendant'].map((key, idx) => <Slot key={key} slotKey={key} item={findItem(key)} tooltipSide="right" mobileDir={idx < 3 ? 'down' : 'up'} setEffect={setEffect} characterJob={characterJob} showSetEffect={showSetEffect} />)}
+           {['Face', 'Eye', 'Earrings', 'Pendant2', 'Pendant', 'Puzzle'].map((key, idx) => <Slot key={key} slotKey={key} item={findItem(key)} tooltipSide="right" mobileDir={idx < 3 ? 'down' : 'up'} setEffect={setEffect} characterJob={characterJob} showSetEffect={showSetEffect} />)}
         </div>
       </div>
 
