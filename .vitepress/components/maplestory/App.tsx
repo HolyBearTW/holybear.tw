@@ -9,6 +9,8 @@ import StatRadarChart from './components/StatRadarChart';
 import PresetSwitcher from './components/PresetSwitcher';
 import { fetchCharacterData, findBestDateInPastWeek, fetchWeeklyHistory } from './services/nexonService';
 import { analyzeCharacter } from './services/geminiService';
+import { getStatBreakdown } from './services/statCalculator';
+import StatTooltip from './components/StatTooltip';
 import { DashboardData } from './types';
 import { MOCK_DATA } from './constants';
 import MarkdownIt from 'markdown-it';
@@ -407,7 +409,8 @@ const App: React.FC = () => {
      if (num > 100000000) {
         const yi = Math.floor(num / 100000000);
         const wan = Math.floor((num % 100000000) / 10000);
-        return `${yi}億 ${wan}萬`;
+        const rest = num % 10000;
+        return `${yi}億 ${wan}萬 ${rest}`;
      }
      return num.toLocaleString();
   };
@@ -839,11 +842,19 @@ const App: React.FC = () => {
                      </div>
                      <div className="flex justify-between items-center text-sm border-b border-slate-800/50 pb-2">
                         <span className="flex items-center gap-2 text-slate-400"><Shield className="w-3.5 h-3.5 text-red-500" /> BOSS 傷害</span>
-                        <span className="font-mono text-white">{getStatVal('Boss Damage')}%</span>
+                        <span className="font-mono text-white">
+                           <StatTooltip label="BOSS 傷害" breakdown={getStatBreakdown(data, 'BOSS怪物傷害')}>
+                              {getStatVal('Boss Damage')}%
+                           </StatTooltip>
+                        </span>
                      </div>
                      <div className="flex justify-between items-center text-sm border-b border-slate-800/50 pb-2">
                         <span className="flex items-center gap-2 text-slate-400"><Sword className="w-3.5 h-3.5 text-red-400" /> 傷害</span>
-                        <span className="font-mono text-white">{getStatVal('傷害')}%</span>
+                        <span className="font-mono text-white">
+                           <StatTooltip label="傷害" breakdown={getStatBreakdown(data, '傷害')}>
+                              {getStatVal('傷害')}%
+                           </StatTooltip>
+                        </span>
                      </div>
                      <div className="flex justify-between items-center text-sm border-b border-slate-800/50 pb-2">
                         <span className="flex items-center gap-2 text-slate-400"><Sword className="w-3.5 h-3.5 text-slate-400" /> 一般怪物傷害</span>
@@ -851,15 +862,31 @@ const App: React.FC = () => {
                      </div>
                      <div className="flex justify-between items-center text-sm border-b border-slate-800/50 pb-2">
                         <span className="flex items-center gap-2 text-slate-400"><Shield className="w-3.5 h-3.5 text-blue-500" /> 無視防禦率</span>
-                        <span className="font-mono text-white">{getStatVal('Ignore Defense Rate')}%</span>
+                        <span className="font-mono text-white">
+                           <StatTooltip label="無視防禦率" breakdown={getStatBreakdown(data, '無視防禦率')}>
+                              {getStatVal('Ignore Defense Rate')}%
+                           </StatTooltip>
+                        </span>
                      </div>
                      <div className="flex justify-between items-center text-sm border-b border-slate-800/50 pb-2">
                         <span className="flex items-center gap-2 text-slate-400"><Sword className="w-3.5 h-3.5 text-yellow-500" /> 爆擊傷害</span>
-                        <span className="font-mono text-white">{getStatVal('Critical Damage')}%</span>
+                        <span className="font-mono text-white">
+                           <StatTooltip label="爆擊傷害" breakdown={getStatBreakdown(data, '爆擊傷害')}>
+                              {getStatVal('Critical Damage')}%
+                           </StatTooltip>
+                        </span>
                      </div>
                      <div className="flex justify-between items-center text-sm border-b border-slate-800/50 pb-2">
                         <span className="flex items-center gap-2 text-slate-400"><Sword className="w-3.5 h-3.5 text-slate-300" /> 攻擊力 / 魔攻</span>
-                        <span className="font-mono text-white">{formatNumber(getStatVal('Attack Power'))} / {formatNumber(getStatVal('Magic Power'))}</span>
+                        <span className="font-mono text-white">
+                           <StatTooltip label="攻擊力" breakdown={getStatBreakdown(data, '攻擊力')}>
+                               {formatNumber(getStatVal('Attack Power'))}
+                           </StatTooltip> 
+                           <span className="mx-1">/</span> 
+                           <StatTooltip label="魔法攻擊力" breakdown={getStatBreakdown(data, '魔法攻擊力')}>
+                               {formatNumber(getStatVal('Magic Power'))}
+                           </StatTooltip>
+                        </span>
                      </div>
                      <div className="flex justify-between items-center text-sm border-b border-slate-800/50 pb-2">
                         <span className="flex items-center gap-2 text-slate-400"><Star className="w-3.5 h-3.5 text-yellow-400" /> 星力</span>
@@ -909,15 +936,19 @@ const App: React.FC = () => {
                     
                     {showDetailStats && (
                       <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-3 animate-in fade-in slide-in-from-top-1 bg-[#0d1117] p-3 rounded-lg border border-slate-800">
-                        {detailedStats.map((stat, i) => (
-                          <div key={i} className="flex justify-between items-center text-xs border-b border-slate-800/30 pb-1 last:border-0">
-                            <span className="text-slate-500">{stat.label}</span>
-                            <span className="text-slate-300 font-mono">
-                              {stat.format ? stat.format(getStatVal(stat.key)) : getStatVal(stat.key)}
-                              {stat.suffix || ''}
-                            </span>
-                          </div>
-                        ))}
+                        {detailedStats.map((stat, i) => {
+                          const val = stat.format ? stat.format(getStatVal(stat.key)) : getStatVal(stat.key);
+                          const breakdown = getStatBreakdown(data, stat.key);
+                          return (
+                            <StatTooltip 
+                              key={i} 
+                              label={stat.label} 
+                              value={val} 
+                              suffix={stat.suffix} 
+                              breakdown={breakdown} 
+                            />
+                          );
+                        })}
                       </div>
                     )}
                   </div>
@@ -1128,7 +1159,8 @@ const App: React.FC = () => {
                   {showUpdateLog ? <ChevronUp className="w-4 h-4 ml-2 opacity-70" /> : <ChevronDown className="w-4 h-4 ml-2 opacity-70" />}
                 </div>
                 <ul className="list-disc pl-5 text-sm space-y-1 mt-3 animate-in fade-in slide-in-from-top-1">
-                  {[                
+                  {[            
+                    { date: '2026/02/07', content: '新增能力值 Tooltip 介面的屬性詳細效果(測試中可能有偏差)。' },
                     { date: '2026/02/05', content: '修正裝備 Tooltip 在視窗邊緣溢出的問題，並修正滑鼠懸浮與點擊時位置不一致的異常；將圖騰、武器、副武器、能源、寶玉的 Tooltip 全部設為顯示在左側；新增「拼圖」裝備欄位並納入 AI 分析範圍；優化裝備與時裝欄位的 Tooltip 顯示邏輯，僅在游標位於裝備格內時顯示，移出即隱藏 (點擊固定除外)。' },
                     { date: '2026/02/04', content: '新增圖騰與寶玉裝備欄位並加入 AI 判斷範圍，並改善 AI 分析戰力時的判斷方式；新增顯示裝備套裝效果選項，可自由顯示或隱藏套裝詳細屬性；改善分析角色時的掉寶率警告機制，可選擇忽略警告並繼續分析。' },                  
                     { date: '2026/02/03', content: '修復 AI 分析因串流格式問題導致的失敗；新增「重新分析」按鈕。大幅優化 BOSS 攻略建議邏輯，強制執行戰力硬門檻檢查並列出完整 BOSS 清單，避免越級誤判。' },

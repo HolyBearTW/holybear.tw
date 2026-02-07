@@ -150,6 +150,7 @@ export const fetchCharacterData = async (characterName: string, apiKey: string, 
     buildUrl('/character/hyper-stat', ocid, dateParam),
     buildUrl('/character/link-skill', ocid, dateParam),
     buildUrl('/user/union', ocid, dateParam),
+    buildUrl('/user/union-raider', ocid, dateParam),
     buildUrl('/user/union-artifact', ocid, dateParam),
     buildUrl('/user/union-champion', ocid, dateParam),
     buildUrl('/character/pet-equipment', ocid, dateParam),
@@ -195,7 +196,7 @@ export const fetchCharacterData = async (characterName: string, apiKey: string, 
 
   const [
     basicRes, statRes, equipRes, abilityRes, hyperRes, linkRes,
-    unionRes, artifactRes, unionChampionRes, petRes, symbolRes, setRes, vmatrixRes, hexaRes, dojoRes,
+    unionRes, unionRaiderRes, artifactRes, unionChampionRes, petRes, symbolRes, setRes, vmatrixRes, hexaRes, dojoRes,
     skill5Res, skill6Res,
     skill0Res, skill1Res, skill2Res, skill3Res, skill4Res,
     basic7DaysRes, popularityRes, hexaStatRes, cashItemRes, beautyRes, androidRes
@@ -217,6 +218,7 @@ export const fetchCharacterData = async (characterName: string, apiKey: string, 
   const hyperStat = await safeJson(hyperRes, { character_class: basic.character_class, hyper_stat_preset_1: [] });
   const linkSkill = await safeJson(linkRes, { character_link_skill: [] });
   const union = await safeJson(unionRes);
+  const unionRaider = await safeJson(unionRaiderRes);
   const unionArtifact = await safeJson(artifactRes);
   const unionChampion = await safeJson(unionChampionRes);
   const petEquipment = await safeJson(petRes);
@@ -260,7 +262,7 @@ export const fetchCharacterData = async (characterName: string, apiKey: string, 
   }
 
   return {
-    basic, stat, equipment, ability, hyperStat, linkSkill, union, unionArtifact, unionChampion,
+    basic, stat, equipment, ability, hyperStat, linkSkill, union, unionRaider, unionArtifact, unionChampion,
     petEquipment, symbolEquipment, setEffect, vMatrix, hexaMatrix, hexaMatrixStat,
     dojo, skill5, skill6, skill0, skill1, skill2, skill3, skill4,
     character_basic_7days_ago: basic7Days,

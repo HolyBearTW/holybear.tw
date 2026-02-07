@@ -160,6 +160,7 @@ export interface DashboardData {
   hyperStat: CharacterHyperStat;
   linkSkill: CharacterLinkSkill;
   union?: CharacterUnion;
+  unionRaider?: CharacterUnionRaider;
   unionArtifact?: CharacterUnionArtifact;
   unionChampion?: CharacterUnionChampion;
   petEquipment?: CharacterPetEquipment;
@@ -187,6 +188,24 @@ export interface CharacterUnion {
   union_grade: string;
   union_artifact_level?: number;
   union_artifact_exp?: number;
+}
+
+export interface CharacterUnionRaider {
+  date: string;
+  union_raider_stat: string[];
+  union_occupied_stat: string[];
+  union_block: {
+    block_type: string;
+    block_class: string;
+    block_level: string;
+    block_control_point_x: number;
+    block_control_point_y: number;
+    block_position: { x: number; y: number }[];
+  }[];
+  union_inner_stat: {
+    stat_field_id: string;
+    stat_field_effect: string;
+  }[];
 }
 
 export interface CharacterUnionArtifact {
