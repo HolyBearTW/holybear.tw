@@ -99,9 +99,9 @@ const getKeywords = (statKey: string): string[] => {
         'INT': ['INT', '智力'],
         'LUK': ['LUK', '幸運'],
         'HP': ['MaxHP', 'HP'],
-        'MP': ['MaxMP', 'MP'],
+        'MP': ['MaxMP', 'MP', '魔力'],
         '攻擊力': ['攻擊力', 'Attack Power', 'ATT'],
-        '魔法攻擊力': ['魔法攻擊力', 'Magic Power', 'Magic ATT', '魔力'],
+        '魔法攻擊力': ['魔法攻擊力', 'Magic Power', 'Magic ATT'],
         // 增強關鍵字匹配，包含長字串 (因為 Regex 匹配是貪婪或順序匹配)
         'BOSS怪物傷害': ['攻擊Boss怪物時傷害', '攻擊BOSS怪物時傷害', 'BOSS', 'Boss', '首領'],
         '無視防禦率': ['無視怪物防禦率', '無視', 'Ignore'],
