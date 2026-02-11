@@ -24,7 +24,7 @@
     "front-matter": "^4.0.2",
     "lucide-react": "^0.563.0",
     "lucide-vue-next": "^0.563.0",
-    "markdown-it": "^14.1.0",
+    "markdown-it": "^14.1.1",
     "markdown-it-front-matter": "^0.2.4",
     "medium-zoom": "^1.1.0",
     "opencc-js": "^1.0.5",
