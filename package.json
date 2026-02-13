@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
-    "animejs": "^4.3.5",
+    "animejs": "^4.3.6",
     "autoprefixer": "^10.4.24",
     "chart.js": "^4.5.1",
     "date-fns": "^4.1.0",
