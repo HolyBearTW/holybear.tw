@@ -34,7 +34,7 @@
     "react-is": "^19.2.4",
     "recharts": "^3.7.0",
     "swiper": "^12.1.1",
-    "three": "^0.182.0",
+    "three": "^0.183.0",
     "turndown": "^7.2.2",
     "vue-chartjs": "^5.3.3",
     "vue-instantsearch": "^4.23.3"
