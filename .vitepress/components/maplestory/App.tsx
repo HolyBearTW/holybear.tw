@@ -497,6 +497,9 @@ const App: React.FC = () => {
   const currentAbilityInfo = getAbilityData();
 
   const getModelDisplayName = (id: string) => {
+    // 3.1 系列
+    if (id.includes('3.1-pro-preview')) return 'Gemini 3.1 Pro (最新旗艦)';
+    
     // 3.0 系列
     if (id.includes('3-flash-preview')) return 'Gemini 3.0 Flash (最新極速)';
     if (id.includes('3-pro-preview')) return 'Gemini 3.0 Pro (最新高階)';
@@ -572,8 +575,9 @@ const App: React.FC = () => {
                   }}
                   className="w-full p-3 bg-slate-950 border border-slate-700 rounded-lg text-white focus:border-indigo-500 outline-none appearance-none"
                 >
+                  <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro (最新旗艦 / 需付費)</option>
                   <option value="gemini-3-flash-preview">Gemini 3.0 Flash (最新預設 / 極速)</option>
-                  <option value="gemini-3-pro-preview">Gemini 3.0 Pro (最新高階 / 需付費)</option>
+                  <option value="gemini-3-pro-preview">Gemini 3.0 Pro (高階模型 / 需付費)</option>
                   <option value="gemini-2.5-flash">Gemini 2.5 Flash (穩定首選)</option>
                   <option value="gemini-2.5-pro">Gemini 2.5 Pro (舊版高階 / 需付費)</option>
                 </select>
@@ -1160,6 +1164,7 @@ const App: React.FC = () => {
                 </div>
                 <ul className="list-disc pl-5 text-sm space-y-1 mt-3 animate-in fade-in slide-in-from-top-1">
                   {[            
+                    { date: '2026/02/20', content: '新增 Gemini 3.1 Pro 模型支援與自動降級備援機制；優化 AI 連線失敗時的重試等待時間與提示。' },
                     { date: '2026/02/07', content: '新增能力值 Tooltip 介面的屬性詳細效果(測試中可能有偏差)。' },
                     { date: '2026/02/05', content: '修正裝備 Tooltip 在視窗邊緣溢出的問題，並修正滑鼠懸浮與點擊時位置不一致的異常；將圖騰、武器、副武器、能源、寶玉的 Tooltip 全部設為顯示在左側；新增「拼圖」裝備欄位並納入 AI 分析範圍；優化裝備與時裝欄位的 Tooltip 顯示邏輯，僅在游標位於裝備格內時顯示，移出即隱藏 (點擊固定除外)。' },
                     { date: '2026/02/04', content: '新增圖騰與寶玉裝備欄位並加入 AI 判斷範圍，並改善 AI 分析戰力時的判斷方式；新增顯示裝備套裝效果選項，可自由顯示或隱藏套裝詳細屬性；改善分析角色時的掉寶率警告機制，可選擇忽略警告並繼續分析。' },                  

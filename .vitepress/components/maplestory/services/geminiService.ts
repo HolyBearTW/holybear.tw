@@ -422,8 +422,18 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
 
   let modelsToTry = [effectiveModel];
 
-  if (effectiveModel.includes('3.0')) {
-      modelsToTry = ['gemini-3-flash-preview', 'gemini-2.5-flash'];
+  // 3.1 Pro -> 3.0 Flash -> 2.5 Flash
+  if (effectiveModel.includes('3.1')) {
+      modelsToTry.push('gemini-3-flash-preview');
+      modelsToTry.push('gemini-2.5-flash');
+  } 
+  // 3.0 系列 -> 2.5 Flash
+  else if (effectiveModel.includes('3.0') || effectiveModel.includes('3-')) { 
+      // 若使用者選的是 3.0 Pro，也可以考慮降級跑 3.0 Flash，再跑 2.5 Flash
+      if (effectiveModel !== 'gemini-3-flash-preview') {
+          modelsToTry.push('gemini-3-flash-preview');
+      }
+      modelsToTry.push('gemini-2.5-flash');
   } else {
       modelsToTry.push('gemini-2.5-flash');
   }
@@ -525,8 +535,8 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
       
       lastError = error;
       
-      // 等待1秒再試下一個
-      await new Promise(r => setTimeout(r, 1000));
+      // 失敗後多等幾秒，讓使用者看清楚錯誤提示，也避免過快重試被打回
+      await new Promise(r => setTimeout(r, 5000));
     }
   }
 
