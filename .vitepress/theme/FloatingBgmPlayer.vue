@@ -4,6 +4,10 @@ import { defaultTheme, THEME_CHANGE_EVENT } from './background/themes'
 
 /* --- 音樂清單 --- */
 const originalMusicList = ref([
+  { src: '/music/MapleStory_VoiceofVerdict.mp3', title: '楓之谷：證明的戰場 - 重生為傳說的命運（最初的敵對者魔王戰）' },
+  { src: '/music/MapleStory_WisdomBeyondAspirations.mp3', title: '楓之谷：證明的戰場 - 洞察真相的智慧（最初的敵對者魔王戰）' },
+  { src: '/music/MapleStory_GateofProof.mp3', title: '楓之谷：證明的戰場 - 意志起源之處' },
+  { src: '/music/MapleStory_SuccessionBloom.mp3', title: '楓之谷：證明的戰場 - 證明意志之處' },
   { src: '/music/LeagueofLegends_OmegaSquadTeemo.mp3', title: '英雄聯盟：戰爭機器 - 提摩' },
   { src: '/music/MapleStory_Reborngods.mp3', title: '楓之谷：塔拉哈特 - 遺跡廢墟' },
   { src: '/music/MapleStory_NightField.mp3', title: '楓之谷 - 不夜城徒步區' },
