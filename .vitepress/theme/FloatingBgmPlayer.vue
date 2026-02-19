@@ -985,7 +985,7 @@ function toggleRepeatOne() {
 .title-text {
     display: inline-block;
     white-space: nowrap;
-    animation: scrollText 12s linear infinite;
+    animation: scrollText 24s linear infinite;
 }
 
 @keyframes scrollText {

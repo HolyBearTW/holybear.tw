@@ -102,7 +102,8 @@ const config = defineConfig({
             // --- 1. 取得預設值 ---
             const defaultTitle = head.find(tag => tag[1]?.property === 'og:title')?.[1].content || '';
             const defaultDesc = head.find(tag => tag[1]?.name === 'description')?.[1].content || '';
-            const defaultImage = head.find(tag => tag[1]?.property === 'og:image')?.[1].content || '';
+            // 修正：預設圖片使用網站 Logo (logo.png)
+            const defaultImage = head.find(tag => tag[1]?.property === 'og:image')?.[1].content || 'https://holybear.tw/logo.png';
 
             const pageTitle = frontmatter.title || defaultTitle;
             const pageDescription = frontmatter.description || defaultDesc;
@@ -130,7 +131,8 @@ const config = defineConfig({
                 !(tag[1]?.property?.startsWith('og:')) &&
                 !(tag[1]?.type === 'application/ld+json') && // 移除所有舊的 JSON-LD
                 !(tag[1]?.name === 'x-page-image') &&
-                !(tag[1]?.name === 'twitter:image')
+                !(tag[1]?.name === 'twitter:image') &&
+                !(tag[1]?.name === 'twitter:card') // 確保移除舊的 card 設定
             );
 
             // --- 4. 加入正確的 canonical 與 OG 標籤 ---
@@ -141,6 +143,9 @@ const config = defineConfig({
             cleanHead.push(['meta', { property: 'og:type', content: pageType }]);
             cleanHead.push(['meta', { property: 'og:url', content: pageUrl }]);
             
+            // 強制設定為 summary (小圖模式)，若是 summary_large_image 則會變大圖
+            cleanHead.push(['meta', { name: 'twitter:card', content: 'summary' }]);
+
             // 【關鍵修正】強制統一 Site Name，不論語系
             const globalSiteName = '聖小熊的秘密基地';
             cleanHead.push(['meta', { property: 'og:site_name', content: globalSiteName }]);
