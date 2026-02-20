@@ -4076,10 +4076,10 @@ tapable@^2.3.0:
   resolved "https://registry.yarnpkg.com/tapable/-/tapable-2.3.0.tgz#7e3ea6d5ca31ba8e078b560f0d83ce9a14aa8be6"
   integrity sha512-g9ljZiwki/LfxmQADO3dEY1CbpmXT5Hm2fJ+QaGKwSXUylMybePR7/67YW7jOrrvjEgL1Fmz5kzyAjWVWLlucg==
 
-three@^0.183.0:
-  version "0.183.0"
-  resolved "https://registry.yarnpkg.com/three/-/three-0.183.0.tgz#dea9c721a53250e28e99114bb7b46dc2bb01dc91"
-  integrity sha512-G6SH2jfefIVa2YI4JL2VbgQhrrbp1A8dRc7lr3PW827kdVyaX2RgH6M5FmjmdVFLgSHppyg3OYOZdTfWElle+g==
+three@^0.183.1:
+  version "0.183.1"
+  resolved "https://registry.yarnpkg.com/three/-/three-0.183.1.tgz#542153dce00df37e42d1197085d77d76f6de8e7e"
+  integrity sha512-Psv6bbd3d/M/01MT2zZ+VmD0Vj2dbWTNhfe4CuSg7w5TuW96M3NOyCVuh9SZQ05CpGmD7NEcJhZw4GVjhCYxfQ==
 
 timeago.js@^4.0.2:
   version "4.0.2"
