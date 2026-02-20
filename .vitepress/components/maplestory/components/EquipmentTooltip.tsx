@@ -249,6 +249,12 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
            if (keywords.some(k => itemName.includes(k))) return true;
       }
       
+      // [圖騰] 死後世界的的痕跡
+      // 若該套組為 "死後世界的的痕跡"，且道具名稱包含 "的痕跡"，則視為匹配
+      if (setName.includes('死後世界的的痕跡') || setName.includes('死後世界的痕跡')) {
+          if (itemName.includes('的痕跡')) return true;
+      }
+      
       return false;
   });
 
