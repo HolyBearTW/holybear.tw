@@ -37,7 +37,7 @@
     "three": "^0.183.1",
     "turndown": "^7.2.2",
     "vue-chartjs": "^5.3.3",
-    "vue-instantsearch": "^4.23.3"
+    "vue-instantsearch": "^4.24.0"
   },
   "scripts": {
     "dev": "vitepress dev",
