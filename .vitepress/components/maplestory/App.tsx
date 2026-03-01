@@ -16,7 +16,7 @@ import { MOCK_DATA } from './constants';
 import MarkdownIt from 'markdown-it';
 import { calculateWeeklyGrowth } from './components/ExpTrendChart';
 
-const DEFAULT_GEMINI_KEY = import.meta.env.VITE_DEFAULT_GEMINI_KEY || '';
+const DEFAULT_GEMINI_KEY = ''; // 已安全移除預設金鑰
 
 const SERVER_ICONS: Record<string, string> = {
   '艾麗亞': 'https://tw.hicdn.beanfun.com/beanfun/event/MapleStory/UnionWebRank/assets/img/ai_li_ya.png',
@@ -84,7 +84,7 @@ const App: React.FC = () => {
   });
   
   const [geminiKey, setGeminiKey] = useState<string | null>(() => {
-    return localStorage.getItem('gemini_api_key') || import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_DEFAULT_GEMINI_KEY || null;
+    return localStorage.getItem('gemini_api_key') || null;
   });
 
   const [geminiModel, setGeminiModel] = useState<string>(() => {
@@ -1153,17 +1153,32 @@ const App: React.FC = () => {
         )}
       </main>
           {(!data && !loading && !error) && (
-            <div className="my-8 flex justify-center">
-              <div className="vp-tip custom-vp-tip p-4 sm:p-6 rounded-lg border-l-4 border-indigo-400 bg-indigo-50/90 text-indigo-900 dark:bg-[#23263a] dark:text-indigo-200 dark:border-indigo-500 shadow-sm mx-auto transition-all duration-300">
+            <div className="my-8 flex flex-col items-center gap-4">
+              {/* 🔴 緊急紅色公告 (顯示到 2026/03/31) */}
+              {new Date() < new Date('2026-04-01T00:00:00') && (
+                <div className="vp-tip custom-vp-tip-danger p-4 sm:p-6 rounded-lg border-l-4 border-red-500 bg-red-50/90 text-red-900 dark:bg-red-950/30 dark:text-red-200 shadow-sm transition-all duration-300 w-full max-w-2xl">
+                  <div className="font-bold mb-2 text-red-600 dark:text-red-400 flex items-center gap-2">
+                     <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+                     【重要】安全機制更新公告
+                  </div>
+                  <div className="text-sm space-y-2 opacity-90 leading-relaxed">
+                    <p>為保障網站與使用者安全，<strong>本站已移除內建的 Gemini API 金鑰</strong>。</p>
+                    <p>若您需要使用「AI 戰力分析」功能，請點擊右上方的 <strong>「齒輪」</strong> 按鈕，填寫您自己申請的免費 <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="underline text-red-700 dark:text-red-300">Google Gemini API 金鑰</a>。</p>
+                  </div>
+                </div>
+              )}
+
+              <div className="vp-tip custom-vp-tip p-4 sm:p-6 rounded-lg border-l-4 border-indigo-400 bg-indigo-50/90 text-indigo-900 dark:bg-[#23263a] dark:text-indigo-200 dark:border-indigo-500 shadow-sm transition-all duration-300 w-full max-w-2xl">
                 <div 
                   className="font-bold mb-1 text-indigo-700 dark:text-indigo-300 flex justify-between items-center cursor-pointer select-none"
-                  onClick={() => setShowUpdateLog(!showUpdateLog)}
-                >
-                  <span className="font-bold">更新日誌 {showUpdateLog ? '' : '(近期)'}</span>
-                  {showUpdateLog ? <ChevronUp className="w-4 h-4 ml-2 opacity-70" /> : <ChevronDown className="w-4 h-4 ml-2 opacity-70" />}
-                </div>
-                <ul className="list-disc pl-5 text-sm space-y-1 mt-3 animate-in fade-in slide-in-from-top-1">
-                  {[    
+                    onClick={() => setShowUpdateLog(!showUpdateLog)}
+                  >
+                    <span className="font-bold">更新日誌 {showUpdateLog ? '' : '(近期)'}</span>
+                    {showUpdateLog ? <ChevronUp className="w-4 h-4 ml-2 opacity-70" /> : <ChevronDown className="w-4 h-4 ml-2 opacity-70" />}
+                  </div>
+                  <ul className="list-disc pl-5 text-sm space-y-1 mt-3 animate-in fade-in slide-in-from-top-1">
+                    {[    
+                    { date: '2026/03/01', content: '【資安升級】移除網站內建的 Gemini API 公用金鑰。使用者現在必須在設定中輸入自己的 API Key 才能執行 AI 分析。' },
                     { date: '2026/02/21', content: '新增 Gemini AI 分析時的裝備潛能屬性判定標準與優化戰力評語用字遣詞。' },
                     { date: '2026/02/20', content: '新增 Gemini 3.1 Pro 模型支援與自動降級備援機制；優化 AI 連線失敗時的重試等待時間與提示。' },
                     { date: '2026/02/07', content: '新增能力值 Tooltip 介面的屬性詳細效果(測試中可能有偏差)。' },
@@ -1192,6 +1207,15 @@ const App: React.FC = () => {
             </div>
           )}
           <style>{`
+            .custom-vp-tip-danger {
+               box-sizing: border-box;
+               max-width: 28rem;
+               margin-left: 1rem;
+               margin-right: 1rem;
+               padding-left: 1rem;
+               padding-right: 1rem;
+               display: block;
+            }
             .custom-vp-tip {
               background: rgba(0,255,238,0.12);
               /* #00FFEE 主題色系 */
@@ -1206,6 +1230,7 @@ const App: React.FC = () => {
               color: #b8fff9;
             }
             @media (min-width: 640px) {
+              .custom-vp-tip-danger,
               .custom-vp-tip {
                 max-width: 42rem;
                 margin-left: auto;

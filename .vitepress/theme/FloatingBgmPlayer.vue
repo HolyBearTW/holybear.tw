@@ -4,6 +4,7 @@ import { defaultTheme, THEME_CHANGE_EVENT } from './background/themes'
 
 /* --- 音樂清單 --- */
 const originalMusicList = ref([
+  { src: '/music/MapleStory_WhereStarsRest(Original).mp3', title: '楓之谷 - 賽拉斯（經典）' },
   { src: '/music/MapleStory_VoiceofVerdict.mp3', title: '楓之谷：證明的戰場 - 重生為傳說的命運（最初的敵對者魔王戰）' },
   { src: '/music/MapleStory_WisdomBeyondAspirations.mp3', title: '楓之谷：證明的戰場 - 洞察真相的智慧（最初的敵對者魔王戰）' },
   { src: '/music/MapleStory_GateofProof.mp3', title: '楓之谷：證明的戰場 - 意志起源之處' },
