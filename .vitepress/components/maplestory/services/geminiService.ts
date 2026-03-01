@@ -70,7 +70,7 @@ const extractTextFromChunk = (chunk: any): string => {
 // UPDATE: 預設值改為 gemini-3-flash
 export const analyzeCharacter = async (data: DashboardData, apiKey: string, modelId: string = 'gemini-3-flash-preview', ignoreWarnings: boolean = false, onProgress?: (msg: string) => void): Promise<string> => {
   if (!apiKey) {
-    return "💡 **請在使用前設定您的 API Key**\n\n基於資安考量，本站不再內建公用的 API Key。\n請點擊左下方的 **「設定」** 齒輪按鈕，輸入您專屬的 Google Gemini API Key 以啟用分析功能。";
+    return "💡 **請在使用前設定您的 API Key**\n\n基於資安考量，本站不再內建公用的 API Key。\n請點擊右下方的 **「設定模型 / API Key」** 按鈕，輸入您專屬的 [Google Gemini API 金鑰](https://aistudio.google.com/app/apikey) 以啟用分析功能。";
   }
 
   // 1. 資料前處理
