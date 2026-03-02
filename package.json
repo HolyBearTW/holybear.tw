@@ -22,7 +22,7 @@
     "date-fns": "^4.1.0",
     "firebase": "^12.10.0",
     "front-matter": "^4.0.2",
-    "lucide-react": "^0.575.0",
+    "lucide-react": "^0.576.0",
     "lucide-vue-next": "^0.575.0",
     "markdown-it": "^14.1.1",
     "markdown-it-front-matter": "^0.2.4",
