@@ -983,10 +983,10 @@
   resolved "https://registry.npmjs.org/@kurkle/color/-/color-0.3.4.tgz"
   integrity sha512-M5UknZPHRu3DEDWoipU6sE8PdkZ6Z/S+v4dD+Ke8IaNlpdSQah50lz1KtcFBa2vsdOnwbbnxJwVM4wty6udA5w==
 
-"@lando/vitepress-theme-default-plus@^1.1.1":
-  version "1.1.1"
-  resolved "https://registry.npmjs.org/@lando/vitepress-theme-default-plus/-/vitepress-theme-default-plus-1.1.1.tgz"
-  integrity sha512-DcwDvsUHJ8n9ofKRgclbkEXGl5DglzUSQdXNEY1MvoSMKGDTP/iZUXR5acZk6gsOmaUyQ3/vBRrIjXUvCsC1vQ==
+"@lando/vitepress-theme-default-plus@^1.1.5":
+  version "1.1.5"
+  resolved "https://registry.yarnpkg.com/@lando/vitepress-theme-default-plus/-/vitepress-theme-default-plus-1.1.5.tgz#a9b4038f49497f4ba3e2fdcf8dc5f5d146809bfd"
+  integrity sha512-a54uTRfiKwOXTJ4Gm6xhnMKRg0lpZ/CosDIfh1jksw5fg/VELpmPKhbC6A0i8OgoNO27hXIe5EOby2sZWshKjg==
   dependencies:
     "@docsearch/js" "^3.5.2"
     axios "^1.7.7"
