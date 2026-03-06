@@ -88,7 +88,7 @@ const App: React.FC = () => {
   });
 
   const [geminiModel, setGeminiModel] = useState<string>(() => {
-    return localStorage.getItem('gemini_model') || 'gemini-3-flash-preview';
+    return localStorage.getItem('gemini_model') || 'gemini-3.1-flash-lite-preview';
   });
   const [showKeySettings, setShowKeySettings] = useState(false);
   const [characterName, setCharacterName] = useState('');
@@ -576,7 +576,8 @@ const App: React.FC = () => {
                   className="w-full p-3 bg-slate-950 border border-slate-700 rounded-lg text-white focus:border-indigo-500 outline-none appearance-none"
                 >
                   <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro (最新旗艦 / 需付費)</option>
-                  <option value="gemini-3-flash-preview">Gemini 3.0 Flash (最新預設 / 極速)</option>
+                  <option value="gemini-3.1-flash-lite-preview">Gemini 3.1 Flash-Lite (最新預設 / 免費極速)</option>
+                  <option value="gemini-3-flash-preview">Gemini 3.0 Flash (舊版預設 / 極速)</option>
                   <option value="gemini-3-pro-preview">Gemini 3.0 Pro (高階模型 / 需付費)</option>
                   <option value="gemini-2.5-flash">Gemini 2.5 Flash (穩定首選)</option>
                   <option value="gemini-2.5-pro">Gemini 2.5 Pro (舊版高階 / 需付費)</option>
@@ -1178,6 +1179,7 @@ const App: React.FC = () => {
                   </div>
                   <ul className="list-disc pl-5 text-sm space-y-1 mt-3 animate-in fade-in slide-in-from-top-1">
                     {[    
+                    { date: '2026/03/06', content: '新增 Gemini 3.1 Flash-Lite 模型並設為預設模型，提供極速的免費分析體驗。' },
                     { date: '2026/03/01', content: '【資安升級】移除網站內建的 Gemini API 公用金鑰。使用者現在必須在設定中輸入自己的 API Key 才能執行 AI 分析。' },
                     { date: '2026/02/21', content: '新增 Gemini AI 分析時的裝備潛能屬性判定標準與優化戰力評語用字遣詞。' },
                     { date: '2026/02/20', content: '新增 Gemini 3.1 Pro 模型支援與自動降級備援機制；優化 AI 連線失敗時的重試等待時間與提示。' },
