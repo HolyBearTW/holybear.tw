@@ -206,7 +206,7 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
 
       //永恆, etc.
       if (setName.includes('永恆')) {
-          if (itemName.includes('永恆火焰戒指') || itemName.includes('永恆勇士')) return false;
+          if (itemName.includes('永恆火焰戒指') || itemName.includes('永恆勇士') || itemName.includes('創世的胸章')) return false;
           if (['永恆', '創世', '命運'].some(k => itemName.includes(k))) return true;
       }
 
@@ -371,6 +371,14 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
 
       {/* Basic Info (Job & Level) - Inferred */}
       <div className={`p-3 ${slotType === 'Puzzle' ? '' : 'border-b border-slate-600/50'} relative z-10 space-y-1`}>
+          <div className="flex items-center text-[11px] leading-tight">
+             <span className="text-slate-400 w-24 shrink-0 font-medium text-left">裝備分類</span>
+             <span className="text-white">
+                {['馴服的怪物', '馬鞍', '怪物裝備'].includes(item.item_equipment_part) || ['馴服的怪物', '馬鞍', '怪物裝備'].includes(item.item_equipment_slot) 
+                  ? '圖騰' 
+                  : item.item_equipment_part || item.item_equipment_slot || '未知'}
+             </span>
+          </div>
           <div className="flex items-center text-[11px] leading-tight">
              <span className="text-slate-400 w-24 shrink-0 font-medium text-left">裝備職業</span>
              <span className="text-white">

@@ -84,6 +84,7 @@ const TOTEM_MAPPING = [
   { name: '萬事的痕跡', path: '/image/theme/maplestory_character/totem23.png' },
   { name: '阿德勒的痕跡', path: '/image/theme/maplestory_character/totem24.png' },
   { name: '柏林的痕跡', path: '/image/theme/maplestory_character/totem25.png' },
+  { name: 'TMS勇者號意念', path: '/image/theme/maplestory_character/totem26.png' },
 ];
 
 const resolveItemIcon = (item: EquipmentItem | undefined, slotKey: string): string | undefined => {
