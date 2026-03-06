@@ -380,6 +380,8 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
                   ? '拼圖'
                   : ['android', 'Android'].includes(item.item_equipment_part) || ['android', 'Android'].includes(item.item_equipment_slot)
                   ? '機器人'
+                  : item.item_name.includes('寶玉') && (['墜飾'].includes(item.item_equipment_part) || ['墜飾'].includes(item.item_equipment_slot))
+                  ? '寶玉'
                   : item.item_equipment_part || item.item_equipment_slot || '未知'}
              </span>
           </div>
