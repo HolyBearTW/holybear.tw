@@ -1179,7 +1179,7 @@ const App: React.FC = () => {
                   </div>
                   <ul className="list-disc pl-5 text-sm space-y-1 mt-3 animate-in fade-in slide-in-from-top-1">
                     {[    
-                    { date: '2026/03/06', content: '新增 Gemini 3.1 Flash-Lite 模型並設為預設模型，提供極速的免費分析體驗。' },
+                    { date: '2026/03/06', content: '新增 Gemini 3.1 Flash-Lite 模型並設為預設模型，提供極速的免費分析體驗；更新裝備 Tooltip 介面，新增裝備分類、可使用卷軸數、白金鐵鎚提煉次數、白金神奇剪刀可使用次數屬性。' },
                     { date: '2026/03/01', content: '【資安升級】移除網站內建的 Gemini API 公用金鑰。使用者現在必須在設定中輸入自己的 API Key 才能執行 AI 分析。' },
                     { date: '2026/02/21', content: '新增 Gemini AI 分析時的裝備潛能屬性判定標準與優化戰力評語用字遣詞。' },
                     { date: '2026/02/20', content: '新增 Gemini 3.1 Pro 模型支援與自動降級備援機制；優化 AI 連線失敗時的重試等待時間與提示。' },

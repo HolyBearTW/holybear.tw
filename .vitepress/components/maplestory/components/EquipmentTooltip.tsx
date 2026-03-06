@@ -376,6 +376,10 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
              <span className="text-white">
                 {['馴服的怪物', '馬鞍', '怪物裝備'].includes(item.item_equipment_part) || ['馴服的怪物', '馬鞍', '怪物裝備'].includes(item.item_equipment_slot) 
                   ? '圖騰' 
+                  : ['puzzle', 'Puzzle'].includes(item.item_equipment_part) || ['puzzle', 'Puzzle'].includes(item.item_equipment_slot)
+                  ? '拼圖'
+                  : ['android', 'Android'].includes(item.item_equipment_part) || ['android', 'Android'].includes(item.item_equipment_slot)
+                  ? '機器人'
                   : item.item_equipment_part || item.item_equipment_slot || '未知'}
              </span>
           </div>
@@ -415,6 +419,25 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
            <StatLine label="BOSS 傷害" base={item.item_base_option.boss_damage} add={item.item_add_option.boss_damage} etc={item.item_etc_option.boss_damage} star="0" total={item.item_total_option.boss_damage} isPercent />
            <StatLine label="無視防禦率" base={item.item_base_option.ignore_monster_armor} add={item.item_add_option.ignore_monster_armor} etc={item.item_etc_option.ignore_monster_armor} star="0" total={item.item_total_option.ignore_monster_armor} isPercent />
            <StatLine label="全屬性%" base={item.item_base_option.all_stat} add={item.item_add_option.all_stat} etc={item.item_etc_option.all_stat} star="0" total={item.item_total_option.all_stat} isPercent />
+           
+           {((item.scroll_upgradable_count || (item as any).scroll_upgradeable_count) !== undefined && String((item.scroll_upgradable_count || (item as any).scroll_upgradeable_count)) !== '0') && (
+             <div className="flex items-center text-[11px] leading-tight mb-1">
+               <span className="text-slate-300 w-24 shrink-0 font-medium">可使用卷軸數:</span>
+               <span className="text-white">{(item.scroll_upgradable_count || (item as any).scroll_upgradeable_count)}</span>
+             </div>
+           )}
+           {item.golden_hammer_flag && String(item.golden_hammer_flag) !== '0' && String(item.golden_hammer_flag) !== '未套用' && (
+             <div className="flex items-center text-[11px] leading-tight mb-1">
+               <span className="text-slate-300 w-24 shrink-0 font-medium whitespace-nowrap">白金鐵鎚提煉:</span>
+               <span className="text-white">{(item.golden_hammer_flag === '使用' || item.golden_hammer_flag === '套用') ? '1次' : `${item.golden_hammer_flag}次`}</span>
+             </div>
+           )}
+           {item.cuttable_count !== undefined && String(item.cuttable_count) !== '255' && String(item.cuttable_count) !== '-1' && String(item.cuttable_count) !== '0' && 
+             (item.item_name.includes('永恆') && (item.item_name.includes('斗篷') || item.item_name.includes('手套') || item.item_name.includes('鞋'))) && (
+             <div className="flex items-center text-[11px] leading-tight mb-1">
+               <span className="text-yellow-400 w-auto shrink-0 font-medium">白金神奇剪刀可使用次數 {item.cuttable_count}次</span>
+             </div>
+           )}
          </div>
       </div>
       )}

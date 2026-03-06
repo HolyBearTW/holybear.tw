@@ -83,6 +83,9 @@ export interface EquipmentItem {
   additional_potential_option_3: string;
   starforce: string;
   scroll_upgrade: string;
+  scroll_upgradable_count: string;
+  golden_hammer_flag: string;
+  cuttable_count: string;
   starforce_scroll_flag: string;
   item_level: number;
   special_ring_level: number;
