@@ -426,12 +426,6 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
                <span className="text-white">{(item.scroll_upgradable_count || (item as any).scroll_upgradeable_count)}</span>
              </div>
            )}
-           {item.golden_hammer_flag && String(item.golden_hammer_flag) !== '0' && String(item.golden_hammer_flag) !== '未套用' && (
-             <div className="flex items-center text-[11px] leading-tight mb-1">
-               <span className="text-slate-300 w-24 shrink-0 font-medium whitespace-nowrap">白金鐵鎚提煉:</span>
-               <span className="text-white">{(item.golden_hammer_flag === '使用' || item.golden_hammer_flag === '套用') ? '1次' : `${item.golden_hammer_flag}次`}</span>
-             </div>
-           )}
            {item.cuttable_count !== undefined && String(item.cuttable_count) !== '255' && String(item.cuttable_count) !== '-1' && String(item.cuttable_count) !== '0' && 
              (item.item_name.includes('永恆') && (item.item_name.includes('斗篷') || item.item_name.includes('手套') || item.item_name.includes('鞋'))) && (
              <div className="flex items-center text-[11px] leading-tight mb-1">
