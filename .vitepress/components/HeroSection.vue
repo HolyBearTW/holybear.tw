@@ -27,7 +27,6 @@ const getImageUrl = (image) => {
   return image.startsWith('http') ? image : withBase(image)
 }
 
-// 修正日期顯示邏輯
 const formatDate = (dateStr) => {
   if (!dateStr) return ''
   const date = new Date(dateStr)
@@ -52,9 +51,9 @@ const modules = [Autoplay, Navigation, Pagination]
         :navigation="{ prevEl: '.prev-btn', nextEl: '.next-btn' }"
         class="main-swiper"
       >
-        <swiper-slide v-for="post in carouselPosts" :key="post.url">
+        <swiper-slide v-for="(post, index) in carouselPosts" :key="post.url + index">
           <a :href="withBase(post.url)" class="slide-content">
-            <img :src="getImageUrl(post.image || post.frontmatter?.image)" class="slide-img" />
+            <img :src="getImageUrl(post.image || post.frontmatter?.image)" class="slide-img" loading="lazy" />
             <div class="slide-overlay"></div>
             <div class="slide-info">
               
@@ -88,27 +87,15 @@ const modules = [Autoplay, Navigation, Pagination]
   width: 100%;
 }
 
-/* 1. 外層容器：只負責「限制視野範圍」，不負責圓角 */
 .carousel-container { 
   position: relative; 
   height: 420px; 
   width: 100%;
   z-index: 1; 
-  background: transparent; /* 背景透明，避免露出底色 */
-  
-  /* 這裡只負責把「跑到很遠的左右兩邊」的圖切掉 */
-  overflow: hidden;
-  
-  /* 這裡設定圓角是為了配合 Safari 的渲染層級，但真正的裁切在下面 */
-  border-radius: 16px; 
-  /* 加上預設底色，避免在 Android 等有大量 Canvas 背景的頁面上發生 Alpha 透明度運算閃爍 */
-  background-color: var(--vp-c-bg, #000);
-  
-  /* 移除 mask-image，因為外層不需要做細部裁切 */
-  padding: 0 !important;
+  background: transparent;
+  padding: 0;
 }
 
-/* 2. Swiper 結構重置 */
 .main-swiper,
 :deep(.swiper-wrapper),
 :deep(.swiper-slide) {
@@ -118,76 +105,43 @@ const modules = [Autoplay, Navigation, Pagination]
   padding: 0;
 }
 
-/* 確保 Swiper 本身不要有奇怪的 3D 透視衝突 */
-:deep(.swiper-slide) {
-  /* 移除 preserve-3d 避免 Android 旗艦機 (Adreno 顯示晶片) 的 Z-fighting 破圖 */
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
-  transform: translateZ(0);
-}
-
-/* 3. 【核心關鍵】內容層：每一張卡片自己切圓角 */
-/* 這樣隔壁張圖片怎麼動，都不會影響這張圖的圓角 */
+/* 讓每一張卡片自己決定圓角，並用最單純的方式裁切 */
 .slide-content {
   display: block; 
   width: 100%;
   height: 100%;
   position: relative;
   text-decoration: none;
-  margin: 0 !important;
-  padding: 0 !important;
-  
-  /* 【關鍵 1】圓角在這裡設定 */
+  margin: 0;
+  padding: 0;
   border-radius: 16px;
-  
-  /* 【關鍵 2】每張卡片自己裁切自己 */
   overflow: hidden;
-  background-color: #000; /* 給予實底色填補滑動時如果圖還沒仔好的空隙 */
+  background-color: var(--vp-c-bg, #000); 
   
-  /* 在 iOS Safari 如果同時用 WebKit Mask 與 3D Transform 極易造成嚴重閃爍 */
-  /* -webkit-mask-image 已經移除，改由原生 overlow 搭配 3D hack 修正疊層 */
-
-  /* 建立獨立渲染層，確保隔壁張圖不會疊上來 */
-  transform: translateZ(0); /* 改用 translateZ(0) 較為相容，避免 translate3d 引發額外 GPU 紋理計算 */
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
-  /* 移除 isolation: isolate 避免在部分 Android 產生重繪堆疊問題 */
+  /* 這是唯一需要保留來防止 Safari 圓角在動畫時失效的語法，它比 translateZ 更不耗效能 */
+  -webkit-mask-image: -webkit-radial-gradient(white, black);
 }
 
-/* 4. 圖片層：維持放大設定，解決白邊 */
 .slide-img { 
   position: absolute; 
   top: 0;
   left: 0;
-  
-  /* 解除限制並填滿 */
-  width: 100% !important; 
-  height: 100% !important; 
-  max-width: none !important; 
-  margin: 0 !important; 
-  padding: 0 !important;
-  
+  width: 100%; 
+  height: 100%; 
   object-fit: cover; 
   display: block;
   z-index: 1;
-  
-  /* 維持 1.01 倍放大，填補微小縫隙 */
-  transform: scale(1.01) translateZ(0); 
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
-  
+  /* 僅保留放大 1.01 倍防止白邊，移除所有 backface-visibility 與 translateZ */
+  transform: scale(1.01); 
   transition: transform 0.6s ease;
-  /* 移除 will-change，避免在手機版與 Swiper 滑動動畫產生硬體加速衝突導致閃屏 */
 }
 
-/* Hover 放大效果 */
 @media (hover: hover) and (pointer: fine) {
   .slide-content:hover .slide-img { 
-    transform: scale(1.05) translateZ(0); 
+    transform: scale(1.05); 
   }
 }
 
-/* 遮罩層 */
 .slide-overlay { 
   position: absolute; 
   inset: 0; 
@@ -196,7 +150,7 @@ const modules = [Autoplay, Navigation, Pagination]
   pointer-events: none; 
 }
 
-/* --- 文字與按鈕樣式保持原樣 --- */
+/* 文字與按鈕樣式 */
 .slide-info { position: absolute; bottom: 2.5rem; left: 2rem; right: 2rem; color: #fff; z-index: 10; }
 .slide-meta { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; }
 .cat-tag { background: var(--vp-c-brand); color: #000; padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; }
@@ -209,6 +163,7 @@ const modules = [Autoplay, Navigation, Pagination]
 .prev-btn { left: 1rem; }
 .next-btn { right: 1rem; }
 .custom-pagination { position: absolute; bottom: 1rem !important; left: 50% !important; transform: translateX(-50%); z-index: 20; display: flex; gap: 8px; }
+
 @media (max-width: 768px) {
   .carousel-container { height: 320px; }
   .slide-title { font-size: 1.5rem; }
