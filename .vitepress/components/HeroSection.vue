@@ -114,6 +114,11 @@ const modules = [Autoplay, Navigation, Pagination]
   height: 100%;
   margin: 0;
   padding: 0;
+  /* 修復手機版滑動閃爍問題 */
+  -webkit-transform: translate3d(0, 0, 0);
+  transform: translate3d(0, 0, 0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
 /* 3. 【核心關鍵】內容層：每一張卡片自己切圓角 */
@@ -138,7 +143,9 @@ const modules = [Autoplay, Navigation, Pagination]
   -webkit-mask-image: -webkit-radial-gradient(white, black);
   
   /* 建立獨立渲染層，確保隔壁張圖不會疊上來 */
-  transform: translateZ(0);
+  transform: translate3d(0, 0, 0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
   isolation: isolate;
 }
 
@@ -160,7 +167,9 @@ const modules = [Autoplay, Navigation, Pagination]
   z-index: 1;
   
   /* 維持 1.01 倍放大，填補微小縫隙 */
-  transform: scale(1.01); 
+  transform: scale(1.01) translateZ(0); 
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
   
   transition: transform 0.6s ease;
   will-change: transform;
@@ -168,7 +177,7 @@ const modules = [Autoplay, Navigation, Pagination]
 
 /* Hover 放大效果 */
 .slide-content:hover .slide-img { 
-  transform: scale(1.05); 
+  transform: scale(1.05) translateZ(0); 
 }
 
 /* 遮罩層 */
