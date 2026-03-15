@@ -1047,7 +1047,7 @@ body.theme-christmas .content-container {
  */
 canvas, 
 [class*="-background"],
-[class*="-bg"] {
+[class*="-bg"]:not(.image-bg) {
   transform: translateZ(0) !important;
   will-change: transform !important;
 }
@@ -1140,4 +1140,6 @@ canvas,
     --vp-backdrop-bg-color: var(--vp-c-bg) !important;
   }
 }
+
+
 
