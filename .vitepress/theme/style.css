@@ -1124,6 +1124,7 @@ canvas,
   .VPLocalNav, .VPLocalNav .container, .VPLocalNavOutlineDropdown, .VPLocalNav OutlineDropdown > button, .menu {
     background: var(--vp-c-bg) !important;
   }
+}
 
 @media (max-width: 768px) {
   /* 徹底終結所有 VitePress 內建模糊 */
@@ -1139,3 +1140,4 @@ canvas,
     --vp-backdrop-bg-color: var(--vp-c-bg) !important;
   }
 }
+
