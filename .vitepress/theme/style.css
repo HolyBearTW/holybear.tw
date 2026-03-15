@@ -337,13 +337,22 @@ input[type="range"]::-moz-range-thumb {
   margin: 1rem 0;
   border: 1px solid var(--vp-c-divider) !important;
   border-radius: 0 !important;
-  display: table !important;
+  display: block !important; /* 改回 block 來啟用橫向滾動，修復手機版破版 */
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
 }
 .vp-doc table th, .vp-doc table td {
   border-right: 1px solid var(--vp-c-divider) !important;
   border-bottom: 1px solid var(--vp-c-divider) !important;
   padding: 8px 16px;
-  white-space: nowrap;
+  white-space: nowrap; /* 如果不想要字被截斷可以保留，但配上 overflow-x: auto 就能滾動 */
+}
+
+/* 確保表格內的圖片在手機版不會無限制撐開 */
+.vp-doc table img {
+  max-width: 100% !important;
+  height: auto !important;
+  /* 如果圖片本身太小，不用強制放大；如果太大，最多等於儲存格寬或螢幕寬 */
 }
 
 /* ==================== Hero / logo / image (整合) ==================== */
