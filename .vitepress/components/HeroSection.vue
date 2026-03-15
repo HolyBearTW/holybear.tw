@@ -114,11 +114,15 @@ const modules = [Autoplay, Navigation, Pagination]
   height: 100%;
   margin: 0;
   padding: 0;
-  /* 修復手機版滑動閃爍問題 */
-  -webkit-transform: translate3d(0, 0, 0);
-  transform: translate3d(0, 0, 0);
+}
+
+/* 僅針對 Slide 進行 3D 加速，不要污染 wrapper 否則會跟 Swiper 自帶的動畫衝突 */
+:deep(.swiper-slide) {
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
+  transform: translate3d(0, 0, 0);
+  -webkit-transform-style: preserve-3d;
+  transform-style: preserve-3d;
 }
 
 /* 3. 【核心關鍵】內容層：每一張卡片自己切圓角 */
@@ -138,11 +142,11 @@ const modules = [Autoplay, Navigation, Pagination]
   /* 【關鍵 2】每張卡片自己裁切自己 */
   overflow: hidden;
   
-  /* 【關鍵 3 - Safari/Chrome 核彈級修復】 */
-  /* 這行指令強制瀏覽器：「這張卡片滑動時，圓角遮罩必須跟著一起動」 */
-  -webkit-mask-image: -webkit-radial-gradient(white, black);
-  
+  /* 在 iOS Safari 如果同時用 WebKit Mask 與 3D Transform 極易造成嚴重閃爍 */
+  /* -webkit-mask-image 已經移除，改由原生 overlow 搭配 3D hack 修正疊層 */
+
   /* 建立獨立渲染層，確保隔壁張圖不會疊上來 */
+  -webkit-transform: translate3d(0, 0, 0);
   transform: translate3d(0, 0, 0);
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
@@ -172,7 +176,7 @@ const modules = [Autoplay, Navigation, Pagination]
   backface-visibility: hidden;
   
   transition: transform 0.6s ease;
-  will-change: transform;
+  /* 移除 will-change，避免在手機版與 Swiper 滑動動畫產生硬體加速衝突導致閃屏 */
 }
 
 /* Hover 放大效果 */
