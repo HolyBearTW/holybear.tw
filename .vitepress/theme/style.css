@@ -1097,3 +1097,16 @@ canvas,
     background-color: var(--vp-c-bg) !important;
   }
 }
+
+@media (max-width: 768px) {
+  * {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  .VPNavBar {
+    background: var(--vp-c-bg) !important;
+  }
+  .VPLocalNav {
+    background: var(--vp-c-bg) !important;
+  }
+}
