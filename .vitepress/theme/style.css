@@ -661,12 +661,7 @@ body:not(:has(.VPHome)):not(.is-home-page) .VPSidebar .curtain {
   background-color: rgba(255, 255, 255, 0.01) !important;
   backdrop-filter: blur(8px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
-  transform: translate3d(0, 0, 0);
-  will-change: backdrop-filter;
-}
-
-/* 非首頁時，強制保持透明以顯示模糊效果 */
-body:not(:has(.VPHome)):not(.is-home-page) .VPNavScreen {
+    /* 移除 translate3d 與 will-change，避免 Android 設備因為 GPU 記憶體吃緊產生全域閃屏 */
   @apply !backdrop-blur-[8px] !bg-white/1;
 }
 
@@ -1042,3 +1037,28 @@ body.theme-christmas .content-container {
   background-color: transparent !important;
 }
 
+
+/* ========================================================================= */
+/* Android (Adreno GPU / Samsung Flagships) 全螢幕閃爍 / 破版 綜合修正 */
+/* ========================================================================= */
+/* 
+ * 1. 隔離背景層，避免 Canvas 重繪觸發全局 Backdrop Filter 重新計算 
+ * 2. 修正包含 Backdrop Filter 元件的堆疊環境 
+ */
+canvas, 
+[class*="-background"],
+[class*="-bg"] {
+  transform: translateZ(0) !important;
+  will-change: transform !important;
+}
+
+/* 確保 NavBar 等固定漂浮層不會被 GPU 大規模重繪牽連 */
+.VPNavBar, .VPNavScreen, .music-container {
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+/* 如果移動端還是閃爍，可限制 backdrop-filter */
+@media (max-width: 768px) {
+  /* .VPNavScreen { backdrop-filter: none !important; } */
+}

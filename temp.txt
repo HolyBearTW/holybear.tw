@@ -1,0 +1,20 @@
+canvas, 
+[class*=\
+-background\],
+[class*=\-bg\] {
+  transform: translateZ(0); /* 強制建立獨立 GPU 層 */
+  will-change: transform;
+}
+
+/* 確保 NavBar 等固定漂浮層不會被 GPU 大規模重繪牽連 */
+.VPNavBar, .VPNavScreen, .music-container {
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+/* 如果移動端還是閃爍，可以開啟以下這段：限制 backdrop-filter 會造成硬體加速負擔的情況 */
+@media (max-width: 768px) {
+  /* .VPNavScreen { backdrop-filter: none !important; background: rgba(255, 255, 255, 0.95) !important; } */
+  /* html.dark .VPNavScreen { background: rgba(30, 30, 30, 0.95) !important; } */
+}
+

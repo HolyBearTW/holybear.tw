@@ -101,6 +101,8 @@ const modules = [Autoplay, Navigation, Pagination]
   
   /* 這裡設定圓角是為了配合 Safari 的渲染層級，但真正的裁切在下面 */
   border-radius: 16px; 
+  /* 加上預設底色，避免在 Android 等有大量 Canvas 背景的頁面上發生 Alpha 透明度運算閃爍 */
+  background-color: var(--vp-c-bg, #000);
   
   /* 移除 mask-image，因為外層不需要做細部裁切 */
   padding: 0 !important;
@@ -116,13 +118,12 @@ const modules = [Autoplay, Navigation, Pagination]
   padding: 0;
 }
 
-/* 僅針對 Slide 進行 3D 加速，不要污染 wrapper 否則會跟 Swiper 自帶的動畫衝突 */
+/* 確保 Swiper 本身不要有奇怪的 3D 透視衝突 */
 :deep(.swiper-slide) {
+  /* 移除 preserve-3d 避免 Android 旗艦機 (Adreno 顯示晶片) 的 Z-fighting 破圖 */
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
-  transform: translate3d(0, 0, 0);
-  -webkit-transform-style: preserve-3d;
-  transform-style: preserve-3d;
+  transform: translateZ(0);
 }
 
 /* 3. 【核心關鍵】內容層：每一張卡片自己切圓角 */
@@ -141,16 +142,16 @@ const modules = [Autoplay, Navigation, Pagination]
   
   /* 【關鍵 2】每張卡片自己裁切自己 */
   overflow: hidden;
+  background-color: #000; /* 給予實底色填補滑動時如果圖還沒仔好的空隙 */
   
   /* 在 iOS Safari 如果同時用 WebKit Mask 與 3D Transform 極易造成嚴重閃爍 */
   /* -webkit-mask-image 已經移除，改由原生 overlow 搭配 3D hack 修正疊層 */
 
   /* 建立獨立渲染層，確保隔壁張圖不會疊上來 */
-  -webkit-transform: translate3d(0, 0, 0);
-  transform: translate3d(0, 0, 0);
+  transform: translateZ(0); /* 改用 translateZ(0) 較為相容，避免 translate3d 引發額外 GPU 紋理計算 */
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
-  isolation: isolate;
+  /* 移除 isolation: isolate 避免在部分 Android 產生重繪堆疊問題 */
 }
 
 /* 4. 圖片層：維持放大設定，解決白邊 */
@@ -180,8 +181,10 @@ const modules = [Autoplay, Navigation, Pagination]
 }
 
 /* Hover 放大效果 */
-.slide-content:hover .slide-img { 
-  transform: scale(1.05) translateZ(0); 
+@media (hover: hover) and (pointer: fine) {
+  .slide-content:hover .slide-img { 
+    transform: scale(1.05) translateZ(0); 
+  }
 }
 
 /* 遮罩層 */
