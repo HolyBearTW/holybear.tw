@@ -1062,3 +1062,10 @@ canvas,
 @media (max-width: 768px) {
   /* .VPNavScreen { backdrop-filter: none !important; } */
 }
+/* 強制停用手機版音樂播放器及所有的 Backdrop blur 測試 */
+@media (max-width: 768px) {
+  * {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}
