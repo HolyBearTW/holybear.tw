@@ -9,7 +9,7 @@
     "concurrently": "^9.2.1",
     "markdown-it-task-lists": "^2.1.1",
     "sass-embedded": "^1.98.0",
-    "tailwindcss": "^4.1.18",
+    "tailwindcss": "^4.2.2",
     "vitepress": "^2.0.0-alpha.16",
     "vitepress-plugin-auto-sidebar": "^1.4.0",
     "vue": "^3.5.30"
