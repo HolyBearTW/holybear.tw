@@ -20,7 +20,7 @@
     "autoprefixer": "^10.4.27",
     "chart.js": "^4.5.1",
     "date-fns": "^4.1.0",
-    "firebase": "^12.10.0",
+    "firebase": "^12.11.0",
     "front-matter": "^4.0.2",
     "lucide-react": "^0.577.0",
     "lucide-vue-next": "^0.577.0",
