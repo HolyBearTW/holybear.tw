@@ -3,6 +3,10 @@ export default [
   {
     "items": [
       {
+        "text": "快檢查你的LINE！ 三星旗艦用戶發現驚人Bug：拔掉權限反而更好用？",
+        "link": "/blog/2026-03-29"
+      },
+      {
         "text": "不忍小米了！ 換了三星 S26 Ultra",
         "link": "/blog/2026-03-15"
       },
@@ -37,10 +41,6 @@ export default [
       {
         "text": "颱風假咧？！😤 暴風圈是裝飾品膩？！",
         "link": "/blog/2025-07-06-typhoon"
-      },
-      {
-        "text": "發燒啦！🔥 身體當機了！",
-        "link": "/blog/2025-07-06"
       }
     ]
   },
