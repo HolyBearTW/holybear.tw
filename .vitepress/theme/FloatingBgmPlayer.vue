@@ -12,7 +12,7 @@ const originalMusicList = ref([
   { src: '/music/Zelda/Hyrule_Warriors_Age_of_Imprisonment_OST_-_The_Final_Confrontation_-_For_the_Future.mp4', title: '薩爾達無雙：封印戰記 - 最終決戰：為了未來' },
   { src: '/music/Zelda/Hyrule_Warriors_Age_of_Imprisonment_OST_-_Reflecting_on_Battle.mp4', title: '薩爾達無雙：封印戰記 - 回顧戰仗' },
   { src: '/music/Zelda/Hyrule_Warriors_Age_of_Imprisonment_OST_-_Journeys_End.mp4', title: '薩爾達無雙：封印戰記 - 旅途的終點' },
-  { src: '/music/Zelda/Tears_Of_The_Kingdom_OST_-_Last_Catch.mp4', title: '薩爾達傳說：王國之淚 - 最後的接住' },
+  { src: '/music/Zelda/Tears_Of_The_Kingdom_OST_Last_Catch.mp4', title: '薩爾達傳說：王國之淚 - 最後的接住' },
   { src: '/music/MapleStory_Abyss_AbysmalRavine.mp3', title: '楓之谷：米納爾森林 - 黑洞深淵' },
   { src: '/music/MapleStory_Abyss_TheBottomEnd.mp3', title: '楓之谷：米納爾森林 - 深淵之底' },
   { src: '/music/MapleStory_Dancing_Sea_Otter.mp3', title: '楓之谷：伊甸提斯克 - 波浪海獺' },
