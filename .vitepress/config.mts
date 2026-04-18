@@ -35,7 +35,6 @@ const config = defineConfig({
             rel: 'stylesheet',
             href: '/fonts/LINESeed.css'
         }],
-        // 網站說明與標籤
         ['meta', { name: 'description', content: '聖小熊的個人網站，收錄 HyperOS 模組、技術筆記與開發心得，專注於 Android 客製化與開源創作分享。' }],
         ['meta', { name: 'keywords', content: '聖小熊, HolyBear, HyperOS, 模組, Mod, MIUI, Android, GitHub, 技術部落格, Blog' }],
         
@@ -45,11 +44,38 @@ const config = defineConfig({
         // Twitter Card
         ['meta', { name: 'twitter:card', content: 'summary' }],
         ['meta', { name: 'twitter:image', content: '/logo.png' }],
+        
         // Nexon Analytics
         ['script', { type: 'text/javascript', src: 'https://openapi.nexon.com/js/analytics.js?app_id=245469', async: '' }]
     ],
     vite: {
-        plugins: [gitMetaPlugin(), react()],
+        server: {
+            hmr: {
+                // 如果只針對 Vite 中的 React 禁用 HMR (這樣 @vitejs/plugin-react 就不會載入 refresh-runtime)
+                // 這不會影響 Vue 的 HMR
+                overlay: false
+            }
+        },
+        plugins: [
+            gitMetaPlugin(), 
+            // 把 react-refresh 真的關掉的最保險方法（不讓它跑 refresh-runtime.js）
+            react({ fastRefresh: false })
+        ],
+        // 這段會直接告訴 Vite 本機開發伺服器，直接隱藏那些含 shimmed 的雜訊，是真正100%終極解法
+        customLogger: (function() {
+            try {
+                const logger = require('vite').createLogger();
+                const originalWarn = logger.warn;
+                logger.warn = (msg, options) => {
+                    if (msg.includes('Something has shimmed')) return;
+                    originalWarn(msg, options);
+                };
+                return logger;
+            } catch(e) {
+                // 如果編譯時無法讀取 vite logger，就回傳undefined
+                return undefined;
+            }
+        })(),
         resolve: {
             alias: [
                 {

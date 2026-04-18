@@ -3,12 +3,11 @@ import { Key, Lock, ExternalLink, Sparkles } from 'lucide-react';
 
 interface ApiKeyModalProps {
   onSave: (nexonKey: string, geminiKey: string) => void;
-  onDemo: () => void;
   defaultNexonKey?: string;
   defaultGeminiKey?: string;
 }
 
-const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ onSave, onDemo, defaultNexonKey = '', defaultGeminiKey = '' }) => {
+const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ onSave, defaultNexonKey = '', defaultGeminiKey = '' }) => {
   const [nexonKey, setNexonKey] = useState(defaultNexonKey);
   const [geminiKey, setGeminiKey] = useState(defaultGeminiKey);
 
@@ -84,14 +83,6 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ onSave, onDemo, defaultNexonK
               className="w-full bg-maple-600 hover:bg-maple-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 rounded-lg transition-colors flex items-center justify-center gap-2"
             >
               進入儀表板
-            </button>
-            
-            <button
-              type="button"
-              onClick={onDemo}
-              className="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium py-3 rounded-lg transition-colors"
-            >
-              試用演示模式
             </button>
           </div>
         </form>

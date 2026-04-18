@@ -1,4 +1,5 @@
 import React from 'react';
+import { BorderBeam } from 'border-beam';
 import { EquipmentItem, ItemOption, CharacterSetEffect } from '../types';
 import { Star } from 'lucide-react';
 

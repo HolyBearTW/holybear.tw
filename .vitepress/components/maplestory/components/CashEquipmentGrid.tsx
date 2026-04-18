@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
+import { BorderBeam } from 'border-beam';
 import { CharacterCashItemEquipment, CashItemEquipmentPreset, CharacterBeautyEquipment } from '../types';
 import PresetSwitcher from './PresetSwitcher';
 import DyePreview from './DyePreview';
@@ -408,7 +409,11 @@ const CashEquipmentGrid: React.FC<CashEquipmentGridProps> = ({ cashEquipment, be
 
          {/* Center Character & Beauty */}
          <div className="w-32 flex flex-col items-center relative">
-            <div className="absolute top-0 inset-x-0 h-32 bg-pink-500/10 rounded-full blur-xl transform scale-75 translate-y-4"></div>
+            <div className="absolute inset-x-0 top-0 pointer-events-none transform scale-75 translate-y-4 h-32">
+                <BorderBeam colorVariant="colorful">
+                  <div className="w-full h-full rounded-full" />
+                </BorderBeam>
+            </div>
             {characterImage ? (
                 <img 
                   src={`${characterImage}${characterImage.includes('?') ? '&' : '?'}action=A06`} 

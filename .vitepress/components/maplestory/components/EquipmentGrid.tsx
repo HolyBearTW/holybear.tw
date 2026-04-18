@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
+import { BorderBeam } from 'border-beam';
 import { EquipmentItem, CharacterEquipment, CharacterSetEffect } from '../types';
 import EquipmentTooltip from './EquipmentTooltip';
 import PresetSwitcher from './PresetSwitcher';
@@ -420,7 +421,12 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, setEffect, cha
 
       {/* Center Character */}
       <div className="w-32 flex flex-col items-center justify-start relative gap-2">
-         <div className="absolute top-10 w-24 h-24 bg-slate-800/20 rounded-full blur-xl transform scale-150"></div>
+         {/* Using BorderBeam as requested for background effect */}
+         <div className="absolute inset-0 pointer-events-none scale-150 top-10 w-24 h-24">
+           <BorderBeam colorVariant="mono">
+             <div className="w-full h-full rounded-full" />
+           </BorderBeam>
+         </div>
          <div className="h-[184px] sm:h-[216px] flex items-center justify-center w-full relative z-20">
             {characterImage ? (
                 <img src={characterImage} alt="Character" className="relative z-10 drop-shadow-2xl scale-[1.35] transform translate-y-2 origin-bottom pointer-events-none" />
