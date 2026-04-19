@@ -54,7 +54,15 @@ const config = defineConfig({
                 // 如果只針對 Vite 中的 React 禁用 HMR (這樣 @vitejs/plugin-react 就不會載入 refresh-runtime)
                 // 這不會影響 Vue 的 HMR
                 overlay: false
-            }
+            },
+            fs: {
+                // 嚴格限制可訪問的目錄
+                allow: ['.'],
+                // 明確拒絕訪問敏感目錄
+                deny: ['.env', '.env.*', '*.{pem,crt,key}', 'node_modules/**']
+            },
+            // 增加 CORS 限制
+            cors: true,
         },
         plugins: [
             gitMetaPlugin(), 
@@ -96,16 +104,6 @@ const config = defineConfig({
                 'markdown-it',
                 'recharts'
             ],
-        },
-        server: {
-            fs: {
-                // 嚴格限制可訪問的目錄
-                allow: ['.'],
-                // 明確拒絕訪問敏感目錄
-                deny: ['.env', '.env.*', '*.{pem,crt,key}', 'node_modules/**']
-            },
-            // 增加 CORS 限制
-            cors: true,
         },
     },   
     // ✨ START: 整合所有 OG 標籤的最終邏輯 (SEO 修正版) ✨
