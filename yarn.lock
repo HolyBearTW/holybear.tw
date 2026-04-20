@@ -518,10 +518,10 @@
   resolved "https://registry.npmjs.org/@esbuild/win32-x64/-/win32-x64-0.27.2.tgz"
   integrity sha512-sRdU18mcKf7F+YgheI/zGf5alZatMUTKj/jNS6l744f9u3WFu4v7twcUI9vu4mknF4Y9aDlblIie0IM+5xxaqQ==
 
-"@firebase/ai@2.11.0":
-  version "2.11.0"
-  resolved "https://registry.npmjs.org/@firebase/ai/-/ai-2.11.0.tgz"
-  integrity sha512-+oqOne/h5J51LezazR+VyzKe3AK455W29JXnb4jOeVvQhC7FymledN5+XE+w5vEcMhRQ6n1f62fdGs4A44X32A==
+"@firebase/ai@2.11.1":
+  version "2.11.1"
+  resolved "https://registry.yarnpkg.com/@firebase/ai/-/ai-2.11.1.tgz#a78c8d8a8acc5261fb2e0fa0216209b43a57c6dc"
+  integrity sha512-WGTF81W3WBKJY+c7xqTzO15OGAkCAs8cpADqflAI0skhTZjIkhF0qyf55rq4Ctt6jKygkv99rPfMrjAHTgXaVQ==
   dependencies:
     "@firebase/app-check-interop-types" "0.3.3"
     "@firebase/component" "0.7.2"
@@ -2520,12 +2520,12 @@ find-up@^4.1.0:
     locate-path "^5.0.0"
     path-exists "^4.0.0"
 
-firebase@^12.12.0:
-  version "12.12.0"
-  resolved "https://registry.npmjs.org/firebase/-/firebase-12.12.0.tgz"
-  integrity sha512-5Ap+pN5iEJUvBlQEZEmLuUm7Gvu6I5xv1jZ5SiSNyw4jrwlHo+4tmZv3OPPoKfN9eo1kBwyyBvi+pWHIPXwfYw==
+firebase@^12.12.1:
+  version "12.12.1"
+  resolved "https://registry.yarnpkg.com/firebase/-/firebase-12.12.1.tgz#4c5145ce819509b1e547d27aef584ab719809d29"
+  integrity sha512-ee7xA+bTJLfjB9BP/8FQr3EkxmpAAGc1lNc5QkWgTDpUw24HYXFPm7FEWRdLtGnygxIdYpFmepSc5VjkI6NHhw==
   dependencies:
-    "@firebase/ai" "2.11.0"
+    "@firebase/ai" "2.11.1"
     "@firebase/analytics" "0.10.21"
     "@firebase/analytics-compat" "0.2.27"
     "@firebase/app" "0.14.11"
