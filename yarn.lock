@@ -1882,10 +1882,10 @@ algoliasearch@^5.14.2:
     "@algolia/requester-fetch" "5.44.0"
     "@algolia/requester-node-http" "5.44.0"
 
-animejs@^4.3.6:
-  version "4.3.6"
-  resolved "https://registry.npmjs.org/animejs/-/animejs-4.3.6.tgz"
-  integrity sha512-rzZ4bDc8JAtyx6hYwxj7s5M/yWfnM5qqY4hZDnhy1cWFvMb6H5/necHS2sbCY3WQTDbRLuZL10dPXSxSCFOr/w==
+animejs@^4.4.0:
+  version "4.4.0"
+  resolved "https://registry.yarnpkg.com/animejs/-/animejs-4.4.0.tgz#4e5a8dc134b55195f57de6293a842fe058129ac9"
+  integrity sha512-GcMGjPjWP6VLjOi8Z0RCLfKS4LiPc2TkXNtdCadsDFsVkRoKt/hyXyV8MSKOUy1KULLzXt0yigdRYfEcxlo9Dw==
 
 ansi-regex@^5.0.1:
   version "5.0.1"
