@@ -3525,10 +3525,10 @@ react-dom@^19.2.5:
   dependencies:
     scheduler "^0.27.0"
 
-react-is@^19.2.5:
-  version "19.2.5"
-  resolved "https://registry.npmjs.org/react-is/-/react-is-19.2.5.tgz"
-  integrity sha512-Dn0t8IQhCmeIT3wu+Apm1/YVsJXsGWi6k4sPdnBIdqMVtHtv0IGi6dcpNpNkNac0zB2uUAqNX3MHzN8c+z2rwQ==
+react-is@^19.2.6:
+  version "19.2.6"
+  resolved "https://registry.yarnpkg.com/react-is/-/react-is-19.2.6.tgz#aeee6159b159eb7f520d672cffcc69e7052d288f"
+  integrity sha512-XjBR15BhXuylgWGuslhDKqlSayuqvqBX91BP8pauG8kd1zY8kotkNWbXksTCNRarse4kuGbe2kIY05ARtwNIvw==
 
 "react-redux@8.x.x || 9.x.x":
   version "9.2.0"
