@@ -43,7 +43,7 @@ const initParticles = (width: number, height: number) => {
 const animate = () => {
   if (!canvas.value) return
   
-  const ctx = canvas.value.getContext('2d')
+  const ctx = canvas.value.getContext('2d', { willReadFrequently: true })
   if (!ctx) return
   
   const width = canvas.value.width

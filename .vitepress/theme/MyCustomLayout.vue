@@ -156,7 +156,6 @@ onMounted(() => {
     // 從 localStorage 載入主題
     const savedTheme = localStorage.getItem(THEME_STORAGE_KEY)
     if (savedTheme) {
-      console.log('從 localStorage 載入主題:', savedTheme) // 調試用
       currentBackgroundTheme.value = savedTheme
       updateBodyClass(savedTheme)
     } else {
@@ -165,7 +164,6 @@ onMounted(() => {
     
     // 監聽主題切換事件
     window.addEventListener(THEME_CHANGE_EVENT, handleThemeChange)
-    console.log('Layout 已掛載，當前主題:', currentBackgroundTheme.value) // 調試用
   }
 })
 

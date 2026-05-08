@@ -46,7 +46,7 @@ const modules = [Autoplay, Navigation, Pagination]
         :modules="modules"
         :slides-per-view="1"
         :loop="true"
-        :autoplay="{ delay: 2500, disableOnInteraction: false }"
+        :autoplay="{ delay: 5000, disableOnInteraction: false }"
         :pagination="{ clickable: true, el: '.custom-pagination' }"
         :navigation="{ prevEl: '.prev-btn', nextEl: '.next-btn' }"
         class="main-swiper"
@@ -162,12 +162,20 @@ const modules = [Autoplay, Navigation, Pagination]
 .carousel-container:hover .nav-btn { opacity: 1; }
 .prev-btn { left: 1rem; }
 .next-btn { right: 1rem; }
-.custom-pagination { position: absolute; bottom: 1rem !important; left: 50% !important; transform: translateX(-50%); z-index: 20; display: flex; gap: 8px; }
+.custom-pagination { 
+  position: absolute; 
+  bottom: 1rem !important; 
+  left: 2rem !important; 
+  z-index: 20; 
+  display: flex; 
+  gap: 8px; 
+}
 
 @media (max-width: 768px) {
   .carousel-container { height: 320px; }
   .slide-title { font-size: 1.5rem; }
   .slide-info { bottom: 2rem; left: 1.2rem; right: 1.2rem; }
+  .custom-pagination { left: 1.2rem !important; }
   .nav-btn { display: none; }
 }
 </style>

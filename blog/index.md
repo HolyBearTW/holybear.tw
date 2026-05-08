@@ -399,8 +399,10 @@ watch(isOldVersion, (newValue) => {
 
 <ClientOnly>
   <!-- 將 HeroSection 移出 blog-container 以便獨立控制寬度 -->
-  <div class="hero-wrapper">
-    <HeroSection :posts="carouselPosts" />
+  <div class="VPFeatures VPHomeFeatures" style="padding-top: 0 !important; padding-bottom: 2rem !important; display: flex; justify-content: center;">
+    <div class="container home-carousel-container">
+      <HeroSection :posts="carouselPosts" />
+    </div>
   </div>
 
   <div class="blog-container">
@@ -2160,18 +2162,6 @@ body.blog-index-page [class*="content-container"] {
 .blog-container {
   padding-top: 0 !important; /* 消除頂部間距 */
   margin-top: 0;             /* 下方內容與 Hero 的間距由 Hero 決定 */
-}
-
-.hero-wrapper {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 2rem 2rem 0 2rem; /* 給予適當的左右間距，順便給上方空間 */
-}
-
-@media (max-width: 768px) {
-  .hero-wrapper {
-    padding: 1rem 1rem 0 1rem;
-  }
 }
 
 /* 針對 HeroSection 的微調 */

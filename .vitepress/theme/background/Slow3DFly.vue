@@ -339,7 +339,7 @@ const drawPetals = (ctx: CanvasRenderingContext2D) => {
         const tempCanvas = document.createElement('canvas')
         tempCanvas.width = size
         tempCanvas.height = size
-        const tempCtx = tempCanvas.getContext('2d')
+        const tempCtx = tempCanvas.getContext('2d', { willReadFrequently: true })
         
         if (tempCtx) {
           // 在臨時 canvas 上繪製 SVG
@@ -546,7 +546,7 @@ const animate = () => {
   const canvas = canvasRef.value
   if (!canvas) return
   
-  const ctx = canvas.getContext('2d')
+  const ctx = canvas.getContext('2d', { willReadFrequently: true })
   if (!ctx) return
   
   const width = canvas.width

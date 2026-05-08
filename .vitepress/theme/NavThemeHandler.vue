@@ -36,8 +36,6 @@ const handleClick = (event: MouseEvent) => {
     const text = link.textContent || ''
     const href = link.getAttribute('href') || ''
     
-    console.log('點擊了:', text, href)
-    
     // 遍歷所有主題配置，檢查是否匹配
     for (const [displayName, themeId, icon] of backgroundThemes) {
       const themeHash = `#theme-${themeId}`
@@ -56,9 +54,6 @@ const handleClick = (event: MouseEvent) => {
 // 處理 hash 變化
 const handleHashChange = () => {
   const hash = window.location.hash
-  if (hash) {
-    console.log('Hash 變化:', hash)
-  }
   // 僅當 hash 有帶 #theme- 才處理
   if (!hash.startsWith('#theme-')) return
   // 遍歷所有主題配置，檢查 hash 是否匹配
@@ -117,8 +112,6 @@ onMounted(() => {
     // 檢查初始 hash
     handleHashChange()
   }, 500)
-  
-  console.log('NavThemeHandler 已掛載，當前主題:', currentTheme.value)
 })
 
 onUnmounted(() => {

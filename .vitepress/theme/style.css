@@ -1542,22 +1542,6 @@ html.dark .VPDocAsideOutline {
   box-shadow: 0 14px 38px rgba(0, 0, 0, 0.22);
 }
 
-/* Blog index polish */
-body.blog-index-page .dashboard-panel,
-body.blog-index-page .filter-modal,
-body.blog-index-page .author-details-modal {
-  border-radius: var(--hb-card-radius) !important;
-  border: 1px solid var(--hb-border-light) !important;
-  background: rgba(255, 255, 255, 0.78) !important;
-  box-shadow: var(--hb-shadow-soft) !important;
-}
-
-html.dark body.blog-index-page .dashboard-panel,
-html.dark body.blog-index-page .filter-modal,
-html.dark body.blog-index-page .author-details-modal {
-  border-color: var(--hb-border-dark) !important;
-  background: rgba(18, 20, 26, 0.78) !important;
-}
 
 body.blog-index-page .article-card,
 body.blog-index-page .stat-card,
