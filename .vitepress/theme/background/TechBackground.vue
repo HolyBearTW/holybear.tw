@@ -233,7 +233,7 @@ const drawScanlines = (ctx: CanvasRenderingContext2D, width: number, height: num
 const animate = () => {
   if (!canvas.value) return
   if (!ctx) {
-    ctx = canvas.value.getContext('2d') as CanvasRenderingContext2D | null
+    ctx = canvas.value.getContext('2d', { alpha: false }) as CanvasRenderingContext2D | null
   }
   if (!ctx) return
   const c = ctx as CanvasRenderingContext2D
@@ -428,8 +428,8 @@ onMounted(() => {
   initNodes(canvas.value.width, canvas.value.height)
   initDataFlows(canvas.value.width, canvas.value.height)
   initHexagons(canvas.value.width, canvas.value.height)
-  // 取得 2D context，提示瀏覽器此畫布會頻繁讀取像素以提升效能
-  ctx = canvas.value.getContext('2d', { willReadFrequently: true }) as CanvasRenderingContext2D | null
+  // 背景每幀都完整重繪，不需要保留透明通道，可降低部分手機瀏覽器的合成閃爍。
+  ctx = canvas.value.getContext('2d', { alpha: false }) as CanvasRenderingContext2D | null
   animate()
   
   window.addEventListener('mousemove', handleMouseMove)

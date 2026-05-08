@@ -5,27 +5,33 @@ image: /logo.png
 
 hero:
   name: "HolyBear's Blog"
-  text: "My Personal Website"
-  tagline: "HyperOS Mod Collection"
+  text: "Mods and Technical Notes"
+  tagline: "A focused home for HyperOS / Android customization, experiments, release notes, and build notes."
   image:
     src: /logo.png
     alt: HolyBearTW
   actions:
     - theme: brand
-      text: Blog
+      text: Read Blog
       link: /en/blog/
     - theme: alt
-      text: Portfolio
+      text: View Work
       link: /en/Mod
     - theme: alt
       text: Shortlink
       link: https://go.holybear.tw/
 
 features:
-  - title: Blog
-    details: This section chronicles my journey of learning and creation. From coding challenges and problem-solving notes to observations on daily life, these entries document my authentic growth. I hope sharing my experiences offers you some inspiration or resonates with you.
-  - title: Portfolio
-    details: My portfolio showcases various modules I've developed. Each module is meticulously designed to address specific problems or provide practical functions. While only listed here, you can find full demonstrations and details of my work on Telegram.
+  - title: HyperOS Mods
+    details: A focused archive for module work, release context, and practical notes around Android customization.
+    link: /en/Mod
+  - title: Technical Notes
+    details: Debugging records, implementation details, and reusable decisions kept close to the work that produced them.
+    link: /docs/
+  - title: Build Logs
+    details: Project updates and creative notes that explain not only what changed, but why those choices mattered.
+    link: /en/blog/
   - title: Connect
-    details: If you're interested in my work or wish to discuss further, feel free to contact me via Telegram. I also regularly share the latest development progress and ideas in the group, looking forward to growing with you on this tech journey.
+    details: Telegram, GitHub, and site tools bring feedback, discussion, and collaboration into one clear path.
+    link: https://t.me/HolyBearTW
 ---

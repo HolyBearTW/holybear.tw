@@ -829,10 +829,10 @@ onUnmounted(() => {
 }
 
 .VPContent{
-    background-color: rgb(255, 255, 255,.2) !important;
+    /* removed global background to avoid mobile navbar dark overlay */
 }
 .dark .VPContent{
-    background-color: rgba(0, 0, 0, 0.2) !important;
+    /* removed global background to avoid mobile navbar dark overlay */
 }
 
 /* Dark Mode - 內容區域背景 (透射模糊) */
