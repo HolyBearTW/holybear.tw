@@ -622,6 +622,23 @@ html:not(.dark) body:not(:has(.VPHome)):not(.is-home-page) .VPSidebar.open {
   -webkit-backdrop-filter: none !important;
 }
 
+body:not(.is-home-page) .VPSidebar,
+html.dark body:not(.is-home-page) .VPSidebar,
+body:not(.is-home-page) .VPSidebar.open,
+html.dark body:not(.is-home-page) .VPSidebar.open,
+body:not(.is-home-page) .VPSidebar .curtain,
+html.dark body:not(.is-home-page) .VPSidebar .curtain {
+  --vp-sidebar-bg-color: transparent !important;
+  --vp-backdrop-bg-color: transparent !important;
+  --tw-backdrop-blur: blur(0px) !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
 @media (min-width: 960px) {
   html:has(body:not(:has(.VPHome)):not(.is-home-page)) {
     background: transparent !important;
