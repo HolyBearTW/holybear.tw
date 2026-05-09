@@ -639,7 +639,10 @@ function handleContainerClick(e) {
 
 function showMusicInfo() {
   musicInfoHidden.value = false
-  playerMinimized.value = true
+  isPlaylistVisible.value = false
+  isVolumeVisible.value = false
+  playerMinimized.value = false
+  isClicked.value = true
 }
 
 /* --- 歌曲 title toast --- */
@@ -883,13 +886,12 @@ function toggleRepeatOne() {
 
 .music-container.minimized .music-info {
   opacity: 1 !important;
-    transform: translateY(-50%) !important;
-    pointer-events: auto;
-    cursor: pointer;
-    /* 陰影改為品牌色 */
-    box-shadow: 0 8px 28px rgba(0, 204, 238, 0.25),
-                0 0 0 1px rgba(255, 255, 255, 0.25) inset;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateY(-50%) !important;
+  pointer-events: auto;
+  cursor: pointer;
+  box-shadow: 0 8px 28px rgba(0, 204, 238, 0.25),
+        0 0 0 1px rgba(255, 255, 255, 0.25) inset;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .music-container:not(.minimized) {
