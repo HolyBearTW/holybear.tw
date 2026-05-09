@@ -203,6 +203,7 @@ onMounted(async () => {
 
   // 主題事件
   window.addEventListener(THEME_CHANGE_EVENT, themeHandler)
+  window.addEventListener('pointerdown', handlePointerOutside, true)
   window.addEventListener('click', handleClickOutside)
   document.addEventListener('mousemove', handleGlobalMouseMove)
 
@@ -259,6 +260,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   window.removeEventListener(THEME_CHANGE_EVENT, themeHandler)
+  window.removeEventListener('pointerdown', handlePointerOutside, true)
   window.removeEventListener('click', handleClickOutside)
   document.removeEventListener('mousemove', handleGlobalMouseMove)
   document.removeEventListener('mousemove', handleMouseDragMove)
@@ -450,6 +452,20 @@ function toggleVolume() {
 }
 
 function handleClickOutside(event) {
+  closePlayerOnOutsideInteract(event)
+}
+
+function handlePointerOutside(event) {
+  closePlayerOnOutsideInteract(event)
+}
+
+function collapsePlayerToSidebarButton() {
+  isClicked.value = false
+  musicInfoHidden.value = true
+  playerMinimized.value = true
+}
+
+function closePlayerOnOutsideInteract(event) {
   const clickedInsidePlayer = playerContainer.value && playerContainer.value.contains(event.target)
   const clickedInsideSidebar = sidebarToggle.value && sidebarToggle.value.contains(event.target)
 
@@ -459,11 +475,7 @@ function handleClickOutside(event) {
 
     if (musicInfoHidden.value) return
 
-    if (playing.value) {
-      playerMinimized.value = true
-    } else {
-      playerOpen.value = false
-    }
+    collapsePlayerToSidebarButton()
   }
 }
 
@@ -773,7 +785,7 @@ function toggleRepeatOne() {
 
   <transition name="sidebar-fade">
     <div v-if="showSidebarButton && playerOpen" ref="sidebarToggle" class="sidebar-toggle" @click.stop.prevent="showMusicInfo" @touchend.stop.prevent="showMusicInfo">
-      <div class="sidebar-icon"><</div>
+      <i class="fa-solid fa-music sidebar-icon"></i>
     </div>
   </transition>
 
@@ -823,16 +835,17 @@ function toggleRepeatOne() {
     position: fixed;
     bottom: 24px;
     right: 24px;
-    background: rgba(255, 255, 255, 0.3);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
+  background: rgba(18, 20, 26, 0.82);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
     border-radius: 24px;
     padding: 20px 30px;
     z-index: 9999;
     min-width: 350px;
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    /* 邊框使用極淡的品牌色 */
-    border: 1px solid var(--vp-c-brand-dimm);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.28),
+        0 0 0 1px rgba(0, 255, 238, 0.08) inset;
 }
 
 /* 最小化狀態：主體完全消失 */
@@ -885,11 +898,10 @@ function toggleRepeatOne() {
 
 /* ==================== 歌曲資訊 ==================== */
 .music-info {
-    /* 背景帶一點點品牌色調 */
-    background: rgba(227, 253, 253, 0.5);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid var(--vp-c-brand-dimm);
+  background: linear-gradient(180deg, rgba(29, 33, 42, 0.92), rgba(17, 19, 26, 0.78));
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 16px;
     position: absolute;
     width: calc(100% - 80px);
@@ -900,8 +912,8 @@ function toggleRepeatOne() {
     transform: translateY(0%);
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: -1;
-    box-shadow: 0 4px 16px rgba(0, 204, 238, 0.1),
-                0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.24),
+          0 0 0 1px rgba(0, 255, 238, 0.06) inset;
     user-select: none;
     -webkit-user-select: none;
     -webkit-touch-callout: none;
@@ -935,17 +947,16 @@ function toggleRepeatOne() {
 /* ==================== 側邊欄按鈕 ==================== */
 .sidebar-toggle {
     position: fixed;
-    right: 0px;
+  right: 8px;
     bottom: 24px;
     width: 20px;
     height: 108px;
-    background: rgba(255, 255, 255, 0.35);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid var(--vp-c-brand-dark); 
-    box-shadow: 0 0 20px rgba(0, 204, 238, 0.2),
-                0 0 40px rgba(0, 204, 238, 0.1),
-                inset 0 0 20px rgba(0, 204, 238, 0.05);
+    background: rgba(22, 24, 31, 0.84);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.24),
+          inset 0 0 0 1px rgba(0, 255, 238, 0.05);
     border-radius: 12px 0 0 12px;
     display: flex;
     align-items: center;
@@ -959,21 +970,38 @@ function toggleRepeatOne() {
     touch-action: manipulation;
 }
 
+  .sidebar-toggle:not(.player-toggle)::before {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: inherit;
+    background:
+      radial-gradient(circle at 50% 50%, rgba(0, 255, 238, 0.12) 0, rgba(0, 255, 238, 0.06) 38%, rgba(143, 112, 255, 0.04) 62%, transparent 78%);
+    opacity: 0.75;
+    pointer-events: none;
+    z-index: -1;
+  }
+
+.sidebar-toggle:not(.player-toggle) {
+    width: 30px;
+    border-radius: 14px;
+}
+
 .sidebar-toggle:hover {
-    background: rgba(255, 255, 255, 0.55);
-    border-color: var(--vp-c-brand-darker);
-    box-shadow: 0 0 25px rgba(0, 204, 238, 0.4),
-                0 0 50px rgba(0, 204, 238, 0.2),
-                inset 0 0 25px rgba(0, 204, 238, 0.1);
+  background: rgba(26, 29, 37, 0.92);
+  border-color: rgba(0, 255, 238, 0.18);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.32),
+        inset 0 0 0 1px rgba(0, 255, 238, 0.08);
     transform: translateX(-3px);
 }
 
 .sidebar-icon {
-    font-size: 20px;
-    font-weight: bold;
-    color: var(--vp-c-brand-darker);
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  font-size: 17px;
+  font-weight: 600;
+    color: var(--vp-c-brand);
+    text-shadow: 0 2px 10px rgba(0, 255, 238, 0.18);
     pointer-events: none;
+    line-height: 1;
 }
 
 .sidebar-fade-enter-active,
@@ -994,7 +1022,7 @@ function toggleRepeatOne() {
     font-size: 1rem;
     font-weight: 700;
     margin: 0 0 8px 0;
-    color: #333;
+    color: rgba(244, 248, 255, 0.96);
     overflow: hidden;
     position: relative;
     height: 1.5em;
@@ -1020,14 +1048,14 @@ function toggleRepeatOne() {
     display: flex;
     justify-content: space-between;
     font-size: 0.75rem;
-    color: #666;
+    color: rgba(182, 190, 205, 0.88);
     margin-bottom: 8px;
 }
 
 /* ==================== 進度條 ==================== */
 .progress-container {
-    background-color: rgba(179, 252, 247, 0.3);
-    backdrop-filter: blur(8px);
+  background-color: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(10px);
     border-radius: 8px;
     cursor: pointer;
     height: 6px;
@@ -1073,8 +1101,7 @@ function toggleRepeatOne() {
 }
 
 .action-btn {
-    /* 亮色模式下使用深品牌色以增加對比 */
-    color: var(--vp-c-brand-darker);
+  color: var(--vp-c-brand);
     font-size: 20px;
     cursor: pointer;
     padding: 10px;
@@ -1088,13 +1115,13 @@ function toggleRepeatOne() {
 }
 
 .action-btn:hover {
-    color: var(--vp-c-brand-dark);
-    background-color: var(--vp-c-brand-dimm);
-    border-color: var(--vp-c-brand-light);
+  color: var(--vp-c-brand-light);
+  background-color: rgba(255, 255, 255, 0.08);
+  border-color: rgba(0, 255, 238, 0.16);
     transform: scale(1.1);
     backdrop-filter: blur(8px);
-    border: 1px solid var(--vp-c-brand-dimm);
-    box-shadow: 0 4px 12px rgba(0, 204, 238, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
 
 .action-btn:active {
@@ -1127,12 +1154,14 @@ function toggleRepeatOne() {
     bottom: calc(75%);
     left: 84.7%;
     transform: translateX(-50%);
-    background: rgba(240, 255, 255, 0.9);
-    border: 1px solid var(--vp-c-brand-dimm);
+    background: rgba(18, 20, 26, 0.88);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 12px;
     padding: 20px;
-    box-shadow: 0 8px 32px rgba(0, 204, 238, 0.15),
-                0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+    box-shadow: 0 18px 36px rgba(0, 0, 0, 0.28),
+          0 0 0 1px rgba(0, 255, 238, 0.06) inset;
     min-width: 10px;
     z-index: 10;
     display: flex;
@@ -1144,8 +1173,8 @@ function toggleRepeatOne() {
 .volume-percentage-display {
     font-size: 18px;
     font-weight: 600;
-    color: var(--vp-c-brand-darker);
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    color: rgba(244, 248, 255, 0.92);
+    text-shadow: none;
     margin-bottom: 8px;
     user-select: none;
 }
@@ -1164,7 +1193,7 @@ function toggleRepeatOne() {
     direction: rtl;
     width: 6px;
     height: 120px;
-    background: rgba(179, 252, 247, 0.4);
+    background: rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(8px);
     border-radius: 3px;
     outline: none;
@@ -1209,14 +1238,14 @@ function toggleRepeatOne() {
     bottom: calc(75%);
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(240, 255, 255, 0.35);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid var(--vp-c-brand-dimm);
+    background: rgba(18, 20, 26, 0.86);
+    backdrop-filter: blur(20px) saturate(150%);
+    -webkit-backdrop-filter: blur(20px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 18px;
     padding: 25px;
-    box-shadow: 0 8px 32px rgba(0, 204, 238, 0.15),
-                0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3),
+          0 0 0 1px rgba(0, 255, 238, 0.06) inset;
     max-width: 350px;
     max-height: 400px;
     z-index: 10;
@@ -1226,9 +1255,9 @@ function toggleRepeatOne() {
     margin: 0 0 18px 0;
     font-size: 1.25rem;
     font-weight: 700;
-    color: rgb(46, 46, 46);
+    color: rgba(244, 248, 255, 0.94);
     text-align: center;
-    text-shadow: 0 2px 4px rgba(255, 255, 255, 0.1);
+    text-shadow: none;
 }
 
 .playlist-items {
@@ -1367,10 +1396,10 @@ function toggleRepeatOne() {
 
 /* ==================== 深色模式 (Dark Mode) ==================== */
 @media (prefers-color-scheme: dark) {
-    .dark .music-container {
-        background: rgba(30, 30, 30, 0.5);
-        border: 0px solid transparent;
-    }
+  .dark .music-container {
+    background: rgba(18, 20, 26, 0.82);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
     
     .dark .action-btn {
         /* 深色模式下使用最亮的品牌色 */
@@ -1379,8 +1408,8 @@ function toggleRepeatOne() {
     }
     
     .dark .music-info {
-        background: linear-gradient(to top, rgba(30, 30, 30, 0.9), rgba(30, 30, 30, 0.5));
-        border-color: var(--vp-c-brand-dimm);
+      background: linear-gradient(180deg, rgba(29, 33, 42, 0.92), rgba(17, 19, 26, 0.78));
+      border-color: rgba(255, 255, 255, 0.08);
     }
 
     .dark .music-info .title {

@@ -53,7 +53,7 @@ const modules = [Autoplay, Navigation, Pagination]
       >
         <swiper-slide v-for="(post, index) in carouselPosts" :key="post.url + index">
           <a :href="withBase(post.url)" class="slide-content">
-            <img :src="getImageUrl(post.image || post.frontmatter?.image)" class="slide-img" loading="lazy" />
+            <img :src="getImageUrl(post.image || post.frontmatter?.image)" class="slide-img no-zoom" loading="lazy" />
             <div class="slide-overlay"></div>
             <div class="slide-info">
               
@@ -128,6 +128,7 @@ const modules = [Autoplay, Navigation, Pagination]
   left: 0;
   width: 100%; 
   height: 100%; 
+  margin: 0 !important;
   object-fit: cover; 
   display: block;
   z-index: 1;

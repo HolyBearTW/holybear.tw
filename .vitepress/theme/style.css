@@ -611,6 +611,29 @@ body:not(:has(.VPHome)):not(.is-home-page) .VPSidebar .curtain {
   z-index: 0 !important;
 }
 
+@media (min-width: 960px) {
+  html:has(body:not(:has(.VPHome)):not(.is-home-page)) {
+    background: transparent !important;
+    background-color: transparent !important;
+  }
+
+  body:not(:has(.VPHome)):not(.is-home-page) .VPSidebar,
+  html.dark body:not(:has(.VPHome)):not(.is-home-page) .VPSidebar,
+  html.dark body:not(:has(.VPHome)):not(.is-home-page) .VPSidebar.open,
+  html:not(.dark) body:not(:has(.VPHome)):not(.is-home-page) .VPSidebar.open {
+    background: transparent !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  body:not(:has(.VPHome)):not(.is-home-page) .VPSidebar .curtain {
+    background: transparent !important;
+    background-color: transparent !important;
+  }
+}
+
 /* ==================== DocSearch / Navbar 搜尋按鈕 ==================== */
 .DocSearch-Button {
   @apply !backdrop-blur-[16px] !bg-white/10;
@@ -1132,7 +1155,7 @@ canvas,
   .VPNavBar, .VPNav, .VPNavBarAppearance, .VPSidebar, .VPNavScreen, .music-container, .floating-music-player, [class*='blur'] {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
-    background-color: var(--vp-c-bg) !important;
+    background-color: transparent !important;
   }
 }
 
@@ -1141,7 +1164,7 @@ canvas,
   .VPLocalNav, .VPMenu, .VPFlyout, .VPLocalNavOutlineDropdown, .VPOffcanvas, .VPDoc {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
-    background-color: var(--vp-c-bg) !important;
+    background-color: transparent !important;
   }
 }
 
@@ -1151,10 +1174,10 @@ canvas,
     -webkit-backdrop-filter: none !important;
   }
   .VPNavBar {
-    background: var(--vp-c-bg) !important;
+    background: transparent !important;
   }
   .VPLocalNav {
-    background: var(--vp-c-bg) !important;
+    background: transparent !important;
   }
 }
 
@@ -1164,12 +1187,12 @@ canvas,
     -webkit-backdrop-filter: none !important;
     --tw-backdrop-blur: blur(0px) !important;
     --vp-nav-bg-blur: blur(0px) !important;
-    --vp-local-nav-bg-color: var(--vp-c-bg) !important;
-    --vp-nav-bg-color: var(--vp-c-bg) !important;
-    --vp-sidebar-bg-color: var(--vp-c-bg) !important;
+    --vp-local-nav-bg-color: transparent !important;
+    --vp-nav-bg-color: transparent !important;
+    --vp-sidebar-bg-color: transparent !important;
   }
   .VPLocalNav, .VPLocalNav .container, .VPLocalNavOutlineDropdown, .VPLocalNav OutlineDropdown > button, .menu {
-    background: var(--vp-c-bg) !important;
+    background: transparent !important;
   }
 }
 
@@ -1180,11 +1203,23 @@ canvas,
     -webkit-backdrop-filter: none !important;
   }
   #VPNavScreen, .VPNavScreen, .VPLocalNav {
-    background-color: var(--vp-c-bg) !important;
+    background-color: transparent !important;
   }
   html, body, #app {
     --vp-nav-bg-blur: blur(0px) !important;
-    --vp-backdrop-bg-color: var(--vp-c-bg) !important;
+    --vp-backdrop-bg-color: transparent !important;
+  }
+
+  .VPApp,
+  .VPPage,
+  .VPContent,
+  .VPDoc,
+  .vp-doc,
+  .content,
+  .content-container,
+  .container {
+    background: transparent !important;
+    background-color: transparent !important;
   }
 }
 
@@ -1235,19 +1270,21 @@ select {
   background: transparent !important;
 }
 
-body:not(.is-home-page) .VPContent {
+.Layout {
   position: relative;
 }
 
-body:not(.is-home-page) .VPContent::before {
+.Layout::before {
   content: "";
   position: fixed;
   inset: 0;
-  z-index: -3;
+  z-index: 0;
   pointer-events: none;
   background:
-    linear-gradient(135deg, rgba(0, 255, 238, 0.05), transparent 36%),
-    linear-gradient(315deg, rgba(143, 112, 255, 0.06), transparent 38%);
+    radial-gradient(circle at 8% 6%, rgba(0, 255, 238, 0.14) 0, rgba(0, 255, 238, 0.08) 10%, rgba(0, 255, 238, 0.04) 18%, transparent 28%),
+    radial-gradient(circle at 18% 4%, rgba(143, 112, 255, 0.08) 0, rgba(143, 112, 255, 0.04) 12%, transparent 24%),
+    linear-gradient(135deg, rgba(0, 255, 238, 0.04), transparent 24%),
+    linear-gradient(315deg, rgba(143, 112, 255, 0.04), transparent 28%);
 }
 
 /* Navigation */
@@ -1333,6 +1370,22 @@ body.is-home-page .VPHomeHero .container {
 .VPHero .actions {
   gap: 12px !important;
   flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+  .VPHero .actions {
+    gap: 8px !important;
+    flex-wrap: nowrap !important;
+  }
+
+  .VPHero .actions .VPButton {
+    flex: 1 1 0;
+    min-width: 0;
+    padding-inline: 10px !important;
+    font-size: 13px !important;
+    white-space: nowrap;
+    justify-content: center;
+  }
 }
 
 .VPButton {
@@ -1878,8 +1931,17 @@ body:has(.VPHome) .VPNavBar .container::after {
 }
 
 /* Mobile compositor flash guard */
+:root {
+  --hb-mobile-fallback-bg: #061018;
+}
+
+html:not(.dark) {
+  --hb-mobile-fallback-bg: #f4f8fc;
+}
+
 html {
-  background-color: #061018 !important;
+  background-color: var(--hb-mobile-fallback-bg) !important;
+  overscroll-behavior-y: none;
 }
 
 html:not(.dark):not(:has(body.theme-tech)):not(:has(body.theme-gaming)):not(:has(body.theme-gravityfield)):not(:has(body.theme-halloween)):not(:has(body.theme-christmas)) {
@@ -1889,6 +1951,34 @@ html:not(.dark):not(:has(body.theme-tech)):not(:has(body.theme-gaming)):not(:has
 body {
   background-color: transparent !important;
   isolation: isolate;
+  overscroll-behavior-y: none;
+}
+
+body.theme-tech,
+body.theme-gaming,
+body.theme-gravityfield,
+body.theme-halloween,
+body.theme-christmas {
+  --hb-mobile-fallback-bg: #061018;
+}
+
+html:not(.dark) body.theme-tech,
+html:not(.dark) body.theme-animated,
+html:not(.dark) body.theme-hyperos,
+html:not(.dark) body.theme-hyperos2,
+html:not(.dark) body.theme-halo {
+  --hb-mobile-fallback-bg: #f7fbfc;
+}
+
+.mobile-flash-guard {
+  position: fixed;
+  inset: 0;
+  z-index: -3;
+  pointer-events: none;
+  background: var(--hb-mobile-fallback-bg);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: translate3d(0, 0, 0);
 }
 
 .tech-background,

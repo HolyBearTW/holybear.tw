@@ -2146,6 +2146,15 @@ body.blog-index-page .vp-doc h2 {
   padding-top: 0 !important;
   margin-top: 0 !important;
 }
+body.blog-index-page .vp-doc,
+body.blog-index-page .VPDoc,
+body.blog-index-page .VPDoc .container,
+body.blog-index-page .VPDoc .content,
+body.blog-index-page .VPDoc .content-container,
+body.blog-index-page .VPDoc .content-body {
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
 body.blog-index-page main,
 body.blog-index-page .VPContent,
 body.blog-index-page .VPContent .content-container,
@@ -2155,6 +2164,10 @@ body.blog-index-page [class*="content-container"] {
   border-top: none !important;
   box-shadow: none !important;
   outline: none !important;
+}
+body.blog-index-page .vp-doc > .VPFeatures.VPHomeFeatures:first-child {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
 }
 </style>
 

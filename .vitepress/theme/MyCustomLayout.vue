@@ -417,8 +417,8 @@ onUnmounted(() => {
             if (typeof location !== 'undefined') {
                 const path = location.pathname;
                 const isBlogList =
-                    /^\/blog\/?index(\.html)?$/.test(path) ||
-                    /^\/en\/blog\/?index(\.html)?$/.test(path);
+                    /^\/blog(?:\/|\/index(?:\.html)?)?$/.test(path) ||
+                    /^\/en\/blog(?:\/|\/index(?:\.html)?)?$/.test(path);
                 if (isBlogList) return;
             }
             const zoomImgs = document.querySelectorAll('.vp-doc img:not(.no-zoom)');
@@ -482,6 +482,7 @@ onUnmounted(() => {
 <template>
     <MigrationNotice :intro-finished="true" />
     <FloatingBgmPlayer />
+    <div class="mobile-flash-guard" aria-hidden="true"></div>
 
     <ClientOnly>
         <Tech v-if="currentBackgroundTheme === 'tech'" />
@@ -1162,31 +1163,38 @@ html.dark .VPHero .name {
 <style>
 /* 文章頁腳 */
 .VPFooter {
-    background: rgba(255, 255, 255,.2) !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    border-top: none !important;
 }
 .dark .VPFooter {
-    background: rgba(0, 0, 0, 0.2) !important;
+    background: transparent !important;
+    background-color: transparent !important;
 }
 .BlogVPFooter {
         width: 100%;
         padding: 32px 0 24px 0;
-        background: var(--vp-c-bg);
+                background: transparent !important;
+                background-color: transparent !important;
         border-top: none !important;
         text-align: center;
         font-size: 14px;
-        background: rgba(255, 255, 255,.2) !important;
         color: #67676c !important;
 }
 .dark .BlogVPFooter {
-    background: rgba(0, 0, 0, 0.2) !important;
+        background: transparent !important;
+        background-color: transparent !important;
     color: #98989f !important;
 }
 .dark .BlogVPFooter {
-  background: rgba(0, 0, 0, 0.2) !important;
+    background: transparent !important;
+    background-color: transparent !important;
 }
 .BlogVPFooter .container {
     max-width: 960px;
     margin: 0 auto;
+        background: transparent !important;
+        background-color: transparent !important;
 }
 .BlogVPFooter .message {
     margin-bottom: 4px;

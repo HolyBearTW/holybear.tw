@@ -24,6 +24,7 @@ let animationId
 
 let accumulatedTime = 0
 let isPlaying = false
+let lastWidth = 0
 
 let audioContext, audioAnalyser, audioSource
 let frequencyData
@@ -207,6 +208,7 @@ const init = () => {
   const container = canvasContainer.value
   const width = window.innerWidth
   const height = window.innerHeight
+  lastWidth = width
 
   camera = new THREE.PerspectiveCamera( 75, width / height, 5, 15000 )
   camera.position.z = 1000 
@@ -338,6 +340,8 @@ const onWindowResize = () => {
   if (!camera || !renderer) return
   const width = window.innerWidth
   const height = window.innerHeight
+  if (lastWidth !== 0 && Math.abs(width - lastWidth) < 10) return
+  lastWidth = width
   camera.aspect = width / height
   camera.updateProjectionMatrix()
   renderer.setSize( width, height )
