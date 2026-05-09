@@ -1160,27 +1160,12 @@ canvas,
 @media (max-width: 768px) {
   /* .VPNavScreen { backdrop-filter: none !important; } */
 }
-/* 強制停用手機版音樂播放器及所有的 Backdrop blur 測試 */
-@media (max-width: 768px) {
-  * {
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-  }
-}
-/* 強制覆蓋 Tailwind 與底層變數的模糊設定 */
-@media (max-width: 768px) {
-  *, ::before, ::after {
-    --tw-backdrop-blur: blur(0) !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-  }
-}
 
 @media (max-width: 768px) {
   :root, page {
     --vp-nav-bg-blur: blur(0px) !important;
   }
-  .VPNavBar, .VPNav, .VPNavBarAppearance, .VPSidebar, .VPNavScreen, .music-container, .floating-music-player, [class*='blur'] {
+  .VPNavBar, .VPNav, .VPNavBarAppearance, .VPSidebar, .VPNavScreen {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
     background-color: transparent !important;
@@ -1197,10 +1182,6 @@ canvas,
 }
 
 @media (max-width: 768px) {
-  * {
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-  }
   .VPNavBar {
     background: transparent !important;
   }
@@ -1210,10 +1191,23 @@ canvas,
 }
 
 @media (max-width: 768px) {
-  *, *::before, *::after {
+  .VPNavBar,
+  .VPNavBar::before,
+  .VPNavBar::after,
+  .VPNav,
+  .VPNav::before,
+  .VPNav::after,
+  .VPSidebar,
+  .VPSidebar::before,
+  .VPSidebar::after,
+  .VPNavScreen,
+  .VPNavScreen::before,
+  .VPNavScreen::after,
+  .VPLocalNav,
+  .VPLocalNav::before,
+  .VPLocalNav::after {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
-    --tw-backdrop-blur: blur(0px) !important;
     --vp-nav-bg-blur: blur(0px) !important;
     --vp-local-nav-bg-color: transparent !important;
     --vp-nav-bg-color: transparent !important;
@@ -1651,7 +1645,7 @@ body.blog-index-page .article-image img {
 
 /* Floating player polish */
 body .music-container.music-container {
-  border-radius: 14px !important;
+  border-radius: 24px !important;
   box-shadow: 0 18px 44px rgba(0, 0, 0, 0.22), 0 0 0 1px rgba(0, 255, 238, 0.12) inset !important;
 }
 
@@ -1700,19 +1694,42 @@ body .music-container.music-container {
 
   body .music-container.music-container {
     right: auto !important;
-    bottom: 10px !important;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 18px) !important;
     left: 50% !important;
     width: min(320px, calc(100vw - 28px)) !important;
     min-width: 0 !important;
     padding: 12px 14px !important;
     border-radius: 14px !important;
     transform: translateX(-50%) !important;
-    background: rgba(18, 20, 26, 0.88) !important;
+    background: transparent !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  body .music-container.music-container::before {
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  body .sidebar-toggle {
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
   }
 
   body .music-container.music-container .navigation {
     gap: 8px !important;
     margin-top: 0 !important;
+    padding: 8px 10px !important;
+    border-radius: 16px !important;
+    background: rgba(6, 10, 16, 0.34) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    backdrop-filter: blur(18px) saturate(145%) !important;
+    -webkit-backdrop-filter: blur(18px) saturate(145%) !important;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2),
+      0 0 0 1px rgba(0, 255, 238, 0.03) inset !important;
   }
 
   body .music-container.music-container .action-btn {
@@ -1728,8 +1745,20 @@ body .music-container.music-container {
     font-size: 21px !important;
   }
 
+  body .music-container.music-container.play .music-info,
+  body .music-container.music-container.minimized .music-info {
+    display: block !important;
+    opacity: 1 !important;
+    z-index: 1 !important;
+  }
+
   body .music-container.music-container.play .music-info {
-    display: none !important;
+    transform: translateY(-107%) !important;
+  }
+
+  body .music-container.music-container.minimized .music-info {
+    opacity: 1 !important;
+    transform: translateY(-50%) !important;
   }
 }
 
@@ -2127,4 +2156,5 @@ body.is-home-page .VPNavBar .divider-line {
     background-color: transparent !important;
   }
 }
+
 

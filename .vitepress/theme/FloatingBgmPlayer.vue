@@ -691,7 +691,7 @@ function toggleRepeatOne() {
     >
       <div
         class="music-info"
-        :class="{ hidden: musicInfoHidden, dragging: isDragging }"
+        :class="{ hidden: musicInfoHidden, dragging: isDragging, visible: playing && !musicInfoHidden }"
         :style="isDragging ? { transform: `translateX(${dragOffset}px) translateY(-107%)` } : {}"
         @click="handleMusicInfoClick"
         @mouseenter="handleMouseEnter"
@@ -737,7 +737,7 @@ function toggleRepeatOne() {
       </div>
 
       <transition name="slide-up">
-        <div v-if="isVolumeVisible" class="volume-panel">
+        <div v-if="isVolumeVisible" class="volume-panel bg-slate-950/28 backdrop-blur-3xl backdrop-saturate-150 backdrop-contrast-125">
           <div class="volume-percentage-display">{{ Math.round(volume * 100) }}%</div>
           <div class="volume-slider-vertical-container">
             <input
@@ -754,13 +754,13 @@ function toggleRepeatOne() {
       </transition>
 
       <transition name="slide-up">
-        <div v-if="isPlaylistVisible" class="playlist-panel">
+        <div v-if="isPlaylistVisible" class="playlist-panel bg-slate-950/22 backdrop-blur-3xl backdrop-saturate-150 backdrop-contrast-125">
           <h3 class="playlist-title">播放清單</h3>
           <div class="playlist-items">
             <div
               v-for="(song, index) in musicList"
               :key="song.src"
-              class="playlist-item"
+              class="playlist-item bg-slate-950/24 backdrop-blur-2xl backdrop-saturate-150"
               :class="{ active: index === currentIndex }"
               @click="selectAndPlaySong(index)"
             >
@@ -791,7 +791,7 @@ function toggleRepeatOne() {
 
   <transition name="sidebar-fade">
     <div v-if="showPlayerToggle" class="sidebar-toggle player-toggle" @click.stop.prevent="playerOpen = true" @touchend.stop.prevent="playerOpen = true">
-      <i class="fa-solid fa-music"></i>
+      <i class="fa-solid fa-music sidebar-icon"></i>
     </div>
   </transition>
 </template>
@@ -835,9 +835,6 @@ function toggleRepeatOne() {
     position: fixed;
     bottom: 24px;
     right: 24px;
-  background: rgba(18, 20, 26, 0.82);
-  backdrop-filter: blur(20px) saturate(150%);
-  -webkit-backdrop-filter: blur(20px) saturate(150%);
     border-radius: 24px;
     padding: 20px 30px;
     z-index: 9999;
@@ -846,6 +843,20 @@ function toggleRepeatOne() {
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 18px 44px rgba(0, 0, 0, 0.28),
         0 0 0 1px rgba(0, 255, 238, 0.08) inset;
+  background: transparent;
+}
+
+.music-container::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: rgba(18, 20, 26, 0.54);
+    backdrop-filter: blur(28px) saturate(160%);
+    -webkit-backdrop-filter: blur(28px) saturate(160%);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
 }
 
 /* 最小化狀態：主體完全消失 */
@@ -853,9 +864,13 @@ function toggleRepeatOne() {
     background: transparent !important;
     border-color: transparent !important;
     box-shadow: none !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
     transform: translateY(20px);
+}
+
+.music-container.minimized::before {
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
 .music-container.minimized > *:not(.music-info) {
@@ -867,7 +882,7 @@ function toggleRepeatOne() {
 }
 
 .music-container.minimized .music-info {
-    opacity: 0.9 !important;
+  opacity: 1 !important;
     transform: translateY(-50%) !important;
     pointer-events: auto;
     cursor: pointer;
@@ -885,9 +900,13 @@ function toggleRepeatOne() {
     background: transparent !important;
     border-color: transparent !important;
     box-shadow: none !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
     pointer-events: none !important;
+}
+
+.music-container.info-hidden::before {
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
 .music-container.info-hidden > *:not(.sidebar-toggle) {
@@ -898,9 +917,7 @@ function toggleRepeatOne() {
 
 /* ==================== 歌曲資訊 ==================== */
 .music-info {
-  background: linear-gradient(180deg, rgba(29, 33, 42, 0.92), rgba(17, 19, 26, 0.78));
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: rgba(10, 16, 24, 0.12);
   border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 16px;
     position: absolute;
@@ -911,16 +928,51 @@ function toggleRepeatOne() {
     opacity: 0;
     transform: translateY(0%);
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: -1;
-    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.24),
-          0 0 0 1px rgba(0, 255, 238, 0.06) inset;
+    z-index: 1;
+    pointer-events: none;
+    box-shadow: 0 22px 48px rgba(0, 0, 0, 0.28),
+          0 0 0 1px rgba(255, 255, 255, 0.08) inset,
+          0 0 24px rgba(255, 255, 255, 0.06) inset;
     user-select: none;
     -webkit-user-select: none;
     -webkit-touch-callout: none;
+    overflow: hidden;
+    isolation: isolate;
+    backdrop-filter: blur(84px) saturate(170%) contrast(116%) brightness(108%);
+    -webkit-backdrop-filter: blur(84px) saturate(170%) contrast(116%) brightness(108%);
+  }
+
+  .music-info::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    border-radius: inherit;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(8, 14, 22, 0.22) 28%, rgba(8, 14, 22, 0.3));
+    backdrop-filter: blur(84px) saturate(170%) contrast(116%) brightness(108%);
+    -webkit-backdrop-filter: blur(84px) saturate(170%) contrast(116%) brightness(108%);
+    pointer-events: none;
+  }
+
+  .music-info::after {
+    content: '';
+    position: absolute;
+    inset: 1px;
+    z-index: 0;
+    border-radius: 15px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.02) 34%, rgba(255, 255, 255, 0));
+    pointer-events: none;
+  }
+
+  .music-info > * {
+    position: relative;
+    z-index: 1;
 }
 
 .music-container.play .music-info {
     opacity: 1;
+    z-index: 1;
+    pointer-events: auto;
     transform: translateY(-107%);
 }
 
@@ -949,7 +1001,7 @@ function toggleRepeatOne() {
     position: fixed;
   right: 8px;
     bottom: 24px;
-    width: 20px;
+    width: 30px;
     height: 108px;
     background: rgba(22, 24, 31, 0.84);
     backdrop-filter: blur(16px);
@@ -957,7 +1009,7 @@ function toggleRepeatOne() {
     border: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow: 0 10px 28px rgba(0, 0, 0, 0.24),
           inset 0 0 0 1px rgba(0, 255, 238, 0.05);
-    border-radius: 12px 0 0 12px;
+    border-radius: 14px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -970,7 +1022,7 @@ function toggleRepeatOne() {
     touch-action: manipulation;
 }
 
-  .sidebar-toggle:not(.player-toggle)::before {
+.sidebar-toggle::before {
     content: '';
     position: absolute;
     inset: -4px;
@@ -980,11 +1032,6 @@ function toggleRepeatOne() {
     opacity: 0.75;
     pointer-events: none;
     z-index: -1;
-  }
-
-.sidebar-toggle:not(.player-toggle) {
-    width: 30px;
-    border-radius: 14px;
 }
 
 .sidebar-toggle:hover {
@@ -1012,10 +1059,6 @@ function toggleRepeatOne() {
 .sidebar-fade-enter-from,
 .sidebar-fade-leave-to {
     transform: translateX(40px);
-}
-
-.sidebar-toggle.player-toggle .sidebar-icon {
-    font-size: 24px;
 }
 
 .music-info .title {
@@ -1154,9 +1197,6 @@ function toggleRepeatOne() {
     bottom: calc(75%);
     left: 84.7%;
     transform: translateX(-50%);
-    background: rgba(18, 20, 26, 0.88);
-    backdrop-filter: blur(18px);
-    -webkit-backdrop-filter: blur(18px);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 12px;
     padding: 20px;
@@ -1168,6 +1208,7 @@ function toggleRepeatOne() {
     flex-direction: column;
     align-items: center;
     gap: 12px;
+    overflow: hidden;
 }
 
 .volume-percentage-display {
@@ -1238,9 +1279,6 @@ function toggleRepeatOne() {
     bottom: calc(75%);
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(18, 20, 26, 0.86);
-    backdrop-filter: blur(20px) saturate(150%);
-    -webkit-backdrop-filter: blur(20px) saturate(150%);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 18px;
     padding: 25px;
@@ -1249,6 +1287,10 @@ function toggleRepeatOne() {
     max-width: 350px;
     max-height: 400px;
     z-index: 10;
+  overflow: hidden;
+  box-shadow: 0 22px 48px rgba(0, 0, 0, 0.28),
+        0 0 0 1px rgba(255, 255, 255, 0.08) inset,
+        0 0 24px rgba(255, 255, 255, 0.06) inset;
 }
 
 .playlist-title {
@@ -1278,21 +1320,18 @@ function toggleRepeatOne() {
     border-radius: 12px;
     cursor: pointer;
     transition: all 0.3s ease;
-    background: rgba(240, 255, 255, 0.3);
-    backdrop-filter: blur(8px);
     border: 1px solid rgba(0, 204, 238, 0.1);
     box-shadow: 0 2px 8px rgba(0, 204, 238, 0.05);
 }
 
 .playlist-item:hover {
-    background: var(--vp-c-brand-dimm);
+  background: rgba(9, 22, 30, 0.34);
     border-color: var(--vp-c-brand-light);
     box-shadow: 0 4px 12px rgba(0, 204, 238, 0.15);
 }
 
 .playlist-item.active {
-    /* 激活狀態使用品牌漸層背景 */
-    background: linear-gradient(135deg, rgba(0, 255, 238, 0.15) 0%, rgba(0, 204, 238, 0.15) 100%);
+  background: rgba(7, 20, 28, 0.38);
     border-left: 3px solid var(--vp-c-brand-dark);
     border-color: var(--vp-c-brand-light);
     box-shadow: 0 4px 16px rgba(0, 204, 238, 0.2),
@@ -1308,13 +1347,13 @@ function toggleRepeatOne() {
 
 .song-number {
     font-weight: 700;
-    color: var(--vp-c-brand-darker);
+  color: rgba(117, 239, 234, 0.96);
     min-width: 28px;
-    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
+  text-shadow: none;
 }
 
 .song-title {
-    color: rgba(51, 51, 51, 0.9);
+  color: rgba(234, 240, 250, 0.94);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1380,8 +1419,7 @@ function toggleRepeatOne() {
 }
 
 .volume-panel, .playlist-panel {
-    background: rgba(255, 255, 255, 0.75);
-    border-color: var(--vp-c-brand-dark);
+  border-color: rgba(255, 255, 255, 0.08);
 }
 
 /* ==================== 響應式設計 ==================== */
@@ -1392,13 +1430,20 @@ function toggleRepeatOne() {
         min-width: 300px;
         padding: 20px 25px;
     }
+
+  .music-info {
+    top: 27px;
+  }
 }
 
 /* ==================== 深色模式 (Dark Mode) ==================== */
 @media (prefers-color-scheme: dark) {
   .dark .music-container {
-    background: rgba(18, 20, 26, 0.82);
     border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .dark .music-container::before {
+    background: rgba(18, 20, 26, 0.82);
   }
     
     .dark .action-btn {
@@ -1408,7 +1453,6 @@ function toggleRepeatOne() {
     }
     
     .dark .music-info {
-      background: linear-gradient(180deg, rgba(29, 33, 42, 0.92), rgba(17, 19, 26, 0.78));
       border-color: rgba(255, 255, 255, 0.08);
     }
 
@@ -1422,7 +1466,6 @@ function toggleRepeatOne() {
 
     .dark .volume-panel,
     .dark .playlist-panel {
-        background: rgba(30, 30, 30, 0.75);
         border-color: var(--vp-c-brand-dark);
     }
 
@@ -1431,8 +1474,7 @@ function toggleRepeatOne() {
     }
 
     .dark .playlist-item {
-        background: rgba(0, 255, 238, 0.05);
-        border-color: rgba(0, 255, 238, 0.05);
+      border-color: rgba(0, 255, 238, 0.12);
     }
     
     .dark .playlist-item:hover {
