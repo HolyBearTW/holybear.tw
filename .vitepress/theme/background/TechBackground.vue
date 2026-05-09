@@ -233,7 +233,7 @@ const drawScanlines = (ctx: CanvasRenderingContext2D, width: number, height: num
 const animate = () => {
   if (!canvas.value) return
   if (!ctx) {
-    ctx = canvas.value.getContext('2d', { alpha: false }) as CanvasRenderingContext2D | null
+    ctx = canvas.value.getContext('2d', { alpha: false, willReadFrequently: true }) as CanvasRenderingContext2D | null
   }
   if (!ctx) return
   const c = ctx as CanvasRenderingContext2D
@@ -429,7 +429,7 @@ onMounted(() => {
   initDataFlows(canvas.value.width, canvas.value.height)
   initHexagons(canvas.value.width, canvas.value.height)
   // 背景每幀都完整重繪，不需要保留透明通道，可降低部分手機瀏覽器的合成閃爍。
-  ctx = canvas.value.getContext('2d', { alpha: false }) as CanvasRenderingContext2D | null
+  ctx = canvas.value.getContext('2d', { alpha: false, willReadFrequently: true }) as CanvasRenderingContext2D | null
   animate()
   
   window.addEventListener('mousemove', handleMouseMove)
