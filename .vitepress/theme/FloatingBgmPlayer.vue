@@ -1163,6 +1163,7 @@ function toggleRepeatOne() {
   color: var(--vp-c-brand-light);
   background-color: rgba(255, 255, 255, 0.08);
   border-color: rgba(0, 255, 238, 0.16);
+  transform: scale(1.1);
   backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);

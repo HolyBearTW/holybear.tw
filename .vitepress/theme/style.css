@@ -1643,12 +1643,6 @@ body.blog-index-page .article-image img {
   border-radius: var(--hb-card-radius) !important;
 }
 
-/* Floating player polish */
-body .music-container.music-container {
-  border-radius: 24px !important;
-  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.22), 0 0 0 1px rgba(0, 255, 238, 0.12) inset !important;
-}
-
 /* Mobile refinements */
 @media (max-width: 768px) {
   body.is-home-page .VPHomeHero {
@@ -1692,27 +1686,7 @@ body .music-container.music-container {
     min-height: 42px !important;
   }
 
-  body .music-container.music-container {
-    right: auto !important;
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 18px) !important;
-    left: 50% !important;
-    width: min(320px, calc(100vw - 28px)) !important;
-    min-width: 0 !important;
-    padding: 12px 14px !important;
-    border-radius: 14px !important;
-    transform: translateX(-50%) !important;
-    background: transparent !important;
-    border-color: transparent !important;
-    box-shadow: none !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-  }
-
-  body .music-container.music-container::before {
-    background: transparent !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-  }
+  
 
   body .sidebar-toggle {
     right: 10px !important;
@@ -1730,49 +1704,6 @@ body .music-container.music-container {
   body .sidebar-toggle .sidebar-icon {
     font-size: 20px !important;
     text-shadow: 0 0 12px rgba(0, 255, 238, 0.24) !important;
-  }
-
-  body .music-container.music-container .navigation {
-    gap: 8px !important;
-    margin-top: 0 !important;
-    padding: 8px 10px !important;
-    border-radius: 16px !important;
-    background: rgba(6, 10, 16, 0.34) !important;
-    border: 1px solid rgba(255, 255, 255, 0.06) !important;
-    backdrop-filter: blur(18px) saturate(145%) !important;
-    -webkit-backdrop-filter: blur(18px) saturate(145%) !important;
-    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2),
-      0 0 0 1px rgba(0, 255, 238, 0.03) inset !important;
-  }
-
-  body .music-container.music-container .action-btn {
-    width: 36px !important;
-    height: 36px !important;
-    padding: 8px !important;
-    font-size: 17px !important;
-  }
-
-  body .music-container.music-container .action-btn-big {
-    width: 48px !important;
-    height: 48px !important;
-    font-size: 21px !important;
-  }
-
-  body .music-container.music-container.play .music-info {
-    display: block !important;
-    opacity: 1 !important;
-    z-index: 1 !important;
-  }
-
-  body .music-container.music-container.play .music-info {
-    transform: translateY(-107%) !important;
-  }
-
-  body .music-container.music-container.minimized .music-info {
-    opacity: 0 !important;
-    visibility: hidden !important;
-    pointer-events: none !important;
-    transform: translateY(-30%) !important;
   }
 }
 
