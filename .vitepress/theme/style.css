@@ -1459,8 +1459,8 @@ html.dark .VPHome .VPButton.alt {
 
 .VPHomeHero .image-bg {
   opacity: 0.62 !important;
-  filter: blur(37px) saturate(1.15) !important;
-  transform: translate3d(0, 0, 0) scale(2) !important;
+  filter: blur(50px) saturate(1.15) !important;
+  transform: translate3d(-50%, -50%, 0) scale(1.5) !important;
   contain: paint !important;
   backface-visibility: hidden !important;
 }
