@@ -34,6 +34,26 @@ const { isDark } = useData()
 // 當前背景主題
 const currentBackgroundTheme = ref(defaultTheme)
 
+const mobileFallbackBackground = computed(() => {
+    const theme = currentBackgroundTheme.value
+    const darkFallbackThemes = new Set(['tech', 'gaming', 'gravityfield', 'slow3dfly', 'halloween', 'christmas'])
+    const adaptiveThemes = new Set(['animated', 'hyperos', 'hyperos2', 'halo', 'none'])
+
+    if (darkFallbackThemes.has(theme)) {
+        return '#061018'
+    }
+
+    if (adaptiveThemes.has(theme)) {
+        return isDark.value ? '#061018' : '#f7fbfc'
+    }
+
+    return isDark.value ? '#061018' : '#f7fbfc'
+})
+
+const mobileFlashGuardStyle = computed(() => ({
+    backgroundColor: mobileFallbackBackground.value
+}))
+
 // ============================================
 // 　　　　　　　深淺色模式切換邏輯
 // ============================================
@@ -482,7 +502,7 @@ onUnmounted(() => {
 <template>
     <MigrationNotice :intro-finished="true" />
     <FloatingBgmPlayer />
-    <div class="mobile-flash-guard" aria-hidden="true"></div>
+    <div class="mobile-flash-guard" :style="mobileFlashGuardStyle" aria-hidden="true"></div>
 
     <ClientOnly>
         <Tech v-if="currentBackgroundTheme === 'tech'" />

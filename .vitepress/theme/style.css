@@ -2000,9 +2000,10 @@ html:not(.dark) body.theme-halo {
 .mobile-flash-guard {
   position: fixed;
   inset: 0;
-  z-index: -3;
+  z-index: -1;
   pointer-events: none;
   background: var(--hb-mobile-fallback-bg);
+  contain: paint;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
   transform: translate3d(0, 0, 0);
