@@ -62,7 +62,9 @@ const reveal = () => {
 
 .spoiler-container:not(.revealed) .spoiler-content {
   filter: blur(50px);
-  transform: scale(1.05);
+  transform: translate3d(0, 0, 0) scale(1.05);
+  backface-visibility: hidden;
+  contain: paint;
 }
 
 .spoiler-container.revealed .spoiler-content {

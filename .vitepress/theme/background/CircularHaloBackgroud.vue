@@ -43,7 +43,9 @@ html.dark .animated-background {
     position: absolute;
     border-radius: 50%;
     opacity: 0.4;
-    filter: blur(40px);
+      filter: blur(20px);
+      transform: scale(2) translate3d(0, 0, 0) !important;
+      backface-visibility: hidden !important;
     pointer-events: auto;
     mix-blend-mode: lighten;
     z-index: 0;
@@ -53,14 +55,16 @@ html.dark .animated-background {
     position: absolute;
     border-radius: 50%;
     opacity: 0.4;
-    filter: blur(40px);
+      filter: blur(20px);
+      transform: scale(2) translate3d(0, 0, 0) !important;
+      backface-visibility: hidden !important;
     pointer-events: auto;
     mix-blend-mode: lighten;
   }
 /* 淺色模式 blob 強化 */
 html:not(.dark) .blob {
   opacity: 0.6;
-  filter: blur(32px);
+    filter: blur(16px);
   mix-blend-mode: normal;
 }
 /* 各 blob 位置與顏色 */

@@ -29,28 +29,28 @@ const blocks = ref<Block[]>([
     color: 'linear-gradient(135deg, #4A9FF5 0%, #1E88E5 100%)', 
     initialX: 25, 
     initialY: 25,
-    blur: 80
+    blur: 40
   },
   { 
     // 紅色 - 左下角
     color: 'linear-gradient(135deg, #FF6B6B 0%, #EE5A52 100%)', 
     initialX: 25, 
     initialY: 95,
-    blur: 70
+    blur: 35
   },
   { 
     // 黃橘色 - 右上角
     color: 'linear-gradient(135deg, #FFB84D 0%, #FF9500 100%)', 
     initialX: 110, 
     initialY: 15,
-    blur: 90
+    blur: 45
   },
   { 
     // 青藍色 - 右下角 (替代綠色，更好的混色效果)
     color: 'linear-gradient(135deg, #4DD0E1 0%, #26C6DA 100%)', 
     initialX: 100, 
     initialY: 75,
-    blur: 75
+    blur: 38
   }
 ])
 
@@ -81,6 +81,9 @@ onMounted(() => {
   overflow: hidden;
   z-index: -1;
   background: linear-gradient(to bottom, #e0e7ff 0%, #fce7f3 50%, #dbeafe 100%);
+  transform: translate3d(0, 0, 0) !important;
+  backface-visibility: hidden !important;
+  contain: paint !important;
 }
 /* 色塊基礎樣式  大小*/
 .color-block {

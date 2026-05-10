@@ -35,8 +35,6 @@ export default {
             else document.body.classList.remove('is-home-page');
         }
         updateBodyClasses();
-        // 降低頻率減輕負擔，並確保不與 theme 切換衝突
-        setInterval(updateBodyClasses, 500);
 
 
 
@@ -247,52 +245,38 @@ export default {
             return pageUrl;
         }
 
-        // 初始同步一次，並保存最後同步的 URL
-        let lastSyncedUrl = updateCanonicalAndOg();
+        // 初始同步一次
+        updateCanonicalAndOg();
 
         // 首次進站
     // 移除 replayIfChanged，避免動畫重複觸發
         setupGlobalOutlineHoverScroll();
+        updateBodyClasses();
         updateCanonicalAndOg();
 
         // 已移除 replayIfChanged 輪詢
 
         // 監聽 VitePress 事件與路由
         window.addEventListener('DOMContentLoaded', () => {
+            updateBodyClasses();
             setupGlobalOutlineHoverScroll();
             updateCanonicalAndOg();
         });
         window.addEventListener('vitepress:pageview', () => {
             setTimeout(() => {
+                updateBodyClasses();
                 setupGlobalOutlineHoverScroll();
-                lastSyncedUrl = updateCanonicalAndOg();
+                updateCanonicalAndOg();
             }, 80);
         });
         if (router && typeof router.onAfterRouteChanged === 'function') {
             router.onAfterRouteChanged(() => {
                 setTimeout(() => {
+                    updateBodyClasses();
                     setupGlobalOutlineHoverScroll();
-                    lastSyncedUrl = updateCanonicalAndOg();
+                    updateCanonicalAndOg();
                 }, 50);
             });
         }
-
-        // 定期同步 head（canonical/og）
-        const HEAD_SYNC_INTERVAL = 1200;
-        setInterval(() => {
-            const siteUrl = 'https://holybear.tw';
-            const currentPath = window.location.pathname
-                .replace(/\/index(?:\.html)?$/, '/')
-                .replace(/\.html$/, '');
-            const normalized = currentPath.startsWith('/') ? currentPath : '/' + currentPath;
-            const currentUrl = siteUrl + normalized;
-            const canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
-            const ogUrl = document.querySelector('meta[property="og:url"]') as HTMLMetaElement | null;
-            const mismatch = !canonical || canonical.href !== currentUrl || !ogUrl || ogUrl.content !== currentUrl;
-            const urlChanged = currentUrl !== lastSyncedUrl;
-            if (urlChanged || mismatch) {
-                lastSyncedUrl = updateCanonicalAndOg();
-            }
-        }, HEAD_SYNC_INTERVAL);
     }
 };

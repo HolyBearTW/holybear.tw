@@ -940,6 +940,9 @@ function toggleRepeatOne() {
     -webkit-touch-callout: none;
     overflow: hidden;
     isolation: isolate;
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+    contain: paint;
     backdrop-filter: blur(84px) saturate(170%) contrast(116%) brightness(108%);
     -webkit-backdrop-filter: blur(84px) saturate(170%) contrast(116%) brightness(108%);
   }

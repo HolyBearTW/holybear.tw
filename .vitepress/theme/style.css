@@ -1146,8 +1146,9 @@ body.theme-christmas .content-container {
 canvas, 
 [class*="-background"],
 [class*="-bg"]:not(.image-bg) {
-  transform: translateZ(0) !important;
-  will-change: transform !important;
+  transform: translate3d(0, 0, 0) !important;
+  contain: paint !important;
+  backface-visibility: hidden !important;
 }
 
 /* 確保 NavBar 等固定漂浮層不會被 GPU 大規模重繪牽連 */
@@ -1369,6 +1370,10 @@ body.is-home-page .VPHomeHero .container {
   max-width: 780px;
   font-weight: 850 !important;
   line-height: 1.04 !important;
+  isolation: isolate !important;
+  transform: translate3d(0, 0, 0) !important;
+  backface-visibility: hidden !important;
+  will-change: filter, background-position;
 }
 
 .VPHero .text {
@@ -1454,7 +1459,10 @@ html.dark .VPHome .VPButton.alt {
 
 .VPHomeHero .image-bg {
   opacity: 0.62 !important;
-  filter: blur(74px) saturate(1.15) !important;
+  filter: blur(37px) saturate(1.15) !important;
+  transform: translate3d(0, 0, 0) scale(2) !important;
+  contain: paint !important;
+  backface-visibility: hidden !important;
 }
 
 /* Home feature grid */
@@ -1996,9 +2004,10 @@ body.hyperos2-bg::before,
 body.hyperos2-bg::after {
   z-index: 0 !important;
   pointer-events: none !important;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  transform: translate3d(0, 0, 0);
+  contain: paint !important;
+  backface-visibility: hidden !important;
+  -webkit-backface-visibility: hidden !important;
+  transform: translate3d(0, 0, 0) !important;
 }
 
 .tech-background,

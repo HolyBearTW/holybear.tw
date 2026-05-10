@@ -1104,6 +1104,10 @@ section.VPSidebarItem.level-0 {
   color: transparent;
   -webkit-text-fill-color: transparent;
   animation: gradientRotate 5s ease infinite;
+    isolation: isolate !important;
+    transform: translate3d(0, 0, 0) !important;
+    backface-visibility: hidden !important;
+    will-change: filter, background-position;
 }
 html.dark .VPHero .name {
   animation: gradientRotate 5s ease infinite, dynamicGlow 5s ease infinite;

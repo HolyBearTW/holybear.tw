@@ -97,6 +97,8 @@ onUnmounted(() => {
   background-size: 200% 200%, 200% 200%, 200% 200%, 200% 200%, 100% 100%;
   background-position: 80% 20%, 80% 90%, 20% 90%, 20% 20%, 0% 50%;
   animation: hyperOSColors1to2 8s ease-in-out infinite;
+  transform: scale(2) translate3d(0, 0, 0) !important;
+  backface-visibility: hidden !important;
 }
 html:not(.dark) .hyperos2-bg:not(:has(.VPHome))::before {
   background: 
@@ -108,12 +110,14 @@ html:not(.dark) .hyperos2-bg:not(:has(.VPHome))::before {
   background-size: 200% 200%, 200% 200%, 200% 200%, 200% 200%, 100% 100%;
   background-position: 80% 20%, 80% 90%, 20% 90%, 20% 20%, 0% 50%;
   animation: gradientRotate 8s linear infinite;
-  filter: blur(50px);
+  filter: blur(25px);
 }
 html:not(.dark) .hyperos2-bg:not(:has(.VPHome))::after {
   background: 
     radial-gradient(circle at 60% 40%, rgba(145, 194, 250, 0.6) 0%, transparent 45%),
     radial-gradient(circle at 40% 70%, rgba(250, 191, 237, 0.6) 0%, transparent 45%);
+  transform: scale(2) translate3d(0, 0, 0) !important;
+  backface-visibility: hidden !important;
 }
 .hyperos2-bg:has(.VPHome)::before {
   background:
@@ -124,7 +128,9 @@ html:not(.dark) .hyperos2-bg:not(:has(.VPHome))::after {
     linear-gradient(135deg, #0a0a14 0%, #14141e 50%, #1e1e28 100%);
   background-size: 200% 200%, 200% 200%, 200% 200%, 200% 200%, 100% 100%;
   animation: hyperOSColors1to2 5s ease-in-out infinite;
-  filter: blur(60px);
+  filter: blur(30px);
+  transform: scale(2) translate3d(0, 0, 0) !important;
+  backface-visibility: hidden !important;
 }
 .hyperos2-bg:has(.VPHome)::after {
   background:
@@ -134,6 +140,8 @@ html:not(.dark) .hyperos2-bg:not(:has(.VPHome))::after {
   animation: hyperOSColors2to3 6s ease-in-out infinite;
   opacity: 0;
   mix-blend-mode: screen;
+  transform: scale(2) translate3d(0, 0, 0) !important;
+  backface-visibility: hidden !important;
 }
 html:not(.dark) .hyperos2-bg:has(.VPHome)::before {
   background:
@@ -144,12 +152,14 @@ html:not(.dark) .hyperos2-bg:has(.VPHome)::before {
     linear-gradient(135deg, #f8f7ff 0%, #fef9fb 50%, #f5f8ff 100%);
   background-size: 200% 200%, 200% 200%, 200% 200%, 200% 200%, 100% 100%;
   animation: gradientRotate 5s ease-in-out infinite;
-  filter: blur(50px);
+  filter: blur(25px);
 }
 html:not(.dark) .hyperos2-bg:has(.VPHome)::after {
   background:
     radial-gradient(circle at 60% 40%, rgba(145, 194, 250, 0.6) 0%, transparent 45%),
     radial-gradient(circle at 40% 70%, rgba(250, 191, 237, 0.6) 0%, transparent 45%);
   opacity: 0.5;
+  transform: scale(2) translate3d(0, 0, 0) !important;
+  backface-visibility: hidden !important;
 }
 </style>
