@@ -74,9 +74,13 @@ function startHalloween() {
   batContainer.style.left = '0';
   batContainer.style.top = '0';
   batContainer.style.width = '100vw';
-  batContainer.style.height = '100vh';
+  batContainer.style.height = '100dvh';
+  batContainer.style.minHeight = '100dvh';
   batContainer.style.zIndex = '9998';
   batContainer.style.pointerEvents = 'none';
+  batContainer.style.transform = 'translate3d(0, 0, 0)';
+  batContainer.style.backfaceVisibility = 'hidden';
+  batContainer.style.contain = 'paint';
 
   for (let i = 0; i < 12; i++) {
     const bat = document.createElement('img');

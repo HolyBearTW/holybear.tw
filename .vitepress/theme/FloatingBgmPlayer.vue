@@ -1428,6 +1428,14 @@ function toggleRepeatOne() {
 }
 
 /* ==================== 響應式設計 ==================== */
+@media (max-width: 768px) {
+  .music-info,
+  .music-info::before {
+    backdrop-filter: blur(24px) saturate(140%) contrast(108%) brightness(104%);
+    -webkit-backdrop-filter: blur(24px) saturate(140%) contrast(108%) brightness(104%);
+  }
+}
+
 @media (max-width: 480px) {
     .music-container {
         right: 12px;

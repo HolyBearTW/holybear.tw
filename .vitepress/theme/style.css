@@ -1958,6 +1958,23 @@ html:not(.dark):not(:has(body.theme-tech)):not(:has(body.theme-gaming)):not(:has
   background-color: #f7fbfc !important;
 }
 
+html:has(body.theme-tech),
+html:has(body.theme-gaming),
+html:has(body.theme-gravityfield),
+html:has(body.theme-slow3dfly),
+html:has(body.theme-halloween),
+html:has(body.theme-christmas) {
+  --hb-mobile-fallback-bg: #061018;
+}
+
+html:not(.dark):has(body.theme-animated),
+html:not(.dark):has(body.theme-hyperos),
+html:not(.dark):has(body.theme-hyperos2),
+html:not(.dark):has(body.theme-halo),
+html:not(.dark):has(body.theme-none) {
+  --hb-mobile-fallback-bg: #f7fbfc;
+}
+
 body {
   background-color: transparent !important;
   isolation: isolate;

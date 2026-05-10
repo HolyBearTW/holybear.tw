@@ -53,7 +53,7 @@ function startChristmas() {
   // --- Snowflakes Container ---
   const snowflakeContainer = document.createElement('div');
   snowflakeContainer.id = 'christmas-snowflakes';
-  snowflakeContainer.style.cssText = 'position:fixed; left:0; top:0; width:100vw; height:100vh; z-index:9998; pointer-events:none; overflow: hidden;';
+  snowflakeContainer.style.cssText = 'position:fixed; inset:0; width:100vw; height:100dvh; min-height:100dvh; z-index:9998; pointer-events:none; overflow:hidden; transform:translate3d(0,0,0); backface-visibility:hidden; contain:paint;';
 
   // --- 核心動畫邏輯 ---
   const animateSnow = (snowflake, index) => {

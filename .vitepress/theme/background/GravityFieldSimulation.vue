@@ -224,8 +224,12 @@ const init = () => {
   renderer.domElement.style.top = '0'
   renderer.domElement.style.left = '0'
   renderer.domElement.style.width = '100vw'
-  renderer.domElement.style.height = '100vh'
+  renderer.domElement.style.height = '100dvh'
+  renderer.domElement.style.minHeight = '100dvh'
   renderer.domElement.style.zIndex = '-1'
+  renderer.domElement.style.transform = 'translate3d(0, 0, 0)'
+  renderer.domElement.style.backfaceVisibility = 'hidden'
+  renderer.domElement.style.contain = 'paint'
   container.appendChild( renderer.domElement )
 
   initComputeRenderer()
