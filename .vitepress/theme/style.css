@@ -449,17 +449,20 @@ input[type="range"]::-moz-range-thumb {
 
 /* Aside container (外觀) */
 .VPDocAsideOutline {
-  @apply !backdrop-blur-[8px] !bg-white/70;
+  background: rgba(255, 255, 255, 0.06) !important;
   border-radius: 18px !important;
   padding: 16px 18px !important;
   margin-bottom: 1.5em !important;
-  border: 1.5px solid var(--vp-c-divider, #e0e0e0) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.08) !important;
   overflow: hidden;
   transition: background 0.3s;
+  box-shadow: none !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
 }
 html.dark .VPDocAsideOutline {
-  @apply !bg-[#1e1e1e]/70;
-  border: 1.5px solid var(--vp-c-divider, #333) !important;
+  background: rgba(12, 18, 26, 0.2) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.06) !important;
 }
 .VPDocAsideOutline .outline-items { border-radius: 12px !important; background: transparent !important; }
 
@@ -511,6 +514,72 @@ body:not(:has(.VPHome)):not(.is-home-page) .VPNavScreen {
 html.dark body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar:not(.top),
 html.dark body:not(:has(.VPHome)):not(.is-home-page) .VPNavScreen {
   @apply !bg-[#1e1e1e]/70 !border-white/5 !shadow-sm;
+}
+
+@media (min-width: 960px) {
+  body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar:not(.top),
+  html.dark body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar:not(.top) {
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    border-bottom-color: transparent !important;
+    box-shadow: none !important;
+    backdrop-filter: blur(20px) saturate(140%) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(140%) !important;
+  }
+
+  body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar.has-sidebar .wrapper,
+  html.dark body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar.has-sidebar .wrapper {
+    padding: 0 32px !important;
+  }
+
+  body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar.has-sidebar .container,
+  html.dark body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar.has-sidebar .container {
+    max-width: calc(var(--vp-layout-max-width) - 64px) !important;
+  }
+
+  body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar.has-sidebar .title,
+  html.dark body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar.has-sidebar .title {
+    position: static !important;
+    z-index: auto !important;
+    padding: 0 !important;
+    width: auto !important;
+    background: transparent !important;
+  }
+
+  body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar.has-sidebar .content,
+  html.dark body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar.has-sidebar .content {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar:not(.top) .wrapper {
+    background: rgba(255, 255, 255, 0.34) !important;
+    background-color: rgba(255, 255, 255, 0.34) !important;
+    border: 1px solid rgba(15, 23, 42, 0.06) !important;
+    box-shadow: 0 14px 36px rgba(15, 23, 42, 0.12) !important;
+    backdrop-filter: blur(20px) saturate(140%) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(140%) !important;
+  }
+
+  html.dark body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar:not(.top) .wrapper {
+    background: rgba(12, 18, 26, 0.34) !important;
+    background-color: rgba(12, 18, 26, 0.34) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.22) !important;
+  }
+
+  body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar:not(.top) .container > .title,
+  body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar:not(.top) .container > .content,
+  body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar:not(.top) .VPNavBarTitle,
+  body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar:not(.top) .VPNavBarTitle .title,
+  body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar:not(.top) .content-body {
+    background: transparent !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
 }
 
 /* =================================================================
@@ -615,28 +684,19 @@ body:not(:has(.VPHome)):not(.is-home-page) .VPSidebar,
 html.dark body:not(:has(.VPHome)):not(.is-home-page) .VPSidebar,
 html.dark body:not(:has(.VPHome)):not(.is-home-page) .VPSidebar.open,
 html:not(.dark) body:not(:has(.VPHome)):not(.is-home-page) .VPSidebar.open {
-  background: var(--panel-glass-bg) !important;
-  background-color: var(--panel-glass-bg) !important;
+  background: rgba(255, 255, 255, 0.26) !important;
+  background-color: rgba(255, 255, 255, 0.26) !important;
+  border-right: 1px solid rgba(15, 23, 42, 0.08) !important;
   box-shadow: none !important;
-  backdrop-filter: blur(8px) !important;
-  -webkit-backdrop-filter: blur(8px) !important;
+  backdrop-filter: blur(16px) saturate(136%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(136%) !important;
 }
 
-body:not(.is-home-page) .VPSidebar,
-html.dark body:not(.is-home-page) .VPSidebar,
-body:not(.is-home-page) .VPSidebar.open,
-html.dark body:not(.is-home-page) .VPSidebar.open,
-body:not(.is-home-page) .VPSidebar .curtain,
-html.dark body:not(.is-home-page) .VPSidebar .curtain {
-  --vp-sidebar-bg-color: var(--panel-glass-bg) !important;
-  --vp-backdrop-bg-color: rgba(0, 0, 0, 0.12) !important;
-  --tw-backdrop-blur: blur(8px) !important;
-  background: var(--panel-glass-bg) !important;
-  background-color: var(--panel-glass-bg) !important;
-  background-image: none !important;
-  box-shadow: none !important;
-  backdrop-filter: blur(8px) !important;
-  -webkit-backdrop-filter: blur(8px) !important;
+html.dark body:not(:has(.VPHome)):not(.is-home-page) .VPSidebar,
+html.dark body:not(:has(.VPHome)):not(.is-home-page) .VPSidebar.open {
+  background: rgba(12, 18, 26, 0.26) !important;
+  background-color: rgba(12, 18, 26, 0.26) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
 }
 
 @media (min-width: 960px) {
@@ -649,11 +709,19 @@ html.dark body:not(.is-home-page) .VPSidebar .curtain {
   html.dark body:not(:has(.VPHome)):not(.is-home-page) .VPSidebar,
   html.dark body:not(:has(.VPHome)):not(.is-home-page) .VPSidebar.open,
   html:not(.dark) body:not(:has(.VPHome)):not(.is-home-page) .VPSidebar.open {
-    background: var(--panel-glass-bg) !important;
-    background-color: var(--panel-glass-bg) !important;
+    background: rgba(255, 255, 255, 0.26) !important;
+    background-color: rgba(255, 255, 255, 0.26) !important;
+    border-right: 1px solid rgba(15, 23, 42, 0.08) !important;
     box-shadow: none !important;
-    backdrop-filter: blur(8px) !important;
-    -webkit-backdrop-filter: blur(8px) !important;
+    backdrop-filter: blur(16px) saturate(136%) !important;
+    -webkit-backdrop-filter: blur(16px) saturate(136%) !important;
+  }
+
+  html.dark body:not(:has(.VPHome)):not(.is-home-page) .VPSidebar,
+  html.dark body:not(:has(.VPHome)):not(.is-home-page) .VPSidebar.open {
+    background: rgba(12, 18, 26, 0.26) !important;
+    background-color: rgba(12, 18, 26, 0.26) !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
   }
 
   body:not(:has(.VPHome)):not(.is-home-page) .VPSidebar .curtain {
@@ -1241,7 +1309,31 @@ body.is-home-page .VPNavBar::after {
 
 /* VPLocalNav 高斯模糊效果 */
 body:not(:has(.VPHome)):not(.is-home-page) .VPLocalNav {
-  @apply !backdrop-blur-[8px] !bg-white/1;
+  background: rgba(255, 255, 255, 0.34) !important;
+  background-color: rgba(255, 255, 255, 0.34) !important;
+  background-image: none !important;
+  border-bottom: none !important;
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.12) !important;
+  backdrop-filter: blur(18px) saturate(138%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(138%) !important;
+}
+
+html.dark body:not(:has(.VPHome)):not(.is-home-page) .VPLocalNav {
+  background: rgba(12, 18, 26, 0.34) !important;
+  background-color: rgba(12, 18, 26, 0.34) !important;
+  border-bottom: none !important;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.2) !important;
+}
+
+body:not(:has(.VPHome)):not(.is-home-page) .VPLocalNav .container,
+body:not(:has(.VPHome)):not(.is-home-page) .VPLocalNav::before,
+body:not(:has(.VPHome)):not(.is-home-page) .VPLocalNav::after {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  border: none !important;
+  border-bottom: none !important;
+  box-shadow: none !important;
 }
 
 /* 確保右側目錄（On this page）過長文字以省略號顯示，並且占滿可用空間 */
@@ -1413,7 +1505,7 @@ canvas,
   :root, page {
     --vp-nav-bg-blur: blur(0px) !important;
   }
-  .VPNavBar, .VPNav, .VPNavBarAppearance, .VPSidebar, .VPNavScreen {
+  .VPNavBarAppearance {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
     background-color: transparent !important;
@@ -1430,27 +1522,12 @@ canvas,
 }
 
 @media (max-width: 768px) {
-  .VPNavBar {
-    background: transparent !important;
-  }
   .VPLocalNav {
     background: transparent !important;
   }
 }
 
 @media (max-width: 768px) {
-  .VPNavBar,
-  .VPNavBar::before,
-  .VPNavBar::after,
-  .VPNav,
-  .VPNav::before,
-  .VPNav::after,
-  .VPSidebar,
-  .VPSidebar::before,
-  .VPSidebar::after,
-  .VPNavScreen,
-  .VPNavScreen::before,
-  .VPNavScreen::after,
   .VPLocalNav,
   .VPLocalNav::before,
   .VPLocalNav::after {
@@ -1468,11 +1545,7 @@ canvas,
 
 @media (max-width: 768px) {
   /* 徹底終結所有 VitePress 內建模糊 */
-  #VPNavScreen, .VPNavScreen, .VPNavScreen * {
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-  }
-  #VPNavScreen, .VPNavScreen, .VPLocalNav {
+  .VPLocalNav {
     background-color: transparent !important;
   }
   html, body, #app {
@@ -2378,36 +2451,46 @@ body.is-home-page .VPNavBar .divider-line {
 
 /* Final mobile drawer override: keep home top nav transparent, but restore drawer/sidebar panel backgrounds. */
 @media (max-width: 1024px) {
-  html body .VPNavScreen,
+  html body .VPNavScreen {
+    --vp-nav-bg-color: transparent !important;
+    --vp-backdrop-bg-color: transparent !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    border-left: none !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
   html body .VPSidebar,
   html body .VPSidebar.open {
-    --vp-nav-bg-color: var(--panel-glass-bg) !important;
     --vp-sidebar-bg-color: var(--panel-glass-bg) !important;
     --vp-backdrop-bg-color: rgba(0, 0, 0, 0.12) !important;
-    background: linear-gradient(180deg, rgba(18, 22, 27, 0.92) 0%, rgba(14, 18, 24, 0.88) 100%) !important;
-    background-color: rgba(18, 22, 27, 0.9) !important;
+    background: #0a0e14 !important;
+    background-color: #0a0e14 !important;
     border-left: 1px solid rgba(255, 255, 255, 0.06) !important;
-    box-shadow: -18px 0 48px rgba(0, 0, 0, 0.28) !important;
-    backdrop-filter: blur(18px) saturate(140%) !important;
-    -webkit-backdrop-filter: blur(18px) saturate(140%) !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
   }
 
   html body .VPNavScreen::before {
-    content: '';
-    position: fixed;
-    inset: var(--vp-nav-height, 56px) 0 0 0;
-    background: linear-gradient(180deg, rgba(5, 9, 15, 0.42) 0%, rgba(5, 9, 15, 0.62) 100%) !important;
-    backdrop-filter: blur(4px) !important;
-    -webkit-backdrop-filter: blur(4px) !important;
-    pointer-events: none;
-    z-index: -1;
+    display: none !important;
+    content: none !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
   }
 
-  html.dark body .VPNavScreen,
+  html.dark body .VPNavScreen {
+    background: transparent !important;
+    background-color: transparent !important;
+  }
+
   html.dark body .VPSidebar,
   html.dark body .VPSidebar.open {
-    background: linear-gradient(180deg, rgba(17, 21, 27, 0.94) 0%, rgba(12, 16, 22, 0.9) 100%) !important;
-    background-color: rgba(16, 20, 26, 0.92) !important;
+    background: #0a0e14 !important;
+    background-color: #0a0e14 !important;
   }
 
   html body .VPNavScreen .container,
@@ -2424,7 +2507,7 @@ body.is-home-page .VPNavBar .divider-line {
     position: relative;
     z-index: 1;
     max-width: 390px;
-    margin: 16px auto 0;
+    margin: 16px 0 0 auto;
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -2442,6 +2525,7 @@ body.is-home-page .VPNavBar .divider-line {
   }
 
   html body .VPNavScreen {
+    top: calc(var(--vp-nav-height, 56px) + var(--vp-layout-top-height, 0px) - 1px) !important;
     padding-top: 0 !important;
   }
 
@@ -2498,15 +2582,14 @@ body.is-home-page .VPNavBar .divider-line {
     border-color: rgba(255, 255, 255, 0.05) !important;
   }
 
-  body:has(.VPNavBarHamburger[aria-expanded="true"]) .VPNavBar,
-  body:has(.VPNavBarHamburger[aria-expanded="true"]) .VPNavBar .wrapper,
-  body:has(.VPNavBarHamburger[aria-expanded="true"]) .VPNavBar .container,
-  body:has(.VPNavBarHamburger[aria-expanded="true"]) .VPNavBar .content,
-  body:has(.VPNavBarHamburger[aria-expanded="true"]) .VPNavBar .content-body {
-    background: linear-gradient(180deg, rgba(10, 18, 27, 0.96) 0%, rgba(10, 18, 27, 0.9) 100%) !important;
-    background-color: rgba(10, 18, 27, 0.94) !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
-    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22) !important;
+  body:has(.VPNavBarHamburger[aria-expanded="true"]) .VPLocalNav,
+  body:has(.VPNavBarHamburger[aria-expanded="true"]) .VPLocalNav .container,
+  body:has(.VPNavBarHamburger[aria-expanded="true"]) .VPLocalNav::before,
+  body:has(.VPNavBarHamburger[aria-expanded="true"]) .VPLocalNav::after {
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
   }
@@ -2520,15 +2603,6 @@ body.is-home-page .VPNavBar .divider-line {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
     filter: none !important;
-  }
-
-  html.dark body:has(.VPNavBarHamburger[aria-expanded="true"]) .VPNavBar,
-  html.dark body:has(.VPNavBarHamburger[aria-expanded="true"]) .VPNavBar .wrapper,
-  html.dark body:has(.VPNavBarHamburger[aria-expanded="true"]) .VPNavBar .container,
-  html.dark body:has(.VPNavBarHamburger[aria-expanded="true"]) .VPNavBar .content,
-  html.dark body:has(.VPNavBarHamburger[aria-expanded="true"]) .VPNavBar .content-body {
-    background: linear-gradient(180deg, rgba(12, 17, 24, 0.98) 0%, rgba(12, 17, 24, 0.94) 100%) !important;
-    background-color: rgba(12, 17, 24, 0.96) !important;
   }
 
   html.dark body .VPNavScreen .VPNavScreenMenu .VPNavScreenMenuLink,
@@ -2554,6 +2628,142 @@ body.is-home-page .VPNavBar .divider-line {
     color: #00b8b8 !important;
     box-shadow: 0 4px 16px rgba(0,255,238,0.18) !important;
     transform: none !important;
+  }
+}
+
+@media (max-width: 1024px) {
+  body:has(.VPNavBarHamburger[aria-expanded="true"]) .VPNavScreen,
+  html.dark body:has(.VPNavBarHamburger[aria-expanded="true"]) .VPNavScreen,
+  body:not(:has(.VPHome)):not(.is-home-page):has(.VPNavBarHamburger[aria-expanded="true"]) .VPNavScreen,
+  html.dark body:not(:has(.VPHome)):not(.is-home-page):has(.VPNavBarHamburger[aria-expanded="true"]) .VPNavScreen {
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  body:has(.VPNavBarHamburger[aria-expanded="true"]) .VPNavScreen::before,
+  html.dark body:has(.VPNavBarHamburger[aria-expanded="true"]) .VPNavScreen::before,
+  body:not(:has(.VPHome)):not(.is-home-page):has(.VPNavBarHamburger[aria-expanded="true"]) .VPNavScreen::before,
+  html.dark body:not(:has(.VPHome)):not(.is-home-page):has(.VPNavBarHamburger[aria-expanded="true"]) .VPNavScreen::before {
+    display: none !important;
+    content: none !important;
+    background: transparent !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  body:has(.VPNavBarHamburger[aria-expanded="true"]) .VPNavScreen {
+    z-index: 35 !important;
+  }
+
+  body:has(.VPNavBarHamburger[aria-expanded="true"]) .VPNavScreen {
+    position: fixed !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  .VPNavBar.top.screen-open,
+  .VPNavBar.home.top.screen-open,
+  .VPNavBar.screen-open,
+  .VPNavBar.top.screen-open .wrapper,
+  .VPNavBar.home.top.screen-open .wrapper,
+  .VPNavBar.screen-open .wrapper,
+  .VPNavBar.top.screen-open .container,
+  .VPNavBar.home.top.screen-open .container,
+  .VPNavBar.screen-open .container,
+  .VPNavBar.top.screen-open .content,
+  .VPNavBar.home.top.screen-open .content,
+  .VPNavBar.screen-open .content,
+  .VPNavBar.top.screen-open .content-body,
+  .VPNavBar.home.top.screen-open .content-body,
+  .VPNavBar.screen-open .content-body {
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  body:has(.VPNavBarHamburger[aria-expanded="true"]) .VPNavBarTitle,
+  body:has(.VPNavBarHamburger[aria-expanded="true"]) .VPNavBarSearch,
+  body:has(.VPNavBarHamburger[aria-expanded="true"]) .VPNavBarExtra {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    z-index: 2 !important;
+  }
+
+  body:has(.VPNavBarHamburger[aria-expanded="true"]) .VPNavBarHamburger {
+    z-index: 40 !important;
+  }
+}
+
+@media (min-width: 960px) {
+  body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar:has(.VPFlyout:hover),
+  body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar:has(.VPFlyout .button[aria-expanded="true"]),
+  body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar:has(.VPFlyout:hover) .wrapper,
+  body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar:has(.VPFlyout .button[aria-expanded="true"]) .wrapper {
+    backdrop-filter: blur(22px) saturate(140%) !important;
+    -webkit-backdrop-filter: blur(22px) saturate(140%) !important;
+  }
+
+  html:not(.dark) body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar:has(.VPFlyout:hover) .wrapper,
+  html:not(.dark) body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar:has(.VPFlyout .button[aria-expanded="true"]) .wrapper {
+    background: rgba(255, 255, 255, 0.34) !important;
+    border: 1px solid rgba(15, 23, 42, 0.06) !important;
+    box-shadow: 0 14px 36px rgba(15, 23, 42, 0.12) !important;
+  }
+
+  html.dark body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar:has(.VPFlyout:hover) .wrapper,
+  html.dark body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar:has(.VPFlyout .button[aria-expanded="true"]) .wrapper {
+    background: rgba(12, 18, 26, 0.34) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.22) !important;
+  }
+
+  body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar:has(.VPFlyout:hover) .container > .title,
+  body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar:has(.VPFlyout .button[aria-expanded="true"]) .container > .title,
+  body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar:has(.VPFlyout:hover) .container > .content,
+  body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar:has(.VPFlyout .button[aria-expanded="true"]) .container > .content,
+  body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar:has(.VPFlyout:hover) .VPNavBarTitle,
+  body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar:has(.VPFlyout .button[aria-expanded="true"]) .VPNavBarTitle,
+  body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar:has(.VPFlyout:hover) .VPNavBarTitle .title,
+  body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar:has(.VPFlyout .button[aria-expanded="true"]) .VPNavBarTitle .title,
+  body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar:has(.VPFlyout:hover) .content-body,
+  body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar:has(.VPFlyout .button[aria-expanded="true"]) .content-body {
+    background: transparent !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  .VPFlyout .menu,
+  .VPFlyout .menu .VPMenu {
+    backdrop-filter: blur(16px) saturate(135%) !important;
+    -webkit-backdrop-filter: blur(16px) saturate(135%) !important;
+  }
+
+  html:not(.dark) .VPFlyout .menu,
+  html:not(.dark) .VPFlyout .menu .VPMenu {
+    background: rgba(255, 255, 255, 0.72) !important;
+    border: 1px solid rgba(15, 23, 42, 0.08) !important;
+  }
+
+  html.dark .VPFlyout .menu,
+  html.dark .VPFlyout .menu .VPMenu {
+    background: rgba(15, 20, 28, 0.78) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
   }
 }
 
