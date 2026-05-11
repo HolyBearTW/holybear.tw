@@ -90,6 +90,10 @@ const config = defineConfig({
                     find: /^.*\/VPAlgoliaSearchBox\.vue$/, 
                     replacement: fileURLToPath(new URL('../node_modules/vitepress/dist/client/theme-default/components/VPAlgoliaSearchBox.vue', import.meta.url))
                 },
+                {
+                    find: /^.*\/VPNavScreenTranslations\.vue$/,
+                    replacement: fileURLToPath(new URL('./theme/MobileNavScreenTranslations.vue', import.meta.url))
+                },
                 { find: 'react', replacement: fileURLToPath(new URL('../node_modules/react', import.meta.url)) },
                 { find: 'react-dom', replacement: fileURLToPath(new URL('../node_modules/react-dom', import.meta.url)) },
             ],

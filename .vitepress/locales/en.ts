@@ -12,7 +12,7 @@ export default {
       { text: 'Donate', link: 'https://paypal.me/holybear0610' },
       { 
         text: 'Themes', 
-        items: generateNavThemes()
+        items: generateNavThemes('en')
       }
     ],
     sidebar: {

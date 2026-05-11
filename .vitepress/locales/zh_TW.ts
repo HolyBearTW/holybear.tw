@@ -21,7 +21,7 @@ export default {
   },
   {
     text: '佈景主題',
-    items: generateNavThemes()
+    items: generateNavThemes('zh-TW')
   }
     ],
     sidebarMenuLabel: '日誌列表',

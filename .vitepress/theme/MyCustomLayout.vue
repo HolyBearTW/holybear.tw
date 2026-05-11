@@ -979,7 +979,7 @@ section.VPSidebarItem.level-0 {
   }
 
   .VPNavScreenMenuGroup.open .button-icon {
-    transform: rotate(45deg) !important;
+        transform: translateY(-50%) rotate(45deg) !important;
   }
 
   /* 展開內容容器 - 平滑高度展開動畫 */
