@@ -40,6 +40,15 @@
     "vue-chartjs": "^5.3.3",
     "vue-instantsearch": "^4.26.2"
   },
+  "overrides": {
+    "preact": "10.27.3",
+    "front-matter": {
+      "js-yaml": "3.14.2"
+    },
+    "gray-matter": {
+      "js-yaml": "3.14.2"
+    }
+  },
   "scripts": {
     "dev": "vitepress dev",
     "build": "vitepress build",
