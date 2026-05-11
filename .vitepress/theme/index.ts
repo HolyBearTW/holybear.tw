@@ -34,11 +34,13 @@ export default {
             if (isHome) document.body.classList.add('is-home-page');
             else document.body.classList.remove('is-home-page');
         }
+        updateBodyClasses();
+
+
 
         // --- 其餘原本功能 ---
         let lastContent: string | null = null;
         let hoverTimer: NodeJS.Timeout | null = null;
-        let scheduledUpdateFrame: number | null = null;
 
 
 
@@ -148,9 +150,26 @@ export default {
             document.removeEventListener('mouseover', globalHoverDelegate);
             document.removeEventListener('click', globalClickDelegate);
             document.addEventListener('mouseover', globalHoverDelegate);
-
+            
             // 使用更強制性的方式綁定點擊事件
             document.addEventListener('click', globalClickDelegate, true); // 使用 capture phase
+            
+            // 額外的保險措施：直接在側邊欄綁定事件
+            setTimeout(() => {
+                const outline = document.querySelector('.VPDocAsideOutline');
+                if (outline) {
+                    outline.addEventListener('click', (e) => {
+                        if (e.target && e.target instanceof HTMLElement) {
+                            const link = e.target.closest('.outline-link');
+                            if (link && link.getAttribute('href')?.startsWith('#')) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                globalClickDelegate(e);
+                            }
+                        }
+                    }, true);
+                }
+            }, 500);
         }
 
         // --- SEO 與 head 標籤動態同步 ---
@@ -165,11 +184,6 @@ export default {
             };
             const pagePath = getCleanPath(window.location.pathname);
             const pageUrl = siteUrl + pagePath;
-
-            const currentCanonicalHref = (document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null)?.href || '';
-            if (currentCanonicalHref === pageUrl) {
-                return pageUrl;
-            }
 
             // canonical
             let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
@@ -231,22 +245,37 @@ export default {
             return pageUrl;
         }
 
-        function runAppDomUpdates() {
-            scheduledUpdateFrame = null;
+        // 初始同步一次
+        updateCanonicalAndOg();
+
+        // 首次進站
+    // 移除 replayIfChanged，避免動畫重複觸發
+        setupGlobalOutlineHoverScroll();
+        updateBodyClasses();
+        updateCanonicalAndOg();
+
+        // 已移除 replayIfChanged 輪詢
+
+        // 監聽 VitePress 事件與路由
+        window.addEventListener('DOMContentLoaded', () => {
             updateBodyClasses();
             setupGlobalOutlineHoverScroll();
             updateCanonicalAndOg();
-        }
-
-        function scheduleAppDomUpdates() {
-            if (scheduledUpdateFrame !== null) return;
-            scheduledUpdateFrame = window.requestAnimationFrame(runAppDomUpdates);
-        }
-
-        // 監聽 VitePress 路由並把所有 DOM / head 更新合併到同一個 frame。
+        });
+        window.addEventListener('vitepress:pageview', () => {
+            setTimeout(() => {
+                updateBodyClasses();
+                setupGlobalOutlineHoverScroll();
+                updateCanonicalAndOg();
+            }, 80);
+        });
         if (router && typeof router.onAfterRouteChanged === 'function') {
             router.onAfterRouteChanged(() => {
-                scheduleAppDomUpdates();
+                setTimeout(() => {
+                    updateBodyClasses();
+                    setupGlobalOutlineHoverScroll();
+                    updateCanonicalAndOg();
+                }, 50);
             });
         }
     }
