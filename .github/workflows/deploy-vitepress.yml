@@ -14,11 +14,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  full-pipeline:
+  build:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
       - name: 遷出程式碼
@@ -295,10 +292,6 @@ jobs:
         with:
           path: .vitepress/dist
 
-      - name: 正式部署到 GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v5
-
       # 新文章偵測 & Telegram 通知照原本邏輯即可
       - name: 偵測新文章
         id: detect-new-files
@@ -423,3 +416,18 @@ jobs:
               echo "Telegram API 回應：$RESPONSE"
             fi
             done
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: 正式部署到 GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
