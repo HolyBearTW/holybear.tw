@@ -1,13 +1,16 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, onBeforeUnmount } from 'vue'
 import { useData, withBase } from 'vitepress'
 import { Swiper, SwiperSlide } from 'swiper/vue'
-import { Autoplay, Navigation, Pagination } from 'swiper/modules'
+// 🌟 引入 EffectFade 模組
+import { Autoplay, Navigation, Pagination, EffectFade } from 'swiper/modules'
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-vue-next'
 
 import 'swiper/css'
 import 'swiper/css/navigation'
 import 'swiper/css/pagination'
+// 🌟 引入 Fade 的專屬 CSS
+import 'swiper/css/effect-fade'
 
 const props = defineProps({
   posts: { type: Array, default: () => [] }
@@ -15,9 +18,15 @@ const props = defineProps({
 
 const { lang } = useData()
 const mounted = ref(false)
+const observer = ref(null)
 
 onMounted(() => {
   mounted.value = true
+})
+
+// 組件銷毀時清理監視器，避免記憶體洩漏
+onBeforeUnmount(() => {
+  if (observer.value) observer.value.disconnect()
 })
 
 const carouselPosts = computed(() => props.posts.slice(0, 10))
@@ -36,26 +45,25 @@ const formatDate = (dateStr) => {
   })
 }
 
-const apply2dTranslate = (swiper) => {
-  if (!swiper?.wrapperEl) return
-
-  const translate = Number.isFinite(swiper.translate) ? swiper.translate : 0
-  const rounded = Math.round(translate * 1000) / 1000
-
-  swiper.wrapperEl.style.transform = swiper.isHorizontal()
-    ? `translate(${rounded}px, 0px)`
-    : `translate(0px, ${rounded}px)`
-}
-
 const handleSwiperInit = (swiper) => {
-  apply2dTranslate(swiper)
+  // 🌟 建立視窗偵測器：只有輪播圖在畫面上時，才允許自動播放
+  observer.value = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        swiper.autoplay.start() // 出現在畫面上 -> 繼續播
+      } else {
+        swiper.autoplay.stop()  // 離開畫面 -> 強制暫停，放過 GPU
+      }
+    })
+  }, { threshold: 0.1 }) // 只要有 10% 離開視線就觸發
+
+  if (swiper.el) {
+    observer.value.observe(swiper.el)
+  }
 }
 
-const handleSetTranslate = (swiper) => {
-  apply2dTranslate(swiper)
-}
-
-const modules = [Autoplay, Navigation, Pagination]
+// 註冊模組
+const modules = [Autoplay, Navigation, Pagination, EffectFade]
 </script>
 
 <template>
@@ -65,11 +73,12 @@ const modules = [Autoplay, Navigation, Pagination]
         :modules="modules"
         :slides-per-view="1"
         :loop="true"
+        effect="fade"
+        :fade-effect="{ crossFade: true }"
         :autoplay="{ delay: 5000, disableOnInteraction: false }"
         :pagination="{ clickable: true, el: '.custom-pagination' }"
         :navigation="{ prevEl: '.prev-btn', nextEl: '.next-btn' }"
         @swiper="handleSwiperInit"
-        @setTranslate="handleSetTranslate"
         class="main-swiper"
       >
         <swiper-slide v-for="(post, index) in carouselPosts" :key="post.url + index">
@@ -127,7 +136,7 @@ const modules = [Autoplay, Navigation, Pagination]
 }
 
 :deep(.swiper-wrapper) {
-  will-change: transform;
+  will-change: transform, opacity;
 }
 
 /* 讓每一張卡片自己決定圓角，並用最單純的方式裁切 */
