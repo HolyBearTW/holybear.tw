@@ -42,10 +42,11 @@ export default {
         };
         initCrashFixStyle();
 
-        // --- Body Class 更新邏輯 ---
+        // --- Body Class 更新邏輯 (MutationObserver 版) ---
         function isBlogPage(path: string) {
             return /^\/(en\/)?blog\/(?!$|index|index-new)[\w-]+/.test(path) || /^\/docs\/[\w-]+/.test(path);
         }
+        
         function updateBodyClasses() {
             const isBlog = isBlogPage(window.location.pathname);
             const isHome = !!document.querySelector('.VPHome');
@@ -56,10 +57,22 @@ export default {
             if (isHome) document.body.classList.add('is-home-page');
             else document.body.classList.remove('is-home-page');
         }
-        
-        // 初始執行一次
-        updateBodyClasses();
-        // 🚫 [已刪除] setInterval(updateBodyClasses, 500) -> 避免無意義的 GPU 重繪災難
+
+        // 建立 DOM 觀察者，精準取代 setInterval
+        if (typeof window !== 'undefined') {
+            const observer = new MutationObserver(() => {
+                updateBodyClasses();
+            });
+
+            window.addEventListener('DOMContentLoaded', () => {
+                const appContainer = document.querySelector('#app') || document.body;
+                observer.observe(appContainer, { 
+                    childList: true, 
+                    subtree: true 
+                });
+                updateBodyClasses(); // 首次載入先執行一次
+            });
+        }
 
         // --- 其餘原本功能 ---
         let hoverTimer: NodeJS.Timeout | null = null;
@@ -255,13 +268,7 @@ export default {
         setupGlobalOutlineHoverScroll();
         updateCanonicalAndOg();
 
-        window.addEventListener('DOMContentLoaded', () => {
-            setupGlobalOutlineHoverScroll();
-            updateCanonicalAndOg();
-            updateBodyClasses();
-        });
-
-        // 取代原本的 setInterval，將更新邏輯綁定在路由切換時
+        // 綁定事件以應對 VitePress 的動態路由
         window.addEventListener('vitepress:pageview', () => {
             setTimeout(() => {
                 setupGlobalOutlineHoverScroll();
@@ -279,7 +286,5 @@ export default {
                 }, 50);
             });
         }
-        
-        // 🚫 [已刪除] setInterval(HEAD_SYNC_INTERVAL) -> 路由監聽已經足夠處理 SEO 標籤同步
     }
 };
