@@ -766,18 +766,18 @@ body:not(:has(.VPHome)):not(.is-home-page) .VPSidebar,
 html.dark body:not(:has(.VPHome)):not(.is-home-page) .VPSidebar,
 html.dark body:not(:has(.VPHome)):not(.is-home-page) .VPSidebar.open,
 html:not(.dark) body:not(:has(.VPHome)):not(.is-home-page) .VPSidebar.open {
-  background: rgba(255, 255, 255, 0.26) !important;
-  background-color: rgba(255, 255, 255, 0.26) !important;
+  background: rgba(247, 251, 252, 0.88) !important;
+  background-color: rgba(247, 251, 252, 0.88) !important;
   border-right: 1px solid rgba(15, 23, 42, 0.08) !important;
   box-shadow: none !important;
-  backdrop-filter: blur(16px) saturate(136%) !important;
-  -webkit-backdrop-filter: blur(16px) saturate(136%) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
 html.dark body:not(:has(.VPHome)):not(.is-home-page) .VPSidebar,
 html.dark body:not(:has(.VPHome)):not(.is-home-page) .VPSidebar.open {
-  background: rgba(12, 18, 26, 0.26) !important;
-  background-color: rgba(12, 18, 26, 0.26) !important;
+  background: rgba(6, 16, 24, 0.88) !important;
+  background-color: rgba(6, 16, 24, 0.88) !important;
   border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
 }
 
@@ -2891,7 +2891,6 @@ body.is-home-page .VPNavBar .divider-line {
     background-color: #0a0e14 !important;
   }
 
-  html body .VPNavScreen .container,
   html body .VPNavScreen .menu,
   html body .VPNavScreenMenuGroup .items {
     background: transparent !important;
@@ -2913,6 +2912,7 @@ body.is-home-page .VPNavBar .divider-line {
     border-radius: 26px;
     border: 1px solid rgba(255, 255, 255, 0.06);
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.015) 100%) !important;
+    background-color: rgba(255, 255, 255, 0.03) !important;
     box-shadow: 0 24px 54px rgba(0, 0, 0, 0.3);
     backdrop-filter: blur(10px) saturate(120%) !important;
     -webkit-backdrop-filter: blur(10px) saturate(120%) !important;
@@ -2977,6 +2977,7 @@ body.is-home-page .VPNavBar .divider-line {
 
   html.dark body .VPNavScreen .container {
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.028) 0%, rgba(255, 255, 255, 0.012) 100%) !important;
+    background-color: rgba(255, 255, 255, 0.028) !important;
     border-color: rgba(255, 255, 255, 0.05) !important;
   }
 
@@ -3652,6 +3653,63 @@ body.is-home-page .VPNavBar .divider-line {
   body.is-blog-page .VPFlyout .menu,
   body.is-blog-page .VPNavBarMenuGroup .menu {
     position: absolute !important;
+  }
+}
+
+@media (max-width: 959px) {
+  body .VPScreen,
+  body .VPOffcanvas,
+  body .VPNavScreen,
+  html.dark body .VPNavScreen,
+  body .VPSidebar,
+  html.dark body .VPSidebar,
+  body .VPSidebar.open,
+  html.dark body .VPSidebar.open,
+  body .VPSidebar .curtain,
+  html.dark body .VPSidebar .curtain {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  body .VPScreen,
+  body .VPOffcanvas,
+  body .VPNavScreen,
+  html.dark body .VPNavScreen {
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+  }
+
+  body .VPSidebar,
+  body .VPSidebar.open {
+    background: rgba(247, 251, 252, 0.88) !important;
+    background-color: rgba(247, 251, 252, 0.88) !important;
+    border-right: 1px solid rgba(15, 23, 42, 0.08) !important;
+  }
+
+  html.dark body .VPSidebar,
+  html.dark body .VPSidebar.open {
+    background: rgba(6, 16, 24, 0.88) !important;
+    background-color: rgba(6, 16, 24, 0.88) !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
+  }
+
+  body .VPSidebar .curtain,
+  html.dark body .VPSidebar .curtain {
+    background: rgba(6, 16, 24, 0.18) !important;
+    background-color: rgba(6, 16, 24, 0.18) !important;
+  }
+}
+
+@media (max-width: 1024px) {
+  body:has(.VPNavBarHamburger[aria-expanded="true"]) .VPNavScreen,
+  html.dark body:has(.VPNavBarHamburger[aria-expanded="true"]) .VPNavScreen,
+  body:has(.VPNavBarHamburger[aria-expanded="true"]) .VPSidebar,
+  html.dark body:has(.VPNavBarHamburger[aria-expanded="true"]) .VPSidebar,
+  body:has(.VPNavBarHamburger[aria-expanded="true"]) .VPSidebar.open,
+  html.dark body:has(.VPNavBarHamburger[aria-expanded="true"]) .VPSidebar.open {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
   }
 }
 
