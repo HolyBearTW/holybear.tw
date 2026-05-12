@@ -70,17 +70,43 @@ export default {
             else document.body.classList.remove('is-home-page');
         }
 
-        // 建立 DOM 觀察者，精準取代 setInterval
+        // 🌟 建立 DOM 觀察者，精準取代 setInterval (已加入防抖與動畫過濾黑名單)
         if (typeof window !== 'undefined') {
-            const observer = new MutationObserver(() => {
-                updateBodyClasses();
+            let timeoutId: NodeJS.Timeout | null = null;
+
+            const observer = new MutationObserver((mutations) => {
+                // 1. 過濾黑名單：檢查這次的變動是不是「高頻動畫」引起的
+                const shouldUpdate = mutations.some(m => {
+                    const target = m.target as HTMLElement;
+                    // 如果沒有 classList (例如單純的文字節點被抽換)，通常是有效的路由變動
+                    if (!target || !target.classList) return true; 
+
+                    // 如果變動的是 Swiper 輪播圖或音樂播放器的進度條，直接無視
+                    const isSwiper = target.classList.contains('swiper-wrapper') || 
+                                     target.classList.contains('swiper-slide') || 
+                                     target.classList.contains('swiper-pagination-bullet') ||
+                                     target.classList.contains('custom-pagination');
+                    const isPlayer = target.classList.contains('progress') || target.tagName === 'SPAN';
+
+                    // 只要「不是」這兩個地雷，就代表是真正需要更新的 DOM 變化
+                    return !isSwiper && !isPlayer; 
+                });
+
+                if (shouldUpdate) {
+                    // 2. 防抖機制：即使瞬間收到 100 個 DOM 替換請求，也只在 50ms 後執行一次 updateBodyClasses
+                    if (timeoutId) clearTimeout(timeoutId);
+                    timeoutId = setTimeout(() => {
+                        updateBodyClasses();
+                    }, 50);
+                }
             });
 
             window.addEventListener('DOMContentLoaded', () => {
                 const appContainer = document.querySelector('#app') || document.body;
                 observer.observe(appContainer, { 
                     childList: true, 
-                    subtree: true 
+                    subtree: true,
+                    attributes: true // 恢復屬性監聽，但因為有上方過濾器保護，不會再引發 GPU 崩潰
                 });
                 updateBodyClasses(); // 首次載入先執行一次
             });
