@@ -508,15 +508,33 @@ body {
 }
 
 /* 一般頁面 (非首頁) 的導航列 - 分拆 Light/Dark 規則，避免 @apply dark: 生成不可預期的選擇器 */
-body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar:not(.top),
-body:not(:has(.VPHome)):not(.is-home-page) .VPNavScreen {
+body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar:not(.top) {
   @apply !backdrop-blur-[8px] !bg-white/70 !border-b !border-black/5;
 }
 
+body:not(:has(.VPHome)):not(.is-home-page) .VPNavScreen {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
 /* 深色模式 override */
-html.dark body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar:not(.top),
-html.dark body:not(:has(.VPHome)):not(.is-home-page) .VPNavScreen {
+html.dark body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar:not(.top) {
   @apply !bg-[#1e1e1e]/70 !border-white/5 !shadow-sm;
+}
+
+html.dark body:not(:has(.VPHome)):not(.is-home-page) .VPNavScreen {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
 @media (min-width: 960px) {
@@ -748,11 +766,17 @@ html:not(.dark) body .VPSidebar.open {
 
 /* 手機選單背景 - 強制修復 */
 .VPNavScreen {
-  @apply !backdrop-blur-[8px] !bg-white/85;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
 html.dark .VPNavScreen {
-  @apply !bg-[#1e1e1e]/85;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
 }
 
 /* Curtain 處理（避免遮罩擋住模糊） */
