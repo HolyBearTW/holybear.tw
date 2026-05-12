@@ -19,6 +19,7 @@ const props = defineProps({
 const { lang } = useData()
 const mounted = ref(false)
 const observer = ref(null)
+let animationUnlockTimer = null
 
 onMounted(() => {
   mounted.value = true
@@ -27,6 +28,7 @@ onMounted(() => {
 // 組件銷毀時清理監視器，避免記憶體洩漏
 onBeforeUnmount(() => {
   if (observer.value) observer.value.disconnect()
+  if (animationUnlockTimer) clearTimeout(animationUnlockTimer)
 })
 
 const carouselPosts = computed(() => props.posts.slice(0, 10))
@@ -46,6 +48,14 @@ const formatDate = (dateStr) => {
 }
 
 const handleSwiperInit = (swiper) => {
+  const releaseAnimatingLock = (duration = 300) => {
+    if (animationUnlockTimer) clearTimeout(animationUnlockTimer)
+
+    animationUnlockTimer = setTimeout(() => {
+      swiper.animating = false
+    }, Math.max(Number(duration) || 0, 0) + 80)
+  }
+
   // 🌟 建立視窗偵測器：只有輪播圖在畫面上時，才允許自動播放
   observer.value = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
@@ -60,6 +70,14 @@ const handleSwiperInit = (swiper) => {
   if (swiper.el) {
     observer.value.observe(swiper.el)
   }
+
+  swiper.on('setTransition', (duration) => {
+    releaseAnimatingLock(duration)
+  })
+
+  swiper.on('slideChangeTransitionEnd', () => {
+    swiper.animating = false
+  })
 }
 
 // 註冊模組
@@ -139,6 +157,24 @@ const modules = [Autoplay, Navigation, Pagination, EffectFade]
   will-change: transform, opacity;
 }
 
+/* 🗡️ 斬斷 Android 15 GPU 崩潰的防禦 (配合 JS 的 animating 保險解鎖) */
+:deep(.swiper-wrapper) {
+  transform: none !important;
+}
+
+:deep(.swiper-slide) {
+  position: absolute !important;
+  left: 0 !important;
+  top: 0 !important;
+  transform: none !important;
+  transition-property: opacity !important;
+}
+
+:deep(.swiper-slide.swiper-slide-active) {
+  position: relative !important;
+  z-index: 2;
+}
+
 /* 讓每一張卡片自己決定圓角，並用最單純的方式裁切 */
 .slide-content {
   display: block; 
@@ -153,6 +189,7 @@ const modules = [Autoplay, Navigation, Pagination, EffectFade]
   background-color: var(--vp-c-bg, #000); 
   
   /* 這是唯一需要保留來防止 Safari 圓角在動畫時失效的語法，它比 translateZ 更不耗效能 */
+  mask-image: radial-gradient(white, black);
   -webkit-mask-image: -webkit-radial-gradient(white, black);
 }
 
@@ -192,7 +229,7 @@ const modules = [Autoplay, Navigation, Pagination, EffectFade]
 .slide-date { display: flex; align-items: center; gap: 5px; font-size: 13px; color: rgba(255, 255, 255, 0.8); font-weight: 500; }
 .date-icon { width: 14px; height: 14px; }
 .slide-title { font-size: 2rem; margin-bottom: 12px; line-height: 1.2; font-weight: 800; }
-.slide-desc { opacity: 0.85; font-size: 0.95rem; max-width: 800px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.slide-desc { opacity: 0.85; font-size: 0.95rem; max-width: 800px; display: -webkit-box; line-clamp: 2; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .nav-btn { position: absolute; top: 50%; transform: translateY(-50%); z-index: 20; background: rgba(0,0,0,0.3); color: white; border: none; width: 44px; height: 44px; border-radius: 50%; cursor: pointer; transition: 0.3s; opacity: 0; display: flex; align-items: center; justify-content: center; }
 .carousel-container:hover .nav-btn { opacity: 1; }
 .prev-btn { left: 1rem; }
@@ -214,23 +251,4 @@ const modules = [Autoplay, Navigation, Pagination, EffectFade]
   .nav-btn { display: none; }
 }
 
-/* 🗡️ 斬斷 Android 15 GPU 崩潰的最後一擊：強制廢除 Swiper 隱藏的 3D 位移 */
-:deep(.swiper-wrapper) {
-  display: block !important;
-  transform: none !important; /* 絕對禁止整個容器的 3D 位移 */
-}
-
-:deep(.swiper-slide) {
-  position: absolute !important;
-  left: 0 !important;
-  top: 0 !important;
-  transform: none !important; /* 絕對禁止單張卡片的 3D 位移 */
-  transition-property: opacity !important; /* 逼迫 GPU 只能處理透明度變化 */
-}
-
-/* 撐開父容器高度，避免絕對定位導致輪播圖高度坍塌 */
-:deep(.swiper-slide.swiper-slide-active) {
-  position: relative !important;
-  z-index: 2;
-}
 </style>
