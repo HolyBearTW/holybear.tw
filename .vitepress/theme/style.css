@@ -24,7 +24,10 @@
 
 /* 強制使用藍色（indigo）作為品牌色，覆蓋 vitepress-theme-default-plus 的紅色 */
   --vp-c-brand-1: var(--vp-c-indigo-1) !important;
-  --vp-c-brand-2: var(--vp-c-indigo-2) !important;
+  background: rgba(255, 255, 255, 0.54) !important;
+  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.14) !important;
+  backdrop-filter: blur(20px) saturate(155%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(155%) !important;
   --vp-c-brand-3: var(--vp-c-indigo-3) !important;
   --vp-c-brand-soft: var(--vp-c-indigo-soft) !important;
 
@@ -671,6 +674,12 @@ body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar .divider-line {
   box-shadow: none !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+  overflow: visible !important;
+}
+
+.VPNav,
+.VPNavBar.top {
+  z-index: 80 !important;
 }
 .VPNavBar.top::before,
 .VPNavBar.top::after,
@@ -896,12 +905,21 @@ html.dark body:not(:has(.VPHome)):not(.is-home-page) .VPSidebar.open {
 /* ==================== 手機選單與語言選單置中 ==================== */
 /* 手機版選單背景：與導航欄同步 */
 .VPNavScreen {
-  /*
-  background-color: rgba(255, 255, 255, 0.01) !important;
-  backdrop-filter: blur(8px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
-  @apply !backdrop-blur-[8px] !bg-white/1;
-  */
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.VPNavScreen .VPNavScreenMenu .VPNavScreenMenuLink,
+.VPNavScreenTranslations.translations .title,
+.VPNavScreenTranslations.translations .VPLink.link,
+.VPNavScreenAppearance.appearance,
+.VPNavScreenMenuGroup > .button,
+.VPNavScreenMenuGroup .VPNavScreenMenuGroupLink {
+  backdrop-filter: blur(16px) saturate(140%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(140%) !important;
 }
 
 .VPNavScreen .VPNavScreenMenu .VPNavScreenMenuLink {
@@ -1305,6 +1323,26 @@ html.dark body:not(:has(.VPHome)):not(.is-home-page) .VPSidebar.open {
   color: #00b8b8;
 }
 
+/* 手機選單最終覆寫：外層不模糊，只有選單本體有玻璃效果 */
+.VPNavScreen,
+html.dark .VPNavScreen {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.VPNavScreenMenuGroup > .button,
+.VPNavScreenMenuGroup .VPNavScreenMenuGroupLink,
+.VPNavScreenAppearance.appearance,
+.VPNavScreenTranslations.translations .title,
+.VPNavScreenTranslations.translations .VPLink.link,
+.VPNavScreen .VPNavScreenMenu .VPNavScreenMenuLink {
+  backdrop-filter: blur(16px) saturate(140%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(140%) !important;
+}
+
 
 /* ==================== 小調整 / 方便閱讀 ==================== */
 /* 首個 h2 標題微調（文章頁） */
@@ -1605,6 +1643,21 @@ body:not(:has(.VPHome)):not(.is-home-page) .VPLocalNav .divider-line {
     background-color: transparent !important;
     border-color: transparent !important;
     box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  body.is-blog-page .VPNavBar.has-sidebar:has(.VPFlyout:hover)::after,
+  body.is-blog-page .VPNavBar.has-sidebar:has(.VPFlyout .button[aria-expanded="true"])::after,
+  body.is-blog-page .VPNavBar.has-sidebar.top:has(.VPFlyout:hover)::after,
+  body.is-blog-page .VPNavBar.has-sidebar.top:has(.VPFlyout .button[aria-expanded="true"])::after,
+  body.is-blog-page .VPNavBar.has-sidebar:has(.VPNavBarMenuGroup:hover)::after,
+  body.is-blog-page .VPNavBar.has-sidebar:has(.VPNavBarMenuGroup .button[aria-expanded="true"])::after,
+  body.is-blog-page .VPNavBar.has-sidebar.top:has(.VPNavBarMenuGroup:hover)::after,
+  body.is-blog-page .VPNavBar.has-sidebar.top:has(.VPNavBarMenuGroup .button[aria-expanded="true"])::after {
+    opacity: 0 !important;
+    background: transparent !important;
+    background-color: transparent !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
   }
@@ -1922,6 +1975,33 @@ select {
   transition: color 0.18s ease, background 0.18s ease, transform 0.18s ease !important;
 }
 
+.VPFlyout,
+.VPNavBarMenuGroup {
+  border-radius: var(--hb-card-radius) !important;
+}
+
+.VPFlyout .menu,
+.VPNavBarMenuGroup .menu,
+.VPFlyout .VPMenu,
+.VPNavBarMenuGroup .VPMenu {
+  overflow: hidden !important;
+  border: 1px solid var(--hb-border-light) !important;
+  border-radius: var(--hb-card-radius) !important;
+  background: rgba(255, 255, 255, 0.68) !important;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.16) !important;
+  backdrop-filter: blur(16px) saturate(140%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(140%) !important;
+}
+
+html.dark .VPFlyout .menu,
+html.dark .VPNavBarMenuGroup .menu,
+html.dark .VPFlyout .VPMenu,
+html.dark .VPNavBarMenuGroup .VPMenu {
+  border-color: var(--hb-border-dark) !important;
+  background: rgba(15, 20, 28, 0.78) !important;
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.26) !important;
+}
+
 .VPNavBarMenuLink:hover,
 .VPNavBarMenuGroup .button:hover {
   background: rgba(0, 255, 238, 0.1) !important;
@@ -1968,6 +2048,10 @@ body.is-home-page .VPHomeHero .container {
   transform: translate3d(0, 0, 0) !important;
   backface-visibility: hidden !important;
   will-change: filter, background-position;
+  white-space: nowrap !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-wrap: nowrap;
 }
 
 .VPHero .text {
@@ -2254,6 +2338,11 @@ body.blog-index-page .article-image img {
 
   body.is-home-page .VPHomeHero .container {
     gap: 24px !important;
+  }
+
+  .VPHero .name {
+    max-width: 100%;
+    font-size: clamp(1.8rem, 7vw, 2.7rem) !important;
   }
 
   .VPHero .tagline {
@@ -3034,6 +3123,535 @@ body.is-home-page .VPNavBar .divider-line {
   html.dark .VPFlyout .menu .VPMenu {
     background: rgba(15, 20, 28, 0.78) !important;
     border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  }
+}
+
+@media (min-width: 960px) {
+  html body.is-blog-page .VPNav .VPNavBar .VPFlyout .button:hover + .menu,
+  html body.is-blog-page .VPNav .VPNavBar .VPFlyout .button:focus-visible + .menu,
+  html body.is-blog-page .VPNav .VPNavBar .VPNavBarMenuGroup .button:hover + .menu,
+  html body.is-blog-page .VPNav .VPNavBar .VPNavBarMenuGroup .button:focus-visible + .menu,
+  html body.is-blog-page .VPNav .VPNavBar .VPFlyout:hover > .menu,
+  html body.is-blog-page .VPNav .VPNavBar .VPFlyout:focus-within > .menu,
+  html body.is-blog-page .VPNav .VPNavBar .VPNavBarMenuGroup:hover > .menu,
+  html body.is-blog-page .VPNav .VPNavBar .VPNavBarMenuGroup:focus-within > .menu,
+  html body.is-blog-page .VPNav .VPNavBar .VPFlyout .button[aria-expanded="true"] + .menu,
+  html body.is-blog-page .VPNav .VPNavBar .VPNavBarMenuGroup .button[aria-expanded="true"] + .menu {
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+
+  html body.is-blog-page .VPNav .VPNavBar .VPFlyout .button:hover + .menu .VPMenu,
+  html body.is-blog-page .VPNav .VPNavBar .VPFlyout .button:focus-visible + .menu .VPMenu,
+  html body.is-blog-page .VPNav .VPNavBar .VPNavBarMenuGroup .button:hover + .menu .VPMenu,
+  html body.is-blog-page .VPNav .VPNavBar .VPNavBarMenuGroup .button:focus-visible + .menu .VPMenu,
+  html body.is-blog-page .VPNav .VPNavBar .VPFlyout:hover > .menu .VPMenu,
+  html body.is-blog-page .VPNav .VPNavBar .VPFlyout:focus-within > .menu .VPMenu,
+  html body.is-blog-page .VPNav .VPNavBar .VPNavBarMenuGroup:hover > .menu .VPMenu,
+  html body.is-blog-page .VPNav .VPNavBar .VPNavBarMenuGroup:focus-within > .menu .VPMenu,
+  html body.is-blog-page .VPNav .VPNavBar .VPFlyout .button[aria-expanded="true"] + .menu .VPMenu,
+  html body.is-blog-page .VPNav .VPNavBar .VPNavBarMenuGroup .button[aria-expanded="true"] + .menu .VPMenu {
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+
+  .VPFlyout .button:hover + .menu,
+  .VPFlyout .button:focus-visible + .menu,
+  .VPNavBarMenuGroup .button:hover + .menu,
+  .VPNavBarMenuGroup .button:focus-visible + .menu,
+  .VPFlyout:hover > .menu,
+  .VPFlyout:focus-within > .menu,
+  .VPNavBarMenuGroup:hover > .menu,
+  .VPNavBarMenuGroup:focus-within > .menu,
+  .VPFlyout .button[aria-expanded="true"] + .menu,
+  .VPNavBarMenuGroup .button[aria-expanded="true"] + .menu {
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+
+  .VPFlyout .button:hover + .menu .VPMenu,
+  .VPFlyout .button:focus-visible + .menu .VPMenu,
+  .VPNavBarMenuGroup .button:hover + .menu .VPMenu,
+  .VPNavBarMenuGroup .button:focus-visible + .menu .VPMenu,
+  .VPFlyout:hover > .menu .VPMenu,
+  .VPFlyout:focus-within > .menu .VPMenu,
+  .VPNavBarMenuGroup:hover > .menu .VPMenu,
+  .VPNavBarMenuGroup:focus-within > .menu .VPMenu,
+  .VPFlyout .button[aria-expanded="true"] + .menu .VPMenu,
+  .VPNavBarMenuGroup .button[aria-expanded="true"] + .menu .VPMenu {
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+
+  .VPFlyout .menu,
+  .VPNavBarMenuGroup .menu {
+    padding: 0 !important;
+    visibility: hidden !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  body.hb-nav-menu-portal-active .VPFlyout > .menu,
+  body.hb-nav-menu-portal-active .VPNavBarMenuGroup > .menu {
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+
+  body.hb-nav-menu-portal-active .VPFlyout > .menu .VPMenu,
+  body.hb-nav-menu-portal-active .VPNavBarMenuGroup > .menu .VPMenu,
+  body.hb-nav-menu-portal-active .VPFlyout > .VPMenu,
+  body.hb-nav-menu-portal-active .VPNavBarMenuGroup > .VPMenu {
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+
+  .hb-nav-menu-portal {
+    position: fixed;
+    z-index: 180;
+    pointer-events: auto;
+  }
+
+  .hb-nav-menu-portal::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 100%;
+    height: 22px;
+    background: transparent;
+    pointer-events: auto;
+  }
+
+  .hb-nav-menu-portal,
+  .hb-nav-menu-portal * {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+
+  .hb-nav-menu-portal .VPMenu {
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    overflow: hidden !important;
+    border-radius: var(--hb-card-radius) !important;
+    backdrop-filter: blur(56px) saturate(240%) !important;
+    -webkit-backdrop-filter: blur(56px) saturate(240%) !important;
+    box-shadow: 0 28px 64px rgba(0, 0, 0, 0.34) !important;
+  }
+
+  .hb-nav-menu-portal.hb-nav-menu-portal-translations .VPMenu {
+    min-width: 144px;
+    padding: 0 !important;
+  }
+
+  .hb-nav-menu-portal.hb-nav-menu-portal-translations .title,
+  .hb-nav-menu-portal.hb-nav-menu-portal-translations .VPLink.link {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    line-height: 1.35;
+  }
+
+  .hb-nav-menu-portal.hb-nav-menu-portal-translations .VPMenu .title {
+    justify-content: flex-start;
+    align-items: center;
+    display: flex !important;
+    min-height: 32px !important;
+    padding: 6px 8px 6px 18px !important;
+    margin: 0 !important;
+    font-weight: 700;
+    font-size: 13px;
+    line-height: 1.35 !important;
+    border-radius: 10px;
+    white-space: nowrap;
+  }
+
+  .hb-nav-menu-portal.hb-nav-menu-portal-translations .VPMenu .VPLink.link {
+    justify-content: flex-start;
+    min-height: 32px !important;
+    padding: 6px 10px 6px 14px !important;
+    border-radius: 10px;
+  }
+
+  .hb-nav-menu-portal.hb-nav-menu-portal-translations .VPLink.link.hb-current-locale {
+    cursor: default;
+    pointer-events: none;
+    font-weight: 700;
+  }
+
+  .hb-nav-menu-portal.hb-nav-menu-portal-translations .VPMenu .title::before,
+  .hb-nav-menu-portal.hb-nav-menu-portal-translations .VPMenu .VPLink.link.hb-current-locale::before,
+  .hb-nav-menu-portal.hb-nav-menu-portal-translations .VPMenu .VPLink.link::before {
+    content: '';
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex: 0 0 auto;
+    font-size: 1rem;
+    line-height: 1;
+  }
+
+  .hb-nav-menu-portal.hb-nav-menu-portal-translations .VPMenu .title::before,
+  .hb-nav-menu-portal.hb-nav-menu-portal-translations .VPMenu .VPLink.link.hb-current-locale::before {
+    content: '🇹🇼' !important;
+  }
+
+  .hb-nav-menu-portal.hb-nav-menu-portal-translations .VPMenu .VPLink.link[lang='en']::before,
+  .hb-nav-menu-portal.hb-nav-menu-portal-translations .VPMenu .VPLink.link[hreflang='en']::before {
+    content: '🇺🇸' !important;
+  }
+
+  html:not(.dark) .hb-nav-menu-portal .VPMenu {
+    background: rgba(255, 255, 255, 0.16) !important;
+    border: 1px solid rgba(15, 23, 42, 0.1) !important;
+    box-shadow: 0 30px 64px rgba(15, 23, 42, 0.18) !important;
+  }
+
+  html.dark .hb-nav-menu-portal .VPMenu {
+    background: rgba(15, 20, 28, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.14) !important;
+    box-shadow: 0 28px 64px rgba(0, 0, 0, 0.34) !important;
+  }
+
+  .VPFlyout .menu .VPMenu,
+  .VPNavBarMenuGroup .menu .VPMenu,
+  .VPFlyout .VPMenu,
+  .VPNavBarMenuGroup .VPMenu {
+    overflow: hidden !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    border-radius: var(--hb-card-radius) !important;
+    backdrop-filter: blur(26px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(26px) saturate(180%) !important;
+  }
+
+  html:not(.dark) .VPFlyout .menu .VPMenu,
+  html:not(.dark) .VPNavBarMenuGroup .menu .VPMenu,
+  html:not(.dark) .VPFlyout .VPMenu,
+  html:not(.dark) .VPNavBarMenuGroup .VPMenu {
+    background: rgba(255, 255, 255, 0.62) !important;
+    border: 1px solid rgba(15, 23, 42, 0.1) !important;
+    box-shadow: 0 20px 48px rgba(15, 23, 42, 0.18) !important;
+  }
+
+  html.dark .VPFlyout .menu .VPMenu,
+  html.dark .VPNavBarMenuGroup .menu .VPMenu,
+  html.dark .VPFlyout .VPMenu,
+  html.dark .VPNavBarMenuGroup .VPMenu {
+    background: rgba(15, 20, 28, 0.68) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 22px 50px rgba(0, 0, 0, 0.28) !important;
+  }
+
+  .VPNavBarTranslations.translations .menu .VPMenu,
+  .VPNavBarTranslations.translations .VPMenu {
+    min-width: 144px;
+    padding: 0 !important;
+    overflow: hidden !important;
+    border-radius: var(--hb-card-radius) !important;
+    backdrop-filter: blur(56px) saturate(240%) !important;
+    -webkit-backdrop-filter: blur(56px) saturate(240%) !important;
+  }
+
+  html:not(.dark) .VPNavBarTranslations.translations .menu .VPMenu,
+  html:not(.dark) .VPNavBarTranslations.translations .VPMenu {
+    background: rgba(255, 255, 255, 0.16) !important;
+    border: 1px solid rgba(15, 23, 42, 0.1) !important;
+    box-shadow: 0 30px 64px rgba(15, 23, 42, 0.18) !important;
+  }
+
+  html.dark .VPNavBarTranslations.translations .menu .VPMenu,
+  html.dark .VPNavBarTranslations.translations .VPMenu {
+    background: rgba(15, 20, 28, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.14) !important;
+    box-shadow: 0 28px 64px rgba(0, 0, 0, 0.34) !important;
+  }
+
+  .VPNavBarTranslations.translations .menu {
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .VPNavBarTranslations.translations:has(> .button:hover) > .menu,
+  .VPNavBarTranslations.translations:has(> .button:focus-visible) > .menu,
+  .VPNavBarTranslations.translations:has(> .button[aria-expanded="true"]) > .menu,
+  .VPNavBarTranslations.translations:has(> .menu:hover) > .menu,
+  .VPNavBarTranslations.translations:has(> .menu:focus-within) > .menu {
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    width: auto !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .VPNavBarTranslations.translations .VPMenu .items {
+    display: grid;
+    gap: 4px;
+    padding: 6px;
+  }
+
+  body.is-blog-page .VPNavBar.has-sidebar .VPNavBarTranslations.translations .VPMenu .title,
+  body.is-blog-page .VPNavBar.has-sidebar.top .VPNavBarTranslations.translations .VPMenu .title {
+    padding: 6px 10px !important;
+  }
+
+  body.is-blog-page .VPNavBar.has-sidebar .VPNavBarTranslations.translations .VPMenu .VPLink.link,
+  body.is-blog-page .VPNavBar.has-sidebar.top .VPNavBarTranslations.translations .VPMenu .VPLink.link {
+    padding: 6px 10px !important;
+  }
+
+  .VPNavBarTranslations.translations .title,
+  .VPNavBarTranslations.translations .VPLink.link {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    line-height: 1.35;
+  }
+
+  .VPNavBarTranslations.translations .VPMenu .title {
+    justify-content: flex-start;
+    align-items: center;
+    display: flex !important;
+    min-height: 32px !important;
+    padding: 6px 10px 6px 14px !important;
+    margin: 0 !important;
+    font-weight: 700;
+    font-size: 13px;
+    line-height: 1.35 !important;
+    border-radius: 10px;
+    white-space: nowrap;
+  }
+
+  html:not(.dark) .hb-nav-menu-portal.hb-nav-menu-portal-translations .VPMenu .title,
+  html:not(.dark) .VPNavBarTranslations.translations .VPMenu .title {
+    background: rgba(255, 255, 255, 0.06) !important;
+    border: 1px solid rgba(15, 23, 42, 0.04) !important;
+  }
+
+  html.dark .hb-nav-menu-portal.hb-nav-menu-portal-translations .VPMenu .title,
+  html.dark .VPNavBarTranslations.translations .VPMenu .title {
+    background: rgba(255, 255, 255, 0.008) !important;
+    border: 1px solid rgba(255, 255, 255, 0.02) !important;
+  }
+
+  .VPNavBarTranslations.translations .VPMenu .VPLink.link {
+    justify-content: flex-start;
+    min-height: 32px !important;
+    padding: 6px 10px 6px 14px !important;
+    border-radius: 10px;
+  }
+
+  .VPNavBarTranslations.translations .VPMenu .title::before,
+  .VPNavBarTranslations.translations .VPMenu .VPLink.link::before {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex: 0 0 auto;
+    font-size: 1rem;
+    line-height: 1;
+  }
+
+  .VPNavBarTranslations.translations .VPMenu .title::before {
+    content: '🇹🇼' !important;
+  }
+
+  .VPNavBarTranslations.translations .VPMenu .VPLink.link[lang='en']::before,
+  .VPNavBarTranslations.translations .VPMenu .VPLink.link[hreflang='en']::before {
+    content: '🇺🇸' !important;
+  }
+
+  .VPNavBarMenuGroup .menu .VPMenu,
+  .VPNavBarMenuGroup .VPMenu {
+    backdrop-filter: blur(30px) saturate(190%) !important;
+    -webkit-backdrop-filter: blur(30px) saturate(190%) !important;
+  }
+
+  .VPNavBar:not(.top) .VPNavBarMenuGroup .menu .VPMenu,
+  .VPNavBar:not(.top) .VPNavBarMenuGroup .VPMenu {
+    backdrop-filter: blur(42px) saturate(220%) !important;
+    -webkit-backdrop-filter: blur(42px) saturate(220%) !important;
+  }
+
+  .VPNavBarMenuGroup:has(a[href^='#theme-']) {
+    position: relative;
+  }
+
+  .VPNavBarMenuGroup:has(a[href^='#theme-']) > .menu {
+    right: -14px;
+  }
+
+  .VPNavBarMenuGroup .VPMenu .items {
+    display: grid;
+    gap: 4px;
+    padding: 6px;
+  }
+
+  .VPNavBarMenuGroup .VPMenu .VPMenuLink {
+    padding: 0 !important;
+  }
+
+  .VPNavBarMenuGroup .VPMenu .VPLink.link {
+    display: flex;
+    align-items: center;
+    min-height: 32px;
+    padding: 6px 10px !important;
+    border-radius: 10px;
+  }
+
+  .VPFlyout .VPMenu .items,
+  .VPFlyout .VPMenu .VPMenuLink,
+  .VPFlyout .VPMenu .title,
+  .VPFlyout .VPMenu .VPLink.link,
+  .VPNavBarMenuGroup .VPMenu .items,
+  .VPNavBarMenuGroup .VPMenu .VPMenuLink,
+  .VPNavBarMenuGroup .VPMenu .title,
+  .VPNavBarMenuGroup .VPMenu .VPLink.link,
+  .VPNavBarTranslations.translations .VPMenu .items,
+  .VPNavBarTranslations.translations .VPMenu .title,
+  .VPNavBarTranslations.translations .VPMenu .VPLink.link {
+    animation: none !important;
+    transition: none !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: none !important;
+  }
+
+  html:not(.dark) .VPNavBarMenuGroup .menu .VPMenu,
+  html:not(.dark) .VPNavBarMenuGroup .VPMenu {
+    background: rgba(255, 255, 255, 0.56) !important;
+    box-shadow: 0 22px 50px rgba(15, 23, 42, 0.2) !important;
+  }
+
+  html:not(.dark) .VPNavBar:not(.top) .VPNavBarMenuGroup .menu .VPMenu,
+  html:not(.dark) .VPNavBar:not(.top) .VPNavBarMenuGroup .VPMenu {
+    background: rgba(255, 255, 255, 0.22) !important;
+    border: 1px solid rgba(15, 23, 42, 0.1) !important;
+    box-shadow: 0 30px 64px rgba(15, 23, 42, 0.18) !important;
+  }
+
+  html:not(.dark) .VPNavBarMenuGroup .VPMenu .VPLink.link {
+    background: rgba(255, 255, 255, 0.34) !important;
+  }
+
+  html:not(.dark) .VPNavBar:not(.top) .VPNavBarMenuGroup .VPMenu .VPLink.link {
+    background: rgba(255, 255, 255, 0.06) !important;
+    border: 1px solid rgba(15, 23, 42, 0.04) !important;
+  }
+
+  html.dark .VPNavBarMenuGroup .menu .VPMenu,
+  html.dark .VPNavBarMenuGroup .VPMenu {
+    background: rgba(15, 20, 28, 0.54) !important;
+    box-shadow: 0 24px 54px rgba(0, 0, 0, 0.3) !important;
+  }
+
+  html.dark .VPNavBar:not(.top) .VPNavBarMenuGroup .menu .VPMenu,
+  html.dark .VPNavBar:not(.top) .VPNavBarMenuGroup .VPMenu {
+    background: rgba(15, 20, 28, 0.16) !important;
+    border: 1px solid rgba(255, 255, 255, 0.14) !important;
+    box-shadow: 0 28px 64px rgba(0, 0, 0, 0.34) !important;
+  }
+
+  html.dark .VPNavBarMenuGroup .VPMenu .VPLink.link {
+    background: rgba(255, 255, 255, 0.06) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  }
+
+  html.dark .VPNavBar:not(.top) .VPNavBarMenuGroup .VPMenu .VPLink.link {
+    background: rgba(255, 255, 255, 0.008) !important;
+    border: 1px solid rgba(255, 255, 255, 0.02) !important;
+  }
+
+  html.dark .VPFlyout .menu,
+  html.dark .VPNavBarMenuGroup .menu,
+  html:not(.dark) .VPFlyout .menu,
+  html:not(.dark) .VPNavBarMenuGroup .menu {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+  }
+
+  .VPFlyout .button:hover + .menu,
+  .VPFlyout .button:focus-visible + .menu,
+  .VPNavBarMenuGroup .button:hover + .menu,
+  .VPNavBarMenuGroup .button:focus-visible + .menu,
+  .VPFlyout:hover > .menu,
+  .VPFlyout:focus-within > .menu,
+  .VPNavBarMenuGroup:hover > .menu,
+  .VPNavBarMenuGroup:focus-within > .menu {
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    width: auto !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .VPFlyout .button:hover + .menu .VPMenu,
+  .VPFlyout .button:focus-visible + .menu .VPMenu,
+  .VPNavBarMenuGroup .button:hover + .menu .VPMenu,
+  .VPNavBarMenuGroup .button:focus-visible + .menu .VPMenu,
+  .VPFlyout:hover > .menu .VPMenu,
+  .VPFlyout:focus-within > .menu .VPMenu,
+  .VPNavBarMenuGroup:hover > .menu .VPMenu,
+  .VPNavBarMenuGroup:focus-within > .menu .VPMenu {
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+}
+
+@media (min-width: 960px) {
+  body.is-blog-page .VPNavBar,
+  body.is-blog-page .VPNavBar.has-sidebar,
+  body.is-blog-page .VPNavBar.top,
+  body.is-blog-page .VPNavBar.top > .wrapper,
+  body.is-blog-page .VPNavBar.top > .container,
+  body.is-blog-page .VPNavBar.top .content,
+  body.is-blog-page .VPNavBar.top .content-body {
+    overflow: visible !important;
+  }
+
+  body.is-blog-page .VPNavBar,
+  body.is-blog-page .VPNav {
+    pointer-events: auto !important;
+    z-index: 120 !important;
+  }
+
+  body.is-blog-page .VPFlyout,
+  body.is-blog-page .VPNavBarMenuGroup,
+  body.is-blog-page .VPFlyout .menu,
+  body.is-blog-page .VPNavBarMenuGroup .menu,
+  body.is-blog-page .VPFlyout .VPMenu,
+  body.is-blog-page .VPNavBarMenuGroup .VPMenu {
+    position: relative !important;
+    z-index: 121 !important;
+  }
+
+  body.is-blog-page .VPFlyout .menu,
+  body.is-blog-page .VPNavBarMenuGroup .menu {
+    position: absolute !important;
   }
 }
 

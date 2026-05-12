@@ -54,9 +54,282 @@ export default {
         };
         initCrashFixStyle();
 
+        const initDesktopNavFlyoutFix = () => {
+            if (document.getElementById('hb-desktop-nav-flyout-fix')) return;
+            const style = document.createElement('style');
+            style.id = 'hb-desktop-nav-flyout-fix';
+            style.innerHTML = `
+                @media (min-width: 960px) {
+                    body.is-blog-page .VPNav,
+                    body.is-blog-page .VPNavBar,
+                    body.is-blog-page .VPNavBar > .wrapper,
+                    body.is-blog-page .VPNavBar > .container,
+                    body.is-blog-page .VPNavBar .content,
+                    body.is-blog-page .VPNavBar .content-body {
+                        overflow: visible !important;
+                    }
+
+                    body.is-blog-page .VPNav,
+                    body.is-blog-page .VPNavBar {
+                        z-index: 120 !important;
+                        pointer-events: auto !important;
+                    }
+
+                    body.is-blog-page .VPFlyout:hover .menu[data-v-546fcfc2],
+                    body.is-blog-page .VPFlyout:focus-within .menu[data-v-546fcfc2],
+                    body.is-blog-page .VPFlyout .button[aria-expanded="true"] + .menu[data-v-546fcfc2],
+                    body.is-blog-page .VPFlyout:hover .menu[data-v-ce7cea34],
+                    body.is-blog-page .VPFlyout:focus-within .menu[data-v-ce7cea34],
+                    body.is-blog-page .VPFlyout .button[aria-expanded="true"] + .menu[data-v-ce7cea34] {
+                        visibility: visible !important;
+                        opacity: 1 !important;
+                        pointer-events: auto !important;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        };
+        initDesktopNavFlyoutFix();
+
+        let activeNavPortal: HTMLElement | null = null;
+        let activeNavPortalSource: HTMLElement | null = null;
+        let isNavPortalHovered = false;
+        let lastNavPortalRect: DOMRect | null = null;
+        let navPortalCloseTimer: ReturnType<typeof setTimeout> | null = null;
+
+        const clearDesktopNavPortalCloseTimer = () => {
+            if (!navPortalCloseTimer) return;
+            clearTimeout(navPortalCloseTimer);
+            navPortalCloseTimer = null;
+        };
+
+        const isDesktopNavPortalEligible = (root: HTMLElement) => {
+            return !!root.querySelector(':scope > .menu > .VPMenu');
+        };
+
+        const setDesktopNavSourceHidden = (root: HTMLElement | null, hidden: boolean) => {
+            if (!root) return;
+            const menu = root.querySelector<HTMLElement>(':scope > .menu');
+            const panel = root.querySelector<HTMLElement>(':scope > .menu > .VPMenu, :scope > .VPMenu');
+
+            root.classList.toggle('hb-nav-portal-source', hidden);
+
+            if (!menu || !panel) return;
+
+            if (hidden) {
+                menu.style.setProperty('display', 'none', 'important');
+                menu.style.setProperty('opacity', '0', 'important');
+                menu.style.setProperty('visibility', 'hidden', 'important');
+                menu.style.setProperty('pointer-events', 'none', 'important');
+                panel.style.setProperty('opacity', '0', 'important');
+                panel.style.setProperty('visibility', 'hidden', 'important');
+                panel.style.setProperty('pointer-events', 'none', 'important');
+            }
+            else {
+                menu.style.removeProperty('display');
+                menu.style.removeProperty('opacity');
+                menu.style.removeProperty('visibility');
+                menu.style.removeProperty('pointer-events');
+                panel.style.removeProperty('opacity');
+                panel.style.removeProperty('visibility');
+                panel.style.removeProperty('pointer-events');
+            }
+        };
+
+        const queueDesktopNavPortalRemoval = () => {
+            clearDesktopNavPortalCloseTimer();
+            navPortalCloseTimer = setTimeout(() => {
+                const activeRoot = getActiveDesktopNavRoot();
+                if (activeRoot || isNavPortalHovered) return;
+                removeDesktopNavPortal();
+            }, 420);
+        };
+
+        const removeDesktopNavPortal = () => {
+            clearDesktopNavPortalCloseTimer();
+            setDesktopNavSourceHidden(activeNavPortalSource, false);
+            activeNavPortal?.remove();
+            activeNavPortal = null;
+            activeNavPortalSource = null;
+            isNavPortalHovered = false;
+            lastNavPortalRect = null;
+            document.body.classList.remove('hb-nav-menu-portal-active');
+        };
+
+        const getActiveDesktopNavRoot = () => {
+            const roots = Array.from(document.querySelectorAll<HTMLElement>('.VPNav .VPFlyout, .VPNav .VPNavBarMenuGroup'));
+            return roots.find((root) => {
+                if (!isDesktopNavPortalEligible(root)) return false;
+                return root.matches(':hover') || root.matches(':focus-within');
+            }) || null;
+        };
+
+        const syncDesktopNavPortal = () => {
+            if (typeof window === 'undefined' || window.innerWidth < 960) {
+                removeDesktopNavPortal();
+                return;
+            }
+
+            clearDesktopNavPortalCloseTimer();
+            const activeRoot = getActiveDesktopNavRoot();
+            if (!activeRoot && !isNavPortalHovered) {
+                queueDesktopNavPortalRemoval();
+                return;
+            }
+
+            const sourceRoot = activeRoot || activeNavPortalSource;
+            if (!sourceRoot) {
+                removeDesktopNavPortal();
+                return;
+            }
+
+            if (!activeRoot && isNavPortalHovered && activeNavPortal && activeNavPortalSource === sourceRoot) {
+                return;
+            }
+
+            const sourceMenu = sourceRoot.querySelector<HTMLElement>(':scope > .menu');
+            const sourcePanel = sourceMenu?.querySelector<HTMLElement>(':scope > .VPMenu');
+            const sourceButton = sourceRoot.querySelector<HTMLElement>(':scope > .button');
+
+            if (!sourceMenu || !sourcePanel || !sourceButton) {
+                removeDesktopNavPortal();
+                return;
+            }
+
+            if (!activeNavPortal) {
+                activeNavPortal = document.createElement('div');
+                activeNavPortal.className = 'hb-nav-menu-portal';
+                activeNavPortal.style.setProperty('left', '-9999px');
+                activeNavPortal.style.setProperty('top', '-9999px');
+                activeNavPortal.addEventListener('mouseenter', () => {
+                    clearDesktopNavPortalCloseTimer();
+                    isNavPortalHovered = true;
+                });
+                activeNavPortal.addEventListener('mouseleave', () => {
+                    isNavPortalHovered = false;
+                    queueDesktopNavPortalRemoval();
+                });
+                document.body.appendChild(activeNavPortal);
+            }
+
+            document.body.classList.add('hb-nav-menu-portal-active');
+
+            const buttonRect = sourceButton.getBoundingClientRect();
+            const panelRect = sourcePanel.getBoundingClientRect();
+            const isTranslationsRoot = sourceRoot.classList.contains('VPNavBarTranslations') || sourceRoot.classList.contains('translations');
+            const fallbackWidth = sourcePanel.scrollWidth || sourceMenu.scrollWidth || Math.max(sourceButton.offsetWidth + 20, 168);
+            const fallbackHeight = sourcePanel.scrollHeight || sourceMenu.scrollHeight || 0;
+            const width = Math.round(isTranslationsRoot ? 156 : (panelRect.width || fallbackWidth));
+            const alignmentOffset = sourceRoot.matches('.VPNavBarMenuGroup:has(a[href^="#theme-"])') ? 14 : 0;
+            const rawLeft = Math.round(buttonRect.right - width + alignmentOffset);
+            const left = Math.max(12, Math.min(rawLeft, window.innerWidth - width - 12));
+            const top = Math.round(buttonRect.bottom - 4);
+            const height = Math.round(panelRect.height || fallbackHeight);
+
+            if (activeNavPortalSource && activeNavPortalSource !== sourceRoot) {
+                setDesktopNavSourceHidden(activeNavPortalSource, false);
+            }
+            setDesktopNavSourceHidden(sourceRoot, true);
+
+            activeNavPortal.classList.toggle(
+                'hb-nav-menu-portal-translations',
+                isTranslationsRoot
+            );
+
+            if (activeNavPortalSource !== sourceRoot || activeNavPortal.childElementCount === 0) {
+                const nextPanel = sourcePanel.cloneNode(true) as HTMLElement;
+                if (activeNavPortal.classList.contains('hb-nav-menu-portal-translations')) {
+                    const title = nextPanel.querySelector<HTMLElement>('.title');
+                    if (title) {
+                        const currentLocaleRow = document.createElement('div');
+                        currentLocaleRow.className = 'VPMenuLink';
+
+                        const currentLocaleLabel = document.createElement('span');
+                        currentLocaleLabel.className = 'VPLink link lando hb-current-locale';
+                        currentLocaleLabel.textContent = title.textContent || '';
+
+                        currentLocaleRow.appendChild(currentLocaleLabel);
+                        title.replaceWith(currentLocaleRow);
+                    }
+                }
+                nextPanel.style.setProperty('visibility', 'visible', 'important');
+                nextPanel.style.setProperty('opacity', '1', 'important');
+                nextPanel.style.setProperty('pointer-events', 'auto', 'important');
+                activeNavPortal.replaceChildren(nextPanel);
+            }
+            activeNavPortalSource = sourceRoot;
+
+            lastNavPortalRect = new DOMRect(left, top, width, height);
+
+            activeNavPortal.style.setProperty('left', `${left}px`);
+            activeNavPortal.style.setProperty('top', `${top}px`);
+            activeNavPortal.style.setProperty('width', `${width}px`);
+        };
+
+        const updateDesktopNavMenuState = () => {
+            if (typeof window === 'undefined') return;
+
+            const isDesktop = window.innerWidth >= 960;
+            if (!isDesktop) {
+                document.body.classList.remove('hb-nav-menu-open');
+                applyDesktopNavMenuOpenStyles(false);
+                return;
+            }
+
+            const isOpen = isNavPortalHovered || !!document.querySelector(
+                '.VPNav .VPFlyout:hover, ' +
+                '.VPNav .VPFlyout:focus-within, ' +
+                '.VPNav .VPNavBarMenuGroup:hover, ' +
+                '.VPNav .VPNavBarMenuGroup:focus-within'
+            );
+
+            document.body.classList.toggle('hb-nav-menu-open', isOpen);
+            applyDesktopNavMenuOpenStyles(isOpen);
+            syncDesktopNavPortal();
+        };
+
+        const applyDesktopNavMenuOpenStyles = (isOpen: boolean) => {
+            if (!isOpen) {
+                removeDesktopNavPortal();
+            }
+        };
+
+        const scheduleDesktopNavMenuStateUpdate = () => {
+            requestAnimationFrame(() => {
+                updateDesktopNavMenuState();
+            });
+        };
+
         // --- Body Class 更新邏輯 (MutationObserver 版) ---
         function isBlogPage(path: string) {
             return /^\/(en\/)?blog\/(?!$|index|index-new)[\w-]+/.test(path) || /^\/docs\/[\w-]+/.test(path);
+        }
+
+        function applyDesktopBlogNavFix() {
+            if (typeof window === 'undefined' || window.innerWidth < 960) return;
+            if (!document.body.classList.contains('is-blog-page')) return;
+
+            const navSelectors = [
+                '.VPNav',
+                '.VPNavBar',
+                '.VPNavBar > .wrapper',
+                '.VPNavBar > .container',
+                '.VPNavBar .content',
+                '.VPNavBar .content-body',
+            ];
+
+            for (const selector of navSelectors) {
+                const element = document.querySelector<HTMLElement>(selector);
+                if (!element) continue;
+                element.style.setProperty('overflow', 'visible', 'important');
+            }
+
+            const nav = document.querySelector<HTMLElement>('.VPNav');
+            const navBar = document.querySelector<HTMLElement>('.VPNavBar');
+            nav?.style.setProperty('z-index', '120', 'important');
+            navBar?.style.setProperty('z-index', '120', 'important');
+            nav?.style.setProperty('pointer-events', 'auto', 'important');
+            navBar?.style.setProperty('pointer-events', 'auto', 'important');
         }
         
         function updateBodyClasses() {
@@ -68,6 +341,11 @@ export default {
 
             if (isHome) document.body.classList.add('is-home-page');
             else document.body.classList.remove('is-home-page');
+
+            requestAnimationFrame(() => {
+                applyDesktopBlogNavFix();
+                updateDesktopNavMenuState();
+            });
         }
 
         // 建立 DOM 觀察者，精準取代 setInterval，並加入「絕對領域防護罩」
@@ -111,6 +389,14 @@ export default {
                 });
                 updateBodyClasses(); // 首次載入先執行一次
             });
+
+            window.addEventListener('resize', applyDesktopBlogNavFix);
+            window.addEventListener('resize', scheduleDesktopNavMenuStateUpdate);
+            document.addEventListener('mouseover', scheduleDesktopNavMenuStateUpdate, true);
+            document.addEventListener('mouseout', scheduleDesktopNavMenuStateUpdate, true);
+            document.addEventListener('focusin', scheduleDesktopNavMenuStateUpdate, true);
+            document.addEventListener('focusout', scheduleDesktopNavMenuStateUpdate, true);
+            document.addEventListener('click', scheduleDesktopNavMenuStateUpdate, true);
         }
 
         // --- 其餘原本功能 ---
@@ -313,6 +599,7 @@ export default {
                 setupGlobalOutlineHoverScroll();
                 updateCanonicalAndOg();
                 updateBodyClasses();
+                updateDesktopNavMenuState();
             }, 80);
         });
 
@@ -322,6 +609,7 @@ export default {
                     setupGlobalOutlineHoverScroll();
                     updateCanonicalAndOg();
                     updateBodyClasses();
+                    updateDesktopNavMenuState();
                 }, 50);
             });
         }

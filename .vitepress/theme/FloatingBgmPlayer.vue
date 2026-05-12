@@ -74,6 +74,7 @@ const REPEAT_ONE_KEY = 'holybear-bgm-repeat-one'
 const audio = ref(null)
 const playerContainer = ref(null)
 const sidebarToggle = ref(null)
+const playlistItemsRef = ref(null)
 const playing = ref(false)
 const volume = ref(0.6)
 const volumeBeforeMute = ref(0.6)
@@ -100,6 +101,28 @@ const isHovering = ref(false)
 const isClicked = ref(false)
 
 let autoPlayListener = null
+let internalAudioTransition = false
+let pendingTrackAdvance = false
+let trackAdvanceUnlockTimer = null
+let playbackRecoveryTimer = null
+let intendedToPlay = false
+let resumeOnVisibilityReturn = false
+
+function canAttemptPlaybackNow() {
+  if (typeof navigator === 'undefined' || !navigator.userActivation) return true
+  return navigator.userActivation.hasBeenActive
+}
+
+function armAutoplayOnInteraction() {
+  if (autoPlayListener) return
+
+  autoPlayListener = () => {
+    autoPlayListener = null
+    playMusic()
+  }
+
+  document.body.addEventListener('click', autoPlayListener, { once: true, capture: true })
+}
 
 /* --- Computed 屬性 --- */
 const currentSong = computed(() => {
@@ -205,7 +228,10 @@ onMounted(async () => {
   window.addEventListener(THEME_CHANGE_EVENT, themeHandler)
   window.addEventListener('pointerdown', handlePointerOutside, true)
   window.addEventListener('click', handleClickOutside)
+  window.addEventListener('pageshow', handlePageShow)
+  window.addEventListener('focus', handleWindowFocus)
   document.addEventListener('mousemove', handleGlobalMouseMove)
+  document.addEventListener('visibilitychange', handleVisibilityChange)
 
   const savedVolume = localStorage.getItem(VOLUME_KEY)
   if (savedVolume !== null) {
@@ -237,24 +263,28 @@ onMounted(async () => {
 
     // 統一處理初始播放邏輯
     const isPlayingOnLoad = localStorage.getItem(PLAYING_KEY) === 'true';
+    intendedToPlay = savedTheme === 'christmas' || isPlayingOnLoad
+
     if (playerOpen.value && (savedTheme === 'christmas' || isPlayingOnLoad)) {
-        await selectAndPlaySong(currentIndex.value, { forceRestart: true });
-        // 如果 selectAndPlaySong 因瀏覽器政策未能自動播放，則設置點擊監聽器
-        if (!playing.value) { // 檢查 playing.value 是否仍為 false (selectAndPlaySong 會更新此值)
-            console.warn('自動播放被瀏覽器阻止，等待用戶互動...');
-            autoPlayListener = () => { playMusic(); };
-            document.body.addEventListener('click', autoPlayListener, { once: true, capture: true }); // 在捕獲階段監聽
+        if (canAttemptPlaybackNow()) {
+          await selectAndPlaySong(currentIndex.value, { forceRestart: true });
+        } else {
+          syncPlayingState(false)
+          armAutoplayOnInteraction()
         }
     } else if (playerOpen.value) {
-        // 播放器開啟，但上次非播放狀態且不是聖誕主題，等待用戶互動
-        console.warn('播放器開啟但上次非播放狀態或首次加載，等待用戶互動...');
-        autoPlayListener = () => { playMusic(); };
-        document.body.addEventListener('click', autoPlayListener, { once: true, capture: true }); // 在捕獲階段監聽
+      intendedToPlay = false
+      syncPlayingState(false)
     } else {
         // 播放器未開啟，確保播放狀態為 false
+      intendedToPlay = false
         playing.value = false;
         localStorage.setItem(PLAYING_KEY, 'false');
     }
+
+    syncMediaSessionMetadata()
+    syncMediaSessionPlaybackState()
+    setupMediaSessionHandlers()
   }
 })
 
@@ -262,7 +292,10 @@ onUnmounted(() => {
   window.removeEventListener(THEME_CHANGE_EVENT, themeHandler)
   window.removeEventListener('pointerdown', handlePointerOutside, true)
   window.removeEventListener('click', handleClickOutside)
+  window.removeEventListener('pageshow', handlePageShow)
+  window.removeEventListener('focus', handleWindowFocus)
   document.removeEventListener('mousemove', handleGlobalMouseMove)
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
   document.removeEventListener('mousemove', handleMouseDragMove)
   document.removeEventListener('mouseup', handleMouseDragEnd)
 
@@ -277,12 +310,31 @@ onUnmounted(() => {
   }
   if (hoverTimer) clearTimeout(hoverTimer)
   if (leaveTimer) clearTimeout(leaveTimer)
+  if (trackAdvanceUnlockTimer) clearTimeout(trackAdvanceUnlockTimer)
+  if (playbackRecoveryTimer) clearTimeout(playbackRecoveryTimer)
+
+  clearMediaSessionHandlers()
 })
 
 /* --- Watchers --- */
 // 只同步 localStorage，避免跟 selectAndPlaySong 重複操作
 watch(currentIndex, (val) => {
   localStorage.setItem(INDEX_KEY, String(val))
+
+  if (isPlaylistVisible.value) {
+    scrollActivePlaylistItem()
+  }
+
+  syncMediaSessionMetadata()
+})
+
+watch(playing, () => {
+  syncMediaSessionPlaybackState()
+})
+
+watch(isPlaylistVisible, async (visible) => {
+  if (!visible) return
+  await scrollActivePlaylistItem(false)
 })
 
 watch(volume, (newVolume) => {
@@ -294,6 +346,9 @@ watch(volume, (newVolume) => {
 watch(playerOpen, (val) => {
   localStorage.setItem(PLAYER_OPEN_KEY, val ? 'true' : 'false')
   if (!val) {
+    intendedToPlay = false
+    resumeOnVisibilityReturn = false
+    cancelPlaybackRecovery()
     if (autoPlayListener) {
       document.body.removeEventListener('click', autoPlayListener)
       autoPlayListener = null
@@ -323,6 +378,9 @@ watch(musicInfoHidden, (newVal) => {
 /* --- 播放控制函數 --- */
 function playMusic() {
   if (!audio.value) return
+  intendedToPlay = true
+  resumeOnVisibilityReturn = false
+  cancelPlaybackRecovery()
   audio.value.volume = volume.value
   audio.value.loop = repeatOne.value
 
@@ -332,24 +390,26 @@ function playMusic() {
   }
 
   audio.value.play().then(() => {
-    playing.value = true
-    localStorage.setItem(PLAYING_KEY, 'true')
+    syncPlayingState(true)
   }).catch(e => {
-    console.error('音樂播放失敗', e);
     // 如果播放失敗，且是瀏覽器阻止，重新設置監聽器
     if (e.name === 'NotAllowedError') {
-      console.warn('自動播放被瀏覽器阻止，等待用戶互動...');
-      autoPlayListener = () => { playMusic(); };
-      document.body.addEventListener('click', autoPlayListener, { once: true, capture: true });
+      armAutoplayOnInteraction()
+      return
     }
+
+    console.error('音樂播放失敗', e);
   })
 }
 
 function pauseMusic() {
   if (!audio.value) return
+  intendedToPlay = false
+  resumeOnVisibilityReturn = false
+  cancelPlaybackRecovery()
+  internalAudioTransition = false
   audio.value.pause()
-  playing.value = false
-  localStorage.setItem(PLAYING_KEY, 'false')
+  syncPlayingState(false)
 }
 
 function togglePlay() {
@@ -360,7 +420,7 @@ function prevSong() {
   if (!musicList.value || musicList.value.length === 0) return
   const len = musicList.value.length
   const newIndex = (currentIndex.value - 1 + len) % len
-  selectAndPlaySong(newIndex, { forceRestart: true })
+  return selectAndPlaySong(newIndex, { forceRestart: true })
 }
 
 function nextSong() {
@@ -368,7 +428,218 @@ function nextSong() {
   const len = musicList.value.length
   const newIndex = (currentIndex.value + 1) % len
   // 如果 repeatOne 開著，audio.loop 會阻止 ended 事件 — 但我們仍呼叫 nextSong 時會在這裡執行切歌
-  selectAndPlaySong(newIndex, { forceRestart: true })
+  return selectAndPlaySong(newIndex, { forceRestart: true })
+}
+
+function syncPlayingState(isPlaying) {
+  playing.value = isPlaying
+  localStorage.setItem(PLAYING_KEY, isPlaying ? 'true' : 'false')
+  syncMediaSessionPlaybackState()
+}
+
+function cancelPlaybackRecovery() {
+  if (playbackRecoveryTimer) {
+    clearTimeout(playbackRecoveryTimer)
+    playbackRecoveryTimer = null
+  }
+}
+
+function lockTrackAdvance() {
+  pendingTrackAdvance = true
+  if (trackAdvanceUnlockTimer) clearTimeout(trackAdvanceUnlockTimer)
+  trackAdvanceUnlockTimer = setTimeout(() => {
+    pendingTrackAdvance = false
+  }, 400)
+}
+
+async function handleTrackEnded(reason = 'ended') {
+  if (repeatOne.value || pendingTrackAdvance) return
+
+  lockTrackAdvance()
+  await nextSong()
+}
+
+function handleAudioPlay() {
+  cancelPlaybackRecovery()
+  intendedToPlay = true
+  resumeOnVisibilityReturn = false
+  syncPlayingState(true)
+}
+
+function handleAudioPlaying() {
+  cancelPlaybackRecovery()
+  intendedToPlay = true
+  resumeOnVisibilityReturn = false
+  syncPlayingState(true)
+}
+
+function handleAudioPause() {
+  if (internalAudioTransition) return
+
+  const audioEl = audio.value
+  const isNearTrackEnd = audioEl && duration.value > 0 && (duration.value - audioEl.currentTime) <= 0.35
+
+  if (!repeatOne.value && isNearTrackEnd) {
+    handleTrackEnded('pause-near-end')
+    return
+  }
+
+  if (intendedToPlay) {
+    syncPlayingState(false)
+    if (document.hidden) {
+      resumeOnVisibilityReturn = true
+      return
+    }
+
+    requestPlaybackRecovery('unexpected-pause', 220)
+    return
+  }
+
+  syncPlayingState(false)
+}
+
+function handleAudioError() {
+  if (!audio.value || internalAudioTransition) return
+
+  const isNearTrackEnd = duration.value > 0 && (duration.value - audio.value.currentTime) <= 0.35
+  if (!repeatOne.value && isNearTrackEnd) {
+    handleTrackEnded('error-near-end')
+    return
+  }
+
+  if (intendedToPlay) {
+    requestPlaybackRecovery('audio-error', 320)
+  }
+}
+
+function handleAudioWaiting() {
+  if (!intendedToPlay || internalAudioTransition) return
+  requestPlaybackRecovery('waiting', 420)
+}
+
+function handleAudioStalled() {
+  if (!intendedToPlay || internalAudioTransition) return
+  requestPlaybackRecovery('stalled', 520)
+}
+
+function handleAudioSuspend() {
+  if (!intendedToPlay || internalAudioTransition) return
+  requestPlaybackRecovery('suspend', 620)
+}
+
+function handleAudioCanPlay() {
+  if (!intendedToPlay || internalAudioTransition || !audio.value?.paused) return
+  requestPlaybackRecovery('canplay', 0)
+}
+
+function requestPlaybackRecovery(reason, delay = 300) {
+  if (!audio.value || internalAudioTransition || !intendedToPlay || pendingTrackAdvance) return
+
+  if (document.hidden) {
+    resumeOnVisibilityReturn = true
+    return
+  }
+
+  cancelPlaybackRecovery()
+  playbackRecoveryTimer = setTimeout(async () => {
+    if (!audio.value || internalAudioTransition || !intendedToPlay || pendingTrackAdvance) return
+
+    try {
+      if (audio.value.readyState < 2) {
+        audio.value.load()
+      }
+
+      await audio.value.play()
+      syncPlayingState(true)
+      resumeOnVisibilityReturn = false
+    } catch (error) {
+      if (error.name === 'NotAllowedError') {
+        resumeOnVisibilityReturn = true
+      } else {
+        console.warn(`音訊恢復失敗: ${reason}`, error)
+      }
+    }
+  }, delay)
+}
+
+function handleVisibilityChange() {
+  if (document.hidden) {
+    if (intendedToPlay) {
+      resumeOnVisibilityReturn = true
+    }
+    return
+  }
+
+  syncMediaSessionMetadata()
+  syncMediaSessionPlaybackState()
+  setupMediaSessionHandlers()
+
+  if (resumeOnVisibilityReturn || (intendedToPlay && audio.value?.paused)) {
+    requestPlaybackRecovery('visibility-return', 120)
+  }
+}
+
+function handlePageShow() {
+  syncMediaSessionMetadata()
+  syncMediaSessionPlaybackState()
+  setupMediaSessionHandlers()
+
+  if (resumeOnVisibilityReturn || (intendedToPlay && audio.value?.paused)) {
+    requestPlaybackRecovery('pageshow', 80)
+  }
+}
+
+function handleWindowFocus() {
+  if (resumeOnVisibilityReturn || (intendedToPlay && audio.value?.paused)) {
+    requestPlaybackRecovery('window-focus', 80)
+  }
+}
+
+function syncMediaSessionMetadata() {
+  if (typeof navigator === 'undefined' || !('mediaSession' in navigator) || typeof MediaMetadata === 'undefined') return
+
+  navigator.mediaSession.metadata = new MediaMetadata({
+    title: currentSong.value.title || '未命名曲目',
+    artist: '聖小熊的秘密基地',
+    album: '網站背景音樂'
+  })
+}
+
+function syncMediaSessionPlaybackState() {
+  if (typeof navigator === 'undefined' || !('mediaSession' in navigator)) return
+  navigator.mediaSession.playbackState = playing.value ? 'playing' : 'paused'
+}
+
+function setupMediaSessionHandlers() {
+  if (typeof navigator === 'undefined' || !('mediaSession' in navigator)) return
+
+  const handlers = {
+    play: () => playMusic(),
+    pause: () => pauseMusic(),
+    previoustrack: () => prevSong(),
+    nexttrack: () => nextSong(),
+    stop: () => pauseMusic()
+  }
+
+  Object.entries(handlers).forEach(([action, handler]) => {
+    try {
+      navigator.mediaSession.setActionHandler(action, handler)
+    } catch (error) {
+      console.warn(`Media Session action \"${action}\" 註冊失敗`, error)
+    }
+  })
+}
+
+function clearMediaSessionHandlers() {
+  if (typeof navigator === 'undefined' || !('mediaSession' in navigator)) return
+
+  ;['play', 'pause', 'previoustrack', 'nexttrack', 'stop'].forEach((action) => {
+    try {
+      navigator.mediaSession.setActionHandler(action, null)
+    } catch (error) {
+      console.warn(`Media Session action \"${action}\" 清除失敗`, error)
+    }
+  })
 }
 
 // 統一負責切歌：設定 src -> load() -> play()
@@ -382,32 +653,40 @@ async function selectAndPlaySong(index, options = {}) {
   await nextTick()
   if (!audio.value) return
 
+  internalAudioTransition = true
+  cancelPlaybackRecovery()
+
   try {
+    audio.value.pause()
     audio.value.src = musicList.value[index].src
     audio.value.load()
     currentTime.value = 0
 
     if (playing.value || options.forceRestart) {
+      intendedToPlay = true
       await audio.value.play()
-      playing.value = true
-      localStorage.setItem(PLAYING_KEY, 'true')
+      syncPlayingState(true)
+    } else {
+      syncPlayingState(false)
     }
   } catch (e) {
     if (e.name !== 'AbortError') {
-      console.error('切歌/播放失敗', e)
-      playing.value = false
-      localStorage.setItem(PLAYING_KEY, 'false')
+      syncPlayingState(false)
       // 如果播放失敗，且是瀏覽器阻止，重新設置監聽器
       if (e.name === 'NotAllowedError') {
-        console.warn('自動播放被瀏覽器阻止，等待用戶互動...');
-        // 確保在重新添加之前，如果存在，先移除舊的監聽器
         if (autoPlayListener) {
           document.body.removeEventListener('click', autoPlayListener);
+          autoPlayListener = null
         }
-        autoPlayListener = () => { playMusic(); };
-        document.body.addEventListener('click', autoPlayListener, { once: true, capture: true });
+        armAutoplayOnInteraction()
+        return
       }
+
+      console.error('切歌/播放失敗', e)
     }
+  } finally {
+    internalAudioTransition = false
+    syncMediaSessionMetadata()
   }
 
   isPlaylistVisible.value = false
@@ -444,6 +723,25 @@ function toggleMute() {
 function togglePlaylist() {
   isPlaylistVisible.value = !isPlaylistVisible.value
   if (isPlaylistVisible.value) isVolumeVisible.value = false
+}
+
+async function scrollActivePlaylistItem(smooth = true) {
+  await nextTick()
+
+  const container = playlistItemsRef.value
+  if (!container) return
+
+  const activeItem = container.querySelector('.playlist-item.active')
+  if (!activeItem) return
+
+  const containerRect = container.getBoundingClientRect()
+  const itemRect = activeItem.getBoundingClientRect()
+  const targetScrollTop = container.scrollTop + (itemRect.top - containerRect.top) - (container.clientHeight / 2) + (activeItem.clientHeight / 2)
+
+  container.scrollTo({
+    top: Math.max(0, targetScrollTop),
+    behavior: smooth ? 'smooth' : 'auto'
+  })
 }
 
 function toggleVolume() {
@@ -673,8 +971,16 @@ function toggleRepeatOne() {
   id="global-audio-player" 
   crossorigin="anonymous"
   preload="auto"
-  @ended="nextSong"
+  @ended="handleTrackEnded"
   @loadedmetadata="onLoadedMetadata"
+  @play="handleAudioPlay"
+  @playing="handleAudioPlaying"
+  @pause="handleAudioPause"
+  @error="handleAudioError"
+  @waiting="handleAudioWaiting"
+  @stalled="handleAudioStalled"
+  @suspend="handleAudioSuspend"
+  @canplay="handleAudioCanPlay"
 ></audio>
 
   <transition name="player-fade">
@@ -759,7 +1065,7 @@ function toggleRepeatOne() {
       <transition name="slide-up">
         <div v-if="isPlaylistVisible" class="playlist-panel bg-slate-950/22 backdrop-blur-3xl backdrop-saturate-150 backdrop-contrast-125">
           <h3 class="playlist-title">播放清單</h3>
-          <div class="playlist-items">
+          <div ref="playlistItemsRef" class="playlist-items">
             <div
               v-for="(song, index) in musicList"
               :key="song.src"
