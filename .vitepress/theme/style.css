@@ -3255,7 +3255,7 @@ body.is-home-page .VPNavBar .divider-line {
   }
 
   .hb-nav-menu-portal.hb-nav-menu-portal-translations .VPMenu {
-    min-width: 144px;
+    min-width: 132px;
     padding: 0 !important;
   }
 
@@ -3284,7 +3284,7 @@ body.is-home-page .VPNavBar .divider-line {
   .hb-nav-menu-portal.hb-nav-menu-portal-translations .VPMenu .VPLink.link {
     justify-content: flex-start;
     min-height: 32px !important;
-    padding: 6px 10px 6px 14px !important;
+    padding: 6px 8px 6px 18px !important;
     border-radius: 10px;
   }
 
@@ -3408,7 +3408,7 @@ body.is-home-page .VPNavBar .divider-line {
   .VPNavBarTranslations.translations .VPMenu .items {
     display: grid;
     gap: 4px;
-    padding: 6px;
+    padding: 4px;
   }
 
   body.is-blog-page .VPNavBar.has-sidebar .VPNavBarTranslations.translations .VPMenu .title,
@@ -3434,7 +3434,7 @@ body.is-home-page .VPNavBar .divider-line {
     align-items: center;
     display: flex !important;
     min-height: 32px !important;
-    padding: 6px 10px 6px 14px !important;
+    padding: 6px 8px 6px 18px !important;
     margin: 0 !important;
     font-weight: 700;
     font-size: 13px;
@@ -3458,7 +3458,7 @@ body.is-home-page .VPNavBar .divider-line {
   .VPNavBarTranslations.translations .VPMenu .VPLink.link {
     justify-content: flex-start;
     min-height: 32px !important;
-    padding: 6px 10px 6px 14px !important;
+    padding: 6px 8px 6px 18px !important;
     border-radius: 10px;
   }
 
