@@ -157,21 +157,24 @@ const modules = [Autoplay, Navigation, Pagination, EffectFade]
   will-change: transform, opacity;
 }
 
-/* 🗡️ 斬斷 Android 15 GPU 崩潰的防禦 (配合 JS 的 animating 保險解鎖) */
+/* 🗡️ 斬斷 Android 15 GPU 崩潰：純 CSS Grid 無感切換法 */
 :deep(.swiper-wrapper) {
-  transform: none !important;
+  display: grid !important; /* 用 Grid 網格系統取代 Flex */
+  transform: none !important; /* 徹底沒收引發當機的 3D 屬性 */
 }
 
 :deep(.swiper-slide) {
-  position: absolute !important;
-  left: 0 !important;
-  top: 0 !important;
-  transform: none !important;
-  transition-property: opacity !important;
+  grid-area: 1 / 1 !important; /* 魔法在這：讓所有幻燈片擠在同一個格子裡完美重疊！不需 absolute */
+  transform: none !important;  
+  opacity: 0 !important;       /* 預設全部透明隱藏 */
+  pointer-events: none;        /* 隱藏的圖片不干擾點擊 */
+  transition: opacity 0.4s ease !important; /* 交給 CSS 順滑淡入淡出 */
+  z-index: 1;
 }
 
 :deep(.swiper-slide.swiper-slide-active) {
-  position: relative !important;
+  opacity: 1 !important;       /* 只有加上 active class 的那張才顯示 */
+  pointer-events: auto;
   z-index: 2;
 }
 
