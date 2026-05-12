@@ -21,15 +21,23 @@ jobs:
       - name: 遷出程式碼
         uses: actions/checkout@v6
         with:
-          fetch-depth: 0
+          fetch-depth: 1
+
+      - name: 補抓比對基準 commit
+        if: github.event_name == 'push' && github.event.before != '' && github.event.before != '0000000000000000000000000000000000000000'
+        run: |
+          git fetch --no-tags --depth=1 origin ${{ github.event.before }}
 
       # --- 新增：檢查 blog/en/blog/docs 是否有變動 ---
       - name: 檢查內容是否有變動
         id: detect-content-changed
         run: |
           CHANGED=0
+          if [ "${{ github.event_name }}" != "push" ] || [ -z "${{ github.event.before }}" ] || [ "${{ github.event.before }}" = "0000000000000000000000000000000000000000" ]; then
+            echo "非 push 事件或無可比對的 before commit，視為有內容變動。"
+            CHANGED=1
           # 比對有無 blog/, en/blog/, docs/ 相關變更
-          if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -E '^(blog/|en/blog/|docs/)' ; then
+          elif git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -E '^(blog/|en/blog/|docs/)' ; then
             CHANGED=1
           fi
           echo "has_changed=$([[ $CHANGED -eq 1 ]] && echo true || echo false)" >> $GITHUB_OUTPUT
