@@ -70,30 +70,31 @@ export default {
             else document.body.classList.remove('is-home-page');
         }
 
-        // 🌟 建立 DOM 觀察者，精準取代 setInterval (已加入防抖與動畫過濾黑名單)
+        // 建立 DOM 觀察者，精準取代 setInterval，並加入「絕對領域防護罩」
         if (typeof window !== 'undefined') {
             let timeoutId: NodeJS.Timeout | null = null;
 
             const observer = new MutationObserver((mutations) => {
-                // 1. 過濾黑名單：檢查這次的變動是不是「高頻動畫」引起的
-                const shouldUpdate = mutations.some(m => {
-                    const target = m.target as HTMLElement;
-                    // 如果沒有 classList (例如單純的文字節點被抽換)，通常是有效的路由變動
-                    if (!target || !target.classList) return true; 
+                let shouldUpdate = false;
 
-                    // 如果變動的是 Swiper 輪播圖或音樂播放器的進度條，直接無視
-                    const isSwiper = target.classList.contains('swiper-wrapper') || 
-                                     target.classList.contains('swiper-slide') || 
-                                     target.classList.contains('swiper-pagination-bullet') ||
-                                     target.classList.contains('custom-pagination');
-                    const isPlayer = target.classList.contains('progress') || target.tagName === 'SPAN';
-
-                    // 只要「不是」這兩個地雷，就代表是真正需要更新的 DOM 變化
-                    return !isSwiper && !isPlayer; 
-                });
+                for (const m of mutations) {
+                    const target = m.target as Node;
+                    // 關鍵修復：如果是文字節點變動(例如音樂秒數)，就往上找它的父元素
+                    const el = (target.nodeType === 3 ? target.parentElement : target) as HTMLElement;
+                    
+                    if (el && typeof el.closest === 'function') {
+                        // 🛑 核心防禦：只要這個變動是發生在「輪播圖」或「音樂播放器」裡面，我們直接無視！
+                        if (el.closest('.carousel-container') || el.closest('.music-container') || el.closest('.progress')) {
+                            continue;
+                        }
+                    }
+                    // 只要有一丁點不是播放器或輪播圖造成的變動（例如切換頁面），就放行
+                    shouldUpdate = true;
+                    break;
+                }
 
                 if (shouldUpdate) {
-                    // 2. 防抖機制：即使瞬間收到 100 個 DOM 替換請求，也只在 50ms 後執行一次 updateBodyClasses
+                    // 防抖機制：即使瞬間收到有效的 DOM 替換請求，也只在 50ms 後執行一次
                     if (timeoutId) clearTimeout(timeoutId);
                     timeoutId = setTimeout(() => {
                         updateBodyClasses();
@@ -105,8 +106,8 @@ export default {
                 const appContainer = document.querySelector('#app') || document.body;
                 observer.observe(appContainer, { 
                     childList: true, 
-                    subtree: true,
-                    attributes: true // 恢復屬性監聽，但因為有上方過濾器保護，不會再引發 GPU 崩潰
+                    subtree: true 
+                    // 注意：這裡絕對不要加 attributes: true，這樣就無敵了
                 });
                 updateBodyClasses(); // 首次載入先執行一次
             });
