@@ -2999,6 +2999,25 @@ body.is-home-page .VPNavBar .divider-line {
     margin: 0 !important;
   }
 
+  html body .VPNavScreen .container {
+    --tw-backdrop-blur: blur(10px) !important;
+    --tw-backdrop-saturate: saturate(120%) !important;
+    -webkit-backdrop-filter: var(--tw-backdrop-blur,) var(--tw-backdrop-brightness,) var(--tw-backdrop-contrast,) var(--tw-backdrop-grayscale,) var(--tw-backdrop-hue-rotate,) var(--tw-backdrop-invert,) var(--tw-backdrop-opacity,) var(--tw-backdrop-saturate,) var(--tw-backdrop-sepia,) !important;
+    backdrop-filter: var(--tw-backdrop-blur,) var(--tw-backdrop-brightness,) var(--tw-backdrop-contrast,) var(--tw-backdrop-grayscale,) var(--tw-backdrop-hue-rotate,) var(--tw-backdrop-invert,) var(--tw-backdrop-opacity,) var(--tw-backdrop-saturate,) var(--tw-backdrop-sepia,) !important;
+  }
+
+  html body .VPNavScreen .menu .VPNavScreenMenuLink,
+  html body .VPNavScreen .menu .VPNavScreenMenuGroup > .button,
+  html body .VPNavScreenTranslations.translations .title,
+  html body .VPNavScreenAppearance.appearance,
+  html body .VPNavScreenTranslations.translations .VPLink.link,
+  html body .VPNavScreenMenuGroup .VPNavScreenMenuGroupLink {
+    --tw-backdrop-blur: blur(16px) !important;
+    --tw-backdrop-saturate: saturate(140%) !important;
+    -webkit-backdrop-filter: var(--tw-backdrop-blur,) var(--tw-backdrop-brightness,) var(--tw-backdrop-contrast,) var(--tw-backdrop-grayscale,) var(--tw-backdrop-hue-rotate,) var(--tw-backdrop-invert,) var(--tw-backdrop-opacity,) var(--tw-backdrop-saturate,) var(--tw-backdrop-sepia,) !important;
+    backdrop-filter: var(--tw-backdrop-blur,) var(--tw-backdrop-brightness,) var(--tw-backdrop-contrast,) var(--tw-backdrop-grayscale,) var(--tw-backdrop-hue-rotate,) var(--tw-backdrop-invert,) var(--tw-backdrop-opacity,) var(--tw-backdrop-saturate,) var(--tw-backdrop-sepia,) !important;
+  }
+
   html.dark body .VPNavScreen .container {
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.028) 0%, rgba(255, 255, 255, 0.012) 100%) !important;
     background-color: rgba(255, 255, 255, 0.028) !important;
