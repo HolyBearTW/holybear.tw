@@ -17,39 +17,56 @@ export default {
         app.component('HeroSection', HeroSection);
 
         if (typeof document === 'undefined') return; // SSR 階段直接跳過
-        
-        // 恢復 is-blog-page 判斷，只加在文章內頁（不是首頁、index-new等列表頁）
+
+        // --- 注入 Android Chromium GPU 崩潰防禦 CSS ---
+        const initCrashFixStyle = () => {
+            if (document.getElementById('gpu-crash-fix')) return;
+            const style = document.createElement('style');
+            style.id = 'gpu-crash-fix';
+            style.innerHTML = `
+                /* 強迫 Chromium 引擎使用獨立的 GPU 合成層，避免 Android 15 驅動崩潰 */
+                body, #app {
+                    -webkit-transform: translateZ(0);
+                    transform: translateZ(0);
+                    backface-visibility: hidden;
+                    perspective: 1000px;
+                }
+                /* 避免固定背景圖引發行動版 GPU 內存溢出 */
+                @media (max-width: 768px) {
+                    * {
+                        background-attachment: scroll !important;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        };
+        initCrashFixStyle();
+
+        // --- Body Class 更新邏輯 ---
         function isBlogPage(path: string) {
-            // 匹配 /blog/xxxx、/en/blog/xxxx、/docs/xxxx 文章頁（不是列表頁）
             return /^\/(en\/)?blog\/(?!$|index|index-new)[\w-]+/.test(path) || /^\/docs\/[\w-]+/.test(path);
         }
         function updateBodyClasses() {
             const isBlog = isBlogPage(window.location.pathname);
             const isHome = !!document.querySelector('.VPHome');
             
-            // 使用 classList 操作，避免覆蓋其他 themes class (如 theme-christmas)
             if (isBlog) document.body.classList.add('is-blog-page');
             else document.body.classList.remove('is-blog-page');
 
             if (isHome) document.body.classList.add('is-home-page');
             else document.body.classList.remove('is-home-page');
         }
+        
+        // 初始執行一次
         updateBodyClasses();
-        // 降低頻率減輕負擔，並確保不與 theme 切換衝突
-        setInterval(updateBodyClasses, 500);
-
-
+        // 🚫 [已刪除] setInterval(updateBodyClasses, 500) -> 避免無意義的 GPU 重繪災難
 
         // --- 其餘原本功能 ---
-        let lastContent: string | null = null;
         let hoverTimer: NodeJS.Timeout | null = null;
 
-
-
-
-
-        function globalHoverDelegate(e) {
-            const link = e.target.closest('.outline-link');
+        function globalHoverDelegate(e: Event) {
+            const target = e.target as HTMLElement;
+            const link = target?.closest('.outline-link');
             if (
                 link &&
                 link instanceof HTMLElement &&
@@ -67,7 +84,6 @@ export default {
                     if (href && href.startsWith('#')) {
                         const anchor = document.querySelector(href);
                         if (anchor) {
-                            // 簡單的一次性滾動，計算準確位置
                             const elementPosition = anchor.getBoundingClientRect().top;
                             const offsetPosition = elementPosition + window.pageYOffset - 50;
                             
@@ -81,9 +97,10 @@ export default {
             }
         }
 
-        function globalClickDelegate(e) {
+        function globalClickDelegate(e: Event) {
+            const target = e.target as HTMLElement;
             // 處理主題鏈接點擊
-            const themeLink = e.target.closest('a[href^="#theme-"]');
+            const themeLink = target?.closest('a[href^="#theme-"]');
             if (themeLink && themeLink instanceof HTMLElement) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -92,16 +109,11 @@ export default {
                 const href = themeLink.getAttribute('href');
                 if (href && href.startsWith('#theme-')) {
                     const themeId = href.replace('#theme-', '');
-
-                    // 保存到 localStorage
                     localStorage.setItem(THEME_STORAGE_KEY, themeId);
-
-                    // 觸發主題切換事件
                     window.dispatchEvent(new CustomEvent('theme-change', {
                         detail: { theme: themeId }
                     }));
 
-                    // 關閉下拉菜單（如果有的話）
                     const dropdown = themeLink.closest('.VPNavBarMenuGroup');
                     if (dropdown) {
                         dropdown.classList.remove('open');
@@ -111,26 +123,23 @@ export default {
             }
 
             // 原有的 outline-link 處理邏輯
-            const link = e.target.closest('.outline-link');
+            const link = target?.closest('.outline-link');
             if (
                 link &&
                 link instanceof HTMLElement &&
                 link.matches('.outline-link')
             ) {
-                // 更強力地阻止預設行為
                 e.preventDefault();
                 e.stopPropagation();
-                e.stopImmediatePropagation(); // 阻止其他監聽器
+                e.stopImmediatePropagation();
 
                 const href = link.getAttribute('href');
                 if (href && href.startsWith('#')) {
                     const anchor = document.querySelector(href);
                     if (anchor) {
-                        // 完全複製懸停時的邏輯
                         const elementPosition = anchor.getBoundingClientRect().top;
                         const offsetPosition = elementPosition + window.pageYOffset - 50;
 
-                        // 使用 setTimeout 確保在其他事件處理完後執行
                         setTimeout(() => {
                             window.scrollTo({
                                 top: offsetPosition,
@@ -138,31 +147,29 @@ export default {
                             });
                         }, 10);
 
-                        // 更新 URL，但不觸發跳轉
                         setTimeout(() => {
                             history.pushState(null, '', href);
                         }, 50);
                     }
                 }
-                return false; // 額外保險
+                return false;
             }
         }
 
         function setupGlobalOutlineHoverScroll() {
             document.removeEventListener('mouseover', globalHoverDelegate);
-            document.removeEventListener('click', globalClickDelegate);
+            document.removeEventListener('click', globalClickDelegate, true);
+            
             document.addEventListener('mouseover', globalHoverDelegate);
+            document.addEventListener('click', globalClickDelegate, true); 
             
-            // 使用更強制性的方式綁定點擊事件
-            document.addEventListener('click', globalClickDelegate, true); // 使用 capture phase
-            
-            // 額外的保險措施：直接在側邊欄綁定事件
             setTimeout(() => {
                 const outline = document.querySelector('.VPDocAsideOutline');
                 if (outline) {
                     outline.addEventListener('click', (e) => {
-                        if (e.target && e.target instanceof HTMLElement) {
-                            const link = e.target.closest('.outline-link');
+                        const target = e.target as HTMLElement;
+                        if (target) {
+                            const link = target.closest('.outline-link');
                             if (link && link.getAttribute('href')?.startsWith('#')) {
                                 e.preventDefault();
                                 e.stopPropagation();
@@ -187,7 +194,6 @@ export default {
             const pagePath = getCleanPath(window.location.pathname);
             const pageUrl = siteUrl + pagePath;
 
-            // canonical
             let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
             if (!canonical) {
                 canonical = document.createElement('link');
@@ -196,7 +202,6 @@ export default {
             }
             canonical.href = pageUrl;
 
-            // og:url
             let ogUrl = document.querySelector('meta[property="og:url"]') as HTMLMetaElement | null;
             if (!ogUrl) {
                 ogUrl = document.createElement('meta');
@@ -205,7 +210,6 @@ export default {
             }
             ogUrl.setAttribute('content', pageUrl);
 
-            // og:title, og:description
             const docTitle = document.title || '';
             const descEl = document.querySelector('meta[name="description"]') as HTMLMetaElement | null;
             const docDesc = descEl?.content || '';
@@ -216,6 +220,7 @@ export default {
                 document.head.appendChild(ogTitle);
             }
             ogTitle.setAttribute('content', docTitle);
+            
             let ogDesc = document.querySelector('meta[property="og:description"]') as HTMLMetaElement | null;
             if (!ogDesc) {
                 ogDesc = document.createElement('meta');
@@ -224,7 +229,6 @@ export default {
             }
             ogDesc.setAttribute('content', docDesc);
 
-            // og:image, twitter:image
             const pageImageMeta = document.querySelector('meta[name="x-page-image"]') as HTMLMetaElement | null;
             const pageImage = pageImageMeta?.content || '';
             if (pageImage) {
@@ -247,52 +251,35 @@ export default {
             return pageUrl;
         }
 
-        // 初始同步一次，並保存最後同步的 URL
-        let lastSyncedUrl = updateCanonicalAndOg();
-
-        // 首次進站
-    // 移除 replayIfChanged，避免動畫重複觸發
+        // --- 初始化與路由監聽 ---
         setupGlobalOutlineHoverScroll();
         updateCanonicalAndOg();
 
-        // 已移除 replayIfChanged 輪詢
-
-        // 監聽 VitePress 事件與路由
         window.addEventListener('DOMContentLoaded', () => {
             setupGlobalOutlineHoverScroll();
             updateCanonicalAndOg();
+            updateBodyClasses();
         });
+
+        // 取代原本的 setInterval，將更新邏輯綁定在路由切換時
         window.addEventListener('vitepress:pageview', () => {
             setTimeout(() => {
                 setupGlobalOutlineHoverScroll();
-                lastSyncedUrl = updateCanonicalAndOg();
+                updateCanonicalAndOg();
+                updateBodyClasses();
             }, 80);
         });
+
         if (router && typeof router.onAfterRouteChanged === 'function') {
             router.onAfterRouteChanged(() => {
                 setTimeout(() => {
                     setupGlobalOutlineHoverScroll();
-                    lastSyncedUrl = updateCanonicalAndOg();
+                    updateCanonicalAndOg();
+                    updateBodyClasses();
                 }, 50);
             });
         }
-
-        // 定期同步 head（canonical/og）
-        const HEAD_SYNC_INTERVAL = 1200;
-        setInterval(() => {
-            const siteUrl = 'https://holybear.tw';
-            const currentPath = window.location.pathname
-                .replace(/\/index(?:\.html)?$/, '/')
-                .replace(/\.html$/, '');
-            const normalized = currentPath.startsWith('/') ? currentPath : '/' + currentPath;
-            const currentUrl = siteUrl + normalized;
-            const canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
-            const ogUrl = document.querySelector('meta[property="og:url"]') as HTMLMetaElement | null;
-            const mismatch = !canonical || canonical.href !== currentUrl || !ogUrl || ogUrl.content !== currentUrl;
-            const urlChanged = currentUrl !== lastSyncedUrl;
-            if (urlChanged || mismatch) {
-                lastSyncedUrl = updateCanonicalAndOg();
-            }
-        }, HEAD_SYNC_INTERVAL);
+        
+        // 🚫 [已刪除] setInterval(HEAD_SYNC_INTERVAL) -> 路由監聽已經足夠處理 SEO 標籤同步
     }
 };
