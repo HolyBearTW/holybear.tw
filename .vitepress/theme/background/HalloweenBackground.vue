@@ -73,7 +73,7 @@ function startHalloween() {
   batContainer.style.position = 'fixed';
   batContainer.style.left = '0';
   batContainer.style.top = '0';
-  batContainer.style.width = '100vw';
+  batContainer.style.width = '100%';
   batContainer.style.height = '100dvh';
   batContainer.style.minHeight = '100dvh';
   batContainer.style.zIndex = '9998';

@@ -2274,6 +2274,7 @@ html:not(.dark) {
 
 html {
   background-color: var(--hb-mobile-fallback-bg) !important;
+  overflow-x: clip;
   overscroll-behavior-y: none;
 }
 
@@ -2301,7 +2302,22 @@ html:not(.dark):has(body.theme-none) {
 body {
   background-color: transparent !important;
   isolation: isolate;
+  overflow-x: clip;
   overscroll-behavior-y: none;
+}
+
+body,
+#app {
+  -webkit-transform: none !important;
+  transform: none !important;
+  perspective: none !important;
+}
+
+@supports not (overflow: clip) {
+  html,
+  body {
+    overflow-x: hidden;
+  }
 }
 
 body.theme-tech,
@@ -2361,12 +2377,31 @@ body.hyperos2-bg::after {
 .gravity-container {
   position: fixed !important;
   inset: 0 !important;
-  width: 100vw !important;
+  width: 100% !important;
+  max-width: 100% !important;
   height: 100vh !important;
   height: 100dvh !important;
   min-height: 100vh !important;
   min-height: 100dvh !important;
   overflow: hidden !important;
+}
+
+.Layout,
+.VPApp,
+.VPPage,
+.VPContent,
+body.is-home-page {
+  overflow-x: clip;
+}
+
+@supports not (overflow: clip) {
+  .Layout,
+  .VPApp,
+  .VPPage,
+  .VPContent,
+  body.is-home-page {
+    overflow-x: hidden;
+  }
 }
 
 .Layout,

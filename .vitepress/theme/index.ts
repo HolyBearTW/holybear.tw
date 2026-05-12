@@ -24,12 +24,24 @@ export default {
             const style = document.createElement('style');
             style.id = 'gpu-crash-fix';
             style.innerHTML = `
-                /* 強迫 Chromium 引擎使用獨立的 GPU 合成層，避免 Android 15 驅動崩潰 */
-                body, #app {
-                    -webkit-transform: translateZ(0);
-                    transform: translateZ(0);
+                /* 僅提升背景層的 GPU 合成，避免祖先 transform 破壞 fixed 背景定位 */
+                .mobile-flash-guard,
+                .tech-background,
+                .animated-background,
+                .gaming-rgb-theme,
+                .slow-3d-fly-theme,
+                .hyperos-background,
+                .christmas-background,
+                .halloween-background,
+                .gravity-container,
+                .gravity-container canvas,
+                body.hyperos2-bg::before,
+                body.hyperos2-bg::after {
+                    -webkit-transform: translate3d(0, 0, 0);
+                    transform: translate3d(0, 0, 0);
+                    will-change: transform, opacity;
                     backface-visibility: hidden;
-                    perspective: 1000px;
+                    -webkit-backface-visibility: hidden;
                 }
                 /* 避免固定背景圖引發行動版 GPU 內存溢出 */
                 @media (max-width: 768px) {
