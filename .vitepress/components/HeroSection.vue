@@ -36,6 +36,25 @@ const formatDate = (dateStr) => {
   })
 }
 
+const apply2dTranslate = (swiper) => {
+  if (!swiper?.wrapperEl) return
+
+  const translate = Number.isFinite(swiper.translate) ? swiper.translate : 0
+  const rounded = Math.round(translate * 1000) / 1000
+
+  swiper.wrapperEl.style.transform = swiper.isHorizontal()
+    ? `translate(${rounded}px, 0px)`
+    : `translate(0px, ${rounded}px)`
+}
+
+const handleSwiperInit = (swiper) => {
+  apply2dTranslate(swiper)
+}
+
+const handleSetTranslate = (swiper) => {
+  apply2dTranslate(swiper)
+}
+
 const modules = [Autoplay, Navigation, Pagination]
 </script>
 
@@ -49,6 +68,8 @@ const modules = [Autoplay, Navigation, Pagination]
         :autoplay="{ delay: 5000, disableOnInteraction: false }"
         :pagination="{ clickable: true, el: '.custom-pagination' }"
         :navigation="{ prevEl: '.prev-btn', nextEl: '.next-btn' }"
+        @swiper="handleSwiperInit"
+        @setTranslate="handleSetTranslate"
         class="main-swiper"
       >
         <swiper-slide v-for="(post, index) in carouselPosts" :key="post.url + index">
@@ -103,6 +124,10 @@ const modules = [Autoplay, Navigation, Pagination]
   height: 100%;
   margin: 0;
   padding: 0;
+}
+
+:deep(.swiper-wrapper) {
+  will-change: transform;
 }
 
 /* 讓每一張卡片自己決定圓角，並用最單純的方式裁切 */
