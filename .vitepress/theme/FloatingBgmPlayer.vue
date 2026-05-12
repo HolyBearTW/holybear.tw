@@ -712,7 +712,7 @@ function toggleRepeatOne() {
           <span>{{ formatTime(duration) }}</span>
         </div>
         <div class="progress-container" @click="setProgress">
-          <div class="progress" :style="{ width: progressPercent + '%' }"></div>
+          <div class="progress" :style="{ transform: `scaleX(${progressPercent / 100})` }"></div>
         </div>
       </div>
 
@@ -1118,8 +1118,10 @@ function toggleRepeatOne() {
     background: linear-gradient(90deg, var(--vp-c-brand-darker) 0%, var(--vp-c-brand) 100%);
     border-radius: 8px;
     height: 100%;
-    width: 0%;
-    transition: width 0.1s linear;
+  width: 100%;
+  transform-origin: left center;
+  will-change: transform;
+  transition: transform 0.25s linear;
     position: relative;
     box-shadow: 0 0 8px var(--vp-c-brand-dimm);
 }

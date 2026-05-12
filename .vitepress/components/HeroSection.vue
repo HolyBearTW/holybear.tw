@@ -213,4 +213,24 @@ const modules = [Autoplay, Navigation, Pagination, EffectFade]
   .custom-pagination { left: 1.2rem !important; }
   .nav-btn { display: none; }
 }
+
+/* 🗡️ 斬斷 Android 15 GPU 崩潰的最後一擊：強制廢除 Swiper 隱藏的 3D 位移 */
+:deep(.swiper-wrapper) {
+  display: block !important;
+  transform: none !important; /* 絕對禁止整個容器的 3D 位移 */
+}
+
+:deep(.swiper-slide) {
+  position: absolute !important;
+  left: 0 !important;
+  top: 0 !important;
+  transform: none !important; /* 絕對禁止單張卡片的 3D 位移 */
+  transition-property: opacity !important; /* 逼迫 GPU 只能處理透明度變化 */
+}
+
+/* 撐開父容器高度，避免絕對定位導致輪播圖高度坍塌 */
+:deep(.swiper-slide.swiper-slide-active) {
+  position: relative !important;
+  z-index: 2;
+}
 </style>
