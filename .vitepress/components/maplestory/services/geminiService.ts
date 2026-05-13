@@ -67,8 +67,8 @@ const extractTextFromChunk = (chunk: any): string => {
   }
 };
 
-// UPDATE: 預設值改為 gemini-3.1-flash-lite-preview
-export const analyzeCharacter = async (data: DashboardData, apiKey: string, modelId: string = 'gemini-3.1-flash-lite-preview', ignoreWarnings: boolean = false, onProgress?: (msg: string) => void): Promise<string> => {
+// UPDATE: 預設值改為 gemini-3.1-flash-lite
+export const analyzeCharacter = async (data: DashboardData, apiKey: string, modelId: string = 'gemini-3.1-flash-lite', ignoreWarnings: boolean = false, onProgress?: (msg: string) => void): Promise<string> => {
   if (!apiKey) {
     return "💡 **請在使用前設定您的 API Key**\n\n基於資安考量，本站不再內建公用的 API Key。\n請點擊右下方的 **「設定模型 / API Key」** 按鈕，輸入您專屬的 [Google Gemini API 金鑰](https://aistudio.google.com/app/apikey) 以啟用分析功能。";
   }
@@ -461,8 +461,8 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
 
   // 3.1 系列 (Pro/Flash/Lite) -> 3.1 Flash-Lite -> 3.0 Flash -> 2.5 Flash
   if (effectiveModel.includes('3.1')) {
-      if (effectiveModel !== 'gemini-3.1-flash-lite-preview') {
-          modelsToTry.push('gemini-3.1-flash-lite-preview');
+      if (effectiveModel !== 'gemini-3.1-flash-lite') {
+          modelsToTry.push('gemini-3.1-flash-lite');
       }
       modelsToTry.push('gemini-3-flash-preview');
       modelsToTry.push('gemini-2.5-flash');
