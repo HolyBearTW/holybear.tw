@@ -21,7 +21,7 @@ jobs:
       - name: 遷出程式碼
         uses: actions/checkout@v6
         with:
-          fetch-depth: 0
+          fetch-depth: 1
 
       - name: 補抓比對基準 commit
         if: github.event_name == 'push' && github.event.before != '' && github.event.before != '0000000000000000000000000000000000000000'
