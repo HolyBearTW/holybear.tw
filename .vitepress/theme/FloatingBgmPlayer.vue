@@ -642,7 +642,7 @@ function clearMediaSessionHandlers() {
   })
 }
 
-// 統一負責切歌：設定 src -> load() -> play()
+// 統一負責切歌：設定 src -> 移除 load() 避免斷檔 -> 同步 Metadata -> play()
 async function selectAndPlaySong(index, options = {}) {
   const { forceRestart = false } = options
   if (!musicList.value || musicList.value.length === 0) return
@@ -657,13 +657,18 @@ async function selectAndPlaySong(index, options = {}) {
   cancelPlaybackRecovery()
 
   try {
-    audio.value.pause()
+    // 【修改重點 1】：絕對不要在背景切歌時呼叫 pause() 或 load()
+    // 直接替換 src，瀏覽器底層會自動接續處理
     audio.value.src = musicList.value[index].src
-    audio.value.load()
     currentTime.value = 0
+
+    // 【修改重點 2】：將 MediaSession 資訊更新移到 play() 之前
+    // 讓系統在觸發背景播放前，先知道這是連續的播放清單，避免通知欄播放器被收回
+    syncMediaSessionMetadata()
 
     if (playing.value || options.forceRestart) {
       intendedToPlay = true
+      // 等待 play() 執行，此時不應該被 NotAllowedError 阻擋了
       await audio.value.play()
       syncPlayingState(true)
     } else {
@@ -681,12 +686,11 @@ async function selectAndPlaySong(index, options = {}) {
         armAutoplayOnInteraction()
         return
       }
-
       console.error('切歌/播放失敗', e)
     }
   } finally {
     internalAudioTransition = false
-    syncMediaSessionMetadata()
+    // 原本在這裡的 syncMediaSessionMetadata() 已經移到上面了
   }
 
   isPlaylistVisible.value = false
