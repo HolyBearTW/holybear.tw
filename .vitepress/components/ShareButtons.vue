@@ -58,24 +58,32 @@ const copyLink = async () => {
   display: flex;
   width: 100%;
   margin: 32px 0 16px;
+  justify-content: flex-end;
 }
 
 .share-wrapper {
-  margin-left: auto; /* 強制靠右 */
   display: flex;
   align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
   gap: 12px;
+  width: 100%;
+  max-width: 100%;
 }
 
 .share-label {
   font-size: 13px;
   font-weight: 500;
   color: var(--vp-c-text-2);
+  flex: 0 0 auto;
 }
 
 .share-items {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 6px;
+  max-width: 100%;
 }
 
 .icon-btn {
@@ -116,7 +124,10 @@ const copyLink = async () => {
     justify-content: center;
   }
   .share-wrapper {
-    margin-left: unset;
+    justify-content: center;
+  }
+  .share-items {
+    justify-content: center;
   }
 }
 </style>

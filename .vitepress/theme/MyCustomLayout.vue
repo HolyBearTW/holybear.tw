@@ -163,6 +163,9 @@ const updateBodyClass = (theme: string) => {
     const allThemeIds = getAllThemeIds()
     const allThemeClasses = allThemeIds.map(id => `theme-${id}`)
     document.body.classList.remove(...allThemeClasses)
+
+    const isAboutPage = page.value?.relativePath === 'about.md'
+    document.body.classList.toggle('about-page', !!isAboutPage)
   
   // 添加當前主題 class
   if (theme && theme !== 'none') {
@@ -249,6 +252,19 @@ onUnmounted(() => {
         return p === 'index.md' || p === 'zh_TW/index.md' || p === 'en/index.md'
     })
 
+    const isBlogArticlePage = computed(() => {
+        const relativePath = page.value?.relativePath || ''
+        return relativePath.startsWith('blog/') || relativePath.startsWith('en/blog/')
+    })
+
+    const isDocsPage = computed(() => {
+        const relativePath = page.value?.relativePath || ''
+        return relativePath.startsWith('docs/')
+    })
+
+    const shouldShowDocHeader = computed(() => isBlogArticlePage.value || isDocsPage.value)
+    const shouldShowVotePanel = computed(() => isBlogArticlePage.value || isDocsPage.value)
+
     const currentTitle = computed(() =>
         frontmatter.value
             ? (frontmatter.value.title || (isEnglish.value ? 'Unknown post title' : '無標題文章'))
@@ -281,6 +297,7 @@ onUnmounted(() => {
             () => route.path,
             () => {
                 triggerMetaLoadingDelay();
+                updateBodyClass(currentBackgroundTheme.value);
             }
         );
         const isMetaLoading = computed(() => isMetaLoadingRaw.value || isMetaLoadingWithDelay.value);
@@ -531,7 +548,7 @@ onUnmounted(() => {
         </template>
 
         <template #doc-before>
-            <div v-if="!isHomePage" class="blog-post-header-injected">
+            <div v-if="shouldShowDocHeader" class="blog-post-header-injected">
                 <h1 class="blog-post-title">{{ currentTitle }}</h1>
                 
                 <div v-if="(frontmatter.category && frontmatter.category.length) || (frontmatter.tags && frontmatter.tags.length)" class="blog-post-meta-row">
@@ -541,13 +558,13 @@ onUnmounted(() => {
 
                 <p class="blog-post-date-in-content">
                     <span class="blog-post-date-main">
-                        <span v-if="!isMetaLoading" class="author-inline">
+                        <span v-if="isBlogArticlePage && !isMetaLoading" class="author-inline">
                             <img class="post-author-avatar" :src="currentAuthorAvatar" :alt="currentAuthorMeta.name" />
                             <a :href="currentAuthorUrl" target="_blank" rel="noopener" class="author-link-name">{{ currentAuthorMeta.name }}</a>
                             <span v-if="currentDisplayDate" class="dot" aria-hidden="true">•</span>
                             <span v-if="currentDisplayDate">{{ currentDisplayDate }}</span>
                         </span>
-                        <ClientOnly v-else>
+                        <ClientOnly v-else-if="isBlogArticlePage">
                             <span class="author-inline">
                                 <div class="meta-content-wrapper skeleton-wrapper">
                                     <span class="post-author-avatar skeleton skeleton-avatar"></span>
@@ -556,7 +573,7 @@ onUnmounted(() => {
                             </span>
                         </ClientOnly>
                     </span>
-                    <span class="blog-post-date-right">
+                    <span v-if="isBlogArticlePage" class="blog-post-date-right">
                         <ClientOnly>
                             <ViewCounter :slug="currentSlug" />
                         </ClientOnly>
@@ -566,9 +583,13 @@ onUnmounted(() => {
             </div>
         </template>
         <template #doc-after>
-            <ClientOnly>
+            <ClientOnly v-if="isBlogArticlePage">
                 <ShareButtons />
+            </ClientOnly>
+            <ClientOnly v-if="shouldShowVotePanel">
                 <VotePanel />
+            </ClientOnly>
+            <ClientOnly v-if="isBlogArticlePage">
                 <GiscusComments />
             </ClientOnly>
         </template>
@@ -839,6 +860,89 @@ onUnmounted(() => {
 /* 內容區域圓角 */
 .VPDoc .content:not(.VPDocAsideOutline):not(.VPDocAsideOutline *) {
   border-radius: 18px !important;
+}
+
+body.about-page .VPDoc .container,
+body.about-page .VPDoc,
+body.about-page .VPDoc .vp-doc,
+body.about-page .VPDoc .content-body,
+body.about-page .VPDoc .content-container,
+body.about-page .VPDoc .content {
+    max-width: none !important;
+}
+
+body.about-page {
+    --vp-layout-max-width: 1440px;
+    --main-width: 1440px;
+}
+
+body.about-page .VPContent,
+body.about-page .VPDoc,
+body.about-page .VPDoc .container,
+body.about-page .VPDoc .content-container,
+body.about-page .VPDoc .content-body,
+body.about-page .VPDoc .content,
+body.about-page .VPDoc .vp-doc {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+}
+
+body.about-page .VPDoc .content {
+    width: 100% !important;
+}
+
+body.about-page .VPDoc,
+body.about-page .VPDoc .content-container,
+body.about-page .VPDoc .content,
+body.about-page .VPDoc .vp-doc {
+    overflow-x: visible !important;
+}
+
+body.about-page .VPDoc .vp-doc > *,
+body.about-page .VPDoc .content :not(pre) {
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+body.about-page .VPDoc .container,
+body.about-page .VPContent .container,
+body.about-page .VPNavBar .container {
+    width: min(1440px, calc(100vw - 64px)) !important;
+    max-width: min(1440px, calc(100vw - 64px)) !important;
+    min-width: 0 !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: 32px !important;
+    padding-right: 32px !important;
+    box-sizing: border-box !important;
+}
+
+@media (min-width: 960px) {
+    body.about-page .VPDoc {
+        padding: 0 !important;
+    }
+
+    body.about-page .VPDoc .aside,
+    body.about-page .VPDocAside,
+    body.about-page .VPDocOutlineDropdown {
+        display: none !important;
+    }
+}
+
+@media (min-width: 1201px) {
+    body.about-page .VPNavBar {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+
+    body.about-page .VPDoc.has-aside .content-container,
+    body.about-page .VPDoc.has-aside .content,
+    body.about-page .VPDoc.has-sidebar .content-container,
+    body.about-page .VPDoc.has-sidebar .content {
+        max-width: none !important;
+        padding-right: 0 !important;
+    }
 }
 
 /* Light Mode - 內容區域背景 (透射模糊) */

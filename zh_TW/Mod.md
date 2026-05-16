@@ -1,5 +1,6 @@
 ---
 title: 作品集
+image: /holybear.png
 layout_type: custom_header
 ---
 

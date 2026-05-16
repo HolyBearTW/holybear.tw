@@ -1,5 +1,6 @@
 ---
 title: Portfolio
+image: /holybear.png
 layout_type: custom_header
 ---
 ::: tip

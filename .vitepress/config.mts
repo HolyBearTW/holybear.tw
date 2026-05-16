@@ -249,6 +249,10 @@ const config = defineConfig({
                     "@type": "WebSite",
                     "name": globalSiteName, // 聖小熊的秘密基地
                     "url": siteUrl,
+                    "logo": {
+                        "@type": "ImageObject",
+                        "url": `${siteUrl}/holybear.png`
+                    },
                     "description": "聖小熊的個人網站，收錄 HyperOS 模組、技術筆記與開發心得。",
                     "publisher": {
                          "@type": "Person",
@@ -275,6 +279,13 @@ const config = defineConfig({
 
                 cleanHead.push(['script', { type: 'application/ld+json' }, JSON.stringify(webpageSchema)]);
             }
+
+            cleanHead.push(['link', {
+                rel: 'preload',
+                href: '/holybear.png',
+                as: 'image',
+                type: 'image/png'
+            }]);
 
             return cleanHead;
     },
