@@ -1,7 +1,7 @@
 ---
 # https://vitepress.dev/reference/default-theme-home-page
 layout: home
-image: /logo.png
+image: /holybear.png
 
 hero:
   name: "HolyBear's Blog"

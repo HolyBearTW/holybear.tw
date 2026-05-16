@@ -1,6 +1,7 @@
 ---
 layout: home
 title: Blog
+image: /holybear.png
 description: HolyBear and Friends' Blog
 
 hero:

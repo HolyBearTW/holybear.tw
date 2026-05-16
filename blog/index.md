@@ -1,6 +1,7 @@
 ---
 layout: home
 title: 日誌
+image: /holybear.png
 description: 聖小熊與夥伴們的日誌
 
 hero:
