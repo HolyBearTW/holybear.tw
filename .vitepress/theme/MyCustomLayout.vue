@@ -862,6 +862,22 @@ onUnmounted(() => {
   border-radius: 18px !important;
 }
 
+@media (max-width: 767px) {
+    .VPDoc .container,
+    .VPContent .container {
+        width: min(100%, calc(100vw - 12px)) !important;
+        max-width: min(100%, calc(100vw - 12px)) !important;
+        padding-left: 6px !important;
+        padding-right: 6px !important;
+        box-sizing: border-box !important;
+    }
+
+    .VPDoc .content:not(.VPDocAsideOutline):not(.VPDocAsideOutline *) {
+        padding: 16px !important;
+        border-radius: 16px !important;
+    }
+}
+
 body.about-page .VPDoc .container,
 body.about-page .VPDoc,
 body.about-page .VPDoc .vp-doc,
@@ -877,12 +893,7 @@ body.about-page {
 }
 
 body.about-page .VPContent,
-body.about-page .VPDoc,
-body.about-page .VPDoc .container,
-body.about-page .VPDoc .content-container,
-body.about-page .VPDoc .content-body,
-body.about-page .VPDoc .content,
-body.about-page .VPDoc .vp-doc {
+body.about-page .VPDoc .container {
     width: 100% !important;
     max-width: 100% !important;
     min-width: 0 !important;
@@ -905,9 +916,9 @@ body.about-page .VPDoc .content :not(pre) {
     box-sizing: border-box;
 }
 
+
 body.about-page .VPDoc .container,
-body.about-page .VPContent .container,
-body.about-page .VPNavBar .container {
+body.about-page .VPContent .container {
     width: min(1440px, calc(100vw - 64px)) !important;
     max-width: min(1440px, calc(100vw - 64px)) !important;
     min-width: 0 !important;
@@ -916,6 +927,21 @@ body.about-page .VPNavBar .container {
     padding-left: 32px !important;
     padding-right: 32px !important;
     box-sizing: border-box !important;
+}
+
+@media (max-width: 767px) {
+    body.about-page .VPDoc .container,
+    body.about-page .VPContent .container {
+        width: min(100%, calc(100vw - 12px)) !important;
+        max-width: min(100%, calc(100vw - 12px)) !important;
+        padding-left: 6px !important;
+        padding-right: 6px !important;
+    }
+
+    body.about-page .VPDoc .content:not(.VPDocAsideOutline):not(.VPDocAsideOutline *) {
+        padding: 16px !important;
+        border-radius: 16px !important;
+    }
 }
 
 @media (min-width: 960px) {
@@ -949,6 +975,8 @@ body.about-page .VPNavBar .container {
 .VPDoc .content:not(.VPDocAsideOutline):not(.VPDocAsideOutline *) {
   background-color: rgba(255, 255, 255, 0.5) !important;
   padding: 24px;
+  border-radius: 18px !important;
+  overflow: hidden !important;
 }
 
 .VPContent{
@@ -962,6 +990,8 @@ body.about-page .VPNavBar .container {
 .dark .VPDoc .content:not(.VPDocAsideOutline):not(.VPDocAsideOutline *)
   {
   background-color: rgba(26, 26, 30, 0.8) !important;
+  border-radius: 18px !important;
+  overflow: hidden !important;
 }
 
 /* Light Mode - 內容區域文字顏色 */
