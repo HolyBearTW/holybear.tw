@@ -3355,6 +3355,17 @@ body.is-home-page .VPNavBar .divider-line {
     content: '🇹🇼' !important;
   }
 
+  .hb-nav-menu-portal.hb-nav-menu-portal-translations .VPMenu .VPLink.link.hb-current-locale[lang='en']::before,
+  .hb-nav-menu-portal.hb-nav-menu-portal-translations .VPMenu .VPLink.link.hb-current-locale[hreflang='en']::before,
+  .hb-nav-menu-portal.hb-nav-menu-portal-translations .VPMenu .VPLink.link.hb-current-locale[lang='en-US']::before,
+  .hb-nav-menu-portal.hb-nav-menu-portal-translations .VPMenu .VPLink.link.hb-current-locale[hreflang='en-US']::before {
+    content: '🇺🇸' !important;
+  }
+
+  .hb-nav-menu-portal.hb-nav-menu-portal-translations .VPMenu .VPLink.link:not([lang='en']):not([hreflang='en']):not([lang='en-US']):not([hreflang='en-US'])::before {
+    content: '🇹🇼' !important;
+  }
+
   .hb-nav-menu-portal.hb-nav-menu-portal-translations .VPMenu .VPLink.link[lang='en']::before,
   .hb-nav-menu-portal.hb-nav-menu-portal-translations .VPMenu .VPLink.link[hreflang='en']::before {
     content: '🇺🇸' !important;
@@ -3517,6 +3528,17 @@ body.is-home-page .VPNavBar .divider-line {
   }
 
   .VPNavBarTranslations.translations .VPMenu .title::before {
+    content: '🇹🇼' !important;
+  }
+
+  .VPNavBarTranslations.translations .VPMenu .VPLink.link.hb-current-locale[lang='en']::before,
+  .VPNavBarTranslations.translations .VPMenu .VPLink.link.hb-current-locale[hreflang='en']::before,
+  .VPNavBarTranslations.translations .VPMenu .VPLink.link.hb-current-locale[lang='en-US']::before,
+  .VPNavBarTranslations.translations .VPMenu .VPLink.link.hb-current-locale[hreflang='en-US']::before {
+    content: '🇺🇸' !important;
+  }
+
+  .VPNavBarTranslations.translations .VPMenu .VPLink.link:not([lang='en']):not([hreflang='en']):not([lang='en-US']):not([hreflang='en-US'])::before {
     content: '🇹🇼' !important;
   }
 

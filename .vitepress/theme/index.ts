@@ -247,6 +247,16 @@ export default {
                         const currentLocaleLabel = document.createElement('span');
                         currentLocaleLabel.className = 'VPLink link lando hb-current-locale';
                         currentLocaleLabel.textContent = title.textContent || '';
+                        const currentLocaleLang = title.getAttribute('lang') || document.documentElement.lang || '';
+                        const currentLocaleHrefLang = title.getAttribute('hreflang') || currentLocaleLang;
+
+                        if (currentLocaleLang) {
+                            currentLocaleLabel.setAttribute('lang', currentLocaleLang);
+                        }
+
+                        if (currentLocaleHrefLang) {
+                            currentLocaleLabel.setAttribute('hreflang', currentLocaleHrefLang);
+                        }
 
                         currentLocaleRow.appendChild(currentLocaleLabel);
                         title.replaceWith(currentLocaleRow);
