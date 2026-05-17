@@ -3756,3 +3756,48 @@ body.is-home-page .VPNavBar .divider-line {
   }
 }
 
+/* ==========================================================================
+   只有在 Frontmatter 有設定 pageClass: custom-footer-layout 的頁面才會生效
+   ========================================================================== */
+.custom-footer-layout .VPDocFooter .edit-info {
+  display: flex !important;
+  flex-direction: row !important;       /* 橫向並排 */
+  justify-content: space-between !important; /* 一個最左，一個最右 */
+  align-items: center !important;       /* 垂直置中 */
+  align-content: center !important;
+  width: 100% !important;               /* 撐滿寬度 */
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* 修正左邊「編輯此頁」 */
+.custom-footer-layout .VPDocFooter .edit-link {
+  display: flex !important;
+  align-items: center !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+}
+
+.custom-footer-layout .VPDocFooter .edit-link-button {
+  display: flex !important;
+  align-items: center !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* 修正右邊「最後更新時間」 */
+.custom-footer-layout .VPDocFooter .last-updated {
+  display: flex !important;
+  align-items: center !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.custom-footer-layout .VPDocFooter .VPLastUpdated {
+  display: inline-block !important;
+  margin: 0 !important;                 /* 歸零官方預設 margin-top */
+  padding: 0 !important;
+  line-height: 1 !important;
+  text-align: right !important;
+}

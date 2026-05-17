@@ -1,6 +1,7 @@
 ---
 title: 作品集
 layout_type: blog
+pageClass: custom-footer-layout
 ---
 
 ::: tip

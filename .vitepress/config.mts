@@ -293,6 +293,7 @@ const config = defineConfig({
 
         themeConfig: {
         logo: '/logo.png',
+        contributors: false,
         outline: {
             level: [2, 3], // 默認顯示 H2 和 H3 標題
         },
@@ -319,21 +320,22 @@ const config = defineConfig({
         }
     },
 
-    // buildEnd 現在只專注於處理 Git 相關資訊，保持乾淨
-    buildEnd(siteConfig) {
-        // 這裡不需要處理 Git 資訊，因為我們已經在 git-meta 插件中處理了
-    },
+    transformPageData(pageData) {
+        // 1. 處理 docs/ 底下的文章排版
+        if (pageData.relativePath?.startsWith('docs/')) {
+            pageData.frontmatter = pageData.frontmatter || {};
+            pageData.frontmatter.pageClass = 'custom-footer-layout';
+        }
 
-        // 自動讓 blog 文章預設顯示側邊欄和右側目錄，並自動加上 blog: true 標籤
-transformPageData(pageData) {
-    // 檢查路徑是否以 'blog/' 開頭
-    if (pageData.relativePath?.startsWith('blog/')) {
-        // 確保側邊欄和右側目錄顯示 (您原有的部分)
-        pageData.frontmatter.aside = true;
-        pageData.frontmatter.sidebar = true;
-    }
-    return pageData;
-},
+        // 2. 處理 blog/ 底下的文章側邊欄 (你原本的邏輯)
+        if (pageData.relativePath?.startsWith('blog/')) {
+            pageData.frontmatter = pageData.frontmatter || {};
+            pageData.frontmatter.aside = true;
+            pageData.frontmatter.sidebar = true;
+        }
+
+        return pageData;
+    },
 
     transformHtml: (code, id, { pageData }) => {
         // 1. 處理 canonicalUrl
