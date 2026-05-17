@@ -2283,7 +2283,7 @@ html.dark .VPDoc .content:not(.VPDocAsideOutline):not(.VPDocAsideOutline *) {
   background: linear-gradient(90deg, var(--hb-brand), var(--hb-violet));
 }
 
-.vp-doc a {
+.vp-doc a:not(.new-post-btn) {
   color: var(--vp-c-brand-1) !important;
   text-underline-offset: 4px;
   text-decoration-thickness: 1px;

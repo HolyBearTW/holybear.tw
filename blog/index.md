@@ -158,8 +158,18 @@ const rawPosts = computed(() => {
   ).map(post => ({
     ...post,
     image: post.frontmatter?.image || fallbackImg,
-    tags: Array.isArray(post.frontmatter?.tags) ? post.frontmatter?.tags : [],
-    category: Array.isArray(post.frontmatter?.category) ? post.frontmatter?.category : []
+    tags: Array.isArray(post.tags)
+      ? post.tags
+      : (Array.isArray(post.frontmatter?.tags)
+        ? post.frontmatter?.tags
+        : (Array.isArray(post.frontmatter?.tag)
+          ? post.frontmatter?.tag
+          : (post.frontmatter?.tag ? [post.frontmatter.tag] : []))),
+    category: Array.isArray(post.category)
+      ? post.category
+      : (Array.isArray(post.frontmatter?.category)
+        ? post.frontmatter?.category
+        : (post.frontmatter?.category ? [post.frontmatter.category] : []))
   }))
 })
 
