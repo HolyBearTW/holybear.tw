@@ -865,10 +865,10 @@ onUnmounted(() => {
 @media (max-width: 767px) {
     .VPDoc .container,
     .VPContent .container {
-        width: min(100%, calc(100vw - 12px)) !important;
-        max-width: min(100%, calc(100vw - 12px)) !important;
-        padding-left: 6px !important;
-        padding-right: 6px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
         box-sizing: border-box !important;
     }
 
@@ -932,10 +932,10 @@ body.about-page .VPContent .container {
 @media (max-width: 767px) {
     body.about-page .VPDoc .container,
     body.about-page .VPContent .container {
-        width: min(100%, calc(100vw - 12px)) !important;
-        max-width: min(100%, calc(100vw - 12px)) !important;
-        padding-left: 6px !important;
-        padding-right: 6px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
     }
 
     body.about-page .VPDoc .content:not(.VPDocAsideOutline):not(.VPDocAsideOutline *) {
