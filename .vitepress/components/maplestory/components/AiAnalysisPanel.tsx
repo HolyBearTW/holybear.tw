@@ -22,7 +22,7 @@ const md = new MarkdownIt({ breaks: true, html: true });
 
 const getModelDisplayName = (id: string) => {
     if (id.includes('3.1-pro-preview')) return 'Gemini 3.1 Pro (最新旗艦)';
-    if (id.includes('3.1-flash')) return 'Gemini 3.1 Flash (最新極速)';
+    if (id.includes('3.1-flash-lite')) return 'Gemini 3.1 Flash (最新極速)';
     if (id.includes('3-pro-preview')) return 'Gemini 3.0 Pro (最新高階)';
     if (id.includes('2.5-flash')) return 'Gemini 2.5 Flash (穩定首選)';
     if (id.includes('2.5-pro')) return 'Gemini 2.5 Pro (生產級別)';
