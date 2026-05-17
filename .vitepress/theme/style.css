@@ -2165,6 +2165,7 @@ html.dark .VPHome .VPButton.alt {
   transform: translate3d(-50%, -50%, 0) scale(1.5) !important;
   contain: paint !important;
   backface-visibility: hidden !important;
+  pointer-events: none !important;
 }
 
 /* Home feature grid */
