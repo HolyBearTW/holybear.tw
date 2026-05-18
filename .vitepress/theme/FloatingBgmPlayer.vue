@@ -107,6 +107,7 @@ let trackAdvanceUnlockTimer = null
 let playbackRecoveryTimer = null
 let intendedToPlay = false
 let resumeOnVisibilityReturn = false
+let mediaSessionPositionRaf = null
 
 function canAttemptPlaybackNow() {
   if (typeof navigator === 'undefined' || !navigator.userActivation) return true
@@ -229,7 +230,10 @@ onMounted(async () => {
   window.addEventListener('pointerdown', handlePointerOutside, true)
   window.addEventListener('click', handleClickOutside)
   window.addEventListener('pageshow', handlePageShow)
+  window.addEventListener('pagehide', handlePageHide)
   window.addEventListener('focus', handleWindowFocus)
+  window.addEventListener('resume', handleRuntimeResume)
+  document.addEventListener('freeze', handleDocumentFreeze)
   document.addEventListener('mousemove', handleGlobalMouseMove)
   document.addEventListener('visibilitychange', handleVisibilityChange)
 
@@ -293,7 +297,10 @@ onUnmounted(() => {
   window.removeEventListener('pointerdown', handlePointerOutside, true)
   window.removeEventListener('click', handleClickOutside)
   window.removeEventListener('pageshow', handlePageShow)
+  window.removeEventListener('pagehide', handlePageHide)
   window.removeEventListener('focus', handleWindowFocus)
+  window.removeEventListener('resume', handleRuntimeResume)
+  document.removeEventListener('freeze', handleDocumentFreeze)
   document.removeEventListener('mousemove', handleGlobalMouseMove)
   document.removeEventListener('visibilitychange', handleVisibilityChange)
   document.removeEventListener('mousemove', handleMouseDragMove)
@@ -312,6 +319,7 @@ onUnmounted(() => {
   if (leaveTimer) clearTimeout(leaveTimer)
   if (trackAdvanceUnlockTimer) clearTimeout(trackAdvanceUnlockTimer)
   if (playbackRecoveryTimer) clearTimeout(playbackRecoveryTimer)
+  stopMediaSessionPositionSync()
 
   clearMediaSessionHandlers()
 })
@@ -330,6 +338,13 @@ watch(currentIndex, (val) => {
 
 watch(playing, () => {
   syncMediaSessionPlaybackState()
+  syncMediaSessionPositionState()
+
+  if (playing.value) {
+    startMediaSessionPositionSync()
+  } else {
+    stopMediaSessionPositionSync()
+  }
 })
 
 watch(isPlaylistVisible, async (visible) => {
@@ -435,6 +450,7 @@ function syncPlayingState(isPlaying) {
   playing.value = isPlaying
   localStorage.setItem(PLAYING_KEY, isPlaying ? 'true' : 'false')
   syncMediaSessionPlaybackState()
+  syncMediaSessionPositionState()
 }
 
 function cancelPlaybackRecovery() {
@@ -464,6 +480,7 @@ function handleAudioPlay() {
   intendedToPlay = true
   resumeOnVisibilityReturn = false
   syncPlayingState(true)
+  startMediaSessionPositionSync()
 }
 
 function handleAudioPlaying() {
@@ -471,6 +488,7 @@ function handleAudioPlaying() {
   intendedToPlay = true
   resumeOnVisibilityReturn = false
   syncPlayingState(true)
+  startMediaSessionPositionSync()
 }
 
 function handleAudioPause() {
@@ -496,6 +514,7 @@ function handleAudioPause() {
   }
 
   syncPlayingState(false)
+  stopMediaSessionPositionSync()
 }
 
 function handleAudioError() {
@@ -530,6 +549,22 @@ function handleAudioSuspend() {
 function handleAudioCanPlay() {
   if (!intendedToPlay || internalAudioTransition || !audio.value?.paused) return
   requestPlaybackRecovery('canplay', 0)
+}
+
+function handleDocumentFreeze() {
+  if (intendedToPlay) {
+    resumeOnVisibilityReturn = true
+  }
+}
+
+function handlePageHide() {
+  if (intendedToPlay) {
+    resumeOnVisibilityReturn = true
+  }
+
+  syncMediaSessionMetadata()
+  syncMediaSessionPlaybackState()
+  syncMediaSessionPositionState()
 }
 
 function requestPlaybackRecovery(reason, delay = 300) {
@@ -582,6 +617,7 @@ function handleVisibilityChange() {
 function handlePageShow() {
   syncMediaSessionMetadata()
   syncMediaSessionPlaybackState()
+  syncMediaSessionPositionState()
   setupMediaSessionHandlers()
 
   if (resumeOnVisibilityReturn || (intendedToPlay && audio.value?.paused)) {
@@ -592,6 +628,17 @@ function handlePageShow() {
 function handleWindowFocus() {
   if (resumeOnVisibilityReturn || (intendedToPlay && audio.value?.paused)) {
     requestPlaybackRecovery('window-focus', 80)
+  }
+}
+
+function handleRuntimeResume() {
+  syncMediaSessionMetadata()
+  syncMediaSessionPlaybackState()
+  syncMediaSessionPositionState()
+  setupMediaSessionHandlers()
+
+  if (resumeOnVisibilityReturn || (intendedToPlay && audio.value?.paused)) {
+    requestPlaybackRecovery('runtime-resume', 80)
   }
 }
 
@@ -610,6 +657,53 @@ function syncMediaSessionPlaybackState() {
   navigator.mediaSession.playbackState = playing.value ? 'playing' : 'paused'
 }
 
+function syncMediaSessionPositionState() {
+  if (typeof navigator === 'undefined' || !('mediaSession' in navigator) || typeof navigator.mediaSession.setPositionState !== 'function') return
+  if (!audio.value) return
+
+  const playbackRate = Number.isFinite(audio.value.playbackRate) && audio.value.playbackRate > 0
+    ? audio.value.playbackRate
+    : 1
+  const position = Number.isFinite(audio.value.currentTime) ? audio.value.currentTime : 0
+  const hasFiniteDuration = Number.isFinite(duration.value) && duration.value > 0
+
+  try {
+    if (!hasFiniteDuration) {
+      navigator.mediaSession.setPositionState({
+        duration: 0,
+        playbackRate,
+        position: 0
+      })
+      return
+    }
+
+    navigator.mediaSession.setPositionState({
+      duration: duration.value,
+      playbackRate,
+      position: Math.min(position, duration.value)
+    })
+  } catch (error) {
+    console.warn('Media Session position state 同步失敗', error)
+  }
+}
+
+function startMediaSessionPositionSync() {
+  if (typeof window === 'undefined' || mediaSessionPositionRaf !== null) return
+
+  const tick = () => {
+    mediaSessionPositionRaf = window.requestAnimationFrame(tick)
+    syncMediaSessionPositionState()
+  }
+
+  mediaSessionPositionRaf = window.requestAnimationFrame(tick)
+}
+
+function stopMediaSessionPositionSync() {
+  if (typeof window === 'undefined' || mediaSessionPositionRaf === null) return
+  window.cancelAnimationFrame(mediaSessionPositionRaf)
+  mediaSessionPositionRaf = null
+}
+
 function setupMediaSessionHandlers() {
   if (typeof navigator === 'undefined' || !('mediaSession' in navigator)) return
 
@@ -618,7 +712,10 @@ function setupMediaSessionHandlers() {
     pause: () => pauseMusic(),
     previoustrack: () => prevSong(),
     nexttrack: () => nextSong(),
-    stop: () => pauseMusic()
+    stop: () => pauseMusic(),
+    seekbackward: (details = {}) => seekByOffset(-(details.seekOffset || 10)),
+    seekforward: (details = {}) => seekByOffset(details.seekOffset || 10),
+    seekto: (details = {}) => seekToPosition(details.seekTime, details.fastSeek)
   }
 
   Object.entries(handlers).forEach(([action, handler]) => {
@@ -661,10 +758,12 @@ async function selectAndPlaySong(index, options = {}) {
     // 直接替換 src，瀏覽器底層會自動接續處理
     audio.value.src = musicList.value[index].src
     currentTime.value = 0
+    duration.value = 0
 
     // 【修改重點 2】：將 MediaSession 資訊更新移到 play() 之前
     // 讓系統在觸發背景播放前，先知道這是連續的播放清單，避免通知欄播放器被收回
     syncMediaSessionMetadata()
+    syncMediaSessionPositionState()
 
     if (playing.value || options.forceRestart) {
       intendedToPlay = true
@@ -699,10 +798,12 @@ async function selectAndPlaySong(index, options = {}) {
 /* --- 進度與 metadata --- */
 function onLoadedMetadata(e) {
   duration.value = e.target.duration || 0
+  syncMediaSessionPositionState()
 }
 
 function updateProgress(e) {
   if (!isSeeking.value) currentTime.value = e.target.currentTime
+  syncMediaSessionPositionState()
 }
 
 function setProgress(e) {
@@ -712,6 +813,30 @@ function setProgress(e) {
   const width = rect.width
   const percent = clickX / width
   audio.value.currentTime = percent * duration.value
+  currentTime.value = audio.value.currentTime
+  syncMediaSessionPositionState()
+}
+
+function seekByOffset(offsetSeconds) {
+  if (!audio.value || duration.value === 0 || !Number.isFinite(offsetSeconds)) return
+  const nextTime = Math.min(Math.max(audio.value.currentTime + offsetSeconds, 0), duration.value)
+  audio.value.currentTime = nextTime
+  currentTime.value = nextTime
+  syncMediaSessionPositionState()
+}
+
+function seekToPosition(seekTime, fastSeek = false) {
+  if (!audio.value || duration.value === 0 || !Number.isFinite(seekTime)) return
+  const nextTime = Math.min(Math.max(seekTime, 0), duration.value)
+
+  if (fastSeek && typeof audio.value.fastSeek === 'function') {
+    audio.value.fastSeek(nextTime)
+  } else {
+    audio.value.currentTime = nextTime
+  }
+
+  currentTime.value = nextTime
+  syncMediaSessionPositionState()
 }
 
 /* --- 音量 --- */
@@ -875,21 +1000,21 @@ function handleMouseDragEnd(e) {
 }
 
 function handleMouseEnter() {
-  if (!playerMinimized.value || musicInfoHidden.value || isClicked.value) return
+  if (!playerMinimized.value || musicInfoHidden.value) return
   isHovering.value = true
   if (leaveTimer) { clearTimeout(leaveTimer); leaveTimer = null }
   if (hoverTimer) { clearTimeout(hoverTimer) }
   hoverTimer = setTimeout(() => {
-    if (isHovering.value && !isClicked.value) playerMinimized.value = false
+    if (isHovering.value) playerMinimized.value = false
   }, 200)
 }
 
 function handleMouseLeave() {
   isHovering.value = false
   if (hoverTimer) { clearTimeout(hoverTimer); hoverTimer = null }
-  if (!isClicked.value && !playerMinimized.value && !isPlaylistVisible.value && !isVolumeVisible.value) {
+  if (!playerMinimized.value && !isPlaylistVisible.value && !isVolumeVisible.value) {
     leaveTimer = setTimeout(() => {
-      if (!isHovering.value && !isClicked.value) playerMinimized.value = true
+      if (!isHovering.value) playerMinimized.value = true
     }, 100)
   }
 }
@@ -902,15 +1027,15 @@ function handleContainerMouseEnter() {
 
 function handleContainerMouseLeave() {
   isHovering.value = false
-  if (!isClicked.value && !playerMinimized.value && !isPlaylistVisible.value && !isVolumeVisible.value) {
+  if (!playerMinimized.value && !isPlaylistVisible.value && !isVolumeVisible.value) {
     leaveTimer = setTimeout(() => {
-      if (!isHovering.value && !isClicked.value) playerMinimized.value = true
+      if (!isHovering.value) playerMinimized.value = true
     }, 300)
   }
 }
 
 function handleGlobalMouseMove(e) {
-  if (playerMinimized.value || isClicked.value || !playerOpen.value) return
+  if (playerMinimized.value || !playerOpen.value) return
   const container = playerContainer.value
   if (!container) return
   const rect = container.getBoundingClientRect()
@@ -925,18 +1050,12 @@ function handleMusicInfoClick(e) {
   if (playerMinimized.value) {
     e.stopPropagation()
     playerMinimized.value = false
-    isClicked.value = true
-  } else if (!isClicked.value) {
-    e.stopPropagation()
-    isClicked.value = true
   }
 }
 
 function handleContainerClick(e) {
-  if (!isClicked.value && !playerMinimized.value) {
-    e.stopPropagation()
-    isClicked.value = true
-  }
+  if (playerMinimized.value) return
+  e.stopPropagation()
 }
 
 function showMusicInfo() {
@@ -944,7 +1063,7 @@ function showMusicInfo() {
   isPlaylistVisible.value = false
   isVolumeVisible.value = false
   playerMinimized.value = false
-  isClicked.value = true
+  isClicked.value = false
 }
 
 /* --- 歌曲 title toast --- */
