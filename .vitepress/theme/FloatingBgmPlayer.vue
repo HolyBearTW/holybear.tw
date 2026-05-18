@@ -688,12 +688,12 @@ function setupMediaSessionHandlers() {
 
   const handlers = {
     play: () => {
-      syncMediaSessionPositionState()
       playMusic()
+      setTimeout(() => syncMediaSessionPositionState(), 200)
     },
     pause: () => {
       pauseMusic()
-      syncMediaSessionPositionState()
+      setTimeout(() => syncMediaSessionPositionState(), 200)
     },
     previoustrack: () => prevSong(),
     nexttrack: () => nextSong(),
@@ -709,7 +709,6 @@ function setupMediaSessionHandlers() {
       }
 
       currentTime.value = targetTime
-      syncMediaSessionPositionState()
     }
   }
 
@@ -816,7 +815,9 @@ function updateProgress(e) {
 function handleAudioSeeked(e) {
   isSeeking.value = false
   currentTime.value = Number.isFinite(e.target.currentTime) ? e.target.currentTime : currentTime.value
-  syncMediaSessionPositionState()
+  setTimeout(() => {
+    syncMediaSessionPositionState()
+  }, 200)
 }
 
 function setProgress(e) {
