@@ -263,6 +263,8 @@ onMounted(async () => {
     audio.value.volume = volume.value;
     audio.value.loop = repeatOne.value;
     audio.value.addEventListener('timeupdate', updateProgress);
+    audio.value.addEventListener('durationchange', handleDurationChange)
+    audio.value.addEventListener('seeked', handleAudioSeeked)
     // loadedmetadata 綁在 template (@loadedmetadata)，這裡可以備援但不必要重複綁
 
     // 統一處理初始播放邏輯
@@ -308,6 +310,8 @@ onUnmounted(() => {
 
   if (audio.value) {
     audio.value.removeEventListener('timeupdate', updateProgress)
+    audio.value.removeEventListener('durationchange', handleDurationChange)
+    audio.value.removeEventListener('seeked', handleAudioSeeked)
     // 由 template 綁定的 loadedmetadata 事件不需移除這裡，但 safe 做一次移除
     audio.value.removeEventListener('loadedmetadata', onLoadedMetadata)
   }
@@ -661,26 +665,25 @@ function syncMediaSessionPositionState() {
   if (typeof navigator === 'undefined' || !('mediaSession' in navigator) || typeof navigator.mediaSession.setPositionState !== 'function') return
   if (!audio.value) return
 
+  const mediaDuration = Number.isFinite(audio.value.duration) && audio.value.duration > 0
+    ? audio.value.duration
+    : duration.value
   const playbackRate = Number.isFinite(audio.value.playbackRate) && audio.value.playbackRate > 0
     ? audio.value.playbackRate
     : 1
   const position = Number.isFinite(audio.value.currentTime) ? audio.value.currentTime : 0
-  const hasFiniteDuration = Number.isFinite(duration.value) && duration.value > 0
+  const hasFiniteDuration = Number.isFinite(mediaDuration) && mediaDuration > 0
 
   try {
     if (!hasFiniteDuration) {
-      navigator.mediaSession.setPositionState({
-        duration: 0,
-        playbackRate,
-        position: 0
-      })
+      navigator.mediaSession.setPositionState()
       return
     }
 
     navigator.mediaSession.setPositionState({
-      duration: duration.value,
+      duration: mediaDuration,
       playbackRate,
-      position: Math.min(position, duration.value)
+      position: Math.min(position, mediaDuration)
     })
   } catch (error) {
     console.warn('Media Session position state 同步失敗', error)
@@ -797,12 +800,22 @@ async function selectAndPlaySong(index, options = {}) {
 
 /* --- 進度與 metadata --- */
 function onLoadedMetadata(e) {
-  duration.value = e.target.duration || 0
+  duration.value = Number.isFinite(e.target.duration) ? e.target.duration : 0
+  syncMediaSessionPositionState()
+}
+
+function handleDurationChange(e) {
+  duration.value = Number.isFinite(e.target.duration) ? e.target.duration : 0
   syncMediaSessionPositionState()
 }
 
 function updateProgress(e) {
   if (!isSeeking.value) currentTime.value = e.target.currentTime
+  syncMediaSessionPositionState()
+}
+
+function handleAudioSeeked(e) {
+  currentTime.value = Number.isFinite(e.target.currentTime) ? e.target.currentTime : currentTime.value
   syncMediaSessionPositionState()
 }
 
