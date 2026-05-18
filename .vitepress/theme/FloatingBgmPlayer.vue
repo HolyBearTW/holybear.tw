@@ -687,8 +687,14 @@ function setupMediaSessionHandlers() {
   if (typeof navigator === 'undefined' || !('mediaSession' in navigator)) return
 
   const handlers = {
-    play: () => playMusic(),
-    pause: () => pauseMusic(),
+    play: () => {
+      syncMediaSessionPositionState()
+      playMusic()
+    },
+    pause: () => {
+      pauseMusic()
+      syncMediaSessionPositionState()
+    },
     previoustrack: () => prevSong(),
     nexttrack: () => nextSong(),
     stop: () => pauseMusic(),
@@ -805,7 +811,6 @@ function handleDurationChange(e) {
 
 function updateProgress(e) {
   if (!isSeeking.value) currentTime.value = e.target.currentTime
-  syncMediaSessionPositionState()
 }
 
 function handleAudioSeeked(e) {
