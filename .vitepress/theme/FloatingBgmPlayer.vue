@@ -107,7 +107,7 @@ let trackAdvanceUnlockTimer = null
 let playbackRecoveryTimer = null
 let intendedToPlay = false
 let resumeOnVisibilityReturn = false
-let mediaSessionPositionRaf = null
+let mediaSessionSeekEnabled = false
 
 function canAttemptPlaybackNow() {
   if (typeof navigator === 'undefined' || !navigator.userActivation) return true
@@ -323,7 +323,6 @@ onUnmounted(() => {
   if (leaveTimer) clearTimeout(leaveTimer)
   if (trackAdvanceUnlockTimer) clearTimeout(trackAdvanceUnlockTimer)
   if (playbackRecoveryTimer) clearTimeout(playbackRecoveryTimer)
-  stopMediaSessionPositionSync()
 
   clearMediaSessionHandlers()
 })
@@ -344,11 +343,6 @@ watch(playing, () => {
   syncMediaSessionPlaybackState()
   syncMediaSessionPositionState()
 
-  if (playing.value) {
-    startMediaSessionPositionSync()
-  } else {
-    stopMediaSessionPositionSync()
-  }
 })
 
 watch(isPlaylistVisible, async (visible) => {
@@ -484,7 +478,6 @@ function handleAudioPlay() {
   intendedToPlay = true
   resumeOnVisibilityReturn = false
   syncPlayingState(true)
-  startMediaSessionPositionSync()
 }
 
 function handleAudioPlaying() {
@@ -492,7 +485,6 @@ function handleAudioPlaying() {
   intendedToPlay = true
   resumeOnVisibilityReturn = false
   syncPlayingState(true)
-  startMediaSessionPositionSync()
 }
 
 function handleAudioPause() {
@@ -518,7 +510,6 @@ function handleAudioPause() {
   }
 
   syncPlayingState(false)
-  stopMediaSessionPositionSync()
 }
 
 function handleAudioError() {
@@ -676,7 +667,7 @@ function syncMediaSessionPositionState() {
 
   try {
     if (!hasFiniteDuration) {
-      navigator.mediaSession.setPositionState()
+      mediaSessionSeekEnabled = false
       return
     }
 
@@ -685,26 +676,11 @@ function syncMediaSessionPositionState() {
       playbackRate,
       position: Math.min(position, mediaDuration)
     })
+    mediaSessionSeekEnabled = true
   } catch (error) {
+    mediaSessionSeekEnabled = false
     console.warn('Media Session position state 同步失敗', error)
   }
-}
-
-function startMediaSessionPositionSync() {
-  if (typeof window === 'undefined' || mediaSessionPositionRaf !== null) return
-
-  const tick = () => {
-    mediaSessionPositionRaf = window.requestAnimationFrame(tick)
-    syncMediaSessionPositionState()
-  }
-
-  mediaSessionPositionRaf = window.requestAnimationFrame(tick)
-}
-
-function stopMediaSessionPositionSync() {
-  if (typeof window === 'undefined' || mediaSessionPositionRaf === null) return
-  window.cancelAnimationFrame(mediaSessionPositionRaf)
-  mediaSessionPositionRaf = null
 }
 
 function setupMediaSessionHandlers() {
@@ -716,9 +692,19 @@ function setupMediaSessionHandlers() {
     previoustrack: () => prevSong(),
     nexttrack: () => nextSong(),
     stop: () => pauseMusic(),
-    seekbackward: (details = {}) => seekByOffset(-(details.seekOffset || 10)),
-    seekforward: (details = {}) => seekByOffset(details.seekOffset || 10),
-    seekto: (details = {}) => seekToPosition(details.seekTime, details.fastSeek)
+    seekto: (details = {}) => {
+      if (!audio.value || !audio.value.duration || typeof details.seekTime !== 'number') return
+      const targetTime = Math.min(Math.max(details.seekTime, 0), audio.value.duration)
+
+      if (details.fastSeek && typeof audio.value.fastSeek === 'function') {
+        audio.value.fastSeek(targetTime)
+      } else {
+        audio.value.currentTime = targetTime
+      }
+
+      currentTime.value = targetTime
+      syncMediaSessionPositionState()
+    }
   }
 
   Object.entries(handlers).forEach(([action, handler]) => {
@@ -728,12 +714,20 @@ function setupMediaSessionHandlers() {
       console.warn(`Media Session action \"${action}\" 註冊失敗`, error)
     }
   })
+
+  ;['seekbackward', 'seekforward'].forEach((action) => {
+    try {
+      navigator.mediaSession.setActionHandler(action, null)
+    } catch (error) {
+      console.warn(`Media Session action \"${action}\" 清除失敗`, error)
+    }
+  })
 }
 
 function clearMediaSessionHandlers() {
   if (typeof navigator === 'undefined' || !('mediaSession' in navigator)) return
 
-  ;['play', 'pause', 'previoustrack', 'nexttrack', 'stop'].forEach((action) => {
+  ;['play', 'pause', 'previoustrack', 'nexttrack', 'stop', 'seekbackward', 'seekforward', 'seekto'].forEach((action) => {
     try {
       navigator.mediaSession.setActionHandler(action, null)
     } catch (error) {
@@ -1107,6 +1101,8 @@ function toggleRepeatOne() {
   id="global-audio-player" 
   crossorigin="anonymous"
   preload="auto"
+  playsinline
+  webkit-playsinline="true"
   @ended="handleTrackEnded"
   @loadedmetadata="onLoadedMetadata"
   @play="handleAudioPlay"

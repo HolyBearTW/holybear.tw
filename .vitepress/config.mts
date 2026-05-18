@@ -50,6 +50,7 @@ const config = defineConfig({
     ],
     vite: {
         server: {
+            host: true,
             hmr: {
                 // 如果只針對 Vite 中的 React 禁用 HMR (這樣 @vitejs/plugin-react 就不會載入 refresh-runtime)
                 // 這不會影響 Vue 的 HMR
