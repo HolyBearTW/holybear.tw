@@ -659,9 +659,10 @@ function syncMediaSessionPositionState() {
   const mediaDuration = Number.isFinite(audio.value.duration) && audio.value.duration > 0
     ? audio.value.duration
     : duration.value
-  const playbackRate = Number.isFinite(audio.value.playbackRate) && audio.value.playbackRate > 0
+  const currentRate = Number.isFinite(audio.value.playbackRate) && audio.value.playbackRate > 0
     ? audio.value.playbackRate
     : 1
+  const playbackRate = playing.value ? currentRate : 0
   const position = Number.isFinite(audio.value.currentTime) ? audio.value.currentTime : 0
   const hasFiniteDuration = Number.isFinite(mediaDuration) && mediaDuration > 0
 
@@ -671,10 +672,12 @@ function syncMediaSessionPositionState() {
       return
     }
 
+    const jitter = Math.random() * 0.0001
+
     navigator.mediaSession.setPositionState({
       duration: mediaDuration,
       playbackRate,
-      position: Math.min(position, mediaDuration)
+      position: Math.min(position + jitter, mediaDuration)
     })
     mediaSessionSeekEnabled = true
   } catch (error) {
