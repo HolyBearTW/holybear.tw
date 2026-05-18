@@ -809,6 +809,7 @@ function updateProgress(e) {
 }
 
 function handleAudioSeeked(e) {
+  isSeeking.value = false
   currentTime.value = Number.isFinite(e.target.currentTime) ? e.target.currentTime : currentTime.value
   syncMediaSessionPositionState()
 }
@@ -819,31 +820,27 @@ function setProgress(e) {
   const clickX = e.clientX - rect.left
   const width = rect.width
   const percent = clickX / width
+  isSeeking.value = true
   audio.value.currentTime = percent * duration.value
-  currentTime.value = audio.value.currentTime
-  syncMediaSessionPositionState()
 }
 
 function seekByOffset(offsetSeconds) {
   if (!audio.value || duration.value === 0 || !Number.isFinite(offsetSeconds)) return
   const nextTime = Math.min(Math.max(audio.value.currentTime + offsetSeconds, 0), duration.value)
+  isSeeking.value = true
   audio.value.currentTime = nextTime
-  currentTime.value = nextTime
-  syncMediaSessionPositionState()
 }
 
 function seekToPosition(seekTime, fastSeek = false) {
   if (!audio.value || duration.value === 0 || !Number.isFinite(seekTime)) return
   const nextTime = Math.min(Math.max(seekTime, 0), duration.value)
+  isSeeking.value = true
 
   if (fastSeek && typeof audio.value.fastSeek === 'function') {
     audio.value.fastSeek(nextTime)
   } else {
     audio.value.currentTime = nextTime
   }
-
-  currentTime.value = nextTime
-  syncMediaSessionPositionState()
 }
 
 /* --- 音量 --- */
