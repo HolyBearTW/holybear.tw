@@ -662,7 +662,6 @@ function syncMediaSessionPositionState() {
   const currentRate = Number.isFinite(audio.value.playbackRate) && audio.value.playbackRate > 0
     ? audio.value.playbackRate
     : 1
-  const playbackRate = playing.value ? currentRate : 0
   const position = Number.isFinite(audio.value.currentTime) ? audio.value.currentTime : 0
   const hasFiniteDuration = Number.isFinite(mediaDuration) && mediaDuration > 0
 
@@ -676,7 +675,7 @@ function syncMediaSessionPositionState() {
 
     navigator.mediaSession.setPositionState({
       duration: mediaDuration,
-      playbackRate,
+      playbackRate: currentRate,
       position: Math.min(position + jitter, mediaDuration)
     })
     mediaSessionSeekEnabled = true
