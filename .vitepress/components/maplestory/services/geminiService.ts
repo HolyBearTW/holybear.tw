@@ -464,12 +464,13 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
       if (effectiveModel !== 'gemini-3.5-flash') {
         modelsToTry.push('gemini-3.5-flash');
       }
+      modelsToTry.push('gemini-3.5-flash');
       if (effectiveModel !== 'gemini-3.1-flash-lite') {
           modelsToTry.push('gemini-3.1-flash-lite');
       }
       modelsToTry.push('gemini-3-flash-preview');
       modelsToTry.push('gemini-2.5-flash');
-  } 
+    }
   // 3.0 系列 -> 2.5 Flash
   else if (effectiveModel.includes('3.0') || effectiveModel.includes('3-')) { 
       // 若使用者選的是 3.0 Pro，也可以考慮降級跑 3.0 Flash，再跑 2.5 Flash
@@ -555,7 +556,11 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
 
       if (!fullText) throw new Error(`Empty Response from ${currentModel}`);
       
-      return fullText + `\n\n_(Gemini 模型： **${currentModel}**)_`;
+      const modelNote = currentModel === effectiveModel
+        ? `_(Gemini 模型：已依照您的選擇使用 **${currentModel}**)_`
+        : `_(Gemini 模型：您選擇的是 **${effectiveModel}**，本次因 fallback 實際使用 **${currentModel}**)_`;
+
+      return fullText + `\n\n${modelNote}`;
 
     } catch (error: any) {
       const cleanMsg = extractErrorMessage(error);

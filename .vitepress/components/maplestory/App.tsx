@@ -157,7 +157,7 @@ const App: React.FC = () => {
             dropRateWarningData={dropRateWarningData}
             isHighScore={isHighScore}
             aiResultRef={aiResultRef}
-            handleAiAnalysis={handleAiAnalyze}
+            handleAiAnalyze={handleAiAnalyze}
             setShowKeySettings={setShowKeySettings}
             setDropRateWarningData={setDropRateWarningData}
             geminiModel={geminiModel}
