@@ -58,6 +58,7 @@ const KeySettingsModal: React.FC<KeySettingsModalProps> = ({
               }}
               className="w-full p-3 bg-slate-950 border border-slate-700 rounded-lg text-white focus:border-indigo-500 outline-none appearance-none"
             >
+              <option value="gemini-3.5-flash">Gemini 3.5 Flash (最新高速 / 推薦)</option>
               <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro (最新旗艦 / 需付費)</option>
               <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash-Lite (最新預設 / 免費極速)</option>
               <option value="gemini-3-flash-preview">Gemini 3.0 Flash (舊版預設 / 極速)</option>

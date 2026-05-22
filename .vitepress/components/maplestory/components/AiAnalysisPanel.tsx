@@ -21,6 +21,7 @@ interface AiAnalysisPanelProps {
 const md = new MarkdownIt({ breaks: true, html: true });
 
 const getModelDisplayName = (id: string) => {
+  if (id.includes('3.5-flash')) return 'Gemini 3.5 Flash (最新高速)';
     if (id.includes('3.1-pro-preview')) return 'Gemini 3.1 Pro (最新旗艦)';
     if (id.includes('3.1-flash-lite')) return 'Gemini 3.1 Flash (最新極速)';
     if (id.includes('3-pro-preview')) return 'Gemini 3.0 Pro (最新高階)';
@@ -30,6 +31,7 @@ const getModelDisplayName = (id: string) => {
 };
 
 const getEstimatedWaitTime = (id: string) => {
+  if (id.includes('3.5-flash')) return '20~90';
     if (id.includes('flash-preview')) return '30~120';
     if (id.includes('flash')) return '30~120';
     if (id.includes('pro')) return '60~120';

@@ -1,4 +1,5 @@
 export const updateLogs = [    
+  { date: '2026/05/23', content: '新增 Gemini 3.5 Flash 模型選項並設為最新預設，同步更新 AI 分析面板的模型顯示名稱、預估等待時間與自動降級備援順序，讓分析失敗時可更平順回退至 3.1 Flash-Lite、3.0 Flash 與 2.5 Flash；另外修正網站浮動背景音樂播放器在 Media Session 同步進度時誤將 playbackRate 設為 0 導致瀏覽器警告的問題。' },
   { date: '2026/04/19', content: '大規模重構系統架構，抽離獨立的狀態管理，整合搜尋相關 UI 元件，徹底移除測試用假資料與 DEMO 模式，大幅提升程式碼維護性；優化網站視覺效果，全面引進 Border Beam 動態發光邊框元件，取代原有的靜態模糊光暈，大幅提升介面質感。' },
   { date: '2026/03/06', content: '新增 Gemini 3.1 Flash-Lite 模型並設為預設模型，提供極速的免費分析體驗；更新裝備 Tooltip 介面，新增裝備分類、可使用卷軸數、白金神奇剪刀可使用次數屬性。' },
   { date: '2026/03/01', content: '【資安升級】移除網站內建的 Gemini API 公用金鑰。使用者現在必須在設定中輸入自己的 API Key 才能執行 AI 分析。' },
