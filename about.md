@@ -123,5 +123,8 @@ pageClass: custom-footer-layout
 - 先從我的網站內容開始逛
 - 想聊開源、Android、網頁、或創作方式都可以
 - 這裡是我的小基地，也是我自己最想分享的地方
+- 上面的圖片是我的形象圖，希望可以藉此和各位更加親近。
 
-> 上面的圖片是我的形象圖，希望可以藉此和各位更加親近。
+> 下面是我的 Telegram QR Code，歡迎加友，但也記得告知你從哪裡來的喔！
+
+<img src="/image/about/holybear_tg.png" alt="聖小熊電報" />
