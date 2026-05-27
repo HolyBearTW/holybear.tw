@@ -34,7 +34,7 @@
     "react-dom": "^19.2.6",
     "react-is": "^19.2.6",
     "recharts": "^3.8.1",
-    "swiper": "^12.1.4",
+    "swiper": "^12.2.0",
     "three": "^0.184.0",
     "turndown": "^7.2.4",
     "vue-chartjs": "^5.3.3",
