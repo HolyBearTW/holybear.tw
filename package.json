@@ -18,7 +18,7 @@
     "@google/generative-ai": "^0.24.1",
     "animejs": "^4.4.1",
     "autoprefixer": "^10.5.0",
-    "border-beam": "^1.0.1",
+    "border-beam": "^1.1.0",
     "chart.js": "^4.5.1",
     "date-fns": "^4.4.0",
     "firebase": "^12.14.0",
