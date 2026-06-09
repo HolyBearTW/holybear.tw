@@ -1,0 +1,4 @@
+{
+    "continue.experimental.submitTerminalCommands": true,
+    "continue.experimental.readResponseFromTerminal": true
+}
