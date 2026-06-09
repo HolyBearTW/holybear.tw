@@ -3,6 +3,10 @@ export default [
   {
     "items": [
       {
+        "text": "Happy Birthday, holybear! Have an awesome day! 🎉",
+        "link": "/blog/2026-06-10"
+      },
+      {
         "text": "快檢查你的LINE！ 三星旗艦用戶發現驚人Bug：拔掉權限反而更好用？",
         "link": "/blog/2026-03-29"
       },
@@ -37,10 +41,6 @@ export default [
       {
         "text": "衝動購物？才怪！Switch 2 開箱給你看看有多香！🤤",
         "link": "/blog/2025-07-18"
-      },
-      {
-        "text": "颱風假咧？！😤 暴風圈是裝飾品膩？！",
-        "link": "/blog/2025-07-06-typhoon"
       }
     ]
   },
