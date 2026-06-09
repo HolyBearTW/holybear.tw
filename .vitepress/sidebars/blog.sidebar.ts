@@ -3,7 +3,7 @@ export default [
   {
     "items": [
       {
-        "text": "Happy Birthday, holybear! Have an awesome day! 🎉",
+        "text": "Happy Birthday, holybear！ Have an awesome day！ 🎉",
         "link": "/blog/2026-06-10"
       },
       {
