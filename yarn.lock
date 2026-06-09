@@ -1976,10 +1976,10 @@ boolbase@^1.0.0:
   resolved "https://registry.npmjs.org/boolbase/-/boolbase-1.0.0.tgz"
   integrity sha512-JZOSA7Mo9sNGB8+UjSgzdLtokWAky1zbztM3WRLCbZ70/3cTANmQmOdR7y2g+J0e2WXywy1yS468tY+IruqEww==
 
-border-beam@^1.1.0:
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/border-beam/-/border-beam-1.1.0.tgz#1639ffe6f86f2ef5176b04718bb37ad9f66feca0"
-  integrity sha512-P7VN93Dg2OV4OxaFtbk0/T+IFCQuXKeRVSLFSDnNUJSv/fb37fl+YRpWr3SkRR0LCKrCYIEAIDspNVavC8MNJg==
+border-beam@^1.2.0:
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/border-beam/-/border-beam-1.2.0.tgz#b1050f77f5c82318d7961892facfebd62e0c361d"
+  integrity sha512-WDcuwqVgd0SqIw1VQhXoSzXS4r3YhGBdd1pb+RqDmBe7+umydR9GrnazJkRs+7ngQV/PSP/4lZHhwu36DE2+bQ==
 
 braces@^3.0.3:
   version "3.0.3"
