@@ -38,7 +38,7 @@
     "three": "^0.184.0",
     "turndown": "^7.2.4",
     "vue-chartjs": "^5.3.3",
-    "vue-instantsearch": "^4.26.8"
+    "vue-instantsearch": "^4.26.9"
   },
   "overrides": {
     "preact": "10.27.3",
