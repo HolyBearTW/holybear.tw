@@ -2002,10 +2002,10 @@ boolbase@^1.0.0:
   resolved "https://registry.npmjs.org/boolbase/-/boolbase-1.0.0.tgz"
   integrity sha512-JZOSA7Mo9sNGB8+UjSgzdLtokWAky1zbztM3WRLCbZ70/3cTANmQmOdR7y2g+J0e2WXywy1yS468tY+IruqEww==
 
-border-beam@^1.2.0:
-  version "1.2.0"
-  resolved "https://registry.yarnpkg.com/border-beam/-/border-beam-1.2.0.tgz#b1050f77f5c82318d7961892facfebd62e0c361d"
-  integrity sha512-WDcuwqVgd0SqIw1VQhXoSzXS4r3YhGBdd1pb+RqDmBe7+umydR9GrnazJkRs+7ngQV/PSP/4lZHhwu36DE2+bQ==
+border-beam@^1.3.0:
+  version "1.3.0"
+  resolved "https://registry.yarnpkg.com/border-beam/-/border-beam-1.3.0.tgz#afa004eebcb5736a228343dc594a9720a47de477"
+  integrity sha512-oZSISp3aQau4ASTmzm5pzxeBinO6Fh2HW0gyEixJgtpUZvRiU0vNpP+IwGRrNpIyqPjA7Rf5EBnVqDSJ49cm5w==
 
 braces@^3.0.3:
   version "3.0.3"
