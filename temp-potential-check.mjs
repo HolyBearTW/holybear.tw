@@ -151,8 +151,11 @@ const highLevelAdditionalItem = {
 const highLevelAdditionalPercentLines = [
   'STR +2%',
   'STR +4%',
+  'STR +5%',
   'STR +6%',
   'STR +8%',
+  'INT +8%',
+  '全屬性 +5%',
 ];
 
 for (const [index, line] of highLevelAdditionalPercentLines.entries()) {
@@ -178,10 +181,14 @@ const additionalFlatAttackLines = [
   '物理攻擊力 +12',
   '物理攻擊力 +13',
   '物理攻擊力 +14',
+  '物理攻擊力 +15',
+  '物理攻擊力 +16',
   '魔法攻擊力 +11',
   '魔法攻擊力 +12',
   '魔法攻擊力 +13',
   '魔法攻擊力 +14',
+  '魔法攻擊力 +15',
+  '魔法攻擊力 +16',
 ];
 
 for (const [index, line] of additionalFlatAttackLines.entries()) {

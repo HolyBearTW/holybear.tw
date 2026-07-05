@@ -423,10 +423,16 @@ const shouldBypassConservativePercentCap = (label: string) => {
     'dex%',
     'int%',
     'luk%',
+    '全屬性%',
     '物理攻擊力%',
     '攻擊力%',
     '魔法攻擊力%',
   ].some((candidate) => normalized === normalizeRuleAlias(candidate));
+};
+
+const isAllStatPercentLabel = (label: string) => {
+  const normalized = normalizeRuleAlias(label);
+  return normalized.includes(normalizeRuleAlias('全屬性%'));
 };
 
 const isFlatMainStatLabel = (label: string) => {
@@ -475,11 +481,26 @@ const inferForcedUserPercentGrade = (
 
   if (mode === 'additional') {
     const itemLevel = item.item_base_option?.base_equipment_level || item.item_level || 0;
-    const thresholdOffset = itemLevel >= 160 ? 1 : 0;
 
-    if (value >= 11 + thresholdOffset) return 'legendary';
-    if (value >= 8 + thresholdOffset) return 'unique';
-    if (value >= 3 + thresholdOffset) return 'epic';
+    if (isAllStatPercentLabel(label) && itemLevel >= 160) {
+      if (value >= 8) return 'legendary';
+      if (value >= 6) return 'unique';
+      if (value >= 5) return 'unique';
+      if (value >= 3) return 'epic';
+      if (value >= 1) return 'rare';
+      return null;
+    }
+
+    if (value >= 8) return 'legendary';
+    if (itemLevel >= 160) {
+      if (value >= 6) return 'unique';
+      if (value >= 3) return 'epic';
+      if (value >= 1) return 'rare';
+      return null;
+    }
+
+    if (value >= 5) return 'unique';
+    if (value >= 3) return 'epic';
     if (value >= 1) return 'rare';
     return null;
   }
@@ -516,12 +537,9 @@ const inferForcedAdditionalFlatAttackGrade = (
     return null;
   }
 
-  const itemLevel = item.item_base_option?.base_equipment_level || item.item_level || 0;
-  const thresholdOffset = itemLevel > 0 && itemLevel <= 150 ? 1 : 0;
-
-  if (value >= 14 - thresholdOffset) return 'legendary';
-  if (value >= 13 - thresholdOffset) return 'unique';
-  if (value >= 12 - thresholdOffset) return 'epic';
+  if (value >= 16) return 'legendary';
+  if (value >= 15) return 'unique';
+  if (value >= 12) return 'epic';
   if (value >= 1) return 'rare';
   return null;
 };
@@ -556,6 +574,15 @@ export const explainPotentialLineGrade = (
   const maxGrade = normalizeGrade(overallGrade);
   const { label, value } = normalizePotentialText(lineText);
   const forcedSpecialPotentialGrade = label ? inferForcedSpecialPotentialGrade(label, value ?? Number.NaN) : null;
+  const forcedPercentGrade = label && value !== null
+    ? inferForcedUserPercentGrade(item, label, value, mode)
+    : null;
+  const forcedAdditionalFlatMainStatGrade = label && value !== null
+    ? inferForcedAdditionalFlatMainStatGrade(label, value, mode)
+    : null;
+  const forcedAdditionalFlatAttackGrade = label && value !== null
+    ? inferForcedAdditionalFlatAttackGrade(item, label, value, mode)
+    : null;
   const effectiveMaxGrade = maxGrade && label ? getEffectiveMaxGrade(item, maxGrade, lineIndex, label) : maxGrade;
   const fallbackGrade = effectiveMaxGrade ? getFallbackSubLineGrade(effectiveMaxGrade) : null;
   const equipmentKey = normalizeEquipmentKey(item);
@@ -570,6 +597,12 @@ export const explainPotentialLineGrade = (
     ? null
     : (forcedSpecialPotentialGrade
       ? forcedSpecialPotentialGrade
+      : (forcedPercentGrade
+        ? (mode === 'additional' ? forcedPercentGrade : clampGrade(forcedPercentGrade, effectiveMaxGrade))
+        : (forcedAdditionalFlatMainStatGrade
+          ? forcedAdditionalFlatMainStatGrade
+          : (forcedAdditionalFlatAttackGrade
+            ? forcedAdditionalFlatAttackGrade
       : (!inferred
       ? (lineIndex === 0 ? effectiveMaxGrade : fallbackGrade)
       : (
@@ -579,7 +612,7 @@ export const explainPotentialLineGrade = (
             ? getMoreConservativeGrade(clampGrade(inferred, effectiveMaxGrade), fallbackGrade || effectiveMaxGrade)
             : clampGrade(inferred, effectiveMaxGrade)
           )
-      )));
+      ))))));
 
   return {
     equipmentKey,
