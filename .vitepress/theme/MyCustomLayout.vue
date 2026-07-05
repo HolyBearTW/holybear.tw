@@ -22,6 +22,7 @@ import HyperOS2 from './background/HyperOS2Theme.vue'
 import Christmas from './background/ChristmasBackground.vue'
 import Halloween from './background/HalloweenBackground.vue'
 import GravityFieldSimulation from './background/GravityFieldSimulation.vue'
+import { getCopyrightText } from './copyright'
 import { 
   defaultTheme, 
   THEME_STORAGE_KEY, 
@@ -30,6 +31,7 @@ import {
 } from './background/themes'
 
 const { isDark } = useData()
+const copyrightText = getCopyrightText('聖小熊')
 
 // 當前背景主題
 const currentBackgroundTheme = ref(defaultTheme)
@@ -597,7 +599,7 @@ onUnmounted(() => {
     <footer class="BlogVPFooter">
   <div class="container">
     <p class="message">AGPL-3.0 Licensed</p>
-    <p class="copyright">Copyright © 2025-2026 聖小熊</p>
+        <p class="copyright">{{ copyrightText }}</p>
   </div>
 </footer>
 </template>

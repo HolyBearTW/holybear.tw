@@ -1,4 +1,5 @@
 import { generateNavThemes } from '../theme/background/themes';
+import { getCopyrightText } from '../theme/copyright';
 
 export default {
   lang: 'zh-TW',
@@ -51,7 +52,7 @@ export default {
     },
     footer: {
       message: 'AGPL-3.0 Licensed',
-      copyright: 'Copyright © 2025-2026 聖小熊'
+      copyright: getCopyrightText('聖小熊')
     },
     notFound: {
       title: '找不到頁面',

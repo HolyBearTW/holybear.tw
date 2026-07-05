@@ -1,5 +1,6 @@
 import sidebarEn from '../sidebars/blog.sidebar.en'
 import { generateNavThemes } from '../theme/background/themes';
+import { getCopyrightText } from '../theme/copyright';
 
 export default {
   lang: 'en',
@@ -42,7 +43,7 @@ export default {
     },
     footer: {
       message: 'AGPL-3.0 Licensed',
-      copyright: 'Copyright © 2025 HolyBear'
+      copyright: getCopyrightText('HolyBear')
     },
     notFound: {
       title: 'Page Not Found',
