@@ -70,15 +70,23 @@ const Familiar: React.FC<FamiliarProps> = ({ data }) => {
     const optionValue = option.option_value || '';
     const normalizedText = `${optionName} ${optionValue}`.replace(/\s+/g, '');
     const isRecoveryOption =
-      normalizedText.includes('秒內') && (
+      (
+        normalizedText.includes('秒內') ||
+        normalizedText.includes('攻擊時')
+      ) && (
         normalizedText.includes('恢復HP') ||
         normalizedText.includes('恢復MP') ||
         normalizedText.includes('恢復HP/MP')
       );
+    const isLowValueStatOption =
+      optionName.includes('MaxHP') ||
+      optionName.includes('MaxMP') ||
+      optionName.includes('防禦力');
 
     return (
       optionName.includes('效果') ||
-      isRecoveryOption
+      isRecoveryOption ||
+      isLowValueStatOption
     );
   };
 
