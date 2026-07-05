@@ -273,7 +273,15 @@ const normalizeEquipmentKey = (item: EquipmentItem): string | null => {
     return 'secondary';
   }
 
+  const secondaryAliases = EQUIPMENT_ALIASES.secondary || [];
+  if (secondaryAliases.some((alias) => source.includes(alias.toLowerCase()))) {
+    return 'secondary';
+  }
+
   for (const [key, aliases] of Object.entries(EQUIPMENT_ALIASES)) {
+    if (key === 'secondary') {
+      continue;
+    }
     if (aliases.some((alias) => source.includes(alias.toLowerCase()))) {
       return key;
     }
@@ -435,9 +443,50 @@ const isAllStatPercentLabel = (label: string) => {
   return normalized.includes(normalizeRuleAlias('全屬性%'));
 };
 
+const isHpMpPercentLabel = (label: string) => {
+  const normalized = normalizeRuleAlias(label);
+  return [
+    '最大HP%',
+    'MaxHP%',
+    'HP%',
+    '最大MP%',
+    'MaxMP%',
+    'MP%',
+  ].some((candidate) => normalized === normalizeRuleAlias(candidate));
+};
+
 const isFlatMainStatLabel = (label: string) => {
   const normalized = normalizeRuleAlias(label);
-  return ['str', 'dex', 'int', 'luk'].some((candidate) => normalized === normalizeRuleAlias(candidate));
+  return ['str', 'dex', 'int', 'luk'].some((candidate) => (
+    normalized === normalizeRuleAlias(candidate)
+    || normalized === normalizeRuleAlias(`${candidate}%`)
+  ));
+};
+
+const isThreeWeaponKey = (equipmentKey: string | null) => (
+  equipmentKey === 'weapon' || equipmentKey === 'secondary' || equipmentKey === 'emblem'
+);
+
+const inferThreeWeaponAdditionalMainStatGrade = (
+  item: EquipmentItem,
+  label: string,
+  value: number,
+  mode: PotentialInferenceMode,
+): PotentialGrade | null => {
+  if (mode !== 'additional' || Number.isNaN(value)) {
+    return null;
+  }
+
+  const equipmentKey = normalizeEquipmentKey(item);
+  if (!isThreeWeaponKey(equipmentKey) || !isFlatMainStatLabel(label)) {
+    return null;
+  }
+
+  if (value >= 12) return 'legendary';
+  if (value >= 9) return 'unique';
+  if (value >= 6) return 'epic';
+  if (value >= 3) return 'rare';
+  return null;
 };
 
 const isFlatAttackLabel = (label: string) => {
@@ -466,6 +515,16 @@ const inferForcedSpecialPotentialGrade = (
     return 'legendary';
   }
 
+  if (
+    normalized.includes(normalizeRuleAlias('道具掉落率%'))
+    || normalized.includes(normalizeRuleAlias('掉寶率%'))
+    || normalized.includes(normalizeRuleAlias('楓幣獲得量%'))
+    || normalized.includes(normalizeRuleAlias('楓幣掉落率%'))
+    || normalized.includes(normalizeRuleAlias('楓幣%'))
+  ) {
+    return 'legendary';
+  }
+
   return null;
 };
 
@@ -481,6 +540,14 @@ const inferForcedUserPercentGrade = (
 
   if (mode === 'additional') {
     const itemLevel = item.item_base_option?.base_equipment_level || item.item_level || 0;
+    const equipmentKey = normalizeEquipmentKey(item);
+
+    if (isAllStatPercentLabel(label) && itemLevel > 0 && itemLevel <= 150) {
+      if (value >= 5) return 'unique';
+      if (value >= 2) return 'epic';
+      if (value >= 1) return 'rare';
+      return null;
+    }
 
     if (isAllStatPercentLabel(label) && itemLevel >= 160) {
       if (value >= 8) return 'legendary';
@@ -494,7 +561,8 @@ const inferForcedUserPercentGrade = (
     if (value >= 8) return 'legendary';
     if (itemLevel >= 160) {
       if (value >= 6) return 'unique';
-      if (value >= 3) return 'epic';
+      if (value >= 5) return 'epic';
+      if (value >= 3) return 'rare';
       if (value >= 1) return 'rare';
       return null;
     }
@@ -505,10 +573,61 @@ const inferForcedUserPercentGrade = (
     return null;
   }
 
+  const itemLevel = item.item_base_option?.base_equipment_level || item.item_level || 0;
+
+  if (isAllStatPercentLabel(label)) {
+    if (itemLevel >= 160) {
+      if (value >= 9) return 'legendary';
+      if (value >= 7) return 'unique';
+      if (value >= 4) return 'epic';
+      if (value >= 2) return 'rare';
+      return null;
+    }
+
+    if (itemLevel > 0 && itemLevel <= 150) {
+      if (value >= 9) return 'legendary';
+      if (value >= 6) return 'unique';
+      if (value >= 4) return 'epic';
+      if (value >= 2) return 'rare';
+      return null;
+    }
+  }
+
   if (value >= 12) return 'legendary';
   if (value >= 9) return 'unique';
   if (value >= 4) return 'epic';
   if (value >= 2) return 'rare';
+  return null;
+};
+
+const inferForcedMainHpMpPercentGrade = (
+  item: EquipmentItem,
+  label: string,
+  value: number,
+  mode: PotentialInferenceMode,
+): PotentialGrade | null => {
+  if (mode !== 'main' || !isHpMpPercentLabel(label) || Number.isNaN(value)) {
+    return null;
+  }
+
+  const itemLevel = item.item_base_option?.base_equipment_level || item.item_level || 0;
+
+  if (itemLevel >= 160) {
+    if (value >= 13) return 'legendary';
+    if (value >= 10) return 'unique';
+    if (value >= 7) return 'epic';
+    if (value >= 4) return 'rare';
+    return null;
+  }
+
+  if (itemLevel > 0 && itemLevel <= 150) {
+    if (value >= 12) return 'legendary';
+    if (value >= 9) return 'unique';
+    if (value >= 6) return 'epic';
+    if (value >= 3) return 'rare';
+    return null;
+  }
+
   return null;
 };
 
@@ -535,6 +654,12 @@ const inferForcedAdditionalFlatAttackGrade = (
 ): PotentialGrade | null => {
   if (mode !== 'additional' || !isFlatAttackLabel(label) || Number.isNaN(value)) {
     return null;
+  }
+
+  const itemLevel = item.item_base_option?.base_equipment_level || item.item_level || 0;
+
+  if (itemLevel > 0 && itemLevel <= 150 && value >= 11 && value < 12) {
+    return 'epic';
   }
 
   if (value >= 16) return 'legendary';
@@ -574,8 +699,14 @@ export const explainPotentialLineGrade = (
   const maxGrade = normalizeGrade(overallGrade);
   const { label, value } = normalizePotentialText(lineText);
   const forcedSpecialPotentialGrade = label ? inferForcedSpecialPotentialGrade(label, value ?? Number.NaN) : null;
+  const forcedThreeWeaponAdditionalMainStatGrade = label && value !== null
+    ? inferThreeWeaponAdditionalMainStatGrade(item, label, value, mode)
+    : null;
   const forcedPercentGrade = label && value !== null
     ? inferForcedUserPercentGrade(item, label, value, mode)
+    : null;
+  const forcedMainHpMpPercentGrade = label && value !== null
+    ? inferForcedMainHpMpPercentGrade(item, label, value, mode)
     : null;
   const forcedAdditionalFlatMainStatGrade = label && value !== null
     ? inferForcedAdditionalFlatMainStatGrade(label, value, mode)
@@ -597,8 +728,12 @@ export const explainPotentialLineGrade = (
     ? null
     : (forcedSpecialPotentialGrade
       ? forcedSpecialPotentialGrade
+      : (forcedThreeWeaponAdditionalMainStatGrade
+        ? forcedThreeWeaponAdditionalMainStatGrade
       : (forcedPercentGrade
-        ? (mode === 'additional' ? forcedPercentGrade : clampGrade(forcedPercentGrade, effectiveMaxGrade))
+        ? clampGrade(forcedPercentGrade, effectiveMaxGrade)
+        : (forcedMainHpMpPercentGrade
+          ? clampGrade(forcedMainHpMpPercentGrade, effectiveMaxGrade)
         : (forcedAdditionalFlatMainStatGrade
           ? forcedAdditionalFlatMainStatGrade
           : (forcedAdditionalFlatAttackGrade
@@ -612,7 +747,7 @@ export const explainPotentialLineGrade = (
             ? getMoreConservativeGrade(clampGrade(inferred, effectiveMaxGrade), fallbackGrade || effectiveMaxGrade)
             : clampGrade(inferred, effectiveMaxGrade)
           )
-      ))))));
+      ))))))));
 
   return {
     equipmentKey,
@@ -729,11 +864,19 @@ export const inferPotentialLineGrade = (
     return lineIndex === 0 ? maxGrade : effectiveFallbackGrade;
   }
 
+  const forcedThreeWeaponAdditionalMainStatGrade = inferThreeWeaponAdditionalMainStatGrade(item, label, value, mode);
+  if (forcedThreeWeaponAdditionalMainStatGrade) {
+    return forcedThreeWeaponAdditionalMainStatGrade;
+  }
+
   const forcedPercentGrade = inferForcedUserPercentGrade(item, label, value, mode);
   if (forcedPercentGrade) {
-    return mode === 'additional'
-      ? forcedPercentGrade
-      : clampGrade(forcedPercentGrade, effectiveMaxGrade);
+    return clampGrade(forcedPercentGrade, effectiveMaxGrade);
+  }
+
+  const forcedMainHpMpPercentGrade = inferForcedMainHpMpPercentGrade(item, label, value, mode);
+  if (forcedMainHpMpPercentGrade) {
+    return clampGrade(forcedMainHpMpPercentGrade, effectiveMaxGrade);
   }
 
   const forcedAdditionalFlatMainStatGrade = inferForcedAdditionalFlatMainStatGrade(label, value, mode);

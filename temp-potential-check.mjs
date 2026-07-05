@@ -16,6 +16,8 @@ const additionalLines = [
   '攻擊Boss怪物時傷害 +18%',
   '攻擊Boss怪物時傷害 +12%',
   'DEX +10%',
+  '道具掉落率 +20%',
+  '楓幣獲得量 +20%',
 ];
 
 for (const [index, line] of lines.entries()) {
@@ -27,6 +29,48 @@ for (const [index, line] of additionalLines.entries()) {
   console.log(line, inferPotentialLineGrade(item, line, '傳說', index, 'additional'));
   console.log(explainPotentialLineGrade(item, line, '傳說', index, 'additional'));
 }
+
+const threeWeaponAdditionalMainStatCases = [
+  {
+    name: '武器 附加 STR 9%',
+    item: { item_name: '測試武器', item_equipment_part: '武器', item_equipment_slot: '武器' },
+    line: 'STR +9%',
+  },
+  {
+    name: '副武 附加 INT 9%',
+    item: { item_name: '測試副武', item_equipment_part: '副武器', item_equipment_slot: '副武器' },
+    line: 'INT +9%',
+  },
+  {
+    name: '能源 附加 INT 9%',
+    item: { item_name: '測試能源', item_equipment_part: '能源', item_equipment_slot: '能源' },
+    line: 'INT +9%',
+  },
+];
+
+threeWeaponAdditionalMainStatCases.forEach(({ name, item, line }) => {
+  console.log(`THREE_WEAPON_ADDITIONAL_MAIN_STAT:${name}`, inferPotentialLineGrade(item, line, '傳說', 0, 'additional'));
+  console.log(explainPotentialLineGrade(item, line, '傳說', 0, 'additional'));
+});
+
+const highLevelAdditionalShoeCases = [
+  {
+    name: '160等鞋子 附加 STR 3%',
+    item: {
+      item_name: '測試鞋子',
+      item_equipment_part: '鞋子',
+      item_equipment_slot: '鞋子',
+      item_level: 160,
+      item_base_option: { base_equipment_level: 160 },
+    },
+    line: 'STR +3%',
+  },
+];
+
+highLevelAdditionalShoeCases.forEach(({ name, item, line }) => {
+  console.log(`HIGH_LEVEL_ADDITIONAL_SHOE:${name}`, inferPotentialLineGrade(item, line, '傳說', 0, 'additional'));
+  console.log(explainPotentialLineGrade(item, line, '傳說', 0, 'additional'));
+});
 
 const percentCases = [
   {
@@ -116,6 +160,88 @@ percentCases.forEach(({ name, item, line, grade, index, mode }) => {
   console.log(explainPotentialLineGrade(item, line, grade, index, mode));
 });
 
+const mainAllStatCases = [
+  {
+    name: '160等主潛能 全屬性 7%',
+    item: {
+      item_name: '測試高等手套',
+      item_equipment_part: '手套',
+      item_equipment_slot: '手套',
+      item_level: 160,
+      item_base_option: { base_equipment_level: 160 },
+    },
+    line: '全屬性 +7%',
+  },
+  {
+    name: '150等主潛能 全屬性 6%',
+    item: {
+      item_name: '測試低等披風',
+      item_equipment_part: '披風',
+      item_equipment_slot: '披風',
+      item_level: 150,
+      item_base_option: { base_equipment_level: 150 },
+    },
+    line: '全屬性 +6%',
+  },
+];
+
+mainAllStatCases.forEach(({ name, item, line }) => {
+  console.log(`MAIN_ALL_STAT:${name}`, inferPotentialLineGrade(item, line, '傳說', 0, 'main'));
+  console.log(explainPotentialLineGrade(item, line, '傳說', 0, 'main'));
+});
+
+const mainHpMpCases = [
+  {
+    name: '160等主潛能 HP 10%',
+    item: {
+      item_name: '測試高等帽子',
+      item_equipment_part: '帽子',
+      item_equipment_slot: '帽子',
+      item_level: 160,
+      item_base_option: { base_equipment_level: 160 },
+    },
+    line: '最大HP +10%',
+  },
+  {
+    name: '160等主潛能 MP 13%',
+    item: {
+      item_name: '測試高等帽子',
+      item_equipment_part: '帽子',
+      item_equipment_slot: '帽子',
+      item_level: 160,
+      item_base_option: { base_equipment_level: 160 },
+    },
+    line: '最大MP +13%',
+  },
+  {
+    name: '150等主潛能 HP 9%',
+    item: {
+      item_name: '測試低等帽子',
+      item_equipment_part: '帽子',
+      item_equipment_slot: '帽子',
+      item_level: 150,
+      item_base_option: { base_equipment_level: 150 },
+    },
+    line: '最大HP +9%',
+  },
+  {
+    name: '150等主潛能 MP 12%',
+    item: {
+      item_name: '測試低等帽子',
+      item_equipment_part: '帽子',
+      item_equipment_slot: '帽子',
+      item_level: 150,
+      item_base_option: { base_equipment_level: 150 },
+    },
+    line: '最大MP +12%',
+  },
+];
+
+mainHpMpCases.forEach(({ name, item, line }) => {
+  console.log(`MAIN_HP_MP:${name}`, inferPotentialLineGrade(item, line, '傳說', 0, 'main'));
+  console.log(explainPotentialLineGrade(item, line, '傳說', 0, 'main'));
+});
+
 const additionalItem = {
   item_name: '測試手套',
   item_equipment_part: '手套',
@@ -131,6 +257,7 @@ const additionalPercentLines = [
   'STR +3%',
   'STR +5%',
   'STR +7%',
+  '全屬性 +2%',
 ];
 
 for (const [index, line] of additionalPercentLines.entries()) {
