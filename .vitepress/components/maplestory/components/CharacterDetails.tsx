@@ -21,6 +21,19 @@ const artifactCrystalImages = [
   '/image/theme/artifact/Artifact3.png', '/image/theme/artifact/Artifact4.png',
   '/image/theme/artifact/Artifact5.png', '/image/theme/artifact/Artifact6.png',
   '/image/theme/artifact/Artifact7.png', '/image/theme/artifact/Artifact8.png',
+  '/image/theme/artifact/Artifact9.png',
+];
+
+const artifactCrystalNames = [
+  '水晶：伊昆圖姆',
+  '水晶：奧班',
+  '水晶：尼哈爾',
+  '水晶：赫爾賽德',
+  '水晶：阿爾特',
+  '水晶：卡爾西溫',
+  '水晶：阿爾卡娜',
+  '水晶：奧迪溫',
+  '水晶：拉圖斯',
 ];
 
 const CHAMPION_PATH = '/image/theme/unionChampion';
@@ -642,7 +655,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
       {/* Union & Artifact - w-full + min-w-0 */}
       <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0 break-inside-avoid mb-6 inline-block align-top">
         <SectionHeader icon={<Layers />} title="聯盟 & 神器" />
-        <div className="space-y-4">
+        <div className="space-y-2">
           {union && (
             <div className="flex justify-between items-center bg-slate-800/50 p-3 rounded-lg">
               <span className="text-slate-400">聯盟等級</span>
@@ -661,20 +674,37 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
                    {unionArtifact?.union_artifact_level ?? unionArtifact?.level ?? union?.union_artifact_level ?? '-'}
                  </span>
                </div>
-               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                 {unionArtifact.union_artifact_crystal.map((crystal, idx) => (
-                           <div key={idx} className="bg-slate-900/50 p-2 rounded-lg border border-slate-700 text-xs flex flex-row items-center min-h-[90px]">
-                             <div className="flex-shrink-0 w-16 h-16 flex items-center justify-center">
-                               <img src={artifactCrystalImages[idx]} alt={crystal.name} className="w-16 h-16 object-contain rounded-lg bg-slate-800 border border-purple-400/40" />
-                             </div>
-                             <div className="flex-1 ml-2">
-                               <div className="text-purple-300 font-bold mb-1">{crystal.name} Lv.{crystal.level}</div>
-                               <div className="text-slate-500">{crystal.crystal_option_name_1}</div>
-                               <div className="text-slate-500">{crystal.crystal_option_name_2}</div>
-                               <div className="text-slate-500">{crystal.crystal_option_name_3}</div>
-                             </div>
-                           </div>
-                 ))}
+               <div className="grid grid-cols-3 gap-2">
+                 {artifactCrystalNames.map((crystalName, idx) => {
+                   const crystal = unionArtifact.union_artifact_crystal[idx];
+                   const active = Boolean(crystal);
+
+                   return (
+                     <div key={crystalName} className={`p-2 rounded-lg border text-xs flex flex-row items-center min-h-[90px] transition-all ${active ? 'bg-slate-900/50 border-slate-700' : 'bg-slate-950/40 border-slate-800/70'}`}>
+                       <div className="flex-shrink-0 w-16 h-16 flex items-center justify-center">
+                         <img
+                           src={artifactCrystalImages[idx]}
+                           alt={crystalName}
+                           className={`w-16 h-16 object-contain rounded-lg bg-slate-800 border border-purple-400/40 ${active ? 'opacity-100 drop-shadow-[0_0_6px_rgba(56,189,248,0.5)]' : 'grayscale opacity-25'}`}
+                         />
+                       </div>
+                       <div className="flex-1 ml-2 min-w-0">
+                         <div className={`font-bold mb-1 ${active ? 'text-purple-300' : 'text-slate-400'}`}>
+                           {(crystal?.name || crystalName)} {active ? `Lv.${crystal?.level}` : 'Lv.0'}
+                         </div>
+                         {active ? (
+                           <>
+                             <div className="text-slate-500">{crystal?.crystal_option_name_1}</div>
+                             <div className="text-slate-500">{crystal?.crystal_option_name_2}</div>
+                             <div className="text-slate-500">{crystal?.crystal_option_name_3}</div>
+                           </>
+                         ) : (
+                          <div className="text-slate-500">未啟用</div>
+                         )}
+                       </div>
+                     </div>
+                   );
+                 })}
                </div>
                {(() => {
                    const effects = unionArtifact.union_artifact_effect;

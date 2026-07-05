@@ -1,19 +1,111 @@
-import React, { useState } from 'react';
-import { CheckSquare, Link2, PawPrint, Square, Star } from 'lucide-react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { CheckSquare, Link2, PawPrint, Sparkles, Square } from 'lucide-react';
 import { CharacterFamiliar, DashboardData, FamiliarInfo, FamiliarLinkSlot, FamiliarOption } from '../types';
 
 interface FamiliarProps {
   data: DashboardData;
 }
 
+interface FamiliarNameTooltipProps {
+  displayName: string;
+  originalName: string;
+}
+
+const FamiliarNameTooltip: React.FC<FamiliarNameTooltipProps> = ({ displayName, originalName }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [adjustStyle, setAdjustStyle] = useState<React.CSSProperties>({});
+
+  const showTooltip = isOpen || isHovered;
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (isOpen && containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen]);
+
+  useLayoutEffect(() => {
+    if (showTooltip && tooltipRef.current && containerRef.current) {
+      const tooltipEl = tooltipRef.current;
+      const containerEl = containerRef.current;
+      const containerRect = containerEl.getBoundingClientRect();
+      const tooltipWidth = tooltipEl.getBoundingClientRect().width;
+      const vw = Math.min(window.innerWidth, document.documentElement.clientWidth || window.innerWidth);
+      const padding = 10;
+      const containerCenter = containerRect.left + containerRect.width / 2;
+      const currentLeft = containerCenter - tooltipWidth / 2;
+      const currentRight = containerCenter + tooltipWidth / 2;
+
+      let shiftX = 0;
+
+      if (currentLeft < padding) {
+        shiftX = padding - currentLeft;
+      } else if (currentRight > vw - padding) {
+        shiftX = (vw - padding) - currentRight;
+      }
+
+      if (shiftX !== 0) {
+        setAdjustStyle({ left: `calc(50% + ${shiftX}px)` });
+      } else {
+        setAdjustStyle({});
+      }
+    }
+  }, [showTooltip]);
+
+  return (
+    <div
+      ref={containerRef}
+      className={`relative min-w-0 max-w-full ${showTooltip ? 'z-[100]' : 'z-0'}`}
+    >
+      <button
+        type="button"
+        onClick={(event) => {
+          event.stopPropagation();
+          setIsOpen(value => !value);
+        }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        onFocus={() => setIsHovered(true)}
+        onBlur={() => setIsHovered(false)}
+        className="min-w-0 max-w-full truncate rounded border-b border-dashed border-sky-400/70 text-left text-base font-bold text-slate-100 transition-colors hover:border-sky-300 hover:text-sky-100 focus:outline-none focus:ring-2 focus:ring-sky-400/40 cursor-help"
+        aria-expanded={showTooltip}
+      >
+        {displayName}
+      </button>
+
+      <div
+        ref={tooltipRef}
+        style={adjustStyle}
+        className={`absolute bottom-full left-1/2 z-[200] mb-2 w-[min(220px,calc(100vw-20px))] max-w-[calc(100vw-20px)] -translate-x-1/2 rounded-lg border border-sky-500/40 bg-[#1a1d24]/95 p-3 shadow-2xl backdrop-blur-md ${showTooltip ? 'block' : 'hidden'} animate-in fade-in zoom-in-95 duration-200 pointer-events-none`}
+      >
+        <div className="text-[11px] font-bold tracking-wide text-sky-300">原始萌獸名稱</div>
+        <div className="mt-1 break-words text-sm font-bold text-white leading-tight">{originalName}</div>
+      </div>
+    </div>
+  );
+};
+
 const Familiar: React.FC<FamiliarProps> = ({ data }) => {
   const fam = data.familiar as CharacterFamiliar | undefined;
   const [showAllFamiliars, setShowAllFamiliars] = useState(false);
+  const characterClass = data.basic?.character_class || '';
+  const isDemonAvenger = characterClass.includes('惡魔復仇者');
   const familiarList =
     fam?.familiar_list ||
     fam?.familiar_info ||
     [];
   const linkSlots = fam?.familiar_link_slot || [];
+  const finalStats = data.stat?.final_stat || [];
 
   const formatSlot = (slotId?: string) => {
     if (!slotId) return '未連結';
@@ -45,25 +137,24 @@ const Familiar: React.FC<FamiliarProps> = ({ data }) => {
     };
   };
 
-  const sortedFamiliarList = [...familiarList].sort((left, right) => {
-    const leftMeta = getFamiliarUsageMeta(left);
-    const rightMeta = getFamiliarUsageMeta(right);
-
-    const leftScore = (leftMeta.isUsing ? 100 : 0) + (leftMeta.isSummoned ? 10 : 0) + (leftMeta.isActiveLinked ? 5 : 0) + (leftMeta.isLinked ? 1 : 0);
-    const rightScore = (rightMeta.isUsing ? 100 : 0) + (rightMeta.isSummoned ? 10 : 0) + (rightMeta.isActiveLinked ? 5 : 0) + (rightMeta.isLinked ? 1 : 0);
-
-    if (leftScore !== rightScore) {
-      return rightScore - leftScore;
-    }
-
-    return (left.familiar_name || left.familiar_nickname || '').localeCompare(right.familiar_name || right.familiar_nickname || '', 'zh-Hant');
-  });
-
   const parseOptionValue = (value?: string) => {
     if (!value) return Number.NEGATIVE_INFINITY;
     const matched = value.match(/-?\d+(?:\.\d+)?/);
     return matched ? Number(matched[0]) : Number.NEGATIVE_INFINITY;
   };
+
+  const getFinalStatValue = (statName: string) => {
+    const stat = finalStats.find(item => item.stat_name === statName);
+    if (!stat) return Number.NEGATIVE_INFINITY;
+    return parseOptionValue(stat.stat_value);
+  };
+
+  const focusedMainStat = [
+    { label: 'STR', value: getFinalStatValue('STR') },
+    { label: 'DEX', value: getFinalStatValue('DEX') },
+    { label: 'INT', value: getFinalStatValue('INT') },
+    { label: 'LUK', value: getFinalStatValue('LUK') },
+  ].sort((left, right) => right.value - left.value)[0]?.label;
 
   const isExcludedThresholdOption = (option: FamiliarOption) => {
     const optionName = option.option_name || '';
@@ -89,6 +180,107 @@ const Familiar: React.FC<FamiliarProps> = ({ data }) => {
       isLowValueStatOption
     );
   };
+
+  const getWhitelistedPotentialWeight = (option: FamiliarOption) => {
+    const optionName = option.option_name || '';
+    const optionValue = option.option_value || '';
+    const normalizedText = `${optionName} ${optionValue}`.replace(/\s+/g, '').toUpperCase();
+
+    if (
+      normalizedText.includes('最終傷害') ||
+      normalizedText.includes('BOSS傷害') ||
+      normalizedText.includes('攻擊BOSS怪物時傷害') ||
+      normalizedText.includes('無視防禦') ||
+      normalizedText.includes('無視怪物防禦率')
+    ) {
+      return 6;
+    }
+
+    if (
+      normalizedText.includes('爆擊傷害') ||
+      normalizedText.includes('爆傷')
+    ) {
+      return 5;
+    }
+
+    if (
+      normalizedText.includes('爆擊率') ||
+      normalizedText.includes('物理攻擊力%') ||
+      normalizedText.includes('魔法攻擊力%') ||
+      normalizedText.includes('攻擊力%') ||
+      normalizedText.includes('魔力%') ||
+      normalizedText.includes('加持持續時間') ||
+      normalizedText.includes('被動技能增加')
+    ) {
+      return 4;
+    }
+
+    if (
+      normalizedText.includes('全屬性%') ||
+      normalizedText.includes('所有屬性%')
+    ) {
+      return focusedMainStat ? 4 : 3;
+    }
+
+    if (
+      normalizedText.includes('STR%') ||
+      normalizedText.includes('DEX%') ||
+      normalizedText.includes('INT%') ||
+      normalizedText.includes('LUK%') ||
+      (isDemonAvenger && normalizedText.includes('HP%'))
+    ) {
+      if (focusedMainStat && normalizedText.includes(`${focusedMainStat}%`)) {
+        return 5;
+      }
+
+      return 3;
+    }
+
+    return 0;
+  };
+
+  const getFamiliarPotentialScore = (familiar: FamiliarInfo) => {
+    const options = Array.isArray(familiar.option) ? familiar.option : [];
+
+    return options.reduce((total, option) => {
+      if (isExcludedThresholdOption(option)) {
+        return total;
+      }
+
+      const weight = getWhitelistedPotentialWeight(option);
+      if (weight <= 0) {
+        return total;
+      }
+
+      const value = parseOptionValue(option.option_value);
+      if (!Number.isFinite(value)) {
+        return total;
+      }
+
+      return total + Math.max(value, 0) * weight;
+    }, 0);
+  };
+
+  const sortedFamiliarList = [...familiarList].sort((left, right) => {
+    const leftMeta = getFamiliarUsageMeta(left);
+    const rightMeta = getFamiliarUsageMeta(right);
+
+    const leftUsageScore = (leftMeta.isUsing ? 100 : 0) + (leftMeta.isSummoned ? 10 : 0) + (leftMeta.isActiveLinked ? 5 : 0) + (leftMeta.isLinked ? 1 : 0);
+    const rightUsageScore = (rightMeta.isUsing ? 100 : 0) + (rightMeta.isSummoned ? 10 : 0) + (rightMeta.isActiveLinked ? 5 : 0) + (rightMeta.isLinked ? 1 : 0);
+
+    if (leftUsageScore !== rightUsageScore) {
+      return rightUsageScore - leftUsageScore;
+    }
+
+    const leftPotentialScore = getFamiliarPotentialScore(left);
+    const rightPotentialScore = getFamiliarPotentialScore(right);
+
+    if (leftPotentialScore !== rightPotentialScore) {
+      return rightPotentialScore - leftPotentialScore;
+    }
+
+    return (left.familiar_name || left.familiar_nickname || '').localeCompare(right.familiar_name || right.familiar_nickname || '', 'zh-Hant');
+  });
 
   const shouldShowPotential = (familiar: FamiliarInfo, options: FamiliarOption[]) => {
     const { isSummoned, isLinked } = getFamiliarUsageMeta(familiar);
@@ -141,44 +333,66 @@ const Familiar: React.FC<FamiliarProps> = ({ data }) => {
   };
 
   const renderFamiliarCard = (familiar: FamiliarInfo, idx: number) => {
-    const name = familiar.familiar_name || familiar.familiar_nickname || '未知萌獸';
+    const originalName = familiar.familiar_name || '未知萌獸';
     const nickname = familiar.familiar_nickname;
+    const displayName = nickname || originalName;
+    const hasCustomName = Boolean(nickname && nickname !== originalName);
     const options = Array.isArray(familiar.option) ? familiar.option : [];
     const { isSummoned, isLinked, isUsing } = getFamiliarUsageMeta(familiar);
+    const isSpecial = familiar.familiar_special_flag === 'true';
 
     return (
-      <div key={`${name}-${idx}`} className="rounded-xl border border-slate-700 bg-slate-900/60 p-4 shadow-inner">
+      <div
+        key={`${displayName}-${idx}`}
+        className={`relative overflow-visible rounded-xl border p-4 shadow-inner transition-all ${isSpecial ? 'border-amber-400/50 bg-[linear-gradient(135deg,rgba(120,53,15,0.28),rgba(15,23,42,0.92))] shadow-[0_0_24px_rgba(251,191,36,0.16)]' : 'border-slate-700 bg-slate-900/60'}`}
+      >
+        {isSpecial && (
+          <>
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(251,191,36,0.18),transparent_45%)] animate-pulse" />
+          </>
+        )}
         <div className="mb-4 flex items-start justify-between gap-3">
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="text-base font-bold text-slate-100 break-words">{name}</div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 whitespace-nowrap min-w-0 overflow-visible">
+              {hasCustomName ? (
+                <FamiliarNameTooltip displayName={displayName} originalName={originalName} />
+              ) : (
+                <div className="min-w-0 max-w-full truncate text-base font-bold text-slate-100">
+                  {displayName}
+                </div>
+              )}
+              {isSpecial && (
+                <span className="shrink-0 rounded-full border border-amber-400/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold text-amber-200 shadow-[0_0_10px_rgba(251,191,36,0.18)] animate-pulse">
+                  傲天
+                </span>
+              )}
               {isUsing && (
-                <span className="rounded-full border border-emerald-700/40 bg-emerald-900/40 px-2 py-0.5 text-[10px] font-bold text-emerald-300">
+                <span className="shrink-0 rounded-full border border-emerald-700/40 bg-emerald-900/40 px-2 py-0.5 text-[10px] font-bold text-emerald-300">
                   召喚中
                 </span>
               )}
               {isLinked && (
-                <span className="rounded-full border border-pink-700/40 bg-pink-900/30 px-2 py-0.5 text-[10px] font-bold text-pink-300">
+                <span className="shrink-0 rounded-full border border-pink-700/40 bg-pink-900/30 px-2 py-0.5 text-[10px] font-bold text-pink-300">
                   已放入{formatSlot(familiar.slot_id)}
                 </span>
               )}
             </div>
-            {nickname && nickname !== name && <div className="mt-1 text-xs text-slate-400">暱稱: {nickname}</div>}
           </div>
         </div>
 
-        <div className="mb-4 grid grid-cols-1 gap-3">
-          <div className="rounded-lg border border-slate-700 bg-slate-950/50 p-3">
-            <div className="mb-2 flex items-center gap-2 text-xs font-bold text-blue-300">
-              <Star className="h-4 w-4" />
-              外觀與識別
-            </div>
-            <div className="space-y-1 text-xs text-slate-400">
-              <div>外觀名稱: <span className="text-slate-200">{familiar.look_name || '-'}</span></div>
-              <div>萌獸名稱: <span className="text-slate-200">{familiar.familiar_name || '-'}</span></div>
+        {isSpecial && (
+          <div className="mb-4 grid grid-cols-1 gap-3">
+            <div className="rounded-lg border border-amber-500/30 bg-amber-950/10 p-3">
+              <div className="mb-2 flex items-center gap-2 text-xs font-bold text-amber-200">
+                <Sparkles className="h-4 w-4" />
+                額外技能
+              </div>
+              <div className="text-xs text-slate-300">
+                {familiar.skill_name || '無技能資料'}
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         <div className="space-y-2">
           <div className="text-xs font-bold text-slate-300">萌獸潛能</div>
