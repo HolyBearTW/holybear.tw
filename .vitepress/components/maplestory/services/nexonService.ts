@@ -154,6 +154,7 @@ export const fetchCharacterData = async (characterName: string, apiKey: string, 
     buildUrl('/user/union-artifact', ocid, dateParam),
     buildUrl('/user/union-champion', ocid, dateParam),
     buildUrl('/character/pet-equipment', ocid, dateParam),
+    buildUrl('/character/familiar', ocid, dateParam),
     buildUrl('/character/symbol-equipment', ocid, dateParam),
     buildUrl('/character/set-effect', ocid, dateParam),
     buildUrl('/character/vmatrix', ocid, dateParam),
@@ -196,7 +197,7 @@ export const fetchCharacterData = async (characterName: string, apiKey: string, 
 
   const [
     basicRes, statRes, equipRes, abilityRes, hyperRes, linkRes,
-    unionRes, unionRaiderRes, artifactRes, unionChampionRes, petRes, symbolRes, setRes, vmatrixRes, hexaRes, dojoRes,
+    unionRes, unionRaiderRes, artifactRes, unionChampionRes, petRes, familiarRes, symbolRes, setRes, vmatrixRes, hexaRes, dojoRes,
     skill5Res, skill6Res,
     skill0Res, skill1Res, skill2Res, skill3Res, skill4Res,
     basic7DaysRes, popularityRes, hexaStatRes, cashItemRes, beautyRes, androidRes
@@ -223,6 +224,7 @@ export const fetchCharacterData = async (characterName: string, apiKey: string, 
   const unionChampion = await safeJson(unionChampionRes);
   const petEquipment = await safeJson(petRes);
   const symbolEquipment = await safeJson(symbolRes);
+  const familiar = await safeJson(familiarRes);
   const setEffect = await safeJson(setRes);
   const vMatrix = await safeJson(vmatrixRes);
   const hexaMatrix = await safeJson(hexaRes);
@@ -252,7 +254,7 @@ export const fetchCharacterData = async (characterName: string, apiKey: string, 
       }
   }
 
-  let lastUpdated = specificDate; 
+  let lastUpdated: string = specificDate || '';
   if (!lastUpdated) {
       if (basic.date) {
           lastUpdated = basic.date.split('T')[0];
@@ -263,7 +265,7 @@ export const fetchCharacterData = async (characterName: string, apiKey: string, 
 
   return {
     basic, stat, equipment, ability, hyperStat, linkSkill, union, unionRaider, unionArtifact, unionChampion,
-    petEquipment, symbolEquipment, setEffect, vMatrix, hexaMatrix, hexaMatrixStat,
+    petEquipment, familiar, symbolEquipment, setEffect, vMatrix, hexaMatrix, hexaMatrixStat,
     dojo, skill5, skill6, skill0, skill1, skill2, skill3, skill4,
     character_basic_7days_ago: basic7Days,
     cashItemEquipment, beautyEquipment, androidEquipment, lastUpdated

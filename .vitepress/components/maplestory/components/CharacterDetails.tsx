@@ -5,6 +5,7 @@ import {
   CheckSquare, Square, Trophy, User, Link, Atom 
 } from 'lucide-react';
 import ExpTrendChart from './ExpTrendChart';
+import Familiar from './Familiar';
 
 interface CharacterDetailsProps {
   data: DashboardData;
@@ -460,6 +461,14 @@ const PetEquipDisplay: React.FC<{ equip: any }> = ({ equip }) => {
   const [isOpen, setIsOpen] = useState(false);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const [adjustStyle, setAdjustStyle] = useState<React.CSSProperties>({});
+  const hasVisibleContent = Boolean(
+    equip?.item_icon ||
+    equip?.item_name ||
+    equip?.item_description ||
+    (typeof equip?.scroll_upgrade === 'number' && equip.scroll_upgrade > 0) ||
+    (typeof equip?.scroll_upgradable === 'number' && equip.scroll_upgradable > 0) ||
+    (Array.isArray(equip?.item_option) && equip.item_option.length > 0)
+  );
 
   // 智慧定位：確保 Tooltip 不會超出左右邊界 (透過 right 偏移修正，保留預設 positioning)
   useLayoutEffect(() => {
@@ -498,7 +507,7 @@ const PetEquipDisplay: React.FC<{ equip: any }> = ({ equip }) => {
     }
   }, [isOpen]);
 
-  if (!equip) return null;
+  if (!equip || !hasVisibleContent) return null;
   
   return (
     <div 
@@ -520,9 +529,15 @@ const PetEquipDisplay: React.FC<{ equip: any }> = ({ equip }) => {
                 <img src={equip.item_icon} className="w-10 h-10 mb-2 bg-slate-800 rounded p-1" />
                 <div className="text-sm font-bold text-white mb-1 break-words w-full leading-tight text-center">{equip.item_name}</div>
                 <div className="text-[10px] text-slate-400">寵物裝備</div>
+               {equip.item_description && (
+                  <div className="w-full mt-2 text-[10px] leading-relaxed text-slate-400 text-center break-words">
+                    {equip.item_description}
+                  </div>
+               )}
                 {(equip.scroll_upgrade > 0) && (
                      <div className="w-full mt-2 pt-2 border-t border-slate-700/50 text-xs text-slate-300 text-center">
                         <div className="text-yellow-400">強化次數: {equip.scroll_upgrade}</div>
+                    {typeof equip.scroll_upgradable === 'number' && <div className="text-slate-400 mt-0.5">可升級次數: {equip.scroll_upgradable}</div>}
                      </div>
                 )}
                 {equip.item_option && equip.item_option.length > 0 && (
@@ -540,6 +555,17 @@ const PetEquipDisplay: React.FC<{ equip: any }> = ({ equip }) => {
   );
 };
 
+const formatPetDate = (value?: string) => {
+  if (!value) return '-';
+  return value.replace('T', ' ').replace('+08:00', '');
+};
+
+const formatPetPotential = (potential: any) => {
+  if (!potential) return '-';
+  const values = [potential.potential_increase_1, potential.potential_increase_2].filter(Boolean).join(' / ');
+  return `${potential.potential_type || '-'}${values ? `: ${values}` : ''}`;
+};
+
 const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => {
   const [historyData, setHistoryData] = useState<any[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -554,7 +580,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
     });
   }, [data?.basic?.character_name, apiKey]);
 
-  const { union, unionArtifact, symbolEquipment, petEquipment, setEffect, vMatrix, hexaMatrix, hexaMatrixStat, dojo, linkSkill, skill0, skill1, skill2, skill3, skill4, skillHyper, skill5, skill6, hyperStat, unionChampion } = data;
+  const { union, unionArtifact, symbolEquipment, petEquipment, familiar, setEffect, vMatrix, hexaMatrix, hexaMatrixStat, dojo, linkSkill, skill0, skill1, skill2, skill3, skill4, skillHyper, skill5, skill6, hyperStat, unionChampion } = data;
   const [includeJanus, setIncludeJanus] = useState(true);
 
   const findSkillIcon = (name: string) => {
@@ -594,9 +620,9 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
   };
 
   return (
-    <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 mt-6">
+    <div className="flex flex-col gap-6 mt-6">
       {/* 近7天經驗值趨勢 + 極限屬性區塊 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full lg:col-span-2">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
         <div className="bg-[#161b22] p-6 rounded-xl min-w-0 h-full">
           <SectionHeader icon={<Star className="w-5 h-5 text-green-400" />} title="近7天經驗值趨勢" />
           <ExpTrendChart key={historyData.length} historyData={historyData} loading={historyLoading} />
@@ -607,12 +633,14 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
       </div>
 
       {/* 連結技能 - w-full + min-w-0 */}
-      <div className="w-full lg:col-span-2 min-w-0">
+      <div className="w-full min-w-0">
         <LinkSkillSection linkSkill={linkSkill} />
       </div>
 
+      <div className="columns-1 lg:columns-2 gap-6 [column-fill:_balance]">
+
       {/* Union & Artifact - w-full + min-w-0 */}
-      <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0">
+      <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0 break-inside-avoid mb-6 inline-block align-top">
         <SectionHeader icon={<Layers />} title="聯盟 & 神器" />
         <div className="space-y-4">
           {union && (
@@ -704,7 +732,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
       </div>
 
       {/* Symbols - w-full + min-w-0 */}
-      <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0">
+      <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0 break-inside-avoid mb-6 inline-block align-top">
         <SectionHeader icon={<Hexagon />} title="符文 & 力量" />
         {symbolEquipment && (
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
@@ -774,8 +802,8 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
         })()}
       </div>
 
-      {/* Pets - w-full + min-w-0 */}
-      <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0">
+      {/* Pets - independent column card */}
+      <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0 break-inside-avoid mb-6 inline-block align-top">
         <SectionHeader icon={<PawPrint />} title="寵物資訊" />
         {petEquipment ? (
           <div className="space-y-3">
@@ -783,17 +811,71 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
               const petName = petEquipment[`pet_${num}_name` as keyof typeof petEquipment] as string;
               const petNick = petEquipment[`pet_${num}_nickname` as keyof typeof petEquipment] as string;
               const petIcon = petEquipment[`pet_${num}_icon` as keyof typeof petEquipment] as string;
+              const petDescription = petEquipment[`pet_${num}_description` as keyof typeof petEquipment] as string;
+              const petType = petEquipment[`pet_${num}_pet_type` as keyof typeof petEquipment] as string;
+              const petSkills = petEquipment[`pet_${num}_skill` as keyof typeof petEquipment] as string[];
+              const petExpire = petEquipment[`pet_${num}_date_expire` as keyof typeof petEquipment] as string;
+              const petAppearance = petEquipment[`pet_${num}_appearance` as keyof typeof petEquipment] as string;
+              const petAppearanceIcon = petEquipment[`pet_${num}_appearance_icon` as keyof typeof petEquipment] as string;
+              const petPotential = petEquipment[`pet_${num}_potential` as keyof typeof petEquipment] as any[];
+              const primaryPetPotential = Array.isArray(petPotential)
+                ? petPotential.find(potential => potential && (potential.potential_type || potential.potential_increase_1 || potential.potential_increase_2))
+                : undefined;
               const petAuto = petEquipment[`pet_${num}_auto_skill` as keyof typeof petEquipment] as any;
               const petEquip = petEquipment[`pet_${num}_equipment` as keyof typeof petEquipment] as any;
               if (!petName) return null;
               return (
-                <div key={num} className="bg-slate-900/50 p-3 rounded-lg border border-slate-700 flex items-center gap-3">
-                  <img src={petIcon} alt={petName} className="w-10 h-10 object-contain bg-slate-800 rounded-full p-1 shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <div className="font-bold text-slate-200 text-sm truncate">{petNick || petName}</div>
-                    {petAuto && <div className="flex gap-1 mt-1">{petAuto.skill_1_icon && <img src={petAuto.skill_1_icon} className="w-4 h-4" />}{petAuto.skill_2_icon && <img src={petAuto.skill_2_icon} className="w-4 h-4" />}</div>}
+                <div key={num} className="bg-slate-900/50 p-4 rounded-lg border border-slate-700">
+                  <div className="flex items-start gap-3">
+                    <img src={petIcon} alt={petName} className="w-12 h-12 object-contain bg-slate-800 rounded-full p-1 shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <div className="font-bold text-slate-200 text-sm break-words">{petNick || petName}</div>
+                        {petType && <span className="rounded-full border border-sky-700/40 bg-sky-900/30 px-2 py-0.5 text-[10px] font-bold text-sky-300">{petType}</span>}
+                      </div>
+                      {petNick && petNick !== petName && <div className="mt-1 text-xs text-slate-400">名稱: {petName}</div>}
+                      {petDescription && <div className="mt-2 text-xs leading-relaxed text-slate-400">{petDescription}</div>}
+                    </div>
+                    {petEquip && <PetEquipDisplay equip={petEquip} />}
                   </div>
-                  {petEquip && <PetEquipDisplay equip={petEquip} />}
+
+                  <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+                    <div className="rounded-lg border border-slate-700 bg-slate-950/40 p-3 text-xs text-slate-300 space-y-1.5">
+                      <div>魔法時間: <span className="text-slate-100">{formatPetDate(petExpire)}</span></div>
+                      <div className="flex items-center gap-2">
+                        <span>外型: <span className="text-slate-100">{petAppearance || '-'}</span></span>
+                        {petAppearanceIcon && <img src={petAppearanceIcon} alt={petAppearance || petName} className="w-5 h-5 rounded bg-slate-800 p-0.5" />}
+                      </div>
+                      <div>技能: <span className="text-slate-100">{petSkills && petSkills.length > 0 ? petSkills.join('、') : '-'}</span></div>
+                    </div>
+
+                    <div className="rounded-lg border border-slate-700 bg-slate-950/40 p-3 text-xs text-slate-300 space-y-2">
+                      <div className="font-bold text-slate-200">自動加持技能</div>
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-2">
+                          {petAuto?.skill_1_icon && <img src={petAuto.skill_1_icon} className="w-4 h-4" />}
+                          <span>{petAuto?.skill_1 || '-'}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {petAuto?.skill_2_icon && <img src={petAuto.skill_2_icon} className="w-4 h-4" />}
+                          <span>{petAuto?.skill_2 || '-'}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 rounded-lg border border-slate-700 bg-slate-950/40 p-3">
+                    <div className="mb-2 text-xs font-bold text-slate-200">寵物潛能</div>
+                    <div className="space-y-1.5 text-xs text-slate-300">
+                      {primaryPetPotential ? (
+                        <div className="rounded border border-slate-800 bg-slate-900/60 px-2.5 py-2">
+                          {formatPetPotential(primaryPetPotential)}
+                        </div>
+                      ) : (
+                        <div className="text-slate-500">無寵物潛能資料</div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               );
             })}
@@ -801,20 +883,8 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
         ) : (<div className="text-slate-500 text-sm text-center py-4">無寵物資料</div>)}
       </div>
 
-      {/* Dojo - w-full + min-w-0 */}
-      <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0">
-           <SectionHeader icon={<Sword />} title="武陵道場" />
-           {dojo ? (
-             <div className="flex flex-col gap-3">
-                <div className="flex justify-between items-center bg-slate-900/50 p-3 rounded-lg border border-slate-700"><span className="text-slate-400 text-sm">最高樓層</span><span className="text-xl font-bold text-red-400">{dojo.dojang_best_floor}F</span></div>
-                <div className="flex justify-between items-center bg-slate-900/50 p-3 rounded-lg border border-slate-700"><span className="text-slate-400 text-sm">通關時間</span><span className="text-lg font-bold text-slate-200">{Math.floor(dojo.dojang_best_time / 60)}分 {dojo.dojang_best_time % 60}秒</span></div>
-                <div className="text-right text-xs text-slate-500 mt-1">紀錄日期: {dojo.date_dojang_record ? dojo.date_dojang_record.split('T')[0] : '-'}</div>
-             </div>
-           ) : (<div className="text-slate-500 text-sm text-center py-10">無武陵道場紀錄</div>)}
-      </div>
-
       {/* Set Effects - w-full + min-w-0 */}
-      <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0">
+      <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0 break-inside-avoid mb-6 inline-block align-top">
         <SectionHeader icon={<Crown />} title="套裝效果" />
         <div className="space-y-3">
           {setEffect?.set_effect.map((set, idx) => (
@@ -826,8 +896,20 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
         </div>
       </div>
 
+      {/* Dojo - w-full + min-w-0 */}
+      <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0 self-start break-inside-avoid mb-6 inline-block align-top">
+           <SectionHeader icon={<Sword />} title="武陵道場" />
+           {dojo ? (
+             <div className="flex flex-col gap-3">
+                <div className="flex justify-between items-center bg-slate-900/50 p-3 rounded-lg border border-slate-700"><span className="text-slate-400 text-sm">最高樓層</span><span className="text-xl font-bold text-red-400">{dojo.dojang_best_floor}F</span></div>
+                <div className="flex justify-between items-center bg-slate-900/50 p-3 rounded-lg border border-slate-700"><span className="text-slate-400 text-sm">通關時間</span><span className="text-lg font-bold text-slate-200">{Math.floor(dojo.dojang_best_time / 60)}分 {dojo.dojang_best_time % 60}秒</span></div>
+                <div className="text-right text-xs text-slate-500 mt-1">紀錄日期: {dojo.date_dojang_record ? dojo.date_dojang_record.split('T')[0] : '-'}</div>
+             </div>
+           ) : (<div className="text-slate-500 text-sm text-center py-10">無武陵道場紀錄</div>)}
+      </div>
+
       {/* Skills (V/Hexa) - w-full + min-w-0 */}
-      <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0">
+      <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0 break-inside-avoid mb-6 inline-block align-top">
         {hexaMatrix && hexaMatrix.character_hexa_core_equipment && hexaMatrix.character_hexa_core_equipment.length > 0 && (
           <div className="mb-6">
             {(() => {
@@ -872,146 +954,153 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
         )}
       </div>
 
-      {/* HEXA Stats - w-full + min-w-0 */}
-      {hexaMatrixStat && (
-        <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full lg:col-span-2 min-w-0">
-            <SectionHeader icon={<Hexagon />} title="HEXA 屬性" />
-            {(() => {
-                const totals: Record<string, number> = {};
-                const cores = [hexaMatrixStat.character_hexa_stat_core?.[0], hexaMatrixStat.character_hexa_stat_core_2?.[0], hexaMatrixStat.character_hexa_stat_core_3?.[0]].filter(Boolean);
-                cores.forEach(core => {
-                    if (!core) return;
-                    const addStat = (name: string, level: number, isMain: boolean = false) => {
-                        if (!name || level === 0) return;
-                        const val = calculateHexaStatValue(name, level, isMain);
-                        totals[name] = (totals[name] || 0) + val;
-                    };
-                    addStat(core.main_stat_name, core.main_stat_level, true);
-                    addStat(core.sub_stat_name_1, core.sub_stat_level_1);
-                    addStat(core.sub_stat_name_2, core.sub_stat_level_2);
-                });
-                if (Object.keys(totals).length === 0) return null;
-                return (
-                    <div className="bg-purple-900/20 border border-purple-500/30 rounded-lg p-4 mb-6">
-                        <h4 className="text-sm font-bold text-purple-300 mb-3 flex items-center gap-2"><Star className="w-4 h-4 text-yellow-400" /> 屬性總和</h4>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                            {Object.entries(totals).map(([name, val], idx) => {
-                                const isPercent = name.toLowerCase().includes('boss') || name.includes('無視') || name.includes('防禦') || name.includes('爆擊傷害') || name.includes('Critical') || name === '傷害' || name === 'Damage';
-                                return (
-                                    <div key={name} className="bg-slate-900/50 px-3 py-2 rounded border border-purple-500/20 flex justify-between items-center">
-                                        <span className="text-xs text-slate-300">{name.replace(/boss/gi, 'BOSS')}</span>
-                                        <span className="text-sm font-bold text-green-400 font-mono">+{isPercent ? val.toFixed(2) + '%' : val}</span>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                );
-            })()}
+      </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {[0, 1, 2].map((coreIndex) => {
-                    let stat = undefined;
-                    if (coreIndex === 0 && hexaMatrixStat.character_hexa_stat_core && hexaMatrixStat.character_hexa_stat_core.length > 0) stat = hexaMatrixStat.character_hexa_stat_core[0];
-                    else if (coreIndex === 1 && hexaMatrixStat.character_hexa_stat_core_2 && hexaMatrixStat.character_hexa_stat_core_2.length > 0) stat = hexaMatrixStat.character_hexa_stat_core_2[0];
-                    else if (coreIndex === 2 && hexaMatrixStat.character_hexa_stat_core_3 && hexaMatrixStat.character_hexa_stat_core_3.length > 0) stat = hexaMatrixStat.character_hexa_stat_core_3[0];
-                    
-                    if (!stat) {
-                        return (
-                            <div key={coreIndex} className="bg-slate-900/30 p-4 rounded-lg border border-slate-800/50 flex flex-col items-center justify-center min-h-[200px] opacity-50">
-                                <Hexagon className="w-8 h-8 text-slate-700 mb-2" />
-                                <div className="text-sm font-bold text-slate-600">HEXA 屬性核心 {coreIndex + 1}</div>
-                                <div className="text-xs text-slate-700">未解鎖或無資料</div>
-                            </div>
-                        );
-                    }
+        <div className="space-y-6">
+        <Familiar data={{ ...data, familiar }} />
+
+        {/* HEXA Stats - full width like LinkSkillSection */}
+        {hexaMatrixStat && (
+        <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0">
+          <SectionHeader icon={<Hexagon />} title="HEXA 屬性" />
+          {(() => {
+            const totals: Record<string, number> = {};
+            const cores = [hexaMatrixStat.character_hexa_stat_core?.[0], hexaMatrixStat.character_hexa_stat_core_2?.[0], hexaMatrixStat.character_hexa_stat_core_3?.[0]].filter(Boolean);
+            cores.forEach(core => {
+              if (!core) return;
+              const addStat = (name: string, level: number, isMain: boolean = false) => {
+                if (!name || level === 0) return;
+                const val = calculateHexaStatValue(name, level, isMain);
+                totals[name] = (totals[name] || 0) + val;
+              };
+              addStat(core.main_stat_name, core.main_stat_level, true);
+              addStat(core.sub_stat_name_1, core.sub_stat_level_1);
+              addStat(core.sub_stat_name_2, core.sub_stat_level_2);
+            });
+            if (Object.keys(totals).length === 0) return null;
+            return (
+              <div className="bg-purple-900/20 border border-purple-500/30 rounded-lg p-4 mb-6">
+                <h4 className="text-sm font-bold text-purple-300 mb-3 flex items-center gap-2"><Star className="w-4 h-4 text-yellow-400" /> 屬性總和</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                  {Object.entries(totals).map(([name, val]) => {
+                    const isPercent = name.toLowerCase().includes('boss') || name.includes('無視') || name.includes('防禦') || name.includes('爆擊傷害') || name.includes('Critical') || name === '傷害' || name === 'Damage';
                     return (
-                        <div key={coreIndex} className="bg-slate-900/80 p-4 rounded-lg border border-purple-500/30 relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 bg-purple-600 text-white text-[10px] px-2 py-0.5 rounded-bl font-bold">階級 {stat.stat_grade}</div>
-                            <div className="flex items-center gap-3 mb-3">
-                                <div className="w-10 h-10 rounded bg-slate-800 flex items-center justify-center border border-purple-500/50 shadow-[0_0_10px_rgba(168,85,247,0.2)]"><Hexagon className="w-6 h-6 text-purple-400" /></div>
-                                <div><div className="text-sm font-bold text-purple-300">HEXA 屬性核心 {coreIndex + 1}</div><div className="text-xs text-slate-500">欄位 {stat.slot_id}</div></div>
-                            </div>
-                            <div className="space-y-2">
-                                <div className="bg-slate-950/50 p-2 rounded border border-slate-800">
-                                    <div className="flex justify-between items-center mb-1"><span className="text-xs text-slate-300 font-bold">MAIN STAT</span><span className="text-xs font-bold text-purple-400">Lv.{stat.main_stat_level}</span></div>
-                                    <div className="flex justify-between items-center"><span className="text-sm text-white">{stat.main_stat_name.replace(/boss/gi, 'BOSS')}</span><span className="text-sm text-green-400 font-mono">{getHexaStatValue(stat.main_stat_name, stat.main_stat_level, true)}</span></div>
-                                    <div className="w-full h-1 bg-slate-800 mt-1 rounded-full overflow-hidden"><div className="h-full bg-purple-500" style={{ width: `${(stat.main_stat_level / 10) * 100}%` }}></div></div>
-                                </div>
-                                <div className="grid grid-cols-1 gap-2">
-                                    <div className="bg-slate-950/50 p-2 rounded border border-slate-800">
-                                        <div className="flex justify-between items-center mb-1"><span className="text-[10px] text-slate-400 font-bold">ADDITIONAL STAT</span><span className="text-xs font-bold text-blue-400">Lv.{stat.sub_stat_level_1}</span></div>
-                                        <div className="flex justify-between items-center"><span className="text-xs text-slate-200">{stat.sub_stat_name_1.replace(/boss/gi, 'BOSS')}</span><span className="text-xs text-green-400 font-mono">{getHexaStatValue(stat.sub_stat_name_1, stat.sub_stat_level_1)}</span></div>
-                                        <div className="w-full h-1 bg-slate-800 mt-1 rounded-full overflow-hidden"><div className="h-full bg-blue-500" style={{ width: `${(stat.sub_stat_level_1 / 10) * 100}%` }}></div></div>
-                                    </div>
-                                    <div className="bg-slate-950/50 p-2 rounded border border-slate-800">
-                                        <div className="flex justify-between items-center mb-1"><span className="text-[10px] text-slate-400 font-bold">ADDITIONAL STAT</span><span className="text-xs font-bold text-blue-400">Lv.{stat.sub_stat_level_2}</span></div>
-                                        <div className="flex justify-between items-center"><span className="text-xs text-slate-200">{stat.sub_stat_name_2.replace(/boss/gi, 'BOSS')}</span><span className="text-xs text-green-400 font-mono">{getHexaStatValue(stat.sub_stat_name_2, stat.sub_stat_level_2)}</span></div>
-                                        <div className="w-full h-1 bg-slate-800 mt-1 rounded-full overflow-hidden"><div className="h-full bg-blue-500" style={{ width: `${(stat.sub_stat_level_2 / 10) * 100}%` }}></div></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                      <div key={name} className="bg-slate-900/50 px-3 py-2 rounded border border-purple-500/20 flex justify-between items-center">
+                        <span className="text-xs text-slate-300">{name.replace(/boss/gi, 'BOSS')}</span>
+                        <span className="text-sm font-bold text-green-400 font-mono">+{isPercent ? val.toFixed(2) + '%' : val}</span>
+                      </div>
                     );
-                })}
-            </div>
-        </div>
-      )}
-
-      {/* --- Union Champion (聯盟冠軍) 全新設計 --- */}
-      {unionChampion && (
-        <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full lg:col-span-2 min-w-0">
-          <SectionHeader icon={<Trophy />} title="聯盟冠軍" />
-          
-          <div className="px-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              
-              {/* Left Column: 冠軍角色卡片 */}
-              <div className="flex flex-col gap-4">
-                <h3 className="font-semibold text-sm flex items-center gap-2 text-slate-400">
-                  <User className="w-4 h-4" /> 冠軍角色
-                </h3>
-                {unionChampion.union_champion && unionChampion.union_champion.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4"> 
-                        {unionChampion.union_champion.map((champ: any, idx: number) => (
-                            <ChampionCard key={idx} champ={champ} apiKey={apiKey} />
-                        ))}
-                    </div>
-                ) : (
-                    <div className="text-slate-500 text-sm">無冠軍資料</div>
-                )}
-              </div>
-
-              {/* Right Column: 冠軍徽章效果列表 */}
-              <div className="flex flex-col gap-4">
-                <h3 className="font-semibold text-sm flex items-center gap-2 text-slate-400">
-                  <Layers className="w-4 h-4" /> 冠軍徽章效果
-                </h3>
-                <div className="flex flex-col gap-2 bg-slate-900/30 p-4 rounded-lg border border-slate-800">
-                    {unionChampion.champion_badge_total_info && unionChampion.champion_badge_total_info.length > 0 ? (
-                        unionChampion.champion_badge_total_info.map((info: any, idx: number) => {
-                            const parts = info.stat.split(/(\d+(?:\.\d+)?(?:%|)?)/); 
-                            return (
-                                <div key={idx} className="flex items-center gap-3 text-sm text-slate-400 border-b border-slate-800/50 last:border-0 pb-2 last:pb-0">
-                                    <span className="text-yellow-500/50">•</span>
-                                    <span>
-                                        {parts.map((part: string, i: number) => (
-                                            /\d/.test(part) ? <span key={i} className="text-green-400 font-mono font-bold">{part}</span> : <span key={i}>{part}</span>
-                                        ))}
-                                    </span>
-                                </div>
-                            );
-                        })
-                    ) : (
-                        <div className="text-slate-500 text-sm">無徽章效果</div>
-                    )}
+                  })}
                 </div>
               </div>
+            );
+          })()}
 
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[0, 1, 2].map((coreIndex) => {
+              let stat = undefined;
+              if (coreIndex === 0 && hexaMatrixStat.character_hexa_stat_core && hexaMatrixStat.character_hexa_stat_core.length > 0) stat = hexaMatrixStat.character_hexa_stat_core[0];
+              else if (coreIndex === 1 && hexaMatrixStat.character_hexa_stat_core_2 && hexaMatrixStat.character_hexa_stat_core_2.length > 0) stat = hexaMatrixStat.character_hexa_stat_core_2[0];
+              else if (coreIndex === 2 && hexaMatrixStat.character_hexa_stat_core_3 && hexaMatrixStat.character_hexa_stat_core_3.length > 0) stat = hexaMatrixStat.character_hexa_stat_core_3[0];
+
+              if (!stat) {
+                return (
+                  <div key={coreIndex} className="bg-slate-900/30 p-4 rounded-lg border border-slate-800/50 flex flex-col items-center justify-center min-h-[200px] opacity-50">
+                    <Hexagon className="w-8 h-8 text-slate-700 mb-2" />
+                    <div className="text-sm font-bold text-slate-600">HEXA 屬性核心 {coreIndex + 1}</div>
+                    <div className="text-xs text-slate-700">未解鎖或無資料</div>
+                  </div>
+                );
+              }
+              return (
+                <div key={coreIndex} className="bg-slate-900/80 p-4 rounded-lg border border-purple-500/30 relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 bg-purple-600 text-white text-[10px] px-2 py-0.5 rounded-bl font-bold">階級 {stat.stat_grade}</div>
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded bg-slate-800 flex items-center justify-center border border-purple-500/50 shadow-[0_0_10px_rgba(168,85,247,0.2)]"><Hexagon className="w-6 h-6 text-purple-400" /></div>
+                    <div><div className="text-sm font-bold text-purple-300">HEXA 屬性核心 {coreIndex + 1}</div><div className="text-xs text-slate-500">欄位 {stat.slot_id}</div></div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="bg-slate-950/50 p-2 rounded border border-slate-800">
+                      <div className="flex justify-between items-center mb-1"><span className="text-xs text-slate-300 font-bold">MAIN STAT</span><span className="text-xs font-bold text-purple-400">Lv.{stat.main_stat_level}</span></div>
+                      <div className="flex justify-between items-center"><span className="text-sm text-white">{stat.main_stat_name.replace(/boss/gi, 'BOSS')}</span><span className="text-sm text-green-400 font-mono">{getHexaStatValue(stat.main_stat_name, stat.main_stat_level, true)}</span></div>
+                      <div className="w-full h-1 bg-slate-800 mt-1 rounded-full overflow-hidden"><div className="h-full bg-purple-500" style={{ width: `${(stat.main_stat_level / 10) * 100}%` }}></div></div>
+                    </div>
+                    <div className="grid grid-cols-1 gap-2">
+                      <div className="bg-slate-950/50 p-2 rounded border border-slate-800">
+                        <div className="flex justify-between items-center mb-1"><span className="text-[10px] text-slate-400 font-bold">ADDITIONAL STAT</span><span className="text-xs font-bold text-blue-400">Lv.{stat.sub_stat_level_1}</span></div>
+                        <div className="flex justify-between items-center"><span className="text-xs text-slate-200">{stat.sub_stat_name_1.replace(/boss/gi, 'BOSS')}</span><span className="text-xs text-green-400 font-mono">{getHexaStatValue(stat.sub_stat_name_1, stat.sub_stat_level_1)}</span></div>
+                        <div className="w-full h-1 bg-slate-800 mt-1 rounded-full overflow-hidden"><div className="h-full bg-blue-500" style={{ width: `${(stat.sub_stat_level_1 / 10) * 100}%` }}></div></div>
+                      </div>
+                      <div className="bg-slate-950/50 p-2 rounded border border-slate-800">
+                        <div className="flex justify-between items-center mb-1"><span className="text-[10px] text-slate-400 font-bold">ADDITIONAL STAT</span><span className="text-xs font-bold text-blue-400">Lv.{stat.sub_stat_level_2}</span></div>
+                        <div className="flex justify-between items-center"><span className="text-xs text-slate-200">{stat.sub_stat_name_2.replace(/boss/gi, 'BOSS')}</span><span className="text-xs text-green-400 font-mono">{getHexaStatValue(stat.sub_stat_name_2, stat.sub_stat_level_2)}</span></div>
+                        <div className="w-full h-1 bg-slate-800 mt-1 rounded-full overflow-hidden"><div className="h-full bg-blue-500" style={{ width: `${(stat.sub_stat_level_2 / 10) * 100}%` }}></div></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
-      )}
+        )}
+
+        {/* --- Union Champion (聯盟冠軍) full width like LinkSkillSection --- */}
+        {unionChampion && (
+        <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0">
+          <SectionHeader icon={<Trophy />} title="聯盟冠軍" />
+
+          <div className="px-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            {/* Left Column: 冠軍角色卡片 */}
+            <div className="flex flex-col gap-4">
+            <h3 className="font-semibold text-sm flex items-center gap-2 text-slate-400">
+              <User className="w-4 h-4" /> 冠軍角色
+            </h3>
+            {unionChampion.union_champion && unionChampion.union_champion.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                {unionChampion.union_champion.map((champ: any, idx: number) => (
+                  <ChampionCard key={idx} champ={champ} apiKey={apiKey} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-slate-500 text-sm">無冠軍資料</div>
+            )}
+            </div>
+
+            {/* Right Column: 冠軍徽章效果列表 */}
+            <div className="flex flex-col gap-4">
+            <h3 className="font-semibold text-sm flex items-center gap-2 text-slate-400">
+              <Layers className="w-4 h-4" /> 冠軍徽章效果
+            </h3>
+            <div className="flex flex-col gap-2 bg-slate-900/30 p-4 rounded-lg border border-slate-800">
+              {unionChampion.champion_badge_total_info && unionChampion.champion_badge_total_info.length > 0 ? (
+                unionChampion.champion_badge_total_info.map((info: any, idx: number) => {
+                  const parts = info.stat.split(/(\d+(?:\.\d+)?(?:%|)?)/);
+                  return (
+                    <div key={idx} className="flex items-center gap-3 text-sm text-slate-400 border-b border-slate-800/50 last:border-0 pb-2 last:pb-0">
+                      <span className="text-yellow-500/50">•</span>
+                      <span>
+                        {parts.map((part: string, i: number) => (
+                          /\d/.test(part) ? <span key={i} className="text-green-400 font-mono font-bold">{part}</span> : <span key={i}>{part}</span>
+                        ))}
+                      </span>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="text-slate-500 text-sm">無徽章效果</div>
+              )}
+            </div>
+            </div>
+
+          </div>
+          </div>
+        </div>
+        )}
+
+        </div>
 
     </div>
   );

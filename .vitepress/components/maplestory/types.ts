@@ -10,6 +10,7 @@ export interface OcidResponse {
 }
 
 export interface CharacterBasic {
+  date?: string;
   character_name: string;
   world_name: string;
   character_gender: string;
@@ -182,6 +183,8 @@ export interface DashboardData {
   cashItemEquipment?: CharacterCashItemEquipment;
   beautyEquipment?: CharacterBeautyEquipment;
   dojo?: CharacterDojo;
+  familiar?: CharacterFamiliar;
+  character_basic_7days_ago?: CharacterBasic;
   lastUpdated: string; // Internal timestamp for display
 }
 
@@ -251,6 +254,17 @@ export interface CharacterUnionChampion {
 
 export interface CharacterPetEquipment {
   date: string;
+  pet_1_pet_type?: string;
+  pet_1_skill?: string[];
+  pet_1_date_expire?: string;
+  pet_1_appearance?: string;
+  pet_1_appearance_icon?: string;
+  pet_1_potential?: {
+    potential_step?: string;
+    potential_type?: string;
+    potential_increase_1?: string;
+    potential_increase_2?: string;
+  }[];
   pet_1_name?: string;
   pet_1_nickname?: string;
   pet_1_icon?: string;
@@ -259,6 +273,14 @@ export interface CharacterPetEquipment {
       item_name: string;
       item_icon: string;
       item_description: string;
+    item_option?: {
+      option_type?: string;
+      option_value?: string;
+    }[];
+    scroll_upgrade?: number;
+    scroll_upgradable?: number;
+    item_shape?: string;
+    item_shape_icon?: string;
   };
   pet_1_auto_skill?: {
       skill_1: string;
@@ -266,6 +288,17 @@ export interface CharacterPetEquipment {
       skill_2: string;
       skill_2_icon: string;
   };
+  pet_2_pet_type?: string;
+  pet_2_skill?: string[];
+  pet_2_date_expire?: string;
+  pet_2_appearance?: string;
+  pet_2_appearance_icon?: string;
+  pet_2_potential?: {
+    potential_step?: string;
+    potential_type?: string;
+    potential_increase_1?: string;
+    potential_increase_2?: string;
+  }[];
   pet_2_name?: string;
   pet_2_nickname?: string;
   pet_2_icon?: string;
@@ -274,6 +307,14 @@ export interface CharacterPetEquipment {
       item_name: string;
       item_icon: string;
       item_description: string;
+    item_option?: {
+      option_type?: string;
+      option_value?: string;
+    }[];
+    scroll_upgrade?: number;
+    scroll_upgradable?: number;
+    item_shape?: string;
+    item_shape_icon?: string;
   };
   pet_2_auto_skill?: {
       skill_1: string;
@@ -281,6 +322,17 @@ export interface CharacterPetEquipment {
       skill_2: string;
       skill_2_icon: string;
   };
+  pet_3_pet_type?: string;
+  pet_3_skill?: string[];
+  pet_3_date_expire?: string;
+  pet_3_appearance?: string;
+  pet_3_appearance_icon?: string;
+  pet_3_potential?: {
+    potential_step?: string;
+    potential_type?: string;
+    potential_increase_1?: string;
+    potential_increase_2?: string;
+  }[];
   pet_3_name?: string;
   pet_3_nickname?: string;
   pet_3_icon?: string;
@@ -289,6 +341,14 @@ export interface CharacterPetEquipment {
       item_name: string;
       item_icon: string;
       item_description: string;
+    item_option?: {
+      option_type?: string;
+      option_value?: string;
+    }[];
+    scroll_upgrade?: number;
+    scroll_upgradable?: number;
+    item_shape?: string;
+    item_shape_icon?: string;
   };
   pet_3_auto_skill?: {
       skill_1: string;
@@ -491,4 +551,45 @@ export interface CharacterAndroidEquipment {
   android_nickname: string;
   android_icon: string;
   android_description: string;
+}
+
+export interface FamiliarInfo {
+  familiar_id?: string;
+  familiar_name?: string;
+  familiar_nickname?: string;
+  familiar_special_flag?: string;
+  familiar_state?: string;
+  familiar_level?: number;
+  familiar_exp?: number;
+  skill_name?: string;
+  option_level?: number;
+  option?: FamiliarOption[];
+  familiar_grade?: string;
+  look_name?: string;
+  summoned_flag?: string;
+  slot_id?: string;
+  familiar_icon?: string;
+  familiar_image?: string;
+  familiar_description?: string;
+  [key: string]: any;
+}
+
+export interface FamiliarOption {
+  option_no?: number;
+  option_name?: string;
+  option_value?: string;
+}
+
+export interface FamiliarLinkSlot {
+  slot_id?: string;
+  familiar_name?: string | null;
+  active_flag?: string;
+  expire_date?: string;
+}
+
+export interface CharacterFamiliar {
+  date?: string;
+  familiar_list?: FamiliarInfo[];
+  familiar_info?: FamiliarInfo[];
+  familiar_link_slot?: FamiliarLinkSlot[];
 }

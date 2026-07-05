@@ -391,7 +391,7 @@ const CashEquipmentGrid: React.FC<CashEquipmentGridProps> = ({ cashEquipment, be
         className="-mx-3 sm:mx-0"
       />
       
-      <div className="flex justify-center gap-6 mt-4">
+      <div className="mt-4 flex justify-center gap-0.5 sm:gap-4 lg:gap-6">
          {/* Left Column */}
          <div className="flex gap-2">
             <div className="flex flex-col gap-2">
@@ -408,8 +408,8 @@ const CashEquipmentGrid: React.FC<CashEquipmentGridProps> = ({ cashEquipment, be
          </div>
 
          {/* Center Character & Beauty */}
-         <div className="w-32 flex flex-col items-center relative">
-            <div className="absolute inset-x-0 top-0 pointer-events-none transform scale-75 translate-y-4 h-32">
+         <div className="w-[9.25rem] sm:w-28 lg:w-32 flex flex-col items-center relative">
+            <div className="absolute inset-x-0 top-0 pointer-events-none transform scale-65 sm:scale-75 translate-y-3 sm:translate-y-4 h-24 sm:h-32">
                 <BorderBeam colorVariant="colorful">
                   <div className="w-full h-full rounded-full" />
                 </BorderBeam>
@@ -418,13 +418,13 @@ const CashEquipmentGrid: React.FC<CashEquipmentGridProps> = ({ cashEquipment, be
                 <img 
                   src={`${characterImage}${characterImage.includes('?') ? '&' : '?'}action=A06`} 
                   alt="Character" 
-                  className="relative z-10 drop-shadow-2xl scale-125 transform translate-y-4" 
+                  className="relative z-10 max-w-full drop-shadow-2xl scale-95 sm:scale-110 lg:scale-125 transform translate-y-2 sm:translate-y-4" 
                 />
             ) : (
                 <div className="w-24 h-24 rounded-full bg-slate-800/50 mb-4" />
             )}
             
-            <div className="flex flex-col gap-2 mt-12 relative z-20 items-center">
+            <div className="relative z-20 mt-8 sm:mt-12 flex flex-col gap-2 items-center">
                 <div className="flex gap-2">
                    <BeautySlot 
                       label={showAdditionalBeauty ? (beautyEquipment?.character_class?.includes('神之子') ? "髮型 (Alpha)" : "髮型 (一般)") : "髮型"} 

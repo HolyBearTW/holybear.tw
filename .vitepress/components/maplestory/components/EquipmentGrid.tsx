@@ -407,7 +407,7 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, setEffect, cha
         }
       />
 
-      <div className="flex justify-center gap-6 mt-4">
+      <div className="mt-4 flex justify-center gap-0.5 sm:gap-4 lg:gap-6">
       
       {/* Left Columns (Accessories) */}
       <div className="flex gap-2">
@@ -420,16 +420,16 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, setEffect, cha
       </div>
 
       {/* Center Character */}
-      <div className="w-32 flex flex-col items-center justify-start relative gap-2">
+      <div className="w-[9.25rem] sm:w-28 lg:w-32 flex flex-col items-center justify-start relative gap-2">
          {/* Using BorderBeam as requested for background effect */}
-         <div className="absolute inset-0 pointer-events-none scale-150 top-10 w-24 h-24">
+         <div className="absolute inset-0 pointer-events-none scale-125 sm:scale-140 lg:scale-150 top-10 w-20 h-20 sm:w-24 sm:h-24">
            <BorderBeam colorVariant="mono">
              <div className="w-full h-full rounded-full" />
            </BorderBeam>
          </div>
-         <div className="h-[184px] sm:h-[216px] flex items-center justify-center w-full relative z-20">
+         <div className="h-[152px] sm:h-[184px] lg:h-[216px] flex items-center justify-center w-full relative z-20">
             {characterImage ? (
-                <img src={characterImage} alt="Character" className="relative z-10 drop-shadow-2xl scale-[1.35] transform translate-y-2 origin-bottom pointer-events-none" />
+            <img src={characterImage} alt="Character" className="relative z-10 max-w-full drop-shadow-2xl scale-100 sm:scale-110 lg:scale-[1.35] transform translate-y-1 sm:translate-y-2 origin-bottom pointer-events-none" />
             ) : (
                 <div className="w-24 h-24 rounded-full bg-slate-800/50 relative z-10" />
             )}
