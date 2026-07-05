@@ -637,7 +637,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
         <LinkSkillSection linkSkill={linkSkill} />
       </div>
 
-      <div className="columns-1 lg:columns-2 gap-6 [column-fill:_balance]">
+      <div className="columns-1 lg:columns-2 gap-6 [column-fill:_balance] lg:-mb-6">
 
       {/* Union & Artifact - w-full + min-w-0 */}
       <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0 break-inside-avoid mb-6 inline-block align-top">
@@ -884,7 +884,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
       </div>
 
       {/* Set Effects - w-full + min-w-0 */}
-      <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0 break-inside-avoid mb-6 inline-block align-top">
+      <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0 break-inside-avoid inline-block align-top">
         <SectionHeader icon={<Crown />} title="套裝效果" />
         <div className="space-y-3">
           {setEffect?.set_effect.map((set, idx) => (

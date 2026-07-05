@@ -1,7 +1,6 @@
 import React from 'react';
-import { BorderBeam } from 'border-beam';
 import { EquipmentItem, ItemOption, CharacterSetEffect } from '../types';
-import { Star } from 'lucide-react';
+import { inferPotentialLineGrade } from '../potentialInference';
 
 interface EquipmentTooltipProps {
   item: EquipmentItem;
@@ -10,6 +9,122 @@ interface EquipmentTooltipProps {
   slotType?: string;
   showSetEffect?: boolean;
 }
+
+const WINDOW_ASSET_BASE = '/image/theme/window';
+
+const windowBg = (name: string) => ({ backgroundImage: `url('${WINDOW_ASSET_BASE}/${name}')` });
+
+const DotDivider: React.FC<{ className?: string }> = ({ className = '' }) => (
+  <div className={`h-[3px] bg-repeat-x ${className}`.trim()} style={windowBg('window_dotline.png')} />
+);
+
+const StarForceIcon: React.FC<{ filled: boolean }> = ({ filled }) => (
+  <img
+    className="block w-[11px] h-[10px] -mr-[1px]"
+    alt={filled ? '★' : '☆'}
+    src={`${WINDOW_ASSET_BASE}/${filled ? 'starForce_filled.png' : 'starForce_empty.png'}`}
+    aria-hidden="true"
+  />
+);
+
+const CategoryBadge: React.FC<{ label: string }> = ({ label }) => (
+  <div className="inline-flex items-center">
+    <div className="w-[8px] h-[14px] shrink-0" style={windowBg('category_w.png')} />
+    <div className="h-[14px] flex items-center bg-repeat-x px-[2px] text-[#B8BFC5]" style={windowBg('category_c.png')}>
+      {label}
+    </div>
+    <div className="w-[8px] h-[14px] shrink-0" style={windowBg('category_e.png')} />
+  </div>
+);
+
+const PotentialLine: React.FC<{ text: string; icon: string }> = ({ text, icon }) => (
+  <div className="flex items-center gap-x-[5px] text-white">
+    <img className="w-[10px] h-[10px]" alt="" src={`${WINDOW_ASSET_BASE}/${icon}`} aria-hidden="true" />
+    <span>{text}</span>
+  </div>
+);
+
+const isPotentialSealed = (flag?: string) => String(flag || '').toLowerCase() === 'true';
+
+const getPotentialAssetName = (grade: string | undefined, type: 'title' | 'detail') => {
+  const normalized = String(grade || '').toLowerCase();
+
+  let suffix = 'legendary';
+  if (type === 'title') {
+    if (normalized.includes('unique') || normalized.includes('罕見')) suffix = 'unique';
+    else if (normalized.includes('epic') || normalized.includes('稀有')) suffix = 'epic';
+    else if (normalized.includes('rare') || normalized.includes('特殊')) suffix = 'rare';
+  } else {
+    if (normalized.includes('unique')) suffix = 'unique';
+    else if (normalized.includes('epic')) suffix = 'epic';
+    else if (normalized.includes('rare')) suffix = 'rare';
+  }
+
+  return `potential_${type}_${suffix}.png`;
+};
+
+const ExceptionalLine: React.FC<{ text: string }> = ({ text }) => (
+  <div className="text-white leading-[1.35]">
+    {text}
+  </div>
+);
+
+const firstDefinedValue = (...values: unknown[]) => values.find((value) => value !== undefined && value !== null && value !== '');
+
+const formatExceptionalStatValue = (value: unknown) => {
+  const numericValue = Number(value || 0);
+  return Number.isFinite(numericValue) ? numericValue : 0;
+};
+
+const extractExceptionalData = (item: EquipmentItem) => {
+  const exceptionalOption = (item as any).item_exceptional_option;
+
+  const directCount = firstDefinedValue(
+    (item as any).exceptional_upgrade,
+    (item as any).exceptional_enhancement,
+    (item as any).exceptional_enhancement_count,
+    exceptionalOption?.exceptional_upgrade,
+    exceptionalOption?.exceptional_enhancement,
+    exceptionalOption?.exceptional_enhancement_count,
+    exceptionalOption?.upgrade_count,
+    exceptionalOption?.count,
+    exceptionalOption?.value,
+  );
+
+  const count = parseInt(String(directCount ?? '0'), 10) || 0;
+
+  const allStat = ['str', 'dex', 'int', 'luk']
+    .map((key) => formatExceptionalStatValue(exceptionalOption?.[key]))
+    .filter((value) => value > 0);
+  const hp = formatExceptionalStatValue(exceptionalOption?.max_hp);
+  const mp = formatExceptionalStatValue(exceptionalOption?.max_mp);
+  const attackPower = formatExceptionalStatValue(exceptionalOption?.attack_power);
+  const magicPower = formatExceptionalStatValue(exceptionalOption?.magic_power);
+
+  const lines: string[] = [];
+
+  if (allStat.length > 0) {
+    const allStatValue = Math.min(...allStat);
+    lines.push(`全屬性 +${allStatValue}`);
+  }
+
+  if (hp > 0 || mp > 0) {
+    const hpText = hp > 0 ? `最大HP/MP +${hp}` : '';
+    const mpText = mp > 0 && mp !== hp ? `最大MP +${mp}` : '';
+    lines.push([hpText, mpText].filter(Boolean).join(' '));
+  }
+
+  if (attackPower > 0 || magicPower > 0) {
+    if (attackPower > 0 && magicPower > 0 && attackPower === magicPower) {
+      lines.push(`攻擊力/魔法攻擊力 +${attackPower}`);
+    } else {
+      if (attackPower > 0) lines.push(`攻擊力 +${attackPower}`);
+      if (magicPower > 0) lines.push(`魔法攻擊力 +${magicPower}`);
+    }
+  }
+
+  return { count, lines };
+};
 
 const StatLine: React.FC<{ label: string; base: string; add: string; etc: string; star: string; total: string; isPercent?: boolean }> = ({ label, base, add, etc, star, total, isPercent }) => {
   if (total === '0' || !total) return null;
@@ -91,6 +206,41 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
 
   const potInfo = getPotGradeInfo(item.potential_option_grade);
   const addPotInfo = getPotGradeInfo(item.additional_potential_option_grade);
+  const potentialTitleIcon = getPotentialAssetName(item.potential_option_grade, 'title');
+  const additionalPotentialTitleIcon = getPotentialAssetName(item.additional_potential_option_grade, 'title');
+  const mainPotentialSealed = isPotentialSealed(item.potential_option_flag);
+  const additionalPotentialSealed = isPotentialSealed(item.additional_potential_option_flag);
+  const { count: exceptionalCount, lines: exceptionalOptions } = extractExceptionalData(item);
+  const hasExceptionalEnhancement = exceptionalCount > 0;
+  const mainPotentialLines = [item.potential_option_1, item.potential_option_2, item.potential_option_3]
+    .filter(Boolean)
+    .map((text, index) => {
+      const inferredGrade = inferPotentialLineGrade(item, text, item.potential_option_grade, index) || item.potential_option_grade;
+      return {
+        text,
+        grade: inferredGrade,
+        icon: getPotentialAssetName(inferredGrade, 'detail'),
+      };
+    });
+  const additionalPotentialLines = [item.additional_potential_option_1, item.additional_potential_option_2, item.additional_potential_option_3]
+    .filter(Boolean)
+    .map((text, index) => {
+      const inferredGrade = inferPotentialLineGrade(item, text, item.additional_potential_option_grade, index, 'additional') || item.additional_potential_option_grade;
+      return {
+        text,
+        grade: inferredGrade,
+        icon: getPotentialAssetName(inferredGrade, 'detail'),
+      };
+    });
+  const equipmentCategory = ['馴服的怪物', '馬鞍', '怪物裝備'].includes(item.item_equipment_part) || ['馴服的怪物', '馬鞍', '怪物裝備'].includes(item.item_equipment_slot)
+    ? '圖騰'
+    : ['puzzle', 'Puzzle'].includes(item.item_equipment_part) || ['puzzle', 'Puzzle'].includes(item.item_equipment_slot)
+    ? '拼圖'
+    : ['android', 'Android'].includes(item.item_equipment_part) || ['android', 'Android'].includes(item.item_equipment_slot)
+    ? '機器人'
+    : item.item_name.includes('寶玉') && (['墜飾'].includes(item.item_equipment_part) || ['墜飾'].includes(item.item_equipment_slot))
+    ? '寶玉'
+    : item.item_equipment_part || item.item_equipment_slot || '未知';
 
   // Starforce display logic
   const sfCount = parseInt(item.starforce || '0');
@@ -263,138 +413,107 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
       if (sfCount === 0) return null;
 
       const is25Star = sfCount >= 25; // 25星特效
-
-      // Grid Style (Grid)
       const row1Max = 15;
-      const row2Max = 30; // Max allowed display is 30
+      const row2Max = 30;
+      const limit = isSpecialWeapon ? sfCount : maxStars;
+
+      const renderRow = (start: number, end: number) => {
+        const groups: React.ReactNode[] = [];
+
+        for (let groupStart = start; groupStart < end; groupStart += 5) {
+          if (groupStart >= limit) break;
+
+          const stars: React.ReactNode[] = [];
+          for (let i = groupStart; i < Math.min(groupStart + 5, end, limit); i++) {
+            stars.push(<StarForceIcon key={i} filled={i < sfCount} />);
+          }
+
+          groups.push(
+            <span key={groupStart} className={`inline-flex items-center ${groupStart + 5 < end && groupStart + 5 < limit ? 'mr-[6px]' : ''}`}>
+              {stars}
+            </span>
+          );
+        }
+
+        if (groups.length === 0) return null;
+
+        return (
+          <div className="flex h-[14px] items-center justify-center">
+            {groups}
+          </div>
+        );
+      };
       
       return (
-        <div className="flex flex-col items-center gap-1 mb-2 px-2 relative">
-             {/* 25星閃耀特效 (25 Star Special Effect - Ultra) */}
+        <div className="relative text-center mb-[4px] -mt-[9px] min-h-[8px] overflow-visible">
              {is25Star && (
-                <div className="absolute inset-0 z-0 text-yellow-300 select-none pointer-events-none">
-                  {/* 背景強烈發光 (High Light Glow) */}
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-yellow-500/30 blur-xl rounded-full animate-pulse"></div>
-                  
-                  {/* 動態符號星星群 (Dynamic Symbols) - 收斂範圍至框內 */}
-                  <span className="absolute -top-3 -left-2 text-xl animate-bounce drop-shadow-[0_0_8px_rgba(255,215,0,0.8)]" style={{ animationDuration: '1.2s' }}>★</span>
-                  <span className="absolute -top-5 left-1/2 text-xs text-yellow-100 animate-ping" style={{ animationDuration: '2.5s' }}>✦</span>
-                  <span className="absolute -top-2 -right-3 text-lg animate-bounce delay-100 drop-shadow-[0_0_8px_gold]" style={{ animationDuration: '1.5s' }}>★</span>
-                  
-                  <span className="absolute top-1/2 -left-5 text-sm animate-pulse delay-75 text-white drop-shadow-md">☆</span>
-                  <span className="absolute top-1/3 -right-6 text-lg animate-bounce delay-300 text-yellow-200 drop-shadow-[0_0_6px_orange]">★</span>
-                  
-                  <span className="absolute -bottom-3 left-0 text-xs animate-ping delay-500 text-white">✦</span>
-                  <span className="absolute -bottom-1 -right-2 text-base animate-pulse delay-200 drop-shadow-lg">☆</span>
-                  <span className="absolute top-0 right-1/3 text-[8px] animate-ping delay-700 text-white">✦</span>
-                </div>
+                <img
+                  src={`${WINDOW_ASSET_BASE}/starForce_anim.png`}
+                  alt=""
+                  className="absolute top-0 left-0 w-full h-auto max-w-none pointer-events-none select-none"
+                  aria-hidden="true"
+                />
              )}
-            <div className={`flex justify-center gap-0.5 relative z-10 ${is25Star ? 'drop-shadow-[0_0_12px_rgba(255,215,0,0.8)]' : ''}`}>
-                {(() => {
-                    const rowStars = [];
-                    // Limit logic:
-                    // Special Weapon: EXACTLY sfCount (so no empty stars)
-                    // Normal Weapon: maxStars (shows empty stars up to max)
-                    const limit = isSpecialWeapon ? sfCount : maxStars;
-
-                    for (let i = 0; i < row1Max; i++) {
-                        if (i >= limit) break;
-                        const isFilled = i < sfCount;
-                        const isGap = i > 0 && i % 5 === 0;
-                        rowStars.push(
-                           <div key={i} className={`${isGap ? 'ml-3' : ''}`}>
-                             <Star 
-                                className={`w-3 h-3 ${isFilled ? 'fill-yellow-400 text-yellow-500 drop-shadow-[0_0_2px_rgba(250,204,21,0.6)]' : 'text-slate-600'}`} 
-                                fill={isFilled ? "currentColor" : "none"}
-                                strokeWidth={isFilled ? 0 : 1.5}
-                             />
-                           </div>
-                        );
-                    }
-                    return rowStars;
-                })()}
+            <div className="relative z-10 mb-[4px]">
+              {renderRow(0, row1Max)}
+              {limit > row1Max && renderRow(row1Max, row2Max)}
             </div>
-            {(() => {
-                const limit = isSpecialWeapon ? sfCount : maxStars;
-                if (limit <= row1Max) return null;
-
-                const rowStars = [];
-                for (let i = row1Max; i < row2Max; i++) {
-                    if (i >= limit) break;
-                    const isFilled = i < sfCount;
-                    const isGap = i > row1Max && (i - row1Max) % 5 === 0;
-                    rowStars.push(
-                        <div key={i} className={`${isGap ? 'ml-3' : ''}`}>
-                             <Star 
-                                className={`w-3 h-3 ${isFilled ? 'fill-yellow-400 text-yellow-500 drop-shadow-[0_0_2px_rgba(250,204,21,0.6)]' : 'text-slate-600'}`} 
-                                fill={isFilled ? "currentColor" : "none"}
-                                strokeWidth={isFilled ? 0 : 1.5}
-                             />
-                        </div>
-                    );
-                }
-                return (
-                    <div className="flex justify-center gap-0.5">
-                        {rowStars}
-                    </div>
-                );
-            })()}
         </div>
       );
   };
   
   return (
-    <div className={`w-full bg-[#1a1d24]/95 backdrop-blur-md border-2 ${potInfo.border} rounded-lg shadow-2xl overflow-hidden z-50 text-left pointer-events-none relative`}>
-      {/* Header / Stars */}
-      <div className="p-3 border-b border-slate-600/50 text-center relative bg-[#15171c]/50">
-        {renderStars()}
-        <h3 className={`text-base font-bold text-white relative z-10`}>
+    <div className="relative grid grid-cols-[14px_minmax(0,1fr)_15px] grid-rows-[14px_auto_15px] w-full text-white text-[12px] leading-[1.2] overflow-hidden z-50 text-left pointer-events-none">
+      <div className="bg-left-top" style={windowBg('window_nw.png')} />
+      <div className="bg-repeat-x" style={windowBg('window_n.png')} />
+      <div className="bg-left-top" style={windowBg('window_ne.png')} />
+
+      <div className="bg-repeat-y" style={windowBg('window_w.png')} />
+      <div className="relative [&>*:last-child]:pb-0" style={windowBg('window_c.png')}>
+        <div className="px-3 pt-3 pb-2 text-center relative">
+          {renderStars()}
+          <h3 className="text-sm font-bold text-white relative z-10">
            {item.item_name}
            {item.special_ring_level > 0 && <span className="text-orange-400 ml-1">Lv.{item.special_ring_level}</span>}
            {scrollCount > 0 ? ` (+${scrollCount})` : ''}
-        </h3>
-        {item.potential_option_grade && potInfo.label && (
-          <p className="text-[10px] text-slate-400 mt-0.5">({potInfo.label}等級道具)</p>
-        )}
-      </div>
+          </h3>
+          {item.potential_option_grade && potInfo.label && (
+            <p className="text-[10px] text-slate-300 mt-0.5">({potInfo.label}等級道具)</p>
+          )}
+        </div>
 
-      {/* Main Image */}
-      <div className="p-4 flex justify-center border-b border-slate-600/50 bg-[#121418]/50 relative">
-         <div className="relative z-10">
-            <img 
-               src={item.item_icon} 
-               alt={item.item_name} 
-               className="w-16 h-16 object-contain scale-110 drop-shadow-lg" 
-            />
-            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-12 h-1 bg-black/50 blur-sm rounded-[50%]" />
-         </div>
-      </div>
+        <DotDivider />
 
-      {/* Basic Info (Job & Level) - Inferred */}
-      <div className={`p-3 ${slotType === 'Puzzle' ? '' : 'border-b border-slate-600/50'} relative z-10 space-y-1`}>
-          <div className="flex items-center text-[11px] leading-tight">
-             <span className="text-slate-400 w-24 shrink-0 font-medium text-left">裝備分類</span>
-             <span className="text-white">
-                {['馴服的怪物', '馬鞍', '怪物裝備'].includes(item.item_equipment_part) || ['馴服的怪物', '馬鞍', '怪物裝備'].includes(item.item_equipment_slot) 
-                  ? '圖騰' 
-                  : ['puzzle', 'Puzzle'].includes(item.item_equipment_part) || ['puzzle', 'Puzzle'].includes(item.item_equipment_slot)
-                  ? '拼圖'
-                  : ['android', 'Android'].includes(item.item_equipment_part) || ['android', 'Android'].includes(item.item_equipment_slot)
-                  ? '機器人'
-                  : item.item_name.includes('寶玉') && (['墜飾'].includes(item.item_equipment_part) || ['墜飾'].includes(item.item_equipment_slot))
-                  ? '寶玉'
-                  : item.item_equipment_part || item.item_equipment_slot || '未知'}
-             </span>
+        <div className="px-3 py-[6px] relative">
+          <div className="relative flex justify-between items-end gap-3">
+            <div className="relative w-[64px] h-[64px] bg-no-repeat bg-[length:64px_64px]" style={windowBg('itemIcon_base.png')}>
+              <div className="absolute inset-0 pointer-events-none bg-[length:64px_64px]" style={windowBg('itemIcon_shade.png')} />
+              <div className="relative w-full h-full overflow-hidden">
+                <img
+                  src={item.item_icon}
+                  alt={item.item_name}
+                  className="absolute max-w-6 max-h-6 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 scale-[2]"
+                />
+              </div>
+            </div>
+            <div className="flex flex-col items-end gap-y-[4px] text-[12px] leading-3">
+              <CategoryBadge label={equipmentCategory} />
+              <div className="flex items-center gap-x-[5px]">
+                <span className="text-[#B8BFC5]">要求等級</span>
+                <span>Lv.{itemLevel}</span>
+              </div>
+            </div>
           </div>
+        </div>
+
+        <DotDivider />
+
+        <div className={`px-3 py-[8px] ${slotType === 'Puzzle' ? '' : ''} relative z-10 space-y-1`}>
           <div className="flex items-center text-[11px] leading-tight">
              <span className="text-slate-400 w-24 shrink-0 font-medium text-left">裝備職業</span>
              <span className="text-white">
                 {getJobDisplay()}
              </span>
-          </div>
-          <div className="flex items-center text-[11px] leading-tight">
-             <span className="text-slate-400 w-24 shrink-0 font-medium text-left">要求等級</span>
-             <span className="text-white">Lv. {itemLevel}</span>
           </div>
           {/* Set Effect Summary Line */}
            {matchedSet && (
@@ -403,11 +522,12 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
                   <span>{matchedSet.set_name} ({matchedSet.total_set_count})</span>
               </div>
            )}
-      </div>
+          </div>
 
-      {/* Stats Section */}
-      {slotType !== 'Puzzle' && (
-      <div className="p-3 space-y-1 border-b border-slate-600/50 relative z-10 bg-transparent">
+          {slotType !== 'Puzzle' && <DotDivider />}
+
+          {slotType !== 'Puzzle' && (
+          <div className="px-3 py-[8px] space-y-1 relative z-10 bg-transparent">
          {/* Categories */}
          <div className="space-y-0.5">
            <StatLine label="STR" base={item.item_base_option.str} add={item.item_add_option.str} etc={item.item_etc_option.str} star={item.item_starforce_option.str} total={item.item_total_option.str} />
@@ -436,46 +556,73 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
              </div>
            )}
          </div>
-      </div>
-      )}
+          </div>
+          )}
 
-      {/* Potentials */}
-      {item.potential_option_grade && (
-        <div className="p-3 border-b border-slate-600/50 relative z-10">
-           <div className={`flex items-center gap-1.5 text-xs font-bold mb-1 ${potInfo.color}`}>
-              <div className={`w-5 h-5 rounded border ${potInfo.border} flex items-center justify-center text-[10px] bg-slate-800`}>
-                  {potInfo.char}
-              </div>
+          {item.potential_option_grade && <DotDivider />}
+
+          {item.potential_option_grade && (
+          <div className="px-3 py-[8px] relative z-10">
+            <div className={`flex items-center gap-1.5 text-xs font-bold mb-[2px] ${potInfo.color}`}>
+                <img className="w-[10px] h-[10px]" alt={potInfo.label} src={`${WINDOW_ASSET_BASE}/${potentialTitleIcon}`} />
               <span>{potInfo.label}潛能屬性</span>
            </div>
-           <div className="text-xs space-y-0.5 text-white pl-1">
-              {item.potential_option_1 && <p>{item.potential_option_1}</p>}
-              {item.potential_option_2 && <p>{item.potential_option_2}</p>}
-              {item.potential_option_3 && <p>{item.potential_option_3}</p>}
-           </div>
+            {mainPotentialSealed ? (
+              <div className="text-xs pl-1 text-slate-300">潛在能力已封印</div>
+            ) : (
+              <div className="text-xs space-y-0.5 pl-1">
+                  {mainPotentialLines.map((line, index) => <PotentialLine key={`${index}-${line.text}`} text={line.text} icon={line.icon} />)}
+             </div>
+            )}
         </div>
-      )}
+          )}
 
-      {/* Additional Potentials */}
-      {item.additional_potential_option_grade && (
-        <div className="p-3 relative z-10">
-           <div className={`flex items-center gap-1.5 text-xs font-bold mb-1 ${addPotInfo.color}`}>
-              <div className={`w-5 h-5 rounded border ${addPotInfo.border} flex items-center justify-center text-[10px] bg-slate-800`}>
-                  {addPotInfo.char}
-              </div>
+          {item.additional_potential_option_grade && <DotDivider />}
+
+          {item.additional_potential_option_grade && (
+          <div className="px-3 py-[8px] relative z-10">
+            <div className={`flex items-center gap-1.5 text-xs font-bold mb-[2px] ${addPotInfo.color}`}>
+                <img className="w-[10px] h-[10px]" alt={addPotInfo.label} src={`${WINDOW_ASSET_BASE}/${additionalPotentialTitleIcon}`} />
               <span>{addPotInfo.label}附加潛能</span>
            </div>
-           <div className="text-xs space-y-0.5 text-white pl-1">
-              {item.additional_potential_option_1 && <p>{item.additional_potential_option_1}</p>}
-              {item.additional_potential_option_2 && <p>{item.additional_potential_option_2}</p>}
-              {item.additional_potential_option_3 && <p>{item.additional_potential_option_3}</p>}
-           </div>
+            {additionalPotentialSealed ? (
+              <div className="text-xs pl-1 text-slate-300">附加潛在能力已封印</div>
+            ) : (
+              <div className="text-xs space-y-0.5 pl-1">
+                  {additionalPotentialLines.map((line, index) => <PotentialLine key={`${index}-${line.text}`} text={line.text} icon={line.icon} />)}
+             </div>
+            )}
         </div>
-      )}
+          )}
 
-      {/* Soul Weapon */}
-      {item.soul_name && (
-        <div className={`p-3 relative z-10 ${item.additional_potential_option_grade ? 'border-t border-slate-600/50' : ''}`}>
+          {hasExceptionalEnhancement && <DotDivider />}
+
+          {hasExceptionalEnhancement && (
+          <div className="px-3 py-[8px] relative z-10 text-xs">
+            <div className="flex items-start gap-x-[6px] text-white">
+              <img
+                className="w-[14px] h-[14px] mt-[1px] shrink-0"
+                alt="EX"
+                src={`${WINDOW_ASSET_BASE}/exceptional_enhanced.png`}
+              />
+              <div className="min-w-0 flex-1">
+                <div className="text-[#F0D38A] leading-[1.35]">
+                  卓越強化：{exceptionalCount} 次
+                </div>
+                <div className="mt-[2px] space-y-[1px]">
+                  {exceptionalOptions.map((option) => (
+                    <ExceptionalLine key={option} text={option} />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+          )}
+
+          {item.soul_name && <DotDivider />}
+
+          {item.soul_name && (
+          <div className="px-3 py-[8px] relative z-10">
            <div className="flex items-center gap-1.5 text-xs font-bold mb-1 text-red-400">
               <div className="w-5 h-5 rounded border border-red-500 flex items-center justify-center text-[10px] bg-slate-800">
                   魂
@@ -487,11 +634,12 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
               {item.soul_option && <p>{item.soul_option}</p>}
            </div>
         </div>
-      )}
+          )}
       
-      {/* Set Effect Details (Full List) */}
-      {showSetEffect && matchedSet && matchedSet.set_effect_info && (
-        <div className="p-3 border-t border-slate-600/50 relative z-10 transition-all duration-300">
+          {showSetEffect && matchedSet && matchedSet.set_effect_info && <DotDivider />}
+
+          {showSetEffect && matchedSet && matchedSet.set_effect_info && (
+          <div className="px-3 py-[8px] relative z-10 transition-all duration-300">
             <div className="flex justify-between items-center mb-2">
                 <h4 className="text-sm font-bold text-green-400">{matchedSet.set_name}</h4>
                 <span className="text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded border border-slate-700">
@@ -521,14 +669,21 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
                 })}
             </div>
         </div>
-      )}
+        )}
 
-      {/* Footer */}
-      {item.item_description && (
-        <div className="bg-[#121418]/50 p-2 text-xs text-slate-400 text-left relative z-10 border-t border-slate-700 leading-relaxed whitespace-pre-wrap break-words">
+        {item.item_description && <DotDivider />}
+
+        {item.item_description && (
+        <div className="px-3 py-[8px] text-xs text-slate-300 text-left relative z-10 leading-relaxed whitespace-pre-wrap break-words">
           {formatDescription(item.item_description)}
         </div>
-      )}
+        )}
+      </div>
+      <div className="bg-repeat-y" style={windowBg('window_e.png')} />
+
+      <div className="bg-left-top" style={windowBg('window_sw.png')} />
+      <div className="bg-repeat-x" style={windowBg('window_s.png')} />
+      <div className="bg-left-top" style={windowBg('window_se.png')} />
     </div>
   );
 };

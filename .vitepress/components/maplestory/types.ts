@@ -58,6 +58,19 @@ export interface ItemOption {
   equipment_level_decrease: number;
   max_hp_rate: string;
   max_mp_rate: string;
+  base_equipment_level?: number;
+}
+
+export interface ItemExceptionalOption {
+  str: string;
+  dex: string;
+  int: string;
+  luk: string;
+  max_hp: string;
+  max_mp: string;
+  attack_power: string;
+  magic_power: string;
+  exceptional_upgrade: number;
 }
 
 export interface EquipmentItem {
@@ -74,6 +87,8 @@ export interface EquipmentItem {
   item_add_option: ItemOption; // Flame stats
   item_etc_option: ItemOption; // Scroll stats
   item_starforce_option: ItemOption; // Starforce stats
+  potential_option_flag?: string;
+  additional_potential_option_flag?: string;
   potential_option_grade: string;
   additional_potential_option_grade: string;
   potential_option_1: string;
@@ -91,6 +106,7 @@ export interface EquipmentItem {
   item_level: number;
   special_ring_level: number;
   date_expire: string;
+  item_exceptional_option?: ItemExceptionalOption;
   soul_name?: string;
   soul_option?: string;
 }
