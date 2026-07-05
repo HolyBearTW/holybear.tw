@@ -88,6 +88,10 @@ const TOTEM_MAPPING = [
   { name: 'TMS勇者號意念', path: '/image/theme/maplestory_character/totem26.png' },
 ];
 
+const CUSTOM_ITEM_ICON_MAPPING = [
+  { name: '神諭者的戒指', path: '/image/theme/maplestory_character/raw1.png' },
+];
+
 const resolveItemIcon = (item: EquipmentItem | undefined, slotKey: string): string | undefined => {
   if (!item) return undefined;
   
@@ -107,11 +111,16 @@ const resolveItemIcon = (item: EquipmentItem | undefined, slotKey: string): stri
     if (match) return match.path;
   }
 
+  const customItemIcon = CUSTOM_ITEM_ICON_MAPPING.find(m => m.name === item.item_name);
+  if (customItemIcon) {
+    return customItemIcon.path;
+  }
+
   // 3. Fallback to API icon
   return item.item_icon;
 };
 
-const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'left' | 'right'; mobileDir?: 'up' | 'down'; setEffect?: CharacterSetEffect; characterJob?: string; showSetEffect?: boolean }> = ({ slotKey, item, tooltipSide = 'left', mobileDir = 'down', setEffect, characterJob, showSetEffect }) => {
+const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'left' | 'right'; mobileDir?: 'up' | 'down'; setEffect?: CharacterSetEffect; characterJob?: string; showSetEffect?: boolean; disabled?: boolean }> = ({ slotKey, item, tooltipSide = 'left', mobileDir = 'down', setEffect, characterJob, showSetEffect, disabled = false }) => {
   const def = SLOT_DEFINITIONS[slotKey];
   const [isOpen, setIsOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -173,11 +182,11 @@ const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'lef
   if (!def) return <div className="w-10 h-10 sm:w-12 sm:h-12 invisible flex-shrink-0" />;
 
   // Restore style variables logic
-  let borderColor = 'border-slate-800';
-  let bgColor = 'bg-[#1a1d24]';
+  let borderColor = disabled ? 'border-slate-700' : 'border-slate-800';
+  let bgColor = disabled ? 'bg-[#11151b]' : 'bg-[#1a1d24]';
   let glow = '';
 
-  if (item) {
+  if (!disabled && item) {
     const grade = item.potential_option_grade ? item.potential_option_grade.toLowerCase() : '';
     if (grade.includes('legendary') || grade.includes('傳說')) { 
         borderColor = 'border-green-500'; 
@@ -200,7 +209,7 @@ const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'lef
       className={`relative group ${showTooltip ? 'z-[100]' : 'z-0'} !transform-none !transition-none !translate-y-0 !m-0`}
     >
       <div 
-        className={`w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0 ${bgColor} border-2 ${borderColor} rounded-md flex items-center justify-center relative overflow-hidden ${glow} cursor-pointer`}
+        className={`w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0 ${bgColor} border-2 ${borderColor} rounded-md flex items-center justify-center relative overflow-hidden ${glow} ${item ? 'cursor-pointer' : 'cursor-default'} ${disabled ? 'opacity-45 saturate-0' : ''}`}
         onClick={(e) => { e.stopPropagation(); setIsOpen(!isOpen); }}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
@@ -383,6 +392,13 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, setEffect, cha
     return fuzzy;
   };
 
+  const visibleItems = getDisplayItems();
+  const hasOverall = visibleItems.some((item: EquipmentItem) => {
+    const slot = normalize(item.item_equipment_slot);
+    const part = normalize(item.item_equipment_part);
+    return slot === '套服' || slot === 'overall' || part === '套服' || part === 'overall';
+  });
+
   return (
     <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner relative">
       <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
@@ -454,7 +470,7 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, setEffect, cha
       {/* Right Columns (Armor) */}
       <div className="flex gap-2">
           <div className="flex flex-col gap-2">
-            {['Hat', 'Top', 'Bottom', 'Shoulder', 'Android', 'Gem'].map((key, idx) => <Slot key={key} slotKey={key} item={findItem(key)} tooltipSide="left" mobileDir={idx < 3 ? 'down' : 'up'} setEffect={setEffect} characterJob={characterJob} showSetEffect={showSetEffect} />)}
+            {['Hat', 'Top', 'Bottom', 'Shoulder', 'Android', 'Gem'].map((key, idx) => <Slot key={key} slotKey={key} item={key === 'Bottom' && hasOverall ? undefined : findItem(key)} tooltipSide="left" mobileDir={idx < 3 ? 'down' : 'up'} setEffect={setEffect} characterJob={characterJob} showSetEffect={showSetEffect} disabled={key === 'Bottom' && hasOverall} />)}
           </div>
           <div className="flex flex-col gap-2">
             {['Cape', 'Gloves', 'Shoes', 'Medal', 'Heart', 'Badge'].map((key, idx) => <Slot key={key} slotKey={key} item={findItem(key)} tooltipSide="left" mobileDir={idx < 3 ? 'down' : 'up'} setEffect={setEffect} characterJob={characterJob} showSetEffect={showSetEffect} />)}

@@ -4,6 +4,180 @@ import { CharacterCashItemEquipment, CashItemEquipmentPreset, CharacterBeautyEqu
 import PresetSwitcher from './PresetSwitcher';
 import DyePreview from './DyePreview';
 
+const WINDOW_ASSET_BASE = '/image/theme/window';
+const CUSTOM_CASH_ITEM_ICON_MAPPING = [
+  { name: '神諭者的戒指', path: '/image/theme/maplestory_character/raw1.png' },
+];
+
+const windowBg = (name: string) => ({ backgroundImage: `url('${WINDOW_ASSET_BASE}/${name}')` });
+
+const resolveCashItemIcon = (item?: CashItemEquipmentPreset): string | undefined => {
+  if (!item) return undefined;
+
+  const customItemIcon = CUSTOM_CASH_ITEM_ICON_MAPPING.find(mapping => mapping.name === item.cash_item_name);
+  return customItemIcon?.path || item.cash_item_icon;
+};
+
+const DotDivider: React.FC<{ className?: string }> = ({ className = '' }) => (
+  <div className={`h-[3px] bg-repeat-x ${className}`.trim()} style={windowBg('window_dotline.png')} />
+);
+
+const CategoryBadge: React.FC<{ label: string }> = ({ label }) => (
+  <div className="inline-flex items-center">
+    <div className="w-[8px] h-[14px] shrink-0" style={windowBg('category_w.png')} />
+    <div className="h-[14px] flex items-center bg-repeat-x px-[2px] text-[#B8BFC5]" style={windowBg('category_c.png')}>
+      {label}
+    </div>
+    <div className="w-[8px] h-[14px] shrink-0" style={windowBg('category_e.png')} />
+  </div>
+);
+
+const CashTooltipWindow: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
+  <div className={`relative grid grid-cols-[14px_minmax(0,1fr)_15px] grid-rows-[14px_auto_15px] w-full text-white text-[12px] leading-[1.2] overflow-hidden z-50 text-left pointer-events-none ${className}`.trim()}>
+    <div className="bg-left-top" style={windowBg('window_nw.png')} />
+    <div className="bg-repeat-x" style={windowBg('window_n.png')} />
+    <div className="bg-left-top" style={windowBg('window_ne.png')} />
+
+    <div className="bg-repeat-y" style={windowBg('window_w.png')} />
+    <div className="relative" style={windowBg('window_c.png')}>
+      {children}
+    </div>
+    <div className="bg-repeat-y" style={windowBg('window_e.png')} />
+
+    <div className="bg-left-top" style={windowBg('window_sw.png')} />
+    <div className="bg-repeat-x" style={windowBg('window_s.png')} />
+    <div className="bg-left-top" style={windowBg('window_se.png')} />
+  </div>
+);
+
+const BeautyTooltipContent: React.FC<BeautySlotProps> = ({ label, name, baseColor, mixColor, mixRate, hue, saturation, brightness }) => {
+  const hasMix = mixRate && parseInt(mixRate) > 0;
+  const hasSkinDetails =
+    typeof hue === 'number' &&
+    typeof saturation === 'number' &&
+    typeof brightness === 'number' &&
+    (hue !== 0 || saturation !== 0 || brightness !== 0);
+
+  return (
+    <CashTooltipWindow>
+      <div className="px-3 pt-3 pb-2 text-center">
+        <h3 className="text-sm font-bold text-white">{name}</h3>
+      </div>
+
+      <DotDivider />
+
+      <div className="px-3 py-[6px] flex justify-end">
+        <CategoryBadge label={label} />
+      </div>
+
+      <DotDivider />
+
+      <div className="px-3 py-[8px] space-y-2 text-[11px] leading-tight">
+        {baseColor && (
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-slate-400">基底</span>
+            <span className="text-white">{baseColor}</span>
+          </div>
+        )}
+        {hasMix && (
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-slate-400">混染</span>
+            <span className="text-white">{mixColor} ({mixRate}%)</span>
+          </div>
+        )}
+        {hasSkinDetails && (
+          <>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-slate-400">色相</span>
+              <span className="text-white">{hue}</span>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-slate-400">飽和</span>
+              <span className="text-white">{saturation}</span>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-slate-400">亮度</span>
+              <span className="text-white">{brightness}</span>
+            </div>
+          </>
+        )}
+      </div>
+    </CashTooltipWindow>
+  );
+};
+
+const CashItemTooltipContent: React.FC<{ item: CashItemEquipmentPreset; hasPrism: boolean }> = ({ item, hasPrism }) => {
+  const prism = item.cash_item_coloring_prism;
+  const displayIcon = resolveCashItemIcon(item);
+
+  return (
+    <CashTooltipWindow>
+      <div className="px-3 pt-3 pb-2 text-center">
+        <h3 className="text-sm font-bold text-white">{item.cash_item_name}</h3>
+      </div>
+
+      <DotDivider />
+
+      <div className="px-3 py-[6px] relative">
+        <div className="relative flex justify-between items-end gap-3">
+          <div className="relative w-[64px] h-[64px] bg-no-repeat bg-[length:64px_64px]" style={windowBg('itemIcon_base.png')}>
+            <div className="absolute inset-0 pointer-events-none bg-[length:64px_64px]" style={windowBg('itemIcon_shade.png')} />
+            <div className="relative w-full h-full overflow-hidden">
+              {hasPrism && prism ? (
+                <DyePreview
+                  imageUrl={displayIcon}
+                  hue={prism.hue}
+                  saturation={prism.saturation}
+                  value={prism.value}
+                  className="absolute max-w-6 max-h-6 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 scale-[2] bg-transparent"
+                />
+              ) : (
+                <img
+                  src={displayIcon}
+                  alt={item.cash_item_name}
+                  className="absolute max-w-6 max-h-6 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 scale-[2]"
+                />
+              )}
+            </div>
+          </div>
+          <div className="flex flex-col items-end gap-y-[4px] text-[12px] leading-3">
+            <CategoryBadge label={item.cash_item_equipment_slot || '時裝'} />
+            {hasPrism && <span className="text-[11px] text-indigo-300">染色套用中</span>}
+          </div>
+        </div>
+      </div>
+
+      {(hasPrism || (item.cash_item_option && item.cash_item_option.length > 0)) && <DotDivider />}
+
+      <div className="px-3 py-[8px] space-y-1 text-[11px] leading-tight">
+        {hasPrism && prism && (
+          <>
+            <div className="text-indigo-300 font-medium mb-1">染色資訊</div>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-slate-400">色相</span>
+              <span className="text-white">{prism.hue}</span>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-slate-400">飽和</span>
+              <span className="text-white">{prism.saturation}</span>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-slate-400">亮度</span>
+              <span className="text-white">{prism.value}</span>
+            </div>
+          </>
+        )}
+        {item.cash_item_option?.map((opt, i) => (
+          <div key={i} className="flex items-center justify-between gap-3">
+            <span className="text-slate-400">{opt.option_type}</span>
+            <span className="text-white">{opt.option_value}</span>
+          </div>
+        ))}
+      </div>
+    </CashTooltipWindow>
+  );
+};
+
 interface CashEquipmentGridProps {
   cashEquipment: CharacterCashItemEquipment;
   beautyEquipment?: CharacterBeautyEquipment;
@@ -44,6 +218,12 @@ const BeautySlot: React.FC<BeautySlotProps> = ({ label, name, baseColor, mixColo
   // 智慧定位：確保 Tooltip 不會超出左右邊界 (透過 left 修正中心點，保留 transform 動畫)
   useLayoutEffect(() => {
     if (showTooltip && tooltipRef.current) {
+      const vw = Math.min(window.innerWidth, document.documentElement.clientWidth || window.innerWidth);
+      if (vw >= 768) {
+        setAdjustStyle({});
+        return;
+      }
+
         const tooltipEl = tooltipRef.current;
         const parentEl = tooltipEl.parentElement;
         
@@ -51,7 +231,6 @@ const BeautySlot: React.FC<BeautySlotProps> = ({ label, name, baseColor, mixColo
             const parentRect = parentEl.getBoundingClientRect();
             const tooltipWidth = tooltipEl.getBoundingClientRect().width;
             
-            const vw = Math.min(window.innerWidth, document.documentElement.clientWidth || window.innerWidth);
             const padding = 10; 
 
             const parentCenter = parentRect.left + parentRect.width / 2;
@@ -82,6 +261,8 @@ const BeautySlot: React.FC<BeautySlotProps> = ({ label, name, baseColor, mixColo
     typeof saturation === 'number' && 
     typeof brightness === 'number' && 
     (hue !== 0 || saturation !== 0 || brightness !== 0);
+  const borderColor = name ? 'border-slate-600' : 'border-slate-800';
+  const glow = name ? 'shadow-[0_0_10px_-2px_rgba(148,163,184,0.18)]' : '';
   
   let iconSrc = '';
   if (label.includes('髮型')) iconSrc = '/image/theme/hair.png';
@@ -90,14 +271,16 @@ const BeautySlot: React.FC<BeautySlotProps> = ({ label, name, baseColor, mixColo
 
   // Beauty slots are typically at the top, so we show tooltip BELOW by default
   const mobileTooltipClass = 'top-full mt-2';
+  const desktopPositionClass = 'md:right-full md:mr-1 md:left-auto';
+  const desktopVerticalClass = 'md:top-1/2 md:-translate-y-1/2 md:bottom-auto md:mt-0 md:mb-0';
 
   return (
     <div 
       ref={containerRef}
-      className={`relative group ${showTooltip ? 'z-[100]' : 'z-0'}`}
+      className={`relative group ${showTooltip ? 'z-[300] isolate' : 'z-0'} !transform-none !transition-none !translate-y-0 !m-0`}
     >
       <div 
-        className={`w-10 h-10 sm:w-12 sm:h-12 bg-[#1a1d24] border-2 ${name ? 'border-pink-500/50' : 'border-slate-800'} rounded-md flex flex-col items-center justify-center relative overflow-hidden transition-all p-1 cursor-pointer`}
+        className={`w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0 bg-[#1a1d24] border-2 ${borderColor} rounded-md flex flex-col items-center justify-center relative overflow-hidden ${glow} cursor-pointer p-1`}
         onClick={(e) => { e.stopPropagation(); setIsOpen(!isOpen); }}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
@@ -110,7 +293,7 @@ const BeautySlot: React.FC<BeautySlotProps> = ({ label, name, baseColor, mixColo
            />
         ) : (
            name ? (
-             <div className="text-[9px] sm:text-[10px] text-center leading-tight text-pink-200 break-words w-full overflow-hidden">
+             <div className="text-[9px] sm:text-[10px] text-center leading-tight text-slate-200 break-words w-full overflow-hidden">
                 {name.replace('髮型', '').replace('臉型', '')}
              </div>
            ) : (
@@ -123,37 +306,28 @@ const BeautySlot: React.FC<BeautySlotProps> = ({ label, name, baseColor, mixColo
         <div 
             ref={tooltipRef}
             style={adjustStyle}
-            className={`absolute left-1/2 -translate-x-1/2 z-[200] w-[180px] animate-in fade-in duration-100 ${showTooltip ? 'block' : 'hidden'}
-                        ${mobileTooltipClass} bottom-auto`}
+            className={`absolute left-1/2 -translate-x-1/2 z-[200] w-[240px] animate-in fade-in zoom-in-95 duration-200 ${showTooltip ? 'block' : 'hidden'}
+                ${mobileTooltipClass} bottom-auto md:absolute ${desktopVerticalClass} ${desktopPositionClass} md:translate-x-0 md:zoom-in-100`}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
         >
-           <div className="bg-[#1a1d24]/95 backdrop-blur-md border border-pink-500/30 rounded-lg shadow-xl p-3 text-center">
-             <div className="text-sm font-bold text-pink-300 mb-1">{label}</div>
-             <div className="text-xs text-white mb-2">{name}</div>
-             
-             <div className="flex flex-col items-center gap-1">
-               <div className="flex justify-center gap-2 text-[10px]">
-                  {baseColor && <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">{baseColor}</span>}
-                  {hasMix && (
-                    <>
-                      <span className="text-slate-500">+</span>
-                      <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">{mixColor} ({mixRate}%)</span>
-                    </>
-                  )}
-               </div>
-               {hasSkinDetails && (
-                   <div className="text-[9px] text-slate-400 mt-1">
-                      H: {hue} / S: {saturation} / B: {brightness}
-                   </div>
-               )}
-             </div>
-           </div>
+           <BeautyTooltipContent
+             label={label}
+             name={name}
+             baseColor={baseColor}
+             mixColor={mixColor}
+             mixRate={mixRate}
+             hue={hue}
+             saturation={saturation}
+             brightness={brightness}
+           />
         </div>
       )}
     </div>
   );
 };
 
-const CashSlot: React.FC<{ label: string; item?: CashItemEquipmentPreset; tooltipSide?: 'left' | 'right'; mobileDir?: 'up' | 'down' }> = ({ label, item, tooltipSide = 'left', mobileDir = 'down' }) => {
+const CashSlot: React.FC<{ label: string; item?: CashItemEquipmentPreset; tooltipSide?: 'left' | 'right'; mobileDir?: 'up' | 'down'; disabled?: boolean }> = ({ label, item, tooltipSide = 'left', mobileDir = 'down', disabled = false }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const tooltipRef = useRef<HTMLDivElement>(null);
@@ -176,6 +350,12 @@ const CashSlot: React.FC<{ label: string; item?: CashItemEquipmentPreset; toolti
   // 智慧定位：確保 Tooltip 不會超出左右邊界 (透過 left 修正中心點，保留 transform 動畫)
   useLayoutEffect(() => {
     if (showTooltip && tooltipRef.current) {
+      const vw = Math.min(window.innerWidth, document.documentElement.clientWidth || window.innerWidth);
+      if (vw >= 768) {
+        setAdjustStyle({});
+        return;
+      }
+
         const tooltipEl = tooltipRef.current;
         const parentEl = tooltipEl.parentElement;
         
@@ -183,7 +363,6 @@ const CashSlot: React.FC<{ label: string; item?: CashItemEquipmentPreset; toolti
             const parentRect = parentEl.getBoundingClientRect();
             const tooltipWidth = tooltipEl.getBoundingClientRect().width;
             
-            const vw = Math.min(window.innerWidth, document.documentElement.clientWidth || window.innerWidth);
             const padding = 10; 
 
             const parentCenter = parentRect.left + parentRect.width / 2;
@@ -206,28 +385,31 @@ const CashSlot: React.FC<{ label: string; item?: CashItemEquipmentPreset; toolti
             }
         }
     }
-  }, [isOpen]);
+  }, [showTooltip]);
 
   const desktopPositionClass = tooltipSide === 'left'
     ? 'md:right-full md:mr-1 md:left-auto'
     : 'md:left-full md:ml-1 md:right-auto';
 
   const prism = item?.cash_item_coloring_prism;
+  const displayIcon = resolveCashItemIcon(item);
   const hasPrism = prism && (prism.hue !== 0 || prism.saturation !== 0 || prism.value !== 0 || (prism.color_range && prism.color_range !== ''));
+  const borderColor = disabled ? 'border-slate-700' : item ? 'border-slate-600' : 'border-slate-800';
+  const glow = disabled ? '' : item ? 'shadow-[0_0_10px_-2px_rgba(148,163,184,0.18)]' : '';
 
-  // Mobile position logic
   const mobilePositionClass = mobileDir === 'up'
     ? 'bottom-full mb-2 md:bottom-auto md:mb-0'
     : 'top-full mt-2 md:mt-0';
+  const desktopVerticalClass = 'md:top-1/2 md:-translate-y-1/2 md:bottom-auto md:mt-0 md:mb-0';
 
   return (
     <div 
       ref={containerRef}
-      className={`relative group ${showTooltip ? 'z-[100]' : 'z-0'}`}
+      className={`relative group ${showTooltip ? 'z-[300] isolate' : 'z-0'} !transform-none !transition-none !translate-y-0 !m-0`}
     >
       {/* 1. 格子本體 (Slot) */}
       <div 
-        className={`w-10 h-10 sm:w-12 sm:h-12 bg-[#1a1d24] border-2 ${item ? 'border-pink-500/50' : 'border-slate-800'} rounded-md flex items-center justify-center relative overflow-hidden transition-all cursor-pointer`}
+        className={`w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0 ${disabled ? 'bg-[#11151b]' : 'bg-[#1a1d24]'} border-2 ${borderColor} rounded-md flex items-center justify-center relative overflow-hidden ${glow} ${item ? 'cursor-pointer' : 'cursor-default'} ${disabled ? 'opacity-45 saturate-0' : ''}`}
         onClick={(e) => { e.stopPropagation(); setIsOpen(!isOpen); }}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
@@ -237,7 +419,7 @@ const CashSlot: React.FC<{ label: string; item?: CashItemEquipmentPreset; toolti
             {hasPrism ? (
               <>
                 <DyePreview 
-                    imageUrl={item.cash_item_icon} 
+                  imageUrl={displayIcon} 
                     hue={prism.hue} 
                     saturation={prism.saturation} 
                     value={prism.value} 
@@ -246,7 +428,7 @@ const CashSlot: React.FC<{ label: string; item?: CashItemEquipmentPreset; toolti
                 <img src="/image/theme/cashitem.png" alt="染色" className="absolute bottom-[3px] left-[3px] w-3 h-3 z-20" title="染色" />
               </>
             ) : (
-              <img src={item.cash_item_icon} alt={item.cash_item_name} className="max-w-full max-h-full object-contain z-10 translate-x-[1px] translate-y-[1px]" />
+              <img src={displayIcon} alt={item.cash_item_name} className="max-w-full max-h-full object-contain z-10 translate-x-[1px] translate-y-[1px]" />
             )}
           </>
         ) : (
@@ -259,55 +441,12 @@ const CashSlot: React.FC<{ label: string; item?: CashItemEquipmentPreset; toolti
         <div 
             ref={tooltipRef}
             style={adjustStyle}
-            className={`absolute left-1/2 -translate-x-1/2 z-[200] w-[200px] 
+            className={`absolute left-1/2 -translate-x-1/2 z-[9999] w-[260px]
                         ${showTooltip ? 'block' : 'hidden'} animate-in fade-in zoom-in-95 duration-200
                         ${mobilePositionClass}
-                        md:absolute md:top-0 ${desktopPositionClass} md:translate-y-0 md:translate-x-0 md:mt-0 md:zoom-in-100`}
+                        md:absolute ${desktopVerticalClass} ${desktopPositionClass} md:translate-x-0 md:mt-0 md:zoom-in-100`}
         >
-           <div className="bg-[#1a1d24]/95 backdrop-blur-md border border-pink-500/30 rounded-lg shadow-xl p-3 text-center">
-             <div className="text-sm font-bold text-pink-300 mb-1">{item.cash_item_name}</div>
-             <div className="text-[10px] text-slate-400">{item.cash_item_equipment_slot}</div>
-             
-             {hasPrism ? (
-               <>
-                 {/* [修正重點] 這裡的 Tooltip 預覽圖
-                     1. 移除原本的 style (background: #222)
-                     2. 改用 className 設定大小 (w-16 h-16) 並去背，與下方一般圖片一致
-                 */}
-                 <DyePreview 
-                    imageUrl={item.cash_item_icon} 
-                    hue={prism.hue} 
-                    saturation={prism.saturation} 
-                    value={prism.value} 
-                    className="w-16 h-16 object-contain mx-auto my-2 bg-transparent"
-                 />
-                 
-                 <div className="mt-2 pt-2 border-t border-slate-700/50 flex flex-col items-center">
-                   <div className="text-[10px] font-bold text-indigo-300 mb-1 flex items-center justify-center gap-1">
-                      <span className="w-2 h-2 bg-indigo-500 rounded-full"></span> 染色資訊
-                   </div>
-                   <div className="text-[9px] text-slate-400 grid grid-cols-3 gap-1 mb-2">
-                      <div className="bg-slate-800/50 rounded px-1 py-0.5 border border-slate-700">色相: {prism.hue}</div>
-                      <div className="bg-slate-800/50 rounded px-1 py-0.5 border border-slate-700">飽和: {prism.saturation}</div>
-                      <div className="bg-slate-800/50 rounded px-1 py-0.5 border border-slate-700">亮度: {prism.value}</div>
-                   </div>
-                 </div>
-               </>
-             ) : (
-               // 一般裝備的圖片樣式 (作為參考)
-               <img src={item.cash_item_icon} alt={item.cash_item_name} className="w-16 h-16 object-contain mx-auto my-2" />
-             )}
-
-             {item.cash_item_option && item.cash_item_option.length > 0 && (
-                 <div className="mt-2 pt-2 border-t border-slate-700/50 space-y-1">
-                     {item.cash_item_option.map((opt, i) => (
-                         <div key={i} className="text-[10px] text-slate-300">
-                           {opt.option_type}: {opt.option_value}
-                         </div>
-                     ))}
-                 </div>
-             )}
-           </div>
+           <CashItemTooltipContent item={item} hasPrism={Boolean(hasPrism)} />
         </div>
       )}
     </div>
@@ -354,15 +493,34 @@ const CashEquipmentGrid: React.FC<CashEquipmentGridProps> = ({ cashEquipment, be
   }
   let activeItems = [...mainItems, ...additionalItems];
   
+  const normalizeText = (value?: string) => (value || '').trim().toLowerCase();
+
+  const matchesKeywords = (item: CashItemEquipmentPreset, keywords: string[]) => {
+      const normalizedKeywords = keywords.map(keyword => keyword.trim().toLowerCase());
+      const slot = normalizeText(item.cash_item_equipment_slot);
+      const part = normalizeText(item.cash_item_equipment_part);
+
+      return normalizedKeywords.some(keyword => (
+        slot === keyword ||
+        slot.includes(keyword) ||
+        part === keyword ||
+        part.includes(keyword)
+      ));
+  };
+
   const findByKeywords = (keywords: string[]) => {
-      return activeItems.find(item => keywords.some(k => item.cash_item_equipment_slot === k || item.cash_item_equipment_slot.includes(k)));
+      return activeItems.find(item => matchesKeywords(item, keywords));
   };
 
   const findAllByKeywords = (keywords: string[]) => {
-      return activeItems.filter(item => keywords.some(k => item.cash_item_equipment_slot === k || item.cash_item_equipment_slot.includes(k)));
+      return activeItems.filter(item => matchesKeywords(item, keywords));
   };
 
   const rings = findAllByKeywords(['戒指', 'Ring']);
+  const overallItem = findByKeywords(['套服', 'overall', 'longcoat', '한벌옷', '한벌', 'coat']);
+  const topItem = findByKeywords(['上衣', 'Top']);
+  const bottomItem = findByKeywords(['褲子', 'Bottom']);
+  const hasOverall = Boolean(overallItem);
 
   const showAdditionalBeauty = 
     beautyEquipment?.additional_character_hair?.hair_name && 
@@ -377,7 +535,7 @@ const CashEquipmentGrid: React.FC<CashEquipmentGridProps> = ({ cashEquipment, be
   return (
     <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner relative mt-4">
       <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-         <span className="w-2 h-2 rounded-full bg-pink-500"></span> 時裝 (Cash Items)
+        <span className="w-2 h-2 rounded-full bg-sky-400"></span> 時裝 (Cash Items)
       </h3>
       
       {/* 這裡加入了 showBase={true} 以顯示 '0' 按鈕 */}
@@ -424,7 +582,7 @@ const CashEquipmentGrid: React.FC<CashEquipmentGridProps> = ({ cashEquipment, be
                 <div className="w-24 h-24 rounded-full bg-slate-800/50 mb-4" />
             )}
             
-            <div className="relative z-20 mt-8 sm:mt-12 flex flex-col gap-2 items-center">
+            <div className="relative mt-8 sm:mt-12 flex flex-col gap-2 items-center">
                 <div className="flex gap-2">
                    <BeautySlot 
                       label={showAdditionalBeauty ? (beautyEquipment?.character_class?.includes('神之子') ? "髮型 (Alpha)" : "髮型 (一般)") : "髮型"} 
@@ -483,8 +641,8 @@ const CashEquipmentGrid: React.FC<CashEquipmentGridProps> = ({ cashEquipment, be
          <div className="flex gap-2">
             <div className="flex flex-col gap-2">
                 <CashSlot label="帽子" item={findByKeywords(['帽子', 'Hat', 'Cap'])} tooltipSide="left" mobileDir="down" />
-                <CashSlot label="上衣" item={findByKeywords(['上衣', '套服', 'Top', 'Overall'])} tooltipSide="left" mobileDir="down" />
-                <CashSlot label="褲子" item={findByKeywords(['褲子', 'Bottom'])} tooltipSide="left" mobileDir="up" />
+                <CashSlot label="上衣" item={overallItem || topItem} tooltipSide="left" mobileDir="down" />
+                <CashSlot label="褲子" item={hasOverall ? undefined : bottomItem} tooltipSide="left" mobileDir="up" disabled={hasOverall} />
                 <CashSlot label="武器" item={activeItems.find(item => 
                    (item.cash_item_equipment_slot === '武器' || item.cash_item_equipment_slot === 'Weapon') && 
                    !item.cash_item_equipment_slot.includes('Secondary') && 

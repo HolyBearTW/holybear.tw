@@ -37,6 +37,11 @@ const artifactCrystalNames = [
 ];
 
 const CHAMPION_PATH = '/image/theme/unionChampion';
+const HEXA_STAT_CORE_ICONS = [
+  '/image/theme/hexa/hexa-stat1.png',
+  '/image/theme/hexa/hexa-stat2.png',
+  '/image/theme/hexa/hexa-stat3.png',
+];
 
 // HEXA 六轉技能設定
 
@@ -1036,7 +1041,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
               if (!stat) {
                 return (
                   <div key={coreIndex} className="bg-slate-900/30 p-4 rounded-lg border border-slate-800/50 flex flex-col items-center justify-center min-h-[200px] opacity-50">
-                    <Hexagon className="w-8 h-8 text-slate-700 mb-2" />
+                    <img src={HEXA_STAT_CORE_ICONS[coreIndex]} alt={`HEXA 屬性核心 ${coreIndex + 1}`} className="w-8 h-8 mb-2 object-contain opacity-60" />
                     <div className="text-sm font-bold text-slate-600">HEXA 屬性核心 {coreIndex + 1}</div>
                     <div className="text-xs text-slate-700">未解鎖或無資料</div>
                   </div>
@@ -1046,7 +1051,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
                 <div key={coreIndex} className="bg-slate-900/80 p-4 rounded-lg border border-purple-500/30 relative overflow-hidden group">
                   <div className="absolute top-0 right-0 bg-purple-600 text-white text-[10px] px-2 py-0.5 rounded-bl font-bold">階級 {stat.stat_grade}</div>
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 rounded bg-slate-800 flex items-center justify-center border border-purple-500/50 shadow-[0_0_10px_rgba(168,85,247,0.2)]"><Hexagon className="w-6 h-6 text-purple-400" /></div>
+                    <img src={HEXA_STAT_CORE_ICONS[coreIndex]} alt={`HEXA 屬性核心 ${coreIndex + 1}`} className="w-8 h-8 object-contain flex-shrink-0" />
                     <div><div className="text-sm font-bold text-purple-300">HEXA 屬性核心 {coreIndex + 1}</div><div className="text-xs text-slate-500">欄位 {stat.slot_id}</div></div>
                   </div>
                   <div className="space-y-2">
