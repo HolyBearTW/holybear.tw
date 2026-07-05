@@ -884,7 +884,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
       </div>
 
       {/* Set Effects - w-full + min-w-0 */}
-      <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0 break-inside-avoid inline-block align-top">
+      <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0 break-inside-avoid mb-6 inline-block align-top">
         <SectionHeader icon={<Crown />} title="套裝效果" />
         <div className="space-y-3">
           {setEffect?.set_effect.map((set, idx) => (
@@ -956,7 +956,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
 
       </div>
 
-        <div className="space-y-6">
+        <div className="space-y-6 -mt-6 lg:mt-0">
         <Familiar data={{ ...data, familiar }} />
 
         {/* HEXA Stats - full width like LinkSkillSection */}
