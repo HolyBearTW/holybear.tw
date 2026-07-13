@@ -28,7 +28,7 @@
     "markdown-it": "^14.3.0",
     "markdown-it-front-matter": "^0.2.4",
     "medium-zoom": "^1.1.0",
-    "opencc-js": "^1.4.0",
+    "opencc-js": "^1.4.1",
     "postcss": "^8.5.19",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
