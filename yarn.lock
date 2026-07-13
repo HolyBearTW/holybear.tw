@@ -3232,10 +3232,10 @@ oniguruma-to-es@^4.3.6:
     regex "^6.1.0"
     regex-recursion "^6.0.2"
 
-opencc-js@^1.4.0:
-  version "1.4.0"
-  resolved "https://registry.yarnpkg.com/opencc-js/-/opencc-js-1.4.0.tgz#bfa879f1814b1709dfb4edeed0c47e3dc342897c"
-  integrity sha512-SEb4huI5+lT4CFPA4sgs+NAOOgpcmdHZ+vYxhRLR1bQWIt6VRwpFPjWgTJAWAg1MviDcXTBe5zVoUOVxVxNK8w==
+opencc-js@^1.4.1:
+  version "1.4.1"
+  resolved "https://registry.yarnpkg.com/opencc-js/-/opencc-js-1.4.1.tgz#e5ced73c43f0a73a2ab8ac71101eb47ab2f0397d"
+  integrity sha512-2lPLcrg7cnh1ATSduOxhnk/jq6KlR6w+5Ihl4wF7Z5e5Rva4vxTyugV5rZ7EiUCOZl+EDOLetIix+BhgYDCC+A==
 
 p-limit@^2.2.0:
   version "2.3.0"
