@@ -658,7 +658,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
       <div className="columns-1 lg:columns-2 gap-6 [column-fill:_balance] lg:-mb-6">
 
       {/* Union & Artifact - w-full + min-w-0 */}
-      <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0 break-inside-avoid mb-6 inline-block align-top">
+      <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full max-w-full min-w-0 break-inside-avoid mb-6 block self-stretch">
         <SectionHeader icon={<Layers />} title="聯盟 & 神器" />
         <div className="space-y-2">
           {union && (
@@ -679,21 +679,22 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
                    {unionArtifact?.union_artifact_level ?? unionArtifact?.level ?? union?.union_artifact_level ?? '-'}
                  </span>
                </div>
-               <div className="grid grid-cols-3 gap-2">
+               <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
                  {artifactCrystalNames.map((crystalName, idx) => {
                    const crystal = unionArtifact.union_artifact_crystal[idx];
                    const active = Boolean(crystal);
+                   const isLastSingleMobile = idx === artifactCrystalNames.length - 1 && artifactCrystalNames.length % 2 === 1;
 
                    return (
-                     <div key={crystalName} className={`p-2 rounded-lg border text-xs flex flex-row items-center min-h-[90px] transition-all ${active ? 'bg-slate-900/50 border-slate-700' : 'bg-slate-950/40 border-slate-800/70'}`}>
-                       <div className="flex-shrink-0 w-16 h-16 flex items-center justify-center">
+                      <div key={crystalName} className={`p-2 rounded-lg border text-xs flex flex-col items-center sm:flex-row sm:items-center min-h-[90px] transition-all ${active ? 'bg-slate-900/50 border-slate-700' : 'bg-slate-950/40 border-slate-800/70'} ${idx === artifactCrystalNames.length - 1 && artifactCrystalNames.length % 2 === 1 ? 'col-span-2 lg:col-span-1' : ''}`}>
+                       <div className="flex-shrink-0 w-16 h-16 flex items-center justify-center mx-auto sm:mx-0">
                          <img
                            src={artifactCrystalImages[idx]}
                            alt={crystalName}
                            className={`w-16 h-16 object-contain rounded-lg bg-slate-800 border border-purple-400/40 ${active ? 'opacity-100 drop-shadow-[0_0_6px_rgba(56,189,248,0.5)]' : 'grayscale opacity-25'}`}
                          />
                        </div>
-                       <div className="flex-1 ml-2 min-w-0">
+                       <div className="flex-1 mt-2 sm:mt-0 sm:ml-2 min-w-0 text-center sm:text-left">
                          <div className={`font-bold mb-1 ${active ? 'text-purple-300' : 'text-slate-400'}`}>
                            {(crystal?.name || crystalName)} {active ? `Lv.${crystal?.level}` : 'Lv.0'}
                          </div>
@@ -704,7 +705,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
                              <div className="text-slate-500">{crystal?.crystal_option_name_3}</div>
                            </>
                          ) : (
-                          <div className="text-slate-500">未啟用</div>
+                           <div className="text-slate-500">未啟用</div>
                          )}
                        </div>
                      </div>
@@ -932,7 +933,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
       </div>
 
       {/* Dojo - w-full + min-w-0 */}
-      <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0 self-start break-inside-avoid mb-6 inline-block align-top">
+      <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0 self-start break-inside-avoid mb-6 block">
            <SectionHeader icon={<Sword />} title="武陵道場" />
            {dojo ? (
              <div className="flex flex-col gap-3">
