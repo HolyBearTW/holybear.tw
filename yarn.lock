@@ -2705,10 +2705,10 @@ instantsearch-ui-components@0.33.1:
     "@swc/helpers" "0.5.18"
     markdown-to-jsx "^7.7.15"
 
-instantsearch.js@4.106.0:
-  version "4.106.0"
-  resolved "https://registry.yarnpkg.com/instantsearch.js/-/instantsearch.js-4.106.0.tgz#4ed0806fb2b78080f210d4bf8a48fd0ce03e63c4"
-  integrity sha512-KdfEz3NP2DGLxgkTyfhiRw5tH8QWIIokgHXkfYEiuEgY3Je6l9/hOF9AlM203BBvqOF7lCiX9zwEIHj27KO3Rw==
+instantsearch.js@4.107.0:
+  version "4.107.0"
+  resolved "https://registry.yarnpkg.com/instantsearch.js/-/instantsearch.js-4.107.0.tgz#d846e970fdfa28d32be4be5812ffb0bf9febd3f8"
+  integrity sha512-xXQGI3dOqseKtYi4NtUthv8Zc9MD0oaYnGdP8r5O1MtJ0MF+9yr1pZ5380fP+xitKqwvGCghnkeP5m03aqLXBQ==
   dependencies:
     "@algolia/events" "^4.0.1"
     "@swc/helpers" "0.5.18"
@@ -4202,14 +4202,14 @@ vue-chartjs@^5.3.4:
   resolved "https://registry.yarnpkg.com/vue-chartjs/-/vue-chartjs-5.3.4.tgz#9a0f102a56504824674d01d35eece40e2f6b186c"
   integrity sha512-x3Fqob8RQvrTdssfi9ecsCzEkFOd8JPmNwSkSQzdfKj/uBsRJs/Y88cZcZIEcPsTVfMGwMo4MOoihoDG2DoE/g==
 
-vue-instantsearch@^4.27.1:
-  version "4.27.1"
-  resolved "https://registry.yarnpkg.com/vue-instantsearch/-/vue-instantsearch-4.27.1.tgz#ee95d251c0a3f2ae5397c5af8c66dc73835f8962"
-  integrity sha512-pc7Crn1ttzl41GK/MpiOYJ5FUAR1dfhxpx9bPbDbo74cbGvm7rEkWQKh83m3guF8sjnPtKd6ZQR967OZ13OXfA==
+vue-instantsearch@^4.28.0:
+  version "4.28.0"
+  resolved "https://registry.yarnpkg.com/vue-instantsearch/-/vue-instantsearch-4.28.0.tgz#ffd2455e779773fc12b68f0120d050384fdfe53f"
+  integrity sha512-gPQzf4GH62lePtZNBdORiuM9mArOQe8+uP1OZ5hjt04KIunV70+twy7f0li987U8tyVhi66ajYVhup/hFGt9NA==
   dependencies:
     "@swc/helpers" "0.5.18"
     instantsearch-ui-components "0.33.1"
-    instantsearch.js "4.106.0"
+    instantsearch.js "4.107.0"
     mitt "^2.1.0"
 
 vue@^3.4.15, vue@^3.5.39, vue@^3.5.40:
