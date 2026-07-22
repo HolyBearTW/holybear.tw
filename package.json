@@ -31,7 +31,7 @@
     "opencc-js": "^1.4.1",
     "postcss": "^8.5.21",
     "react": "^19.2.8",
-    "react-dom": "^19.2.7",
+    "react-dom": "^19.2.8",
     "react-is": "^19.2.8",
     "recharts": "^3.10.0",
     "swiper": "^14.0.6",
