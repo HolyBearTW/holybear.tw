@@ -25,14 +25,14 @@ const artifactCrystalImages = [
 ];
 
 const artifactCrystalNames = [
-  '水晶：伊昆圖姆',
-  '水晶：奧班',
-  '水晶：尼哈爾',
-  '水晶：赫爾賽德',
-  '水晶：阿爾特',
-  '水晶：卡爾西溫',
-  '水晶：阿爾卡娜',
-  '水晶：奧迪溫',
+  '水晶：菇菇寶貝',
+  '水晶：綠水靈',
+  '水晶：刺菇菇',
+  '水晶：木妖',
+  '水晶：石巨人',
+  '水晶：巴洛古',
+  '水晶：殘暴炎魔',
+  '水晶：粉豆',
   '水晶：拉圖斯',
 ];
 
@@ -94,22 +94,41 @@ const CONDITIONAL_SKILLS = [
     '蒼刃傳授', '紫扇傳授'
 ];
 
+const HEXA_COMMON_SKILLS = [
+  { key: 'JANUS', label: '靈魂雅努斯', matcher: /雅努斯|janus/ },
+  { key: 'HECATE', label: '靈魂赫卡忒', matcher: /赫卡忒|hecate/ },
+];
+
+const getHexaCommonSkillKey = (name: string) => {
+  const normalized = (name || '').toLowerCase();
+  return HEXA_COMMON_SKILLS.find(skill => skill.matcher.test(normalized))?.key ?? null;
+};
+
 // ---------------------------
 // 2. Helper 函式
 // ---------------------------
 
-const calculateHexaProgress = (hexaMatrix: any, includeJanus: boolean) => {
+const calculateHexaProgress = (hexaMatrix: any, commonSkillFlags: Record<string, boolean>) => {
   if (!hexaMatrix || !hexaMatrix.character_hexa_core_equipment) {
-    return { current: 0, total: 1, percent: 0, currentErda: 0, remainingFragments: 0, remainingErda: 0, hasJanus: false };
+    return { current: 0, total: 1, percent: 0, currentErda: 0, remainingFragments: 0, remainingErda: 0, hasJanus: false, hasHecate: false };
   }
   let totalFragmentsUsed = 0;
   let totalErdaUsed = 0;
   let grandTotalFragments = 0;
   let grandTotalErda = 0;
   let hasJanus = false;
+  let hasHecate = false;
+  const enabledCommonCount = Object.values(commonSkillFlags).filter(Boolean).length;
 
   Object.values(HEXA_SETTINGS).forEach(setting => {
-    if (!includeJanus && setting.key === 'COMMON') return;
+    if (setting.key === 'COMMON') {
+      if (enabledCommonCount === 0) return;
+      const costPerCore = setting.costs.reduce((a, b) => a + b, 0);
+      const erdaPerCore = setting.erdaCosts.reduce((a, b) => a + b, 0);
+      grandTotalFragments += costPerCore * enabledCommonCount;
+      grandTotalErda += erdaPerCore * enabledCommonCount;
+      return;
+    }
     const costPerCore = setting.costs.reduce((a, b) => a + b, 0);
     const erdaPerCore = setting.erdaCosts.reduce((a, b) => a + b, 0);
     grandTotalFragments += costPerCore * setting.quantity;
@@ -119,8 +138,12 @@ const calculateHexaProgress = (hexaMatrix: any, includeJanus: boolean) => {
   hexaMatrix.character_hexa_core_equipment.forEach((core: any) => {
     const level = parseInt(core.hexa_core_level, 10);
     const type = (core.hexa_core_type || '').toLowerCase();
-    
-    if (HEXA_SETTINGS.COMMON.keywords.some(k => type.includes(k))) hasJanus = true;
+    const name = (core.hexa_core_name || '').toLowerCase();
+    const commonSkillKey = getHexaCommonSkillKey(name);
+    const isJanus = commonSkillKey === 'JANUS';
+    const isHecate = commonSkillKey === 'HECATE';
+    if (isJanus) hasJanus = true;
+    if (isHecate) hasHecate = true;
 
     let targetSetting = null;
     if (HEXA_SETTINGS.SKILL.keywords.some(k => type.includes(k))) targetSetting = HEXA_SETTINGS.SKILL;
@@ -128,10 +151,16 @@ const calculateHexaProgress = (hexaMatrix: any, includeJanus: boolean) => {
     else if (HEXA_SETTINGS.ENHANCEMENT.keywords.some(k => type.includes(k))) targetSetting = HEXA_SETTINGS.ENHANCEMENT;
     else if (HEXA_SETTINGS.COMMON.keywords.some(k => type.includes(k))) targetSetting = HEXA_SETTINGS.COMMON;
 
-    if (targetSetting && (includeJanus || targetSetting.key !== 'COMMON')) {
-      for (let i = 0; i < level; i++) {
-        totalFragmentsUsed += targetSetting.costs[i] || 0;
-        totalErdaUsed += targetSetting.erdaCosts[i] || 0;
+    if (targetSetting) {
+      const shouldIncludeCommon = targetSetting.key !== 'COMMON'
+        || (commonSkillKey && commonSkillFlags[commonSkillKey])
+        || (!commonSkillKey && enabledCommonCount > 0);
+
+      if (shouldIncludeCommon) {
+        for (let i = 0; i < level; i++) {
+          totalFragmentsUsed += targetSetting.costs[i] || 0;
+          totalErdaUsed += targetSetting.erdaCosts[i] || 0;
+        }
       }
     }
   });
@@ -143,7 +172,8 @@ const calculateHexaProgress = (hexaMatrix: any, includeJanus: boolean) => {
     currentErda: totalErdaUsed,
     remainingFragments: grandTotalFragments - totalFragmentsUsed,
     remainingErda: grandTotalErda - totalErdaUsed,
-    hasJanus: hasJanus
+    hasJanus: hasJanus,
+    hasHecate: hasHecate
   };
 };
 
@@ -600,6 +630,13 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
 
   const { union, unionArtifact, symbolEquipment, petEquipment, familiar, setEffect, vMatrix, hexaMatrix, hexaMatrixStat, dojo, linkSkill, skill0, skill1, skill2, skill3, skill4, skillHyper, skill5, skill6, hyperStat, unionChampion } = data;
   const [includeJanus, setIncludeJanus] = useState(true);
+  const [includeHecate, setIncludeHecate] = useState(true);
+  const commonSkillFlags = { JANUS: includeJanus, HECATE: includeHecate };
+
+  const commonSkillButtons = [
+    { key: 'JANUS', active: includeJanus, onClick: () => setIncludeJanus(!includeJanus), label: '靈魂雅努斯' },
+    { key: 'HECATE', active: includeHecate, onClick: () => setIncludeHecate(!includeHecate), label: '靈魂赫卡忒' },
+  ];
 
   const findSkillIcon = (name: string) => {
       if (!name) return undefined;
@@ -949,17 +986,19 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
         {hexaMatrix && hexaMatrix.character_hexa_core_equipment && hexaMatrix.character_hexa_core_equipment.length > 0 && (
           <div className="mb-6">
             {(() => {
-                const progress = calculateHexaProgress(hexaMatrix, includeJanus);
+                const progress = calculateHexaProgress(hexaMatrix, commonSkillFlags);
                 return (
                     <div className="flex flex-col md:flex-row md:justify-between md:items-end mb-4 gap-4">
                         <div>
                             <SectionHeader icon={<Atom />} title="核心技能 (V/Hexa)" />
-                            <div className="flex items-center gap-3 mt-1">
+                            <div className="flex items-center gap-3 mt-1 flex-wrap">
                               <h4 className="text-sm font-bold text-purple-400">HEXA 矩陣</h4>
-                              <button onClick={() => setIncludeJanus(!includeJanus)} className={`text-[10px] px-2 py-0.5 rounded border flex items-center gap-1 transition-all ${includeJanus ? 'bg-purple-900/40 text-purple-300 border-purple-700/50 hover:bg-purple-900/60' : 'bg-slate-800 text-slate-500 border-slate-700 hover:bg-slate-700 hover:text-slate-400'}`}>
-                                {includeJanus ? <CheckSquare className="w-3 h-3" /> : <Square className="w-3 h-3" />}
-                                {includeJanus ? '計算靈魂雅努斯' : '排除靈魂雅努斯'}
-                              </button>
+                              {commonSkillButtons.map(button => (
+                                <button key={button.key} onClick={button.onClick} className={`text-[10px] px-2 py-0.5 rounded border flex items-center gap-1 transition-all ${button.active ? 'bg-purple-900/40 text-purple-300 border-purple-700/50 hover:bg-purple-900/60' : 'bg-slate-800 text-slate-500 border-slate-700 hover:bg-slate-700 hover:text-slate-400'}`}>
+                                  {button.active ? <CheckSquare className="w-3 h-3" /> : <Square className="w-3 h-3" />}
+                                  {button.active ? `計算${button.label}` : `排除${button.label}`}
+                                </button>
+                              ))}
                             </div>
                         </div>
                         <div className="text-right">

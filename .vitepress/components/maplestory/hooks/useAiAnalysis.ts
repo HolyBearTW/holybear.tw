@@ -13,7 +13,7 @@ export const useAiAnalysis = (
   });
 
   const [geminiModel, setGeminiModel] = useState<string>(() => {
-    return typeof localStorage !== 'undefined' ? localStorage.getItem('gemini_model') || 'gemini-3.5-flash' : 'gemini-3.5-flash';
+    return typeof localStorage !== 'undefined' ? localStorage.getItem('gemini_model') || 'gemini-3.5-flash-lite' : 'gemini-3.5-flash-lite';
   });
 
   const [showKeySettings, setShowKeySettings] = useState(false);
