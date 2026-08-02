@@ -140,7 +140,7 @@ const StatLine: React.FC<{ label: string; base: string; add: string; etc: string
   const suffix = isPercent ? '%' : '';
   
   return (
-    <div className="flex items-center text-[11px] leading-tight mb-1">
+    <div className="flex items-center text-[11px] leading-[12px]">
       <span className="text-slate-300 w-24 shrink-0 font-medium">{label}:</span>
       <div className="flex-1">
         <span className="text-white">+{total}{suffix}</span>
@@ -269,6 +269,11 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
   // If actual stars exceed max (e.g. data error or superior assumption wrong), extend max
   if (sfCount > maxStars) maxStars = sfCount;
 
+  const slotLower = (item.item_equipment_slot || '').toLowerCase();
+  const partLower = (item.item_equipment_part || '').toLowerCase();
+  const isSupportWeapon = slotType === 'Secondary';
+  const isEmblemTag = slotType === 'Emblem';
+
   // Improved Job Detection Logic
   const getJobDisplay = () => {
     const name = String(item.item_name || '');
@@ -290,9 +295,6 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
 
     // 2. High Level Weapon/Secondary/Emblem Logic (Level >= 30)
     // If no specific job keyword found above, check if it's W/S/E and use characterJob
-    const slotLower = (item.item_equipment_slot || '').toLowerCase();
-    const partLower = (item.item_equipment_part || '').toLowerCase();
-    
     const isWeapon = slotLower.includes('weapon') || partLower.includes('武器');
     const isEmblem = slotLower.includes('emblem') || partLower.includes('能源') || partLower.includes('徽章');
     const isSecondary = 
@@ -438,30 +440,38 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
         if (groups.length === 0) return null;
 
         return (
-          <div className="flex h-[14px] items-center justify-center">
+          <div className="flex h-[10px] items-start justify-center">
             {groups}
           </div>
         );
       };
       
+      const starRow = renderRow(0, row1Max);
+      const extraStarRow = limit > row1Max ? renderRow(row1Max, row2Max) : null;
+      const hasStars = Boolean(starRow || extraStarRow);
+      if (!hasStars) return null;
+      
       return (
-        <div className="relative text-center mb-[4px] -mt-[9px] min-h-[8px] overflow-visible">
-             {is25Star && (
+        <div className="relative text-center min-h-[0px] overflow-visible">
+            <div className="relative z-10 mb-[8px]">
+              {is25Star && (
                 <img
                   src={`${WINDOW_ASSET_BASE}/starForce_anim.png`}
                   alt=""
-                  className="absolute top-0 left-0 w-full h-auto max-w-none pointer-events-none select-none"
+                  className="absolute top-[-8px] left-0 w-full h-auto max-w-none pointer-events-none select-none z-0"
                   aria-hidden="true"
                 />
-             )}
-            <div className="relative z-10 mb-[4px]">
-              {renderRow(0, row1Max)}
-              {limit > row1Max && renderRow(row1Max, row2Max)}
+              )}
+              <div className="relative z-10">
+                {starRow}
+                {extraStarRow}
+              </div>
             </div>
         </div>
       );
   };
   
+  const renderedStars = renderStars();
   return (
     <div className="relative grid grid-cols-[14px_minmax(0,1fr)_15px] grid-rows-[14px_auto_15px] w-full text-white text-[12px] leading-[1.2] overflow-hidden z-50 text-left pointer-events-none">
       <div className="bg-left-top" style={windowBg('window_nw.png')} />
@@ -470,21 +480,21 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
 
       <div className="bg-repeat-y" style={windowBg('window_w.png')} />
       <div className="relative [&>*:last-child]:pb-0" style={windowBg('window_c.png')}>
-        <div className="px-3 pt-3 pb-2 text-center relative">
-          {renderStars()}
-          <h3 className="text-sm font-bold text-white relative z-10">
+        <div className="px-3 pt-[0px] pb-[3px] text-center relative leading-none">
+          {renderedStars}
+          <h3 className="text-sm font-bold text-white relative z-10 block m-0 p-0 leading-none">
            {item.item_name}
            {item.special_ring_level > 0 && <span className="text-orange-400 ml-1">Lv.{item.special_ring_level}</span>}
            {scrollCount > 0 ? ` (+${scrollCount})` : ''}
           </h3>
           {item.potential_option_grade && potInfo.label && (
-            <p className="text-[10px] text-slate-300 mt-0.5">({potInfo.label}等級道具)</p>
+            <p className="text-[10px] text-slate-300 m-0 leading-none">({potInfo.label}等級道具)</p>
           )}
         </div>
 
         <DotDivider />
 
-        <div className="px-3 py-[6px] relative">
+        <div className="pl-3 pr-1 py-[3px] relative">
           <div className="relative flex justify-between items-end gap-3">
             <div className="relative w-[64px] h-[64px] bg-no-repeat bg-[length:64px_64px]" style={windowBg('itemIcon_base.png')}>
               <div className="absolute inset-0 pointer-events-none bg-[length:64px_64px]" style={windowBg('itemIcon_shade.png')} />
@@ -497,7 +507,11 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
               </div>
             </div>
             <div className="flex flex-col items-end gap-y-[4px] text-[12px] leading-3">
-              <CategoryBadge label={equipmentCategory} />
+              <div className="flex flex-wrap justify-end gap-1">
+                {isEmblemTag && <CategoryBadge label="能源" />}
+                {isSupportWeapon && <CategoryBadge label="輔助武器" />}
+                <CategoryBadge label={equipmentCategory} />
+              </div>
               <div className="flex items-center gap-x-[5px]">
                 <span className="text-[#B8BFC5]">要求等級</span>
                 <span>Lv.{itemLevel}</span>
@@ -508,7 +522,7 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
 
         <DotDivider />
 
-        <div className={`px-3 py-[8px] ${slotType === 'Puzzle' ? '' : ''} relative z-10 space-y-1`}>
+        <div className={`px-3 py-[3px] ${slotType === 'Puzzle' ? '' : ''} relative z-10 space-y-1`}>
           <div className="flex items-center text-[11px] leading-tight">
              <span className="text-slate-400 w-24 shrink-0 font-medium text-left">裝備職業</span>
              <span className="text-white">
@@ -527,9 +541,9 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
           {slotType !== 'Puzzle' && <DotDivider />}
 
           {slotType !== 'Puzzle' && (
-          <div className="px-3 py-[8px] space-y-1 relative z-10 bg-transparent">
+          <div className="px-3 py-0 space-y-1 relative z-10 bg-transparent">
          {/* Categories */}
-         <div className="space-y-0.5">
+         <div className="space-y-[2px]">
            <StatLine label="STR" base={item.item_base_option.str} add={item.item_add_option.str} etc={item.item_etc_option.str} star={item.item_starforce_option.str} total={item.item_total_option.str} />
            <StatLine label="DEX" base={item.item_base_option.dex} add={item.item_add_option.dex} etc={item.item_etc_option.dex} star={item.item_starforce_option.dex} total={item.item_total_option.dex} />
            <StatLine label="INT" base={item.item_base_option.int} add={item.item_add_option.int} etc={item.item_etc_option.int} star={item.item_starforce_option.int} total={item.item_total_option.int} />
@@ -544,14 +558,14 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
            <StatLine label="全屬性%" base={item.item_base_option.all_stat} add={item.item_add_option.all_stat} etc={item.item_etc_option.all_stat} star="0" total={item.item_total_option.all_stat} isPercent />
            
            {((item.scroll_upgradable_count || (item as any).scroll_upgradeable_count) !== undefined && String((item.scroll_upgradable_count || (item as any).scroll_upgradeable_count)) !== '0') && (
-             <div className="flex items-center text-[11px] leading-tight mb-1">
+             <div className="flex items-center text-[11px] leading-none">
                <span className="text-slate-300 w-24 shrink-0 font-medium">可使用卷軸數:</span>
                <span className="text-white">{(item.scroll_upgradable_count || (item as any).scroll_upgradeable_count)}</span>
              </div>
            )}
            {item.cuttable_count !== undefined && String(item.cuttable_count) !== '255' && String(item.cuttable_count) !== '-1' && String(item.cuttable_count) !== '0' && 
              (item.item_name.includes('永恆') && (item.item_name.includes('斗篷') || item.item_name.includes('手套') || item.item_name.includes('鞋'))) && (
-             <div className="flex items-center text-[11px] leading-tight mb-1">
+             <div className="flex items-center text-[11px] leading-none">
                <span className="text-yellow-400 w-auto shrink-0 font-medium">白金神奇剪刀可使用次數 {item.cuttable_count}次</span>
              </div>
            )}
@@ -562,15 +576,15 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
           {item.potential_option_grade && <DotDivider />}
 
           {item.potential_option_grade && (
-          <div className="px-3 py-[8px] relative z-10">
-            <div className={`flex items-center gap-1.5 text-xs font-bold mb-[2px] ${potInfo.color}`}>
+          <div className="px-3 py-[2px] relative z-10">
+            <div className={`flex items-center gap-1.5 text-xs font-bold mb-[1px] ${potInfo.color}`}>
                 <img className="w-[10px] h-[10px]" alt={potInfo.label} src={`${WINDOW_ASSET_BASE}/${potentialTitleIcon}`} />
-              <span>{potInfo.label}潛能屬性</span>
+              <span>潛在能力 : {potInfo.label}</span>
            </div>
             {mainPotentialSealed ? (
               <div className="text-xs pl-1 text-slate-300">潛在能力已封印</div>
             ) : (
-              <div className="text-xs space-y-0.5 pl-1">
+              <div className="text-xs space-y-[1px] pl-1">
                   {mainPotentialLines.map((line, index) => <PotentialLine key={`${index}-${line.text}`} text={line.text} icon={line.icon} />)}
              </div>
             )}
@@ -580,15 +594,15 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
           {item.additional_potential_option_grade && <DotDivider />}
 
           {item.additional_potential_option_grade && (
-          <div className="px-3 py-[8px] relative z-10">
-            <div className={`flex items-center gap-1.5 text-xs font-bold mb-[2px] ${addPotInfo.color}`}>
+          <div className="px-3 py-[2px] relative z-10">
+            <div className={`flex items-center gap-1.5 text-xs font-bold mb-[1px] ${addPotInfo.color}`}>
                 <img className="w-[10px] h-[10px]" alt={addPotInfo.label} src={`${WINDOW_ASSET_BASE}/${additionalPotentialTitleIcon}`} />
-              <span>{addPotInfo.label}附加潛能</span>
+              <span>附加潛在能力 : {addPotInfo.label}</span>
            </div>
             {additionalPotentialSealed ? (
               <div className="text-xs pl-1 text-slate-300">附加潛在能力已封印</div>
             ) : (
-              <div className="text-xs space-y-0.5 pl-1">
+              <div className="text-xs space-y-[1px] pl-1">
                   {additionalPotentialLines.map((line, index) => <PotentialLine key={`${index}-${line.text}`} text={line.text} icon={line.icon} />)}
              </div>
             )}
@@ -598,7 +612,7 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
           {hasExceptionalEnhancement && <DotDivider />}
 
           {hasExceptionalEnhancement && (
-          <div className="px-3 py-[8px] relative z-10 text-xs">
+          <div className="px-3 py-[2px] relative z-10 text-xs">
             <div className="flex items-start gap-x-[6px] text-white">
               <img
                 className="w-[14px] h-[14px] mt-[1px] shrink-0"
@@ -609,7 +623,7 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
                 <div className="text-[#F0D38A] leading-[1.35]">
                   卓越強化：{exceptionalCount} 次
                 </div>
-                <div className="mt-[2px] space-y-[1px]">
+                <div className="mt-[1px] space-y-[1px]">
                   {exceptionalOptions.map((option) => (
                     <ExceptionalLine key={option} text={option} />
                   ))}
@@ -622,16 +636,16 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
           {item.soul_name && <DotDivider />}
 
           {item.soul_name && (
-          <div className="px-3 py-[8px] relative z-10">
-           <div className="flex items-center gap-1.5 text-xs font-bold mb-1 text-red-400">
+          <div className="px-3 py-[2px] relative z-10">
+           <div className="flex items-center gap-1.5 text-xs font-bold mb-[1px] text-red-400">
               <div className="w-5 h-5 rounded border border-red-500 flex items-center justify-center text-[10px] bg-slate-800">
                   魂
               </div>
               <span>靈魂寶珠</span>
            </div>
-           <div className="text-xs space-y-0.5 text-white pl-1">
-              <p className="font-bold text-red-400">{item.soul_name}</p>
-              {item.soul_option && <p>{item.soul_option}</p>}
+           <div className="text-xs space-y-[1px] text-white pl-1">
+              <p className="font-bold text-red-400 mb-0">{item.soul_name}</p>
+              {item.soul_option && <p className="mb-0">{item.soul_option}</p>}
            </div>
         </div>
           )}
@@ -639,14 +653,14 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
           {showSetEffect && matchedSet && matchedSet.set_effect_info && <DotDivider />}
 
           {showSetEffect && matchedSet && matchedSet.set_effect_info && (
-          <div className="px-3 py-[8px] relative z-10 transition-all duration-300">
-            <div className="flex justify-between items-center mb-2">
+          <div className="px-3 py-[2px] relative z-10 transition-all duration-300">
+            <div className="flex justify-between items-center mb-[1px]">
                 <h4 className="text-sm font-bold text-green-400">{matchedSet.set_name}</h4>
                 <span className="text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded border border-slate-700">
                    {matchedSet.total_set_count}件效果生效中
                 </span>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1">
                 {matchedSet.set_effect_info.map((opt, idx) => {
                     // Check if this tier is active
                     // API returns active effects in set_effect_info. 
@@ -660,7 +674,7 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
                     const isActive = true; 
                     return (
                         <div key={idx} className={`${isActive ? 'text-white' : 'text-slate-500'} text-xs`}>
-                            <p className="font-bold mb-0.5 text-orange-300">{opt.set_count}套裝效果</p>
+                            <p className="font-bold mb-0 text-orange-300">{opt.set_count}套裝效果</p>
                             <div className="pl-1 leading-relaxed whitespace-pre-wrap text-[11px] text-slate-300">
                                 {opt.set_option}
                             </div>
@@ -674,7 +688,7 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
         {item.item_description && <DotDivider />}
 
         {item.item_description && (
-        <div className="px-3 py-[8px] text-xs text-slate-300 text-left relative z-10 leading-relaxed whitespace-pre-wrap break-words">
+        <div className="px-3 py-[2px] text-xs text-slate-300 text-left relative z-10 leading-relaxed whitespace-pre-wrap break-words">
           {formatDescription(item.item_description)}
         </div>
         )}

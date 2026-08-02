@@ -141,7 +141,7 @@ const CashItemTooltipContent: React.FC<{ item: CashItemEquipmentPreset; hasPrism
             </div>
           </div>
           <div className="flex flex-col items-end gap-y-[4px] text-[12px] leading-3">
-            <CategoryBadge label={item.cash_item_equipment_slot || '時裝'} />
+            <CategoryBadge label={(/ring|戒指/i.test(item.cash_item_equipment_slot || '') ? '戒指' : item.cash_item_equipment_slot) || '時裝'} />
             {hasPrism && <span className="text-[11px] text-indigo-300">染色套用中</span>}
           </div>
         </div>
