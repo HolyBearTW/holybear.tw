@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "devDependencies": {
-    "@lando/vitepress-theme-default-plus": "^1.1.5",
+    "@lando/vitepress-theme-default-plus": "^1.2.0",
     "@tailwindcss/postcss": "^4.3.3",
     "@vitejs/plugin-react": "^4.3.4",
     "concurrently": "^10.0.4",
