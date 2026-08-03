@@ -881,10 +881,10 @@
   resolved "https://registry.npmjs.org/@kurkle/color/-/color-0.3.4.tgz"
   integrity sha512-M5UknZPHRu3DEDWoipU6sE8PdkZ6Z/S+v4dD+Ke8IaNlpdSQah50lz1KtcFBa2vsdOnwbbnxJwVM4wty6udA5w==
 
-"@lando/vitepress-theme-default-plus@^1.1.5":
-  version "1.1.5"
-  resolved "https://registry.npmjs.org/@lando/vitepress-theme-default-plus/-/vitepress-theme-default-plus-1.1.5.tgz"
-  integrity sha512-a54uTRfiKwOXTJ4Gm6xhnMKRg0lpZ/CosDIfh1jksw5fg/VELpmPKhbC6A0i8OgoNO27hXIe5EOby2sZWshKjg==
+"@lando/vitepress-theme-default-plus@^1.2.0":
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/@lando/vitepress-theme-default-plus/-/vitepress-theme-default-plus-1.2.0.tgz#364ee994fb18448031af9ebe729e26b26bb27916"
+  integrity sha512-Pno1UzHwshXRHFAJxbJlucdQa8EiATo6d99ObwN86A+KCAusew4QXkzySB5WfMF0aLzGntaE0qNT40gS4V/pPw==
   dependencies:
     "@docsearch/js" "^3.5.2"
     axios "^1.7.7"
@@ -1955,13 +1955,6 @@ chart.js@^4.5.1:
   integrity sha512-GIjfiT9dbmHRiYi6Nl2yFCq7kkwdkp1W/lp2J99rX0yo9tgJGn3lKQATztIjb5tVtevcBtIdICNWqlq5+E8/Pw==
   dependencies:
     "@kurkle/color" "^0.3.0"
-
-chokidar@^4.0.0:
-  version "4.0.3"
-  resolved "https://registry.npmjs.org/chokidar/-/chokidar-4.0.3.tgz"
-  integrity sha512-Qgzu8kfBvo+cA4962jnP1KkS6Dop5NS6g7R5LFYJr4b8Ub94PPQXUksCw9PvXoeXPRRddRNC5C1JQUR2SMGtnA==
-  dependencies:
-    readdirp "^4.0.1"
 
 chokidar@^5.0.0:
   version "5.0.0"
@@ -3442,11 +3435,6 @@ read-pkg@^5.2.0:
     parse-json "^5.0.0"
     type-fest "^0.6.0"
 
-readdirp@^4.0.1:
-  version "4.1.2"
-  resolved "https://registry.npmjs.org/readdirp/-/readdirp-4.1.2.tgz"
-  integrity sha512-GDhwkLfywWL2s6vEjyhri+eXmfH6j1L7JE27WhqLeYzoh/A3DBaYGEj2H/HFZCn/kMfim73FXxEJTw06WtxQwg==
-
 readdirp@^5.0.0:
   version "5.0.0"
   resolved "https://registry.yarnpkg.com/readdirp/-/readdirp-5.0.0.tgz#fbf1f71a727891d685bb1786f9ba74084f6e2f91"
@@ -3709,23 +3697,12 @@ sass-embedded@^1.100.0:
     sass-embedded-win32-arm64 "1.100.0"
     sass-embedded-win32-x64 "1.100.0"
 
-sass@1.100.0:
+sass@1.100.0, sass@^1.69.7:
   version "1.100.0"
   resolved "https://registry.yarnpkg.com/sass/-/sass-1.100.0.tgz#b4cab1bed286fe22ac6c879c514f71cd36aa06c8"
   integrity sha512-B5j0rYMlinhhOo9tjQebMVVn0TfyXAF+wB3b2ggZUuJ/is/Y+7+JGjirAMxHZ9Z3hIP98NPfamlAkBHa1lAaXQ==
   dependencies:
     chokidar "^5.0.0"
-    immutable "^5.1.5"
-    source-map-js ">=0.6.2 <2.0.0"
-  optionalDependencies:
-    "@parcel/watcher" "^2.4.1"
-
-sass@^1.69.7:
-  version "1.99.0"
-  resolved "https://registry.npmjs.org/sass/-/sass-1.99.0.tgz"
-  integrity sha512-kgW13M54DUB7IsIRM5LvJkNlpH+WhMpooUcaWGFARkF1Tc82v9mIWkCbCYf+MBvpIUBSeSOTilpZjEPr2VYE6Q==
-  dependencies:
-    chokidar "^4.0.0"
     immutable "^5.1.5"
     source-map-js ">=0.6.2 <2.0.0"
   optionalDependencies:
