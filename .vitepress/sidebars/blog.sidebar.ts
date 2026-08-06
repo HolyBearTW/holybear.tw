@@ -3,6 +3,10 @@ export default [
   {
     "items": [
       {
+        "text": "巴哈姆特30週年板主聚",
+        "link": "/blog/2026-08-03"
+      },
+      {
         "text": "Happy Birthday, holybear！ Have an awesome day！ 🎉",
         "link": "/blog/2026-06-10"
       },
@@ -37,10 +41,6 @@ export default [
       {
         "text": "從安卓再次換到iOS兩個月後，我的感受是什麼？",
         "link": "/blog/2025-08-25"
-      },
-      {
-        "text": "衝動購物？才怪！Switch 2 開箱給你看看有多香！🤤",
-        "link": "/blog/2025-07-18"
       }
     ]
   },

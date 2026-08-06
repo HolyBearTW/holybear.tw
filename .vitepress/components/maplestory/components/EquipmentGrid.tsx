@@ -86,6 +86,7 @@ const TOTEM_MAPPING = [
   { name: '阿德勒的痕跡', path: '/image/theme/maplestory_character/totem24.png' },
   { name: '柏林的痕跡', path: '/image/theme/maplestory_character/totem25.png' },
   { name: 'TMS勇者號意念', path: '/image/theme/maplestory_character/totem26.png' },
+  { name: '時空挑戰者的圖騰', path: '/image/theme/maplestory_character/totem27.png' },
 ];
 
 const CUSTOM_ITEM_ICON_MAPPING = [
