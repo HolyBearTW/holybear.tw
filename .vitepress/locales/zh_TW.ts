@@ -18,7 +18,6 @@ export default {
       { text: '🐲 新年的氣息', link: '/MSnewyear2026' },
       { text: '📝 文章編輯器', link: '/editmd' },
       { text: '🔄 簡繁轉換器', link: '/converter' },
-      { text: '🔗 短網址服務', link: 'https://go.holybear.tw/' }
     ]
   },
   {

@@ -15,16 +15,16 @@ hero:
       text: 閱讀日誌
       link: /blog/
     - theme: alt
-      text: 查看作品
-      link: /Mod
-    - theme: alt
       text: 技術文件
       link: /docs/
+    - theme: alt
+      text: 新楓之谷
+      link: /maplestory
 
 features:
-  - title: HyperOS Mod
-    details: 彙整模組作品、更新脈絡與使用筆記，讓客製化成果有清楚的入口與後續追蹤。
-    link: /Mod
+  - title: 新楓之谷戰力分析
+    details: 新楓之谷角色戰力分析工具，支援查詢台版角色裝備、能力值，並透過 AI 進行分析。
+    link: /maplestory
   - title: 技術筆記
     details: 整理和技術有關的各種教學文章，收錄日常生活中較有可能會用到的技術知識。
     link: /docs/

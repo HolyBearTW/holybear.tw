@@ -18,8 +18,8 @@ hero:
       text: View Work
       link: /en/Mod
     - theme: alt
-      text: Shortlink
-      link: https://go.holybear.tw/
+      text: MapleStory
+      link: /maplestory
 
 features:
   - title: HyperOS Mods
