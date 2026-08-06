@@ -9,6 +9,7 @@ import AiAnalysisPanel from './components/AiAnalysisPanel';
 import UpdateLogBoard from './components/UpdateLogBoard';
 import HeroHeader from './components/HeroHeader';
 import KeySettingsModal from './components/KeySettingsModal';
+import RecentPowerRanking from './components/RecentPowerRanking';
 
 import { useMapleSearch } from './hooks/useMapleSearch';
 import { useAiAnalysis } from './hooks/useAiAnalysis';
@@ -174,7 +175,10 @@ const App: React.FC = () => {
         )}
 
         {!data && !loading && !error && (
-          <SearchEmptyState />
+          <>
+            <SearchEmptyState />
+            <RecentPowerRanking onSelectCharacter={(name) => { setCharacterName(name); handleSearch(undefined, name); }} />
+          </>
         )}
       </main>
           {(!data && !loading && !error) && (

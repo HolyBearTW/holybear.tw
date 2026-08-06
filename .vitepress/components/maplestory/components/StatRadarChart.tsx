@@ -45,27 +45,28 @@ const StatRadarChart: React.FC<StatRadarChartProps> = ({ data }) => {
   const critDmg = getVal('爆擊傷害');
   const ied = getVal('無視防禦率');
 
-  // 4. Scaling (Dynamic Max values)
-  // Instead of fixed max values, we use a dynamic scale based on the user's stats.
-  // We set the "100%" mark to be slightly higher than the user's current value (e.g., 1.2x),
-  // but with a minimum floor to prevent small stats from looking huge.
-  
-  const getDynamicMax = (val: number, floor: number) => {
-     return Math.max(val * 1.2, floor);
+  // 4. Scaling
+  // 使用固定曲線基準，避免「每一項都約落在 83%」導致強勢屬性不明顯。
+  // 另外對無視防禦做遞減，降低其在高區間的視覺壓制。
+  const clamp01 = (v: number) => Math.max(0, Math.min(v, 1));
+  const curveNormalize = (value: number, scale: number, power = 1) => {
+    if (scale <= 0) return 0;
+    const curved = 1 - Math.exp(-Math.max(value, 0) / scale);
+    return clamp01(Math.pow(curved, power));
   };
-
-  const normalize = (val: number, max: number) => {
-    if (max <= 0) return 0;
-    return Math.min(val / max, 1);
+  const normalizeIed = (value: number) => {
+    // 70% 前視為基礎門檻，70% 後才開始顯著計分，並加入遞減。
+    const effective = Math.max(value - 70, 0);
+    return curveNormalize(effective, 16, 1.3);
   };
 
   const stats = [
-    { label: mainStatLabel, value: mainStatVal, max: getDynamicMax(mainStatVal, 5000) }, 
-    { label: attackLabel, value: attackVal, max: getDynamicMax(attackVal, 1000) },      
-    { label: '最終傷害', value: finalDmg, max: getDynamicMax(finalDmg, 100) },           
-    { label: 'BOSS傷害', value: boss, max: getDynamicMax(boss, 300) },               
-    { label: '爆擊傷害', value: critDmg, max: getDynamicMax(critDmg, 50) },            
-    { label: '無視防禦', value: ied, max: 100 }, // IED is always max 100% effectively, but let's keep it simple or cap at 100
+    { label: mainStatLabel, value: mainStatVal, normalized: curveNormalize(mainStatVal, 8500) },
+    { label: attackLabel, value: attackVal, normalized: curveNormalize(attackVal, 1800) },
+    { label: '最終傷害', value: finalDmg, normalized: curveNormalize(finalDmg, 75) },
+    { label: 'BOSS傷害', value: boss, normalized: curveNormalize(boss, 220) },
+    { label: '爆擊傷害', value: critDmg, normalized: curveNormalize(critDmg, 55, 0.9) },
+    { label: '無視防禦', value: ied, normalized: normalizeIed(ied) },
   ];
 
   // SVG Config
@@ -75,9 +76,8 @@ const StatRadarChart: React.FC<StatRadarChartProps> = ({ data }) => {
   const sides = 6;
   
   // Calculate points
-  const getPoint = (index: number, value: number, max: number) => {
+  const getPoint = (index: number, normalized: number) => {
     const angle = (Math.PI * 2 * index) / sides - Math.PI / 2;
-    const normalized = normalize(value, max);
     // Minimum 10% display for visibility
     const r = radius * (normalized < 0.1 ? 0.1 : normalized);
     const x = center + r * Math.cos(angle);
@@ -112,8 +112,8 @@ const StatRadarChart: React.FC<StatRadarChartProps> = ({ data }) => {
   }, []);
 
   const dataPoints = stats.map((s, i) => {
-    // 動畫進場時，value 由 0~實際值
-    return getPoint(i, s.value * progress, s.max);
+    // 動畫進場時，normalized 由 0~實際值
+    return getPoint(i, s.normalized * progress);
   });
   const polyPoints = dataPoints.map(p => `${p.x},${p.y}`).join(' ');
 
