@@ -2,6 +2,7 @@
 import { defineConfig } from '@lando/vitepress-theme-default-plus/config'
 import react from '@vitejs/plugin-react'
 import { fileURLToPath, URL } from 'node:url'
+import { existsSync, readFileSync } from 'node:fs'
 import locales from './locales'
 import gitMetaPlugin from './git-meta'
 import sidebar from './sidebars/blog.sidebar'
@@ -15,7 +16,44 @@ const config = defineConfig({
     base: '/',
     lang: 'zh-TW',
     locales: locales.locales,
-    srcExclude: ['README.md'],
+    srcExclude: [
+        'README.md',
+        'README_en.md',
+        'test.md',
+        '.vitepress/**/*.md',
+        'zh_TW/**/*.md'
+    ],
+    sitemap: {
+        hostname: 'https://holybear.tw',
+        transformItems(items) {
+            return items.filter(({ url }) => {
+                const normalizedUrl = url.replace(/^\/+|\/+$/g, '')
+                if (!normalizedUrl.startsWith('en/blog/')) return true
+
+                const sourceFile = fileURLToPath(
+                    new URL(`../${normalizedUrl}.md`, import.meta.url)
+                )
+
+                return !existsSync(sourceFile) ||
+                    !readFileSync(sourceFile, 'utf8').includes('Blog Not Supported in English')
+            })
+        }
+    },
+    robots: {
+        allowAll: false,
+        sitemap: 'https://holybear.tw/sitemap.xml',
+        policies: [
+            { userAgent: 'Amazonbot', disallow: '/' },
+            { userAgent: 'Applebot-Extended', disallow: '/' },
+            { userAgent: 'Bytespider', disallow: '/' },
+            { userAgent: 'CCBot', disallow: '/' },
+            { userAgent: 'ClaudeBot', disallow: '/' },
+            { userAgent: 'Google-Extended', disallow: '/' },
+            { userAgent: 'GPTBot', disallow: '/' },
+            { userAgent: 'meta-externalagent', disallow: '/' },
+            { userAgent: '*', disallow: '/video/maple.mp4' }
+        ]
+    },
     // 啟用 cleanUrls，移除路由中的 .html 後綴
     cleanUrls: true,
     appearance: 'dark',
