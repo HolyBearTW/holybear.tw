@@ -14,7 +14,7 @@ pageClass: custom-footer-layout
   <div class="about-hero__overlay"></div>
   <div class="about-hero__content">
     <p style="margin: 0 0 1rem; letter-spacing: .18em; text-transform: uppercase; opacity: .82; font-size: clamp(.78rem, 2.8vw, .95rem);">關於聖小熊</p>
-    <h1 style="margin: 0 0 1rem; font-size: clamp(2.2rem, 9vw, 4.5rem); line-height: 1.02; text-wrap: balance;">我不是普通的技術人</h1>
+    <h1 style="margin: 0 0 1rem; font-size: clamp(2.2rem, 9vw, 4.5rem); line-height: 1.02; text-wrap: balance;">我把技術、生活與創作做成自己的小宇宙</h1>
     <p style="margin: 0 auto; max-width: 780px; opacity: .92; font-size: clamp(.98rem, 3.6vw, 1.08rem); line-height: 1.8;">
       我喜歡把技術、生活與創作揉在一起。這個網站是我的個人實驗室，寫下每個踩坑的過程、完成後的成就，以及那些值得記錄的小時刻。
     </p>
