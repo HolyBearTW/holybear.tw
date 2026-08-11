@@ -1045,6 +1045,10 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 720px) {
+  :global(body:has(.hb-home-lobby) .VPContent) {
+    padding-top: 0 !important;
+  }
+
   .hero-shell {
     padding: 14px 14px 22px;
   }

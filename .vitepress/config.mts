@@ -59,14 +59,14 @@ const config = defineConfig({
     appearance: 'dark',
     head: [
         ['meta', { name: 'theme-color', content: '#00FFEE' }],
-        // Favicon 完整配置 - 修正為絕對路徑以幫助 Google 識別
-        ['link', { rel: 'icon', type: 'image/x-icon', href: 'https://holybear.tw/favicon.png' }],
-        ['link', { rel: 'icon', type: 'image/png', sizes: '48x48', href: 'https://holybear.tw/favicon.png' }],
-        ['link', { rel: 'icon', href: 'https://holybear.tw/favicon.png' }],
-        ['link', { rel: 'shortcut icon', type: 'image/png', href: 'https://holybear.tw/favicon.png' }],
-        ['link', { rel: 'apple-touch-icon', sizes: '64x64', href: 'https://holybear.tw/favicon.png' }],
-        
-        ['link', { rel: 'mask-icon', href: '/favicon.png', color: '#00FFEE' }],
+        // Favicon 完整配置 - 使用透明 PNG/ICO，降低 Google 抓到不透明備案的機率
+        ['link', { rel: 'icon', type: 'image/png', sizes: '512x512', href: 'https://holybear.tw/favicon.png' }],
+        ['link', { rel: 'icon', type: 'image/png', sizes: '192x192', href: 'https://holybear.tw/favicon-192.png' }],
+        ['link', { rel: 'icon', type: 'image/png', sizes: '96x96', href: 'https://holybear.tw/favicon-96.png' }],
+        ['link', { rel: 'icon', type: 'image/png', sizes: '48x48', href: 'https://holybear.tw/favicon-48.png' }],
+        ['link', { rel: 'shortcut icon', href: 'https://holybear.tw/favicon.ico' }],
+        ['link', { rel: 'apple-touch-icon', sizes: '180x180', href: 'https://holybear.tw/favicon.png' }],
+
         ['meta', { name: 'msapplication-TileColor', content: '#00FFEE' }],
         ['meta', { name: 'msapplication-TileImage', content: '/favicon.png' }],
         ['link', {
@@ -224,6 +224,7 @@ const config = defineConfig({
 
             // 【關鍵修正】強制統一 Site Name，不論語系
             const globalSiteName = '聖小熊的秘密基地';
+            const siteLogo = `${siteUrl}/favicon.png`;
             cleanHead.push(['meta', { property: 'og:site_name', content: globalSiteName }]);
             
             cleanHead.push(['meta', { name: 'twitter:image', content: pageImage }]);
@@ -278,7 +279,9 @@ const config = defineConfig({
                         "url": siteUrl,
                         "logo": {
                             "@type": "ImageObject",
-                            "url": `${siteUrl}/logo.png`
+                            "url": siteLogo,
+                            "width": 512,
+                            "height": 512
                         }
                     }
                 };
@@ -299,13 +302,16 @@ const config = defineConfig({
                     "url": siteUrl,
                     "logo": {
                         "@type": "ImageObject",
-                        "url": `${siteUrl}/holybear.png`
+                        "url": siteLogo,
+                        "width": 512,
+                        "height": 512
                     },
                     "description": "聖小熊的個人網站，收錄 HyperOS 模組、技術筆記與開發心得。",
                     "publisher": {
                          "@type": "Person",
                          "name": "聖小熊",
-                         "url": siteUrl
+                         "url": siteUrl,
+                         "image": siteLogo
                     }
                 };
 
