@@ -330,7 +330,6 @@ onBeforeUnmount(() => {
 
     <section id="hero-story" class="story-band" aria-labelledby="story-title">
       <div class="story-heading">
-        <p class="eyebrow">本站傳送門</p>
         <h2 id="story-title">先從這幾個站內入口開逛</h2>
       </div>
 
@@ -1047,7 +1046,7 @@ onBeforeUnmount(() => {
 
 @media (max-width: 720px) {
   .hero-shell {
-    padding: 6px 14px 22px;
+    padding: 14px 14px 22px;
   }
 
   .hero-copy {
@@ -1061,10 +1060,17 @@ onBeforeUnmount(() => {
   .hero-brand-lockup {
     justify-content: center;
     margin-inline: auto;
+    padding-top: 8px;
+    overflow: visible;
   }
 
   .hero-logo-card {
     width: clamp(148px, 36vw, 214px);
+    box-shadow:
+      0 18px 42px rgba(0, 0, 0, 0.22),
+      0 0 0 1px rgba(0, 255, 238, 0.12),
+      0 0 28px rgba(0, 255, 238, 0.18);
+    filter: none;
     transform: none;
   }
 
@@ -1073,7 +1079,7 @@ onBeforeUnmount(() => {
   }
 
   .hero-copy h1 {
-    font-size: clamp(1.55rem, min(5.2vw, 10.4cqw), 2.35rem);
+    font-size: clamp(1.72rem, min(6vw, 11.6cqw), 2.72rem);
   }
 
   .hero-home-text {
@@ -1168,7 +1174,7 @@ onBeforeUnmount(() => {
   }
 
   .hero-copy h1 {
-    font-size: clamp(1.45rem, min(6.1vw, 10.2cqw), 2.2rem);
+    font-size: clamp(1.62rem, min(7vw, 11.4cqw), 2.55rem);
   }
 
   .hero-home-text {
