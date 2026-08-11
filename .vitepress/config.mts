@@ -174,6 +174,9 @@ const config = defineConfig({
 
             const pageTitle = frontmatter.title || defaultTitle;
             const pageDescription = frontmatter.description || defaultDesc;
+            const imageWidth = Number(frontmatter.imageWidth);
+            const imageHeight = Number(frontmatter.imageHeight);
+            const twitterCard = frontmatter.twitterCard || 'summary';
             
             // 圖片路徑處理
             let pageImage = defaultImage;
@@ -207,11 +210,17 @@ const config = defineConfig({
             cleanHead.push(['meta', { property: 'og:title', content: pageTitle }]);
             cleanHead.push(['meta', { property: 'og:description', content: pageDescription }]);
             cleanHead.push(['meta', { property: 'og:image', content: pageImage }]);
+            if (Number.isFinite(imageWidth) && imageWidth > 0) {
+                cleanHead.push(['meta', { property: 'og:image:width', content: String(imageWidth) }]);
+            }
+            if (Number.isFinite(imageHeight) && imageHeight > 0) {
+                cleanHead.push(['meta', { property: 'og:image:height', content: String(imageHeight) }]);
+            }
             cleanHead.push(['meta', { property: 'og:type', content: pageType }]);
             cleanHead.push(['meta', { property: 'og:url', content: pageUrl }]);
             
             // 強制設定為 summary (小圖模式)，若是 summary_large_image 則會變大圖
-            cleanHead.push(['meta', { name: 'twitter:card', content: 'summary' }]);
+            cleanHead.push(['meta', { name: 'twitter:card', content: twitterCard }]);
 
             // 【關鍵修正】強制統一 Site Name，不論語系
             const globalSiteName = '聖小熊的秘密基地';
