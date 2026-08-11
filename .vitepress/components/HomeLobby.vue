@@ -149,9 +149,23 @@ const prefersReducedMotion = () => {
     window.matchMedia('(prefers-reduced-motion: reduce)').matches
 }
 
+const prefersStaticTouchLayout = () => {
+  return typeof window !== 'undefined' &&
+    window.matchMedia('(hover: none), (pointer: coarse), (max-width: 720px)').matches
+}
+
+const resetPointer = () => {
+  pointer.value = { x: 0, y: 0, sx: 50, sy: 50 }
+}
+
 const handlePointerMove = (event: PointerEvent) => {
   const target = heroRef.value
   if (!target) return
+
+  if (prefersStaticTouchLayout()) {
+    resetPointer()
+    return
+  }
 
   const rect = target.getBoundingClientRect()
   const px = Math.min(Math.max((event.clientX - rect.left) / rect.width, 0), 1)
@@ -166,7 +180,7 @@ const handlePointerMove = (event: PointerEvent) => {
 }
 
 const handlePointerLeave = () => {
-  pointer.value = { x: 0, y: 0, sx: 50, sy: 50 }
+  resetPointer()
 }
 
 const setActiveUnit = (index: number) => {
@@ -255,15 +269,14 @@ onBeforeUnmount(() => {
           <div class="scene-ring ring-two" aria-hidden="true"></div>
           <div class="scene-ring ring-three" aria-hidden="true"></div>
 
-          <button
+          <a
             v-for="(unit, index) in units"
             :key="unit.label"
             class="scene-node"
             :class="{ 'is-active': index === activeIndex }"
             :style="getUnitStyle(unit, index)"
-            type="button"
+            :href="unit.link"
             :aria-label="unit.label"
-            :aria-pressed="index === activeIndex"
             @pointerenter="pauseAutoRotation(); setActiveUnit(index)"
             @pointerleave="resumeAutoRotation"
             @focus="pauseAutoRotation(); setActiveUnit(index)"
@@ -271,7 +284,7 @@ onBeforeUnmount(() => {
           >
             <component :is="unit.icon" aria-hidden="true" />
             <span class="node-label">{{ unit.label }}</span>
-          </button>
+          </a>
 
           <div class="avatar-rig">
             <div class="avatar-halo" aria-hidden="true"></div>
@@ -647,6 +660,7 @@ onBeforeUnmount(() => {
   border-radius: 50%;
   background: rgba(7, 16, 19, 0.74);
   color: #ffffff;
+  text-decoration: none;
   box-shadow:
     0 18px 42px rgba(0, 0, 0, 0.35),
     inset 0 0 0 1px rgba(255, 255, 255, 0.1);
@@ -1041,6 +1055,7 @@ onBeforeUnmount(() => {
     flex-direction: column;
     align-items: center;
     text-align: center;
+    transform: none;
   }
 
   .hero-brand-lockup {
@@ -1050,6 +1065,7 @@ onBeforeUnmount(() => {
 
   .hero-logo-card {
     width: clamp(148px, 36vw, 214px);
+    transform: none;
   }
 
   .hero-title-group {
@@ -1079,10 +1095,25 @@ onBeforeUnmount(() => {
     aspect-ratio: auto;
     margin-bottom: 190px;
     overflow: visible;
+    transform: none;
+  }
+
+  .scene-grid,
+  .scene-ring {
+    transform: none;
+  }
+
+  .ring-two {
+    transform: rotate(58deg);
+  }
+
+  .ring-three {
+    transform: rotate(-28deg);
   }
 
   .scene-node {
     width: 64px;
+    transform: translate(-50%, -50%);
   }
 
   .node-label {
@@ -1093,6 +1124,11 @@ onBeforeUnmount(() => {
   .avatar-rig {
     width: min(62%, 320px);
     min-width: 218px;
+    transform: translate(-50%, -50%);
+  }
+
+  .avatar-frame img {
+    transform: scale(1.02);
   }
 
   .active-panel {
