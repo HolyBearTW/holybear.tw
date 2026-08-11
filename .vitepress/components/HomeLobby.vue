@@ -115,7 +115,7 @@ const storyItems = [
 const heroRef = ref<HTMLElement | null>(null)
 const activeIndex = ref(0)
 const pointer = ref({ x: 0, y: 0, sx: 50, sy: 50 })
-const isPointerInside = ref(false)
+const isAutoRotationPaused = ref(false)
 let rotateTimer: number | undefined
 
 const activeUnit = computed(() => units[activeIndex.value])
@@ -157,7 +157,6 @@ const handlePointerMove = (event: PointerEvent) => {
   const px = Math.min(Math.max((event.clientX - rect.left) / rect.width, 0), 1)
   const py = Math.min(Math.max((event.clientY - rect.top) / rect.height, 0), 1)
 
-  isPointerInside.value = true
   pointer.value = {
     x: (px - 0.5) * 2,
     y: (py - 0.5) * 2,
@@ -167,12 +166,19 @@ const handlePointerMove = (event: PointerEvent) => {
 }
 
 const handlePointerLeave = () => {
-  isPointerInside.value = false
   pointer.value = { x: 0, y: 0, sx: 50, sy: 50 }
 }
 
 const setActiveUnit = (index: number) => {
   activeIndex.value = index
+}
+
+const pauseAutoRotation = () => {
+  isAutoRotationPaused.value = true
+}
+
+const resumeAutoRotation = () => {
+  isAutoRotationPaused.value = false
 }
 
 const getUnitStyle = (unit: typeof units[number], index: number) => ({
@@ -192,7 +198,7 @@ onMounted(() => {
   if (prefersReducedMotion()) return
 
   rotateTimer = window.setInterval(() => {
-    if (isPointerInside.value) return
+    if (isAutoRotationPaused.value) return
     activeIndex.value = (activeIndex.value + 1) % units.length
   }, 2800)
 })
@@ -258,8 +264,10 @@ onBeforeUnmount(() => {
             type="button"
             :aria-label="unit.label"
             :aria-pressed="index === activeIndex"
-            @pointerenter="setActiveUnit(index)"
-            @focus="setActiveUnit(index)"
+            @pointerenter="pauseAutoRotation(); setActiveUnit(index)"
+            @pointerleave="resumeAutoRotation"
+            @focus="pauseAutoRotation(); setActiveUnit(index)"
+            @blur="resumeAutoRotation"
           >
             <component :is="unit.icon" aria-hidden="true" />
             <span class="node-label">{{ unit.label }}</span>
@@ -272,7 +280,14 @@ onBeforeUnmount(() => {
             </div>
           </div>
 
-          <div class="active-panel" :style="activePanelStyle">
+          <div
+            class="active-panel"
+            :style="activePanelStyle"
+            @pointerenter="pauseAutoRotation"
+            @pointerleave="resumeAutoRotation"
+            @focusin="pauseAutoRotation"
+            @focusout="resumeAutoRotation"
+          >
             <span class="panel-kicker">{{ activeUnit.greeting }}</span>
             <strong>{{ activeUnit.label }}</strong>
             <p>{{ activeUnit.message }}</p>
