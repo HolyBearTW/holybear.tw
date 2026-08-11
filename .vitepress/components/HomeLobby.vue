@@ -737,11 +737,12 @@ onBeforeUnmount(() => {
 }
 
 .avatar-frame img {
-  width: 118%;
-  height: 118%;
-  margin: -7% 0 0 -9%;
+  width: 100%;
+  height: 100%;
+  margin: 0;
   object-fit: cover;
-  transform: translate3d(calc(var(--mx) * -8px), calc(var(--my) * -5px), 0) scale(1.02);
+  object-position: 62% 52%;
+  transform: translate3d(calc(var(--mx) * -3px), calc(var(--my) * -2px), 0) scale(1.04);
 }
 
 .active-panel {
@@ -1138,7 +1139,7 @@ onBeforeUnmount(() => {
   }
 
   .avatar-frame img {
-    transform: scale(1.02);
+    transform: scale(1.04);
   }
 
   .active-panel {
