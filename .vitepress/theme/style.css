@@ -2660,7 +2660,6 @@ html:not(.dark) {
 html {
   background-color: var(--hb-mobile-fallback-bg) !important;
   overflow-x: clip;
-  overscroll-behavior-y: none;
 }
 
 html:not(.dark):not(:has(body.theme-tech)):not(:has(body.theme-gaming)):not(:has(body.theme-gravityfield)):not(:has(body.theme-halloween)):not(:has(body.theme-christmas)) {
@@ -2688,7 +2687,6 @@ body {
   background-color: transparent !important;
   isolation: isolate;
   overflow-x: clip;
-  overscroll-behavior-y: none;
 }
 
 body,
