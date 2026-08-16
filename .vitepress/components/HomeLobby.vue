@@ -116,6 +116,7 @@ const heroRef = ref<HTMLElement | null>(null)
 const activeIndex = ref(0)
 const pointer = ref({ x: 0, y: 0, sx: 50, sy: 50 })
 const isAutoRotationPaused = ref(false)
+const viewportWidth = ref(1440)
 let rotateTimer: number | undefined
 
 const activeUnit = computed(() => units[activeIndex.value])
@@ -130,35 +131,37 @@ const heroStyle = computed(() => ({
 
 const activePanelStyle = computed(() => {
   const unit = activeUnit.value
-  const isTopCenter = unit.y < 20 && unit.x >= 25 && unit.x <= 75
   const isBottomCenter = unit.y > 82 && unit.x >= 35 && unit.x <= 65
 
-  if (isTopCenter || isBottomCenter) {
+  if (isBottomCenter) {
     return {
-      '--panel-width': isTopCenter ? '280px' : '250px',
       '--panel-x': `${unit.x}%`,
-      '--panel-y': `${isTopCenter ? unit.y - 7 : unit.y + 7}%`,
+      '--panel-y': `${unit.y + 7}%`,
       '--panel-shift-x': '-50%',
-      '--panel-shift-y': isTopCenter ? '-100%' : '0%',
+      '--panel-shift-y': '0%',
       '--panel-nudge-x': '0px',
-      '--panel-nudge-y': isTopCenter ? '0px' : '14px'
+      '--panel-nudge-y': '14px'
     }
   }
 
   const isRightSide = unit.x >= 50
-  const panelX = isRightSide ? unit.x + 7 : unit.x - 7
+  const opensLeft = !isRightSide || viewportWidth.value < 1200
+  const panelX = opensLeft ? unit.x - 8 : unit.x + 6
   const panelY = Math.min(Math.max(unit.y, 22), 78)
 
   return {
-    '--panel-width': '250px',
     '--panel-x': `${panelX}%`,
     '--panel-y': `${panelY}%`,
-    '--panel-shift-x': isRightSide ? '0%' : '-100%',
+    '--panel-shift-x': opensLeft ? '-100%' : '0%',
     '--panel-shift-y': '-50%',
-    '--panel-nudge-x': isRightSide ? '14px' : '-14px',
+    '--panel-nudge-x': opensLeft ? '-12px' : '8px',
     '--panel-nudge-y': '0px'
   }
 })
+
+const syncViewportWidth = () => {
+  viewportWidth.value = window.innerWidth
+}
 
 const prefersReducedMotion = () => {
   return typeof window !== 'undefined' &&
@@ -225,6 +228,9 @@ const scrollToStory = () => {
 }
 
 onMounted(() => {
+  syncViewportWidth()
+  window.addEventListener('resize', syncViewportWidth, { passive: true })
+
   if (prefersReducedMotion()) return
 
   rotateTimer = window.setInterval(() => {
@@ -235,6 +241,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   if (rotateTimer) window.clearInterval(rotateTimer)
+  window.removeEventListener('resize', syncViewportWidth)
 })
 </script>
 
@@ -782,7 +789,7 @@ onBeforeUnmount(() => {
   top: var(--panel-y);
   z-index: 20;
   display: grid;
-  width: min(var(--panel-width, 250px), 31vw);
+  width: min(250px, 31vw);
   gap: 5px;
   border: 1px solid rgba(255, 255, 255, 0.22);
   border-left: 5px solid var(--active-accent);
