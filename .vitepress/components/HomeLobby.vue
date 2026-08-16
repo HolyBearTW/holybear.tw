@@ -135,12 +135,13 @@ const activePanelStyle = computed(() => {
 
   if (isTopCenter || isBottomCenter) {
     return {
+      '--panel-width': isTopCenter ? '280px' : '250px',
       '--panel-x': `${unit.x}%`,
       '--panel-y': `${isTopCenter ? unit.y - 7 : unit.y + 7}%`,
       '--panel-shift-x': '-50%',
       '--panel-shift-y': isTopCenter ? '-100%' : '0%',
       '--panel-nudge-x': '0px',
-      '--panel-nudge-y': isTopCenter ? '-14px' : '14px'
+      '--panel-nudge-y': isTopCenter ? '0px' : '14px'
     }
   }
 
@@ -149,6 +150,7 @@ const activePanelStyle = computed(() => {
   const panelY = Math.min(Math.max(unit.y, 22), 78)
 
   return {
+    '--panel-width': '250px',
     '--panel-x': `${panelX}%`,
     '--panel-y': `${panelY}%`,
     '--panel-shift-x': isRightSide ? '0%' : '-100%',
@@ -780,7 +782,7 @@ onBeforeUnmount(() => {
   top: var(--panel-y);
   z-index: 20;
   display: grid;
-  width: min(250px, 31vw);
+  width: min(var(--panel-width, 250px), 31vw);
   gap: 5px;
   border: 1px solid rgba(255, 255, 255, 0.22);
   border-left: 5px solid var(--active-accent);
