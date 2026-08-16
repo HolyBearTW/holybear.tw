@@ -39,28 +39,67 @@ export const useMapleSearch = (
   }, [data?.basic?.character_name, apiKey]);
 
   useEffect(() => {
+    let lastHandledLocation = '';
+
+    const resetToMapleHome = () => {
+      setData(null);
+      setCharacterName('');
+      setSelectedDate('');
+      setLoading(false);
+      setIsScanningBest(false);
+      setShowHistory(false);
+      setHistoryData([]);
+      setError(null);
+    };
+
+    const syncSearchFromLocation = () => {
+       if (lastHandledLocation === window.location.href) return;
+       lastHandledLocation = window.location.href;
+
+       const hashName = decodeURIComponent(window.location.hash.substring(1));
+       if (hashName) {
+          setCharacterName(hashName);
+          handleSearch(undefined, hashName, undefined, true);
+       } else {
+          resetToMapleHome();
+       }
+    };
+
+    const handleMapleHomeClick = (event: MouseEvent) => {
+      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+      const target = event.target as HTMLElement | null;
+      const link = target?.closest('a');
+      if (!link || link.target === '_blank' || link.hasAttribute('download')) return;
+
+      const url = new URL(link.href, window.location.href);
+      const normalizedPath = url.pathname.replace(/\/+$/, '') || '/';
+      const currentPath = window.location.pathname.replace(/\/+$/, '') || '/';
+
+      if (normalizedPath === '/maplestory' && currentPath === '/maplestory' && !url.hash) {
+        lastHandledLocation = url.href;
+        resetToMapleHome();
+      }
+    };
+
     if (typeof window !== 'undefined' && window.location.hash && apiKey && !initialSearchDone.current) {
       const hashName = decodeURIComponent(window.location.hash.substring(1));
       if (hashName) {
+        lastHandledLocation = window.location.href;
         setCharacterName(hashName);
         handleSearch(undefined, hashName, undefined, true);
         initialSearchDone.current = true;
       }
     }
 
-    const handlePopState = (event: PopStateEvent) => {
-       const hashName = decodeURIComponent(window.location.hash.substring(1));
-       if (hashName) {
-          setCharacterName(hashName);
-          handleSearch(undefined, hashName, undefined, true);
-       } else {
-          setData(null);
-          setCharacterName('');
-       }
+    window.addEventListener('popstate', syncSearchFromLocation);
+    window.addEventListener('hashchange', syncSearchFromLocation);
+    document.addEventListener('click', handleMapleHomeClick, true);
+    return () => {
+      window.removeEventListener('popstate', syncSearchFromLocation);
+      window.removeEventListener('hashchange', syncSearchFromLocation);
+      document.removeEventListener('click', handleMapleHomeClick, true);
     };
-
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
   }, [apiKey]);
 
   const addToHistory = (name: string) => {

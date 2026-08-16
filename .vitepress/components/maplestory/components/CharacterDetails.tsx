@@ -201,12 +201,12 @@ const SectionHeader: React.FC<{
     <span className="text-yellow-500 flex-shrink-0">{icon}</span>
     <h3 className="text-lg font-bold text-slate-200 flex-shrink-0">{title}</h3>
     {presetState && (
-      <div className="ml-2 flex gap-1">
+      <div className="maple-section-presets ml-2 flex gap-1">
         {[1, 2, 3].map((num) => (
           <button key={num} onClick={() => presetState.setCurrent(num)}
-            className={`w-6 h-6 text-xs rounded font-bold transition-all flex items-center justify-center relative ${presetState.current === num ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-800 text-slate-500 hover:bg-slate-700 hover:text-slate-300'}`} title={`預設 ${num}`}>
+            className={`maple-preset-button w-6 h-6 text-xs rounded font-bold transition-all flex items-center justify-center relative ${presetState.current === num ? 'is-current bg-indigo-600 text-white shadow-sm' : 'bg-slate-800 text-slate-500 hover:bg-slate-700 hover:text-slate-300'}`} title={`預設 ${num}`}>
             {num}
-            {presetState.active === num && (<span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 border-2 border-slate-900 rounded-full"></span>)}
+            {presetState.active === num && (<span className="maple-preset-live-dot absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 border-2 border-slate-900 rounded-full"></span>)}
           </button>
         ))}
       </div>
@@ -262,7 +262,7 @@ const ItemWithTooltip: React.FC<{
 
   return (
     <div 
-      className={`bg-slate-900 p-2 rounded-lg border ${borderColor} flex flex-col items-center text-center relative group cursor-pointer select-none ${isOpen ? 'z-[100]' : 'z-0 hover:z-50'}`}
+      className={`maple-core-item bg-slate-900 p-2 rounded-lg border ${borderColor} flex flex-col items-center text-center relative group cursor-pointer select-none ${isOpen ? 'z-[100]' : 'z-0 hover:z-50'}`}
       onClick={() => setIsOpen(!isOpen)}
       onMouseLeave={() => setIsOpen(false)}
     >
@@ -336,16 +336,16 @@ const LinkSkillSection = ({ linkSkill }: { linkSkill: any }) => {
   });
 
   return (
-    <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0 h-full">
+    <div className="maple-link-section bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0 h-full">
       <SectionHeader icon={<Link />} title="連結技能 (Link Skills)" presetState={{ current: selectedPreset, setCurrent: setSelectedPreset, active: activePresetNo }} />
       {Object.keys(totals).length > 0 && (
-        <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-4 mb-6">
+        <div className="maple-link-summary bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-4 mb-6">
             <h4 className="text-sm font-bold text-yellow-300 mb-3 flex items-center gap-2"><Star className="w-4 h-4 text-yellow-400" /> 連結技能總和 (估算)</h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                 {Object.entries(totals).map(([name, val], idx) => {
                     const isPercent = ['BOSS 傷害', '無視防禦率', '爆擊率', '爆擊傷害', '最大HP', '最大MP', '獲得經驗值', '傷害'].includes(name);
                     return (
-                        <div key={idx} className="bg-slate-900/50 px-3 py-2 rounded border border-yellow-500/20 flex justify-between items-center">
+                        <div key={idx} className="maple-link-summary-item bg-slate-900/50 px-3 py-2 rounded border border-yellow-500/20 flex justify-between items-center">
                             <span className="text-xs text-slate-300">{name}</span>
                             <span className="text-sm font-bold text-green-400 font-mono">+{isPercent ? val + '%' : val}</span>
                         </div>
@@ -358,13 +358,13 @@ const LinkSkillSection = ({ linkSkill }: { linkSkill: any }) => {
       {((currentSkills && currentSkills.length > 0) || ownedSkill) ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {ownedSkill && (
-              <div className="bg-slate-900/50 p-3 rounded-lg border border-yellow-500/50 flex gap-3 items-start relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 bg-yellow-600/80 text-white text-[10px] px-2 py-0.5 rounded-bl font-bold backdrop-blur-sm">Lv.{ownedSkill.skill_level}</div>
+              <div className="maple-link-card is-owned bg-slate-900/50 p-3 rounded-lg border border-yellow-500/50 flex gap-3 items-start relative overflow-hidden group">
+                  <div className="maple-link-level absolute top-0 right-0 bg-yellow-600/80 text-white text-[10px] px-2 py-0.5 rounded-bl font-bold backdrop-blur-sm">Lv.{ownedSkill.skill_level}</div>
                   <img src={ownedSkill.skill_icon} alt={ownedSkill.skill_name} className="w-10 h-10 rounded bg-slate-800 p-1 shrink-0" />
                   <div className="flex-1 min-w-0">
                   <div className="mb-1 pr-8 flex items-center gap-2">
-                      <span className="font-bold text-yellow-200 text-sm truncate block">{ownedSkill.skill_name}</span>
-                      <span className="text-[10px] bg-yellow-900/50 text-yellow-400 px-1 rounded border border-yellow-700/50">Own</span>
+                      <span className="maple-link-owned-name font-bold text-yellow-200 text-sm truncate block">{ownedSkill.skill_name}</span>
+                      <span className="maple-link-own-badge text-[10px] bg-yellow-900/50 text-yellow-400 px-1 rounded border border-yellow-700/50">Own</span>
                   </div>
                   <div className="text-xs leading-tight">
                       {ownedSkill.skill_effect && <p className="text-green-400 mb-1 line-clamp-2" title={ownedSkill.skill_effect}>{ownedSkill.skill_effect.replace(/\\n/g, ' ')}</p>}
@@ -374,8 +374,8 @@ const LinkSkillSection = ({ linkSkill }: { linkSkill: any }) => {
               </div>
           )}
           {currentSkills.map((skill: any, idx: number) => (
-            <div key={idx} className="bg-slate-900/50 p-3 rounded-lg border border-slate-700 flex gap-3 items-start relative overflow-hidden group">
-              <div className="absolute top-0 right-0 bg-yellow-600/80 text-white text-[10px] px-2 py-0.5 rounded-bl font-bold backdrop-blur-sm">Lv.{skill.skill_level}</div>
+            <div key={idx} className="maple-link-card bg-slate-900/50 p-3 rounded-lg border border-slate-700 flex gap-3 items-start relative overflow-hidden group">
+              <div className="maple-link-level absolute top-0 right-0 bg-yellow-600/80 text-white text-[10px] px-2 py-0.5 rounded-bl font-bold backdrop-blur-sm">Lv.{skill.skill_level}</div>
               <img src={skill.skill_icon} alt={skill.skill_name} className="w-10 h-10 rounded bg-slate-800 p-1 shrink-0" />
               <div className="flex-1 min-w-0">
                 <div className="mb-1 pr-8"><span className="font-bold text-slate-200 text-sm truncate block">{skill.skill_name}</span></div>
@@ -408,7 +408,7 @@ const HyperStatSection = ({ hyperStat }: { hyperStat: any }) => {
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 mt-4">
         {activeStats.map((stat: any, idx: number) => (
           <div key={idx} className="relative flex flex-col bg-[#0d1117] px-3 py-2 rounded-lg text-sm border border-slate-700/50 hover:border-indigo-500/50 transition-colors">
-            <div className="absolute top-0 right-0 bg-indigo-600/80 text-white text-[10px] px-2 py-0.5 rounded-bl font-bold backdrop-bl-sm">Lv.{stat.stat_level}</div>
+            <div className="maple-hyper-level absolute top-0 right-0 bg-indigo-600/80 text-white text-[10px] px-2 py-0.5 rounded-bl font-bold backdrop-bl-sm">Lv.{stat.stat_level}</div>
             <span className="text-slate-300 whitespace-nowrap">{stat.stat_type}</span>
             {stat.stat_increase && (
               <div className="text-xs text-green-400 font-mono mt-1">{typeof stat.stat_increase === 'string' && stat.stat_increase.match(/%$/) ? `${stat.stat_increase}` : ["爆擊率","爆擊傷害","無視防禦率","BOSS傷害","傷害","全屬性","獲得經驗值"].some(k=>stat.stat_type.includes(k)) ? `${stat.stat_increase}` : `${stat.stat_increase}`}</div>
@@ -466,10 +466,10 @@ const ChampionCard: React.FC<{ champ: any; apiKey: string }> = ({ champ, apiKey 
     );
   
     return (
-      <div className="bg-[#0e141e] rounded-xl p-4 relative overflow-hidden min-h-[280px] border border-slate-800 shadow-md group hover:border-slate-600 transition-all flex flex-col justify-between">
+      <div className="maple-champion-card bg-[#0e141e] rounded-xl p-4 relative overflow-hidden min-h-[280px] border border-slate-800 shadow-md group hover:border-slate-600 transition-all flex flex-col justify-between">
         <div className="absolute inset-0 w-full h-full pointer-events-none">
             <img src={`${CHAMPION_PATH}/${bgImage}`} alt="Background" className="w-full h-full object-cover opacity-30 transition-transform duration-500 group-hover:scale-110" />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0e141e] via-[#0e141e]/50 to-transparent"></div>
+            <div className="maple-champion-shade absolute inset-0 bg-gradient-to-t from-[#0e141e] via-[#0e141e]/50 to-transparent"></div>
         </div>
         <div className="absolute top-3 left-4 z-10"><span className="font-bold text-lg text-slate-300 tracking-wider drop-shadow-md">{champ.champion_grade}</span></div>
         <div className="relative z-10 flex flex-col items-center gap-3 pt-6 h-full flex-1">
@@ -781,7 +781,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
                    };
 
                    return (
-                       <div className="bg-purple-900/20 border border-purple-500/30 rounded-lg p-3 mt-2">
+                       <div className="maple-artifact-summary bg-purple-900/20 border border-purple-500/30 rounded-lg p-3 mt-2">
                            <h4 className="text-xs font-bold text-purple-300 mb-2 flex items-center gap-2"><Star className="w-3 h-3 text-purple-400" /> 神器效果總和</h4>
                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                {effects.map((eff, idx) => {
@@ -849,15 +849,15 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
           const hasRates = rates.drop > 0 || rates.meso > 0 || rates.exp > 0;
 
           return (
-            <div className="bg-[#161b22] p-4 rounded-xl border border-slate-800 shadow-inner mt-4">
+            <div className="maple-symbol-stats bg-[#161b22] p-4 rounded-xl border border-slate-800 shadow-inner mt-4">
               <h4 className="text-xs font-bold text-slate-300 mb-4 flex items-center gap-2"><Hexagon className="w-4 h-4 text-slate-400" /> 符文詳細統計</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-purple-900/20 border border-purple-500/30 rounded-lg p-4 flex flex-col justify-start min-h-[100px]">
+                <div className="maple-symbol-card is-arc bg-purple-900/20 border border-purple-500/30 rounded-lg p-4 flex flex-col justify-start min-h-[100px]">
                   <div className="text-purple-300 font-bold text-sm mb-3 flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.8)]"></div>ARC (神秘力量)</div>
                   <div className="flex justify-between items-end mb-2"><span className="text-slate-400 text-xs">力量總和</span><div className="flex items-baseline gap-1"><span className="text-2xl font-bold text-white font-mono">{arcData.force.toLocaleString()}</span>{arcDiff > 0 && <span className="text-xs font-bold text-green-400 font-mono" title={`來自公會技能/極限屬性/稱號: +${arcDiff}`}>+{arcDiff}</span>}</div></div>
                   <div className="flex justify-between items-end border-t border-purple-500/20 pt-2 mt-auto"><span className="text-slate-500 text-xs">屬性加成</span><span className="text-sm font-bold text-purple-400 font-mono">+{arcData.stat.toLocaleString()}</span></div>
                 </div>
-                <div className="bg-cyan-900/20 border border-cyan-500/30 rounded-lg p-4 flex flex-col justify-start min-h-[100px]">
+                <div className="maple-symbol-card is-aut bg-cyan-900/20 border border-cyan-500/30 rounded-lg p-4 flex flex-col justify-start min-h-[100px]">
                   <div className="text-cyan-300 font-bold text-sm mb-3 flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.8)]"></div>AUT (真實力量)</div>
                   <div className="flex justify-between items-end mb-2"><span className="text-slate-400 text-xs">力量總和</span><div className="flex items-baseline gap-1"><span className="text-2xl font-bold text-white font-mono">{autData.force.toLocaleString()}</span>{autDiff > 0 && <span className="text-xs font-bold text-green-400 font-mono" title={`來自公會技能/極限屬性/稱號: +${autDiff}`}>+{autDiff}</span>}</div></div>
                   <div className="flex justify-between items-end"><span className="text-slate-500 text-xs">屬性加成</span><span className="text-sm font-bold text-cyan-400 font-mono">+{autData.stat.toLocaleString()}</span></div>
@@ -962,7 +962,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
         <div className="space-y-3">
           {setEffect?.set_effect.map((set, idx) => (
             <div key={idx} className="bg-slate-900/50 p-3 rounded border border-slate-700">
-              <div className="flex justify-between items-center mb-2"><span className="font-bold text-green-400">{set.set_name}</span><span className="text-xs bg-green-900/30 text-green-300 px-2 py-0.5 rounded-full">{set.total_set_count} 套裝</span></div>
+              <div className="flex justify-between items-center mb-2"><span className="font-bold text-green-400">{set.set_name}</span><span className="maple-set-count-badge text-xs bg-green-900/30 text-green-300 px-2 py-0.5 rounded-full">{set.total_set_count} 套裝</span></div>
               <div className="text-xs text-slate-400 space-y-1">{set.set_effect_info.map((info, i) => (<div key={i} className="flex gap-2"><span className="text-slate-500 w-8 shrink-0">{info.set_count}件:</span><span>{info.set_option}</span></div>))}</div>
             </div>
           ))}
@@ -982,7 +982,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
       </div>
 
       {/* Skills (V/Hexa) - w-full + min-w-0 */}
-      <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0 break-inside-avoid mb-6 inline-block align-top">
+      <div className="maple-core-skills bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0 break-inside-avoid mb-6 inline-block align-top">
         {hexaMatrix && hexaMatrix.character_hexa_core_equipment && hexaMatrix.character_hexa_core_equipment.length > 0 && (
           <div className="mb-6">
             {(() => {
@@ -994,7 +994,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
                             <div className="flex items-center gap-3 mt-1 flex-wrap">
                               <h4 className="text-sm font-bold text-purple-400">HEXA 矩陣</h4>
                               {commonSkillButtons.map(button => (
-                                <button key={button.key} onClick={button.onClick} className={`text-[10px] px-2 py-0.5 rounded border flex items-center gap-1 transition-all ${button.active ? 'bg-purple-900/40 text-purple-300 border-purple-700/50 hover:bg-purple-900/60' : 'bg-slate-800 text-slate-500 border-slate-700 hover:bg-slate-700 hover:text-slate-400'}`}>
+                                <button key={button.key} onClick={button.onClick} className={`maple-core-toggle ${button.active ? 'is-active' : ''} text-[10px] px-2 py-0.5 rounded border flex items-center gap-1 transition-all ${button.active ? 'bg-purple-900/40 text-purple-300 border-purple-700/50 hover:bg-purple-900/60' : 'bg-slate-800 text-slate-500 border-slate-700 hover:bg-slate-700 hover:text-slate-400'}`}>
                                   {button.active ? <CheckSquare className="w-3 h-3" /> : <Square className="w-3 h-3" />}
                                   {button.active ? `計算${button.label}` : `排除${button.label}`}
                                 </button>
@@ -1036,7 +1036,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
 
         {/* HEXA Stats - full width like LinkSkillSection */}
         {hexaMatrixStat && (
-        <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0">
+        <div className="maple-hexa-stats bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0">
           <SectionHeader icon={<Hexagon />} title="HEXA 屬性" />
           {(() => {
             const totals: Record<string, number> = {};
@@ -1054,13 +1054,13 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
             });
             if (Object.keys(totals).length === 0) return null;
             return (
-              <div className="bg-purple-900/20 border border-purple-500/30 rounded-lg p-4 mb-6">
+              <div className="maple-hexa-summary bg-purple-900/20 border border-purple-500/30 rounded-lg p-4 mb-6">
                 <h4 className="text-sm font-bold text-purple-300 mb-3 flex items-center gap-2"><Star className="w-4 h-4 text-yellow-400" /> 屬性總和</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                   {Object.entries(totals).map(([name, val]) => {
                     const isPercent = name.toLowerCase().includes('boss') || name.includes('無視') || name.includes('防禦') || name.includes('爆擊傷害') || name.includes('Critical') || name === '傷害' || name === 'Damage';
                     return (
-                      <div key={name} className="bg-slate-900/50 px-3 py-2 rounded border border-purple-500/20 flex justify-between items-center">
+                      <div key={name} className="maple-hexa-summary-item bg-slate-900/50 px-3 py-2 rounded border border-purple-500/20 flex justify-between items-center">
                         <span className="text-xs text-slate-300">{name.replace(/boss/gi, 'BOSS')}</span>
                         <span className="text-sm font-bold text-green-400 font-mono">+{isPercent ? val.toFixed(2) + '%' : val}</span>
                       </div>
@@ -1088,25 +1088,25 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
                 );
               }
               return (
-                <div key={coreIndex} className="bg-slate-900/80 p-4 rounded-lg border border-purple-500/30 relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 bg-purple-600 text-white text-[10px] px-2 py-0.5 rounded-bl font-bold">階級 {stat.stat_grade}</div>
+                <div key={coreIndex} className="maple-hexa-core bg-slate-900/80 p-4 rounded-lg border border-purple-500/30 relative overflow-hidden group">
+                  <div className="maple-hexa-grade absolute top-0 right-0 bg-purple-600 text-white text-[10px] px-2 py-0.5 rounded-bl font-bold">階級 {stat.stat_grade}</div>
                   <div className="flex items-center gap-3 mb-3">
                     <img src={HEXA_STAT_CORE_ICONS[coreIndex]} alt={`HEXA 屬性核心 ${coreIndex + 1}`} className="w-8 h-8 object-contain flex-shrink-0" />
                     <div><div className="text-sm font-bold text-purple-300">HEXA 屬性核心 {coreIndex + 1}</div><div className="text-xs text-slate-500">欄位 {stat.slot_id}</div></div>
                   </div>
                   <div className="space-y-2">
-                    <div className="bg-slate-950/50 p-2 rounded border border-slate-800">
+                    <div className="maple-hexa-stat-row is-main bg-slate-950/50 p-2 rounded border border-slate-800">
                       <div className="flex justify-between items-center mb-1"><span className="text-xs text-slate-300 font-bold">MAIN STAT</span><span className="text-xs font-bold text-purple-400">Lv.{stat.main_stat_level}</span></div>
                       <div className="flex justify-between items-center"><span className="text-sm text-white">{stat.main_stat_name.replace(/boss/gi, 'BOSS')}</span><span className="text-sm text-green-400 font-mono">{getHexaStatValue(stat.main_stat_name, stat.main_stat_level, true)}</span></div>
                       <div className="w-full h-1 bg-slate-800 mt-1 rounded-full overflow-hidden"><div className="h-full bg-purple-500" style={{ width: `${(stat.main_stat_level / 10) * 100}%` }}></div></div>
                     </div>
                     <div className="grid grid-cols-1 gap-2">
-                      <div className="bg-slate-950/50 p-2 rounded border border-slate-800">
+                      <div className="maple-hexa-stat-row bg-slate-950/50 p-2 rounded border border-slate-800">
                         <div className="flex justify-between items-center mb-1"><span className="text-[10px] text-slate-400 font-bold">ADDITIONAL STAT</span><span className="text-xs font-bold text-blue-400">Lv.{stat.sub_stat_level_1}</span></div>
                         <div className="flex justify-between items-center"><span className="text-xs text-slate-200">{stat.sub_stat_name_1.replace(/boss/gi, 'BOSS')}</span><span className="text-xs text-green-400 font-mono">{getHexaStatValue(stat.sub_stat_name_1, stat.sub_stat_level_1)}</span></div>
                         <div className="w-full h-1 bg-slate-800 mt-1 rounded-full overflow-hidden"><div className="h-full bg-blue-500" style={{ width: `${(stat.sub_stat_level_1 / 10) * 100}%` }}></div></div>
                       </div>
-                      <div className="bg-slate-950/50 p-2 rounded border border-slate-800">
+                      <div className="maple-hexa-stat-row bg-slate-950/50 p-2 rounded border border-slate-800">
                         <div className="flex justify-between items-center mb-1"><span className="text-[10px] text-slate-400 font-bold">ADDITIONAL STAT</span><span className="text-xs font-bold text-blue-400">Lv.{stat.sub_stat_level_2}</span></div>
                         <div className="flex justify-between items-center"><span className="text-xs text-slate-200">{stat.sub_stat_name_2.replace(/boss/gi, 'BOSS')}</span><span className="text-xs text-green-400 font-mono">{getHexaStatValue(stat.sub_stat_name_2, stat.sub_stat_level_2)}</span></div>
                         <div className="w-full h-1 bg-slate-800 mt-1 rounded-full overflow-hidden"><div className="h-full bg-blue-500" style={{ width: `${(stat.sub_stat_level_2 / 10) * 100}%` }}></div></div>

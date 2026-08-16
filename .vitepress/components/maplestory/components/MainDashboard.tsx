@@ -76,9 +76,9 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <div className="lg:col-span-3 space-y-4">
                <div className="bg-[#161b22] border border-slate-800 rounded-xl overflow-hidden shadow-xl relative group">
-                  <div className="h-32 bg-slate-800 relative overflow-hidden">
-                      <div className="absolute inset-0 bg-cover bg-center opacity-30 grayscale mix-blend-overlay transition-all duration-700 group-hover:scale-110 group-hover:opacity-40 group-hover:grayscale-0" style={{ backgroundImage: `url('https://maplestory.io/api/GMS/248/map/${getJobBackgroundMap(data.basic.character_class)}/render/back')` }}></div>
-                      <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#161b22]"></div>
+                  <div className="maple-profile-banner h-32 bg-slate-800 relative overflow-hidden">
+                      <div className="maple-profile-city absolute inset-0 bg-cover bg-center opacity-[0.68] transition-all duration-700 group-hover:scale-110 group-hover:opacity-[0.82]" style={{ backgroundImage: `url('https://maplestory.io/api/GMS/248/map/${getJobBackgroundMap(data.basic.character_class)}/render/back')` }}></div>
+                      <div className="maple-profile-shade absolute inset-0 bg-gradient-to-b from-transparent to-[#161b22]"></div>
                   </div>
                   <div className="px-5 relative -mt-16 flex flex-col items-center pb-5">
                       <div className="w-32 h-32 rounded-full bg-[#0a0c10] border-4 border-[#1f242e] shadow-2xl overflow-hidden flex items-center justify-center mb-3 relative z-10 group-hover:scale-105 transition-transform duration-500">
@@ -156,7 +156,7 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
 
                       <div className="mb-6"><StatRadarChart data={data} /></div>
 
-                      <button onClick={handleAiAnalyze} disabled={analyzing} className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold rounded-lg flex items-center justify-center gap-2 transition-all shadow-lg shadow-indigo-900/20 hover:translate-y-[-1px]">
+                      <button onClick={handleAiAnalyze} disabled={analyzing} className="maple-ai-check-button w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold rounded-lg flex items-center justify-center gap-2 transition-all shadow-lg shadow-indigo-900/20 hover:translate-y-[-1px]">
                          {analyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
                          {aiAnalysis ? '重新分析' : 'AI 健檢'}
                       </button>

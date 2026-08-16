@@ -49,11 +49,11 @@ export const useCharacterStats = (data: DashboardData | null) => {
 
   const getAbilityStyle = (grade: string) => {
     const g = grade.toLowerCase();
-    if (g.includes('legendary') || g.includes('傳說')) return 'border-green-500 bg-green-950/40 text-green-400';
-    if (g.includes('unique') || g.includes('罕見')) return 'border-yellow-500 bg-yellow-950/40 text-yellow-400';
-    if (g.includes('epic') || g.includes('稀有')) return 'border-purple-500 bg-purple-950/40 text-purple-400';
-    if (g.includes('rare') || g.includes('特殊')) return 'border-blue-500 bg-blue-950/40 text-blue-400';
-    return 'border-slate-700 bg-slate-800 text-slate-300';
+    if (g.includes('legendary') || g.includes('傳說')) return 'maple-ability maple-ability-legendary border-green-500 bg-green-950/40 text-green-400';
+    if (g.includes('unique') || g.includes('罕見')) return 'maple-ability maple-ability-unique border-yellow-500 bg-yellow-950/40 text-yellow-400';
+    if (g.includes('epic') || g.includes('稀有')) return 'maple-ability maple-ability-epic border-purple-500 bg-purple-950/40 text-purple-400';
+    if (g.includes('rare') || g.includes('特殊')) return 'maple-ability maple-ability-rare border-blue-500 bg-blue-950/40 text-blue-400';
+    return 'maple-ability maple-ability-normal border-slate-700 bg-slate-800 text-slate-300';
   };
 
   const focusStatKeys = [

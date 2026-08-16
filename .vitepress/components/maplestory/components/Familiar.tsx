@@ -303,7 +303,7 @@ const Familiar: React.FC<FamiliarProps> = ({ data }) => {
     const value = option.option_value || '-';
 
     return (
-      <div key={`${label}-${idx}`} className="flex items-center justify-between gap-3 rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2 text-xs">
+      <div key={`${label}-${idx}`} className="maple-familiar-option flex items-center justify-between gap-3 rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2 text-xs">
         <span className="text-slate-300">{label}</span>
         <span className="font-mono text-green-400">{value}</span>
       </div>
@@ -314,13 +314,13 @@ const Familiar: React.FC<FamiliarProps> = ({ data }) => {
     const active = slot.active_flag === 'true';
 
     return (
-      <div key={`${slot.slot_id || 'slot'}-${idx}`} className="rounded-lg border border-pink-500/20 bg-pink-950/10 p-3">
+      <div key={`${slot.slot_id || 'slot'}-${idx}`} className={`maple-familiar-slot ${active ? 'is-active' : ''} rounded-lg border border-pink-500/20 bg-pink-950/10 p-3`}>
         <div className="mb-2 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-sm font-bold text-pink-300">
             <Link2 className="h-4 w-4" />
             <span>{formatSlot(slot.slot_id)}</span>
           </div>
-          <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${active ? 'bg-emerald-900/40 text-emerald-300 border border-emerald-700/40' : 'bg-slate-800 text-slate-400 border border-slate-700'}`}>
+          <span className={`maple-familiar-slot-status ${active ? 'is-active' : ''} rounded-full px-2 py-0.5 text-[10px] font-bold ${active ? 'bg-emerald-900/40 text-emerald-300 border border-emerald-700/40' : 'bg-slate-800 text-slate-400 border border-slate-700'}`}>
             {active ? '啟用中' : '未啟用'}
           </span>
         </div>
@@ -344,7 +344,7 @@ const Familiar: React.FC<FamiliarProps> = ({ data }) => {
     return (
       <div
         key={`${displayName}-${idx}`}
-        className={`relative overflow-visible rounded-xl border p-4 shadow-inner transition-all ${isSpecial ? 'border-amber-400/50 bg-[linear-gradient(135deg,rgba(120,53,15,0.28),rgba(15,23,42,0.92))] shadow-[0_0_24px_rgba(251,191,36,0.16)]' : 'border-slate-700 bg-slate-900/60'}`}
+        className={`maple-familiar-card ${isSpecial ? 'is-special' : ''} relative overflow-visible rounded-xl border p-4 shadow-inner transition-all ${isSpecial ? 'border-amber-400/50 bg-[linear-gradient(135deg,rgba(120,53,15,0.28),rgba(15,23,42,0.92))] shadow-[0_0_24px_rgba(251,191,36,0.16)]' : 'border-slate-700 bg-slate-900/60'}`}
       >
         {isSpecial && (
           <>
@@ -362,17 +362,17 @@ const Familiar: React.FC<FamiliarProps> = ({ data }) => {
                 </div>
               )}
               {isSpecial && (
-                <span className="shrink-0 rounded-full border border-amber-400/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold text-amber-200 shadow-[0_0_10px_rgba(251,191,36,0.18)] animate-pulse">
+                <span className="maple-familiar-special-badge shrink-0 rounded-full border border-amber-400/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold text-amber-200 shadow-[0_0_10px_rgba(251,191,36,0.18)] animate-pulse">
                   傲天
                 </span>
               )}
               {isUsing && (
-                <span className="shrink-0 rounded-full border border-emerald-700/40 bg-emerald-900/40 px-2 py-0.5 text-[10px] font-bold text-emerald-300">
+                <span className="maple-familiar-summoned-badge shrink-0 rounded-full border border-emerald-700/40 bg-emerald-900/40 px-2 py-0.5 text-[10px] font-bold text-emerald-300">
                   召喚中
                 </span>
               )}
               {isLinked && (
-                <span className="shrink-0 rounded-full border border-pink-700/40 bg-pink-900/30 px-2 py-0.5 text-[10px] font-bold text-pink-300">
+                <span className="maple-familiar-linked-badge shrink-0 rounded-full border border-pink-700/40 bg-pink-900/30 px-2 py-0.5 text-[10px] font-bold text-pink-300">
                   已放入{formatSlot(familiar.slot_id)}
                 </span>
               )}
@@ -408,7 +408,7 @@ const Familiar: React.FC<FamiliarProps> = ({ data }) => {
 
   if (!fam || !Array.isArray(familiarList) || familiarList.length === 0) {
     return (
-      <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0">
+      <div className="maple-familiar-section bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <span className="text-pink-400 flex-shrink-0"><PawPrint className="w-5 h-5" /></span>
@@ -424,7 +424,7 @@ const Familiar: React.FC<FamiliarProps> = ({ data }) => {
   }
 
   return (
-    <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0">
+    <div className="maple-familiar-section bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0">
       <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-2">
           <span className="text-pink-400 flex-shrink-0"><PawPrint className="w-5 h-5" /></span>

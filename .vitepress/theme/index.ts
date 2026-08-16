@@ -616,7 +616,11 @@ export default {
         if (router) {
             const previousBeforeRouteChange = router.onBeforeRouteChange;
             router.onBeforeRouteChange = async (to) => {
-                window.dispatchEvent(new CustomEvent('holybear-route-loading-start'));
+                const targetUrl = new URL(to, window.location.origin);
+                const isSameDocument = targetUrl.pathname === window.location.pathname && targetUrl.search === window.location.search;
+                if (!isSameDocument) {
+                    window.dispatchEvent(new CustomEvent('holybear-route-loading-start'));
+                }
                 return previousBeforeRouteChange?.(to);
             };
 
@@ -626,6 +630,15 @@ export default {
                 const routePath = new URL(to, window.location.origin).pathname.replace(/\/$/, '');
                 if (routePath !== '/maplestory') {
                     window.dispatchEvent(new CustomEvent('holybear-route-loading-finish'));
+                } else {
+                    // React wrapper normally finishes the loading frame as soon as its content mounts.
+                    // Keep a route-level fallback so cached or interrupted mounts can never trap the page.
+                    window.setTimeout(() => {
+                        const currentPath = window.location.pathname.replace(/\/$/, '');
+                        if (currentPath === '/maplestory') {
+                            window.dispatchEvent(new CustomEvent('holybear-route-loading-finish'));
+                        }
+                    }, 1800);
                 }
                 setTimeout(() => {
                     setupGlobalOutlineHoverScroll();

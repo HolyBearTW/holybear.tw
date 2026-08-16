@@ -60,7 +60,10 @@ function handleInternalNavigation(event: MouseEvent) {
   if (!link || link.target === '_blank' || link.hasAttribute('download')) return
 
   const url = new URL(link.href, window.location.href)
-  if (url.origin !== window.location.origin || url.pathname === window.location.pathname && url.hash === window.location.hash) return
+  if (url.origin !== window.location.origin) return
+
+  const isSameDocument = url.pathname === window.location.pathname && url.search === window.location.search
+  if (isSameDocument) return
 
   startRouteLoading()
 }
@@ -121,7 +124,11 @@ onUnmounted(() => {
 <template>
   <div v-if="isVisible" class="brand-loading-frame" :class="{ 'is-popping': isPopping, 'is-leaving': isLeaving, 'is-dark': isDark }" aria-hidden="true">
     <div class="brand-loading-ball">
-      <img class="brand-loading-orb" src="/animations/holy-bear-orb.png" alt="" />
+      <img
+        class="brand-loading-orb"
+        src="/animations/holy-bear-orb-navbar.png"
+        alt=""
+      />
     </div>
 
     <div class="brand-loading-marquee">
@@ -195,11 +202,46 @@ onUnmounted(() => {
   transform: scale(1.12);
 }
 
+.brand-loading-frame:not(.is-dark) .brand-loading-orb {
+  filter:
+    drop-shadow(0 18px 30px rgba(7, 108, 133, 0.2))
+    drop-shadow(0 0 26px rgba(143, 112, 255, 0.2));
+}
+
+.brand-loading-frame:not(.is-dark) .brand-loading-ball::after {
+  position: absolute;
+  z-index: 0;
+  inset: 5%;
+  border: 1px solid rgba(7, 108, 133, 0.2);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 34% 28%, rgba(255, 255, 255, 0.98), rgba(221, 249, 252, 0.9) 48%, rgba(235, 228, 255, 0.82));
+  box-shadow:
+    0 18px 46px rgba(7, 108, 133, 0.18),
+    0 0 36px rgba(143, 112, 255, 0.18);
+  content: '';
+  pointer-events: none;
+}
+
+.brand-loading-frame:not(.is-dark) .brand-loading-ball::before {
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg 35deg,
+    #00b8d4 62deg 92deg,
+    transparent 120deg 205deg,
+    #7c4dff 235deg 280deg,
+    transparent 310deg 360deg
+  );
+  filter:
+    drop-shadow(0 0 8px rgba(0, 184, 212, 0.82))
+    drop-shadow(0 0 10px rgba(124, 77, 255, 0.66));
+}
+
 /* 讓品牌球體有真正可見的旋轉層，小熊本身維持正面 */
 .brand-loading-ball::before {
   position: absolute;
   z-index: 2;
-  inset: 1%;
+  inset: -6%;
   border-radius: 50%;
   background: conic-gradient(
     from 0deg,

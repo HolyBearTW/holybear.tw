@@ -44,7 +44,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
 
     return (
         <div className="w-full flex flex-col items-center gap-6 relative">
-            <div className="flex items-center gap-2 text-sm text-slate-400">
+            <div className="maple-date-control flex items-center gap-2 text-sm text-slate-400">
                 <span>指定日期 (選填):</span>
                 <input 
                     type="date" 
@@ -169,7 +169,7 @@ export const SearchStatus: React.FC<SearchStatusProps> = ({
 
 export const SearchEmptyState: React.FC = () => {
   return (
-    <div className="flex flex-col items-center mt-6">
+    <div className="maple-empty-state flex flex-col items-center mt-6">
       <div className="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mb-3 opacity-50">
         <Search className="w-8 h-8 text-slate-500" />
       </div>
@@ -178,4 +178,3 @@ export const SearchEmptyState: React.FC = () => {
     </div>
   );
 };
-

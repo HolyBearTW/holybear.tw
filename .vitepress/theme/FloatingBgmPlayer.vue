@@ -1930,6 +1930,118 @@ function toggleRepeatOne() {
   }
 }
 
+/* ==================== 淺色模式 (Light Mode) ==================== */
+:global(html:not(.dark) .music-container) {
+  border-color: rgba(7, 108, 133, 0.22);
+  box-shadow: 0 18px 44px rgba(35, 76, 94, 0.18),
+              0 0 0 1px rgba(0, 184, 212, 0.08) inset;
+}
+
+:global(html:not(.dark) .music-container::before) {
+  background: rgba(246, 252, 255, 0.82);
+  backdrop-filter: blur(28px) saturate(145%);
+  -webkit-backdrop-filter: blur(28px) saturate(145%);
+}
+
+:global(html:not(.dark) .music-info) {
+  background: rgba(249, 253, 255, 0.76);
+  border-color: rgba(7, 108, 133, 0.2);
+  box-shadow: 0 22px 48px rgba(35, 76, 94, 0.18),
+              0 0 0 1px rgba(255, 255, 255, 0.72) inset,
+              0 0 24px rgba(0, 184, 212, 0.06) inset;
+}
+
+:global(html:not(.dark) .music-info::before) {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(232, 249, 252, 0.7) 42%, rgba(238, 241, 255, 0.76));
+}
+
+:global(html:not(.dark) .music-info::after) {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.18) 40%, transparent);
+}
+
+:global(html:not(.dark) .music-info .title),
+:global(html:not(.dark) .playlist-title) {
+  color: #082936;
+}
+
+:global(html:not(.dark) .time-info) {
+  color: rgba(17, 54, 69, 0.72);
+}
+
+:global(html:not(.dark) .progress-container),
+:global(html:not(.dark) .volume-slider-vertical) {
+  background-color: rgba(7, 108, 133, 0.14);
+}
+
+:global(html:not(.dark) .action-btn:hover) {
+  background-color: rgba(0, 184, 212, 0.1);
+  border-color: rgba(7, 108, 133, 0.2);
+  box-shadow: 0 8px 20px rgba(35, 76, 94, 0.16);
+}
+
+:global(html:not(.dark) .volume-panel),
+:global(html:not(.dark) .playlist-panel) {
+  background: rgba(246, 252, 255, 0.9);
+  border-color: rgba(7, 108, 133, 0.22);
+  box-shadow: 0 20px 44px rgba(35, 76, 94, 0.2),
+              0 0 0 1px rgba(255, 255, 255, 0.72) inset;
+}
+
+:global(html:not(.dark) .volume-percentage-display),
+:global(html:not(.dark) .song-title) {
+  color: #153846;
+}
+
+:global(html:not(.dark) .song-number) {
+  color: #007f98;
+}
+
+:global(html:not(.dark) .playlist-item) {
+  background: rgba(255, 255, 255, 0.54);
+  border-color: rgba(7, 108, 133, 0.14);
+  box-shadow: 0 2px 8px rgba(35, 76, 94, 0.08);
+}
+
+:global(html:not(.dark) .playlist-item:hover) {
+  background: rgba(222, 248, 252, 0.84);
+  border-color: rgba(0, 150, 180, 0.42);
+  box-shadow: 0 4px 12px rgba(0, 150, 180, 0.14);
+}
+
+:global(html:not(.dark) .playlist-item.active) {
+  background: rgba(213, 245, 250, 0.92);
+  border-color: rgba(0, 150, 180, 0.5);
+  border-left-color: var(--vp-c-brand-dark);
+  box-shadow: 0 4px 16px rgba(0, 150, 180, 0.16),
+              0 0 0 1px rgba(255, 255, 255, 0.72) inset;
+}
+
+:global(html:not(.dark) .playlist-items::-webkit-scrollbar-track) {
+  background: rgba(7, 108, 133, 0.1);
+}
+
+:global(html:not(.dark) .playlist-items::-webkit-scrollbar-thumb) {
+  background: rgba(0, 150, 180, 0.42);
+}
+
+:global(html:not(.dark) .playlist-items::-webkit-scrollbar-thumb:hover) {
+  background: rgba(0, 127, 152, 0.62);
+}
+
+:global(html:not(.dark) .sidebar-toggle) {
+  background: rgba(249, 253, 255, 0.86);
+  border-color: rgba(7, 108, 133, 0.22);
+  box-shadow: 0 10px 28px rgba(35, 76, 94, 0.18),
+              inset 0 0 0 1px rgba(0, 184, 212, 0.06);
+}
+
+:global(html:not(.dark) .sidebar-toggle:hover) {
+  background: rgba(241, 252, 254, 0.96);
+  border-color: rgba(0, 150, 180, 0.38);
+  box-shadow: 0 14px 32px rgba(35, 76, 94, 0.22),
+              inset 0 0 0 1px rgba(0, 184, 212, 0.1);
+}
+
 /* ==================== 深色模式 (Dark Mode) ==================== */
 @media (prefers-color-scheme: dark) {
   .dark .music-container {

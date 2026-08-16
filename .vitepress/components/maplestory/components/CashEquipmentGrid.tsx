@@ -33,7 +33,7 @@ const CategoryBadge: React.FC<{ label: string }> = ({ label }) => (
 );
 
 const CashTooltipWindow: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
-  <div className={`relative grid grid-cols-[14px_minmax(0,1fr)_15px] grid-rows-[14px_auto_15px] w-full text-white text-[12px] leading-[1.2] overflow-hidden z-50 text-left pointer-events-none ${className}`.trim()}>
+  <div className={`maple-equipment-tooltip relative grid grid-cols-[14px_minmax(0,1fr)_15px] grid-rows-[14px_auto_15px] w-full text-white text-[12px] leading-[1.2] overflow-hidden z-50 text-left pointer-events-none ${className}`.trim()}>
     <div className="bg-left-top" style={windowBg('window_nw.png')} />
     <div className="bg-repeat-x" style={windowBg('window_n.png')} />
     <div className="bg-left-top" style={windowBg('window_ne.png')} />

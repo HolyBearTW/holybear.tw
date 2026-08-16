@@ -1,4 +1,5 @@
 export const updateLogs = [  
+  { date: '2026/08/17', content: '新增淺色模式適配，調整角色資訊、潛能、萌獸、HEXA、符文、連結技能與套裝效果等區塊的顏色，讓文字和狀態提示更清楚；同時改善導航列顯示，並修正從角色頁返回楓之谷分析首頁時可能卡在載入畫面的問題。' },
   { date: '2026/08/03', content: '新增近期戰力排行榜 by Mapler House API' },  
   { date: '2026/08/02', content: '微幅調整裝備 Tooltip 呈現方式，以符合遊戲內視覺。' },  
   { date: '2026/07/29', content: '新增 Gemini 3.6 Flash 與 Gemini 3.5 Flash-Lite 模型支援，將預設模型改為 Gemini 3.5 Flash-Lite。同步更新 AI 模型設定選單、模型顯示名稱、預估等待時間與自動降級備援順序，提升 Gemini 分析體驗；同時修正聯盟神器未啟用時的水晶名稱錯誤與因應共通二技開放修改 HEXA 計算邏輯，新增計算靈魂赫卡忒選項。' },
