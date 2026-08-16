@@ -22,6 +22,7 @@ import HyperOS2 from './background/HyperOS2Theme.vue'
 import Christmas from './background/ChristmasBackground.vue'
 import Halloween from './background/HalloweenBackground.vue'
 import GravityFieldSimulation from './background/GravityFieldSimulation.vue'
+import HolyBearLoadingFrame from './HolyBearLoadingFrame.vue'
 import { getCopyrightText } from './copyright'
 import { 
   defaultTheme, 
@@ -519,6 +520,7 @@ onUnmounted(() => {
 </script>
 
 <template>
+    <HolyBearLoadingFrame />
     <MigrationNotice :intro-finished="true" />
     <FloatingBgmPlayer />
     <div class="mobile-flash-guard" :style="mobileFlashGuardStyle" aria-hidden="true"></div>
@@ -1253,20 +1255,32 @@ section.VPSidebarItem.level-0 {
 <style>
 /* Hero 文字動畫 */
 .VPHero .name {
-  background: var(--vp-home-hero-name-background);
+  background-image: -webkit-linear-gradient(120deg, #C1836C 0%, #F7E1C4 20%, #8F70FF 40%, #00FFEE 60%, #33FFFF 100%);
   background-size: 400% 400%;
+  background-repeat: no-repeat;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
   -webkit-text-fill-color: transparent;
-  animation: gradientRotate 5s ease infinite;
+  animation: holyBearVitePressHeroGradient 10s ease-in-out infinite alternate !important;
     isolation: isolate !important;
     transform: translate3d(0, 0, 0) !important;
     backface-visibility: hidden !important;
     will-change: filter, background-position;
 }
 html.dark .VPHero .name {
-  animation: gradientRotate 5s ease infinite, dynamicGlow 5s ease infinite;
+  animation: holyBearVitePressHeroGradient 10s ease-in-out infinite alternate !important;
+}
+.VPHero .image-bg {
+  background-image: -webkit-linear-gradient(120deg, #C1836C 0%, #F7E1C4 20%, #8F70FF 40%, #00FFEE 60%, #33FFFF 100%) !important;
+  background-size: 400% 400% !important;
+  background-repeat: no-repeat !important;
+  opacity: 0.48 !important;
+  filter: blur(30px) saturate(1.2) !important;
+  transform: translate3d(-50%, -50%, 0) scale(1.12) !important;
+  animation: holyBearVitePressHeroGradient 10s ease-in-out infinite alternate !important;
+  animation-play-state: running !important;
+  will-change: background-position;
 }
 @keyframes dynamicGlow {
   0%   { filter: drop-shadow(-1.6px -1.6px 8px #03141a); }
@@ -1281,22 +1295,10 @@ html.dark .VPHero .name {
   90%  { filter: drop-shadow(-1.6px -1.6px 8px #1B04F5); }
   100% { filter: drop-shadow(-1.6px -1.6px 8px #0008F5); }
 }
-@keyframes gradientRotate {
-  0% {
-    background-position: 0% 50%;
-  }
-  25% {
-    background-position: 100% 50%;
-  }
-  50% {
-    background-position: 100% 100%;
-  }
-  75% {
-    background-position: 50% 100%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
+@keyframes holyBearVitePressHeroGradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 /* === 全站自動進場動畫（由下到上） === */

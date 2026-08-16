@@ -3,9 +3,9 @@ import { defineConfig } from '@lando/vitepress-theme-default-plus/config'
 import react from '@vitejs/plugin-react'
 import { fileURLToPath, URL } from 'node:url'
 import { existsSync, readFileSync } from 'node:fs'
-import locales from './locales'
-import gitMetaPlugin from './git-meta'
-import sidebar from './sidebars/blog.sidebar'
+import locales from './locales/index.ts'
+import gitMetaPlugin from './git-meta.ts'
+import sidebar from './sidebars/blog.sidebar.ts'
 import TelegramRoseBotDocsSidebar from './sidebars/Telegram-Rose-Bot-docs.sidebar.ts'
 import VitepressBlogDocsSidebar from './sidebars/Vitepress-Blog-docs-sidebar.ts'
 import SpoilerComponentDocsSidebar from './sidebars/spoiler-component-docs-sidebar.ts'
@@ -60,15 +60,15 @@ const config = defineConfig({
     head: [
         ['meta', { name: 'theme-color', content: '#00FFEE' }],
         // Favicon 完整配置 - 使用透明 PNG/ICO，降低 Google 抓到不透明備案的機率
-        ['link', { rel: 'icon', type: 'image/png', sizes: '512x512', href: 'https://holybear.tw/favicon.png' }],
-        ['link', { rel: 'icon', type: 'image/png', sizes: '192x192', href: 'https://holybear.tw/favicon-192.png' }],
-        ['link', { rel: 'icon', type: 'image/png', sizes: '96x96', href: 'https://holybear.tw/favicon-96.png' }],
-        ['link', { rel: 'icon', type: 'image/png', sizes: '48x48', href: 'https://holybear.tw/favicon-48.png' }],
-        ['link', { rel: 'shortcut icon', href: 'https://holybear.tw/favicon.ico' }],
-        ['link', { rel: 'apple-touch-icon', sizes: '180x180', href: 'https://holybear.tw/favicon.png' }],
+        ['link', { rel: 'icon', type: 'image/png', sizes: '512x512', href: '/favicon.png?v=20260816-face-cutout' }],
+        ['link', { rel: 'icon', type: 'image/png', sizes: '192x192', href: '/favicon-192.png?v=20260816-face-cutout' }],
+        ['link', { rel: 'icon', type: 'image/png', sizes: '96x96', href: '/favicon-96.png?v=20260816-face-cutout' }],
+        ['link', { rel: 'icon', type: 'image/png', sizes: '48x48', href: '/favicon-48.png?v=20260816-face-cutout' }],
+        ['link', { rel: 'shortcut icon', href: '/favicon.ico?v=20260816-face-cutout' }],
+        ['link', { rel: 'apple-touch-icon', sizes: '180x180', href: '/favicon.png?v=20260816-face-cutout' }],
 
         ['meta', { name: 'msapplication-TileColor', content: '#00FFEE' }],
-        ['meta', { name: 'msapplication-TileImage', content: '/favicon.png' }],
+        ['meta', { name: 'msapplication-TileImage', content: '/favicon.png?v=20260816-face-cutout' }],
         ['link', {
             rel: 'stylesheet',
             href: '/fonts/LINESeed.css'
@@ -105,8 +105,13 @@ const config = defineConfig({
         },
         plugins: [
             gitMetaPlugin(), 
-            // 把 react-refresh 真的關掉的最保險方法（不讓它跑 refresh-runtime.js）
-            react({ fastRefresh: false })
+            // 楓谷工具由 Vue wrapper 掛載 React；停用其 Fast Refresh，避免 runtime 版本衝突。
+            react({
+                exclude: [
+                    /[\\/]node_modules[\\/]/,
+                    /[\\/]\.vitepress[\\/]components[\\/]maplestory[\\/]/
+                ]
+            })
         ],
         // 這段會直接告訴 Vite 本機開發伺服器，直接隱藏那些含 shimmed 的雜訊，是真正100%終極解法
         customLogger: (function() {
@@ -145,7 +150,9 @@ const config = defineConfig({
                 'react-dom/client',
                 'lucide-react',
                 'markdown-it',
-                'recharts'
+                'recharts',
+                'border-beam',
+                '@google/generative-ai'
             ],
         },
     },   
@@ -346,7 +353,7 @@ const config = defineConfig({
     // ✨ END: SEO 修正完成 ✨
 
         themeConfig: {
-        logo: '/logo.png',
+        logo: '/favicon.png?v=20260816-face-cutout',
         contributors: false,
         outline: {
             level: [2, 3], // 默認顯示 H2 和 H3 標題

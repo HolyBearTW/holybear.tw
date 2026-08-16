@@ -613,15 +613,27 @@ export default {
             }, 80);
         });
 
-        if (router && typeof router.onAfterRouteChanged === 'function') {
-            router.onAfterRouteChanged(() => {
+        if (router) {
+            const previousBeforeRouteChange = router.onBeforeRouteChange;
+            router.onBeforeRouteChange = async (to) => {
+                window.dispatchEvent(new CustomEvent('holybear-route-loading-start'));
+                return previousBeforeRouteChange?.(to);
+            };
+
+            const previousAfterRouteChange = router.onAfterRouteChange;
+            router.onAfterRouteChange = async (to) => {
+                await previousAfterRouteChange?.(to);
+                const routePath = new URL(to, window.location.origin).pathname.replace(/\/$/, '');
+                if (routePath !== '/maplestory') {
+                    window.dispatchEvent(new CustomEvent('holybear-route-loading-finish'));
+                }
                 setTimeout(() => {
                     setupGlobalOutlineHoverScroll();
                     updateCanonicalAndOg();
                     updateBodyClasses();
                     updateDesktopNavMenuState();
                 }, 50);
-            });
+            };
         }
     }
 };

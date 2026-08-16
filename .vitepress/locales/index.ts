@@ -1,5 +1,5 @@
-import zh_TW from './zh_TW'
-import en from './en'
+import zh_TW from './zh_TW.ts'
+import en from './en.ts'
 
 export default {
   locales: {

@@ -1,5 +1,5 @@
-import { generateNavThemes } from '../theme/background/themes';
-import { getCopyrightText } from '../theme/copyright';
+import { generateNavThemes } from '../theme/background/themes.ts';
+import { getCopyrightText } from '../theme/copyright.ts';
 
 export default {
   lang: 'zh-TW',

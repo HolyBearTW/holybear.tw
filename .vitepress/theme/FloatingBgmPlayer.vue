@@ -90,6 +90,7 @@ const musicInfoHidden = ref(false)
 const showSidebarButton = ref(false)
 const showPlayerToggle = ref(false)
 const repeatOne = ref(false)
+const isPageLoaded = ref(false)
 
 const showTitleToast = ref(false)
 const toastText = ref('')
@@ -108,6 +109,38 @@ let playbackRecoveryTimer = null
 let intendedToPlay = false
 let resumeOnVisibilityReturn = false
 let mediaSessionSeekEnabled = false
+let initialPlaybackPending = false
+
+function isMobileViewport() {
+  return typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches
+}
+
+function handleLoadingComplete() {
+  isPageLoaded.value = true
+
+  if (isMobileViewport()) {
+    playerMinimized.value = true
+    musicInfoHidden.value = true
+    showSidebarButton.value = true
+  }
+
+  startInitialPlaybackWhenReady()
+}
+
+function startInitialPlaybackWhenReady() {
+  if (!isPageLoaded.value || !initialPlaybackPending) return
+
+  initialPlaybackPending = false
+  if (canAttemptPlaybackNow()) {
+    selectAndPlaySong(currentIndex.value, { forceRestart: true })
+  } else {
+    // 尚未取得使用者互動，只更新畫面，不要把首次訪客誤記成「主動暫停」。
+    playing.value = false
+    syncMediaSessionPlaybackState()
+    syncMediaSessionPositionState()
+    armAutoplayOnInteraction()
+  }
+}
 
 function canAttemptPlaybackNow() {
   if (typeof navigator === 'undefined' || !navigator.userActivation) return true
@@ -181,17 +214,16 @@ const themeHandler = (e) => {
       if (wasPlaying) {
         selectAndPlaySong(currentIndex.value, { forceRestart: true });
       } else {
-        if (audio.value) {
-          audio.value.src = musicList.value[currentIndex.value]?.src || '';
-          audio.value.load();
-          currentTime.value = 0;
-        }
+        // 保持選曲狀態即可；等使用者真正播放時才載入音訊。
+        currentTime.value = 0;
+        duration.value = 0;
       }
     }
   }
 };
 
 onMounted(async () => {
+  window.addEventListener('holybear-loading-complete', handleLoadingComplete)
   // 頁面載入時檢查初始主題
   let currentTheme = localStorage.getItem('vitepress-background-theme');
   if (!currentTheme) { // 如果 localStorage 沒有主題設定，則使用 defaultTheme
@@ -256,10 +288,6 @@ onMounted(async () => {
   // 等 template 綁定完畢再初始化 audio
   await nextTick()
   if (audio.value) {
-    if (musicList.value && musicList.value.length > 0) {
-      audio.value.src = musicList.value[currentIndex.value]?.src || ''
-      try { audio.value.load() } catch (e) { console.error('Audio load failed:', e); } // 添加錯誤日誌
-    }
     audio.value.volume = volume.value;
     audio.value.loop = repeatOne.value;
     audio.value.addEventListener('timeupdate', updateProgress);
@@ -268,16 +296,12 @@ onMounted(async () => {
     // loadedmetadata 綁在 template (@loadedmetadata)，這裡可以備援但不必要重複綁
 
     // 統一處理初始播放邏輯
-    const isPlayingOnLoad = localStorage.getItem(PLAYING_KEY) === 'true';
-    intendedToPlay = savedTheme === 'christmas' || isPlayingOnLoad
+    const savedPlayingState = localStorage.getItem(PLAYING_KEY)
+    const shouldStartOnInteraction = savedTheme === 'christmas' || savedPlayingState !== 'false'
+    intendedToPlay = shouldStartOnInteraction
 
-    if (playerOpen.value && (savedTheme === 'christmas' || isPlayingOnLoad)) {
-        if (canAttemptPlaybackNow()) {
-          await selectAndPlaySong(currentIndex.value, { forceRestart: true });
-        } else {
-          syncPlayingState(false)
-          armAutoplayOnInteraction()
-        }
+    if (playerOpen.value && shouldStartOnInteraction) {
+        initialPlaybackPending = true
     } else if (playerOpen.value) {
       intendedToPlay = false
       syncPlayingState(false)
@@ -291,10 +315,13 @@ onMounted(async () => {
     syncMediaSessionMetadata()
     syncMediaSessionPlaybackState()
     setupMediaSessionHandlers()
+    // 載入動畫可能比播放器初始化更早完成；若事件已發生，現在補上首次播放流程。
+    startInitialPlaybackWhenReady()
   }
 })
 
 onUnmounted(() => {
+  window.removeEventListener('holybear-loading-complete', handleLoadingComplete)
   window.removeEventListener(THEME_CHANGE_EVENT, themeHandler)
   window.removeEventListener('pointerdown', handlePointerOutside, true)
   window.removeEventListener('click', handleClickOutside)
@@ -389,8 +416,23 @@ watch(musicInfoHidden, (newVal) => {
 })
 
 /* --- 播放控制函數 --- */
+function ensureCurrentAudioSource() {
+  if (!audio.value) return false
+
+  const targetSrc = currentSong.value?.src || ''
+  if (!targetSrc) return false
+
+  if (audio.value.getAttribute('src') !== targetSrc) {
+    audio.value.src = targetSrc
+    currentTime.value = 0
+    duration.value = 0
+  }
+
+  return true
+}
+
 function playMusic() {
-  if (!audio.value) return
+  if (!audio.value || !ensureCurrentAudioSource()) return
   intendedToPlay = true
   resumeOnVisibilityReturn = false
   cancelPlaybackRecovery()
@@ -405,6 +447,10 @@ function playMusic() {
   audio.value.play().then(() => {
     syncPlayingState(true)
   }).catch(e => {
+    intendedToPlay = false
+    resumeOnVisibilityReturn = false
+    syncPlayingState(false)
+
     // 如果播放失敗，且是瀏覽器阻止，重新設置監聽器
     if (e.name === 'NotAllowedError') {
       armAutoplayOnInteraction()
@@ -505,7 +551,9 @@ function handleAudioPause() {
       return
     }
 
-    requestPlaybackRecovery('unexpected-pause', 220)
+    intendedToPlay = false
+    resumeOnVisibilityReturn = false
+    cancelPlaybackRecovery()
     return
   }
 
@@ -522,28 +570,11 @@ function handleAudioError() {
   }
 
   if (intendedToPlay) {
-    requestPlaybackRecovery('audio-error', 320)
+    intendedToPlay = false
+    resumeOnVisibilityReturn = false
+    cancelPlaybackRecovery()
+    syncPlayingState(false)
   }
-}
-
-function handleAudioWaiting() {
-  if (!intendedToPlay || internalAudioTransition) return
-  requestPlaybackRecovery('waiting', 420)
-}
-
-function handleAudioStalled() {
-  if (!intendedToPlay || internalAudioTransition) return
-  requestPlaybackRecovery('stalled', 520)
-}
-
-function handleAudioSuspend() {
-  if (!intendedToPlay || internalAudioTransition) return
-  requestPlaybackRecovery('suspend', 620)
-}
-
-function handleAudioCanPlay() {
-  if (!intendedToPlay || internalAudioTransition || !audio.value?.paused) return
-  requestPlaybackRecovery('canplay', 0)
 }
 
 function handleDocumentFreeze() {
@@ -575,16 +606,17 @@ function requestPlaybackRecovery(reason, delay = 300) {
     if (!audio.value || internalAudioTransition || !intendedToPlay || pendingTrackAdvance) return
 
     try {
-      if (audio.value.readyState < 2) {
-        audio.value.load()
-      }
-
+      if (!ensureCurrentAudioSource()) return
       await audio.value.play()
       syncPlayingState(true)
       resumeOnVisibilityReturn = false
     } catch (error) {
+      intendedToPlay = false
+      resumeOnVisibilityReturn = false
+      syncPlayingState(false)
+
       if (error.name === 'NotAllowedError') {
-        resumeOnVisibilityReturn = true
+        armAutoplayOnInteraction()
       } else {
         console.warn(`音訊恢復失敗: ${reason}`, error)
       }
@@ -779,6 +811,9 @@ async function selectAndPlaySong(index, options = {}) {
     }
   } catch (e) {
     if (e.name !== 'AbortError') {
+      intendedToPlay = false
+      resumeOnVisibilityReturn = false
+      cancelPlaybackRecovery()
       syncPlayingState(false)
       // 如果播放失敗，且是瀏覽器阻止，重新設置監聽器
       if (e.name === 'NotAllowedError') {
@@ -1012,6 +1047,7 @@ function handleMouseDragEnd(e) {
 }
 
 function handleMouseEnter() {
+  if (isMobileViewport()) return
   if (!playerMinimized.value || musicInfoHidden.value) return
   isHovering.value = true
   if (leaveTimer) { clearTimeout(leaveTimer); leaveTimer = null }
@@ -1022,6 +1058,7 @@ function handleMouseEnter() {
 }
 
 function handleMouseLeave() {
+  if (isMobileViewport()) return
   isHovering.value = false
   if (hoverTimer) { clearTimeout(hoverTimer); hoverTimer = null }
   if (!playerMinimized.value && !isPlaylistVisible.value && !isVolumeVisible.value) {
@@ -1032,12 +1069,14 @@ function handleMouseLeave() {
 }
 
 function handleContainerMouseEnter() {
+  if (isMobileViewport()) return
   isHovering.value = true
   if (hoverTimer) { clearTimeout(hoverTimer); hoverTimer = null }
   if (leaveTimer) { clearTimeout(leaveTimer); leaveTimer = null }
 }
 
 function handleContainerMouseLeave() {
+  if (isMobileViewport()) return
   isHovering.value = false
   if (!playerMinimized.value && !isPlaylistVisible.value && !isVolumeVisible.value) {
     leaveTimer = setTimeout(() => {
@@ -1047,6 +1086,7 @@ function handleContainerMouseLeave() {
 }
 
 function handleGlobalMouseMove(e) {
+  if (isMobileViewport()) return
   if (playerMinimized.value || !playerOpen.value) return
   const container = playerContainer.value
   if (!container) return
@@ -1105,7 +1145,7 @@ function toggleRepeatOne() {
   ref="audio"
   id="global-audio-player" 
   crossorigin="anonymous"
-  preload="auto"
+  preload="none"
   playsinline
   webkit-playsinline="true"
   @ended="handleTrackEnded"
@@ -1114,15 +1154,11 @@ function toggleRepeatOne() {
   @playing="handleAudioPlaying"
   @pause="handleAudioPause"
   @error="handleAudioError"
-  @waiting="handleAudioWaiting"
-  @stalled="handleAudioStalled"
-  @suspend="handleAudioSuspend"
-  @canplay="handleAudioCanPlay"
 ></audio>
 
   <transition name="player-fade">
     <div
-      v-if="playerOpen"
+      v-if="playerOpen && isPageLoaded"
       ref="playerContainer"
       class="music-container"
       :class="{

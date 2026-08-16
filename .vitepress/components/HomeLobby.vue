@@ -130,17 +130,31 @@ const heroStyle = computed(() => ({
 
 const activePanelStyle = computed(() => {
   const unit = activeUnit.value
-  const isRightSide = unit.x > 54
-  const panelX = isRightSide
-    ? Math.max(unit.x - 8, 18)
-    : Math.min(unit.x + 8, 82)
-  const panelY = Math.min(Math.max(unit.y + (unit.y > 66 ? -10 : 8), 20), 78)
+  const isTopCenter = unit.y < 20 && unit.x >= 25 && unit.x <= 75
+  const isBottomCenter = unit.y > 82 && unit.x >= 35 && unit.x <= 65
+
+  if (isTopCenter || isBottomCenter) {
+    return {
+      '--panel-x': `${unit.x}%`,
+      '--panel-y': `${isTopCenter ? unit.y - 7 : unit.y + 7}%`,
+      '--panel-shift-x': '-50%',
+      '--panel-shift-y': isTopCenter ? '-100%' : '0%',
+      '--panel-nudge-x': '0px',
+      '--panel-nudge-y': isTopCenter ? '-14px' : '14px'
+    }
+  }
+
+  const isRightSide = unit.x >= 50
+  const panelX = isRightSide ? unit.x + 7 : unit.x - 7
+  const panelY = Math.min(Math.max(unit.y, 22), 78)
 
   return {
     '--panel-x': `${panelX}%`,
     '--panel-y': `${panelY}%`,
-    '--panel-shift-x': isRightSide ? '-100%' : '0%',
-    '--panel-nudge-x': isRightSide ? '-12px' : '12px'
+    '--panel-shift-x': isRightSide ? '0%' : '-100%',
+    '--panel-shift-y': '-50%',
+    '--panel-nudge-x': isRightSide ? '14px' : '-14px',
+    '--panel-nudge-y': '0px'
   }
 })
 
@@ -235,7 +249,7 @@ onBeforeUnmount(() => {
         <div class="hero-copy">
           <div class="hero-brand-lockup">
             <div class="hero-logo-card">
-              <img src="/logo.png" alt="HolyBearTW" class="hero-logo no-zoom">
+              <img src="/animations/logo.png" alt="HolyBearTW" class="hero-logo no-zoom">
             </div>
           </div>
           <div class="hero-title-group">
@@ -413,7 +427,7 @@ onBeforeUnmount(() => {
 
 .hero-shell {
   position: relative;
-  z-index: 2;
+  z-index: 3;
   display: flex;
   min-height: 0;
   width: min(100%, 1480px);
@@ -450,19 +464,28 @@ onBeforeUnmount(() => {
   position: relative;
   width: clamp(168px, 18vw, 238px);
   aspect-ratio: 1;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: 18px;
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.04)),
-    rgba(7, 16, 19, 0.34);
-  box-shadow:
-    0 18px 42px rgba(0, 0, 0, 0.22),
-    0 0 0 1px rgba(0, 255, 238, 0.12);
-  filter:
-    drop-shadow(0 16px 34px rgba(0, 255, 238, 0.25))
-    drop-shadow(0 4px 14px rgba(143, 112, 255, 0.22));
+  overflow: visible;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: none;
+  filter: none;
   transform: translate3d(calc(var(--mx) * -5px), calc(var(--my) * -4px), 0);
+}
+
+.hero-logo-card::before {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  z-index: -1;
+  border-radius: 50%;
+  background: var(--vp-home-hero-name-background);
+  background-size: 400% 400%;
+  background-position: 0% 50%;
+  animation: holyBearHeroGradient 10s ease-in-out infinite alternate;
+  opacity: 0.48;
+  filter: blur(30px) saturate(1.2);
+  pointer-events: none;
 }
 
 .hero-logo-card::after {
@@ -470,16 +493,18 @@ onBeforeUnmount(() => {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: linear-gradient(120deg, rgba(255, 255, 255, 0.28), transparent 38%);
+  background: transparent;
   pointer-events: none;
 }
 
 .hero-logo {
+  position: relative;
+  z-index: 1;
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 18px;
+  border-radius: 50%;
 }
 
 .hero-title-group {
@@ -650,7 +675,7 @@ onBeforeUnmount(() => {
 .scene-node {
   left: var(--x);
   top: var(--y);
-  z-index: 4;
+  z-index: 8;
   display: grid;
   width: clamp(72px, 7vw, 98px);
   aspect-ratio: 1;
@@ -707,7 +732,7 @@ onBeforeUnmount(() => {
 .avatar-rig {
   left: 50%;
   top: 52%;
-  z-index: 3;
+  z-index: 5;
   width: min(48%, 430px);
   min-width: 260px;
   transform:
@@ -749,7 +774,7 @@ onBeforeUnmount(() => {
   position: absolute;
   left: var(--panel-x);
   top: var(--panel-y);
-  z-index: 7;
+  z-index: 20;
   display: grid;
   width: min(250px, 31vw);
   gap: 5px;
@@ -762,12 +787,11 @@ onBeforeUnmount(() => {
   backdrop-filter: blur(14px);
   pointer-events: auto;
   transform:
-    translate(var(--panel-shift-x), -50%)
+    translate(var(--panel-shift-x), var(--panel-shift-y))
     translateX(var(--panel-nudge-x))
+    translateY(var(--panel-nudge-y))
     translate3d(calc(var(--mx) * 5px), calc(var(--my) * 4px), 0);
   transition:
-    left 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-    top 0.28s cubic-bezier(0.22, 1, 0.36, 1),
     border-color 0.2s ease,
     background 0.2s ease;
 }
@@ -1071,10 +1095,7 @@ onBeforeUnmount(() => {
 
   .hero-logo-card {
     width: clamp(148px, 36vw, 214px);
-    box-shadow:
-      0 18px 42px rgba(0, 0, 0, 0.22),
-      0 0 0 1px rgba(0, 255, 238, 0.12),
-      0 0 28px rgba(0, 255, 238, 0.18);
+    box-shadow: none;
     filter: none;
     transform: none;
   }

@@ -1,6 +1,6 @@
-import sidebarEn from '../sidebars/blog.sidebar.en'
-import { generateNavThemes } from '../theme/background/themes';
-import { getCopyrightText } from '../theme/copyright';
+import sidebarEn from '../sidebars/blog.sidebar.en.ts'
+import { generateNavThemes } from '../theme/background/themes.ts';
+import { getCopyrightText } from '../theme/copyright.ts';
 
 export default {
   lang: 'en',
