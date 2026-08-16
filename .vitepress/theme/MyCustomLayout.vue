@@ -1275,13 +1275,25 @@ html.dark .VPHero .name {
   background-image: -webkit-linear-gradient(120deg, #C1836C 0%, #F7E1C4 20%, #8F70FF 40%, #00FFEE 60%, #33FFFF 100%) !important;
   background-size: 400% 400% !important;
   background-repeat: no-repeat !important;
+  width: 320px !important;
+  height: 320px !important;
   opacity: 0.48 !important;
   filter: blur(30px) saturate(1.2) !important;
   transform: translate3d(-50%, -50%, 0) scale(1.12) !important;
+  z-index: 0 !important;
   animation: holyBearVitePressHeroGradient 10s ease-in-out infinite alternate !important;
   animation-play-state: running !important;
   will-change: background-position;
 }
+
+.VPHero .image-container {
+  isolation: isolate;
+}
+
+.VPHero .image-src {
+  z-index: 1 !important;
+}
+
 @keyframes dynamicGlow {
   0%   { filter: drop-shadow(-1.6px -1.6px 8px #03141a); }
   10%  { filter: drop-shadow(-1.6px -1.6px 8px #4D55E0); }

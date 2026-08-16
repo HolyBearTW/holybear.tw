@@ -365,7 +365,7 @@ onBeforeUnmount(() => {
 }
 
 :global(body:has(.hb-home-lobby) .VPContent) {
-  padding-top: var(--vp-nav-height);
+  padding-top: 0 !important;
   padding-bottom: 0 !important;
 }
 
@@ -433,7 +433,7 @@ onBeforeUnmount(() => {
   width: min(100%, 1480px);
   margin: 0 auto;
   flex-direction: column;
-  padding: clamp(32px, 6vh, 72px) clamp(18px, 3vw, 44px) 0;
+  padding: calc(var(--vp-nav-height) + 4px) clamp(18px, 3vw, 44px) 0;
 }
 
 .hero-stage {
@@ -462,7 +462,7 @@ onBeforeUnmount(() => {
 
 .hero-logo-card {
   position: relative;
-  width: clamp(168px, 18vw, 238px);
+  width: min(340px, calc(100vw - 24px));
   aspect-ratio: 1;
   overflow: visible;
   border: 0;
@@ -476,12 +476,16 @@ onBeforeUnmount(() => {
 .hero-logo-card::before {
   content: "";
   position: absolute;
-  inset: -20%;
+  top: 50%;
+  left: 50%;
+  width: 320px;
+  height: 320px;
   z-index: -1;
   border-radius: 50%;
   background: var(--vp-home-hero-name-background);
   background-size: 400% 400%;
   background-position: 0% 50%;
+  transform: translate3d(-50%, -50%, 0) scale(1.12);
   animation: holyBearHeroGradient 10s ease-in-out infinite alternate;
   opacity: 0.48;
   filter: blur(30px) saturate(1.2);
@@ -1015,7 +1019,7 @@ onBeforeUnmount(() => {
   .hero-stage {
     grid-template-columns: minmax(260px, 0.82fr) minmax(420px, 1.18fr);
     gap: clamp(18px, 3vw, 42px);
-    padding-top: 4px;
+    padding-top: 0;
     padding-bottom: 34px;
   }
 
@@ -1024,7 +1028,7 @@ onBeforeUnmount(() => {
   }
 
   .hero-logo-card {
-    width: clamp(154px, 17vw, 210px);
+    width: min(340px, calc(100vw - 24px));
   }
 
   .hero-title-group {
@@ -1075,7 +1079,11 @@ onBeforeUnmount(() => {
   }
 
   .hero-shell {
-    padding: 14px 14px 22px;
+    padding: var(--vp-nav-height) 14px 22px;
+  }
+
+  .hero-stage {
+    padding-top: 4px;
   }
 
   .hero-copy {
@@ -1089,12 +1097,12 @@ onBeforeUnmount(() => {
   .hero-brand-lockup {
     justify-content: center;
     margin-inline: auto;
-    padding-top: 8px;
+    padding-top: 0;
     overflow: visible;
   }
 
   .hero-logo-card {
-    width: clamp(148px, 36vw, 214px);
+    width: min(340px, calc(100vw - 24px));
     box-shadow: none;
     filter: none;
     transform: none;

@@ -121,9 +121,19 @@ const modules = [Autoplay, Navigation, Pagination, EffectFade]
           </a>
         </swiper-slide>
         
-        <button class="nav-btn prev-btn"><ChevronLeft /></button>
-        <button class="nav-btn next-btn"><ChevronRight /></button>
-        <div class="custom-pagination"></div>
+        <div class="carousel-controls">
+          <button
+            type="button"
+            class="nav-btn prev-btn"
+            :aria-label="lang === 'en' ? 'Previous slide' : '上一則'"
+          ><ChevronLeft /></button>
+          <div class="custom-pagination"></div>
+          <button
+            type="button"
+            class="nav-btn next-btn"
+            :aria-label="lang === 'en' ? 'Next slide' : '下一則'"
+          ><ChevronRight /></button>
+        </div>
       </swiper>
     </div>
   </section>
@@ -246,12 +256,73 @@ const modules = [Autoplay, Navigation, Pagination, EffectFade]
   gap: 8px; 
 }
 
+.carousel-controls {
+  display: contents;
+}
+
+:deep(.custom-pagination .swiper-pagination-bullet) {
+  width: 9px;
+  height: 9px;
+  margin: 0 !important;
+  border: 1px solid rgba(52, 215, 255, 0.9);
+  background: rgba(0, 255, 238, 0.38);
+  opacity: 1;
+  box-shadow: 0 0 7px rgba(0, 255, 238, 0.38);
+  transition: width 0.28s ease, background 0.28s ease, box-shadow 0.28s ease;
+}
+
+:deep(.custom-pagination .swiper-pagination-bullet-active) {
+  width: 28px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #00ffee, #34d7ff);
+  box-shadow: 0 0 6px rgba(0, 255, 238, 0.95), 0 0 16px rgba(52, 215, 255, 0.72);
+}
+
 @media (max-width: 768px) {
-  .carousel-container { height: 320px; }
+  .hero-section {
+    box-sizing: border-box;
+    padding-inline: 14px;
+  }
+
+  .carousel-container { height: 290px; }
+  .main-swiper { height: 100%; overflow: hidden; }
   .slide-title { font-size: 1.5rem; }
-  .slide-info { bottom: 2rem; left: 1.2rem; right: 1.2rem; }
-  .custom-pagination { left: 1.2rem !important; }
-  .nav-btn { display: none; }
+  .slide-info { bottom: 4.5rem; left: 1.2rem; right: 1.2rem; }
+  .carousel-controls {
+    position: absolute;
+    left: 50%;
+    bottom: 8px;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 36px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    transform: translateX(-50%);
+  }
+  .custom-pagination {
+    position: static;
+    width: auto !important;
+    transform: none !important;
+  }
+  .nav-btn {
+    position: static;
+    display: flex;
+    width: 36px;
+    height: 36px;
+    border: 1px solid rgba(52, 215, 255, 0.58);
+    background: rgba(4, 20, 28, 0.34);
+    opacity: 0.9;
+    transform: none;
+    box-shadow: 0 0 12px rgba(0, 255, 238, 0.24);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+  }
+  .nav-btn :deep(svg) { width: 18px; height: 18px; }
 }
 
 </style>

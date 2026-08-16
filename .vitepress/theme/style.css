@@ -359,6 +359,10 @@ input[type="range"]::-moz-range-thumb {
 }
 
 /* ==================== Hero / logo / image (整合) ==================== */
+.VPHomeHero {
+  --hb-hero-logo-size: min(340px, calc(100vw - 24px));
+}
+
 :root .image-src {
   width: 100%;
   height: auto;
@@ -367,7 +371,29 @@ input[type="range"]::-moz-range-thumb {
   aspect-ratio: 1/1;
 }
 @media (min-width: 640px) {
-  :root .image-src { max-width: 238px; min-height: auto; border-radius: 30px; }
+  :root .image-src { max-width: 340px; min-height: auto; border-radius: 30px; }
+
+  .VPHomeHero .image-container {
+    transform: translateY(calc((var(--hb-hero-logo-size) - 300px) / 2)) !important;
+  }
+
+  .VPHomeHero .VPImage.image-src,
+  .VPHomeHero img.image-src {
+    width: var(--hb-hero-logo-size) !important;
+    height: var(--hb-hero-logo-size) !important;
+    max-width: none !important;
+    max-height: none !important;
+  }
+}
+
+@media (min-width: 640px) and (max-width: 959px) {
+  .VPHomeHero .image {
+    margin-top: -74px !important;
+  }
+
+  .VPHomeHero .image-container {
+    margin-bottom: 24px !important;
+  }
 }
 .VPImage.logo {
   border-radius: 0 !important;
@@ -403,26 +429,27 @@ input[type="range"]::-moz-range-thumb {
 /* 響應式：手機時主圖尺寸調整 */
 @media (max-width: 640px) {
   .VPHomeHero .image-container {
-    margin-bottom: 5px !important;
+    margin-bottom: calc(5px + var(--hb-hero-logo-size) - 240px) !important;
     width: 100%;
     display: flex !important;
     justify-content: center !important;
     align-items: center !important;
     position: relative !important;
+    transform: translateY(calc((var(--hb-hero-logo-size) - 240px) / 2)) !important;
     overflow: visible !important;
   }
   .VPHomeHero .VPImage.image-src, .VPHomeHero img.image-src {
     display: block;
     margin: 0 auto;
-    width: 80vw !important;
-    max-width: 200px !important;
-    min-width: 100px !important;
-    height: 80vw !important;
-    max-height: 200px !important;
-    min-height: 100px !important;
+    width: var(--hb-hero-logo-size) !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    height: var(--hb-hero-logo-size) !important;
+    max-height: none !important;
+    min-height: 0 !important;
     border-radius: 24px !important;
     aspect-ratio: 1/1 !important;
-    object-fit: cover !important;
+    object-fit: contain !important;
   }
 }
 
@@ -2166,7 +2193,13 @@ html.dark .VPHome .VPButton.alt {
 }
 
 .VPHomeHero .image-container {
-  transform: none !important;
+  transform: translateY(calc((var(--hb-hero-logo-size) - 300px) / 2)) !important;
+}
+
+@media (max-width: 640px) {
+  .VPHomeHero .image-container {
+    transform: translateY(calc((var(--hb-hero-logo-size) - 240px) / 2)) !important;
+  }
 }
 
 .VPHomeHero .VPImage.image-src,
@@ -2174,6 +2207,7 @@ html.dark .VPHome .VPButton.alt {
   border-radius: 0 !important;
   box-shadow: none !important;
   filter: none !important;
+  translate: none !important;
 }
 
 @keyframes holyBearHeroGradient {
@@ -3874,4 +3908,75 @@ body.holy-bear-page-enter .VPDoc .vp-doc > *:nth-child(3) { animation-delay: 0.1
   0% { opacity: 0; transform: translateY(34px) scale(0.96); }
   72% { opacity: 1; transform: translateY(-5px) scale(1.01); }
   100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Hero 頁面：導覽列覆蓋內容；頂端透明、捲動後恢復毛玻璃背景 */
+body:has(.hb-home-lobby) .VPNav,
+body:has(.VPHero) .VPNav {
+  position: fixed !important;
+  inset: 0 0 auto !important;
+  z-index: 80 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+body:has(.hb-home-lobby) .VPNavBar.top,
+body:has(.hb-home-lobby) .VPNavBar.top > .wrapper,
+body:has(.hb-home-lobby) .VPNavBar.top > .container,
+body:has(.hb-home-lobby) .VPNavBar.top .content-body,
+body:has(.VPHero) .VPNavBar.top,
+body:has(.VPHero) .VPNavBar.top > .wrapper,
+body:has(.VPHero) .VPNavBar.top > .container,
+body:has(.VPHero) .VPNavBar.top .content-body {
+  background: transparent !important;
+  background-image: none !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+body:has(.hb-home-lobby) .VPNavBar:not(.top),
+body:has(.VPHero) .VPNavBar:not(.top) {
+  background: rgba(255, 255, 255, 0.68) !important;
+  background-image: none !important;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.1) !important;
+  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.12) !important;
+  backdrop-filter: blur(20px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(150%) !important;
+}
+
+html.dark body:has(.hb-home-lobby) .VPNavBar:not(.top),
+html.dark body:has(.VPHero) .VPNavBar:not(.top) {
+  background: rgba(6, 13, 16, 0.7) !important;
+  border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28) !important;
+}
+
+body:has(.hb-home-lobby) .VPNavBar::before,
+body:has(.hb-home-lobby) .VPNavBar::after,
+body:has(.VPHero) .VPNavBar::before,
+body:has(.VPHero) .VPNavBar::after {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* VitePress Hero 本身已有導覽列避讓空間，避免在 VPContent 重複計算 */
+body:has(.VPHero) .VPContent {
+  padding-top: 0 !important;
+}
+
+body:has(.VPHero) .VPHero {
+  margin-top: 0 !important;
+}
+
+@media (min-width: 960px) {
+  body:has(.VPHero) .VPHero {
+    padding-bottom: 96px !important;
+  }
 }
