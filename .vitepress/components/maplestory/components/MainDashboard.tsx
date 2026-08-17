@@ -72,6 +72,9 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
     currentAbilityInfo = [],
     getAbilityStyle = () => ''
 }) => {
+    const hasRecentLogin = String(data.basic.access_flag).toLowerCase() === 'true';
+    const [showRecentLoginStatus, setShowRecentLoginStatus] = React.useState(false);
+
     return (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <div className="lg:col-span-3 space-y-4">
@@ -81,9 +84,34 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
                       <div className="maple-profile-shade absolute inset-0 bg-gradient-to-b from-transparent to-[#161b22]"></div>
                   </div>
                   <div className="px-5 relative -mt-16 flex flex-col items-center pb-5">
-                      <div className="w-32 h-32 rounded-full bg-[#0a0c10] border-4 border-[#1f242e] shadow-2xl overflow-hidden flex items-center justify-center mb-3 relative z-10 group-hover:scale-105 transition-transform duration-500">
-                          <img src={data.basic.character_image} alt="Character" className="w-[150%] h-[150%] object-cover mt-8" />
-                      </div>
+                      <button
+                        type="button"
+                        className="relative z-10 mb-3 group-hover:scale-105 transition-transform duration-500"
+                        aria-label={`近7日登入狀態：${hasRecentLogin}`}
+                        onMouseEnter={() => setShowRecentLoginStatus(true)}
+                        onMouseLeave={() => setShowRecentLoginStatus(false)}
+                        onFocus={() => setShowRecentLoginStatus(true)}
+                        onBlur={() => setShowRecentLoginStatus(false)}
+                        onClick={() => setShowRecentLoginStatus(true)}
+                      >
+                          {hasRecentLogin && (
+                            <span
+                              className="maple-recent-login-ring pointer-events-none absolute inset-1 z-10 rounded-full border-[3px] border-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9),0_0_18px_rgba(34,197,94,0.5)] animate-pulse"
+                              aria-hidden="true"
+                            />
+                          )}
+                          <div className="relative w-32 h-32 rounded-full bg-[#0a0c10] border-4 border-[#1f242e] shadow-2xl overflow-hidden flex items-center justify-center">
+                              <img src={data.basic.character_image} alt="Character" className="w-[150%] h-[150%] object-cover mt-8" />
+                          </div>
+                          {showRecentLoginStatus && (
+                            <span
+                              role="status"
+                              className="maple-recent-login-tooltip pointer-events-none absolute left-1/2 -top-10 z-30 -translate-x-1/2 whitespace-nowrap rounded-full border border-emerald-400/40 bg-[#0d1117]/95 px-3 py-1.5 text-xs font-bold text-emerald-300 shadow-lg shadow-emerald-950/40 backdrop-blur-sm"
+                            >
+                              近7日登入：{String(hasRecentLogin)}
+                            </span>
+                          )}
+                      </button>
                       <h2 className="text-2xl font-bold text-white mb-1 text-center">{data.basic.character_name}</h2>
                       {/* FIX: items-center added */}
                       <div className="flex flex-wrap justify-center items-center gap-2 text-xs text-slate-400 mb-6">
@@ -125,10 +153,6 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
                          <div className="flex justify-between border-b border-slate-800/50 pb-1.5">
                             <span>建立日期</span>
                             <span className="text-slate-300 font-mono">{data.basic.character_date_create ? data.basic.character_date_create.split('T')[0] : '2021-03-24'}</span>
-                         </div>
-                         <div className="flex justify-between border-b border-slate-800/50 pb-1.5">
-                            <span>近7日登入</span>
-                            <span className="text-green-400 font-bold">true</span>
                          </div>
                          <div className="flex items-center justify-between border-b border-slate-800/50 pb-1.5">
                            <span className="whitespace-nowrap">七日成長</span>
