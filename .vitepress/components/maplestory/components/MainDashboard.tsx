@@ -94,19 +94,23 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
                         onBlur={() => setShowRecentLoginStatus(false)}
                         onClick={() => setShowRecentLoginStatus(true)}
                       >
-                          {hasRecentLogin && (
-                            <span
-                              className="maple-recent-login-ring pointer-events-none absolute inset-1 z-10 rounded-full border-[3px] border-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9),0_0_18px_rgba(34,197,94,0.5)] animate-pulse"
-                              aria-hidden="true"
-                            />
-                          )}
+                          <span
+                            className={`maple-recent-login-ring pointer-events-none absolute inset-1 z-10 rounded-full border-[3px] animate-pulse ${hasRecentLogin
+                              ? 'border-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9),0_0_18px_rgba(34,197,94,0.5)]'
+                              : 'border-red-400 shadow-[0_0_8px_rgba(248,113,113,0.9),0_0_18px_rgba(239,68,68,0.5)]'
+                            }`}
+                            aria-hidden="true"
+                          />
                           <div className="relative w-32 h-32 rounded-full bg-[#0a0c10] border-4 border-[#1f242e] shadow-2xl overflow-hidden flex items-center justify-center">
                               <img src={data.basic.character_image} alt="Character" className="w-[150%] h-[150%] object-cover mt-8" />
                           </div>
                           {showRecentLoginStatus && (
                             <span
                               role="status"
-                              className="maple-recent-login-tooltip pointer-events-none absolute left-1/2 -top-10 z-30 -translate-x-1/2 whitespace-nowrap rounded-full border border-emerald-400/40 bg-[#0d1117]/95 px-3 py-1.5 text-xs font-bold text-emerald-300 shadow-lg shadow-emerald-950/40 backdrop-blur-sm"
+                              className={`maple-recent-login-tooltip pointer-events-none absolute left-1/2 -top-10 z-30 -translate-x-1/2 whitespace-nowrap rounded-full border bg-[#0d1117]/95 px-3 py-1.5 text-xs font-bold shadow-lg backdrop-blur-sm ${hasRecentLogin
+                                ? 'border-emerald-400/40 text-emerald-300 shadow-emerald-950/40'
+                                : 'border-red-400/40 text-red-300 shadow-red-950/40'
+                              }`}
                             >
                               近7日登入：{String(hasRecentLogin)}
                             </span>
