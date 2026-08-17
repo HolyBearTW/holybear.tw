@@ -1,15 +1,9 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { useData } from 'vitepress'
+import { onMounted, onUnmounted, ref } from 'vue'
 
 const isVisible = ref(true)
 const isPopping = ref(false)
 const isLeaving = ref(false)
-const { isDark } = useData()
-const isFrameDark = computed(() => {
-  if (typeof document === 'undefined') return isDark.value
-  return isDark.value && document.documentElement.classList.contains('dark')
-})
 let previousBodyOverflow = ''
 let previousDocumentOverflow = ''
 let routeShowTimer: number | undefined
@@ -126,7 +120,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div v-show="isVisible" class="brand-loading-frame" :class="{ 'is-popping': isPopping, 'is-leaving': isLeaving, 'is-dark': isFrameDark }" aria-hidden="true">
+  <div v-show="isVisible" class="brand-loading-frame" :class="{ 'is-popping': isPopping, 'is-leaving': isLeaving }" aria-hidden="true">
     <div class="brand-loading-ball">
       <img
         class="brand-loading-orb"
@@ -160,7 +154,7 @@ onUnmounted(() => {
   transition: transform 0.7s cubic-bezier(0.76, 0, 0.24, 1) 0.8s;
 }
 
-.brand-loading-frame.is-dark {
+:global(html.dark .brand-loading-frame) {
   background:
     radial-gradient(circle at 50% 42%, rgba(0, 255, 238, 0.1), transparent 30%),
     radial-gradient(circle at 18% 16%, rgba(143, 112, 255, 0.12), transparent 34%),
@@ -213,13 +207,13 @@ onUnmounted(() => {
   transform: scale(1.12);
 }
 
-.brand-loading-frame:not(.is-dark) .brand-loading-orb {
+:global(html:not(.dark) .brand-loading-frame .brand-loading-orb) {
   filter:
     drop-shadow(0 18px 30px rgba(7, 108, 133, 0.2))
     drop-shadow(0 0 26px rgba(143, 112, 255, 0.2));
 }
 
-.brand-loading-frame:not(.is-dark) .brand-loading-ball::after {
+:global(html:not(.dark) .brand-loading-frame .brand-loading-ball::after) {
   position: absolute;
   z-index: 0;
   inset: 5%;
@@ -234,7 +228,7 @@ onUnmounted(() => {
   pointer-events: none;
 }
 
-.brand-loading-frame:not(.is-dark) .brand-loading-ball::before {
+:global(html:not(.dark) .brand-loading-frame .brand-loading-ball::before) {
   background: conic-gradient(
     from 0deg,
     transparent 0deg 35deg,
