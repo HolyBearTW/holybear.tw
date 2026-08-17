@@ -1245,6 +1245,7 @@ html.dark body:not(:has(.VPHome)):not(.is-home-page) .VPSidebar.open {
   display: grid;
   grid-template-rows: 56px 0fr;
   overflow: hidden !important;
+  border-radius: 16px;
   height: auto !important;
   max-height: none !important;
   border: none !important;
