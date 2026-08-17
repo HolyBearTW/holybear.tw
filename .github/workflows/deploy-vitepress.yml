@@ -289,11 +289,14 @@ jobs:
       - name: 上傳靜態產物到 Pages Artifact
         uses: actions/upload-pages-artifact@v5
         with:
+          name: github-pages-${{ github.run_attempt }}
           path: .vitepress/dist
 
       - name: 正式部署到 GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
+        with:
+          artifact_name: github-pages-${{ github.run_attempt }}
 
       # 新文章偵測 & Telegram 通知照原本邏輯即可
       - name: 偵測新文章
