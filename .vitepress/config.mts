@@ -59,6 +59,17 @@ const config = defineConfig({
     appearance: 'dark',
     head: [
         ['meta', { name: 'theme-color', content: '#00FFEE' }],
+        ['script', {}, `(() => {
+            const root = document.documentElement;
+            const savedAppearance = localStorage.getItem('vitepress-theme-appearance');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const shouldUseDark = savedAppearance === 'light'
+                ? false
+                : savedAppearance === 'auto'
+                    ? prefersDark
+                    : true;
+            root.classList.toggle('dark', shouldUseDark);
+        })()`],
         // Favicon 完整配置 - 使用透明 PNG/ICO，降低 Google 抓到不透明備案的機率
         ['link', { rel: 'icon', type: 'image/png', sizes: '512x512', href: '/favicon.png?v=20260816-face-cutout' }],
         ['link', { rel: 'icon', type: 'image/png', sizes: '192x192', href: '/favicon-192.png?v=20260816-face-cutout' }],
