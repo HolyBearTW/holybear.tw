@@ -1,11 +1,15 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useData } from 'vitepress'
 
 const isVisible = ref(true)
 const isPopping = ref(false)
 const isLeaving = ref(false)
 const { isDark } = useData()
+const isFrameDark = computed(() => {
+  if (typeof document === 'undefined') return isDark.value
+  return isDark.value && document.documentElement.classList.contains('dark')
+})
 let previousBodyOverflow = ''
 let previousDocumentOverflow = ''
 let routeShowTimer: number | undefined
@@ -122,7 +126,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div v-show="isVisible" class="brand-loading-frame" :class="{ 'is-popping': isPopping, 'is-leaving': isLeaving, 'is-dark': isDark }" aria-hidden="true">
+  <div v-show="isVisible" class="brand-loading-frame" :class="{ 'is-popping': isPopping, 'is-leaving': isLeaving, 'is-dark': isFrameDark }" aria-hidden="true">
     <div class="brand-loading-ball">
       <img
         class="brand-loading-orb"
