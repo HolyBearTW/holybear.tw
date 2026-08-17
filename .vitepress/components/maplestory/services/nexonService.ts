@@ -136,7 +136,9 @@ export const fetchCharacterData = async (characterName: string, apiKey: string, 
   // 2. Prepare Date Parameters
   // If specificDate is undefined, we simply don't pass it to buildUrl, 
   // which tells the API to fetch the "latest" available data (approx 15 min delay).
-  const dateParam = specificDate; 
+  // Nexon's current-day data must be requested without an explicit date.
+  // Normalize it here so every caller (including the best-record search) is safe.
+  const dateParam = specificDate === getTaiwanDate() ? undefined : specificDate;
   
   // For historical comparison (7 days ago), we explicitly calculate the date.
   const date7DaysAgo = getDateBefore(8); 
