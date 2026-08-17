@@ -95,7 +95,7 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
                         onClick={() => setShowRecentLoginStatus(true)}
                       >
                           <span
-                            className={`maple-recent-login-ring pointer-events-none absolute inset-1 z-10 rounded-full border-[3px] animate-pulse ${hasRecentLogin
+                            className={`maple-recent-login-ring pointer-events-none absolute inset-0.5 z-10 rounded-full border-[3px] animate-pulse ${hasRecentLogin
                               ? 'border-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9),0_0_18px_rgba(34,197,94,0.5)]'
                               : 'border-red-400 shadow-[0_0_8px_rgba(248,113,113,0.9),0_0_18px_rgba(239,68,68,0.5)]'
                             }`}
