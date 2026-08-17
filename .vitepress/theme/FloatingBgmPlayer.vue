@@ -1919,14 +1919,30 @@ function toggleRepeatOne() {
 
 @media (max-width: 480px) {
     .music-container {
+        left: 12px;
         right: 12px;
         bottom: 12px;
-        min-width: 300px;
-        padding: 20px 25px;
+        width: auto;
+        min-width: 0;
+        padding: 18px 16px;
+        box-sizing: border-box;
     }
 
   .music-info {
     top: 27px;
+  }
+
+  .playlist-panel {
+    width: min(350px, calc(100vw - 40px));
+    max-width: none;
+    padding: 22px 16px;
+    box-sizing: border-box;
+  }
+
+  .volume-panel {
+    right: 8px;
+    left: auto;
+    transform: none;
   }
 }
 
@@ -2040,6 +2056,15 @@ function toggleRepeatOne() {
   border-color: rgba(0, 150, 180, 0.38);
   box-shadow: 0 14px 32px rgba(35, 76, 94, 0.22),
               inset 0 0 0 1px rgba(0, 184, 212, 0.1);
+}
+
+:global(html:not(.dark) .title-toast) {
+  color: #082936;
+  background: rgba(246, 252, 255, 0.94);
+  border: 1px solid rgba(7, 108, 133, 0.2);
+  box-shadow: 0 8px 24px rgba(35, 76, 94, 0.2);
+  backdrop-filter: blur(18px) saturate(145%);
+  -webkit-backdrop-filter: blur(18px) saturate(145%);
 }
 
 /* ==================== 深色模式 (Dark Mode) ==================== */

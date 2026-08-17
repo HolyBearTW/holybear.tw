@@ -1088,9 +1088,10 @@ section.VPSidebarItem.level-0 {
 @media (max-width: 768px) {
   /* 選單群組容器動畫 - 使用 max-height 實現平滑展開 */
   .VPNavScreenMenuGroup {
+    height: auto !important;
+    padding-bottom: 0 !important;
     transition: 
-      max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-      padding 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+      grid-template-rows 0.48s cubic-bezier(0.4, 0, 0.2, 1),
       border-color 0.5s ease !important;
     overflow: hidden;
   }
@@ -1122,20 +1123,29 @@ section.VPSidebarItem.level-0 {
 
   /* 展開內容容器 - 平滑高度展開動畫 */
   .VPNavScreenMenuGroup .items {
+    display: grid;
     max-height: 0;
     opacity: 0;
+    margin: 0 !important;
+    padding-top: 0 !important;
+    visibility: visible !important;
+    pointer-events: none;
     overflow: hidden;
     transition: 
-      max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.2s,  /* 收起時：延遲 0.2s 再收起高度 */
-      opacity 0.5s ease !important;                       /* 收起時：立即開始淡出 */
+      max-height 0.48s cubic-bezier(0.4, 0, 0.2, 1),
+      opacity 0.28s ease,
+      padding-top 0.48s cubic-bezier(0.4, 0, 0.2, 1) !important;
   }
 
   .VPNavScreenMenuGroup.open .items {
     max-height: 1000px; /* 足夠大的值以容納所有項目 */
     opacity: 1;
+    padding-top: 10px !important;
+    pointer-events: auto;
     transition: 
       max-height 1.5s cubic-bezier(0.4, 0, 0.2, 1),       /* 展開時：立即展開高度 */
-      opacity 0.35s ease 0.15s !important;                 /* 展開時：延遲 0.15s 再淡入 */
+      opacity 0.35s ease 0.15s,
+      padding-top 0.48s cubic-bezier(0.4, 0, 0.2, 1) !important; /* 展開時：延遲 0.15s 再淡入 */
   }
 
   /* 單個項目淡入動畫 - 從左滑入 */

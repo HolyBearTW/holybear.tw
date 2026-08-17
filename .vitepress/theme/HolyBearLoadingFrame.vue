@@ -122,7 +122,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div v-if="isVisible" class="brand-loading-frame" :class="{ 'is-popping': isPopping, 'is-leaving': isLeaving, 'is-dark': isDark }" aria-hidden="true">
+  <div v-show="isVisible" class="brand-loading-frame" :class="{ 'is-popping': isPopping, 'is-leaving': isLeaving, 'is-dark': isDark }" aria-hidden="true">
     <div class="brand-loading-ball">
       <img
         class="brand-loading-orb"
@@ -145,15 +145,22 @@ onUnmounted(() => {
 .brand-loading-frame {
   position: fixed;
   inset: 0;
-  z-index: 2000;
+  z-index: 2147483000;
   overflow: hidden;
-  background: #f1f1f1;
-  color: #a8a8a8;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(0, 184, 212, 0.16), transparent 31%),
+    radial-gradient(circle at 18% 16%, rgba(143, 112, 255, 0.12), transparent 34%),
+    radial-gradient(circle at 88% 82%, rgba(0, 255, 238, 0.1), transparent 30%),
+    linear-gradient(135deg, #f8fcfd 0%, #eef9fb 52%, #f7f3ff 100%);
+  color: rgba(16, 91, 108, 0.42);
   transition: transform 0.7s cubic-bezier(0.76, 0, 0.24, 1) 0.8s;
 }
 
 .brand-loading-frame.is-dark {
-  background: #061018;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(0, 255, 238, 0.1), transparent 30%),
+    radial-gradient(circle at 18% 16%, rgba(143, 112, 255, 0.12), transparent 34%),
+    #061018;
   color: #c2ccd2;
 }
 
@@ -215,7 +222,7 @@ onUnmounted(() => {
   border: 1px solid rgba(7, 108, 133, 0.2);
   border-radius: 50%;
   background:
-    radial-gradient(circle at 34% 28%, rgba(255, 255, 255, 0.98), rgba(221, 249, 252, 0.9) 48%, rgba(235, 228, 255, 0.82));
+    radial-gradient(circle at 34% 28%, rgba(247, 253, 255, 0.94), rgba(201, 241, 247, 0.84) 48%, rgba(224, 215, 255, 0.76));
   box-shadow:
     0 18px 46px rgba(7, 108, 133, 0.18),
     0 0 36px rgba(143, 112, 255, 0.18);
@@ -331,8 +338,14 @@ onUnmounted(() => {
 
 @media (max-width: 392px) {
   .brand-loading-ball {
-  width: 180px;
-  height: 180px;
+    width: 190px;
+    height: 190px;
+  }
+
+  .brand-loading-marquee {
+    bottom: 24px;
+    font-size: 23vw;
+    letter-spacing: -3px;
   }
 }
 
