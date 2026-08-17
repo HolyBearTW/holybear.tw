@@ -23,6 +23,7 @@ interface MainDashboardProps {
     toggleFavorite?: (e: any, name: string) => void;
     setShowShareModal?: (show: boolean) => void;
     historyData?: any[];
+    bestCombatPowerRecord?: { date: string; combatPower: number } | null;
     analyzing?: boolean;
     handleAiAnalyze?: () => void;
     aiAnalysis?: string | null;
@@ -64,6 +65,7 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
     toggleFavorite = () => {},
     setShowShareModal = () => {},
     historyData = [],
+    bestCombatPowerRecord = null,
     analyzing = false,
     handleAiAnalyze = () => {},
     aiAnalysis = null,
@@ -74,6 +76,7 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
 }) => {
     const hasRecentLogin = String(data.basic.access_flag).toLowerCase() === 'true';
     const [showRecentLoginStatus, setShowRecentLoginStatus] = React.useState(false);
+    const [showBestCombatPower, setShowBestCombatPower] = React.useState(false);
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -197,9 +200,34 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
                   <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                      <Sword className="w-4 h-4" /> 焦點屬性
                   </h3>
-                  <div className="bg-[#0d1117] border border-slate-700/50 rounded-lg p-3 mb-4">
-                     <div className="text-xs text-slate-500 mb-1">戰鬥力</div>
+                  <div className="relative bg-[#0d1117] border border-slate-700/50 rounded-lg p-3 mb-4">
+                     <div className="mb-1 flex items-center gap-1.5 text-xs text-slate-500">
+                        <span>戰鬥力</span>
+                        {bestCombatPowerRecord && (
+                          <button
+                            type="button"
+                            className="relative inline-flex h-4 w-4 items-center justify-center rounded-full text-slate-500 transition-colors hover:text-emerald-400 focus-visible:text-emerald-400 focus-visible:outline-none"
+                            aria-label="顯示近7日最高戰鬥力"
+                            onMouseEnter={() => setShowBestCombatPower(true)}
+                            onMouseLeave={() => setShowBestCombatPower(false)}
+                            onFocus={() => setShowBestCombatPower(true)}
+                            onBlur={() => setShowBestCombatPower(false)}
+                            onClick={() => setShowBestCombatPower(true)}
+                          >
+                            <Info className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                     </div>
                      <div className="text-xl font-bold text-indigo-400 font-mono tracking-tight">{formatBigNumber(getStatVal('Combat Power'))}</div>
+                     {bestCombatPowerRecord && showBestCombatPower && (
+                       <div
+                         role="status"
+                         className="maple-best-combat-power-tooltip absolute left-3 top-11 z-40 min-w-60 rounded-lg border border-emerald-400/30 bg-black/95 px-3 py-2 text-xs text-slate-200 shadow-xl shadow-black/50 backdrop-blur-sm"
+                       >
+                         <div className="font-bold text-emerald-300">近7日最高戰鬥力：{formatBigNumber(bestCombatPowerRecord.combatPower)}</div>
+                         <div className="mt-1 text-slate-400">紀錄時間：{bestCombatPowerRecord.date.replace(/-/g, '/')}</div>
+                       </div>
+                     )}
                   </div>
                   
                   <div className="space-y-3 mb-6">

@@ -16,6 +16,7 @@ export const useMapleSearch = (
   const [showHistory, setShowHistory] = useState(false);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [historyData, setHistoryData] = useState<any[]>([]);
+  const [bestCombatPowerRecord, setBestCombatPowerRecord] = useState<{ date: string; combatPower: number } | null>(null);
   
   const initialSearchDone = useRef(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -33,9 +34,13 @@ export const useMapleSearch = (
 
   useEffect(() => {
     if (!data?.basic?.character_name || !apiKey) return;
+    setBestCombatPowerRecord(null);
     fetchWeeklyHistory(data.basic.character_name, apiKey)
       .then(history => setHistoryData(history || []))
       .catch(() => setHistoryData([]));
+    findBestDateInPastWeek(data.basic.character_name, apiKey)
+      .then(record => setBestCombatPowerRecord(record))
+      .catch(() => setBestCombatPowerRecord(null));
   }, [data?.basic?.character_name, apiKey]);
 
   useEffect(() => {
@@ -49,6 +54,7 @@ export const useMapleSearch = (
       setIsScanningBest(false);
       setShowHistory(false);
       setHistoryData([]);
+      setBestCombatPowerRecord(null);
       setError(null);
     };
 
@@ -208,6 +214,7 @@ export const useMapleSearch = (
     showHistory, setShowHistory,
     favorites, setFavorites,
     historyData, setHistoryData,
+    bestCombatPowerRecord, setBestCombatPowerRecord,
     searchInputRef,
     handleSearch, handleBestSearch,
     addToHistory, removeFromHistory, toggleFavorite

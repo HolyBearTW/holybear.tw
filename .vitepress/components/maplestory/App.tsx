@@ -32,6 +32,7 @@ const App: React.FC = () => {
     showHistory, setShowHistory,
     favorites,
     historyData,
+    bestCombatPowerRecord,
     searchInputRef,
     handleSearch, handleBestSearch,
     removeFromHistory, toggleFavorite
@@ -142,6 +143,7 @@ const App: React.FC = () => {
             toggleFavorite={toggleFavorite}
             setShowShareModal={setShowShareModal}
             historyData={historyData}
+            bestCombatPowerRecord={bestCombatPowerRecord}
             analyzing={analyzing}
             handleAiAnalyze={handleAiAnalyze}
             aiAnalysis={aiAnalysis}

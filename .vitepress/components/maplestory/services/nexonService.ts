@@ -290,12 +290,15 @@ export const findBestDateInPastWeek = async (characterName: string, apiKey: stri
     }
   }
 
-  const dates = Array.from({ length: 7 }, (_, i) => getTaiwanDate(i + 1));
+  const dates = Array.from({ length: 7 }, (_, i) => getTaiwanDate(i));
+  const currentDate = dates[0];
   console.log('[BestRecord] Scanning dates:', dates);
 
   const requests = dates.map(async (date) => {
     try {
-      const url = `${BASE_URL}/character/stat?ocid=${ocid}&date=${date}`;
+      const url = date === currentDate
+        ? `${BASE_URL}/character/stat?ocid=${ocid}`
+        : `${BASE_URL}/character/stat?ocid=${ocid}&date=${date}`;
       const res = await fetch(url, { headers, cache: 'no-store' });
       if (!res.ok) return null; 
       const data = await res.json();

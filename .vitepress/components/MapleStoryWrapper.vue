@@ -304,6 +304,36 @@ html:not(.dark) #maplestory-root .maple-equipment-tooltip [class~="text-indigo-3
   color: #a5b4fc !important;
 }
 
+html:not(.dark) #maplestory-root .maple-recent-login-tooltip {
+  background: rgba(255, 255, 255, 0.96) !important;
+  box-shadow: 0 8px 22px rgba(35, 76, 94, 0.16) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-recent-login-tooltip[class~="text-emerald-300"] {
+  color: #087a4b !important;
+  border-color: rgba(8, 122, 75, 0.35) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-recent-login-tooltip[class~="text-red-300"] {
+  color: #c22f3f !important;
+  border-color: rgba(194, 47, 63, 0.35) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-best-combat-power-tooltip {
+  color: var(--maple-light-text) !important;
+  background: rgba(255, 255, 255, 0.97) !important;
+  border-color: rgba(8, 122, 75, 0.28) !important;
+  box-shadow: 0 10px 26px rgba(35, 76, 94, 0.18) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-best-combat-power-tooltip [class~="text-emerald-300"] {
+  color: #087a4b !important;
+}
+
+html:not(.dark) #maplestory-root .maple-best-combat-power-tooltip [class~="text-slate-400"] {
+  color: var(--maple-light-text-muted) !important;
+}
+
 html:not(.dark) #maplestory-root .maple-champion-shade {
   background: linear-gradient(to top, rgba(232, 243, 247, 0.96), rgba(232, 243, 247, 0.48), transparent) !important;
 }
