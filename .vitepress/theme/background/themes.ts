@@ -11,13 +11,14 @@ export const backgroundThemes = [
   ['💧 圓點光暈', '💧 Halo Dots', 'halo', '💧'],
   ['📱 HyperOS', '📱 HyperOS', 'hyperos', '📱'],
   ['📱 HyperOS 2', '📱 HyperOS 2', 'hyperos2', '📱'],
+  ['🔷 核心塔', '🔷 Core Tower', 'coretower', '🔷'],
   ['🎃 萬聖節', '🎃 Halloween', 'halloween', '🎃'],
   ['🎄 聖誕節', '🎄 Christmas', 'christmas', '🎄'],
   ['⬜ 無背景', '⬜ No BG', 'none', '⬜'],
 ] as const
 
 // 預設主題 (使用主題ID)
-export const defaultTheme = 'tech'
+export const defaultTheme = 'coretower'
 
 // 主題本地存儲鍵名
 export const THEME_STORAGE_KEY = 'vitepress-background-theme'
