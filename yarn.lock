@@ -264,7 +264,7 @@
   dependencies:
     tslib "^2.4.0"
 
-"@esotericsoftware/spine-core@4.1.24", "@esotericsoftware/spine-core@^4.1.24":
+"@esotericsoftware/spine-core@4.1.24", "@esotericsoftware/spine-core@4.3.13":
   version "4.1.24"
   resolved "https://registry.yarnpkg.com/@esotericsoftware/spine-core/-/spine-core-4.1.24.tgz#e5e5805909759f437f54350c16b3d25917c96cec"
   integrity sha512-+XuQcT7teTohZaleWD4Z8SnDLInJorXQEhOXZ/a7Esz9oC+YehiHGR3DusEDI69kZ+9E7V1XeV6RnrtdeRB7LA==
@@ -276,12 +276,12 @@
   dependencies:
     "@esotericsoftware/spine-webgl" "^4.1.24"
 
-"@esotericsoftware/spine-webgl@4.1.24", "@esotericsoftware/spine-webgl@^4.1.24":
-  version "4.1.24"
-  resolved "https://registry.yarnpkg.com/@esotericsoftware/spine-webgl/-/spine-webgl-4.1.24.tgz#3d9b3dbd5d7e017052bfce832aa647f024e5efbc"
-  integrity sha512-xeFgBJByYhoKof3dG1pvRW8MDoNH5rKNPJ6RyOLE0WpRb2us4QdkHyYjyLWAhxz9DrUWNZeJQiLhjS3qwj/DWg==
+"@esotericsoftware/spine-webgl@4.3.13", "@esotericsoftware/spine-webgl@^4.1.24":
+  version "4.3.13"
+  resolved "https://registry.yarnpkg.com/@esotericsoftware/spine-webgl/-/spine-webgl-4.3.13.tgz#1dfc8ad9cf6809da99e5e64cafc4dbbeb471f44a"
+  integrity sha512-VdMtDU03HcoUfLlt0FXBzSvh53nLS7Hej0ibJ3kCuDf5hftAsDAiwZhhS6Ze+5nDCGrkNzPmssZcT+96FoOjIQ==
   dependencies:
-    "@esotericsoftware/spine-core" "^4.1.24"
+    "@esotericsoftware/spine-core" "4.3.13"
 
 "@firebase/ai@2.14.0":
   version "2.14.0"
