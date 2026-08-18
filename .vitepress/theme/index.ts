@@ -31,6 +31,7 @@ export default {
                 .gaming-rgb-theme,
                 .slow-3d-fly-theme,
                 .hyperos-background,
+                .core-tower-background,
                 .christmas-background,
                 .halloween-background,
                 .gravity-container,

@@ -37,7 +37,7 @@ const handleClick = (event: MouseEvent) => {
     const href = link.getAttribute('href') || ''
     
     // 遍歷所有主題配置，檢查是否匹配
-    for (const [displayName, themeId, icon] of backgroundThemes) {
+    for (const [, , themeId] of backgroundThemes) {
       const themeHash = `#theme-${themeId}`
       
       // 檢查 href 是否匹配 (移除文字匹配以避免誤觸，例如側邊欄連結包含 emoji 時)
@@ -57,7 +57,7 @@ const handleHashChange = () => {
   // 僅當 hash 有帶 #theme- 才處理
   if (!hash.startsWith('#theme-')) return
   // 遍歷所有主題配置，檢查 hash 是否匹配
-  for (const [_, themeId] of backgroundThemes) {
+  for (const [, , themeId] of backgroundThemes) {
     if (hash === `#theme-${themeId}`) {
       changeTheme(themeId)
       // 清除 hash

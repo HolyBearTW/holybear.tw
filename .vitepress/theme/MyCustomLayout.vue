@@ -19,6 +19,7 @@ import Slow3DFly from './background/Slow3DFly.vue'
 import Halo from './background/CircularHaloBackgroud.vue'
 import HyperOS from './background/HyperOSTheme.vue'
 import HyperOS2 from './background/HyperOS2Theme.vue'
+import CoreTower from './background/CoreTowerBackground.vue'
 import Christmas from './background/ChristmasBackground.vue'
 import Halloween from './background/HalloweenBackground.vue'
 import GravityFieldSimulation from './background/GravityFieldSimulation.vue'
@@ -39,7 +40,7 @@ const currentBackgroundTheme = ref(defaultTheme)
 
 const mobileFallbackBackground = computed(() => {
     const theme = currentBackgroundTheme.value
-    const darkFallbackThemes = new Set(['tech', 'gaming', 'gravityfield', 'slow3dfly', 'halloween', 'christmas'])
+    const darkFallbackThemes = new Set(['tech', 'gaming', 'gravityfield', 'slow3dfly', 'coretower', 'halloween', 'christmas'])
     const adaptiveThemes = new Set(['animated', 'hyperos', 'hyperos2', 'halo', 'none'])
 
     if (darkFallbackThemes.has(theme)) {
@@ -533,6 +534,7 @@ onUnmounted(() => {
         <Halo v-if="currentBackgroundTheme === 'halo'" />
         <HyperOS v-if="currentBackgroundTheme === 'hyperos'" />
         <HyperOS2 v-if="currentBackgroundTheme === 'hyperos2'" />
+        <CoreTower v-if="currentBackgroundTheme === 'coretower'" />
         <Halloween v-if="currentBackgroundTheme === 'halloween'" />
         <GravityFieldSimulation v-if="currentBackgroundTheme === 'gravityfield'" />
         <Christmas v-if="currentBackgroundTheme === 'christmas'" />
