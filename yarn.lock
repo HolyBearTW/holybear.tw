@@ -269,14 +269,14 @@
   resolved "https://registry.yarnpkg.com/@esotericsoftware/spine-core/-/spine-core-4.3.13.tgz#98ae7fb700e0dd15b9251894f56ba78777a3ad5e"
   integrity sha512-iGs/40qOWSQYicABebDzFSwFOS1Nsm0dCCS8sGqbpVuThRKdLYeI1cVJpmATSpEmtcetEABTmh97NoBnt7XLDw==
 
-"@esotericsoftware/spine-player@4.1.24":
-  version "4.1.24"
-  resolved "https://registry.yarnpkg.com/@esotericsoftware/spine-player/-/spine-player-4.1.24.tgz#299007d5b592b240bdcdb626a4a875d5ab595d0f"
-  integrity sha512-0KoF3FxSLyBhJRd1acJggNJxRNyF6Vi4ayWkWqTBTqotxdXSeVuLYb+RByftAJaj1am/KKSzE8U+bE4wdgZbZg==
+"@esotericsoftware/spine-player@4.3.13":
+  version "4.3.13"
+  resolved "https://registry.yarnpkg.com/@esotericsoftware/spine-player/-/spine-player-4.3.13.tgz#1ba3b28ebc5bf540ae397baf5a6123bf5082ce0f"
+  integrity sha512-fPSb+Ha4wyQJ3TDCicdA3W3P95bFWk1c25ad3naaz1xmDuRVuqbx3yb060lKwDvyDVhuWoyN219GvYAmakfBlw==
   dependencies:
-    "@esotericsoftware/spine-webgl" "^4.1.24"
+    "@esotericsoftware/spine-webgl" "4.3.13"
 
-"@esotericsoftware/spine-webgl@4.3.13", "@esotericsoftware/spine-webgl@^4.1.24":
+"@esotericsoftware/spine-webgl@4.3.13":
   version "4.3.13"
   resolved "https://registry.yarnpkg.com/@esotericsoftware/spine-webgl/-/spine-webgl-4.3.13.tgz#1dfc8ad9cf6809da99e5e64cafc4dbbeb471f44a"
   integrity sha512-VdMtDU03HcoUfLlt0FXBzSvh53nLS7Hej0ibJ3kCuDf5hftAsDAiwZhhS6Ze+5nDCGrkNzPmssZcT+96FoOjIQ==
