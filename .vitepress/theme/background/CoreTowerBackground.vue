@@ -6,12 +6,12 @@ const back03 = ref<HTMLElement | null>(null)
 const back02 = ref<HTMLElement | null>(null)
 const back01 = ref<HTMLElement | null>(null)
 const foreground = ref<HTMLElement | null>(null)
-const mobileCanvas = ref<HTMLCanvasElement | null>(null)
+const sharedCanvas = ref<HTMLCanvasElement | null>(null)
 const spineReady = ref(false)
 const sharedCanvasEnabled = ref(false)
 
 let players: Array<{ dispose: () => void }> = []
-let mobileRendererCleanup: (() => void) | null = null
+let sharedRendererCleanup: (() => void) | null = null
 let componentDisposed = false
 
 onMounted(async () => {
@@ -34,7 +34,7 @@ onMounted(async () => {
   const isPhonePortrait = window.matchMedia('(max-width: 599px) and (orientation: portrait)').matches
   const isTouchPhoneOrTablet = navigator.maxTouchPoints > 0
     && Math.min(window.screen.width, window.screen.height) <= 1024
-  sharedCanvasEnabled.value = isPhonePortrait || isTouchPhoneOrTablet
+  sharedCanvasEnabled.value = isTouchPhoneOrTablet
 
   const applyForegroundOffsets = (skeleton: any, isPortrait: boolean) => {
     const floorOffset = isPortrait ? -70 : 30
@@ -53,7 +53,7 @@ onMounted(async () => {
     }
   }
 
-  if (sharedCanvasEnabled.value && mobileCanvas.value) {
+  if (sharedCanvasEnabled.value && sharedCanvas.value) {
     const {
       AnimationState,
       AnimationStateData,
@@ -65,9 +65,9 @@ onMounted(async () => {
       SkeletonBinary
     } = await import('@esotericsoftware/spine-webgl')
 
-    if (componentDisposed || !mobileCanvas.value) return
+    if (componentDisposed || !sharedCanvas.value) return
 
-    const canvas = mobileCanvas.value
+    const canvas = sharedCanvas.value
     const context = new ManagedWebGLRenderingContext(canvas, {
       alpha: true,
       premultipliedAlpha: true,
@@ -78,7 +78,7 @@ onMounted(async () => {
     let animationFrame = 0
     let stopped = false
 
-    mobileRendererCleanup = () => {
+    sharedRendererCleanup = () => {
       if (stopped) return
       stopped = true
       cancelAnimationFrame(animationFrame)
@@ -96,7 +96,7 @@ onMounted(async () => {
       await assetManager.loadAll()
       if (componentDisposed || stopped) return
 
-      const mobileLayers = layerAssets.map(([binaryUrl, atlasUrl, layer]) => {
+      const sharedLayers = layerAssets.map(([binaryUrl, atlasUrl, layer]) => {
         const atlas = assetManager.require(atlasUrl)
         const binary = new SkeletonBinary(new AtlasAttachmentLoader(atlas))
         const skeletonData = binary.readSkeletonData(assetManager.require(binaryUrl))
@@ -152,7 +152,7 @@ onMounted(async () => {
           ? Math.min(cssHeight * 0.04, Math.max(0, (cssWidth / mapAspect - cssHeight) / 2))
           : 0
 
-        for (const { layer, skeleton, state } of mobileLayers) {
+        for (const { layer, skeleton, state } of sharedLayers) {
           state.update(delta)
           state.apply(skeleton)
           if (layer === 'foreground') applyForegroundOffsets(skeleton, cssHeight > cssWidth)
@@ -204,9 +204,9 @@ onMounted(async () => {
       spineReady.value = true
       animationFrame = requestAnimationFrame(render)
     } catch (error) {
-      console.warn('[Core Tower] Mobile single-canvas fallback:', error)
-      mobileRendererCleanup()
-      mobileRendererCleanup = null
+      console.warn('[Core Tower] Touch-device shared-canvas fallback:', error)
+      sharedRendererCleanup()
+      sharedRendererCleanup = null
     }
     return
   }
@@ -270,8 +270,8 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   componentDisposed = true
-  mobileRendererCleanup?.()
-  mobileRendererCleanup = null
+  sharedRendererCleanup?.()
+  sharedRendererCleanup = null
   for (const player of players) player.dispose()
   players = []
 })
@@ -292,7 +292,7 @@ onBeforeUnmount(() => {
       alt=""
       decoding="async"
     >
-    <canvas ref="mobileCanvas" class="core-tower-mobile-canvas"></canvas>
+    <canvas ref="sharedCanvas" class="core-tower-shared-canvas"></canvas>
     <div class="core-tower-stage" :class="{ 'is-spine-ready': spineReady }">
       <img
         class="core-tower-scene"
@@ -423,7 +423,7 @@ html:not(.dark) body.theme-coretower .eyebrow {
   display: none;
 }
 
-.core-tower-background.uses-shared-canvas .core-tower-mobile-canvas {
+.core-tower-background.uses-shared-canvas .core-tower-shared-canvas {
   display: block;
   position: absolute;
   inset: 0;
@@ -438,20 +438,6 @@ html:not(.dark) body.theme-coretower .eyebrow {
   display: none;
 }
 
-/* Desktop only: lower the complete WZ stage slightly without changing mobile. */
-@media (min-width: 600px) {
-  .core-tower-stage {
-    top: calc(50% + min(4vh, max(0px, (100vw * 785 / 1080 - 100vh) / 2)));
-    top: calc(50% + min(4dvh, max(0px, (100vw * 785 / 1080 - 100dvh) / 2)));
-  }
-
-  body.theme-coretower .core-tower-stage .core-tower-spine-foreground {
-    transform: translate3d(0, 72px, 0) !important;
-  }
-}
-
-/* Phone portrait: a centered 114% crop places the WZ roof at the top while
-   pushing the floor lower, without changing any layer's relative position. */
 @media (max-width: 599px) and (orientation: portrait) {
   .core-tower-background.uses-shared-canvas {
     background-size: auto 114%;
@@ -490,7 +476,18 @@ html:not(.dark) body.theme-coretower .eyebrow {
       transparent 100%
     );
   }
+}
 
+/* Desktop only: lower the complete WZ stage slightly without changing mobile. */
+@media (min-width: 600px) {
+  .core-tower-stage {
+    top: calc(50% + min(4vh, max(0px, (100vw * 785 / 1080 - 100vh) / 2)));
+    top: calc(50% + min(4dvh, max(0px, (100vw * 785 / 1080 - 100dvh) / 2)));
+  }
+
+  body.theme-coretower .core-tower-stage .core-tower-spine-foreground {
+    transform: translate3d(0, 72px, 0) !important;
+  }
 }
 
 .core-tower-scene {
@@ -518,7 +515,7 @@ html:not(.dark) body.theme-coretower .eyebrow {
   overflow: hidden;
 }
 
-.core-tower-mobile-canvas {
+.core-tower-shared-canvas {
   display: none;
 }
 
@@ -675,13 +672,11 @@ html:not(.dark) .core-tower-background.uses-shared-canvas .core-tower-reading-ma
   }
 }
 
-/* 手機：畫面聚焦中央核心塔，不引入遊戲原本看不到的上下素材。 */
 @media (max-width: 599px) and (orientation: portrait) {
   .core-tower-ambient {
     opacity: 0.32;
     filter: blur(24px) saturate(1.15) brightness(0.44);
   }
-
 }
 
 @media (prefers-reduced-motion: reduce) {
