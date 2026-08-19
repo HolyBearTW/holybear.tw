@@ -71,10 +71,10 @@ onMounted(async () => {
     }
 
     const windowFrame = skeleton.findBone('EV/Window')
-    const windowFrameOffset = isPortrait ? -70 : lowerTabletCanopy ? -24 : 0
+    const windowFrameOffset = isPortrait ? -70 : lowerTabletCanopy ? -60 : 0
     if (windowFrame) windowFrame.y = windowFrame.data.y + windowFrameOffset
 
-    const purpleFrameOffset = isPortrait ? -72 : lowerTabletCanopy ? 9 : 33
+    const purpleFrameOffset = isPortrait ? -72 : lowerTabletCanopy ? -27 : 33
     for (const name of purpleFrameBones) {
       const bone = skeleton.findBone(name)
       if (bone) bone.y = bone.data.y + purpleFrameOffset
