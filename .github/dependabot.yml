@@ -11,3 +11,8 @@ updates:
       interval: "daily"
     ignore:
       - dependency-name: "@vitejs/plugin-react"
+      # Core Tower's extracted .skel assets were exported by Spine 4.1.
+      # Spine runtimes require the asset and runtime major/minor to match.
+      - dependency-name: "@esotericsoftware/spine-core"
+      - dependency-name: "@esotericsoftware/spine-player"
+      - dependency-name: "@esotericsoftware/spine-webgl"
