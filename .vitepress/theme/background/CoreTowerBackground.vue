@@ -8,6 +8,7 @@ const back01 = ref<HTMLElement | null>(null)
 const foreground = ref<HTMLElement | null>(null)
 const mobileCanvas = ref<HTMLCanvasElement | null>(null)
 const spineReady = ref(false)
+const sharedCanvasEnabled = ref(false)
 
 let players: Array<{ dispose: () => void }> = []
 let mobileRendererCleanup: (() => void) | null = null
@@ -31,6 +32,9 @@ onMounted(async () => {
   ]
   const purpleFrameBones = ['EV/WNA', 'EV/WNB']
   const isPhonePortrait = window.matchMedia('(max-width: 599px) and (orientation: portrait)').matches
+  const isTouchPhoneOrTablet = navigator.maxTouchPoints > 0
+    && Math.min(window.screen.width, window.screen.height) <= 1024
+  sharedCanvasEnabled.value = isPhonePortrait || isTouchPhoneOrTablet
 
   const applyForegroundOffsets = (skeleton: any, isPortrait: boolean) => {
     const floorOffset = isPortrait ? -70 : 30
@@ -49,7 +53,7 @@ onMounted(async () => {
     }
   }
 
-  if (isPhonePortrait && mobileCanvas.value) {
+  if (sharedCanvasEnabled.value && mobileCanvas.value) {
     const {
       AnimationState,
       AnimationStateData,
@@ -118,7 +122,9 @@ onMounted(async () => {
 
         const delta = Math.min((time - previousTime) / 1000, 0.1)
         previousTime = time
-        const pixelRatio = Math.min(window.devicePixelRatio || 1, 1.25)
+        const pixelRatio = isPhonePortrait
+          ? Math.min(window.devicePixelRatio || 1, 1.25)
+          : 1
         const width = Math.max(1, Math.round(canvas.clientWidth * pixelRatio))
         const height = Math.max(1, Math.round(canvas.clientHeight * pixelRatio))
 
@@ -133,32 +139,59 @@ onMounted(async () => {
         gl.clearColor(0, 0, 0, 0)
         gl.clear(gl.COLOR_BUFFER_BIT)
 
+        const cssWidth = canvas.clientWidth
+        const cssHeight = canvas.clientHeight
+        const mapWidth = 1080
+        const mapHeight = 785
+        const mapAspect = mapWidth / mapHeight
+        const stageHeight = isPhonePortrait
+          ? cssHeight * 1.14
+          : Math.max(cssHeight, cssWidth / mapAspect)
+        const stageWidth = stageHeight * mapAspect
+        const stageOffsetY = cssWidth >= 600
+          ? Math.min(cssHeight * 0.04, Math.max(0, (cssWidth / mapAspect - cssHeight) / 2))
+          : 0
+
         for (const { layer, skeleton, state } of mobileLayers) {
           state.update(delta)
           state.apply(skeleton)
-          if (layer === 'foreground') applyForegroundOffsets(skeleton, true)
+          if (layer === 'foreground') applyForegroundOffsets(skeleton, cssHeight > cssWidth)
           skeleton.updateWorldTransform()
 
           const isForeground = layer === 'foreground'
-          const regionHeight = isForeground ? height : Math.round(height * 0.7 * 1.14)
-          const regionY = isForeground ? 0 : Math.round((height - regionHeight) / 2)
-          const screenRatio = width / height
-          const visibleHeight = isForeground ? 785 / 1.14 : 785
-          const visibleWidth = isForeground
-            ? visibleHeight * screenRatio
-            : (785 * screenRatio) / (0.7 * 1.14)
-          const viewportX = -visibleWidth / 2
-          const viewportY = -395 + (785 - visibleHeight) / 2
+          const layerScale = isForeground ? 1 : 0.7
+          const layerWidth = stageWidth * layerScale
+          const layerHeight = stageHeight * layerScale
+          const layerLeft = (cssWidth - layerWidth) / 2
+          const layerTop = (cssHeight - layerHeight) / 2 + stageOffsetY
+          const visibleLeft = Math.max(0, layerLeft)
+          const visibleTop = Math.max(0, layerTop)
+          const visibleRight = Math.min(cssWidth, layerLeft + layerWidth)
+          const visibleBottom = Math.min(cssHeight, layerTop + layerHeight)
+          const visibleCssWidth = Math.max(1, visibleRight - visibleLeft)
+          const visibleCssHeight = Math.max(1, visibleBottom - visibleTop)
+          const regionX = Math.round(visibleLeft * pixelRatio)
+          const regionY = Math.round((cssHeight - visibleBottom) * pixelRatio)
+          const regionWidth = Math.round(visibleCssWidth * pixelRatio)
+          const regionHeight = Math.round(visibleCssHeight * pixelRatio)
+          const layerCenterX = (visibleLeft + visibleRight) / 2 - layerLeft
+          const layerCenterY = (visibleTop + visibleBottom) / 2 - layerTop
+          const worldCenterX = -540 + (layerCenterX / layerWidth) * mapWidth
+          const worldCenterY = 390 - (layerCenterY / layerHeight) * mapHeight
+          const visibleWorldWidth = mapWidth * (visibleCssWidth / layerWidth)
+          const visibleWorldHeight = mapHeight * (visibleCssHeight / layerHeight)
+          const viewportX = worldCenterX - visibleWorldWidth / 2
+          const viewportY = worldCenterY - visibleWorldHeight / 2
 
-          gl.viewport(0, regionY, width, regionHeight)
+          gl.viewport(regionX, regionY, regionWidth, regionHeight)
           gl.enable(gl.SCISSOR_TEST)
-          gl.scissor(0, regionY, width, regionHeight)
-          renderer.camera.setViewport(width, regionHeight)
-          renderer.camera.zoom = regionHeight / width > visibleHeight / visibleWidth
-            ? visibleWidth / width
-            : visibleHeight / regionHeight
-          renderer.camera.position.x = viewportX + visibleWidth / 2
-          renderer.camera.position.y = viewportY + visibleHeight / 2
+          gl.scissor(regionX, regionY, regionWidth, regionHeight)
+          renderer.camera.setViewport(regionWidth, regionHeight)
+          renderer.camera.zoom = regionHeight / regionWidth > visibleWorldHeight / visibleWorldWidth
+            ? visibleWorldWidth / regionWidth
+            : visibleWorldHeight / regionHeight
+          renderer.camera.position.x = viewportX + visibleWorldWidth / 2
+          renderer.camera.position.y = viewportY + visibleWorldHeight / 2
           renderer.camera.update()
           renderer.begin()
           renderer.drawSkeleton(skeleton, true)
@@ -245,13 +278,21 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="core-tower-background" aria-hidden="true">
+  <div
+    class="core-tower-background"
+    :class="{
+      'uses-shared-canvas': sharedCanvasEnabled,
+      'is-spine-ready': spineReady
+    }"
+    aria-hidden="true"
+  >
     <img
       class="core-tower-ambient"
       src="/themes/core-tower/core-tower-visible.png"
       alt=""
       decoding="async"
     >
+    <canvas ref="mobileCanvas" class="core-tower-mobile-canvas"></canvas>
     <div class="core-tower-stage" :class="{ 'is-spine-ready': spineReady }">
       <img
         class="core-tower-scene"
@@ -260,7 +301,6 @@ onBeforeUnmount(() => {
         decoding="async"
         fetchpriority="high"
       >
-      <canvas ref="mobileCanvas" class="core-tower-mobile-canvas"></canvas>
       <div ref="back03" class="core-tower-spine-layer core-tower-spine-back-03"></div>
       <div ref="back02" class="core-tower-spine-layer core-tower-spine-back-02"></div>
       <div ref="back01" class="core-tower-spine-layer core-tower-spine-back-01"></div>
@@ -366,6 +406,38 @@ html:not(.dark) body.theme-coretower .eyebrow {
   overflow: hidden;
 }
 
+.core-tower-background.uses-shared-canvas {
+  background:
+    #02040a
+    url('/themes/core-tower/core-tower-visible.png')
+    center / cover
+    no-repeat;
+}
+
+.core-tower-background.uses-shared-canvas.is-spine-ready {
+  background-image: none;
+}
+
+.core-tower-background.uses-shared-canvas .core-tower-ambient,
+.core-tower-background.uses-shared-canvas .core-tower-scene {
+  display: none;
+}
+
+.core-tower-background.uses-shared-canvas .core-tower-mobile-canvas {
+  display: block;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  pointer-events: none;
+}
+
+.core-tower-background.uses-shared-canvas .core-tower-spine-layer {
+  display: none;
+}
+
 /* Desktop only: lower the complete WZ stage slightly without changing mobile. */
 @media (min-width: 600px) {
   .core-tower-stage {
@@ -381,17 +453,8 @@ html:not(.dark) body.theme-coretower .eyebrow {
 /* Phone portrait: a centered 114% crop places the WZ roof at the top while
    pushing the floor lower, without changing any layer's relative position. */
 @media (max-width: 599px) and (orientation: portrait) {
-  .core-tower-background {
-    background:
-      #02040a
-      url('/themes/core-tower/core-tower-visible.png')
-      center / auto 114%
-      no-repeat;
-  }
-
-  .core-tower-ambient,
-  .core-tower-scene {
-    display: none;
+  .core-tower-background.uses-shared-canvas {
+    background-size: auto 114%;
   }
 
   .core-tower-stage {
@@ -426,24 +489,6 @@ html:not(.dark) body.theme-coretower .eyebrow {
       rgb(0 0 0 / 0.55) 95%,
       transparent 100%
     );
-  }
-
-  .core-tower-stage .core-tower-mobile-canvas {
-    display: block;
-    position: absolute;
-    inset: auto;
-    top: calc(50% - 50vh);
-    top: calc(50% - 50dvh);
-    left: calc(50% - 50vw);
-    z-index: 4;
-    width: 100vw;
-    height: 100vh;
-    height: 100dvh;
-    pointer-events: none;
-  }
-
-  .core-tower-spine-layer {
-    display: none;
   }
 
 }
@@ -582,6 +627,35 @@ html.dark .core-tower-reading-mask {
   background:
     linear-gradient(180deg, rgba(0, 0, 0, 0.14), transparent 20%, transparent 74%, rgba(0, 0, 0, 0.28)),
     radial-gradient(ellipse at center, transparent 46%, rgba(0, 0, 0, 0.28) 100%);
+}
+
+/* Touch devices use one static overlay instead of three full-screen compositor
+   layers. The Spine scene remains animated on its shared canvas. */
+.core-tower-background.uses-shared-canvas .core-tower-scanlines,
+.core-tower-background.uses-shared-canvas .core-tower-vignette {
+  display: none;
+}
+
+.core-tower-background.uses-shared-canvas .core-tower-reading-mask {
+  z-index: 3;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  transition: none;
+  background:
+    repeating-linear-gradient(180deg, transparent 0, transparent 3px, rgba(84, 226, 255, 0.028) 4px),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.14), transparent 20%, transparent 74%, rgba(0, 0, 0, 0.28)),
+    radial-gradient(ellipse at center, transparent 46%, rgba(0, 0, 0, 0.28) 100%),
+    linear-gradient(90deg, rgba(1, 7, 16, 0.38), rgba(3, 11, 22, 0.2) 48%, rgba(2, 7, 16, 0.34)),
+    rgba(3, 10, 20, 0.12);
+}
+
+html:not(.dark) .core-tower-background.uses-shared-canvas .core-tower-reading-mask {
+  background:
+    repeating-linear-gradient(180deg, transparent 0, transparent 3px, rgba(84, 226, 255, 0.022) 4px),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.1), transparent 20%, transparent 74%, rgba(0, 0, 0, 0.2)),
+    radial-gradient(ellipse at center, transparent 46%, rgba(0, 0, 0, 0.22) 100%),
+    linear-gradient(90deg, rgba(230, 244, 248, 0.14), rgba(226, 241, 246, 0.05) 48%, rgba(231, 244, 248, 0.12)),
+    rgba(220, 238, 243, 0.03);
 }
 
 @keyframes coreTowerParticlePulse {
