@@ -59,9 +59,11 @@ onMounted(async () => {
   const isPhonePortrait = window.matchMedia('(max-width: 599px) and (orientation: portrait)').matches
   const isTouchPhoneOrTablet = navigator.maxTouchPoints > 0
     && Math.min(window.screen.width, window.screen.height) <= 1024
+  const isTabletLandscape = isTouchPhoneOrTablet
+    && window.matchMedia('(min-width: 600px) and (orientation: landscape)').matches
   sharedCanvasEnabled.value = isTouchPhoneOrTablet
 
-  const applyForegroundOffsets = (skeleton: any, isPortrait: boolean) => {
+  const applyForegroundOffsets = (skeleton: any, isPortrait: boolean, lowerTabletCanopy = false) => {
     const floorOffset = isPortrait ? -70 : 30
     for (const name of floorBones) {
       const bone = skeleton.findBone(name)
@@ -69,9 +71,10 @@ onMounted(async () => {
     }
 
     const windowFrame = skeleton.findBone('EV/Window')
-    if (windowFrame) windowFrame.y = windowFrame.data.y + (isPortrait ? -70 : 0)
+    const windowFrameOffset = isPortrait ? -70 : lowerTabletCanopy ? -24 : 0
+    if (windowFrame) windowFrame.y = windowFrame.data.y + windowFrameOffset
 
-    const purpleFrameOffset = isPortrait ? -72 : 33
+    const purpleFrameOffset = isPortrait ? -72 : lowerTabletCanopy ? 9 : 33
     for (const name of purpleFrameBones) {
       const bone = skeleton.findBone(name)
       if (bone) bone.y = bone.data.y + purpleFrameOffset
@@ -180,7 +183,9 @@ onMounted(async () => {
         for (const { layer, skeleton, state } of sharedLayers) {
           state.update(delta)
           state.apply(skeleton)
-          if (layer === 'foreground') applyForegroundOffsets(skeleton, cssHeight > cssWidth)
+          if (layer === 'foreground') {
+            applyForegroundOffsets(skeleton, cssHeight > cssWidth, isTabletLandscape)
+          }
           skeleton.updateWorldTransform()
 
           const isForeground = layer === 'foreground'
