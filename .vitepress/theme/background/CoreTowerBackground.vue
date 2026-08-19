@@ -1,5 +1,30 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue'
+import spineWebglUrl from '@esotericsoftware/spine-webgl/dist/iife/spine-webgl.min.js?url'
+
+type SpineWebglRuntime = typeof import('@esotericsoftware/spine-webgl')
+
+const loadSpineWebglRuntime = () => {
+  const browserWindow = window as typeof window & {
+    spine?: SpineWebglRuntime
+    __coreTowerSpineWebgl?: Promise<SpineWebglRuntime>
+  }
+  if (browserWindow.spine) return Promise.resolve(browserWindow.spine)
+  if (browserWindow.__coreTowerSpineWebgl) return browserWindow.__coreTowerSpineWebgl
+
+  browserWindow.__coreTowerSpineWebgl = new Promise((resolve, reject) => {
+    const script = document.createElement('script')
+    script.src = spineWebglUrl
+    script.async = true
+    script.dataset.coreTowerSpineWebgl = ''
+    script.onload = () => browserWindow.spine
+      ? resolve(browserWindow.spine)
+      : reject(new Error('Spine WebGL runtime did not expose window.spine'))
+    script.onerror = () => reject(new Error('Unable to load Spine WebGL runtime'))
+    document.head.append(script)
+  })
+  return browserWindow.__coreTowerSpineWebgl
+}
 import '@esotericsoftware/spine-player/dist/spine-player.css'
 
 const back03 = ref<HTMLElement | null>(null)
@@ -63,7 +88,7 @@ onMounted(async () => {
       SceneRenderer,
       Skeleton,
       SkeletonBinary
-    } = await import('@esotericsoftware/spine-webgl')
+    } = await loadSpineWebglRuntime()
 
     if (componentDisposed || !sharedCanvas.value) return
 
@@ -431,10 +456,22 @@ html:not(.dark) body.theme-coretower .eyebrow {
   width: 100vw;
   height: 100vh;
   height: 100dvh;
+  visibility: hidden;
   pointer-events: none;
 }
 
+.core-tower-background.uses-shared-canvas.is-spine-ready .core-tower-shared-canvas {
+  visibility: visible;
+}
+
 .core-tower-background.uses-shared-canvas .core-tower-spine-layer {
+  display: none;
+}
+
+/* These very faint CSS particles each create an extra animated blend layer.
+   The touch renderer already contains the actual WZ Spine effects, so avoid
+   their compositor-memory cost on physical phones and tablets. */
+.core-tower-background.uses-shared-canvas .core-tower-wz-particle {
   display: none;
 }
 
