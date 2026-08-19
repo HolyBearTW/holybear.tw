@@ -59,11 +59,9 @@ onMounted(async () => {
   const isPhonePortrait = window.matchMedia('(max-width: 599px) and (orientation: portrait)').matches
   const isTouchPhoneOrTablet = navigator.maxTouchPoints > 0
     && Math.min(window.screen.width, window.screen.height) <= 1024
-  const isTabletLandscape = isTouchPhoneOrTablet
-    && window.matchMedia('(min-width: 600px) and (orientation: landscape)').matches
   sharedCanvasEnabled.value = isTouchPhoneOrTablet
 
-  const applyForegroundOffsets = (skeleton: any, isPortrait: boolean, lowerTabletCanopy = false) => {
+  const applyForegroundOffsets = (skeleton: any, isPortrait: boolean) => {
     const floorOffset = isPortrait ? -70 : 30
     for (const name of floorBones) {
       const bone = skeleton.findBone(name)
@@ -71,10 +69,9 @@ onMounted(async () => {
     }
 
     const windowFrame = skeleton.findBone('EV/Window')
-    const windowFrameOffset = isPortrait ? -70 : lowerTabletCanopy ? -60 : 0
-    if (windowFrame) windowFrame.y = windowFrame.data.y + windowFrameOffset
+    if (windowFrame) windowFrame.y = windowFrame.data.y + (isPortrait ? -70 : 0)
 
-    const purpleFrameOffset = isPortrait ? -72 : lowerTabletCanopy ? -27 : 33
+    const purpleFrameOffset = isPortrait ? -72 : 33
     for (const name of purpleFrameBones) {
       const bone = skeleton.findBone(name)
       if (bone) bone.y = bone.data.y + purpleFrameOffset
@@ -169,6 +166,12 @@ onMounted(async () => {
 
         const cssWidth = canvas.clientWidth
         const cssHeight = canvas.clientHeight
+        const isTabletLandscape = isTouchPhoneOrTablet
+          && cssWidth >= 600
+          && cssWidth > cssHeight
+        const isTabletPortrait = isTouchPhoneOrTablet
+          && cssWidth >= 600
+          && cssHeight > cssWidth
         const mapWidth = 1080
         const mapHeight = 785
         const mapAspect = mapWidth / mapHeight
@@ -183,17 +186,18 @@ onMounted(async () => {
         for (const { layer, skeleton, state } of sharedLayers) {
           state.update(delta)
           state.apply(skeleton)
-          if (layer === 'foreground') {
-            applyForegroundOffsets(skeleton, cssHeight > cssWidth, isTabletLandscape)
-          }
+          if (layer === 'foreground') applyForegroundOffsets(skeleton, cssHeight > cssWidth)
           skeleton.updateWorldTransform()
 
           const isForeground = layer === 'foreground'
-          const layerScale = isForeground ? 1 : 0.7
+          const layerScale = isForeground || isTabletLandscape ? 1 : 0.7
           const layerWidth = stageWidth * layerScale
           const layerHeight = stageHeight * layerScale
           const layerLeft = (cssWidth - layerWidth) / 2
-          const layerTop = (cssHeight - layerHeight) / 2 + stageOffsetY
+          const foregroundOffsetY = isForeground
+            ? isTabletLandscape ? 72 : isTabletPortrait ? -65 : 0
+            : 0
+          const layerTop = (cssHeight - layerHeight) / 2 + stageOffsetY + foregroundOffsetY
           const visibleLeft = Math.max(0, layerLeft)
           const visibleTop = Math.max(0, layerTop)
           const visibleRight = Math.min(cssWidth, layerLeft + layerWidth)
