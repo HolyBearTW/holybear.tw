@@ -23,8 +23,30 @@ export const defaultTheme = 'coretower'
 // 主題本地存儲鍵名
 export const THEME_STORAGE_KEY = 'vitepress-background-theme'
 
+// 一次性重設舊使用者的背景選擇；更新版本值即可安排下一次遷移。
+const THEME_RESET_VERSION_KEY = 'vitepress-background-theme-reset-version'
+const THEME_RESET_VERSION = 'coretower-default-v1'
+
 // 主題切換事件名稱
 export const THEME_CHANGE_EVENT = 'theme-change'
+
+export function getInitialBackgroundTheme() {
+  if (typeof window === 'undefined') return defaultTheme
+
+  if (localStorage.getItem(THEME_RESET_VERSION_KEY) !== THEME_RESET_VERSION) {
+    localStorage.removeItem(THEME_STORAGE_KEY)
+    localStorage.setItem(THEME_STORAGE_KEY, defaultTheme)
+    localStorage.setItem(THEME_RESET_VERSION_KEY, THEME_RESET_VERSION)
+    return defaultTheme
+  }
+
+  const savedTheme = localStorage.getItem(THEME_STORAGE_KEY)
+  const isKnownTheme = backgroundThemes.some(([, , themeId]) => themeId === savedTheme)
+  if (savedTheme && isKnownTheme) return savedTheme
+
+  localStorage.setItem(THEME_STORAGE_KEY, defaultTheme)
+  return defaultTheme
+}
 
 // 生成導航欄配置 (供 config.mts 使用)
 export function generateNavThemes(locale: 'zh-TW' | 'en' = 'zh-TW') {

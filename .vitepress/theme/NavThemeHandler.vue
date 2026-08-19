@@ -6,7 +6,8 @@ import {
   defaultTheme,
   THEME_STORAGE_KEY, 
   THEME_CHANGE_EVENT,
-  getAllThemeIds
+  getAllThemeIds,
+  getInitialBackgroundTheme
 } from './background/themes'
 
 const { isDark } = useData()
@@ -14,13 +15,14 @@ const router = useRouter()
 const currentTheme = ref<string>(defaultTheme)
 
 // 切換主題的核心函數
-const changeTheme = (theme: string) => {
+const changeTheme = (theme: string, userInitiated = false) => {
   console.log('切換主題到:', theme) // 調試用
+  const themeChanged = currentTheme.value !== theme
   currentTheme.value = theme
   
   // 觸發主題切換事件
   window.dispatchEvent(new CustomEvent(THEME_CHANGE_EVENT, {
-    detail: { theme }
+    detail: { theme, userInitiated: userInitiated && themeChanged }
   }))
   
   // 保存到 localStorage
@@ -44,7 +46,7 @@ const handleClick = (event: MouseEvent) => {
       if (href.includes(themeHash)) {
         event.preventDefault()
         event.stopPropagation()
-        changeTheme(themeId)
+        changeTheme(themeId, true)
         return false
       }
     }
@@ -52,14 +54,14 @@ const handleClick = (event: MouseEvent) => {
 }
 
 // 處理 hash 變化
-const handleHashChange = () => {
+const handleHashChange = (event?: HashChangeEvent) => {
   const hash = window.location.hash
   // 僅當 hash 有帶 #theme- 才處理
   if (!hash.startsWith('#theme-')) return
   // 遍歷所有主題配置，檢查 hash 是否匹配
   for (const [, , themeId] of backgroundThemes) {
     if (hash === `#theme-${themeId}`) {
-      changeTheme(themeId)
+      changeTheme(themeId, Boolean(event))
       // 清除 hash
       history.replaceState(null, '', window.location.pathname + window.location.search)
       return
@@ -94,11 +96,9 @@ watch(currentTheme, (newTheme) => {
 
 onMounted(() => {
   // 載入保存的主題
-  const savedTheme = localStorage.getItem(THEME_STORAGE_KEY)
-  if (savedTheme) {
-    currentTheme.value = savedTheme
-    updateActiveState(savedTheme)
-  }
+  const initialTheme = getInitialBackgroundTheme()
+  currentTheme.value = initialTheme
+  updateActiveState(initialTheme)
   
   // 使用捕獲階段監聽，確保能攔截到點擊
   document.addEventListener('click', handleClick, true)

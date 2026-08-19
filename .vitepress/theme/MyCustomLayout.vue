@@ -27,9 +27,9 @@ import HolyBearLoadingFrame from './HolyBearLoadingFrame.vue'
 import { getCopyrightText } from './copyright'
 import { 
   defaultTheme, 
-  THEME_STORAGE_KEY, 
   THEME_CHANGE_EVENT,
-  getAllThemeIds
+  getAllThemeIds,
+  getInitialBackgroundTheme
 } from './background/themes'
 
 const { isDark } = useData()
@@ -181,13 +181,9 @@ onMounted(() => {
   // 只在客戶端執行 localStorage 和 DOM 操作
   if (typeof window !== 'undefined') {
     // 從 localStorage 載入主題
-    const savedTheme = localStorage.getItem(THEME_STORAGE_KEY)
-    if (savedTheme) {
-      currentBackgroundTheme.value = savedTheme
-      updateBodyClass(savedTheme)
-    } else {
-      updateBodyClass(defaultTheme)
-    }
+    const initialTheme = getInitialBackgroundTheme()
+    currentBackgroundTheme.value = initialTheme
+    updateBodyClass(initialTheme)
     
     // 監聽主題切換事件
     window.addEventListener(THEME_CHANGE_EVENT, handleThemeChange)

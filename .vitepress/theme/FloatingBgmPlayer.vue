@@ -1,10 +1,11 @@
 <script setup>
 import { ref, watch, onMounted, onUnmounted, computed, nextTick } from 'vue'
-import { defaultTheme, THEME_CHANGE_EVENT } from './background/themes'
+import { defaultTheme, THEME_CHANGE_EVENT, getInitialBackgroundTheme } from './background/themes'
 
 /* --- 音樂清單 --- */
 const originalMusicList = ref([
-{ src: '/music/Zelda/Hyrule_Warriors_Age_of_Imprisonment_OST_-_Main_Theme.mp3', title: '薩爾達無雙：封印戰記 - 主題曲' },
+  { src: '/music/MapleStory_SilentProtocol.mp3', title: '楓之谷 - 核心塔' },
+  { src: '/music/Zelda/Hyrule_Warriors_Age_of_Imprisonment_OST_-_Main_Theme.mp3', title: '薩爾達無雙：封印戰記 - 主題曲' },
   { src: '/music/Zelda/Hyrule_Warriors_Age_of_Imprisonment_OST_-_Those_Bold_of_Heart.mp3', title: '薩爾達無雙：封印戰記 - 勇敢的心' },
   { src: '/music/Zelda/Hyrule_Warriors_Age_of_Imprisonment_OST_-_The_Kingdom_of_Hyrule_-_Rise_of_the_Demon_King_Purah_Pad.mp3', title: '薩爾達無雙：封印戰記 - 海拉魯王國：魔王崛起' },
   { src: '/music/Zelda/Hyrule_Warriors_Age_of_Imprisonment_OST_-_The_Unknown_Abyss.mp3', title: '薩爾達無雙：封印戰記 - 未知的深淵' },
@@ -69,6 +70,9 @@ const PLAYING_KEY = 'holybear-bgm-playing'
 const INDEX_KEY = 'holybear-bgm-index'
 const PLAYER_OPEN_KEY = 'holybear-bgm-player-open'
 const REPEAT_ONE_KEY = 'holybear-bgm-repeat-one'
+const CORE_TOWER_MUSIC_INTRO_KEY = 'holybear-coretower-music-introduced'
+const PLAYLIST_RESET_VERSION_KEY = 'holybear-bgm-playlist-reset-version'
+const PLAYLIST_RESET_VERSION = 'silent-protocol-first-v1'
 
 /* --- Refs & 狀態 --- */
 const audio = ref(null)
@@ -110,6 +114,13 @@ let intendedToPlay = false
 let resumeOnVisibilityReturn = false
 let mediaSessionSeekEnabled = false
 let initialPlaybackPending = false
+let currentBackgroundTheme = defaultTheme
+
+function rememberCoreTowerMusicChoice() {
+  if (currentBackgroundTheme === 'coretower') {
+    localStorage.setItem(CORE_TOWER_MUSIC_INTRO_KEY, 'true')
+  }
+}
 
 function isMobileViewport() {
   return typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches
@@ -174,7 +185,11 @@ const progressPercent = computed(() => {
 
 /* --- 生命週期 --- */
 const themeHandler = (e) => {
+  currentBackgroundTheme = e.detail?.theme || currentBackgroundTheme;
   const isChristmasTheme = e.detail?.theme === 'christmas';
+  const shouldForceCoreTowerMusic = e.detail?.theme === 'coretower'
+    && e.detail?.userInitiated === true
+    && localStorage.getItem(CORE_TOWER_MUSIC_INTRO_KEY) !== 'true';
   const christmasSong = {
     src: '/music/MapleStory_WhiteChristmas.mp3',
     title: '楓之谷 - 幸福村（聖誕村莊）'
@@ -211,7 +226,7 @@ const themeHandler = (e) => {
         currentIndex.value = 0; // 可以簡化為總是設為0，或保持不變 (取決於設計)
       }
 
-      if (wasPlaying) {
+      if (wasPlaying && !shouldForceCoreTowerMusic) {
         selectAndPlaySong(currentIndex.value, { forceRestart: true });
       } else {
         // 保持選曲狀態即可；等使用者真正播放時才載入音訊。
@@ -220,17 +235,32 @@ const themeHandler = (e) => {
       }
     }
   }
+
+  if (shouldForceCoreTowerMusic) {
+    repeatOne.value = true;
+    localStorage.setItem(REPEAT_ONE_KEY, 'true');
+    if (audio.value) audio.value.loop = true;
+
+    const coreTowerSongIndex = musicList.value.findIndex(
+      song => song.src === '/music/MapleStory_SilentProtocol.mp3'
+    );
+    localStorage.setItem(CORE_TOWER_MUSIC_INTRO_KEY, 'true');
+    selectAndPlaySong(coreTowerSongIndex >= 0 ? coreTowerSongIndex : 0, { forceRestart: true });
+  }
 };
 
 onMounted(async () => {
   window.addEventListener('holybear-loading-complete', handleLoadingComplete)
-  // 頁面載入時檢查初始主題
-  let currentTheme = localStorage.getItem('vitepress-background-theme');
-  if (!currentTheme) { // 如果 localStorage 沒有主題設定，則使用 defaultTheme
-    currentTheme = defaultTheme;
+  const shouldResetPlaylist = localStorage.getItem(PLAYLIST_RESET_VERSION_KEY) !== PLAYLIST_RESET_VERSION
+  if (shouldResetPlaylist) {
+    localStorage.removeItem(INDEX_KEY)
+    localStorage.setItem(INDEX_KEY, '0')
+    localStorage.setItem(PLAYLIST_RESET_VERSION_KEY, PLAYLIST_RESET_VERSION)
   }
 
-  const savedTheme = currentTheme; // 使用修正後的主題值
+  // 頁面載入時檢查初始主題
+  const savedTheme = getInitialBackgroundTheme();
+  currentBackgroundTheme = savedTheme;
 
   const christmasSong = {
     src: '/music/MapleStory_WhiteChristmas.mp3',
@@ -249,7 +279,7 @@ onMounted(async () => {
     if (musicList.value.some(m => m.src === christmasSong.src)) {
       musicList.value = [...originalMusicList.value];
     }
-    const savedIndex = localStorage.getItem(INDEX_KEY);
+    const savedIndex = shouldResetPlaylist ? '0' : localStorage.getItem(INDEX_KEY);
     if (savedIndex !== null && !isNaN(+savedIndex) && +savedIndex >= 0 && +savedIndex < musicList.value.length) {
       initialMusicIndex = +savedIndex;
     }
@@ -386,6 +416,7 @@ watch(volume, (newVolume) => {
 watch(playerOpen, (val) => {
   localStorage.setItem(PLAYER_OPEN_KEY, val ? 'true' : 'false')
   if (!val) {
+    rememberCoreTowerMusicChoice()
     intendedToPlay = false
     resumeOnVisibilityReturn = false
     cancelPlaybackRecovery()
@@ -463,6 +494,7 @@ function playMusic() {
 
 function pauseMusic() {
   if (!audio.value) return
+  rememberCoreTowerMusicChoice()
   intendedToPlay = false
   resumeOnVisibilityReturn = false
   cancelPlaybackRecovery()
@@ -1137,6 +1169,7 @@ function toggleRepeatOne() {
   repeatOne.value = !repeatOne.value
   localStorage.setItem(REPEAT_ONE_KEY, repeatOne.value ? 'true' : 'false')
   if (audio.value) audio.value.loop = repeatOne.value
+  if (!repeatOne.value) rememberCoreTowerMusicChoice()
 }
 </script>
 
