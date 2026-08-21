@@ -59,6 +59,90 @@ const formatBigNumber = (val: string | number) => {
   return num.toLocaleString();
 };
 
+interface RecentPowerRankHandle {
+  refresh: () => void;
+}
+
+interface RecentPowerRankStatusProps {
+  characterName: string;
+  characterLevel: number;
+  ocid?: string;
+}
+
+const RecentPowerRankStatus = React.forwardRef<RecentPowerRankHandle, RecentPowerRankStatusProps>(({
+  characterName,
+  characterLevel,
+  ocid,
+}, ref) => {
+  const [recentPowerRank, setRecentPowerRank] = React.useState<MaplerHouseCharacterRank | null>(null);
+  const [status, setStatus] = React.useState<'loading' | 'syncing' | 'found' | 'not-found' | 'error'>('loading');
+  const [refreshKey, setRefreshKey] = React.useState(0);
+
+  React.useImperativeHandle(ref, () => ({
+    refresh: () => {
+      invalidateMaplerHouseRankingCache();
+      setRefreshKey((current) => current + 1);
+    },
+  }), []);
+
+  React.useEffect(() => {
+    let active = true;
+    setRecentPowerRank(null);
+    setStatus('loading');
+
+    const loadRank = async () => {
+      let result = await fetchMaplerHouseCharacterRank(characterName);
+      let syncing = false;
+
+      if (!result && ocid) {
+        try {
+          const trackingStatus = await fetchMaplerHouseHistoryStatus(ocid);
+          const rankingEligible = Number(characterLevel || 0) >= 260;
+          if (trackingStatus.tracked && trackingStatus.job?.status === 'completed' && rankingEligible) {
+            invalidateMaplerHouseRankingCache();
+            result = await fetchMaplerHouseCharacterRank(characterName);
+            syncing = !result;
+          }
+        } catch {
+          // 名次查詢仍可維持「未列入」，不讓追蹤狀態錯誤覆蓋主要結果。
+        }
+      }
+
+      return { result, syncing };
+    };
+
+    loadRank()
+      .then(({ result, syncing }) => {
+        if (!active) return;
+        setRecentPowerRank(result);
+        setStatus(result ? 'found' : syncing ? 'syncing' : 'not-found');
+      })
+      .catch(() => {
+        if (!active) return;
+        setRecentPowerRank(null);
+        setStatus('error');
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [characterName, characterLevel, ocid, refreshKey]);
+
+  if (status === 'loading') return <span className="text-slate-500">正在查詢近期排名...</span>;
+  if (status === 'syncing') return <span className="text-emerald-400">正在同步近期戰力排名中...</span>;
+  if (status === 'found' && recentPowerRank) {
+    return (
+      <span className="font-semibold text-yellow-300">
+        近期戰力排名：第 {recentPowerRank.rank.toLocaleString()} / {recentPowerRank.total.toLocaleString()} 名
+      </span>
+    );
+  }
+  if (status === 'error') return <span className="text-slate-500">近期排名暫時無法取得</span>;
+  return <span className="text-slate-500">未列入近期戰力排名</span>;
+});
+
+RecentPowerRankStatus.displayName = 'RecentPowerRankStatus';
+
 const MainDashboard: React.FC<MainDashboardProps> = ({
     data,
     loading,
@@ -84,57 +168,10 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
     const hasRecentLogin = String(data.basic.access_flag).toLowerCase() === 'true';
     const [showRecentLoginStatus, setShowRecentLoginStatus] = React.useState(false);
     const [showBestCombatPower, setShowBestCombatPower] = React.useState(false);
-    const [recentPowerRank, setRecentPowerRank] = React.useState<MaplerHouseCharacterRank | null>(null);
-    const [recentPowerRankStatus, setRecentPowerRankStatus] = React.useState<'loading' | 'syncing' | 'found' | 'not-found' | 'error'>('loading');
-    const [rankingRefreshKey, setRankingRefreshKey] = React.useState(0);
-
-    React.useEffect(() => {
-      let active = true;
-      const characterName = data.basic?.character_name || '';
-      setRecentPowerRank(null);
-      setRecentPowerRankStatus('loading');
-
-      const loadRank = async () => {
-        let result = await fetchMaplerHouseCharacterRank(characterName);
-        let syncing = false;
-
-        if (!result && data.ocid) {
-          try {
-            const trackingStatus = await fetchMaplerHouseHistoryStatus(data.ocid);
-            const rankingEligible = Number(data.basic?.character_level || 0) >= 260;
-            if (trackingStatus.tracked && trackingStatus.job?.status === 'completed' && rankingEligible) {
-              invalidateMaplerHouseRankingCache();
-              result = await fetchMaplerHouseCharacterRank(characterName);
-              syncing = !result;
-            }
-          } catch {
-            // 名次查詢仍可維持「未列入」，不讓追蹤狀態錯誤覆蓋主要結果。
-          }
-        }
-
-        return { result, syncing };
-      };
-
-      loadRank()
-        .then(({ result, syncing }) => {
-          if (!active) return;
-          setRecentPowerRank(result);
-          setRecentPowerRankStatus(result ? 'found' : syncing ? 'syncing' : 'not-found');
-        })
-        .catch(() => {
-          if (!active) return;
-          setRecentPowerRank(null);
-          setRecentPowerRankStatus('error');
-        });
-
-      return () => {
-        active = false;
-      };
-    }, [data.basic?.character_name, data.basic?.character_level, data.ocid, rankingRefreshKey]);
+    const recentPowerRankRef = React.useRef<RecentPowerRankHandle>(null);
 
     const handleTrackingComplete = React.useCallback(() => {
-      invalidateMaplerHouseRankingCache();
-      setRankingRefreshKey((current) => current + 1);
+      recentPowerRankRef.current?.refresh();
     }, []);
 
     return (
@@ -285,15 +322,12 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
                      </div>
                      <div className="text-xl font-bold text-indigo-400 font-mono tracking-tight">{formatBigNumber(getStatVal('Combat Power'))}</div>
                      <div className="mt-1 text-xs">
-                       {recentPowerRankStatus === 'loading' && <span className="text-slate-500">正在查詢近期排名...</span>}
-                       {recentPowerRankStatus === 'syncing' && <span className="text-emerald-400">正在同步近期戰力排名中...</span>}
-                       {recentPowerRankStatus === 'found' && recentPowerRank && (
-                         <span className="font-semibold text-yellow-300">
-                           近期戰力排名：第 {recentPowerRank.rank.toLocaleString()} / {recentPowerRank.total.toLocaleString()} 名
-                         </span>
-                       )}
-                       {recentPowerRankStatus === 'not-found' && <span className="text-slate-500">未列入近期戰力排名</span>}
-                       {recentPowerRankStatus === 'error' && <span className="text-slate-500">近期排名暫時無法取得</span>}
+                       <RecentPowerRankStatus
+                         ref={recentPowerRankRef}
+                         characterName={data.basic?.character_name || ''}
+                         characterLevel={Number(data.basic?.character_level || 0)}
+                         ocid={data.ocid}
+                       />
                      </div>
                      {bestCombatPowerRecord && showBestCombatPower && (
                        <div

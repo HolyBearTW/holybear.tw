@@ -1,5 +1,5 @@
 import React from 'react';
-import { Crown } from 'lucide-react';
+import { Crown, Loader2 } from 'lucide-react';
 import { SERVER_ICONS } from '../constants';
 import {
   fetchMaplerHousePowerRanking,
@@ -60,8 +60,17 @@ const RecentPowerRanking: React.FC<RecentPowerRankingProps> = ({ onSelectCharact
 
   if (loading) {
     return (
-      <div className="maple-ranking-panel max-w-xl mx-auto mt-6 bg-[#161b22] border border-slate-800 rounded-xl shadow-lg p-4 text-sm text-slate-400">
-        正在載入近期戰力排名...
+      <div
+        className="maple-ranking-panel mx-auto mt-6 flex min-h-44 max-w-xl flex-col items-center justify-center rounded-xl border border-slate-800 bg-[#161b22] p-4 text-sm text-slate-400 shadow-lg"
+        role="status"
+        aria-live="polite"
+      >
+        <span className="relative flex h-12 w-12 items-center justify-center">
+          <span className="absolute inset-0 animate-ping rounded-full bg-cyan-400/15" aria-hidden="true" />
+          <Loader2 className="relative h-7 w-7 animate-spin text-cyan-400" aria-hidden="true" />
+        </span>
+        <span className="mt-3 font-semibold text-slate-300">正在載入近期戰力排名...</span>
+        <span className="mt-1 text-xs text-slate-500">正在整理最新的角色名次</span>
       </div>
     );
   }

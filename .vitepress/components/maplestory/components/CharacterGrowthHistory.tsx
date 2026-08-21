@@ -139,13 +139,18 @@ const CharacterGrowthHistory: React.FC<CharacterGrowthHistoryProps> = ({ data })
     };
   }, [data.ocid]);
 
-  const chartDays = useMemo(() => history?.days.slice(-trendRange) ?? [], [history, trendRange]);
+  // Building the chart, 365 calendar cells and event timeline is intentionally
+  // deferred so the ranking and primary dashboard remain responsive when the
+  // history request completes at nearly the same time.
+  const deferredHistory = React.useDeferredValue(history);
+  const historyRenderPending = history !== deferredHistory;
+  const chartDays = useMemo(() => deferredHistory?.days.slice(-trendRange) ?? [], [deferredHistory, trendRange]);
 
   const calendar = useMemo(() => {
-    if (!history) return null;
-    const end = parseDate(history.availableEndDate || history.end);
+    if (!deferredHistory) return null;
+    const end = parseDate(deferredHistory.availableEndDate || deferredHistory.end);
     const start = addDays(end, -364);
-    const dayMap = new Map(history.days.map((day) => [day.date, day]));
+    const dayMap = new Map(deferredHistory.days.map((day) => [day.date, day]));
     const leading = start.getUTCDay();
     const cells: Array<{ key: string; day: MaplerHouseHistoryDay | null; empty?: boolean }> = [];
     for (let index = 0; index < leading; index += 1) {
@@ -176,11 +181,11 @@ const CharacterGrowthHistory: React.FC<CharacterGrowthHistoryProps> = ({ data })
       monthLabels,
       weekCount: Math.ceil(cells.length / 7),
     };
-  }, [history]);
+  }, [deferredHistory]);
 
   const eta = useMemo(() => {
-    if (!history) return null;
-    const sample = history.days.slice(-30);
+    if (!deferredHistory) return null;
+    const sample = deferredHistory.days.slice(-30);
     const gains = sample.slice(1);
     const averageDailyExp = gains.reduce((total, day) => total + Math.max(0, Number(day.expGain) || 0), 0)
       / Math.max(1, gains.length);
@@ -198,9 +203,9 @@ const CharacterGrowthHistory: React.FC<CharacterGrowthHistoryProps> = ({ data })
       sampleDays: gains.length,
       days: Math.max(0, (requiredExp - currentExp) / averageDailyExp),
     };
-  }, [data.basic.character_exp, data.basic.character_exp_rate, data.basic.character_level, history]);
+  }, [data.basic.character_exp, data.basic.character_exp_rate, data.basic.character_level, deferredHistory]);
 
-  if (loading && !history) {
+  if ((loading || historyRenderPending) && !deferredHistory) {
     return (
       <div className="maple-growth-state mt-6 flex min-h-28 items-center justify-center rounded-xl border border-slate-800 bg-[#161b22] text-sm text-slate-500">
         <RefreshCw className="mr-2 h-4 w-4 animate-spin" />讀取成長紀錄中...
@@ -208,7 +213,7 @@ const CharacterGrowthHistory: React.FC<CharacterGrowthHistoryProps> = ({ data })
     );
   }
 
-  if (!history && !error) return null;
+  if (!deferredHistory && !error) return null;
 
   if (error) {
     return (
@@ -218,10 +223,10 @@ const CharacterGrowthHistory: React.FC<CharacterGrowthHistoryProps> = ({ data })
     );
   }
 
-  if (!history || !calendar) return null;
+  if (!deferredHistory || !calendar) return null;
 
-  const bestDay = history.stats.bestDay;
-  const sortedEvents = [...history.events].sort((a, b) => b.date.localeCompare(a.date));
+  const bestDay = deferredHistory.stats.bestDay;
+  const sortedEvents = [...deferredHistory.events].sort((a, b) => b.date.localeCompare(a.date));
 
   return (
     <section className="maple-growth-history mt-6 space-y-5 rounded-xl border border-slate-800 bg-[#161b22] p-5 shadow-xl">
@@ -230,7 +235,7 @@ const CharacterGrowthHistory: React.FC<CharacterGrowthHistoryProps> = ({ data })
           <div className="flex items-center gap-2 text-lg font-bold text-slate-100">
             <TrendingUp className="h-5 w-5 text-emerald-400" />近一年成長紀錄
           </div>
-          <p className="mt-1 text-xs text-slate-500">資料更新至 {history.lastSyncedDate || history.end}</p>
+          <p className="mt-1 text-xs text-slate-500">資料更新至 {deferredHistory.lastSyncedDate || deferredHistory.end}</p>
         </div>
       </header>
 
@@ -299,13 +304,13 @@ const CharacterGrowthHistory: React.FC<CharacterGrowthHistoryProps> = ({ data })
       <div className="maple-growth-panel space-y-4 rounded-xl border border-slate-800 bg-slate-950/30 p-4">
         <div>
           <h3 className="font-semibold text-slate-200">近一年成長概覽</h3>
-          <p className="mt-1 text-xs text-slate-500">{history.start} 至 {history.end}</p>
+          <p className="mt-1 text-xs text-slate-500">{deferredHistory.start} 至 {deferredHistory.end}</p>
         </div>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {[
-            ['活躍天數', `${history.stats.activeDays} 天`],
-            ['最長連續', `${history.stats.longestStreak} 天`],
-            ['等級成長', `+${history.stats.levelGain} Lv`],
+            ['活躍天數', `${deferredHistory.stats.activeDays} 天`],
+            ['最長連續', `${deferredHistory.stats.longestStreak} 天`],
+            ['等級成長', `+${deferredHistory.stats.levelGain} Lv`],
             ['單日最高', bestDay ? compactNumber(bestDay.expGain) : '尚無資料', bestDay?.date],
           ].map(([label, value, note]) => (
             <div key={label} className="maple-growth-summary-card rounded-lg border border-slate-800 bg-slate-900/50 p-3">
@@ -409,4 +414,4 @@ const CharacterGrowthHistory: React.FC<CharacterGrowthHistoryProps> = ({ data })
   );
 };
 
-export default CharacterGrowthHistory;
+export default React.memo(CharacterGrowthHistory);
