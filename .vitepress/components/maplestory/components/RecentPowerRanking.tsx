@@ -77,15 +77,22 @@ const RecentPowerRanking: React.FC<RecentPowerRankingProps> = ({ onSelectCharact
         近期戰力排名
       </h3>
       <div className="space-y-1">
-        {items.map((item, idx) => (
-          <button
-            key={item.characterName}
-            type="button"
-            onClick={() => onSelectCharacter(item.characterName)}
-            className="w-full text-left flex items-center gap-3 py-1.5 px-2 rounded hover:bg-slate-800/70 transition-colors"
-          >
-            <span className={`text-xs font-mono w-5 text-center shrink-0 ${idx < 3 ? 'text-indigo-300 font-bold' : 'text-slate-500'}`}>
-              {(page - 1) * 10 + idx + 1}
+        {items.map((item, idx) => {
+          const rank = (page - 1) * 10 + idx + 1;
+          const crownTier = rank === 1 ? 'is-gold' : rank === 2 ? 'is-silver' : rank === 3 ? 'is-bronze' : null;
+          return (
+            <button
+              key={item.characterName}
+              type="button"
+              onClick={() => onSelectCharacter(item.characterName)}
+              className="w-full text-left flex items-center gap-3 py-1.5 px-2 rounded hover:bg-slate-800/70 transition-colors"
+            >
+            <span
+              className={`flex w-5 shrink-0 items-center justify-center text-center text-xs font-mono ${crownTier ? `maple-ranking-crown ${crownTier}` : 'text-slate-500'}`}
+              title={crownTier ? `第 ${rank} 名` : undefined}
+            >
+              {crownTier ? <Crown className="h-4 w-4 fill-current" aria-hidden="true" /> : rank}
+              {crownTier && <span className="sr-only">第 {rank} 名</span>}
             </span>
             <div className="relative w-10 h-10 rounded-full overflow-hidden bg-slate-800 shrink-0">
               <img
@@ -104,8 +111,9 @@ const RecentPowerRanking: React.FC<RecentPowerRankingProps> = ({ onSelectCharact
               <div className="text-xs text-slate-500 mt-0.5 truncate">{item.worldName}・Lv.{item.level}・{item.jobName}</div>
               <div className="text-xs text-slate-400 mt-0.5">{item.combatPower.toLocaleString()}</div>
             </div>
-          </button>
-        ))}
+            </button>
+          );
+        })}
       </div>
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-800 pt-3 text-xs text-slate-400">
         <span>共 {total.toLocaleString()} 名・第 {page} / {totalPages} 頁</span>
@@ -126,7 +134,7 @@ const RecentPowerRanking: React.FC<RecentPowerRankingProps> = ({ onSelectCharact
             max={totalPages}
             value={pageInput}
             onChange={(event) => setPageInput(event.target.value)}
-            className="w-16 rounded border border-slate-700 bg-[#0d1117] px-2 py-1 text-center text-slate-200 outline-none focus:border-indigo-400"
+            className="maple-ranking-page-input w-16 rounded border px-2 py-1 text-center outline-none"
           />
           <button
             type="submit"

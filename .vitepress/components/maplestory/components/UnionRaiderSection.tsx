@@ -102,13 +102,178 @@ const getClassPortrait = (className?: string | null) => {
   return `/image/theme/maplestory_class/${file || 'all.jpg'}`;
 };
 
-const getRank = (level: number) => {
-  if (level >= 250) return 'SSS';
-  if (level >= 200) return 'SS';
-  if (level >= 140) return 'S';
-  if (level >= 100) return 'A';
-  if (level >= 60) return 'B';
-  return 'C';
+const getUnionBlockName = (block: UnionBlock) => {
+  const name = block.block_class || block.block_type || '(Unknown)';
+  return name.trim().toLocaleLowerCase() === '(unknown)' ? '納希沙漠' : name;
+};
+
+type UnionEffectKind =
+  | 'STR' | 'DEX' | 'INT' | 'LUK' | 'ALL_STAT'
+  | 'CRIT_DAMAGE' | 'BOSS_DAMAGE' | 'IGNORE_DEF' | 'CRIT_RATE'
+  | 'BUFF_DURATION' | 'SUMMON_DURATION' | 'COOLDOWN' | 'EXP' | 'MESO'
+  | 'STATUS_DAMAGE' | 'WILD_HUNTER_DAMAGE' | 'FLAT_HP' | 'MAX_HP' | 'MAX_MP'
+  | 'RECOVER_HP' | 'RECOVER_MP' | 'STATUS_RESISTANCE' | 'MOVEMENT_SPEED';
+
+const unionEffectKinds = new Map<string, UnionEffectKind>();
+const registerUnionEffect = (kind: UnionEffectKind, classNames: string[]) => {
+  classNames.forEach((className) => unionEffectKinds.set(normalizeClassName(className), kind));
+};
+
+registerUnionEffect('STR', ['亞克', '阿戴爾', '拳霸', '重砲指揮官', '重砲', '英雄', '凱撒', '聖騎士', '閃雷悍將']);
+registerUnionEffect('DEX', ['天使破壞者', '箭神', '凱殷', '開拓者', '破風使者']);
+registerUnionEffect('INT', ['大魔導士(冰、雷)', '煉獄巫師', '主教', '烈焰巫師', '凱內西斯', '菈菈', '伊利恩', '夜光']);
+registerUnionEffect('LUK', ['卡蒂娜', '影武者', '虎影', '卡莉', '暗夜行者', '暗影神偷']);
+registerUnionEffect('ALL_STAT', ['傑諾']);
+registerUnionEffect('CRIT_DAMAGE', ['劍豪', '隱月', '墨玄']);
+registerUnionEffect('BOSS_DAMAGE', ['惡魔復仇者', '陰陽師', '葉里萊特', '艾瑞爾', 'Erel Light']);
+registerUnionEffect('IGNORE_DEF', ['爆拳槍神', '琳恩', '幻獸師']);
+registerUnionEffect('CRIT_RATE', ['神射手', '夜使者']);
+registerUnionEffect('BUFF_DURATION', ['機甲戰神']);
+registerUnionEffect('SUMMON_DURATION', ['槍神']);
+registerUnionEffect('COOLDOWN', ['精靈遊俠']);
+registerUnionEffect('EXP', ['神之子']);
+registerUnionEffect('MESO', ['幻影俠盜']);
+registerUnionEffect('STATUS_DAMAGE', ['施亞阿斯特']);
+registerUnionEffect('WILD_HUNTER_DAMAGE', ['狂豹獵人']);
+registerUnionEffect('FLAT_HP', ['聖魂劍士', '米哈逸']);
+registerUnionEffect('MAX_HP', ['黑騎士']);
+registerUnionEffect('MAX_MP', ['大魔導士(火、毒)']);
+registerUnionEffect('RECOVER_HP', ['狂狼勇士']);
+registerUnionEffect('RECOVER_MP', ['龍魔導士']);
+registerUnionEffect('STATUS_RESISTANCE', ['惡魔殺手']);
+registerUnionEffect('MOVEMENT_SPEED', ['蓮']);
+
+const unionEffectValues: Record<UnionEffectKind, number[]> = {
+  STR: [10, 20, 40, 80, 100],
+  DEX: [10, 20, 40, 80, 100],
+  INT: [10, 20, 40, 80, 100],
+  LUK: [10, 20, 40, 80, 100],
+  ALL_STAT: [5, 10, 20, 40, 50],
+  CRIT_DAMAGE: [1, 2, 3, 5, 6],
+  BOSS_DAMAGE: [1, 2, 3, 5, 6],
+  IGNORE_DEF: [1, 2, 3, 5, 6],
+  CRIT_RATE: [1, 2, 3, 4, 5],
+  BUFF_DURATION: [5, 10, 15, 20, 25],
+  SUMMON_DURATION: [4, 6, 8, 10, 12],
+  COOLDOWN: [2, 3, 4, 5, 6],
+  EXP: [4, 6, 8, 10, 12],
+  MESO: [1, 2, 3, 4, 5],
+  STATUS_DAMAGE: [1, 2, 3, 5, 6],
+  WILD_HUNTER_DAMAGE: [4, 8, 12, 16, 20],
+  FLAT_HP: [250, 500, 1000, 2000, 2500],
+  MAX_HP: [2, 3, 4, 5, 6],
+  MAX_MP: [2, 3, 4, 5, 6],
+  RECOVER_HP: [2, 4, 6, 8, 10],
+  RECOVER_MP: [2, 4, 6, 8, 10],
+  STATUS_RESISTANCE: [1, 2, 3, 4, 5],
+  MOVEMENT_SPEED: [2, 4, 6, 8, 10],
+};
+
+const getUnionRankIndex = (block: UnionBlock) => {
+  const level = Number(block.block_level) || 0;
+  const thresholds = normalizeClassName(block.block_class || '') === normalizeClassName('神之子')
+    ? [130, 160, 180, 200, 250]
+    : [60, 100, 140, 200, 250];
+  let rankIndex = 0;
+  thresholds.forEach((threshold, index) => {
+    if (level >= threshold) rankIndex = index;
+  });
+  return rankIndex;
+};
+
+const getRank = (block: UnionBlock) => ['B', 'A', 'S', 'SS', 'SSS'][getUnionRankIndex(block)];
+
+const normalizeUnionEffect = (effect: string) => effect.replace(/\s+/g, '').toLocaleUpperCase();
+
+const matchesUnionEffect = (effect: string, kind: UnionEffectKind, value: number) => {
+  const normalized = normalizeUnionEffect(effect);
+  switch (kind) {
+    case 'STR': return normalized.includes(`增加STR${value}`) && !normalized.includes('DEX');
+    case 'DEX': return normalized.includes(`增加DEX${value}`) && !normalized.includes('STR');
+    case 'INT': return normalized.includes(`增加INT${value}`);
+    case 'LUK': return normalized.includes(`增加LUK${value}`) && !normalized.includes('STR');
+    case 'ALL_STAT': return normalized.includes('STR') && normalized.includes('DEX') && normalized.includes('LUK') && normalized.endsWith(String(value));
+    case 'CRIT_DAMAGE': return normalized.includes(`爆擊傷害${value}%`);
+    case 'BOSS_DAMAGE': return normalized.includes(`BOSS傷害${value}%`);
+    case 'IGNORE_DEF': return normalized.includes(`無視防禦率${value}%`);
+    case 'CRIT_RATE': return normalized.includes(`爆擊機率${value}%`);
+    case 'BUFF_DURATION': return normalized.includes(`加持有效時間${value}%`);
+    case 'SUMMON_DURATION': return normalized.includes(`召喚獸持續時間${value}%`);
+    case 'COOLDOWN': return normalized.includes(`技能冷卻時間降低${value}%`);
+    case 'EXP': return normalized.includes(`經驗值獲得量${value}%`);
+    case 'MESO': return normalized.includes(`楓幣獲得量${value}%`);
+    case 'STATUS_DAMAGE': return normalized.includes('狀態異常') && normalized.includes(`傷害${value}%`);
+    case 'WILD_HUNTER_DAMAGE': return normalized.includes('攻擊時以20%的機率') && normalized.includes(`${value}%的傷害值`);
+    case 'FLAT_HP': return normalized.includes(`增加HP${value}`) || normalized.includes(`增加純HP${value}`);
+    case 'MAX_HP': return normalized.includes(`最大HP${value}%`);
+    case 'MAX_MP': return normalized.includes(`最大MP${value}%`);
+    case 'RECOVER_HP': return normalized.includes(`恢復純HP的${value}%`);
+    case 'RECOVER_MP': return normalized.includes(`恢復純MP的${value}%`);
+    case 'STATUS_RESISTANCE': return normalized.includes(`狀態異常耐性${value}`);
+    case 'MOVEMENT_SPEED': return normalized.includes(`移動速度與最大移動速度${value}`);
+    default: return false;
+  }
+};
+
+const formatUnionEffectFallback = (kind: UnionEffectKind, value: number) => {
+  const labels: Record<UnionEffectKind, string> = {
+    STR: `增加STR ${value}`,
+    DEX: `增加DEX ${value}`,
+    INT: `增加INT ${value}`,
+    LUK: `增加LUK ${value}`,
+    ALL_STAT: `增加STR、DEX、LUK ${value}`,
+    CRIT_DAMAGE: `增加爆擊傷害 ${value}%`,
+    BOSS_DAMAGE: `增加攻擊BOSS傷害 ${value}%`,
+    IGNORE_DEF: `增加無視防禦率 ${value}%`,
+    CRIT_RATE: `增加爆擊機率 ${value}%`,
+    BUFF_DURATION: `增加加持有效時間 ${value}%`,
+    SUMMON_DURATION: `增加召喚獸持續時間 ${value}%`,
+    COOLDOWN: `技能冷卻時間降低 ${value}%`,
+    EXP: `增加經驗值獲得量 ${value}%`,
+    MESO: `增加楓幣獲得量 ${value}%`,
+    STATUS_DAMAGE: `攻擊異常狀態對象時傷害增加 ${value}%`,
+    WILD_HUNTER_DAMAGE: `攻擊時有20%的機率增加 ${value}% 傷害`,
+    FLAT_HP: `增加HP ${value}`,
+    MAX_HP: `增加最大HP ${value}%`,
+    MAX_MP: `增加最大MP ${value}%`,
+    RECOVER_HP: `每當敵人攻擊時70%的機率恢復純HP的${value}%`,
+    RECOVER_MP: `每當敵人攻擊時70%的機率恢復純MP的${value}%`,
+    STATUS_RESISTANCE: `增加狀態異常耐性 ${value}`,
+    MOVEMENT_SPEED: `增加移動速度與最大移動速度 ${value}`,
+  };
+  return labels[kind];
+};
+
+const resolveUnionMemberBonuses = (blocks: UnionBlock[], stats: string[]) => {
+  // Nexon returns the placed blocks and member effects as separate arrays; their indexes are not related.
+  // Match known jobs by effect type and card rank, then leave the remaining official effects to special blocks.
+  const bonuses = new Array<string>(blocks.length);
+  const usedStats = new Set<number>();
+  const unresolvedBlockIndexes: number[] = [];
+
+  blocks.forEach((block, blockIndex) => {
+    const kind = unionEffectKinds.get(normalizeClassName(block.block_class || ''));
+    if (!kind) {
+      unresolvedBlockIndexes.push(blockIndex);
+      return;
+    }
+
+    const value = unionEffectValues[kind][getUnionRankIndex(block)];
+    const statIndex = stats.findIndex((stat, index) => !usedStats.has(index) && matchesUnionEffect(stat, kind, value));
+    if (statIndex >= 0) {
+      usedStats.add(statIndex);
+      bonuses[blockIndex] = stats[statIndex].trim();
+    } else {
+      bonuses[blockIndex] = formatUnionEffectFallback(kind, value);
+    }
+  });
+
+  const remainingStats = stats.filter((_, index) => !usedStats.has(index));
+  unresolvedBlockIndexes.forEach((blockIndex, index) => {
+    bonuses[blockIndex] = remainingStats[index]?.trim() || '暫無成員加成資料';
+  });
+
+  return bonuses;
 };
 
 const getPreset = (raider: CharacterUnionRaider, presetNo: number): UnionRaiderPreset => {
@@ -122,7 +287,7 @@ const getPreset = (raider: CharacterUnionRaider, presetNo: number): UnionRaiderP
   };
 };
 
-const UnionBoard: React.FC<{ blocks: UnionBlock[] }> = ({ blocks }) => {
+const UnionBoard: React.FC<{ blocks: UnionBlock[]; memberBonuses: string[] }> = ({ blocks, memberBonuses }) => {
   const [hoveredBlockIndex, setHoveredBlockIndex] = useState<number | null>(null);
   const blockCells = useMemo(() => {
     const cells = new Map<string, { block: UnionBlock; blockIndex: number; isControl: boolean }>();
@@ -140,14 +305,15 @@ const UnionBoard: React.FC<{ blocks: UnionBlock[] }> = ({ blocks }) => {
   const hoveredBlock = hoveredBlockIndex === null ? null : blocks[hoveredBlockIndex];
 
   const cells = [];
-  for (let y = BOARD_MIN_Y; y <= BOARD_MAX_Y; y += 1) {
+  for (let y = BOARD_MAX_Y; y >= BOARD_MIN_Y; y -= 1) {
     for (let x = BOARD_MIN_X; x <= BOARD_MAX_X; x += 1) {
       const occupied = blockCells.get(`${x},${y}`);
-      const label = occupied?.block.block_class || occupied?.block.block_type || '?';
+      const label = occupied ? getUnionBlockName(occupied.block) : '?';
+      const memberBonus = occupied ? memberBonuses[occupied.blockIndex] || '暫無成員加成資料' : '';
       cells.push(
         <div
           key={`${x},${y}`}
-          title={occupied ? `${label} · Lv.${occupied.block.block_level}` : undefined}
+          title={occupied ? `${label} · Lv.${occupied.block.block_level}\n${memberBonus}` : undefined}
           onMouseEnter={() => setHoveredBlockIndex(occupied?.blockIndex ?? null)}
           className={`maple-union-board-cell relative aspect-square border-b border-r border-slate-700/45 transition-[opacity,filter,box-shadow] duration-150 ${occupied ? blockColors[occupied.block.block_type] || 'bg-slate-500/70' : 'is-empty bg-slate-900/45'} ${hoveredBlockIndex !== null && occupied ? occupied.blockIndex === hoveredBlockIndex ? 'is-highlighted z-20 brightness-125 ring-1 ring-inset ring-white/90' : 'opacity-25 saturate-50' : ''}`}
         >
@@ -163,10 +329,11 @@ const UnionBoard: React.FC<{ blocks: UnionBlock[] }> = ({ blocks }) => {
 
   return (
     <div onMouseLeave={() => setHoveredBlockIndex(null)}>
-      <div className="mb-2 flex h-5 items-center justify-end text-[11px] text-slate-500">
+      <div className="mb-2 flex min-h-10 items-end justify-end text-[11px] text-slate-500">
         {hoveredBlock ? (
-          <span className="maple-union-hover-label rounded-md bg-slate-800 px-2 py-0.5 text-slate-300">
-            {hoveredBlock.block_class || hoveredBlock.block_type || '(Unknown)'} · Lv.{hoveredBlock.block_level}
+          <span className="maple-union-hover-label flex max-w-full items-center gap-2 whitespace-nowrap rounded-md bg-slate-800 px-2 py-1 text-right text-slate-300">
+            <strong>{getUnionBlockName(hoveredBlock)} · Lv.{hoveredBlock.block_level}</strong>
+            <span className="text-[10px] text-slate-400">{memberBonuses[hoveredBlockIndex ?? -1] || '暫無成員加成資料'}</span>
           </span>
         ) : (
           <span>移到拼圖上查看完整範圍</span>
@@ -216,7 +383,10 @@ const UnionRaiderSection: React.FC<UnionRaiderSectionProps> = ({ union, unionRai
 
   const preset = presets[selectedPreset - 1];
   if (!preset) return null;
-  const members = [...preset.union_block].sort((a, b) => Number(b.block_level) - Number(a.block_level));
+  const memberBonuses = resolveUnionMemberBonuses(preset.union_block, preset.union_raider_stat);
+  const members = preset.union_block
+    .map((member, index) => ({ member, bonus: memberBonuses[index] }))
+    .sort((a, b) => Number(b.member.block_level) - Number(a.member.block_level));
   const occupiedCells = new Set(preset.union_block.flatMap((block) => block.block_position.map((position) => `${position.x},${position.y}`))).size;
 
   return (
@@ -267,7 +437,7 @@ const UnionRaiderSection: React.FC<UnionRaiderSectionProps> = ({ union, unionRai
           <div className="maple-union-panel rounded-xl border border-slate-800 bg-slate-900/35 p-4">
             <h4 className="mb-4 flex items-center gap-2 text-sm font-bold text-slate-200"><Grid3X3 className="h-4 w-4 text-indigo-400" />聯盟棋盤</h4>
             <div className="maple-union-board-frame mx-auto max-w-[520px] overflow-visible rounded-lg border border-slate-800 bg-[#0d1117] p-3">
-              {preset.union_block.length ? <UnionBoard blocks={preset.union_block} /> : <div className="py-20 text-center text-xs text-slate-500">此預設尚未配置棋盤</div>}
+              {preset.union_block.length ? <UnionBoard blocks={preset.union_block} memberBonuses={memberBonuses} /> : <div className="py-20 text-center text-xs text-slate-500">此預設尚未配置棋盤</div>}
             </div>
           </div>
           <div className="maple-union-panel rounded-xl border border-slate-800 bg-slate-900/35 p-4">
@@ -283,12 +453,12 @@ const UnionRaiderSection: React.FC<UnionRaiderSectionProps> = ({ union, unionRai
             </div>
             {members.length ? (
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 2xl:grid-cols-3">
-                {members.map((member, index) => {
+                {members.map(({ member, bonus }, index) => {
                   const level = Number(member.block_level) || 0;
-                  const name = member.block_class || member.block_type || '(Unknown)';
+                  const name = getUnionBlockName(member);
                   const color = classColors[member.block_type] || classColors.hybrid;
                   return (
-                    <div key={`${name}-${level}-${index}`} className="maple-union-member group flex min-w-0 items-center gap-2.5 rounded-lg border border-slate-800/80 bg-[#0d1117]/65 p-2 transition-colors hover:border-indigo-500/40 hover:bg-slate-900">
+                    <div key={`${name}-${level}-${index}`} className="maple-union-member group relative flex min-w-0 items-center gap-2.5 rounded-lg border border-slate-800/80 bg-[#0d1117]/65 p-2 transition-colors hover:border-indigo-500/40 hover:bg-slate-900">
                       <div className={`h-11 w-11 shrink-0 overflow-hidden rounded-lg border ${color}`}>
                         <img src={getClassPortrait(member.block_class)} alt={name} className="h-full w-full object-cover transition-transform group-hover:scale-105" loading="lazy" />
                       </div>
@@ -296,7 +466,11 @@ const UnionRaiderSection: React.FC<UnionRaiderSectionProps> = ({ union, unionRai
                         <div className="truncate text-xs font-semibold text-slate-200" title={name}>{name}</div>
                         <div className="mt-0.5 text-[11px] text-slate-500">Lv.{level}</div>
                       </div>
-                      <span className="maple-union-rank shrink-0 rounded bg-yellow-900/60 px-1.5 py-0.5 text-[9px] font-bold text-yellow-300">{getRank(level)}</span>
+                      <span className="maple-union-rank shrink-0 rounded bg-yellow-900/60 px-1.5 py-0.5 text-[9px] font-bold text-yellow-300">{getRank(member)}</span>
+                      <div className="maple-union-member-tooltip pointer-events-none absolute bottom-[calc(100%+0.5rem)] left-1/2 z-50 w-max max-w-[min(18rem,calc(100vw-2rem))] -translate-x-1/2 rounded-lg border px-3 py-2 text-left opacity-0 shadow-xl transition-opacity group-hover:opacity-100">
+                        <div className="text-[11px] font-bold">{name} · Lv.{level}</div>
+                        <div className="mt-1 text-[11px] leading-4">{bonus}</div>
+                      </div>
                     </div>
                   );
                 })}

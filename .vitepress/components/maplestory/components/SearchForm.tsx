@@ -149,7 +149,7 @@ export const SearchStatus: React.FC<SearchStatusProps> = ({
       {loading && !data && (
          <div className="flex flex-col items-center justify-center min-h-[300px] animate-pulse">
             <Loader2 className="w-12 h-12 text-indigo-500 animate-spin mb-4" />
-            <p className="text-slate-500 font-medium">{isScanningBest ? '正在掃描過去七天數據，尋找最強狀態...' : '正在讀取角色資料...'}</p>
+            <p className="maple-character-loading-text font-medium">{isScanningBest ? '正在掃描過去七天數據，尋找最強狀態...' : '正在讀取角色資料...'}</p>
          </div>
       )}
 

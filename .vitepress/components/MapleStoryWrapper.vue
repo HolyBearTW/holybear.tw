@@ -472,6 +472,47 @@ html:not(.dark) #maplestory-root [class~="shadow-2xl"] {
   -webkit-backdrop-filter: blur(16px) saturate(140%) !important;
 }
 
+#maplestory-root .maple-character-loading-text {
+  color: #e2f3f8 !important;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.72);
+}
+
+#maplestory-root .maple-ranking-page-input {
+  color: #e2e8f0 !important;
+  background: transparent !important;
+  border-color: rgba(203, 213, 225, 0.46) !important;
+  box-shadow: none !important;
+  color-scheme: dark;
+}
+
+#maplestory-root .maple-ranking-page-input:focus {
+  border-color: #818cf8 !important;
+  box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.18) !important;
+}
+
+#maplestory-root .maple-ranking-crown.is-gold {
+  color: #facc15 !important;
+  filter: drop-shadow(0 1px 4px rgba(250, 204, 21, 0.34));
+}
+
+#maplestory-root .maple-ranking-crown.is-silver {
+  color: #cbd5e1 !important;
+  filter: drop-shadow(0 1px 4px rgba(203, 213, 225, 0.28));
+}
+
+#maplestory-root .maple-ranking-crown.is-bronze {
+  color: #d97706 !important;
+  filter: drop-shadow(0 1px 4px rgba(217, 119, 6, 0.3));
+}
+
+#maplestory-root .maple-union-member-tooltip {
+  color: #e2e8f0;
+  background: rgba(8, 18, 28, 0.94);
+  border-color: rgba(148, 163, 184, 0.34);
+  backdrop-filter: blur(14px) saturate(135%);
+  -webkit-backdrop-filter: blur(14px) saturate(135%);
+}
+
 #maplestory-root .maple-character-search-input {
   background: rgba(6, 18, 26, 0.5) !important;
   border-color: rgba(255, 255, 255, 0.16) !important;
@@ -515,6 +556,35 @@ html:not(.dark) #maplestory-root .maple-ranking-panel {
   background: rgba(249, 253, 255, 0.76) !important;
   border-color: rgba(36, 94, 112, 0.22) !important;
   box-shadow: 0 14px 36px rgba(35, 76, 94, 0.14) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-character-loading-text {
+  color: #082f3e !important;
+  text-shadow: 0 1px 3px rgba(255, 255, 255, 0.78);
+}
+
+html:not(.dark) #maplestory-root .maple-ranking-page-input {
+  color: #173746 !important;
+  background: transparent !important;
+  border-color: rgba(36, 94, 112, 0.38) !important;
+  color-scheme: light;
+}
+
+html:not(.dark) #maplestory-root .maple-ranking-page-input:focus {
+  border-color: #087f94 !important;
+  box-shadow: 0 0 0 2px rgba(8, 127, 148, 0.14) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-ranking-crown.is-gold {
+  color: #b77900 !important;
+}
+
+html:not(.dark) #maplestory-root .maple-ranking-crown.is-silver {
+  color: #64748b !important;
+}
+
+html:not(.dark) #maplestory-root .maple-ranking-crown.is-bronze {
+  color: #a65313 !important;
 }
 
 html:not(.dark) #maplestory-root .maple-character-search-input {
@@ -1126,6 +1196,17 @@ html:not(.dark) #maplestory-root .maple-union-board-cell.is-highlighted {
 html:not(.dark) #maplestory-root .maple-union-hover-label {
   color: #5145cd !important;
   background: rgba(231, 229, 255, 0.94) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-union-hover-label span {
+  color: #526b78 !important;
+}
+
+html:not(.dark) #maplestory-root .maple-union-member-tooltip {
+  color: #173746 !important;
+  background: rgba(249, 253, 255, 0.96) !important;
+  border-color: rgba(36, 94, 112, 0.28) !important;
+  box-shadow: 0 10px 28px rgba(35, 76, 94, 0.2) !important;
 }
 
 html:not(.dark) #maplestory-root .maple-union-preset {
