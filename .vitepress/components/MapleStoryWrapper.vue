@@ -68,7 +68,11 @@ function syncMapleNavSearch() {
     if (!isDesktop) {
       const original = navSearchOriginals.get(button)
       button.classList.remove('maple-character-nav-search')
-      placeholder.textContent = original.text
+      // This function also runs from a MutationObserver watching the nav.
+      // Avoid replacing the same text node repeatedly, otherwise a docked
+      // DevTools window can cross the mobile breakpoint and create an endless
+      // observer -> textContent -> observer loop.
+      if (placeholder.textContent !== original.text) placeholder.textContent = original.text
       button.setAttribute('aria-label', '搜尋新楓之谷角色')
       button.setAttribute('title', '搜尋新楓之谷角色')
       return

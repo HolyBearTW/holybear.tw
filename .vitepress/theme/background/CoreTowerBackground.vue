@@ -34,6 +34,7 @@ const foreground = ref<HTMLElement | null>(null)
 const sharedCanvas = ref<HTMLCanvasElement | null>(null)
 const spineReady = ref(false)
 const sharedCanvasEnabled = ref(false)
+const isTouchDevice = ref(false)
 
 let players: Array<{ dispose: () => void }> = []
 let sharedRendererCleanup: (() => void) | null = null
@@ -59,7 +60,12 @@ onMounted(async () => {
   const isPhonePortrait = window.matchMedia('(max-width: 599px) and (orientation: portrait)').matches
   const isTouchPhoneOrTablet = navigator.maxTouchPoints > 0
     && Math.min(window.screen.width, window.screen.height) <= 1024
-  sharedCanvasEnabled.value = isTouchPhoneOrTablet
+  isTouchDevice.value = isTouchPhoneOrTablet
+  // A SpinePlayer creates its own full-viewport WebGL canvas. Four players
+  // made desktop DevTools docking resize four contexts at once and caused
+  // large renderer/GPU memory spikes. The shared renderer draws the same four
+  // skeletons through one context on every device.
+  sharedCanvasEnabled.value = true
 
   const applyForegroundOffsets = (skeleton: any, isPortrait: boolean) => {
     const floorOffset = isPortrait ? -70 : 30
@@ -190,12 +196,14 @@ onMounted(async () => {
           skeleton.updateWorldTransform()
 
           const isForeground = layer === 'foreground'
-          const layerScale = isForeground || isTabletLandscape ? 1 : 0.7
+          const layerScale = isForeground || !isTouchPhoneOrTablet || isTabletLandscape ? 1 : 0.7
           const layerWidth = stageWidth * layerScale
           const layerHeight = stageHeight * layerScale
           const layerLeft = (cssWidth - layerWidth) / 2
           const foregroundOffsetY = isForeground
-            ? isTabletLandscape ? 72 : isTabletPortrait ? -65 : 0
+            ? !isTouchPhoneOrTablet
+              ? cssWidth >= 600 ? 72 : 0
+              : isTabletLandscape ? 72 : isTabletPortrait ? -65 : 0
             : 0
           const layerTop = (cssHeight - layerHeight) / 2 + stageOffsetY + foregroundOffsetY
           const visibleLeft = Math.max(0, layerLeft)
@@ -238,7 +246,7 @@ onMounted(async () => {
       spineReady.value = true
       animationFrame = requestAnimationFrame(render)
     } catch (error) {
-      console.warn('[Core Tower] Touch-device shared-canvas fallback:', error)
+      console.warn('[Core Tower] Shared-canvas fallback:', error)
       sharedRendererCleanup()
       sharedRendererCleanup = null
     }
@@ -316,6 +324,7 @@ onBeforeUnmount(() => {
     class="core-tower-background"
     :class="{
       'uses-shared-canvas': sharedCanvasEnabled,
+      'is-touch-device': isTouchDevice,
       'is-spine-ready': spineReady
     }"
     aria-hidden="true"
@@ -478,8 +487,7 @@ html:not(.dark) body.theme-coretower .eyebrow {
 }
 
 /* These very faint CSS particles each create an extra animated blend layer.
-   The touch renderer already contains the actual WZ Spine effects, so avoid
-   their compositor-memory cost on physical phones and tablets. */
+   The shared renderer already contains the actual WZ Spine effects. */
 .core-tower-background.uses-shared-canvas .core-tower-wz-particle {
   display: none;
 }
@@ -673,13 +681,13 @@ html.dark .core-tower-reading-mask {
 }
 
 /* Touch devices use one static overlay instead of three full-screen compositor
-   layers. The Spine scene remains animated on its shared canvas. */
-.core-tower-background.uses-shared-canvas .core-tower-scanlines,
-.core-tower-background.uses-shared-canvas .core-tower-vignette {
+   layers. Desktop keeps the original scanline and vignette treatment. */
+.core-tower-background.uses-shared-canvas.is-touch-device .core-tower-scanlines,
+.core-tower-background.uses-shared-canvas.is-touch-device .core-tower-vignette {
   display: none;
 }
 
-.core-tower-background.uses-shared-canvas .core-tower-reading-mask {
+.core-tower-background.uses-shared-canvas.is-touch-device .core-tower-reading-mask {
   z-index: 3;
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
@@ -692,7 +700,7 @@ html.dark .core-tower-reading-mask {
     rgba(3, 10, 20, 0.12);
 }
 
-html:not(.dark) .core-tower-background.uses-shared-canvas .core-tower-reading-mask {
+html:not(.dark) .core-tower-background.uses-shared-canvas.is-touch-device .core-tower-reading-mask {
   background:
     repeating-linear-gradient(180deg, transparent 0, transparent 3px, rgba(84, 226, 255, 0.022) 4px),
     linear-gradient(180deg, rgba(0, 0, 0, 0.1), transparent 20%, transparent 74%, rgba(0, 0, 0, 0.2)),
