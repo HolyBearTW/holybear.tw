@@ -896,6 +896,10 @@ html.dark body:not(:has(.VPHome)):not(.is-home-page) .VPSidebar.open {
 .VPNavBarSearch { flex-grow: 1; display: flex; justify-content: flex-end; align-items: center; }
 .VPDoc .VPNavBarSearch, .VPContent .VPNavBarSearch { justify-content: flex-end !important; }
 
+@media (min-width: 768px) {
+  .VPNavBarSearch { margin-right: 4px; }
+}
+
 @media (max-width: 768px) {
   .VPNavBarSearch { flex-grow: 0; justify-content: flex-end; align-items: center; }
   .DocSearch-Button {
@@ -2032,11 +2036,48 @@ select {
 
 .VPNavBarMenuLink,
 .VPNavBarMenuGroup .button {
-  min-height: 38px;
   border-radius: var(--hb-card-radius) !important;
-  padding-inline: 12px !important;
+  padding-inline: 8px !important;
   font-weight: 650 !important;
   transition: color 0.18s ease, background 0.18s ease, transform 0.18s ease !important;
+}
+
+.VPNavBarMenuLink {
+  height: 34px !important;
+  min-height: 34px;
+  line-height: 34px !important;
+}
+
+.VPNavBarMenu .list {
+  align-items: center;
+  gap: 4px;
+}
+
+.VPNavBarMenuGroup > .button {
+  position: relative;
+  height: var(--vp-nav-height) !important;
+  min-height: var(--vp-nav-height);
+  line-height: var(--vp-nav-height) !important;
+}
+
+.VPNavBarMenuGroup > .button::before {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  left: 0;
+  height: 34px;
+  border-radius: var(--hb-card-radius);
+  background: transparent;
+  content: "";
+  pointer-events: none;
+  transform: translateY(-50%);
+  transition: background 0.18s ease;
+}
+
+.VPNavBarMenuGroup > .button .text {
+  position: relative;
+  z-index: 1;
+  line-height: var(--vp-nav-height) !important;
 }
 
 .VPFlyout,
@@ -2066,11 +2107,20 @@ html.dark .VPNavBarMenuGroup .VPMenu {
   box-shadow: 0 18px 44px rgba(0, 0, 0, 0.26) !important;
 }
 
-.VPNavBarMenuLink:hover,
-.VPNavBarMenuGroup .button:hover {
+.VPNavBarMenuLink:hover {
   background: rgba(0, 255, 238, 0.1) !important;
   color: var(--vp-c-brand-1) !important;
   transform: translateY(-1px);
+}
+
+.VPNavBarMenuGroup > .button:hover {
+  background: transparent !important;
+  color: var(--vp-c-brand-1) !important;
+  transform: none;
+}
+
+.VPNavBarMenuGroup > .button:hover::before {
+  background: rgba(0, 255, 238, 0.1);
 }
 
 .VPNavBarTitle img,
