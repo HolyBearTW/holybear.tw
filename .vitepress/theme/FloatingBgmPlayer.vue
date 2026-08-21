@@ -2091,6 +2091,16 @@ function toggleRepeatOne() {
               inset 0 0 0 1px rgba(0, 184, 212, 0.1);
 }
 
+:global(html:not(.dark) .sidebar-toggle .sidebar-icon) {
+  color: #087f94;
+  text-shadow: 0 2px 10px rgba(8, 127, 148, 0.2);
+}
+
+:global(html:not(.dark) .sidebar-toggle:hover .sidebar-icon) {
+  color: #076f82;
+  text-shadow: 0 2px 12px rgba(8, 127, 148, 0.28);
+}
+
 :global(html:not(.dark) .title-toast) {
   color: #082936;
   background: rgba(246, 252, 255, 0.94);

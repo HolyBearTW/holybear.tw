@@ -57,12 +57,18 @@ function toSidebar(files, baseDir) {
             continue;
         }
 
-        let title = null, listdate = null;
+        let title = null, listdate = null, category = null;
 
         try {
             const fm = matter(rawContent);
             title = fm.data.title;
             listdate = fm.data.listdate || fm.data.listDate;
+            const rawCategory = fm.data.category;
+            if (Array.isArray(rawCategory)) {
+                category = rawCategory.filter(Boolean).join('、');
+            } else if (typeof rawCategory === 'string') {
+                category = rawCategory.trim();
+            }
         } catch (err) {
             console.error(`Error parsing front matter for file ${file}:`, err);
         }
@@ -89,7 +95,7 @@ function toSidebar(files, baseDir) {
                 }
             }
             postItems.push({
-                text: title,
+                text: category ? `[${category}] ${title}` : title,
                 link,
                 listdate: toDateStr(listdate),
             });

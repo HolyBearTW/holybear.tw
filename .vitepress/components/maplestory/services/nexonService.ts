@@ -266,7 +266,7 @@ export const fetchCharacterData = async (characterName: string, apiKey: string, 
   }
 
   return {
-    basic, stat, equipment, ability, hyperStat, linkSkill, union, unionRaider, unionArtifact, unionChampion,
+    ocid, basic, stat, equipment, ability, hyperStat, linkSkill, union, unionRaider, unionArtifact, unionChampion,
     petEquipment, familiar, symbolEquipment, setEffect, vMatrix, hexaMatrix, hexaMatrixStat,
     dojo, skill5, skill6, skill0, skill1, skill2, skill3, skill4,
     character_basic_7days_ago: basic7Days,

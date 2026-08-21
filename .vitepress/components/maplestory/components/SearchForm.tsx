@@ -55,7 +55,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
             </div>
 
             <form onSubmit={handleSearch} className="w-full max-w-2xl relative group">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-indigo-400 transition-colors" />
+                <Search className="maple-search-leading-icon absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors" />
                 <input 
                     ref={searchInputRef}
                     value={characterName}
@@ -63,7 +63,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
                     onFocus={() => setShowHistory(true)}
                     onBlur={() => setTimeout(() => setShowHistory(false), 200)}
                     placeholder="輸入角色名稱"
-                    className="w-full bg-[#1a1d24] border border-slate-700 rounded-xl py-3 pl-12 pr-20 sm:pr-32 text-sm sm:text-base focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition-all text-white placeholder:text-slate-600 shadow-lg"
+                    className="maple-character-search-input w-full bg-[#1a1d24] border border-slate-700 rounded-xl py-3 pl-12 pr-20 sm:pr-32 text-sm sm:text-base focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition-all text-white placeholder:text-slate-600 shadow-lg"
                 />
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1 items-center">
                     {data && (
@@ -169,12 +169,12 @@ export const SearchStatus: React.FC<SearchStatusProps> = ({
 
 export const SearchEmptyState: React.FC = () => {
   return (
-    <div className="maple-empty-state flex flex-col items-center mt-6">
-      <div className="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mb-3 opacity-50">
-        <Search className="w-8 h-8 text-slate-500" />
+    <div className="maple-empty-state flex flex-col items-center mt-4 mx-auto">
+      <div className="maple-empty-state-icon w-20 h-20 rounded-full flex items-center justify-center mb-3">
+        <Search className="w-8 h-8" />
       </div>
-      <h2 className="text-xl font-bold text-slate-300 mb-2">開始查詢</h2>
-      <p className="text-slate-500 max-w-sm text-center">輸入角色名稱，查看新楓之谷的詳細數據與裝備。</p>
+      <h2 className="text-xl font-bold mb-2">開始查詢</h2>
+      <p className="max-w-sm text-center">輸入角色名稱，查看新楓之谷的詳細數據與裝備。</p>
     </div>
   );
 };

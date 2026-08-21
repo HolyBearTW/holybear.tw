@@ -4014,3 +4014,1181 @@ body:has(.VPHero) .VPHero {
     padding-bottom: 96px !important;
   }
 }
+
+/* 全站導覽列搜尋：桌面版統一使用冷色玻璃按鈕。 */
+@media (min-width: 768px) {
+  .VPNavBarSearchButton,
+  .DocSearch-Button {
+    min-height: 38px !important;
+    color: #294b59 !important;
+    background: rgba(247, 252, 253, 0.88) !important;
+    border: 1px solid rgba(36, 94, 112, 0.24) !important;
+    border-radius: 10px !important;
+    box-shadow: 0 7px 20px rgba(35, 76, 94, 0.13) !important;
+    backdrop-filter: blur(14px) saturate(135%) !important;
+    -webkit-backdrop-filter: blur(14px) saturate(135%) !important;
+    transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease !important;
+  }
+
+  .VPNavBarSearchButton:hover,
+  .VPNavBarSearchButton:focus-visible,
+  .DocSearch-Button:hover,
+  .DocSearch-Button:focus-visible {
+    color: #087f94 !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+    border-color: rgba(8, 127, 148, 0.5) !important;
+    box-shadow: 0 8px 24px rgba(35, 76, 94, 0.17) !important;
+    outline: none !important;
+  }
+
+  .VPNavBarSearchButton .vpi-search,
+  .VPNavBarSearchButton .text,
+  .VPNavBarSearchButton .keys,
+  .VPNavBarSearchButton .keys kbd,
+  .DocSearch-Button .DocSearch-Search-Icon,
+  .DocSearch-Button .DocSearch-Button-Placeholder,
+  .DocSearch-Button .DocSearch-Button-Key {
+    color: #365967 !important;
+  }
+
+  .VPNavBarSearchButton .keys,
+  .DocSearch-Button .DocSearch-Button-Key {
+    background: rgba(36, 94, 112, 0.08) !important;
+    border-color: rgba(36, 94, 112, 0.2) !important;
+    box-shadow: none !important;
+  }
+
+  html.dark .VPNavBarSearchButton,
+  html.dark .DocSearch-Button {
+    color: rgba(255, 255, 255, 0.9) !important;
+    background: rgba(7, 25, 38, 0.68) !important;
+    border-color: rgba(125, 211, 252, 0.32) !important;
+    box-shadow: 0 7px 20px rgba(0, 0, 0, 0.16) !important;
+  }
+
+  html.dark .VPNavBarSearchButton:hover,
+  html.dark .VPNavBarSearchButton:focus-visible,
+  html.dark .DocSearch-Button:hover,
+  html.dark .DocSearch-Button:focus-visible {
+    color: #ffffff !important;
+    background: rgba(8, 47, 64, 0.8) !important;
+    border-color: rgba(103, 232, 249, 0.58) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2) !important;
+  }
+
+  html.dark .VPNavBarSearchButton .vpi-search,
+  html.dark .VPNavBarSearchButton .text,
+  html.dark .VPNavBarSearchButton .keys,
+  html.dark .VPNavBarSearchButton .keys kbd,
+  html.dark .DocSearch-Button .DocSearch-Search-Icon,
+  html.dark .DocSearch-Button .DocSearch-Button-Placeholder,
+  html.dark .DocSearch-Button .DocSearch-Button-Key {
+    color: rgba(255, 255, 255, 0.9) !important;
+  }
+
+  html.dark .VPNavBarSearchButton .keys,
+  html.dark .DocSearch-Button .DocSearch-Button-Key {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-color: rgba(255, 255, 255, 0.18) !important;
+  }
+}
+
+/* Final scroll-top authority: outrank legacy Blog/local-nav glass rules. */
+html body.is-blog-page.hb-at-scroll-top:not(:has(.VPHome)):not(.is-home-page) .VPNav,
+html body.is-blog-page.hb-at-scroll-top:not(:has(.VPHome)):not(.is-home-page) .VPNavBar,
+html body.is-blog-page.hb-at-scroll-top:not(:has(.VPHome)):not(.is-home-page) .VPNavBar .wrapper,
+html body.is-blog-page.hb-at-scroll-top:not(:has(.VPHome)):not(.is-home-page) .VPNavBar .container,
+html body.is-blog-page.hb-at-scroll-top:not(:has(.VPHome)):not(.is-home-page) .VPNavBar .content,
+html body.is-blog-page.hb-at-scroll-top:not(:has(.VPHome)):not(.is-home-page) .VPNavBar .content-body,
+html body.is-blog-page.hb-at-scroll-top:not(:has(.VPHome)):not(.is-home-page) .VPLocalNav,
+html body.is-blog-page.hb-at-scroll-top:not(:has(.VPHome)):not(.is-home-page) .VPLocalNav .container,
+html body.is-blog-page.hb-at-scroll-top:not(:has(.VPHome)):not(.is-home-page) .VPLocalNav .menu,
+html body.is-blog-page.hb-at-scroll-top:not(:has(.VPHome)):not(.is-home-page) .VPLocalNav .title,
+html body.is-blog-page.hb-at-scroll-top:not(:has(.VPHome)):not(.is-home-page) .VPLocalNav .VPLocalNavOutlineDropdown {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html body.is-blog-page.hb-at-scroll-top:not(:has(.VPHome)):not(.is-home-page) .VPNavBar.has-sidebar::before,
+html body.is-blog-page.hb-at-scroll-top:not(:has(.VPHome)):not(.is-home-page) .VPNavBar.has-sidebar::after,
+html body.is-blog-page.hb-at-scroll-top:not(:has(.VPHome)):not(.is-home-page) .VPLocalNav::before,
+html body.is-blog-page.hb-at-scroll-top:not(:has(.VPHome)):not(.is-home-page) .VPLocalNav::after {
+  display: none !important;
+  content: none !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Blog desktop sidebar shell must stay invisible; only #VPSidebarNav is a card. */
+@media (min-width: 960px) {
+  html body.is-blog-page:not(:has(.VPHome)):not(.is-home-page) .VPSidebar,
+  html body.is-blog-page:not(:has(.VPHome)):not(.is-home-page) .VPSidebar.open,
+  html.dark body.is-blog-page:not(:has(.VPHome)):not(.is-home-page) .VPSidebar,
+  html.dark body.is-blog-page:not(:has(.VPHome)):not(.is-home-page) .VPSidebar.open,
+  html:not(.dark) body.is-blog-page:not(:has(.VPHome)):not(.is-home-page) .VPSidebar,
+  html:not(.dark) body.is-blog-page:not(:has(.VPHome)):not(.is-home-page) .VPSidebar.open {
+    top: 0 !important;
+    height: 100vh !important;
+    padding-top: calc(
+      var(--vp-nav-height, 64px) +
+      var(--vp-layout-top-height, 0px) +
+      var(--vp-doc-top-height, 0px) +
+      48px
+    ) !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    filter: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  html body.is-blog-page:not(:has(.VPHome)):not(.is-home-page) .VPSidebar #VPSidebarNav {
+    margin-top: 0 !important;
+  }
+
+  html body.is-blog-page:not(:has(.VPHome)):not(.is-home-page) .VPDoc .aside-container {
+    padding-top: calc(
+      var(--vp-nav-height, 64px) +
+      var(--vp-layout-top-height, 0px) +
+      var(--vp-doc-top-height, 0px) +
+      48px
+    ) !important;
+  }
+
+  html body.is-blog-page:not(:has(.VPHome)):not(.is-home-page) .VPSidebar::before,
+  html body.is-blog-page:not(:has(.VPHome)):not(.is-home-page) .VPSidebar::after,
+  html body.is-blog-page:not(:has(.VPHome)):not(.is-home-page) .VPSidebar .curtain,
+  html.dark body.is-blog-page:not(:has(.VPHome)):not(.is-home-page) .VPSidebar::before,
+  html.dark body.is-blog-page:not(:has(.VPHome)):not(.is-home-page) .VPSidebar::after,
+  html.dark body.is-blog-page:not(:has(.VPHome)):not(.is-home-page) .VPSidebar .curtain {
+    display: none !important;
+    content: none !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}
+
+/* Blog light mode: keep text and navigation readable over decorative backgrounds. */
+html:not(.dark) body.is-blog-page {
+  --vp-c-text-1: #173746 !important;
+  --vp-c-text-2: #526b78 !important;
+  --vp-c-text-3: #6b818c !important;
+}
+
+html:not(.dark) body.is-blog-page .VPNav {
+  background: rgba(237, 246, 249, 0.72) !important;
+  border-bottom: 1px solid rgba(36, 94, 112, 0.14) !important;
+  box-shadow: 0 8px 26px rgba(35, 76, 94, 0.1) !important;
+  backdrop-filter: blur(22px) saturate(148%) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(148%) !important;
+}
+
+html:not(.dark) body.is-blog-page .VPNavBar {
+  background: transparent !important;
+  border-bottom-color: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+@media (min-width: 960px) {
+  html:not(.dark) body.is-blog-page .VPNavBar.has-sidebar {
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  html:not(.dark) body.is-blog-page .VPNavBar.has-sidebar::before,
+  html:not(.dark) body.is-blog-page .VPNavBar.has-sidebar::after {
+    display: none !important;
+    content: none !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}
+
+html:not(.dark) body.is-blog-page .VPNavBarTitle .title,
+html:not(.dark) body.is-blog-page .VPNavBarTitle .title *,
+html:not(.dark) body.is-blog-page .VPNavBarMenuLink,
+html:not(.dark) body.is-blog-page .VPNavBarMenuGroup > .button,
+html:not(.dark) body.is-blog-page .VPNavBarMenuGroup > .button *,
+html:not(.dark) body.is-blog-page .VPNavBarTranslations > .button,
+html:not(.dark) body.is-blog-page .VPNavBarTranslations > .button *,
+html:not(.dark) body.is-blog-page .VPSocialLink {
+  color: #294b59 !important;
+  text-shadow: none !important;
+}
+
+body.is-blog-page .VPNavBarTitle.has-sidebar .title {
+  border-bottom-color: transparent !important;
+}
+
+html:not(.dark) body.is-blog-page .VPNavBarMenuLink:hover,
+html:not(.dark) body.is-blog-page .VPNavBarMenuGroup > .button:hover,
+html:not(.dark) body.is-blog-page .VPNavBarTranslations > .button:hover,
+html:not(.dark) body.is-blog-page .VPSocialLink:hover {
+  color: #087f94 !important;
+}
+
+html:not(.dark) body.is-blog-page .VPNavBarHamburger .top,
+html:not(.dark) body.is-blog-page .VPNavBarHamburger .middle,
+html:not(.dark) body.is-blog-page .VPNavBarHamburger .bottom {
+  background-color: #294b59 !important;
+}
+
+html:not(.dark) body.is-blog-page .VPDoc .vp-doc,
+html:not(.dark) body.is-blog-page .VPDoc .vp-doc p,
+html:not(.dark) body.is-blog-page .VPDoc .vp-doc li,
+html:not(.dark) body.is-blog-page .VPDoc .vp-doc td,
+html:not(.dark) body.is-blog-page .blog-post-title {
+  color: #294b59 !important;
+}
+
+html:not(.dark) body.is-blog-page .VPDoc .vp-doc h1,
+html:not(.dark) body.is-blog-page .VPDoc .vp-doc h2,
+html:not(.dark) body.is-blog-page .VPDoc .vp-doc h3,
+html:not(.dark) body.is-blog-page .VPDoc .vp-doc h4,
+html:not(.dark) body.is-blog-page .VPDoc .vp-doc h5,
+html:not(.dark) body.is-blog-page .VPDoc .vp-doc h6 {
+  color: #123544 !important;
+  text-shadow: none !important;
+}
+
+/* Blog heading anchors: align every # marker with its heading text baseline. */
+body.is-blog-page .VPDoc .vp-doc h1 > .header-anchor,
+body.is-blog-page .VPDoc .vp-doc h2 > .header-anchor,
+body.is-blog-page .VPDoc .vp-doc h3 > .header-anchor,
+body.is-blog-page .VPDoc .vp-doc h4 > .header-anchor,
+body.is-blog-page .VPDoc .vp-doc h5 > .header-anchor,
+body.is-blog-page .VPDoc .vp-doc h6 > .header-anchor {
+  margin-top: 0 !important;
+  line-height: inherit !important;
+  transform: none !important;
+}
+
+body.is-blog-page .VPDoc .vp-doc h1 > .header-anchor,
+body.is-blog-page .VPDoc .vp-doc h3 > .header-anchor,
+body.is-blog-page .VPDoc .vp-doc h4 > .header-anchor,
+body.is-blog-page .VPDoc .vp-doc h5 > .header-anchor,
+body.is-blog-page .VPDoc .vp-doc h6 > .header-anchor {
+  top: 0 !important;
+}
+
+body.is-blog-page .VPDoc .vp-doc h2 > .header-anchor {
+  top: 28px !important;
+}
+
+/* The first article heading intentionally uses compact 5px top padding. */
+body.is-blog-page .VPDoc .vp-doc > div > h1:first-child > .header-anchor,
+body.is-blog-page .VPDoc .vp-doc > div > h2:first-child > .header-anchor {
+  top: 5px !important;
+  margin-top: 0 !important;
+}
+
+/* Keep hash/outline targets below the site's fixed navigation layers. */
+body.is-blog-page .VPDoc .vp-doc h1[id],
+body.is-blog-page .VPDoc .vp-doc h2[id],
+body.is-blog-page .VPDoc .vp-doc h3[id],
+body.is-blog-page .VPDoc .vp-doc h4[id],
+body.is-blog-page .VPDoc .vp-doc h5[id],
+body.is-blog-page .VPDoc .vp-doc h6[id] {
+  scroll-margin-top: 72px !important;
+}
+
+@media (max-width: 959px) {
+  body.is-blog-page .VPDoc .vp-doc h1[id],
+  body.is-blog-page .VPDoc .vp-doc h2[id],
+  body.is-blog-page .VPDoc .vp-doc h3[id],
+  body.is-blog-page .VPDoc .vp-doc h4[id],
+  body.is-blog-page .VPDoc .vp-doc h5[id],
+  body.is-blog-page .VPDoc .vp-doc h6[id] {
+    scroll-margin-top: 112px !important;
+  }
+}
+
+html:not(.dark) body.is-blog-page .VPDoc .vp-doc a:not(.header-anchor) {
+  color: #087f94 !important;
+}
+
+html:not(.dark) body.is-blog-page .VPSidebar,
+html:not(.dark) body.is-blog-page .VPSidebar.open {
+  color: #294b59 !important;
+  background: rgba(247, 252, 253, 0.9) !important;
+}
+
+html:not(.dark) body.is-blog-page .VPSidebar .VPSidebarItem .text,
+html:not(.dark) body.is-blog-page .VPSidebar .VPSidebarItem .link,
+html:not(.dark) body.is-blog-page .VPSidebar .VPLink.link {
+  color: #365967 !important;
+  text-shadow: none !important;
+}
+
+html:not(.dark) body.is-blog-page .VPSidebar .VPSidebarItem.is-active > .item .link,
+html:not(.dark) body.is-blog-page .VPSidebar .VPSidebarItem .link:hover {
+  color: #087f94 !important;
+}
+
+html:not(.dark) body.is-blog-page .VPDocAsideOutline {
+  color: #294b59 !important;
+  background: rgba(247, 252, 253, 0.76) !important;
+  border-color: rgba(36, 94, 112, 0.2) !important;
+  box-shadow: 0 10px 28px rgba(35, 76, 94, 0.12) !important;
+  backdrop-filter: blur(18px) saturate(142%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(142%) !important;
+}
+
+html:not(.dark) body.is-blog-page .VPDocAsideOutline .outline-title,
+html:not(.dark) body.is-blog-page .VPDocAsideOutline .outline-link,
+html:not(.dark) body.is-blog-page .VPDocAsideOutline .outline-link .text,
+html:not(.dark) body.is-blog-page .VPDocAsideOutline .outline-link .label {
+  color: #526b78 !important;
+  text-shadow: none !important;
+}
+
+html:not(.dark) body.is-blog-page .VPDocAsideOutline .outline-title {
+  color: #173746 !important;
+}
+
+html:not(.dark) body.is-blog-page .VPDocAsideOutline .outline-link:hover,
+html:not(.dark) body.is-blog-page .VPDocAsideOutline .outline-link.active,
+html:not(.dark) body.is-blog-page .VPDocAsideOutline .outline-link:hover .text,
+html:not(.dark) body.is-blog-page .VPDocAsideOutline .outline-link.active .text,
+html:not(.dark) body.is-blog-page .VPDocAsideOutline .outline-link:hover .label,
+html:not(.dark) body.is-blog-page .VPDocAsideOutline .outline-link.active .label {
+  color: #087f94 !important;
+}
+
+html:not(.dark) body.is-blog-page .VPDocAsideOutline .outline-link:hover,
+html:not(.dark) body.is-blog-page .VPDocAsideOutline .outline-link:focus-visible,
+html:not(.dark) body.is-blog-page .VPDocAsideOutline .outline-link.active {
+  color: #087f94 !important;
+  background: rgba(36, 94, 112, 0.08) !important;
+}
+
+html.dark body.is-blog-page .VPDocAsideOutline .outline-link:hover,
+html.dark body.is-blog-page .VPDocAsideOutline .outline-link:focus-visible,
+html.dark body.is-blog-page .VPDocAsideOutline .outline-link.active {
+  color: rgba(255, 255, 255, 0.96) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+html:not(.dark) body.is-blog-page .VPDocAsideOutline .outline-marker {
+  background-color: #0a9b8e !important;
+}
+
+/* Blog desktop sidebar: match the floating card treatment used by the outline. */
+@media (min-width: 960px) {
+  body.is-blog-page .VPSidebar,
+  body.is-blog-page .VPSidebar.open,
+  html:not(.dark) body.is-blog-page .VPSidebar,
+  html:not(.dark) body.is-blog-page .VPSidebar.open,
+  html.dark body.is-blog-page .VPSidebar,
+  html.dark body.is-blog-page .VPSidebar.open {
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    border: 0 !important;
+    border-right-color: transparent !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    overflow: visible !important;
+  }
+
+  body.is-blog-page .VPSidebar .curtain,
+  html:not(.dark) body.is-blog-page .VPSidebar .curtain,
+  html.dark body.is-blog-page .VPSidebar .curtain {
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  body.is-blog-page .VPSidebar #VPSidebarNav {
+    position: relative;
+    flex: 0 0 auto !important;
+    width: 224px;
+    max-width: calc(100vw - 48px);
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    margin-top: 48px;
+    margin-bottom: 1.5em !important;
+    padding: 16px 18px !important;
+    border-radius: var(--hb-card-radius) !important;
+    overflow: visible;
+    box-sizing: border-box;
+    transition: background 0.3s;
+  }
+
+  body.is-blog-page .VPSidebar #VPSidebarNav::before {
+    content: "文章列表";
+    display: block;
+    flex: 0 0 auto;
+    margin: 0 0 4px;
+    color: var(--vp-c-text-1);
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 32px;
+  }
+
+  html[lang^="en"] body.is-blog-page .VPSidebar #VPSidebarNav::before {
+    content: "Blog list";
+  }
+
+  body.is-blog-page .VPSidebar #VPSidebarNav .VPLink.link {
+    display: block !important;
+    width: 100%;
+    max-width: 100%;
+    padding: 4px 8px;
+    margin: -4px -8px;
+    border-radius: 4px;
+    box-sizing: border-box;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    transform: none !important;
+    transition: color 0.2s ease, background-color 0.2s ease, transform 0.2s ease !important;
+  }
+
+  body.is-blog-page .VPSidebar #VPSidebarNav .VPLink.link .text {
+    display: block;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  body.is-blog-page .VPSidebar #VPSidebarNav .VPLink.link:hover {
+    transform: translateX(2px) !important;
+  }
+
+  body.is-blog-page .VPSidebar #VPSidebarNav .VPSidebarItem,
+  body.is-blog-page .VPSidebar #VPSidebarNav .VPSidebarItem .item {
+    background: transparent !important;
+  }
+
+  html:not(.dark) body.is-blog-page .VPSidebar #VPSidebarNav .VPLink.link:hover,
+  html:not(.dark) body.is-blog-page .VPSidebar #VPSidebarNav .VPLink.link:focus-visible {
+    color: #087f94 !important;
+    background: rgba(36, 94, 112, 0.08) !important;
+  }
+
+  html.dark body.is-blog-page .VPSidebar #VPSidebarNav .VPLink.link:hover,
+  html.dark body.is-blog-page .VPSidebar #VPSidebarNav .VPLink.link:focus-visible {
+    color: rgba(255, 255, 255, 0.96) !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+  }
+
+  html:not(.dark) body.is-blog-page .VPSidebar #VPSidebarNav {
+    color: #294b59 !important;
+    background: rgba(247, 252, 253, 0.76) !important;
+    border: 1px solid rgba(36, 94, 112, 0.2) !important;
+    box-shadow: 0 10px 28px rgba(35, 76, 94, 0.12) !important;
+    backdrop-filter: blur(18px) saturate(142%) !important;
+    -webkit-backdrop-filter: blur(18px) saturate(142%) !important;
+  }
+
+html.dark body.is-blog-page .VPSidebar #VPSidebarNav {
+    background: rgba(12, 18, 26, 0.2) !important;
+    border: 1px solid var(--hb-border-dark) !important;
+    box-shadow: 0 14px 38px rgba(0, 0, 0, 0.22) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+  }
+}
+
+/* Light mode for Blog/Docs list pages displayed over decorative backgrounds. */
+html:not(.dark) body.blog-index-page .VPNav {
+  background: rgba(237, 246, 249, 0.76) !important;
+  border-bottom: 1px solid rgba(36, 94, 112, 0.14) !important;
+  box-shadow: 0 8px 26px rgba(35, 76, 94, 0.1) !important;
+  backdrop-filter: blur(22px) saturate(148%) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(148%) !important;
+}
+
+html:not(.dark) body.blog-index-page .VPNavBar,
+html:not(.dark) body.blog-index-page .VPNavBar .wrapper,
+html:not(.dark) body.blog-index-page .VPNavBar .container,
+html:not(.dark) body.blog-index-page .VPNavBar .content,
+html:not(.dark) body.blog-index-page .VPNavBar .content-body {
+  background: transparent !important;
+  border-bottom-color: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html:not(.dark) body.blog-index-page .VPNavBarTitle .title,
+html:not(.dark) body.blog-index-page .VPNavBarTitle .title *,
+html:not(.dark) body.blog-index-page .VPNavBarMenuLink,
+html:not(.dark) body.blog-index-page .VPNavBarMenuGroup > .button,
+html:not(.dark) body.blog-index-page .VPNavBarMenuGroup > .button *,
+html:not(.dark) body.blog-index-page .VPNavBarTranslations > .button,
+html:not(.dark) body.blog-index-page .VPNavBarTranslations > .button *,
+html:not(.dark) body.blog-index-page .VPSocialLink {
+  color: #294b59 !important;
+  text-shadow: none !important;
+}
+
+html:not(.dark) body.blog-index-page .VPHomeHero .text {
+  color: rgba(255, 255, 255, 0.96) !important;
+  -webkit-text-fill-color: currentColor !important;
+  text-shadow: 0 3px 16px rgba(2, 18, 31, 0.72) !important;
+}
+
+html:not(.dark) body.blog-index-page .VPHomeHero .tagline {
+  color: rgba(239, 249, 252, 0.9) !important;
+  text-shadow: 0 2px 12px rgba(2, 18, 31, 0.72) !important;
+}
+
+html:not(.dark) body.blog-index-page .blog-header-row .blog-title,
+html:not(.dark) body.blog-index-page .blog-header-row .blog-title svg,
+html:not(.dark) body.blog-index-page .blog-header-row .blog-authors,
+html:not(.dark) body.blog-index-page .blog-header-row .blog-authors strong {
+  color: rgba(255, 255, 255, 0.96) !important;
+  text-shadow: 0 2px 12px rgba(2, 18, 31, 0.72) !important;
+}
+
+html:not(.dark) body.blog-index-page .blog-header-row .blog-authors a {
+  color: #a5f3fc !important;
+  text-shadow: 0 2px 10px rgba(2, 18, 31, 0.68) !important;
+}
+
+/* Standard content-page light mode: transparent at top, light glass after scrolling. */
+html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPNav {
+  background: rgba(237, 246, 249, 0.76) !important;
+  border-bottom: 1px solid rgba(36, 94, 112, 0.14) !important;
+  box-shadow: 0 8px 26px rgba(35, 76, 94, 0.1) !important;
+  backdrop-filter: blur(22px) saturate(148%) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(148%) !important;
+}
+
+html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPNavBar,
+html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPNavBar .wrapper,
+html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPNavBar .container,
+html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPNavBar .content,
+html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPNavBar .content-body {
+  background: transparent !important;
+  border-bottom-color: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPNav:has(.VPNavBar.top) {
+  background: transparent !important;
+  border-bottom-color: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPNavBarTitle .title,
+html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPNavBarTitle .title *,
+html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPNavBarMenuLink,
+html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPNavBarMenuGroup > .button,
+html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPNavBarMenuGroup > .button *,
+html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPNavBarTranslations > .button,
+html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPNavBarTranslations > .button *,
+html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPSocialLink {
+  color: #294b59 !important;
+  text-shadow: none !important;
+}
+
+html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPNav:has(.VPNavBar.top) .VPNavBarTitle .title,
+html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPNav:has(.VPNavBar.top) .VPNavBarTitle .title *,
+html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPNav:has(.VPNavBar.top) .VPNavBarMenuLink,
+html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPNav:has(.VPNavBar.top) .VPNavBarMenuGroup > .button,
+html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPNav:has(.VPNavBar.top) .VPNavBarMenuGroup > .button *,
+html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPNav:has(.VPNavBar.top) .VPNavBarTranslations > .button,
+html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPNav:has(.VPNavBar.top) .VPNavBarTranslations > .button *,
+html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPNav:has(.VPNavBar.top) .VPSocialLink {
+  color: rgba(255, 255, 255, 0.94) !important;
+  text-shadow: 0 2px 10px rgba(2, 18, 31, 0.72) !important;
+}
+
+html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPNav:has(.VPNavBar.top) .VPNavBarHamburger .top,
+html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPNav:has(.VPNavBar.top) .VPNavBarHamburger .middle,
+html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPNav:has(.VPNavBar.top) .VPNavBarHamburger .bottom {
+  background-color: rgba(255, 255, 255, 0.94) !important;
+}
+
+html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPLocalNav {
+  color: #294b59 !important;
+  background: rgba(237, 246, 249, 0.82) !important;
+  border-bottom-color: rgba(36, 94, 112, 0.14) !important;
+  backdrop-filter: blur(18px) saturate(145%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(145%) !important;
+}
+
+html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPDocAsideOutline {
+  color: #294b59 !important;
+  background: rgba(247, 252, 253, 0.76) !important;
+  border-color: rgba(36, 94, 112, 0.2) !important;
+  box-shadow: 0 10px 28px rgba(35, 76, 94, 0.12) !important;
+  backdrop-filter: blur(18px) saturate(142%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(142%) !important;
+}
+
+html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPDocAsideOutline .outline-title {
+  color: #173746 !important;
+}
+
+html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPDocAsideOutline .outline-link,
+html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPDocAsideOutline .outline-link .text,
+html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPDocAsideOutline .outline-link .label {
+  color: #526b78 !important;
+  text-shadow: none !important;
+}
+
+html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPDocAsideOutline .outline-link:hover,
+html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPDocAsideOutline .outline-link:focus-visible,
+html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPDocAsideOutline .outline-link.active {
+  color: #087f94 !important;
+  background: rgba(36, 94, 112, 0.08) !important;
+}
+
+html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPDocAsideOutline .outline-marker {
+  background-color: #0a9b8e !important;
+}
+
+html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) > .VPFooter {
+  color: rgba(255, 255, 255, 0.88) !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  border-top-color: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) > .VPFooter .message,
+html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) > .VPFooter .copyright {
+  color: rgba(255, 255, 255, 0.88) !important;
+  text-shadow: 0 2px 10px rgba(2, 18, 31, 0.72) !important;
+}
+
+/* Shared light-mode chrome: every themed page is transparent at scroll top. */
+html:not(.dark) body .VPNav:has(.VPNavBar.top),
+html:not(.dark) body .VPNav:has(.VPNavBar.top) .VPNavBar,
+html:not(.dark) body .VPNav:has(.VPNavBar.top) .VPNavBar .wrapper,
+html:not(.dark) body .VPNav:has(.VPNavBar.top) .VPNavBar .container,
+html:not(.dark) body .VPNav:has(.VPNavBar.top) .VPNavBar .content,
+html:not(.dark) body .VPNav:has(.VPNavBar.top) .VPNavBar .content-body {
+  background: transparent !important;
+  background-color: transparent !important;
+  border-bottom-color: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html:not(.dark) body .VPNav:has(.VPNavBar.top) .VPNavBarTitle .title,
+html:not(.dark) body .VPNav:has(.VPNavBar.top) .VPNavBarTitle .title *,
+html:not(.dark) body .VPNav:has(.VPNavBar.top) .VPNavBarMenuLink,
+html:not(.dark) body .VPNav:has(.VPNavBar.top) .VPNavBarMenuGroup > .button,
+html:not(.dark) body .VPNav:has(.VPNavBar.top) .VPNavBarMenuGroup > .button *,
+html:not(.dark) body .VPNav:has(.VPNavBar.top) .VPNavBarTranslations > .button,
+html:not(.dark) body .VPNav:has(.VPNavBar.top) .VPNavBarTranslations > .button *,
+html:not(.dark) body .VPNav:has(.VPNavBar.top) .VPSocialLink {
+  color: rgba(255, 255, 255, 0.94) !important;
+  text-shadow: 0 2px 10px rgba(2, 18, 31, 0.72) !important;
+}
+
+html:not(.dark) body .VPNav:has(.VPNavBar.top) .VPNavBarHamburger .top,
+html:not(.dark) body .VPNav:has(.VPNavBar.top) .VPNavBarHamburger .middle,
+html:not(.dark) body .VPNav:has(.VPNavBar.top) .VPNavBarHamburger .bottom {
+  background-color: rgba(255, 255, 255, 0.94) !important;
+}
+
+/* Match the home page: keep every navigation surface clear at scroll top. */
+html body .VPNav:has(.VPNavBar.top),
+html body .VPNav:has(.VPNavBar.top) .VPNavBar,
+html body .VPNav:has(.VPNavBar.top) .VPNavBar .wrapper,
+html body .VPNav:has(.VPNavBar.top) .VPNavBar .container,
+html body .VPNav:has(.VPNavBar.top) .VPNavBar .content,
+html body .VPNav:has(.VPNavBar.top) .VPNavBar .content-body {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html body .VPNav:has(.VPNavBar.top) .VPNavBar.has-sidebar::before,
+html body .VPNav:has(.VPNavBar.top) .VPNavBar.has-sidebar::after {
+  display: none !important;
+  content: none !important;
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Blog articles: use one full-width glass layer after scrolling. */
+body.is-blog-page .VPNav:has(.VPNavBar:not(.top)) {
+  background: rgba(237, 246, 249, 0.72) !important;
+  background-color: rgba(237, 246, 249, 0.72) !important;
+  background-image: none !important;
+  border: 0 !important;
+  box-shadow: 0 8px 26px rgba(35, 76, 94, 0.1) !important;
+  backdrop-filter: blur(22px) saturate(148%) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(148%) !important;
+}
+
+html.dark body.is-blog-page .VPNav:has(.VPNavBar:not(.top)) {
+  background: rgba(12, 18, 26, 0.7) !important;
+  background-color: rgba(12, 18, 26, 0.7) !important;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28) !important;
+}
+
+html body.is-blog-page .VPNavBar.has-sidebar:not(.top)::before,
+html body.is-blog-page .VPNavBar.has-sidebar:not(.top)::after {
+  display: none !important;
+  content: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html body.is-blog-page .VPNavBar:not(.top) .divider,
+html body.is-blog-page .VPNavBar:not(.top) .divider-line {
+  display: none !important;
+  background: transparent !important;
+}
+
+@media (max-width: 959px) {
+  /* VPLocalNav is a separate layer, so explicitly follow the main nav's top state. */
+  html body:has(.VPNavBar.top) .VPLocalNav,
+  html body.hb-at-scroll-top .VPLocalNav,
+  html body:has(.VPNavBar.top) .VPLocalNav .container,
+  html body.hb-at-scroll-top .VPLocalNav .container,
+  html body:has(.VPNavBar.top) .VPLocalNav::before,
+  html body.hb-at-scroll-top .VPLocalNav::before,
+  html body:has(.VPNavBar.top) .VPLocalNav::after,
+  html body.hb-at-scroll-top .VPLocalNav::after {
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  html:not(.dark) body.is-blog-page .VPLocalNav .menu,
+  html:not(.dark) body.is-blog-page .VPLocalNav .menu-text,
+  html:not(.dark) body.is-blog-page .VPLocalNav .menu-icon,
+  html:not(.dark) body.is-blog-page .VPLocalNav .VPLocalNavOutlineDropdown > button,
+  html:not(.dark) body.is-blog-page .VPLocalNav .VPLocalNavOutlineDropdown > button .icon {
+    color: #294b59 !important;
+    text-shadow: none !important;
+  }
+
+  html:not(.dark) body.is-blog-page .VPNavBarSearchButton,
+  html:not(.dark) body.is-blog-page .VPNavBarSearchButton .vpi-search,
+  html:not(.dark) body.is-blog-page .VPNavBarSearchButton .vpi-search::before {
+    color: #294b59 !important;
+    text-shadow: none !important;
+  }
+
+  html:not(.dark) body.is-blog-page:has(.VPNavBar.top) .VPLocalNav .menu,
+  html:not(.dark) body.is-blog-page.hb-at-scroll-top .VPLocalNav .menu,
+  html:not(.dark) body.is-blog-page:has(.VPNavBar.top) .VPLocalNav .menu-text,
+  html:not(.dark) body.is-blog-page.hb-at-scroll-top .VPLocalNav .menu-text,
+  html:not(.dark) body.is-blog-page:has(.VPNavBar.top) .VPLocalNav .menu-icon,
+  html:not(.dark) body.is-blog-page.hb-at-scroll-top .VPLocalNav .menu-icon,
+  html:not(.dark) body.is-blog-page:has(.VPNavBar.top) .VPLocalNav .VPLocalNavOutlineDropdown > button,
+  html:not(.dark) body.is-blog-page.hb-at-scroll-top .VPLocalNav .VPLocalNavOutlineDropdown > button,
+  html:not(.dark) body.is-blog-page:has(.VPNavBar.top) .VPLocalNav .VPLocalNavOutlineDropdown > button .icon,
+  html:not(.dark) body.is-blog-page.hb-at-scroll-top .VPLocalNav .VPLocalNavOutlineDropdown > button .icon,
+  html:not(.dark) body.is-blog-page:has(.VPNavBar.top) .VPNavBarSearchButton,
+  html:not(.dark) body.is-blog-page.hb-at-scroll-top .VPNavBarSearchButton,
+  html:not(.dark) body.is-blog-page:has(.VPNavBar.top) .VPNavBarSearchButton .vpi-search,
+  html:not(.dark) body.is-blog-page.hb-at-scroll-top .VPNavBarSearchButton .vpi-search,
+  html:not(.dark) body.is-blog-page:has(.VPNavBar.top) .VPNavBarSearchButton .vpi-search::before,
+  html:not(.dark) body.is-blog-page.hb-at-scroll-top .VPNavBarSearchButton .vpi-search::before {
+    color: rgba(255, 255, 255, 0.94) !important;
+    text-shadow: 0 2px 10px rgba(2, 18, 31, 0.72) !important;
+  }
+}
+
+/* Keep the Blog article card shape identical in light and dark modes.
+   The generic mobile refinement above removes document radii, so restore the
+   article-specific radius after every responsive/theme override. */
+body.is-blog-page .VPDoc .content:not(.VPDocAsideOutline):not(.VPDocAsideOutline *) {
+  border-radius: 18px !important;
+  overflow: hidden !important;
+}
+
+/* Reliable scroll-top fallback for mobile browsers where VPNavBar.top lags behind. */
+html body.hb-at-scroll-top .VPNav,
+html body.hb-at-scroll-top .VPNavBar,
+html body.hb-at-scroll-top .VPNavBar .wrapper,
+html body.hb-at-scroll-top .VPNavBar .container,
+html body.hb-at-scroll-top .VPNavBar .content,
+html body.hb-at-scroll-top .VPNavBar .content-body {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html body.hb-at-scroll-top .VPNavBar.has-sidebar::before,
+html body.hb-at-scroll-top .VPNavBar.has-sidebar::after {
+  display: none !important;
+  content: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Blog article footer controls: readable light glass instead of dark defaults. */
+html:not(.dark) body.is-blog-page .VPDocFooter,
+html:not(.dark) body.is-blog-page .VPDocFooter .edit-info,
+html:not(.dark) body.is-blog-page .VPDocFooter .last-updated,
+html:not(.dark) body.is-blog-page .VPDocFooter .VPLastUpdated,
+html:not(.dark) body.is-blog-page .share-container,
+html:not(.dark) body.is-blog-page .vote-panel,
+html:not(.dark) body.is-blog-page .giscus-comments-container {
+  color: #365967 !important;
+  text-shadow: none !important;
+}
+
+html:not(.dark) body.is-blog-page .VPDocFooter .back-link::after,
+html:not(.dark) body.is-blog-page .VPDocFooter .edit-link-button,
+html:not(.dark) body.is-blog-page .VPDocFooter .pager-link .title {
+  color: #087f94 !important;
+  text-shadow: none !important;
+}
+
+html:not(.dark) body.is-blog-page .VPDocFooter .pager-link,
+html:not(.dark) body.is-blog-page .VPDocFooter .VPLink.link.pager-link {
+  color: #294b59 !important;
+  background: rgba(249, 253, 255, 0.84) !important;
+  border-color: rgba(36, 94, 112, 0.2) !important;
+  box-shadow: 0 8px 22px rgba(35, 76, 94, 0.1) !important;
+  backdrop-filter: blur(14px) saturate(138%) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(138%) !important;
+}
+
+html:not(.dark) body.is-blog-page .VPDocFooter .pager-link:hover,
+html:not(.dark) body.is-blog-page .VPDocFooter .VPLink.link.pager-link:hover {
+  background: rgba(226, 247, 250, 0.94) !important;
+  border-color: rgba(8, 127, 148, 0.48) !important;
+  box-shadow: 0 10px 26px rgba(8, 127, 148, 0.14) !important;
+}
+
+html:not(.dark) body.is-blog-page .VPDocFooter .pager-link .desc,
+html:not(.dark) body.is-blog-page .share-container .share-label {
+  color: #526b78 !important;
+  text-shadow: none !important;
+}
+
+html:not(.dark) body.is-blog-page .share-container .icon-btn {
+  color: #294b59 !important;
+  background: rgba(249, 253, 255, 0.88) !important;
+  border-color: rgba(36, 94, 112, 0.2) !important;
+  box-shadow: 0 4px 12px rgba(35, 76, 94, 0.08) !important;
+}
+
+html:not(.dark) body.is-blog-page .share-container .icon-btn:hover {
+  color: #ffffff !important;
+}
+
+html:not(.dark) body.is-blog-page .share-container .icon-btn.fb:hover {
+  background: #1877f2 !important;
+  border-color: #1877f2 !important;
+}
+
+html:not(.dark) body.is-blog-page .share-container .icon-btn.x:hover,
+html:not(.dark) body.is-blog-page .share-container .icon-btn.threads:hover {
+  background: #111827 !important;
+  border-color: #111827 !important;
+}
+
+html:not(.dark) body.is-blog-page .share-container .icon-btn.line:hover {
+  background: #06a94d !important;
+  border-color: #06a94d !important;
+}
+
+html:not(.dark) body.is-blog-page .share-container .icon-btn.copy:hover {
+  background: #087f94 !important;
+  border-color: #087f94 !important;
+}
+
+html:not(.dark) body.is-blog-page .vote-panel button {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #087f94, #00aeca) !important;
+  border-color: rgba(0, 136, 160, 0.72) !important;
+  box-shadow: 0 7px 18px rgba(0, 150, 180, 0.18) !important;
+}
+
+html:not(.dark) body.is-blog-page .vote-panel button:hover:not(:disabled),
+html:not(.dark) body.is-blog-page .vote-panel button.active {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #076f82, #009bb6) !important;
+  border-color: #087f94 !important;
+}
+
+html:not(.dark) body.is-blog-page .giscus-comments-placeholder {
+  color: #526b78 !important;
+  background: transparent !important;
+}
+
+/* Force legacy and inline-styled article tables to follow the light theme. */
+html:not(.dark) body.is-blog-page .VPDoc .vp-doc table {
+  color: #294b59 !important;
+  background: rgba(249, 253, 255, 0.84) !important;
+  background-color: rgba(249, 253, 255, 0.84) !important;
+  border-color: #aac4cc !important;
+  box-shadow: 0 8px 24px rgba(35, 76, 94, 0.1) !important;
+}
+
+html:not(.dark) body.is-blog-page .VPDoc .vp-doc table thead,
+html:not(.dark) body.is-blog-page .VPDoc .vp-doc table th {
+  color: #173746 !important;
+  background: rgba(214, 241, 246, 0.94) !important;
+  background-color: rgba(214, 241, 246, 0.94) !important;
+  border-color: #b3cbd2 !important;
+}
+
+html:not(.dark) body.is-blog-page .VPDoc .vp-doc table tbody,
+html:not(.dark) body.is-blog-page .VPDoc .vp-doc table tbody tr {
+  color: #294b59 !important;
+  background: rgba(249, 253, 255, 0.82) !important;
+  background-color: rgba(249, 253, 255, 0.82) !important;
+  border-color: #b8cdd3 !important;
+}
+
+html:not(.dark) body.is-blog-page .VPDoc .vp-doc table tbody tr:nth-child(even) {
+  background: rgba(232, 246, 249, 0.88) !important;
+  background-color: rgba(232, 246, 249, 0.88) !important;
+}
+
+html:not(.dark) body.is-blog-page .VPDoc .vp-doc table td {
+  color: #294b59 !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  border-color: #b8cdd3 !important;
+}
+
+html:not(.dark) body.is-blog-page .VPDoc .vp-doc table caption,
+html:not(.dark) body.is-blog-page .VPDoc .vp-doc table small {
+  color: #526b78 !important;
+  background: transparent !important;
+  text-shadow: none !important;
+}
+
+/* Inline `border: ... !important` cannot be replaced by author CSS; cover it visually. */
+html:not(.dark) body.is-blog-page .VPDoc .vp-doc table[style*="border"] {
+  position: relative !important;
+  isolation: isolate !important;
+  outline: 0 !important;
+  box-shadow: 0 8px 24px rgba(35, 76, 94, 0.1) !important;
+}
+
+html:not(.dark) body.is-blog-page .VPDoc .vp-doc table[style*="border"]::after {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 20 !important;
+  display: block !important;
+  box-sizing: border-box !important;
+  border: 2px solid #9fbcc5 !important;
+  border-radius: inherit !important;
+  pointer-events: none !important;
+}
+
+html:not(.dark) body.is-blog-page .VPDoc .vp-doc table td[style*="border"] {
+  position: relative !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+}
+
+html:not(.dark) body.is-blog-page .VPDoc .vp-doc table td[style*="border"]::after {
+  content: "" !important;
+  position: absolute !important;
+  inset: -1px !important;
+  z-index: 10 !important;
+  display: block !important;
+  box-sizing: border-box !important;
+  border: 2px solid #b3cbd2 !important;
+  pointer-events: none !important;
+}
+
+html:not(.dark) body.blog-index-page .VPFooter,
+html:not(.dark) body.is-blog-page .BlogVPFooter {
+  color: rgba(255, 255, 255, 0.88) !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  border-top-color: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html:not(.dark) body.blog-index-page .VPFooter .message,
+html:not(.dark) body.blog-index-page .VPFooter .copyright,
+html:not(.dark) body.is-blog-page .BlogVPFooter .message,
+html:not(.dark) body.is-blog-page .BlogVPFooter .copyright {
+  color: rgba(255, 255, 255, 0.88) !important;
+  text-shadow: 0 2px 10px rgba(2, 18, 31, 0.72) !important;
+}
+
+/* All desktop navigation flyouts share one readable light-mode palette. */
+@media (min-width: 768px) {
+  html:not(.dark) body .VPNavBarMenuGroup > .menu,
+  html:not(.dark) body .VPFlyout > .menu {
+    background: transparent !important;
+    background-color: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  html:not(.dark) body .VPNavBarMenuGroup .menu .VPMenu,
+  html:not(.dark) body .VPNavBarMenuGroup .VPMenu,
+  html:not(.dark) body .VPFlyout .menu .VPMenu,
+  html:not(.dark) body .VPFlyout .VPMenu,
+  html:not(.dark) body .hb-nav-menu-portal .VPMenu {
+    color: #294b59 !important;
+    background: rgba(247, 252, 253, 0.76) !important;
+    border: 1px solid rgba(36, 94, 112, 0.2) !important;
+    box-shadow: 0 18px 46px rgba(35, 76, 94, 0.18) !important;
+    backdrop-filter: blur(28px) saturate(160%) !important;
+    -webkit-backdrop-filter: blur(28px) saturate(160%) !important;
+  }
+
+  html:not(.dark) body .VPMenu .title,
+  html:not(.dark) body .VPMenu .label,
+  html:not(.dark) body .VPMenu .VPMenuLink,
+  html:not(.dark) body .VPMenu .VPLink.link,
+  html:not(.dark) body .VPMenu .VPLink.link span,
+  html:not(.dark) body .hb-nav-menu-portal .VPMenu .title,
+  html:not(.dark) body .hb-nav-menu-portal .VPMenu .label,
+  html:not(.dark) body .hb-nav-menu-portal .VPMenu .VPLink.link,
+  html:not(.dark) body .hb-nav-menu-portal .VPMenu .VPLink.link span {
+    color: #365967 !important;
+    background: transparent !important;
+    border-color: transparent !important;
+    text-shadow: none !important;
+  }
+
+  html:not(.dark) body .VPMenu .VPLink.link:hover,
+  html:not(.dark) body .VPMenu .VPLink.link:focus-visible,
+  html:not(.dark) body .VPMenu .VPLink.link.active,
+  html:not(.dark) body .hb-nav-menu-portal .VPMenu .VPLink.link:hover,
+  html:not(.dark) body .hb-nav-menu-portal .VPMenu .VPLink.link:focus-visible,
+  html:not(.dark) body .hb-nav-menu-portal .VPMenu .VPLink.link.active {
+    color: #087f94 !important;
+    background: rgba(36, 94, 112, 0.08) !important;
+    border-color: rgba(36, 94, 112, 0.12) !important;
+  }
+
+  html:not(.dark) body .VPMenu .VPLink.link:hover span,
+  html:not(.dark) body .VPMenu .VPLink.link:focus-visible span,
+  html:not(.dark) body .VPMenu .VPLink.link.active span,
+  html:not(.dark) body .hb-nav-menu-portal .VPMenu .VPLink.link:hover span,
+  html:not(.dark) body .hb-nav-menu-portal .VPMenu .VPLink.link:focus-visible span,
+  html:not(.dark) body .hb-nav-menu-portal .VPMenu .VPLink.link.active span {
+    color: #087f94 !important;
+  }
+}
+
+/* Mobile Blog sidebar: keep the expanded list below both navigation rows. */
+@media (max-width: 959px) {
+  html body.is-blog-page:not(:has(.VPHome)):not(.is-home-page) .VPSidebar,
+  html body.is-blog-page:not(:has(.VPHome)):not(.is-home-page) .VPSidebar.open {
+    top: calc(var(--vp-nav-height, 64px) + 48px) !important;
+    bottom: 0 !important;
+    width: min(86vw, 360px) !important;
+    max-width: 360px !important;
+    height: auto !important;
+    padding: 20px 18px 48px !important;
+    border-radius: 0 18px 0 0 !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 18px 0 44px rgba(0, 0, 0, 0.3) !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    backdrop-filter: blur(30px) saturate(160%) !important;
+    -webkit-backdrop-filter: blur(30px) saturate(160%) !important;
+    transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.32s ease !important;
+  }
+
+  html.dark body.is-blog-page:not(:has(.VPHome)):not(.is-home-page) .VPSidebar,
+  html.dark body.is-blog-page:not(:has(.VPHome)):not(.is-home-page) .VPSidebar.open {
+    color: rgba(255, 255, 255, 0.92) !important;
+    background: rgba(7, 17, 25, 0.74) !important;
+    background-color: rgba(7, 17, 25, 0.74) !important;
+  }
+
+  html:not(.dark) body.is-blog-page:not(:has(.VPHome)):not(.is-home-page) .VPSidebar,
+  html:not(.dark) body.is-blog-page:not(:has(.VPHome)):not(.is-home-page) .VPSidebar.open {
+    color: #294b59 !important;
+    background: rgba(247, 252, 253, 0.72) !important;
+    background-color: rgba(247, 252, 253, 0.72) !important;
+    border-right-color: rgba(36, 94, 112, 0.2) !important;
+    box-shadow: 18px 0 44px rgba(35, 76, 94, 0.2) !important;
+  }
+
+  html body.is-blog-page:not(:has(.VPHome)):not(.is-home-page) .VPSidebar .curtain,
+  html body.is-blog-page:not(:has(.VPHome)):not(.is-home-page) .VPSidebar.open .curtain {
+    display: none !important;
+  }
+
+  html body.is-blog-page:not(:has(.VPHome)):not(.is-home-page) .VPSidebar #VPSidebarNav,
+  html body.is-blog-page:not(:has(.VPHome)):not(.is-home-page) .VPSidebar.open #VPSidebarNav {
+    width: 100% !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+  }
+
+  html body.is-blog-page:not(:has(.VPHome)):not(.is-home-page) .VPBackdrop {
+    top: calc(var(--vp-nav-height, 64px) + 48px) !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  html:not(.dark) body.is-blog-page:not(:has(.VPHome)):not(.is-home-page) .VPBackdrop {
+    background: transparent !important;
+    background-color: transparent !important;
+  }
+}

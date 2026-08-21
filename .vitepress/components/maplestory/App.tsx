@@ -10,6 +10,7 @@ import UpdateLogBoard from './components/UpdateLogBoard';
 import HeroHeader from './components/HeroHeader';
 import KeySettingsModal from './components/KeySettingsModal';
 import RecentPowerRanking from './components/RecentPowerRanking';
+import CharacterGrowthHistory from './components/CharacterGrowthHistory';
 
 import { useMapleSearch } from './hooks/useMapleSearch';
 import { useAiAnalysis } from './hooks/useAiAnalysis';
@@ -119,7 +120,7 @@ const App: React.FC = () => {
         />
       </div>
 
-      <main className="max-w-[1600px] mx-auto p-6 mt-4">
+      <main className={`max-w-[1600px] mx-auto px-6 pb-6 ${!data && !loading && !error ? 'pt-0 mt-0' : 'pt-6 mt-4'}`}>
         <SearchStatus 
           loading={loading}
           isScanningBest={isScanningBest}
@@ -152,6 +153,8 @@ const App: React.FC = () => {
             currentAbilityInfo={currentAbilityInfo}
             getAbilityStyle={getAbilityStyle}
           />
+
+          <CharacterGrowthHistory data={data} />
 
            <AiAnalysisPanel 
             analyzing={analyzing}
@@ -200,9 +203,10 @@ const App: React.FC = () => {
               background: rgba(0,255,238,0.12);
               /* #00FFEE 主題色系 */
               box-sizing: border-box;
+              width: calc(100% - 3rem);
               max-width: 28rem;
-              margin-left: 1rem;
-              margin-right: 1rem;
+              margin-left: auto;
+              margin-right: auto;
               padding-left: 1rem;
               padding-right: 1rem;
               display: block;

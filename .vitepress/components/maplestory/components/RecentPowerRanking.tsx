@@ -1,23 +1,21 @@
 import React from 'react';
 import { Crown } from 'lucide-react';
 import { SERVER_ICONS } from '../constants';
-import { fetchMaplerHousePowerRanking } from '../services/maplerhouseService';
-
-interface RecentPowerRankingEntry {
-  characterName: string;
-  worldName: string;
-  jobName: string;
-  level: number;
-  characterImage: string;
-  combatPower: number;
-}
+import {
+  fetchMaplerHousePowerRanking,
+  MaplerHousePowerRankingEntry,
+} from '../services/maplerhouseService';
 
 interface RecentPowerRankingProps {
   onSelectCharacter: (name: string) => void;
 }
 
 const RecentPowerRanking: React.FC<RecentPowerRankingProps> = ({ onSelectCharacter }) => {
-  const [items, setItems] = React.useState<RecentPowerRankingEntry[]>([]);
+  const [items, setItems] = React.useState<MaplerHousePowerRankingEntry[]>([]);
+  const [page, setPage] = React.useState(1);
+  const [pageInput, setPageInput] = React.useState('1');
+  const [total, setTotal] = React.useState(0);
+  const [totalPages, setTotalPages] = React.useState(1);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -26,10 +24,13 @@ const RecentPowerRanking: React.FC<RecentPowerRankingProps> = ({ onSelectCharact
     setLoading(true);
     setError(null);
 
-    fetchMaplerHousePowerRanking()
-      .then((ranking) => {
+    fetchMaplerHousePowerRanking(page)
+      .then((rankingPage) => {
         if (!active) return;
-        setItems(ranking);
+        setItems(rankingPage.items);
+        setTotal(rankingPage.total);
+        setTotalPages(rankingPage.totalPages);
+        setPageInput(String(rankingPage.page));
       })
       .catch((err: unknown) => {
         if (!active) return;
@@ -45,11 +46,21 @@ const RecentPowerRanking: React.FC<RecentPowerRankingProps> = ({ onSelectCharact
     return () => {
       active = false;
     };
-  }, []);
+  }, [page]);
+
+  const goToPage = (event: React.FormEvent) => {
+    event.preventDefault();
+    const requestedPage = Number.parseInt(pageInput, 10);
+    const nextPage = Number.isFinite(requestedPage)
+      ? Math.min(Math.max(requestedPage, 1), totalPages)
+      : page;
+    setPageInput(String(nextPage));
+    setPage(nextPage);
+  };
 
   if (loading) {
     return (
-      <div className="max-w-xl mx-auto mt-6 bg-[#161b22] border border-slate-800 rounded-xl shadow-lg p-4 text-sm text-slate-400">
+      <div className="maple-ranking-panel max-w-xl mx-auto mt-6 bg-[#161b22] border border-slate-800 rounded-xl shadow-lg p-4 text-sm text-slate-400">
         正在載入近期戰力排名...
       </div>
     );
@@ -60,7 +71,7 @@ const RecentPowerRanking: React.FC<RecentPowerRankingProps> = ({ onSelectCharact
   }
 
   return (
-    <div className="max-w-xl mx-auto mt-6 bg-[#161b22] border border-slate-800 rounded-xl shadow-lg p-4">
+    <div className="maple-ranking-panel max-w-xl mx-auto mt-6 bg-[#161b22] border border-slate-800 rounded-xl shadow-lg p-4">
       <h3 className="text-sm font-semibold mb-3 flex items-center gap-2 text-slate-200">
         <Crown className="w-4 h-4 text-yellow-400" />
         近期戰力排名
@@ -74,7 +85,7 @@ const RecentPowerRanking: React.FC<RecentPowerRankingProps> = ({ onSelectCharact
             className="w-full text-left flex items-center gap-3 py-1.5 px-2 rounded hover:bg-slate-800/70 transition-colors"
           >
             <span className={`text-xs font-mono w-5 text-center shrink-0 ${idx < 3 ? 'text-indigo-300 font-bold' : 'text-slate-500'}`}>
-              {idx + 1}
+              {(page - 1) * 10 + idx + 1}
             </span>
             <div className="relative w-10 h-10 rounded-full overflow-hidden bg-slate-800 shrink-0">
               <img
@@ -95,6 +106,43 @@ const RecentPowerRanking: React.FC<RecentPowerRankingProps> = ({ onSelectCharact
             </div>
           </button>
         ))}
+      </div>
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-800 pt-3 text-xs text-slate-400">
+        <span>共 {total.toLocaleString()} 名・第 {page} / {totalPages} 頁</span>
+        <form onSubmit={goToPage} className="flex items-center gap-2">
+          <button
+            type="button"
+            disabled={page <= 1 || loading}
+            onClick={() => setPage((current) => Math.max(1, current - 1))}
+            className="rounded border border-slate-700 px-2 py-1 transition-colors hover:border-indigo-400 hover:text-indigo-300 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            上一頁
+          </button>
+          <label htmlFor="recent-power-ranking-page" className="sr-only">輸入排行榜頁次</label>
+          <input
+            id="recent-power-ranking-page"
+            type="number"
+            min={1}
+            max={totalPages}
+            value={pageInput}
+            onChange={(event) => setPageInput(event.target.value)}
+            className="w-16 rounded border border-slate-700 bg-[#0d1117] px-2 py-1 text-center text-slate-200 outline-none focus:border-indigo-400"
+          />
+          <button
+            type="submit"
+            className="maple-ranking-go-button rounded bg-indigo-600 px-2 py-1 font-semibold text-white transition-colors hover:bg-indigo-500"
+          >
+            前往
+          </button>
+          <button
+            type="button"
+            disabled={page >= totalPages || loading}
+            onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+            className="rounded border border-slate-700 px-2 py-1 transition-colors hover:border-indigo-400 hover:text-indigo-300 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            下一頁
+          </button>
+        </form>
       </div>
     </div>
   );

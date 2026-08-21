@@ -4,8 +4,8 @@ import {
   Zap, Star, Crown, Layers, PawPrint, Hexagon, Sword, Info, 
   CheckSquare, Square, Trophy, User, Link, Atom 
 } from 'lucide-react';
-import ExpTrendChart from './ExpTrendChart';
 import Familiar from './Familiar';
+import UnionRaiderSection from './UnionRaiderSection';
 
 interface CharacterDetailsProps {
   data: DashboardData;
@@ -615,19 +615,6 @@ const formatPetPotential = (potential: any) => {
 };
 
 const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => {
-  const [historyData, setHistoryData] = useState<any[]>([]);
-  const [historyLoading, setHistoryLoading] = useState(false);
-  useEffect(() => {
-    if (!data?.basic?.character_name || !apiKey) return;
-    setHistoryLoading(true);
-    import('../services/nexonService').then(({ fetchWeeklyHistory }) => {
-      fetchWeeklyHistory(data.basic.character_name, apiKey)
-        .then(history => setHistoryData(history || []))
-        .catch(err => console.error('History fetch failed', err))
-        .finally(() => setHistoryLoading(false));
-    });
-  }, [data?.basic?.character_name, apiKey]);
-
   const { union, unionArtifact, symbolEquipment, petEquipment, familiar, setEffect, vMatrix, hexaMatrix, hexaMatrixStat, dojo, linkSkill, skill0, skill1, skill2, skill3, skill4, skillHyper, skill5, skill6, hyperStat, unionChampion } = data;
   const [includeJanus, setIncludeJanus] = useState(true);
   const [includeHecate, setIncludeHecate] = useState(true);
@@ -676,15 +663,8 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
 
   return (
     <div className="flex flex-col gap-6 mt-6">
-      {/* 近7天經驗值趨勢 + 極限屬性區塊 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
-        <div className="bg-[#161b22] p-6 rounded-xl min-w-0 h-full">
-          <SectionHeader icon={<Star className="w-5 h-5 text-green-400" />} title="近7天經驗值趨勢" />
-          <ExpTrendChart key={historyData.length} historyData={historyData} loading={historyLoading} />
-        </div>
-        <div className="bg-[#161b22] p-6 rounded-xl min-w-0 h-full">
-          <HyperStatSection hyperStat={hyperStat} />
-        </div>
+      <div className="bg-[#161b22] p-6 rounded-xl min-w-0 w-full">
+        <HyperStatSection hyperStat={hyperStat} />
       </div>
 
       {/* 連結技能 - w-full + min-w-0 */}
@@ -1176,6 +1156,8 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
         )}
 
         </div>
+
+      <UnionRaiderSection union={union} unionRaider={data.unionRaider} />
 
     </div>
   );

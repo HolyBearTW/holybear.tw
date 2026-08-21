@@ -9,6 +9,13 @@ import PresetSwitcher from './PresetSwitcher';
 import StatTooltip from './StatTooltip';
 import EquipmentGrid from './EquipmentGrid';
 import CashEquipmentGrid from './CashEquipmentGrid';
+import {
+  fetchMaplerHouseCharacterRank,
+  fetchMaplerHouseHistoryStatus,
+  invalidateMaplerHouseRankingCache,
+  MaplerHouseCharacterRank,
+} from '../services/maplerhouseService';
+import MaplerHouseGrowthTracker from './MaplerHouseGrowthTracker';
 
 interface MainDashboardProps {
     data: any;
@@ -77,6 +84,58 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
     const hasRecentLogin = String(data.basic.access_flag).toLowerCase() === 'true';
     const [showRecentLoginStatus, setShowRecentLoginStatus] = React.useState(false);
     const [showBestCombatPower, setShowBestCombatPower] = React.useState(false);
+    const [recentPowerRank, setRecentPowerRank] = React.useState<MaplerHouseCharacterRank | null>(null);
+    const [recentPowerRankStatus, setRecentPowerRankStatus] = React.useState<'loading' | 'syncing' | 'found' | 'not-found' | 'error'>('loading');
+    const [rankingRefreshKey, setRankingRefreshKey] = React.useState(0);
+
+    React.useEffect(() => {
+      let active = true;
+      const characterName = data.basic?.character_name || '';
+      setRecentPowerRank(null);
+      setRecentPowerRankStatus('loading');
+
+      const loadRank = async () => {
+        let result = await fetchMaplerHouseCharacterRank(characterName);
+        let syncing = false;
+
+        if (!result && data.ocid) {
+          try {
+            const trackingStatus = await fetchMaplerHouseHistoryStatus(data.ocid);
+            const rankingEligible = Number(data.basic?.character_level || 0) >= 260;
+            if (trackingStatus.tracked && trackingStatus.job?.status === 'completed' && rankingEligible) {
+              invalidateMaplerHouseRankingCache();
+              result = await fetchMaplerHouseCharacterRank(characterName);
+              syncing = !result;
+            }
+          } catch {
+            // 名次查詢仍可維持「未列入」，不讓追蹤狀態錯誤覆蓋主要結果。
+          }
+        }
+
+        return { result, syncing };
+      };
+
+      loadRank()
+        .then(({ result, syncing }) => {
+          if (!active) return;
+          setRecentPowerRank(result);
+          setRecentPowerRankStatus(result ? 'found' : syncing ? 'syncing' : 'not-found');
+        })
+        .catch(() => {
+          if (!active) return;
+          setRecentPowerRank(null);
+          setRecentPowerRankStatus('error');
+        });
+
+      return () => {
+        active = false;
+      };
+    }, [data.basic?.character_name, data.basic?.character_level, data.ocid, rankingRefreshKey]);
+
+    const handleTrackingComplete = React.useCallback(() => {
+      invalidateMaplerHouseRankingCache();
+      setRankingRefreshKey((current) => current + 1);
+    }, []);
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -187,6 +246,12 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
 
                       <div className="mb-6"><StatRadarChart data={data} /></div>
 
+                      <MaplerHouseGrowthTracker
+                        ocid={data.ocid}
+                        characterName={data.basic.character_name}
+                        onTrackingComplete={handleTrackingComplete}
+                      />
+
                       <button onClick={handleAiAnalyze} disabled={analyzing} className="maple-ai-check-button w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold rounded-lg flex items-center justify-center gap-2 transition-all shadow-lg shadow-indigo-900/20 hover:translate-y-[-1px]">
                          {analyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
                          {aiAnalysis ? '重新分析' : 'AI 健檢'}
@@ -219,6 +284,17 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
                         )}
                      </div>
                      <div className="text-xl font-bold text-indigo-400 font-mono tracking-tight">{formatBigNumber(getStatVal('Combat Power'))}</div>
+                     <div className="mt-1 text-xs">
+                       {recentPowerRankStatus === 'loading' && <span className="text-slate-500">正在查詢近期排名...</span>}
+                       {recentPowerRankStatus === 'syncing' && <span className="text-emerald-400">正在同步近期戰力排名中...</span>}
+                       {recentPowerRankStatus === 'found' && recentPowerRank && (
+                         <span className="font-semibold text-yellow-300">
+                           近期戰力排名：第 {recentPowerRank.rank.toLocaleString()} / {recentPowerRank.total.toLocaleString()} 名
+                         </span>
+                       )}
+                       {recentPowerRankStatus === 'not-found' && <span className="text-slate-500">未列入近期戰力排名</span>}
+                       {recentPowerRankStatus === 'error' && <span className="text-slate-500">近期排名暫時無法取得</span>}
+                     </div>
                      {bestCombatPowerRecord && showBestCombatPower && (
                        <div
                          role="status"

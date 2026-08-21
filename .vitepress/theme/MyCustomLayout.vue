@@ -177,6 +177,93 @@ const updateBodyClass = (theme: string) => {
   }
 }
 
+const updateScrollTopClass = () => {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return
+  document.body.classList.toggle('hb-at-scroll-top', window.scrollY <= 1)
+}
+
+let blogHashAlignmentTimers: number[] = []
+
+const alignBlogHashTarget = () => {
+  if (typeof window === 'undefined' || !document.body.classList.contains('is-blog-page') || !window.location.hash) return
+
+  let targetId = window.location.hash.slice(1)
+  try {
+    targetId = decodeURIComponent(targetId)
+  } catch {
+    // Keep the original hash when it contains an incomplete escape sequence.
+  }
+
+  const target = document.getElementById(targetId)
+  if (!target?.closest('.VPDoc .vp-doc')) return
+
+  const targetTop = window.matchMedia('(max-width: 959px)').matches ? 112 : 72
+  const currentTop = target.getBoundingClientRect().top
+  if (Math.abs(currentTop - targetTop) < 1) return
+
+  window.scrollTo({
+    top: Math.max(0, window.scrollY + currentTop - targetTop),
+    behavior: 'auto'
+  })
+}
+
+const scheduleBlogHashAlignment = () => {
+  if (typeof window === 'undefined') return
+
+  blogHashAlignmentTimers.forEach(timer => window.clearTimeout(timer))
+  blogHashAlignmentTimers = [60, 450, 1100].map(delay => window.setTimeout(alignBlogHashTarget, delay))
+}
+
+const handleBlogSidebarMenuToggle = (event: MouseEvent) => {
+  if (!(event.target instanceof Element) || !document.body.classList.contains('is-blog-page')) return
+
+  const hashLink = event.target.closest<HTMLAnchorElement>(
+    '.VPDocAsideOutline a[href^="#"], .VPLocalNavOutlineDropdown a[href^="#"]'
+  )
+  const rawHash = hashLink?.getAttribute('href') || ''
+  if (hashLink && rawHash.length > 1) {
+    let targetId = rawHash.slice(1)
+    try {
+      targetId = decodeURIComponent(targetId)
+    } catch {
+      // Keep the original id when the link contains an incomplete escape sequence.
+    }
+
+    if (document.getElementById(targetId)) {
+      event.preventDefault()
+      event.stopImmediatePropagation()
+
+      const outlineButton = document.querySelector<HTMLElement>('.VPLocalNavOutlineDropdown > button.open')
+      outlineButton?.click()
+
+      if (window.location.hash !== rawHash) {
+        window.history.pushState(window.history.state, '', rawHash)
+      }
+      scheduleBlogHashAlignment()
+      return
+    }
+  }
+
+  const menuButton = event.target.closest('.VPLocalNav .menu')
+  const outlineButton = event.target.closest('.VPLocalNavOutlineDropdown > button')
+  const sidebar = document.querySelector('.VPSidebar')
+  if ((!menuButton && !outlineButton) || !sidebar?.classList.contains('open')) return
+
+  const backdrop = document.querySelector<HTMLElement>('.VPBackdrop')
+  if (!backdrop) return
+
+  if (outlineButton) {
+    // 目錄與日誌列表互斥：先收起側欄，再讓原本的目錄事件繼續執行。
+    backdrop.click()
+    return
+  }
+
+  // VitePress 的按鈕只負責開啟側欄；再次點擊時沿用遮罩既有的關閉流程。
+  event.preventDefault()
+  event.stopImmediatePropagation()
+  backdrop.click()
+}
+
 onMounted(() => {
   // 只在客戶端執行 localStorage 和 DOM 操作
   if (typeof window !== 'undefined') {
@@ -187,12 +274,23 @@ onMounted(() => {
     
     // 監聽主題切換事件
     window.addEventListener(THEME_CHANGE_EVENT, handleThemeChange)
+    window.addEventListener('scroll', updateScrollTopClass, { passive: true })
+    window.addEventListener('hashchange', scheduleBlogHashAlignment)
+    document.addEventListener('click', handleBlogSidebarMenuToggle, true)
+    updateScrollTopClass()
+    scheduleBlogHashAlignment()
   }
 })
 
 onUnmounted(() => {
   if (typeof window !== 'undefined') {
     window.removeEventListener(THEME_CHANGE_EVENT, handleThemeChange)
+    window.removeEventListener('scroll', updateScrollTopClass)
+    window.removeEventListener('hashchange', scheduleBlogHashAlignment)
+    document.removeEventListener('click', handleBlogSidebarMenuToggle, true)
+    blogHashAlignmentTimers.forEach(timer => window.clearTimeout(timer))
+    blogHashAlignmentTimers = []
+    document.body.classList.remove('hb-at-scroll-top')
   }
 })
 
@@ -252,10 +350,57 @@ onUnmounted(() => {
         return p === 'index.md' || p === 'zh_TW/index.md' || p === 'en/index.md'
     })
 
+    const route = useRoute()
+
     const isBlogArticlePage = computed(() => {
         const relativePath = page.value?.relativePath || ''
         return relativePath.startsWith('blog/') || relativePath.startsWith('en/blog/')
     })
+
+    const syncLegacyBlogTableBorders = () => {
+        if (typeof document === 'undefined' || !isBlogArticlePage.value) return
+
+        const legacyBorderElements = document.querySelectorAll<HTMLElement>(
+            '.VPDoc .vp-doc table[style], .VPDoc .vp-doc table [style]'
+        )
+
+        legacyBorderElements.forEach((element) => {
+            const storedValue = element.dataset.hbOriginalTableBorder
+
+            if (!isDark.value) {
+                const inlineBorder = element.style.getPropertyValue('border')
+                if (inlineBorder && storedValue === undefined) {
+                    element.dataset.hbOriginalTableBorder = inlineBorder
+                    element.dataset.hbOriginalTableBorderPriority = element.style.getPropertyPriority('border')
+                    element.style.removeProperty('border')
+                }
+                return
+            }
+
+            if (storedValue !== undefined) {
+                element.style.setProperty(
+                    'border',
+                    storedValue,
+                    element.dataset.hbOriginalTableBorderPriority || ''
+                )
+                delete element.dataset.hbOriginalTableBorder
+                delete element.dataset.hbOriginalTableBorderPriority
+            }
+        })
+    }
+
+    const scheduleLegacyBlogTableBorderSync = () => {
+        nextTick(() => {
+            requestAnimationFrame(syncLegacyBlogTableBorders)
+        })
+    }
+
+    onMounted(scheduleLegacyBlogTableBorderSync)
+
+    watch(
+        [isDark, () => route.path],
+        scheduleLegacyBlogTableBorderSync
+    )
 
     const isDocsPage = computed(() => {
         const relativePath = page.value?.relativePath || ''
@@ -283,7 +428,6 @@ onUnmounted(() => {
             return !isHomePage.value && !currentPostData.value;
         });
         const isMetaLoadingWithDelay = ref(true);
-        const route = useRoute();
         function triggerMetaLoadingDelay() {
             isMetaLoadingWithDelay.value = true;
             setTimeout(() => {

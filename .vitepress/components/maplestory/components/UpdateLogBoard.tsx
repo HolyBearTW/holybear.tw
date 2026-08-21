@@ -1,10 +1,34 @@
 import { useState } from 'react';
-import { AlertTriangle, ChevronUp, ChevronDown } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import { updateLogs } from '../data/changelog';
 
+const UPDATE_LOGS_PER_PAGE = 5;
+
 export default function UpdateLogBoard() {
-  const [showUpdateLog, setShowUpdateLog] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pageInput, setPageInput] = useState('1');
   const showImportantNotice = new Date() < new Date('2026-04-01T00:00:00');
+  const totalPages = Math.max(1, Math.ceil(updateLogs.length / UPDATE_LOGS_PER_PAGE));
+  const visibleLogs = updateLogs.slice(
+    (page - 1) * UPDATE_LOGS_PER_PAGE,
+    page * UPDATE_LOGS_PER_PAGE
+  );
+
+  const goToPage = (event: React.FormEvent) => {
+    event.preventDefault();
+    const requestedPage = Number.parseInt(pageInput, 10);
+    const nextPage = Number.isFinite(requestedPage)
+      ? Math.min(Math.max(requestedPage, 1), totalPages)
+      : page;
+    setPageInput(String(nextPage));
+    setPage(nextPage);
+  };
+
+  const changePage = (nextPage: number) => {
+    const normalizedPage = Math.min(Math.max(nextPage, 1), totalPages);
+    setPage(normalizedPage);
+    setPageInput(String(normalizedPage));
+  };
 
   return (
     <div className="my-8 flex flex-col items-center gap-4">
@@ -24,22 +48,53 @@ export default function UpdateLogBoard() {
 
       {/* 🔹 更新日誌區塊 */}
       <div className="vp-tip custom-vp-tip p-4 sm:p-6 rounded-lg border-l-4 border-indigo-400 bg-indigo-50/90 text-indigo-900 dark:bg-[#23263a] dark:text-indigo-200 dark:border-indigo-500 shadow-sm transition-all duration-300 w-full max-w-2xl">
-        <div 
-          className="font-bold mb-1 text-indigo-700 dark:text-indigo-300 flex justify-between items-center cursor-pointer select-none"
-          onClick={() => setShowUpdateLog(!showUpdateLog)}
-        >
-          <span className="font-bold">更新日誌 {showUpdateLog ? '' : '(近期)'}</span>
-          {showUpdateLog ? <ChevronUp className="w-4 h-4 ml-2 opacity-70" /> : <ChevronDown className="w-4 h-4 ml-2 opacity-70" />}
+        <div className="font-bold mb-1 text-indigo-700 dark:text-indigo-300 flex justify-between items-center">
+          <span className="font-bold">更新日誌</span>
         </div>
         <ul className="list-disc pl-5 text-sm space-y-1 mt-3 animate-in fade-in slide-in-from-top-1">
-          {updateLogs
-            .slice(0, showUpdateLog ? undefined : 5)
-            .map((item, idx) => (
-              <li key={idx}>
-                <span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">{item.date}</span> {item.content}
-              </li>
-            ))}
+          {visibleLogs.map((item, idx) => (
+            <li key={`${item.date}-${(page - 1) * UPDATE_LOGS_PER_PAGE + idx}`}>
+              <span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">{item.date}</span> {item.content}
+            </li>
+          ))}
         </ul>
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-indigo-300/30 pt-3 text-xs">
+          <span>第 {page} / {totalPages} 頁</span>
+          <form onSubmit={goToPage} className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              disabled={page <= 1}
+              onClick={() => changePage(page - 1)}
+              className="rounded border border-indigo-400/50 px-2 py-1 transition-colors hover:border-indigo-300 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              上一頁
+            </button>
+            <label htmlFor="update-log-page" className="sr-only">輸入更新日誌頁次</label>
+            <input
+              id="update-log-page"
+              type="number"
+              min={1}
+              max={totalPages}
+              value={pageInput}
+              onChange={(event) => setPageInput(event.target.value)}
+              className="w-16 rounded border border-indigo-400/50 bg-transparent px-2 py-1 text-center outline-none focus:border-indigo-300"
+            />
+            <button
+              type="submit"
+              className="rounded bg-indigo-600 px-2 py-1 font-semibold text-white transition-colors hover:bg-indigo-500"
+            >
+              前往
+            </button>
+            <button
+              type="button"
+              disabled={page >= totalPages}
+              onClick={() => changePage(page + 1)}
+              className="rounded border border-indigo-400/50 px-2 py-1 transition-colors hover:border-indigo-300 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              下一頁
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );

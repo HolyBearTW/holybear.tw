@@ -173,6 +173,7 @@ export interface CharacterLinkSkill {
 }
 
 export interface DashboardData {
+  ocid: string;
   basic: CharacterBasic;
   stat: CharacterStat;
   equipment: CharacterEquipment;
@@ -216,18 +217,39 @@ export interface CharacterUnionRaider {
   date: string;
   union_raider_stat: string[];
   union_occupied_stat: string[];
-  union_block: {
-    block_type: string;
-    block_class: string;
-    block_level: string;
-    block_control_point_x: number;
-    block_control_point_y: number;
-    block_position: { x: number; y: number }[];
-  }[];
-  union_inner_stat: {
-    stat_field_id: string;
-    stat_field_effect: string;
-  }[];
+  union_block: UnionBlock[];
+  union_inner_stat: UnionInnerStat[];
+  use_preset_no?: number | string;
+  union_raider_preset_1?: UnionRaiderPreset;
+  union_raider_preset_2?: UnionRaiderPreset;
+  union_raider_preset_3?: UnionRaiderPreset;
+  union_raider_preset_4?: UnionRaiderPreset;
+  union_raider_preset_5?: UnionRaiderPreset;
+}
+
+export interface UnionBlockPosition {
+  x: number;
+  y: number;
+}
+
+export interface UnionBlock {
+  block_type: string;
+  block_class: string | null;
+  block_level: string;
+  block_control_point: UnionBlockPosition;
+  block_position: UnionBlockPosition[];
+}
+
+export interface UnionInnerStat {
+  stat_field_id: string;
+  stat_field_effect: string;
+}
+
+export interface UnionRaiderPreset {
+  union_raider_stat: string[];
+  union_occupied_stat: string[];
+  union_block: UnionBlock[];
+  union_inner_stat: UnionInnerStat[];
 }
 
 export interface CharacterUnionArtifact {
