@@ -3,7 +3,7 @@ import MyCustomLayout from './MyCustomLayout.vue';
 import './style.css';
 import OpenCCConverter from '../components/OpenCCConverter.vue';
 import Spoiler from './Spoiler.vue';
-import { THEME_STORAGE_KEY } from './background/themes';
+import { defaultTheme, THEME_STORAGE_KEY } from './background/themes';
 import ShareButtons from '../components/ShareButtons.vue';
 import HeroSection from '../components/HeroSection.vue';
 
@@ -94,9 +94,21 @@ export default {
 
         let activeNavPortal: HTMLElement | null = null;
         let activeNavPortalSource: HTMLElement | null = null;
+        let activeNavPortalSignature: string | null = null;
         let isNavPortalHovered = false;
         let lastNavPortalRect: DOMRect | null = null;
         let navPortalCloseTimer: ReturnType<typeof setTimeout> | null = null;
+
+        const syncCurrentThemeSelection = (root: ParentNode = document) => {
+            const currentTheme = localStorage.getItem(THEME_STORAGE_KEY) || defaultTheme;
+            root.querySelectorAll<HTMLElement>('a[href^="#theme-"]').forEach((link) => {
+                const isCurrent = link.getAttribute('href') === `#theme-${currentTheme}`;
+                link.classList.toggle('active', isCurrent);
+                link.classList.toggle('hb-current-theme', isCurrent);
+                if (isCurrent) link.setAttribute('aria-current', 'true');
+                else link.removeAttribute('aria-current');
+            });
+        };
 
         const clearDesktopNavPortalCloseTimer = () => {
             if (!navPortalCloseTimer) return;
@@ -152,6 +164,7 @@ export default {
             activeNavPortal?.remove();
             activeNavPortal = null;
             activeNavPortalSource = null;
+            activeNavPortalSignature = null;
             isNavPortalHovered = false;
             lastNavPortalRect = null;
             document.body.classList.remove('hb-nav-menu-portal-active');
@@ -178,13 +191,18 @@ export default {
                 return;
             }
 
-            const sourceRoot = activeRoot || activeNavPortalSource;
+            let sourceRoot = activeRoot || (activeNavPortalSource?.isConnected ? activeNavPortalSource : null);
+            if (!sourceRoot && isNavPortalHovered && activeNavPortal) {
+                const expectsTranslations = activeNavPortal.classList.contains('hb-nav-menu-portal-translations');
+                const currentRoots = Array.from(document.querySelectorAll<HTMLElement>('.VPNav .VPFlyout, .VPNav .VPNavBarMenuGroup'));
+                sourceRoot = currentRoots.find((root) => {
+                    if (!isDesktopNavPortalEligible(root)) return false;
+                    const isTranslations = root.classList.contains('VPNavBarTranslations') || root.classList.contains('translations');
+                    return isTranslations === expectsTranslations;
+                }) || null;
+            }
             if (!sourceRoot) {
                 removeDesktopNavPortal();
-                return;
-            }
-
-            if (!activeRoot && isNavPortalHovered && activeNavPortal && activeNavPortalSource === sourceRoot) {
                 return;
             }
 
@@ -218,9 +236,12 @@ export default {
             const buttonRect = sourceButton.getBoundingClientRect();
             const panelRect = sourcePanel.getBoundingClientRect();
             const isTranslationsRoot = sourceRoot.classList.contains('VPNavBarTranslations') || sourceRoot.classList.contains('translations');
-            const fallbackWidth = sourcePanel.scrollWidth || sourceMenu.scrollWidth || Math.max(sourceButton.offsetWidth + 20, 168);
+            const sourceSignature = `${document.documentElement.lang}\n${sourcePanel.innerHTML}`;
+            const measuredWidth = panelRect.width || sourcePanel.scrollWidth || sourceMenu.scrollWidth;
+            const preservedWidth = activeNavPortalSource === sourceRoot ? lastNavPortalRect?.width || 0 : 0;
+            const fallbackWidth = Math.max(sourceButton.offsetWidth + 20, 168);
             const fallbackHeight = sourcePanel.scrollHeight || sourceMenu.scrollHeight || 0;
-            const width = Math.round(isTranslationsRoot ? 156 : (panelRect.width || fallbackWidth));
+            const width = Math.round(measuredWidth || preservedWidth || fallbackWidth);
             const alignmentOffset = sourceRoot.matches('.VPNavBarMenuGroup:has(a[href^="#theme-"])') ? 14 : 0;
             const rawLeft = Math.round(buttonRect.right - width + alignmentOffset);
             const left = Math.max(12, Math.min(rawLeft, window.innerWidth - width - 12));
@@ -237,7 +258,11 @@ export default {
                 isTranslationsRoot
             );
 
-            if (activeNavPortalSource !== sourceRoot || activeNavPortal.childElementCount === 0) {
+            if (
+                activeNavPortalSource !== sourceRoot ||
+                activeNavPortal.childElementCount === 0 ||
+                activeNavPortalSignature !== sourceSignature
+            ) {
                 const nextPanel = sourcePanel.cloneNode(true) as HTMLElement;
                 if (activeNavPortal.classList.contains('hb-nav-menu-portal-translations')) {
                     const title = nextPanel.querySelector<HTMLElement>('.title');
@@ -246,7 +271,7 @@ export default {
                         currentLocaleRow.className = 'VPMenuLink';
 
                         const currentLocaleLabel = document.createElement('span');
-                        currentLocaleLabel.className = 'VPLink link lando hb-current-locale';
+                        currentLocaleLabel.className = 'VPLink link lando active hb-current-locale';
                         currentLocaleLabel.textContent = title.textContent || '';
                         const currentLocaleLang = title.getAttribute('lang') || document.documentElement.lang || '';
                         const currentLocaleHrefLang = title.getAttribute('hreflang') || currentLocaleLang;
@@ -263,10 +288,12 @@ export default {
                         title.replaceWith(currentLocaleRow);
                     }
                 }
+                syncCurrentThemeSelection(nextPanel);
                 nextPanel.style.setProperty('visibility', 'visible', 'important');
                 nextPanel.style.setProperty('opacity', '1', 'important');
                 nextPanel.style.setProperty('pointer-events', 'auto', 'important');
                 activeNavPortal.replaceChildren(nextPanel);
+                activeNavPortalSignature = sourceSignature;
             }
             activeNavPortalSource = sourceRoot;
 
@@ -355,6 +382,7 @@ export default {
 
             requestAnimationFrame(() => {
                 applyDesktopBlogNavFix();
+                syncCurrentThemeSelection();
                 updateDesktopNavMenuState();
             });
         }
@@ -462,6 +490,7 @@ export default {
                     window.dispatchEvent(new CustomEvent('theme-change', {
                         detail: { theme: themeId }
                     }));
+                    syncCurrentThemeSelection();
 
                     const dropdown = themeLink.closest('.VPNavBarMenuGroup');
                     if (dropdown) {

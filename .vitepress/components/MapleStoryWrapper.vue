@@ -1037,11 +1037,59 @@ html:not(.dark) #maplestory-root .maple-ai-check-button:disabled {
   opacity: 0.58;
 }
 
-html:not(.dark) #maplestory-root .maple-growth-create-button,
-html:not(.dark) #maplestory-root .maple-growth-note-button,
+html:not(.dark) #maplestory-root .maple-growth-create-button {
+  color: #ffffff !important;
+}
+
+html:not(.dark) #maplestory-root .maple-growth-note-button {
+  color: #527168 !important;
+}
+
 html:not(.dark) #maplestory-root .maple-growth-note-button:hover,
 html:not(.dark) #maplestory-root .maple-growth-note-button:focus-visible {
-  color: #ffffff !important;
+  color: #087a4b !important;
+  background: rgba(8, 122, 75, 0.1) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-growth-create-tooltip {
+  color: #284b57 !important;
+  background: rgba(255, 255, 255, 0.98) !important;
+  border-color: rgba(36, 94, 112, 0.24) !important;
+  box-shadow: 0 10px 26px rgba(35, 76, 94, 0.16) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-growth-create-tooltip-meta {
+  color: #647b83 !important;
+}
+
+html:not(.dark) #maplestory-root .maple-growth-progress-card {
+  color: #244a44 !important;
+  background: rgba(233, 246, 241, 0.94) !important;
+  border-color: rgba(8, 122, 75, 0.25) !important;
+  box-shadow: 0 7px 18px rgba(35, 76, 94, 0.08) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-growth-progress-header {
+  color: #245d4d !important;
+  font-weight: 600;
+}
+
+html:not(.dark) #maplestory-root .maple-growth-progress-percent {
+  color: #087a4b !important;
+  font-weight: 700;
+}
+
+html:not(.dark) #maplestory-root .maple-growth-progress-track {
+  background: rgba(36, 94, 112, 0.18) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-growth-progress-fill {
+  background: linear-gradient(90deg, #07885a, #18aa70) !important;
+  box-shadow: 0 0 7px rgba(10, 155, 104, 0.28);
+}
+
+html:not(.dark) #maplestory-root .maple-growth-progress-date {
+  color: #527168 !important;
 }
 
 html:not(.dark) #maplestory-root .maple-link-summary {

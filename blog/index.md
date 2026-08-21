@@ -2195,4 +2195,191 @@ body.blog-index-page .vp-doc > .VPFeatures.VPHomeFeatures:first-child {
 }
 </style>
 
+<style>
+/* Blog index: explicit light palette for chips, controls and overlays. */
+html:not(.dark) body.blog-index-page .stat-card,
+html:not(.dark) body.blog-index-page .author-contribution-section {
+  color: #294b59 !important;
+  background: rgba(249, 253, 255, 0.78) !important;
+  border-color: rgba(36, 94, 112, 0.2) !important;
+  box-shadow: 0 10px 28px rgba(35, 76, 94, 0.1) !important;
+}
+
+html:not(.dark) body.blog-index-page .stat-value,
+html:not(.dark) body.blog-index-page .articles-header h2 {
+  color: #173746 !important;
+}
+
+html:not(.dark) body.blog-index-page .articles-header h2 {
+  text-shadow:
+    0 2px 12px rgba(255, 255, 255, 0.88),
+    0 1px 3px rgba(35, 76, 94, 0.24) !important;
+}
+
+html.dark body.blog-index-page .articles-header h2 {
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.55) !important;
+}
+
+html:not(.dark) body.blog-index-page .stat-label {
+  color: #526b78 !important;
+}
+
+html:not(.dark) body.blog-index-page .filter-btn {
+  color: #087f94 !important;
+  background: rgba(249, 253, 255, 0.82) !important;
+  border-color: rgba(8, 127, 148, 0.38) !important;
+  box-shadow: 0 7px 18px rgba(35, 76, 94, 0.1) !important;
+}
+
+html:not(.dark) body.blog-index-page .filter-btn:hover,
+html:not(.dark) body.blog-index-page .filter-btn:focus-visible {
+  color: #056f82 !important;
+  background: rgba(226, 247, 250, 0.96) !important;
+  border-color: rgba(8, 127, 148, 0.62) !important;
+  box-shadow: 0 9px 22px rgba(8, 127, 148, 0.16) !important;
+}
+
+html:not(.dark) body.blog-index-page .filter-btn.active {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #087f94, #00aeca) !important;
+  border-color: #087f94 !important;
+}
+
+html:not(.dark) body.blog-index-page .filter-badge {
+  color: #087f94 !important;
+  background: #ffffff !important;
+}
+
+html:not(.dark) body.blog-index-page .clear-btn {
+  color: #a52a3f !important;
+  background: rgba(255, 241, 244, 0.94) !important;
+  border-color: rgba(185, 45, 67, 0.4) !important;
+}
+
+html:not(.dark) body.blog-index-page .clear-btn:hover,
+html:not(.dark) body.blog-index-page .clear-btn:focus-visible {
+  color: #ffffff !important;
+  background: #b92d43 !important;
+  border-color: #b92d43 !important;
+}
+
+html:not(.dark) body.blog-index-page .view-icon-btn,
+html:not(.dark) body.blog-index-page .pagination-button {
+  color: #526b78 !important;
+  background: rgba(249, 253, 255, 0.9) !important;
+  border-color: rgba(36, 94, 112, 0.24) !important;
+  box-shadow: 0 5px 14px rgba(35, 76, 94, 0.08) !important;
+}
+
+html:not(.dark) body.blog-index-page .view-icon-btn:hover,
+html:not(.dark) body.blog-index-page .view-icon-btn:focus-visible,
+html:not(.dark) body.blog-index-page .pagination-button:hover:not(:disabled),
+html:not(.dark) body.blog-index-page .pagination-button:focus-visible {
+  color: #087f94 !important;
+  background: rgba(226, 247, 250, 0.96) !important;
+  border-color: rgba(8, 127, 148, 0.56) !important;
+}
+
+html:not(.dark) body.blog-index-page .view-icon-btn.active,
+html:not(.dark) body.blog-index-page .pagination-button.active {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #087f94, #00aeca) !important;
+  border-color: #087f94 !important;
+}
+
+html:not(.dark) body.blog-index-page .pagination-button:disabled,
+html:not(.dark) body.blog-index-page .pagination-button:disabled:hover {
+  color: #82949b !important;
+  background: rgba(236, 243, 245, 0.82) !important;
+  border-color: rgba(36, 94, 112, 0.14) !important;
+}
+
+html:not(.dark) body.blog-index-page .article-tags .tag:not(.category) {
+  color: #365967 !important;
+  background: rgba(232, 241, 244, 0.98) !important;
+  border: 1px solid rgba(36, 94, 112, 0.22) !important;
+}
+
+html:not(.dark) body.blog-index-page .article-tags .tag.category {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #078ba2, #14bdd3) !important;
+  border: 1px solid rgba(7, 127, 148, 0.2) !important;
+  box-shadow: 0 3px 9px rgba(8, 127, 148, 0.15) !important;
+}
+
+html:not(.dark) body.blog-index-page .filter-modal,
+html:not(.dark) body.blog-index-page .author-details-modal {
+  color: #294b59 !important;
+  background: rgba(249, 253, 255, 0.98) !important;
+  border: 1px solid rgba(36, 94, 112, 0.22) !important;
+  box-shadow: 0 22px 64px rgba(18, 51, 66, 0.24) !important;
+}
+
+html:not(.dark) body.blog-index-page .filter-modal-header,
+html:not(.dark) body.blog-index-page .modal-header,
+html:not(.dark) body.blog-index-page .filter-modal-footer {
+  border-color: rgba(36, 94, 112, 0.16) !important;
+}
+
+html:not(.dark) body.blog-index-page .modal-header,
+html:not(.dark) body.blog-index-page .filter-modal-subtitle,
+html:not(.dark) body.blog-index-page .author-bar-container {
+  background: rgba(232, 241, 244, 0.72) !important;
+}
+
+html:not(.dark) body.blog-index-page .filter-modal-header h3,
+html:not(.dark) body.blog-index-page .modal-title,
+html:not(.dark) body.blog-index-page .author-name {
+  color: #173746 !important;
+}
+
+html:not(.dark) body.blog-index-page .filter-modal-subtitle {
+  color: #526b78 !important;
+  border-color: rgba(36, 94, 112, 0.16) !important;
+}
+
+html:not(.dark) body.blog-index-page .close-modal-btn {
+  color: #526b78 !important;
+}
+
+html:not(.dark) body.blog-index-page .close-modal-btn:hover,
+html:not(.dark) body.blog-index-page .close-modal-btn:focus-visible {
+  color: #087f94 !important;
+  background: rgba(8, 127, 148, 0.1) !important;
+}
+
+html:not(.dark) body.blog-index-page .filter-option {
+  color: #365967 !important;
+  background: rgba(240, 247, 249, 0.96) !important;
+  border-color: rgba(36, 94, 112, 0.22) !important;
+}
+
+html:not(.dark) body.blog-index-page .filter-option:hover,
+html:not(.dark) body.blog-index-page .filter-option:focus-visible {
+  color: #087f94 !important;
+  background: rgba(226, 247, 250, 0.96) !important;
+  border-color: rgba(8, 127, 148, 0.52) !important;
+}
+
+html:not(.dark) body.blog-index-page .filter-option.active,
+html:not(.dark) body.blog-index-page .author-option.active,
+html:not(.dark) body.blog-index-page .category-option.active,
+html:not(.dark) body.blog-index-page .tag-option.active,
+html:not(.dark) body.blog-index-page .apply-filter-btn {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #087f94, #00aeca) !important;
+  border-color: #087f94 !important;
+}
+
+html:not(.dark) body.blog-index-page .apply-filter-btn:hover,
+html:not(.dark) body.blog-index-page .apply-filter-btn:focus-visible {
+  background: linear-gradient(135deg, #076f82, #009bb6) !important;
+  box-shadow: 0 7px 18px rgba(8, 127, 148, 0.2) !important;
+}
+
+html:not(.dark) body.blog-index-page .empty-state {
+  color: #526b78 !important;
+}
+</style>
+
 <div id="bottom"></div>

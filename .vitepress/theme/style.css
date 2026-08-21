@@ -9,7 +9,7 @@
 /* ==================== 全域變數 (合併) ==================== */
 
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
 
   /* brand colors */
   --vp-c-brand: #00FFEE !important;
@@ -56,6 +56,57 @@
   --my-glass-bg: rgba(255, 255, 255, 0.1);
   --panel-glass-bg: rgba(255, 255, 255, 0.15); /* Default Light Mode Panel Background - More transparent for glass effect */
   --panel-text-color: var(--vp-c-text-1);
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+html {
+  scrollbar-color: #7899a5 #edf4f6;
+  scrollbar-width: thin;
+}
+
+html::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+html::-webkit-scrollbar-track {
+  background: #edf4f6;
+}
+
+html::-webkit-scrollbar-thumb {
+  background: #7899a5;
+  border: 3px solid #edf4f6;
+  border-radius: 999px;
+}
+
+html::-webkit-scrollbar-thumb:hover {
+  background: #527986;
+}
+
+html::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+html.dark {
+  scrollbar-color: #466773 #111a20;
+}
+
+html.dark::-webkit-scrollbar-track {
+  background: #111a20;
+}
+
+html.dark::-webkit-scrollbar-thumb {
+  background: #466773;
+  border-color: #111a20;
+}
+
+html.dark::-webkit-scrollbar-thumb:hover {
+  background: #5d8997;
 }
 
 /* dark override for glass */
@@ -2053,14 +2104,16 @@ select {
   gap: 4px;
 }
 
-.VPNavBarMenuGroup > .button {
+.VPNavBarMenuGroup > .button,
+.VPNavBarTranslations > .button {
   position: relative;
   height: var(--vp-nav-height) !important;
   min-height: var(--vp-nav-height);
   line-height: var(--vp-nav-height) !important;
 }
 
-.VPNavBarMenuGroup > .button::before {
+.VPNavBarMenuGroup > .button::before,
+.VPNavBarTranslations > .button::before {
   position: absolute;
   top: 50%;
   right: 0;
@@ -2074,7 +2127,8 @@ select {
   transition: background 0.18s ease;
 }
 
-.VPNavBarMenuGroup > .button .text {
+.VPNavBarMenuGroup > .button .text,
+.VPNavBarTranslations > .button > * {
   position: relative;
   z-index: 1;
   color: inherit !important;
@@ -2088,20 +2142,24 @@ select {
   --hb-nav-hover-color: var(--vp-c-brand-1);
 }
 
-#app .VPNavBarTitle .title:hover,
-#app .VPNavBarTitle .title:hover *,
-#app .VPNavBarMenuLink:hover,
-#app .VPNavBarMenuLink:hover *,
-#app .VPNavBarMenuGroup:hover > .button,
-#app .VPNavBarMenuGroup:hover > .button *,
-#app .VPNavBarMenuGroup > .button:focus-visible,
-#app .VPNavBarMenuGroup > .button:focus-visible *,
-#app .VPNavBarMenuGroup > .button[aria-expanded="true"],
-#app .VPNavBarMenuGroup > .button[aria-expanded="true"] *,
-#app .VPNavBarTranslations > .button:hover,
-#app .VPNavBarTranslations > .button:hover *,
-#app .VPSocialLink:hover,
-#app .VPSocialLink:hover * {
+html body #app .VPNav .VPNavBar .VPNavBarTitle .title:hover,
+html body #app .VPNav .VPNavBar .VPNavBarTitle .title:hover *,
+html body #app .VPNav .VPNavBar .VPNavBarMenuLink:hover,
+html body #app .VPNav .VPNavBar .VPNavBarMenuLink:hover *,
+html body #app .VPNav .VPNavBar .VPNavBarMenuGroup:hover > .button,
+html body #app .VPNav .VPNavBar .VPNavBarMenuGroup:hover > .button *,
+html body #app .VPNav .VPNavBar .VPNavBarMenuGroup > .button:focus-visible,
+html body #app .VPNav .VPNavBar .VPNavBarMenuGroup > .button:focus-visible *,
+html body #app .VPNav .VPNavBar .VPNavBarMenuGroup > .button[aria-expanded="true"],
+html body #app .VPNav .VPNavBar .VPNavBarMenuGroup > .button[aria-expanded="true"] *,
+html body #app .VPNav .VPNavBar .VPNavBarTranslations > .button:hover,
+html body #app .VPNav .VPNavBar .VPNavBarTranslations > .button:hover *,
+html body #app .VPNav .VPNavBar .VPNavBarTranslations > .button:focus-visible,
+html body #app .VPNav .VPNavBar .VPNavBarTranslations > .button:focus-visible *,
+html body #app .VPNav .VPNavBar .VPNavBarTranslations > .button[aria-expanded="true"],
+html body #app .VPNav .VPNavBar .VPNavBarTranslations > .button[aria-expanded="true"] *,
+html body #app .VPNav .VPNavBar .VPSocialLink:hover,
+html body #app .VPNav .VPNavBar .VPSocialLink:hover * {
   color: var(--hb-nav-hover-color) !important;
 }
 
@@ -2138,14 +2196,26 @@ html.dark .VPNavBarMenuGroup .VPMenu {
   transform: translateY(-1px);
 }
 
-.VPNavBarMenuGroup > .button:hover {
+.VPNavBarMenuGroup > .button:hover,
+.VPNavBarMenuGroup:hover > .button,
+.VPNavBarMenuGroup > .button:focus-visible,
+.VPNavBarMenuGroup > .button[aria-expanded="true"],
+.VPNavBarTranslations > .button:hover,
+.VPNavBarTranslations > .button:focus-visible,
+.VPNavBarTranslations > .button[aria-expanded="true"] {
   background: transparent !important;
-  color: var(--vp-c-brand-1) !important;
+  color: var(--hb-nav-hover-color) !important;
   transform: none;
 }
 
-.VPNavBarMenuGroup > .button:hover::before {
-  background: rgba(0, 255, 238, 0.1);
+.VPNavBarMenuGroup > .button:hover::before,
+.VPNavBarMenuGroup:hover > .button::before,
+.VPNavBarMenuGroup > .button:focus-visible::before,
+.VPNavBarMenuGroup > .button[aria-expanded="true"]::before,
+.VPNavBarTranslations > .button:hover::before,
+.VPNavBarTranslations > .button:focus-visible::before,
+.VPNavBarTranslations > .button[aria-expanded="true"]::before {
+  background: rgba(0, 255, 238, 0.1) !important;
 }
 
 .VPNavBarTitle img,
@@ -3448,14 +3518,34 @@ body.is-home-page .VPNavBar .divider-line {
     opacity: 1 !important;
     pointer-events: auto !important;
     overflow: hidden !important;
+    padding: 0 !important;
     border-radius: var(--hb-card-radius) !important;
     backdrop-filter: blur(56px) saturate(240%) !important;
     -webkit-backdrop-filter: blur(56px) saturate(240%) !important;
     box-shadow: 0 28px 64px rgba(0, 0, 0, 0.34) !important;
   }
 
+  .hb-nav-menu-portal .VPMenu .items {
+    display: grid;
+    gap: 4px;
+    padding: 6px !important;
+  }
+
+  .hb-nav-menu-portal .VPMenu .VPMenuLink {
+    padding: 0 !important;
+  }
+
+  .hb-nav-menu-portal .VPMenu .VPLink.link,
+  .hb-nav-menu-portal .VPMenu .title {
+    display: flex;
+    align-items: center;
+    min-height: 32px !important;
+    padding: 6px 10px !important;
+    border-radius: 10px;
+    line-height: 1.35 !important;
+  }
+
   .hb-nav-menu-portal.hb-nav-menu-portal-translations .VPMenu {
-    min-width: 132px;
     padding: 0 !important;
   }
 
@@ -3472,7 +3562,7 @@ body.is-home-page .VPNavBar .divider-line {
     align-items: center;
     display: flex !important;
     min-height: 32px !important;
-    padding: 6px 8px 6px 18px !important;
+    padding: 6px 10px !important;
     margin: 0 !important;
     font-weight: 700;
     font-size: 13px;
@@ -3484,7 +3574,7 @@ body.is-home-page .VPNavBar .divider-line {
   .hb-nav-menu-portal.hb-nav-menu-portal-translations .VPMenu .VPLink.link {
     justify-content: flex-start;
     min-height: 32px !important;
-    padding: 6px 8px 6px 18px !important;
+    padding: 6px 10px !important;
     border-radius: 10px;
   }
 
@@ -5198,6 +5288,39 @@ html:not(.dark) body.is-blog-page .BlogVPFooter .copyright {
   html:not(.dark) body .hb-nav-menu-portal .VPMenu .VPLink.link:focus-visible span,
   html:not(.dark) body .hb-nav-menu-portal .VPMenu .VPLink.link.active span {
     color: #087f94 !important;
+  }
+
+  html:not(.dark) body .hb-nav-menu-portal .VPMenu .VPLink.link.hb-current-locale,
+  html:not(.dark) body .VPNavBarTranslations .VPMenu .VPLink.link.hb-current-locale {
+    color: #087f94 !important;
+    background: rgba(36, 94, 112, 0.08) !important;
+    border-color: rgba(36, 94, 112, 0.12) !important;
+  }
+
+  html.dark body .hb-nav-menu-portal .VPMenu .VPLink.link.hb-current-locale,
+  html.dark body .VPNavBarTranslations .VPMenu .VPLink.link.hb-current-locale {
+    color: var(--hb-nav-hover-color, #67e8f9) !important;
+    background: rgba(0, 255, 238, 0.1) !important;
+    border-color: rgba(0, 255, 238, 0.16) !important;
+  }
+
+  body .VPMenu .VPLink.link.hb-current-theme,
+  body .hb-nav-menu-portal .VPMenu .VPLink.link.hb-current-theme {
+    font-weight: 750 !important;
+  }
+
+  html:not(.dark) body .VPMenu .VPLink.link.hb-current-theme,
+  html:not(.dark) body .hb-nav-menu-portal .VPMenu .VPLink.link.hb-current-theme {
+    color: #087f94 !important;
+    background: rgba(36, 94, 112, 0.08) !important;
+    border-color: rgba(36, 94, 112, 0.12) !important;
+  }
+
+  html.dark body .VPMenu .VPLink.link.hb-current-theme,
+  html.dark body .hb-nav-menu-portal .VPMenu .VPLink.link.hb-current-theme {
+    color: var(--hb-nav-hover-color, #67e8f9) !important;
+    background: rgba(0, 255, 238, 0.1) !important;
+    border-color: rgba(0, 255, 238, 0.16) !important;
   }
 }
 

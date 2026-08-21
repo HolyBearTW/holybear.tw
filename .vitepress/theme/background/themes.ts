@@ -3,6 +3,7 @@
 // 添加新主題只需在這個數組中添加一行
 
 export const backgroundThemes = [
+  ['🏙️ 核心塔', '🏙️ Core Tower', 'coretower', '🏙️'],
   ['⚡ 科技感', '⚡ Tech', 'tech', '⚡'],
   ['🌌 引力場', '🌌 Gravity Field', 'gravityfield', '🌌'],
   ['🌊 柔和抽象', '🌊 Soft Abstract', 'animated', '🌊'],
@@ -11,7 +12,6 @@ export const backgroundThemes = [
   ['💧 圓點光暈', '💧 Halo Dots', 'halo', '💧'],
   ['📱 HyperOS', '📱 HyperOS', 'hyperos', '📱'],
   ['📱 HyperOS 2', '📱 HyperOS 2', 'hyperos2', '📱'],
-  ['🔷 核心塔', '🔷 Core Tower', 'coretower', '🔷'],
   ['🎃 萬聖節', '🎃 Halloween', 'halloween', '🎃'],
   ['🎄 聖誕節', '🎄 Christmas', 'christmas', '🎄'],
   ['⬜ 無背景', '⬜ No BG', 'none', '⬜'],
