@@ -838,7 +838,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
                   <div className="flex justify-between items-end border-t border-purple-500/20 pt-2 mt-auto"><span className="text-slate-500 text-xs">屬性加成</span><span className="text-sm font-bold text-purple-400 font-mono">+{arcData.stat.toLocaleString()}</span></div>
                 </div>
                 <div className="maple-symbol-card is-aut bg-cyan-900/20 border border-cyan-500/30 rounded-lg p-4 flex flex-col justify-start min-h-[100px]">
-                  <div className="text-cyan-300 font-bold text-sm mb-3 flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.8)]"></div>AUT (真實力量)</div>
+                  <div className="maple-aut-heading text-cyan-300 font-bold text-sm mb-3 flex items-center gap-2"><div className="maple-aut-dot w-2 h-2 rounded-full bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.8)]"></div>AUT (真實力量)</div>
                   <div className="flex justify-between items-end mb-2"><span className="text-slate-400 text-xs">力量總和</span><div className="flex items-baseline gap-1"><span className="text-2xl font-bold text-white font-mono">{autData.force.toLocaleString()}</span>{autDiff > 0 && <span className="text-xs font-bold text-green-400 font-mono" title={`來自公會技能/極限屬性/稱號: +${autDiff}`}>+{autDiff}</span>}</div></div>
                   <div className="flex justify-between items-end"><span className="text-slate-500 text-xs">屬性加成</span><span className="text-sm font-bold text-cyan-400 font-mono">+{autData.stat.toLocaleString()}</span></div>
                   {hasRates && (
@@ -884,7 +884,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <div className="font-bold text-slate-200 text-sm break-words">{petNick || petName}</div>
-                        {petType && <span className="rounded-full border border-sky-700/40 bg-sky-900/30 px-2 py-0.5 text-[10px] font-bold text-sky-300">{petType}</span>}
+                        {petType && <span className="maple-pet-type-badge rounded-full border border-sky-700/40 bg-sky-900/30 px-2 py-0.5 text-[10px] font-bold text-sky-300">{petType}</span>}
                       </div>
                       {petNick && petNick !== petName && <div className="mt-1 text-xs text-slate-400">名稱: {petName}</div>}
                       {petDescription && <div className="mt-2 text-xs leading-relaxed text-slate-400">{petDescription}</div>}

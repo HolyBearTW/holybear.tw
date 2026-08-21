@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { DashboardData } from "../types";
+import { DEFAULT_AI_MODEL, getAiModelOption, isOpenAiModel } from "../data/aiModels";
 
 // === Helper: 錯誤訊息美化 ===
 const extractErrorMessage = (error: any): string => {
@@ -27,23 +28,207 @@ const extractErrorMessage = (error: any): string => {
   return msg;
 };
 
-// === Helper: 資料減肥 (保留) ===
-const cleanDataForAI = (obj: any): any => {
-  if (Array.isArray(obj)) {
-    return obj.map(cleanDataForAI);
-  } else if (obj !== null && typeof obj === 'object') {
-    return Object.keys(obj).reduce((acc, key) => {
-      const k = key.toLowerCase();
-      if (k.includes('icon') || k.includes('image') || k.includes('url') || k.includes('avatar')) return acc;
-      if (k.includes('date_') || k.includes('expire')) return acc;
-      if (k.includes('description') || k.includes('desc')) return acc;
-      if (k.includes('_preset_2') || k.includes('_preset_3')) return acc;
-      if (k === 'title' || k === 'world_name') {}
-      acc[key] = cleanDataForAI(obj[key]);
-      return acc;
-    }, {} as any);
-  }
-  return obj;
+const hasValue = (value: unknown) => value !== undefined && value !== null && value !== '';
+
+const compactRecord = (record: any) => Object.fromEntries(
+  Object.entries(record || {}).filter(([, value]) => hasValue(value) && value !== '0' && value !== 0)
+);
+
+const summarizeItemOption = (option: any) => compactRecord(option);
+
+const buildAiSnapshot = (data: DashboardData) => {
+  const equipment = (data.equipment?.item_equipment || []).map(item => ({
+    slot: item.item_equipment_slot,
+    name: item.item_name,
+    level: item.item_level,
+    starforce: Number(item.starforce) || 0,
+    scroll: `${item.scroll_upgrade || 0}/${(Number(item.scroll_upgrade) || 0) + (Number(item.scroll_upgradable_count) || 0)}`,
+    specialRingLevel: item.special_ring_level || undefined,
+    potentialGrade: item.potential_option_grade || undefined,
+    potentials: [item.potential_option_1, item.potential_option_2, item.potential_option_3].filter(Boolean),
+    additionalPotentialGrade: item.additional_potential_option_grade || undefined,
+    additionalPotentials: [item.additional_potential_option_1, item.additional_potential_option_2, item.additional_potential_option_3].filter(Boolean),
+    totalOption: summarizeItemOption(item.item_total_option),
+    flameOption: summarizeItemOption(item.item_add_option),
+    scrollOption: summarizeItemOption(item.item_etc_option),
+    exceptionalOption: summarizeItemOption(item.item_exceptional_option),
+    soul: item.soul_name ? { name: item.soul_name, option: item.soul_option } : undefined,
+  }));
+
+  const pets = [1, 2, 3].map(index => {
+    const pet = data.petEquipment as any;
+    const equipmentInfo = pet?.[`pet_${index}_equipment`];
+    const name = pet?.[`pet_${index}_name`];
+    if (!name && !equipmentInfo) return null;
+    return {
+      name,
+      type: pet?.[`pet_${index}_pet_type`],
+      skills: pet?.[`pet_${index}_skill`] || [],
+      potentials: pet?.[`pet_${index}_potential`] || [],
+      equipment: equipmentInfo ? {
+        name: equipmentInfo.item_name,
+        options: equipmentInfo.item_option || [],
+        scrollUpgrade: equipmentInfo.scroll_upgrade,
+        scrollUpgradable: equipmentInfo.scroll_upgradable,
+      } : undefined,
+    };
+  }).filter(Boolean);
+
+  const hexaStatGroups = data.hexaMatrixStat
+    ? [
+        data.hexaMatrixStat.character_hexa_stat_core,
+        data.hexaMatrixStat.character_hexa_stat_core_2,
+        data.hexaMatrixStat.character_hexa_stat_core_3,
+      ].flat().filter(Boolean)
+    : [];
+
+  const familiar = data.familiar;
+  const familiarList = familiar?.familiar_list || familiar?.familiar_info || [];
+  const previous = data.character_basic_7days_ago;
+
+  return {
+    profile: {
+      name: data.basic.character_name,
+      world: data.basic.world_name,
+      class: data.basic.character_class,
+      level: data.basic.character_level,
+      expRate: data.basic.character_exp_rate,
+      guild: data.basic.character_guild_name,
+      liberationCleared: data.basic.liberation_quest_clear_flag,
+      dataDate: data.lastUpdated,
+    },
+    sevenDayGrowth: previous ? {
+      previousLevel: previous.character_level,
+      previousExpRate: previous.character_exp_rate,
+      levelDelta: data.basic.character_level - previous.character_level,
+    } : null,
+    finalStats: Object.fromEntries((data.stat?.final_stat || []).map(stat => [stat.stat_name, stat.stat_value])),
+    unspentResources: {
+      ap: data.stat?.remain_ap || 0,
+      abilityFame: data.ability?.remain_fame || 0,
+      hyperStatPoints: data.hyperStat?.hyper_stat_preset_1_remain_point || 0,
+      artifactAp: data.unionArtifact?.union_artifact_remain_ap || 0,
+    },
+    equipmentPreset: data.equipment?.preset_no,
+    equipment,
+    title: data.equipment?.title?.title_name || null,
+    ability: {
+      grade: data.ability?.ability_grade,
+      lines: (data.ability?.ability_info || []).map(line => ({ grade: line.ability_grade, value: line.ability_value })),
+    },
+    hyperStats: (data.hyperStat?.hyper_stat_preset_1 || []).filter(stat => stat.stat_level > 0).map(stat => ({
+      type: stat.stat_type,
+      level: stat.stat_level,
+      increase: stat.stat_increase,
+    })),
+    linkSkills: (data.linkSkill?.character_link_skill || []).map(skill => ({
+      name: skill.skill_name,
+      level: skill.skill_level,
+      effect: skill.skill_effect,
+    })),
+    ownedLinkSkill: data.linkSkill?.character_owned_link_skill ? {
+      name: data.linkSkill.character_owned_link_skill.skill_name,
+      level: data.linkSkill.character_owned_link_skill.skill_level,
+      effect: data.linkSkill.character_owned_link_skill.skill_effect,
+    } : null,
+    union: data.union ? {
+      level: data.union.union_level,
+      grade: data.union.union_grade,
+      artifactLevel: data.unionArtifact?.union_artifact_level ?? data.unionArtifact?.level ?? data.union.union_artifact_level,
+      raiderPreset: data.unionRaider?.use_preset_no,
+      raiderStats: data.unionRaider?.union_raider_stat || [],
+      occupiedStats: data.unionRaider?.union_occupied_stat || [],
+      innerStats: data.unionRaider?.union_inner_stat || [],
+      blocks: (data.unionRaider?.union_block || []).map(block => ({
+        class: block.block_class,
+        level: block.block_level,
+        type: block.block_type,
+      })),
+      artifactEffects: data.unionArtifact?.union_artifact_effect || [],
+      artifactCrystals: (data.unionArtifact?.union_artifact_crystal || []).map(crystal => ({
+        name: crystal.name,
+        level: crystal.level,
+        options: [crystal.crystal_option_name_1, crystal.crystal_option_name_2, crystal.crystal_option_name_3].filter(Boolean),
+      })),
+      champions: (data.unionChampion?.union_champion || []).map(champion => ({
+        class: champion.champion_class,
+        grade: champion.champion_grade,
+        slot: champion.champion_slot,
+        badges: champion.champion_badge_info || [],
+      })),
+      championBadges: data.unionChampion?.champion_badge_total_info || [],
+    } : null,
+    pets,
+    symbols: (data.symbolEquipment?.symbol || []).map(symbol => ({
+      name: symbol.symbol_name,
+      level: symbol.symbol_level,
+      force: symbol.symbol_force,
+      growth: `${symbol.symbol_growth_count}/${symbol.symbol_require_growth_count}`,
+      stats: compactRecord({ str: symbol.symbol_str, dex: symbol.symbol_dex, int: symbol.symbol_int, luk: symbol.symbol_luk, hp: symbol.symbol_hp }),
+    })),
+    setEffects: (data.setEffect?.set_effect || []).map(set => ({
+      name: set.set_name,
+      count: set.total_set_count,
+      activeEffects: (set.set_effect_info || []).filter(effect => effect.set_count <= set.total_set_count),
+    })),
+    vMatrix: (data.vMatrix?.character_v_core_equipment || []).map(core => ({
+      name: core.v_core_name,
+      type: core.v_core_type,
+      level: core.v_core_level + core.slot_level,
+      enhancedSkills: [core.v_core_skill_1, core.v_core_skill_2, core.v_core_skill_3].filter(Boolean),
+    })),
+    hexaMatrix: (data.hexaMatrix?.character_hexa_core_equipment || []).map(core => ({
+      name: core.hexa_core_name,
+      type: core.hexa_core_type,
+      level: core.hexa_core_level,
+    })),
+    hexaStats: hexaStatGroups.map(core => ({
+      slot: core.slot_id,
+      grade: core.stat_grade,
+      main: `${core.main_stat_name} Lv.${core.main_stat_level}`,
+      sub1: `${core.sub_stat_name_1} Lv.${core.sub_stat_level_1}`,
+      sub2: `${core.sub_stat_name_2} Lv.${core.sub_stat_level_2}`,
+    })),
+    fifthAndSixthJobSkills: [data.skill5, data.skill6].filter(Boolean).flatMap(group =>
+      (group?.character_skill || []).map(skill => ({ name: skill.skill_name, level: skill.skill_level }))
+    ),
+    familiar: {
+      cards: familiarList.map(card => ({
+        name: card.familiar_name,
+        grade: card.familiar_grade,
+        level: card.familiar_level,
+        summoned: card.summoned_flag,
+        skill: card.skill_name,
+        options: card.option || [],
+      })),
+      linkSlots: (familiar?.familiar_link_slot || []).map(slot => ({
+        slot: slot.slot_id,
+        familiar: slot.familiar_name,
+        active: slot.active_flag,
+      })),
+    },
+    dojo: data.dojo ? {
+      bestFloor: data.dojo.dojang_best_floor,
+      bestTimeSeconds: data.dojo.dojang_best_time,
+      recordDate: data.dojo.date_dojang_record,
+    } : null,
+    dataAvailability: {
+      equipment: equipment.length > 0,
+      symbols: Boolean(data.symbolEquipment),
+      union: Boolean(data.union),
+      unionRaider: Boolean(data.unionRaider),
+      unionArtifact: Boolean(data.unionArtifact),
+      unionChampion: Boolean(data.unionChampion),
+      pets: Boolean(data.petEquipment),
+      setEffects: Boolean(data.setEffect),
+      vMatrix: Boolean(data.vMatrix),
+      hexaMatrix: Boolean(data.hexaMatrix),
+      hexaStats: Boolean(data.hexaMatrixStat),
+      familiar: Boolean(data.familiar),
+      dojo: Boolean(data.dojo),
+      sevenDayGrowth: Boolean(previous),
+    },
+  };
 };
 
 // === Helper: 安全提取 Stream Chunk 文字 (兼容不同 SDK 版本) ===
@@ -67,14 +252,91 @@ const extractTextFromChunk = (chunk: any): string => {
   }
 };
 
-// UPDATE: 預設值改為 gemini-3.5-flash-lite
-export const analyzeCharacter = async (data: DashboardData, apiKey: string, modelId: string = 'gemini-3.5-flash-lite', ignoreWarnings: boolean = false, onProgress?: (msg: string) => void): Promise<string> => {
-  if (!apiKey) {
-    return "💡 **請在使用前設定您的 API Key**\n\n基於資安考量，本站不再內建公用的 API Key。\n請點擊右下方的 **「設定模型 / API Key」** 按鈕，輸入您專屬的 [Google Gemini API 金鑰](https://aistudio.google.com/app/apikey) 以啟用分析功能。";
+const extractOpenAiResponseText = (payload: any): string => {
+  if (typeof payload?.output_text === 'string') return payload.output_text;
+  if (!Array.isArray(payload?.output)) return '';
+
+  return payload.output
+    .flatMap((item: any) => Array.isArray(item?.content) ? item.content : [])
+    .filter((content: any) => content?.type === 'output_text' && typeof content?.text === 'string')
+    .map((content: any) => content.text)
+    .join('');
+};
+
+const analyzeWithOpenAi = async (
+  prompt: string,
+  apiKey: string,
+  selectionId: string,
+  onProgress?: (msg: string) => void
+): Promise<string> => {
+  const [, model = 'gpt-5.6-sol', mode = 'standard'] = selectionId.split(':');
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 240000);
+
+  onProgress?.(`正在連線 ${getAiModelOption(selectionId)?.label || model}...`);
+
+  const requestBody: Record<string, any> = {
+    model,
+    input: prompt,
+    max_output_tokens: 10000,
+    store: false,
+    reasoning: {
+      effort: mode === 'fast' || model.includes('luna') ? 'low' : 'medium',
+      ...(mode === 'pro' ? { mode: 'pro' } : {}),
+    },
+    text: { verbosity: mode === 'pro' ? 'medium' : 'low' },
+    ...(mode === 'fast' ? { service_tier: 'fast' } : {}),
+  };
+
+  try {
+    const response = await fetch('https://api.openai.com/v1/responses', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify(requestBody),
+      signal: controller.signal,
+    });
+
+    onProgress?.('模型已接收資料，正在生成精簡健檢報告...');
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const message = payload?.error?.message || `OpenAI API 回應失敗 (${response.status})`;
+      throw new Error(`${response.status}: ${message}`);
+    }
+
+    const text = extractOpenAiResponseText(payload);
+    if (!text) throw new Error(`Empty Response from ${model}`);
+
+    const modeLabel = mode === 'pro' ? 'Pro' : mode === 'fast' ? '快速' : '標準';
+    return `${text}\n\n_(OpenAI 模型：**${model}** / ${modeLabel}模式)_`;
+  } catch (error: any) {
+    if (error?.name === 'AbortError') {
+      return 'AI Analysis Failed: ⚠️ **OpenAI 分析連線逾時**\n\n等待模型回應超過 4 分鐘，請稍後再試或改用快速模式。';
+    }
+
+    const message = extractErrorMessage(error);
+    if (message.includes('429') || message.toLowerCase().includes('quota') || message.toLowerCase().includes('rate limit')) {
+      return '⚠️ **OpenAI 額度已達上限 (Rate Limit Exceeded)**\n\n請檢查 OpenAI API 額度或更換 API Key。\n\n👉 [前往 OpenAI Platform 管理 API Key](https://platform.openai.com/api-keys)';
+    }
+    if (message.includes('401') || message.toLowerCase().includes('api key') || message.toLowerCase().includes('authentication')) {
+      return 'AI Analysis Failed: ⚠️ **OpenAI API Key 無效**\n\n請在設定中確認 OpenAI API Key 是否正確。\n\n👉 [前往 OpenAI Platform 建立或管理 API Key](https://platform.openai.com/api-keys)';
+    }
+    return `AI Analysis Failed: ⚠️ **OpenAI 分析失敗**\n\n${message}`;
+  } finally {
+    clearTimeout(timeout);
+  }
+};
+
+export const analyzeCharacter = async (data: DashboardData, geminiApiKey: string, openAiApiKey: string, modelId: string = DEFAULT_AI_MODEL, ignoreWarnings: boolean = false, onProgress?: (msg: string) => void): Promise<string> => {
+  if (isOpenAiModel(modelId) ? !openAiApiKey : !geminiApiKey) {
+    return isOpenAiModel(modelId)
+      ? "💡 **請先設定 OpenAI API Key**\n\n請點擊 **「設定模型 / API Key」**，輸入您的 OpenAI API Key 後再執行分析。\n\n👉 [前往 OpenAI Platform 建立 API Key](https://platform.openai.com/api-keys)"
+      : "💡 **請在使用前設定您的 API Key**\n\n基於資安考量，本站不再內建公用的 API Key。\n請點擊右下方的 **「設定模型 / API Key」** 按鈕，輸入您專屬的 [Google Gemini API 金鑰](https://aistudio.google.com/app/apikey) 以啟用分析功能。";
   }
 
-  // 1. 資料前處理
-  const simpleData = cleanDataForAI(data);
+  onProgress?.('正在整理戰鬥資料與缺漏欄位...');
 
   // 1.5. 【代碼層攔截】練功裝備判定
   const getStatValue = (names: string[]): number => {
@@ -93,112 +355,9 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
     return `WARNING_DROP_RATE_TOO_HIGH|${dropRate}|${mesoRate}`;
   }
 
-  // 2. 提取摘要 (保留)
-  const relevantStats = data.stat.final_stat
-    .filter(s => ['STR', 'DEX', 'INT', 'LUK', 'HP', 'Combat Power', 'Boss Damage', 'Ignore Defense Rate', 'Final Damage', 'Critical Damage', 'Item Drop Rate', 'Mesos Obtain'].includes(s.stat_name) || ['戰鬥力', 'BOSS怪物傷害', '無視防禦率', '最終傷害', '爆擊傷害', '道具掉落率', '楓幣獲得量'].includes(s.stat_name))
-    .map(s => `${s.stat_name}: ${s.stat_value}`)
-    .join(', ');
-
-  const specialStats = data.stat.final_stat
-    .filter(s => ['Star Force', 'Arcane Power', 'Authentic Force', '星力', '神秘力量', '真實之力'].includes(s.stat_name))
-    .map(s => `${s.stat_name}: ${s.stat_value}`)
-    .join(', ');
-
-  const artifactLevel = data.unionArtifact?.union_artifact_level ?? data.union?.union_artifact_level ?? 0;
-  const unionInfo = `聯盟等級: ${data.union?.union_level || 0}, 神器等級: ${artifactLevel}`;
-
   const isChallengerServer = data.basic.world_name === '挑戰者' || data.basic.world_name.includes('挑戰者');
-
-  const hexaSkills = data.hexaMatrix?.character_hexa_core_equipment?.length 
-    ? data.hexaMatrix.character_hexa_core_equipment.map(s => `${s.hexa_core_name} Lv.${s.hexa_core_level}`).join(', ')
-    : '無六轉技能';
-
-  const vSkills = data.vMatrix?.character_v_core_equipment?.length
-    ? data.vMatrix.character_v_core_equipment
-        .sort((a, b) => (b.v_core_level + b.slot_level) - (a.v_core_level + a.slot_level))
-        .slice(0, 10)
-        .map(s => `${s.v_core_name} Lv.${s.v_core_level + s.slot_level}`)
-        .join(', ')
-    : '無五轉技能';
-
-  const abilityLines = data.ability.ability_info
-    .map((a, i) => `Line ${i+1} (${a.ability_grade}): ${a.ability_value}`)
-    .join('; ');
-
-  const topItems = data.equipment.item_equipment
-    .filter(item => 
-      item.item_equipment_slot === 'Weapon' || 
-      item.item_equipment_slot === 'Sub Weapon' || 
-      item.item_equipment_slot === 'Emblem' || 
-      
-      // TMS 特殊欄位 (官方 Slot 名稱)
-      item.item_equipment_slot === '馴服的怪物' || item.item_equipment_slot === 'Tamed Monster' || // Totem 1
-      item.item_equipment_slot === '馬鞍' || item.item_equipment_slot === 'Saddle' ||             // Totem 2
-      item.item_equipment_slot === '怪物裝備' || item.item_equipment_slot === 'Monster Equipment' || // Totem 3
-      
-      // 兼容可能出現的舊名稱或 API 變體
-      item.item_equipment_slot === 'Totem 1' || 
-      item.item_equipment_slot === 'Totem 2' ||
-      item.item_equipment_slot === 'Totem 3' ||
-      
-      item.item_name.includes('寶玉') || // 寶玉通常在 Pendant 欄位，靠名稱抓
-      item.item_name.includes('圖騰') || // 額外保險
-      
-      parseInt(item.starforce) > 17 || 
-      item.potential_option_grade === 'Legendary' ||
-      item.item_name.includes('規範') || 
-      item.item_name.includes('永續') ||
-      item.item_name.includes('MX-131') ||
-      item.item_name.includes('黑翼') ||
-      item.item_name.includes('VIP') ||
-      item.item_name.includes('創世') ||
-      item.item_name.includes('米特拉') ||
-      item.item_name.includes('永恆') ||
-      item.item_name.includes('滅龍')
-    )
-    .slice(0, 40) // 放寬數量限制，確保能包含圖騰寶玉後不被截斷
-    .map(item => {
-      // 針對「寶玉」進行特殊顯示名稱處理，避免 AI 混淆
-      let displaySlot = item.item_equipment_slot;
-      if (item.item_name.includes('寶玉') && (displaySlot === 'Pendant' || displaySlot === '墜飾')) {
-         displaySlot = 'Gem'; // 強制改名為 Gem (寶玉)
-      }
-      
-      let info = `[${displaySlot}] ${item.item_name}`;
-      
-      // 1. 基本資訊 (星力/等級/塔戒)
-      const baseDetails = [];
-      if (item.starforce && item.starforce !== '0') baseDetails.push(`${item.starforce}星`);
-      if (item.special_ring_level) baseDetails.push(`塔戒Lv.${item.special_ring_level}`);
-      if (item.soul_name) baseDetails.push(`靈魂:${item.soul_name}`);
-      if (baseDetails.length > 0) info += ` (${baseDetails.join(', ')})`;
-
-      // 2. 潛能階級
-      const potGrade = item.potential_option_grade;
-      const addPotGrade = item.additional_potential_option_grade;
-      if (potGrade || addPotGrade) {
-        info += ` | 階級: ${potGrade || '無'}/${addPotGrade || '無'}`;
-      }
-
-      // 3. 詳細潛能 (主潛+附加) - 讓 AI 看到完整數據
-      const mainLines = [item.potential_option_1, item.potential_option_2, item.potential_option_3].filter(Boolean);
-      const addLines = [item.additional_potential_option_1, item.additional_potential_option_2, item.additional_potential_option_3].filter(Boolean);
-      
-      if (mainLines.length > 0) info += ` | 主潛: ${mainLines.join(' / ')}`;
-      if (addLines.length > 0) info += ` | 附加: ${addLines.join(' / ')}`;
-
-      // 4. 武器類顯示總攻
-      if (['Weapon', 'Sub Weapon'].includes(item.item_equipment_slot)) {
-         info += ` | 總攻: ${item.item_total_option.attack_power || 0} / 總魔: ${item.item_total_option.magic_power || 0}`;
-      }
-
-      return info;
-    })
-    .join('\n    '); // 使用換行符號讓每個裝備獨立一行，方便 AI 閱讀
-
-  // [新增] 拼圖判定 Logic
-  const puzzle = data.set_effect?.set_effect?.find(s => s.set_name.includes('拼圖'));
-  const puzzleInfo = puzzle ? `\n    [拼圖] ${puzzle.set_name}` : '';
+  const aiSnapshot = buildAiSnapshot(data);
+  onProgress?.('資料整理完成，正在送交模型分析...');
 
   const prompt = `
     您是一位《新楓之谷》（TMS 台灣伺服器）的頂尖理論計算專家與骨灰級玩家。
@@ -233,11 +392,8 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
        - **絕對不是** 劍豪 (Hayato)、也不是阿戴爾、琳恩或幻獸師。請務必將「蓮」正確識別。
 
     1. **武器/能源階級：** 認定「命運武器」為目前最強武器；「米特拉的憤怒」為目前最強能源（漆黑裝備），其次是「創世武器 (Genesis)」，再來是「神秘冥界 (Arcane)」。
-       * **重要規則：** **創世/命運武器是固定素質，無法強化 (卷軸/星力)，僅能洗潛能、附加潛能以及星火和靈魂寶珠。** 請勿因其未衝卷或星力低而給予負評。
-       * **靈魂寶珠判定 (Soul Orb)：** 請務必檢視武器是否鑲嵌靈魂寶珠。
-         - **T0 (頂標)：** 武公寶珠 (最強爆發)、瑪麗西亞寶珠 (最強增傷)。
-         - **T1 (優秀)：** 艾畢奈亞寶珠 (BOSS攻擊增傷)、露希妲寶珠 (增加無視防禦)、烏勒斯寶珠 (小幅增加BOSS攻擊力)。
-         - 若擁有 T0 寶珠，請給予極高評價。
+       * **重要規則：** **創世/命運武器是固定素質，無法強化 (卷軸/星力)，主要檢查潛能、附加潛能與星火。** 請勿因其未衝卷或星力低而給予負評。
+       * **新版靈魂寶珠規則：** 官方已調整靈魂寶珠系統。資料中若有靈魂可作補充描述，但**未裝備靈魂寶珠不算缺陷、不得扣分，也不得列為必要改善項目**。
 
     2. **防具階級：** 「永恆裝備 (Eternal)」為頂標，其次是「滅龍騎士盔甲 (Dragon Knight/Breath of Divinity set)」，再來是神秘冥界。
     3. **特殊道具判定：** * **塔戒 (Seed Rings) / MX-131 / 黑翼胸章：** 此類裝備無法衝星與洗潛能（MX-131/黑翼為胸章），顯示「0星/無潛能」為正常現象。只要裝備清單中包含此類道具，即代表該玩家具備高階配裝觀念，請直接視為「加分項目」並給予正面評價。
@@ -299,7 +455,7 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
        - **LV265 卡洛斯 (Kalos):** 簡單 200 / 普通一階 250 / 普通二階 300 / 混沌 330 / 終極 440
        - **LV270 最初的敵對者:** 簡單 220 / 普通 320 / 困難 340 / 終極 460
        - **LV275 咖凌 (Kaling):** 簡單 230 / 普通 330 / 困難 350 / 終極 480
-       - **LV280 燦爛的兇星 (尚未開放):** 普通 400 / 困難 550
+       - **LV280 燦爛的凶星:** 普通 400 / 困難 550
        - **LV285 林波 (Limbo):** 普通/困難 500
        - **LV290 巴德利斯:** 普通/困難 700
 
@@ -367,7 +523,7 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
         - **監視者卡洛斯:** 簡單 7000萬 / 普通 2億 / 混沌 10億 / 終極 22~25億
         - **最初的敵對者:** 簡單 1億 / 普通 4億 / 困難 15億 / 終極 40億
         - **咖凌:** 簡單 1億 / 普通 4.3億 / 困難 10~12億 / 終極 30~35億
-        - **燦爛的兇星 (尚未開放):** 普通 7~8億 / 困難 13~15億
+        - **燦爛的凶星:** 普通 5億 / 困難 15億
         - **林波:** 普通 7億 / 困難 12~14億
         - **巴德利斯:** 普通 10億 / 困難 20~30億
           (請根據玩家的面板戰鬥力與上述門檻進行評估，並在「BOSS 攻略建議」中標註最高可單吃難度。)
@@ -378,114 +534,36 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
     2. **禁止越級：** 若玩家戰鬥力 **低於** 表格中的門檻，且**非**上述「強勢職業」 (Kanna/Hayato/Mo Xuan)，**絕對禁止** 評價為「穩通」、「碾壓」或「單吃」。必須誠實標註為「戰力不足，建議組隊」或「極限挑戰」。
     3. **權重優先級：** 「戰力門檻」的權重 > 「等級壓制」或「TMS裝備加成」。即便等級高、裝備好，只要面板戰力沒到 (且非強勢職業)，就不算穩通。
 
-    --- 角色摘要 (Summary) ---
-    角色名稱：${data.basic.character_name} (等級 ${data.basic.character_level} / 職業：${data.basic.character_class})
-    
-    【核心機體】
-    - 面板數據：${relevantStats}
-    - 進階指標：${specialStats}
-    - 系統練度：${unionInfo}
-    - 內在潛能：${abilityLines || '無'}
-
-    【技能練度】
-    - 六轉 (HEXA)：${hexaSkills}
-    - 五轉 (V矩陣)：${vSkills}
-
-    【關鍵裝備摘要】
-    ${topItems}${puzzleInfo}
-
-    --- 完整詳細數據 (Full JSON) ---
-    (已過濾圖片與冗餘資訊，請參考此處進行深度分析)
-    ${JSON.stringify(simpleData)}
+    --- 健檢資料 ---
+    下列 JSON 已排除圖片、外觀、到期日與未使用預設，並整理所有可用戰鬥資料。
+    dataAvailability=false 代表 API 未提供資料，不等於玩家數值為 0；不得據此扣分。
+    分析時優先使用 finalStats 的面板戰鬥力，再交叉檢查完整裝備、潛能／附加潛能、星火、卷軸、卓越強化、超級屬性、傳授技能、聯盟配置／神器／冠軍、寵物、符文成長、套裝、V／HEXA 核心、HEXA 屬性、怪怪卡、武陵與七日成長。靈魂資料僅供補充，不得作為必要條件。
+    ${JSON.stringify(aiSnapshot)}
     
     ---
 
-    請依照以下要求，**依序**輸出您的分析結果。
+    --- 輸出格式（務必依序、精簡、不得重複） ---
+    0. **角色機體簡評：** 3~5 點，涵蓋職業／等級、面板戰力、聯盟／神器、裝備與系統短板。
+    1. 輸出「### 戰力評級：分數（級別）」，下一行以「>」寫一句核心理由，再列精簡依據。
+    2. **BOSS 攻略建議：** Markdown 表格使用「| BOSS名稱 | 最高可單吃難度 | 建議 | 關鍵短評 |」。固定依序列出全部 17 隻：史烏、戴米安、露希妲、威爾、戴斯克、頓凱爾、真‧希拉、瑪麗西亞、守護天使綠水靈、黑魔法師、賽蓮、卡洛斯、最初的敵對者、燦爛的凶星、咖凌、林波、巴德利斯。依硬門檻選最高難度；若未達最低門檻，仍列最低難度並標示「戰力不足」。短評限一句。
+    3. **提升建議：** 僅列 2 項具體、可執行且投資報酬率最高的項目；從所有可用戰鬥資料交叉找真正短板，不要只看裝備。
+    4. 輸出「### 💡 專家點評：」，這是整份報告最有個性、不可壓縮的重點段落。下一行以「>」寫 **180~320 字**，像熟識多年的台灣楓之谷老玩家在 Discord 語音裡認真分析後順手虧朋友：先引用 2~3 個真實機體亮點或短板，再自然延伸 1~2 個貼切的老玩家梗；可以幽默、辛辣、羨慕、敬佩或有情懷，但必須有鋪陳與收尾。每次依角色資料重新創作，禁止套版、硬塞流行語、關鍵字堆砌或只寫一句敷衍短評。
+    5. 最後單獨輸出「--- Analysis Complete ---」。
 
-    0.  **角色機體簡評 (摘要)：** 請用列點方式，快速總結該角色的核心狀態 (職業/等級、面板戰鬥力、聯盟戰地/神器、重點裝備狀態)，作為分析開場。
-
-    1.  **戰力評級：** 
-        請使用 **標題語法 (###)** 與 **引用語法 (>)** 將分數特別放大高亮，使其在報告中非常顯眼。
-        格式範例：
-        ### 戰力評級：15 分 (SSS+ 級 - 傳說再世)
-        > **(此處用一句話簡述核心理由)**
-        
-        並在下方詳細說明給分依據。
-
-    2.  **BOSS 攻略建議 (關鍵指標)：** 
-        *   **直接建立 Markdown 表格**，**切勿在此重複列出角色數據**。
-        *   表頭格式：| BOSS名稱 | 最高可單吃難度 | 建議 | 關鍵短評 |
-        *   **完整列表強制要求：** 表格必須包含以下 **14 隻** BOSS，嚴禁遺漏或截斷：
-             **史烏、戴米安、露希妲、威爾、戴斯克、頓凱爾、真‧希拉、瑪麗西亞、守護天使綠水靈、黑魔法師、賽蓮、卡洛斯、最初的敵對者、燦爛的兇星 (標註尚未開放)、咖凌、林波、巴德利斯**。
-             (即使玩家戰力很低，也必須列出所有 BOSS 並標註「戰力不足」。請勿偷懶只列出幾隻。)
-        *   **內容填寫規則：** 
-            - **最高可單吃難度**：請根據戰力門檻找出該玩家能單吃的「最高難度」。
-            - 若連最低難度都無法單吃（戰力未達標），請填寫該 BOSS 的最低難度並在建議欄標註「戰力不足」。
-        *   請精簡「關鍵短評」文字，以確保表格能完整輸出。
-
-    3.  **提升建議 (針對 TMS 環境)：** 提出 **2 項具體且高投資報酬率** 的傷害提升建議。
-        * 請全方位檢視「短版」 (例如：裝備雖強但 ARC/AUT 不足、或六轉技能等級過低、聯盟戰地太低等)。
-
-    4.  **點評：** 
-        請使用 **標題語法 (###)** 與 **引用語法 (>)** 將這段評語特別放大高亮。
-        格式範例：
-        ### 💡 專家點評：
-        > 「(您的幽默吐槽內容...)」
-
-        **內容要求：**
-        請發揮您的創意，根據該玩家的數據寫下一段 **30~100 字左右**，幽默、辛辣或充滿情懷並帶有「楓之谷老玩家梗」來吐槽或稱讚他的狀態的評語。
-        *   **風格建議：** 可以是「骨灰級老手對新手的期許」、「土豪玩家的羨慕嫉妒恨」、「肝帝的敬佩」、或是「非洲人炸裝的同情」。
-        *   **嚴格禁止硬湊：** 上述括號內的範例僅是列舉，請**絕對不要**把「廣播收點、尬廣跟上、測謊機、練等到暴斃」這些詞全部硬塞在同一段話裡。
-        *   **自然融入：** 請根據玩家的「真實機體」選擇 **1 個最貼切的梗** 即可。
-            - 裝備太強：笑他是「橘子親兒子」或「把薪水都變成喜歡的形狀」。
-            - 裝備太爛：笑他「穿成掉寶裝」或「是被外掛搶圖搶到沒心情玩嗎」。
-            - 練度太高：笑他「是不是住在練功場」或「肝還在嗎」。
-            - 運氣太差：笑他「被橘子機率制裁」或「該去拜拜了」。
-        *   讓這段話像個真實的台灣資深玩家在 Discord 用語音嗆朋友一樣自然，不要寫成像是關鍵字堆砌的機器人文章！
-    
-    5.  **結束標記：** 請在分析結束時輸出一行「--- Analysis Complete ---」。
-
-    **【嚴格輸出格式控制】**
-    *   **No Intro:** 禁止輸出「根據您的數據...」、「這是一份分析...」等廢話。
-    *   **No Loops:** 禁止重複輸出已經寫過的章節。
-    *   **Complete Output:** 必須完整輸出上述所有對應章節，絕對不可中斷。
-    *   **Structure:** 必須嚴格遵守 0 -> 1 -> 2 -> 3 -> 4 的順序。
+    禁止開場白、中途省略、重複章節或改變 0→1→2→3→4 順序。
   `;
+
+  if (isOpenAiModel(modelId)) {
+    return analyzeWithOpenAi(prompt, openAiApiKey, modelId, onProgress);
+  }
 
   // === 修正開始: 重新定義模型列表與錯誤優先級 ===
   
   // 1. 強制過濾：若傳入 gemini-2.0-flash (可能來自舊緩存)，直接升級為 2.5，避免觸發 2.0 額度錯誤
   const effectiveModel = modelId === 'gemini-2.0-flash' ? 'gemini-2.5-flash' : modelId;
 
-  let modelsToTry = [effectiveModel];
-
-    // 3.6/3.5/3.1 系列 -> 3.6 Flash -> 3.5 Flash -> 3.5 Flash-Lite -> 3.1 Flash-Lite -> 3.0 Flash -> 2.5 Flash
-    if (effectiveModel.includes('3.6') || effectiveModel.includes('3.5') || effectiveModel.includes('3.1')) {
-      if (effectiveModel !== 'gemini-3.6-flash') {
-        modelsToTry.push('gemini-3.6-flash');
-      }
-      if (effectiveModel !== 'gemini-3.5-flash') {
-        modelsToTry.push('gemini-3.5-flash');
-      }
-      if (effectiveModel !== 'gemini-3.5-flash-lite') {
-        modelsToTry.push('gemini-3.5-flash-lite');
-      }
-      if (effectiveModel !== 'gemini-3.1-flash-lite') {
-          modelsToTry.push('gemini-3.1-flash-lite');
-      }
-      modelsToTry.push('gemini-3-flash-preview');
-      modelsToTry.push('gemini-2.5-flash');
-    }
-  // 3.0 系列 -> 2.5 Flash
-  else if (effectiveModel.includes('3.0') || effectiveModel.includes('3-')) { 
-      // 若使用者選的是 3.0 Pro，也可以考慮降級跑 3.0 Flash，再跑 2.5 Flash
-      if (effectiveModel !== 'gemini-3-flash-preview') {
-          modelsToTry.push('gemini-3-flash-preview');
-      }
-      modelsToTry.push('gemini-2.5-flash');
-  } else {
-      modelsToTry.push('gemini-2.5-flash');
-  }
+  // 最多保留兩個快速備援，避免失敗時逐一等待大量舊模型。
+  let modelsToTry = [effectiveModel, 'gemini-3.7-flash', 'gemini-2.5-flash'];
   
   // 2. 去除重複並過濾空值
   modelsToTry = [...new Set(modelsToTry)].filter(Boolean);
@@ -514,7 +592,7 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
       console.log(`Trying Gemini Model: ${currentModel}`);
       onProgress?.(`正在嘗試連線 ${currentModel.replace('gemini-', '')} 模型...`);
       
-      const genAI = new GoogleGenerativeAI(apiKey);
+      const genAI = new GoogleGenerativeAI(geminiApiKey);
       const model = genAI.getGenerativeModel({ 
         model: currentModel,
         safetySettings: [
@@ -529,10 +607,14 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
       // Preview 模型與穩定版模型皆統一給予 180 秒 (3分鐘) 以避免 3.0 模型思考過久導致 Timeout
       const TIMEOUT_MS = 180000;
       
-      const generationConfig = {
-          maxOutputTokens: 16384, // 增加 Token 上限以避免截斷 (原 8192)
-          temperature: 0.7,
+      const generationConfig: { maxOutputTokens: number; temperature?: number } = {
+          maxOutputTokens: 10000,
       };
+
+      // Gemini 3.7 已移除舊式取樣參數，舊模型則維持原本設定。
+      if (currentModel !== 'gemini-3.7-flash') {
+        generationConfig.temperature = 0.7;
+      }
 
       // @ts-ignore
       const result = await withTimeout(
@@ -543,6 +625,8 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
         TIMEOUT_MS, 
         currentModel
       );
+
+      onProgress?.('模型已開始回傳內容，正在完成健檢報告...');
       
       let fullText = '';
       
@@ -588,8 +672,8 @@ export const analyzeCharacter = async (data: DashboardData, apiKey: string, mode
       
       lastError = error;
       
-      // 失敗後多等幾秒，讓使用者看清楚錯誤提示，也避免過快重試被打回
-      await new Promise(r => setTimeout(r, 5000));
+      // 短暫退避後立即嘗試備援，避免健檢卡在舊模型重試鏈。
+      await new Promise(r => setTimeout(r, 1200));
     }
   }
 

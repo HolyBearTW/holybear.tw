@@ -2077,7 +2077,32 @@ select {
 .VPNavBarMenuGroup > .button .text {
   position: relative;
   z-index: 1;
+  color: inherit !important;
+  font-weight: 650 !important;
   line-height: var(--vp-nav-height) !important;
+  transition: color 0.18s ease !important;
+}
+
+/* Keep every desktop navigation label in sync with its interactive parent. */
+#app .VPNav {
+  --hb-nav-hover-color: var(--vp-c-brand-1);
+}
+
+#app .VPNavBarTitle .title:hover,
+#app .VPNavBarTitle .title:hover *,
+#app .VPNavBarMenuLink:hover,
+#app .VPNavBarMenuLink:hover *,
+#app .VPNavBarMenuGroup:hover > .button,
+#app .VPNavBarMenuGroup:hover > .button *,
+#app .VPNavBarMenuGroup > .button:focus-visible,
+#app .VPNavBarMenuGroup > .button:focus-visible *,
+#app .VPNavBarMenuGroup > .button[aria-expanded="true"],
+#app .VPNavBarMenuGroup > .button[aria-expanded="true"] *,
+#app .VPNavBarTranslations > .button:hover,
+#app .VPNavBarTranslations > .button:hover *,
+#app .VPSocialLink:hover,
+#app .VPSocialLink:hover * {
+  color: var(--hb-nav-hover-color) !important;
 }
 
 .VPFlyout,

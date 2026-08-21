@@ -137,14 +137,14 @@ const MaplerHouseGrowthTracker: React.FC<MaplerHouseGrowthTrackerProps> = ({
         onFocus={() => setShowNote(true)}
         onBlur={() => setShowNote(false)}
         onClick={() => setShowNote(true)}
-        className="flex h-7 w-7 items-center justify-center rounded-full text-emerald-100/70 transition-colors hover:bg-emerald-700/70 hover:text-white focus-visible:bg-emerald-700/70 focus-visible:text-white focus-visible:outline-none"
+        className="maple-growth-note-button flex h-7 w-7 items-center justify-center rounded-full text-emerald-100/80 transition-colors hover:bg-emerald-700/70 hover:text-white focus-visible:bg-emerald-700/70 focus-visible:text-white focus-visible:outline-none"
       >
         <Info className="h-4 w-4" />
       </button>
       {showNote && (
         <div
           role="note"
-          className="absolute bottom-full right-0 z-50 mb-2 w-[min(18rem,calc(100vw-3rem))] rounded-lg border border-slate-700 bg-black/95 px-3 py-2 text-left text-xs leading-5 text-slate-300 shadow-xl shadow-black/50 backdrop-blur-sm"
+          className="absolute bottom-full right-0 z-50 mb-2 w-[min(18rem,calc(100vw-3rem))] rounded-lg border border-slate-200 bg-white/95 px-3 py-2 text-left text-xs leading-5 text-slate-700 shadow-xl shadow-slate-900/15 backdrop-blur-sm dark:border-slate-700 dark:bg-black/95 dark:text-slate-300 dark:shadow-black/50"
         >
           <p>將 {characterName} 的角色識別碼送至排行榜服務建立追蹤紀錄；之後才會逐步累積成長資料並納入近期排行榜。</p>
           {dailyProgress && <p className="mt-1 text-slate-500">{dailyProgress}</p>}
@@ -156,14 +156,14 @@ const MaplerHouseGrowthTracker: React.FC<MaplerHouseGrowthTrackerProps> = ({
   if (creating || submitted || status?.tracked) {
     return (
       <div className="relative mb-3 w-full">
-        <div className="flex min-h-10 w-full items-center justify-center rounded-lg border border-emerald-500/20 bg-emerald-950/20 px-10 py-2 text-xs text-emerald-300">
+        <div className="flex min-h-10 w-full items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 px-10 py-2 text-xs text-emerald-800 dark:border-emerald-500/20 dark:bg-emerald-950/20 dark:text-emerald-300">
           {creating ? (
             <div className="flex w-full max-w-44 flex-col items-center gap-1.5">
               <div className="flex w-full items-center justify-between gap-2 text-[11px]">
                 <span>正在生成成長檔案</span>
                 {creationProgress !== null && <span>{Math.round(creationProgress)}%</span>}
               </div>
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-emerald-950">
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-emerald-100 dark:bg-emerald-950">
                 {creationProgress !== null ? (
                   <div
                     className="h-full rounded-full bg-emerald-400 transition-[width] duration-500"
@@ -174,7 +174,7 @@ const MaplerHouseGrowthTracker: React.FC<MaplerHouseGrowthTrackerProps> = ({
                 )}
               </div>
               {status?.job?.lastProcessedDate && (
-                <span className="text-[10px] text-emerald-400/70">
+                <span className="text-[10px] text-emerald-600/80 dark:text-emerald-400/70">
                   已處理至 {status.job.lastProcessedDate.replace(/-/g, '/')}
                 </span>
               )}
@@ -193,7 +193,7 @@ const MaplerHouseGrowthTracker: React.FC<MaplerHouseGrowthTrackerProps> = ({
           type="button"
           disabled={creating || !ocid}
           onClick={handleCreate}
-          className="flex min-h-10 w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-10 py-2 text-xs font-bold text-white transition-colors hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
+          className="maple-growth-create-button flex min-h-10 w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-10 py-2 text-xs font-bold text-white shadow-lg shadow-emerald-900/20 transition-all hover:translate-y-[-1px] hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
         >
           {creating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Database className="h-3.5 w-3.5" />}
           {creating ? '正在生成成長檔案...' : '生成成長檔案'}

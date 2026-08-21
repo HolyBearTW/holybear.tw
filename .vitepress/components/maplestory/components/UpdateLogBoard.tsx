@@ -40,8 +40,8 @@ export default function UpdateLogBoard() {
             【重要】安全機制更新公告
           </div>
           <div className="text-sm space-y-2 opacity-90 leading-relaxed">
-            <p>為保障網站與使用者安全，<strong>本站已移除內建的 Gemini API 金鑰</strong>。</p>
-            <p>若您需要使用「AI 戰力分析」功能，請點擊右上方的 <strong> 「齒輪」</strong> 按鈕，填寫您自己申請的免費 <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="underline text-red-700 dark:text-red-300">Google Gemini API 金鑰</a>。</p>
+            <p>為保障網站與使用者安全，<strong>本站不會內建或代管 Gemini／OpenAI API Key</strong>。</p>
+            <p>若您需要使用「AI 戰力分析」功能，請點擊右上方的 <strong>「齒輪」</strong> 按鈕，填寫自己的 <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="underline text-red-700 dark:text-red-300">Google Gemini API Key</a> 或 <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="underline text-red-700 dark:text-red-300">OpenAI API Key</a>。</p>
           </div>
         </div>
       )}

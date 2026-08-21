@@ -396,7 +396,7 @@ const UnionRaiderSection: React.FC<UnionRaiderSectionProps> = ({ union, unionRai
           <Shield className="h-5 w-5 text-yellow-500" />
           <h3 className="text-lg font-bold text-slate-200">聯盟攻擊隊</h3>
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1">
           <span className="mr-1 text-[11px] text-slate-500">預設</span>
           {presets.map((item, index) => {
             const presetNo = index + 1;
@@ -408,10 +408,10 @@ const UnionRaiderSection: React.FC<UnionRaiderSectionProps> = ({ union, unionRai
                 title={`預設 ${presetNo}`}
                 disabled={!available}
                 onClick={() => setSelectedPreset(presetNo)}
-                className={`maple-union-preset relative flex h-7 w-7 items-center justify-center rounded text-xs font-bold transition-all ${selectedPreset === presetNo ? 'is-current bg-indigo-600 text-white shadow-sm' : available ? 'bg-slate-800 text-slate-500 hover:bg-slate-700 hover:text-slate-300' : 'cursor-not-allowed bg-slate-900/60 text-slate-700'}`}
+                className={`maple-union-preset relative flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md border text-sm font-bold transition-all ${selectedPreset === presetNo ? 'is-current border-indigo-400 bg-indigo-600 text-white shadow-sm' : available ? 'border-slate-700 bg-slate-800 text-slate-500 hover:bg-slate-700 hover:text-slate-300' : 'cursor-not-allowed border-slate-800 bg-slate-900/60 text-slate-700'}`}
               >
                 {presetNo}
-                {activePreset === presetNo && <span className="maple-union-live-dot absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full border-2 border-slate-900 bg-green-500" />}
+                {activePreset === presetNo && <span className="maple-union-live-dot absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full border-2 border-slate-900 bg-green-500" />}
               </button>
             );
           })}

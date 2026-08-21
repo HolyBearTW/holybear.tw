@@ -41,6 +41,7 @@ const App: React.FC = () => {
 
   const {
     geminiKey, setGeminiKey,
+    openAiKey, setOpenAiKey,
     geminiModel, setGeminiModel,
     showKeySettings, setShowKeySettings,
     aiAnalysis,
@@ -64,12 +65,17 @@ const App: React.FC = () => {
         <ApiKeyModal 
           defaultNexonKey={apiKey || ''}
           defaultGeminiKey={geminiKey || ''}
-          onSave={(nexonKey, geminiKey) => {
+          defaultOpenAiKey={openAiKey || ''}
+          onSave={(nexonKey, geminiKey, openAiKey) => {
             setApiKey(nexonKey);
             localStorage.setItem('nexon_api_key', nexonKey);
             if (geminiKey) {
               setGeminiKey(geminiKey);
               localStorage.setItem('gemini_api_key', geminiKey);
+            }
+            if (openAiKey) {
+              setOpenAiKey(openAiKey);
+              localStorage.setItem('openai_api_key', openAiKey);
             }
           }} 
         />
@@ -81,6 +87,8 @@ const App: React.FC = () => {
         onClose={() => setShowKeySettings(false)}
         geminiKey={geminiKey}
         setGeminiKey={setGeminiKey}
+        openAiKey={openAiKey}
+        setOpenAiKey={setOpenAiKey}
         geminiModel={geminiModel}
         setGeminiModel={setGeminiModel}
       />

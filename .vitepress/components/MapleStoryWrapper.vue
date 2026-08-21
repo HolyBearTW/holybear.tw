@@ -178,6 +178,7 @@ onBeforeUnmount(() => {
 <style>
 /* MapleStory tool: transparent navigation at the top, glass surface after scrolling. */
 body:has(#maplestory-root) .VPNav {
+  --hb-nav-hover-color: #67e8f9;
   background: transparent !important;
   box-shadow: none !important;
   backdrop-filter: none !important;
@@ -209,13 +210,6 @@ body.maple-nav-over-hero:has(#maplestory-root) .VPNavBar .VPNavBarTranslations >
 body.maple-nav-over-hero:has(#maplestory-root) .VPNavBar .VPSocialLink {
   color: rgba(255, 255, 255, 0.9) !important;
   text-shadow: 0 1px 5px rgba(0, 0, 0, 0.42);
-}
-
-body.maple-nav-over-hero:has(#maplestory-root) .VPNavBar .VPNavBarMenuLink:hover,
-body.maple-nav-over-hero:has(#maplestory-root) .VPNavBar .VPNavBarMenuGroup > .button:hover,
-body.maple-nav-over-hero:has(#maplestory-root) .VPNavBar .VPNavBarTranslations > .button:hover,
-body.maple-nav-over-hero:has(#maplestory-root) .VPNavBar .VPSocialLink:hover {
-  color: #ffffff !important;
 }
 
 /* Visual fallback while VitePress is reconciling its desktop search button DOM. */
@@ -977,6 +971,12 @@ html:not(.dark) #maplestory-root .maple-set-count-badge {
   border: 1px solid rgba(8, 122, 75, 0.28);
 }
 
+html:not(.dark) #maplestory-root .maple-pet-type-badge {
+  color: #076f82 !important;
+  background: rgba(205, 241, 247, 0.96) !important;
+  border-color: rgba(8, 127, 148, 0.3) !important;
+}
+
 html:not(.dark) #maplestory-root .maple-core-toggle {
   color: #526b78 !important;
   background: rgba(237, 247, 250, 0.96) !important;
@@ -1014,6 +1014,15 @@ html:not(.dark) #maplestory-root .maple-symbol-card.is-aut {
   border-color: rgba(0, 159, 187, 0.36) !important;
 }
 
+html:not(.dark) #maplestory-root .maple-aut-heading {
+  color: #075f70 !important;
+}
+
+html:not(.dark) #maplestory-root .maple-aut-dot {
+  background: #087f94 !important;
+  box-shadow: 0 0 6px rgba(8, 127, 148, 0.55) !important;
+}
+
 html:not(.dark) #maplestory-root .maple-ai-check-button {
   color: #ffffff !important;
   background: linear-gradient(135deg, #087f94, #00aeca) !important;
@@ -1026,6 +1035,13 @@ html:not(.dark) #maplestory-root .maple-ai-check-button:hover {
 
 html:not(.dark) #maplestory-root .maple-ai-check-button:disabled {
   opacity: 0.58;
+}
+
+html:not(.dark) #maplestory-root .maple-growth-create-button,
+html:not(.dark) #maplestory-root .maple-growth-note-button,
+html:not(.dark) #maplestory-root .maple-growth-note-button:hover,
+html:not(.dark) #maplestory-root .maple-growth-note-button:focus-visible {
+  color: #ffffff !important;
 }
 
 html:not(.dark) #maplestory-root .maple-link-summary {
@@ -1215,18 +1231,28 @@ html:not(.dark) #maplestory-root .maple-union-member-tooltip {
 
 html:not(.dark) #maplestory-root .maple-union-preset {
   color: #526b78 !important;
-  background: rgba(225, 239, 244, 0.94) !important;
+  background: rgba(237, 247, 250, 0.96) !important;
+  border-color: rgba(36, 94, 112, 0.22) !important;
+  box-shadow: none !important;
 }
 
 html:not(.dark) #maplestory-root .maple-union-preset:not(:disabled):hover {
   color: #087f94 !important;
-  background: rgba(205, 241, 247, 0.98) !important;
+  background: rgba(213, 242, 247, 0.98) !important;
+  border-color: rgba(8, 127, 148, 0.42) !important;
 }
 
 html:not(.dark) #maplestory-root .maple-union-preset.is-current {
   color: #ffffff !important;
-  background: linear-gradient(135deg, #5145cd, #6d5ce8) !important;
-  box-shadow: 0 4px 12px rgba(81, 69, 205, 0.24) !important;
+  background: linear-gradient(135deg, #087f94, #00aeca) !important;
+  border-color: rgba(0, 136, 160, 0.72) !important;
+  box-shadow: 0 5px 14px rgba(0, 150, 180, 0.25) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-union-preset:disabled {
+  color: #8aa0aa !important;
+  background: rgba(237, 247, 250, 0.58) !important;
+  border-color: rgba(36, 94, 112, 0.12) !important;
 }
 
 html:not(.dark) #maplestory-root .maple-union-member:hover {

@@ -1,11 +1,14 @@
 import React from 'react';
-import { Settings, X } from 'lucide-react';
+import { ExternalLink, Settings, X } from 'lucide-react';
+import { AI_MODEL_OPTIONS } from '../data/aiModels';
 
 interface KeySettingsModalProps {
   show: boolean;
   onClose: () => void;
   geminiKey: string | null;
   setGeminiKey: (key: string | null) => void;
+  openAiKey: string | null;
+  setOpenAiKey: (key: string | null) => void;
   geminiModel: string;
   setGeminiModel: (model: string) => void;
 }
@@ -15,6 +18,8 @@ const KeySettingsModal: React.FC<KeySettingsModalProps> = ({
   onClose,
   geminiKey,
   setGeminiKey,
+  openAiKey,
+  setOpenAiKey,
   geminiModel,
   setGeminiModel
 }) => {
@@ -22,7 +27,7 @@ const KeySettingsModal: React.FC<KeySettingsModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-      <div className="bg-slate-900 border border-slate-700 rounded-xl max-w-md w-full p-6 shadow-2xl relative">
+      <div className="bg-slate-900 border border-slate-700 rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl relative">
         <button 
           onClick={onClose}
           className="absolute right-4 top-4 text-slate-500 hover:text-white"
@@ -34,7 +39,7 @@ const KeySettingsModal: React.FC<KeySettingsModalProps> = ({
         </h2>
         <div className="space-y-4 mb-6">
           <div>
-            <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">API Key</label>
+            <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">Google Gemini API Key</label>
             <input
               type="password"
               value={geminiKey || ''}
@@ -47,6 +52,34 @@ const KeySettingsModal: React.FC<KeySettingsModalProps> = ({
                 else localStorage.removeItem('gemini_api_key');
               }}
             />
+            <p className="mt-1.5 text-xs text-slate-500">
+              還沒有金鑰？前往{' '}
+              <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-indigo-400 hover:text-indigo-300 hover:underline">
+                Google AI Studio 建立 Gemini API Key <ExternalLink className="w-3 h-3" />
+              </a>
+            </p>
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">OpenAI API Key（GPT 模型）</label>
+            <input
+              type="password"
+              value={openAiKey || ''}
+              placeholder="貼上您的 OpenAI API Key..."
+              className="w-full p-3 bg-slate-950 border border-slate-700 rounded-lg text-white focus:border-indigo-500 outline-none"
+              onChange={(e) => {
+                const val = e.target.value.trim();
+                setOpenAiKey(val || null);
+                if (val) localStorage.setItem('openai_api_key', val);
+                else localStorage.removeItem('openai_api_key');
+              }}
+            />
+            <p className="mt-1.5 text-xs text-slate-500">
+              GPT 模型使用 OpenAI API Key（不是 ChatGPT 登入密碼）。前往{' '}
+              <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-indigo-400 hover:text-indigo-300 hover:underline">
+                OpenAI Platform 建立 OpenAI API Key <ExternalLink className="w-3 h-3" />
+              </a>
+              ；是否產生費用依帳戶現有試用、贈送或預付額度為準。
+            </p>
           </div>
           <div>
           <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">AI 模型</label>
@@ -58,18 +91,22 @@ const KeySettingsModal: React.FC<KeySettingsModalProps> = ({
               }}
               className="w-full p-3 bg-slate-950 border border-slate-700 rounded-lg text-white focus:border-indigo-500 outline-none appearance-none"
             >
-              <option value="gemini-3.6-flash">Gemini 3.6 Flash (最新高速 / 推薦)</option>
-              <option value="gemini-3.5-flash">Gemini 3.5 Flash (最新高速)</option>
-              <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash-Lite (最新預設 / 免費極速)</option>
-              <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro (最新旗艦 / 需付費)</option>
-              <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash-Lite (免費極速)</option>
-              <option value="gemini-3-flash-preview">Gemini 3.0 Flash (舊版 / 極速)</option>
-              <option value="gemini-3-pro-preview">Gemini 3.0 Pro (高階模型 / 需付費)</option>
-              <option value="gemini-2.5-flash">Gemini 2.5 Flash (穩定首選)</option>
-              <option value="gemini-2.5-pro">Gemini 2.5 Pro (舊版高階 / 需付費)</option>
+              <optgroup label="Google Gemini">
+                {AI_MODEL_OPTIONS.filter(option => option.provider === 'google').map(option => (
+                  <option key={option.id} value={option.id}>{option.label}</option>
+                ))}
+              </optgroup>
+              <optgroup label="OpenAI GPT（依 API 額度計費）">
+                {AI_MODEL_OPTIONS.filter(option => option.provider === 'openai').map(option => (
+                  <option key={option.id} value={option.id}>{option.label}</option>
+                ))}
+              </optgroup>
             </select>
           </div>
         </div>
+        <p className="mb-4 text-xs leading-relaxed text-slate-500">
+          API Key 只會儲存在目前瀏覽器的本機儲存空間；請勿在公用裝置輸入或將金鑰分享給他人。
+        </p>
         <div className="flex justify-end">
           <button 
             onClick={onClose}

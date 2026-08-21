@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
-import { Key, Lock, ExternalLink, Sparkles } from 'lucide-react';
+import { Key, Lock, ExternalLink, Sparkles, Bot } from 'lucide-react';
 
 interface ApiKeyModalProps {
-  onSave: (nexonKey: string, geminiKey: string) => void;
+  onSave: (nexonKey: string, geminiKey: string, openAiKey: string) => void;
   defaultNexonKey?: string;
   defaultGeminiKey?: string;
+  defaultOpenAiKey?: string;
 }
 
-const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ onSave, defaultNexonKey = '', defaultGeminiKey = '' }) => {
+const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ onSave, defaultNexonKey = '', defaultGeminiKey = '', defaultOpenAiKey = '' }) => {
   const [nexonKey, setNexonKey] = useState(defaultNexonKey);
   const [geminiKey, setGeminiKey] = useState(defaultGeminiKey);
+  const [openAiKey, setOpenAiKey] = useState(defaultOpenAiKey);
 
   // Gemini Key 即時寫入 localStorage
   const handleGeminiKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -17,16 +19,21 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ onSave, defaultNexonKey = '',
     localStorage.setItem('gemini_api_key', e.target.value);
   };
 
+  const handleOpenAiKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setOpenAiKey(e.target.value);
+    localStorage.setItem('openai_api_key', e.target.value);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (nexonKey.trim()) {
-      onSave(nexonKey.trim(), geminiKey.trim());
+      onSave(nexonKey.trim(), geminiKey.trim(), openAiKey.trim());
     }
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-      <div className="bg-slate-900 border border-slate-700 rounded-xl max-w-md w-full p-6 shadow-2xl">
+      <div className="bg-slate-900 border border-slate-700 rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl">
         <div className="flex items-center gap-3 mb-4 text-maple-400">
           <Key className="w-8 h-8" />
           <h2 className="text-2xl font-bold text-white">需要 API 金鑰</h2>
@@ -36,7 +43,7 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ onSave, defaultNexonKey = '',
           若要查看真實的楓之谷 TW 數據，您需要一組 <strong>Nexon Open API Key</strong>。
           <br />
           <span className="text-xs text-slate-500 block mt-2">
-            此金鑰僅會儲存在您的瀏覽器記憶體中，並直接用於向 Nexon 伺服器請求數據。
+            所有金鑰只會儲存在目前瀏覽器的本機儲存空間；請勿在公用裝置輸入或將金鑰分享給他人。
           </span>
         </p>
 
@@ -73,6 +80,25 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ onSave, defaultNexonKey = '',
             </div>
             <p className="text-xs text-slate-500 mt-1">
               可從 <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-maple-400 hover:underline">Google AI Studio</a> 免費獲取。
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-400 mb-1">
+              OpenAI API Key (選填，使用 GPT 模型時需要)
+            </label>
+            <div className="relative">
+              <Bot className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-400" />
+              <input
+                type="password"
+                value={openAiKey}
+                onChange={handleOpenAiKeyChange}
+                placeholder="用於 GPT 角色分析功能..."
+                className="w-full pl-10 pr-4 py-3 bg-slate-950 border border-slate-700 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none text-white transition-all"
+              />
+            </div>
+            <p className="text-xs text-slate-500 mt-1">
+              GPT 模型使用 OpenAI API Key（不是 ChatGPT 登入密碼）；可從 <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:underline">OpenAI Platform</a> 建立。是否產生費用依帳戶現有試用、贈送或預付額度為準。
             </p>
           </div>
 
