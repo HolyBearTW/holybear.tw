@@ -5,7 +5,15 @@ export interface AiModelOption {
   estimatedWait: string;
 }
 
-export const DEFAULT_AI_MODEL = 'gemini-3.7-flash';
+export const DEFAULT_GOOGLE_AI_MODEL = 'gemini-3.7-flash';
+export const DEFAULT_OPENAI_AI_MODEL = 'openai:gpt-5.6-terra:standard';
+export const DEFAULT_AI_MODEL = DEFAULT_GOOGLE_AI_MODEL;
+
+export const getRecommendedAiModel = (hasGeminiKey: boolean, hasOpenAiKey: boolean): string => {
+  if (hasOpenAiKey) return DEFAULT_OPENAI_AI_MODEL;
+  if (hasGeminiKey) return DEFAULT_GOOGLE_AI_MODEL;
+  return DEFAULT_AI_MODEL;
+};
 
 export const AI_MODEL_OPTIONS: AiModelOption[] = [
   { id: 'gemini-3.7-flash', label: 'Gemini 3.7 Flash (最新高速 / 推薦)', provider: 'google', estimatedWait: '20~90' },

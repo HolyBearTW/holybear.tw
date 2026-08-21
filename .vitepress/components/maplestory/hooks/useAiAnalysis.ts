@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { analyzeCharacter } from '../services/geminiService';
 import { DashboardData } from '../types';
-import { DEFAULT_AI_MODEL, isOpenAiModel } from '../data/aiModels';
+import { DEFAULT_AI_MODEL, getRecommendedAiModel, isOpenAiModel } from '../data/aiModels';
 
 const DEFAULT_GEMINI_KEY = ''; 
 
@@ -18,7 +18,13 @@ export const useAiAnalysis = (
   });
 
   const [geminiModel, setGeminiModel] = useState<string>(() => {
-    return typeof localStorage !== 'undefined' ? localStorage.getItem('gemini_model') || DEFAULT_AI_MODEL : DEFAULT_AI_MODEL;
+    if (typeof localStorage === 'undefined') return DEFAULT_AI_MODEL;
+    const savedModel = localStorage.getItem('gemini_model');
+    if (savedModel) return savedModel;
+    return getRecommendedAiModel(
+      Boolean(localStorage.getItem('gemini_api_key')),
+      Boolean(localStorage.getItem('openai_api_key')),
+    );
   });
 
   const [showKeySettings, setShowKeySettings] = useState(false);
@@ -29,6 +35,11 @@ export const useAiAnalysis = (
   const [dropRateWarningData, setDropRateWarningData] = useState<{ drop: number, meso: number } | null>(null);
   
   const aiResultRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (typeof localStorage !== 'undefined' && localStorage.getItem('gemini_model')) return;
+    setGeminiModel(getRecommendedAiModel(Boolean(geminiKey), Boolean(openAiKey)));
+  }, [geminiKey, openAiKey]);
 
   const isHighScore = useMemo(() => {
     if (!aiAnalysis) return false;

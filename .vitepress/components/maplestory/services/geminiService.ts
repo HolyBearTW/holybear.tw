@@ -263,7 +263,17 @@ const extractOpenAiResponseText = (payload: any): string => {
     .join('');
 };
 
-const analyzeWithOpenAi = async (
+const isCredentialError = (message: string) => {
+  const normalized = message.toLowerCase();
+  return message.includes('401') || message.includes('403') || normalized.includes('api key') || normalized.includes('authentication');
+};
+
+const isQuotaError = (message: string) => {
+  const normalized = message.toLowerCase();
+  return message.includes('429') || normalized.includes('quota') || normalized.includes('rate limit') || normalized.includes('exhausted');
+};
+
+const analyzeWithOpenAiModel = async (
   prompt: string,
   apiKey: string,
   selectionId: string,
@@ -271,7 +281,12 @@ const analyzeWithOpenAi = async (
 ): Promise<string> => {
   const [, model = 'gpt-5.6-sol', mode = 'standard'] = selectionId.split(':');
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 240000);
+  const timeoutMs = mode === 'pro' ? 120000 : mode === 'fast' || model.includes('luna') ? 35000 : 60000;
+  let timedOut = false;
+  const timeout = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, timeoutMs);
 
   onProgress?.(`正在連線 ${getAiModelOption(selectionId)?.label || model}...`);
 
@@ -312,21 +327,55 @@ const analyzeWithOpenAi = async (
     const modeLabel = mode === 'pro' ? 'Pro' : mode === 'fast' ? '快速' : '標準';
     return `${text}\n\n_(OpenAI 模型：**${model}** / ${modeLabel}模式)_`;
   } catch (error: any) {
-    if (error?.name === 'AbortError') {
-      return 'AI Analysis Failed: ⚠️ **OpenAI 分析連線逾時**\n\n等待模型回應超過 4 分鐘，請稍後再試或改用快速模式。';
+    if (timedOut || error?.name === 'AbortError') {
+      throw new Error(`TIMEOUT: ${model} 在 ${timeoutMs / 1000} 秒內沒有回傳`);
     }
-
-    const message = extractErrorMessage(error);
-    if (message.includes('429') || message.toLowerCase().includes('quota') || message.toLowerCase().includes('rate limit')) {
-      return '⚠️ **OpenAI 額度已達上限 (Rate Limit Exceeded)**\n\n請檢查 OpenAI API 額度或更換 API Key。\n\n👉 [前往 OpenAI Platform 管理 API Key](https://platform.openai.com/api-keys)';
-    }
-    if (message.includes('401') || message.toLowerCase().includes('api key') || message.toLowerCase().includes('authentication')) {
-      return 'AI Analysis Failed: ⚠️ **OpenAI API Key 無效**\n\n請在設定中確認 OpenAI API Key 是否正確。\n\n👉 [前往 OpenAI Platform 建立或管理 API Key](https://platform.openai.com/api-keys)';
-    }
-    return `AI Analysis Failed: ⚠️ **OpenAI 分析失敗**\n\n${message}`;
+    throw error;
   } finally {
     clearTimeout(timeout);
   }
+};
+
+const analyzeWithOpenAi = async (
+  prompt: string,
+  apiKey: string,
+  selectionId: string,
+  onProgress?: (msg: string) => void
+): Promise<string> => {
+  const modelsToTry = [...new Set([
+    selectionId,
+    'openai:gpt-5.6-terra:standard',
+    'openai:gpt-5.6-luna:standard',
+  ])];
+  let lastError: unknown = null;
+  let quotaError: unknown = null;
+
+  for (const currentModel of modelsToTry) {
+    try {
+      console.log(`Trying OpenAI Model: ${currentModel}`);
+      const result = await analyzeWithOpenAiModel(prompt, apiKey, currentModel, onProgress);
+      if (currentModel === selectionId) return result;
+      return `${result}\n\n_(您選擇的是 **${selectionId}**，本次已自動切換備用模型)_`;
+    } catch (error: any) {
+      const message = extractErrorMessage(error);
+      console.error(`[OpenAI Error] Model: ${currentModel} Failed`);
+      console.error(`[OpenAI Error] Details: ${message}`);
+      lastError = error;
+      if (isQuotaError(message)) quotaError = error;
+
+      if (isCredentialError(message)) break;
+      onProgress?.(`⚠️ ${getAiModelOption(currentModel)?.label || currentModel} 無回應或暫時不可用，立即切換備用模型...`);
+    }
+  }
+
+  const message = extractErrorMessage(quotaError || lastError);
+  if (isCredentialError(message)) {
+    return 'AI Analysis Failed: ⚠️ **OpenAI API Key 無效或沒有權限**\n\n請在設定中確認 OpenAI API Key 與專案權限。\n\n👉 [前往 OpenAI Platform 建立或管理 API Key](https://platform.openai.com/api-keys)';
+  }
+  if (isQuotaError(message)) {
+    return '⚠️ **OpenAI 額度已達上限 (Rate Limit Exceeded)**\n\n所有 OpenAI 備用模型皆無法使用，請檢查 API 額度或更換 API Key。\n\n👉 [前往 OpenAI Platform 管理 API Key](https://platform.openai.com/api-keys)';
+  }
+  return `AI Analysis Failed: ⚠️ **OpenAI 模型皆無回應或分析失敗**\n\n${message || '請稍後再試。'}`;
 };
 
 export const analyzeCharacter = async (data: DashboardData, geminiApiKey: string, openAiApiKey: string, modelId: string = DEFAULT_AI_MODEL, ignoreWarnings: boolean = false, onProgress?: (msg: string) => void): Promise<string> => {
@@ -526,6 +575,7 @@ export const analyzeCharacter = async (data: DashboardData, geminiApiKey: string
         - **燦爛的凶星:** 普通 5億 / 困難 15億
         - **林波:** 普通 7億 / 困難 12~14億
         - **巴德利斯:** 普通 10億 / 困難 20~30億
+        - **尤比太 (LV295):** 單吃最低 30億
           (請根據玩家的面板戰鬥力與上述門檻進行評估，並在「BOSS 攻略建議」中標註最高可單吃難度。)
 
     **【⚠️ 絕對邏輯運算守則 (Strict Logic Gate)】**
@@ -545,7 +595,7 @@ export const analyzeCharacter = async (data: DashboardData, geminiApiKey: string
     --- 輸出格式（務必依序、精簡、不得重複） ---
     0. **角色機體簡評：** 3~5 點，涵蓋職業／等級、面板戰力、聯盟／神器、裝備與系統短板。
     1. 輸出「### 戰力評級：分數（級別）」，下一行以「>」寫一句核心理由，再列精簡依據。
-    2. **BOSS 攻略建議：** Markdown 表格使用「| BOSS名稱 | 最高可單吃難度 | 建議 | 關鍵短評 |」。固定依序列出全部 17 隻：史烏、戴米安、露希妲、威爾、戴斯克、頓凱爾、真‧希拉、瑪麗西亞、守護天使綠水靈、黑魔法師、賽蓮、卡洛斯、最初的敵對者、燦爛的凶星、咖凌、林波、巴德利斯。依硬門檻選最高難度；若未達最低門檻，仍列最低難度並標示「戰力不足」。短評限一句。
+    2. **BOSS 攻略建議：** Markdown 表格使用「| BOSS名稱 | 最高可單吃難度 | 建議 | 關鍵短評 |」。固定依序列出全部 18 隻：史烏、戴米安、露希妲、威爾、戴斯克、頓凱爾、真‧希拉、瑪麗西亞、守護天使綠水靈、黑魔法師、賽蓮、卡洛斯、最初的敵對者、燦爛的凶星、咖凌、林波、巴德利斯、尤比太。依硬門檻選最高難度；若未達最低門檻，仍列最低難度並標示「戰力不足」。短評限一句。
     3. **提升建議：** 僅列 2 項具體、可執行且投資報酬率最高的項目；從所有可用戰鬥資料交叉找真正短板，不要只看裝備。
     4. 輸出「### 💡 專家點評：」，這是整份報告最有個性、不可壓縮的重點段落。下一行以「>」寫 **180~320 字**，像熟識多年的台灣楓之谷老玩家在 Discord 語音裡認真分析後順手虧朋友：先引用 2~3 個真實機體亮點或短板，再自然延伸 1~2 個貼切的老玩家梗；可以幽默、辛辣、羨慕、敬佩或有情懷，但必須有鋪陳與收尾。每次依角色資料重新創作，禁止套版、硬塞流行語、關鍵字堆砌或只寫一句敷衍短評。
     5. 最後單獨輸出「--- Analysis Complete ---」。
@@ -562,8 +612,8 @@ export const analyzeCharacter = async (data: DashboardData, geminiApiKey: string
   // 1. 強制過濾：若傳入 gemini-2.0-flash (可能來自舊緩存)，直接升級為 2.5，避免觸發 2.0 額度錯誤
   const effectiveModel = modelId === 'gemini-2.0-flash' ? 'gemini-2.5-flash' : modelId;
 
-  // 最多保留兩個快速備援，避免失敗時逐一等待大量舊模型。
-  let modelsToTry = [effectiveModel, 'gemini-3.7-flash', 'gemini-2.5-flash'];
+  // 依目前穩定性與速度排序；保留 2.5 Flash 作為跨世代最後備援。
+  let modelsToTry = [effectiveModel, 'gemini-3.7-flash', 'gemini-3.6-flash', 'gemini-2.5-flash'];
   
   // 2. 去除重複並過濾空值
   modelsToTry = [...new Set(modelsToTry)].filter(Boolean);
@@ -580,11 +630,23 @@ export const analyzeCharacter = async (data: DashboardData, geminiApiKey: string
   // const ai = new GoogleGenAI({ apiKey }); // Removed to fix hidden error
 
   // Helper: 帶超時的 Promise Wrapper
-  const withTimeout = (promise: Promise<any>, ms: number, modelName: string) => {
-    return Promise.race([
-        promise,
-        new Promise((_, reject) => setTimeout(() => reject(new Error(`TIMEOUT: Model ${modelName} did not respond within ${ms/1000} seconds`)), ms))
-    ]);
+  const withTimeout = <T,>(promise: Promise<T>, ms: number, modelName: string): Promise<T> => {
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(
+        () => reject(new Error(`TIMEOUT: Model ${modelName} did not respond within ${ms / 1000} seconds`)),
+        ms,
+      );
+      promise.then(
+        (value) => {
+          clearTimeout(timer);
+          resolve(value);
+        },
+        (error) => {
+          clearTimeout(timer);
+          reject(error);
+        },
+      );
+    });
   };
 
   for (const currentModel of modelsToTry) {
@@ -603,9 +665,9 @@ export const analyzeCharacter = async (data: DashboardData, geminiApiKey: string
         ]
       });
 
-      // 根據模型調整超時時間：應使用者要求延長等待時間
-      // Preview 模型與穩定版模型皆統一給予 180 秒 (3分鐘) 以避免 3.0 模型思考過久導致 Timeout
-      const TIMEOUT_MS = 180000;
+      const isProModel = currentModel.includes('pro');
+      const FIRST_RESPONSE_TIMEOUT_MS = isProModel ? 75000 : 35000;
+      const STREAM_IDLE_TIMEOUT_MS = isProModel ? 60000 : 35000;
       
       const generationConfig: { maxOutputTokens: number; temperature?: number } = {
           maxOutputTokens: 10000,
@@ -617,30 +679,47 @@ export const analyzeCharacter = async (data: DashboardData, geminiApiKey: string
       }
 
       // @ts-ignore
+      const firstContentDeadline = Date.now() + FIRST_RESPONSE_TIMEOUT_MS;
       const result = await withTimeout(
         model.generateContentStream({
             contents: [{ role: 'user', parts: [{ text: prompt }] }],
             generationConfig
         }), 
-        TIMEOUT_MS, 
+        FIRST_RESPONSE_TIMEOUT_MS,
         currentModel
       );
 
-      onProgress?.('模型已開始回傳內容，正在完成健檢報告...');
-      
       let fullText = '';
-      
-      for await (const chunk of result.stream) {
-        let chunkText = '';
-        try {
-            chunkText = chunk.text();
-        } catch (e) { 
-            // 某些 Block 情況下 text() 會噴錯
+      let hasReportedFirstContent = false;
+      const iterator = result.stream[Symbol.asyncIterator]();
+
+      try {
+        while (true) {
+          const remainingFirstContentTime = Math.max(1, firstContentDeadline - Date.now());
+          const waitMs = fullText ? STREAM_IDLE_TIMEOUT_MS : remainingFirstContentTime;
+          const step = await withTimeout(iterator.next(), waitMs, currentModel);
+          if (step.done) break;
+
+          let chunkText = '';
+          try {
+            chunkText = step.value.text();
+          } catch {
+            // 某些 Block 情況下 text() 會噴錯，繼續等待有效文字。
+          }
+
+          if (chunkText) {
+            fullText += chunkText;
+            if (!hasReportedFirstContent) {
+              hasReportedFirstContent = true;
+              onProgress?.('模型已開始回傳內容，正在完成健檢報告...');
+            }
+          }
         }
-        
-        if (chunkText) {
-          fullText += chunkText;
+      } catch (error) {
+        if (iterator.return) {
+          await iterator.return().catch(() => undefined);
         }
+        throw error;
       }
 
       if (!fullText) throw new Error(`Empty Response from ${currentModel}`);
@@ -661,10 +740,8 @@ export const analyzeCharacter = async (data: DashboardData, geminiApiKey: string
       console.dir(error); 
       console.error('------------------------');
       
-      onProgress?.(`⚠️ ${currentModel.replace('gemini-', '')} 連線失敗/額度滿，正在切換備用模型...`);
-
       // === 關鍵邏輯：優先捕捉 429 錯誤 ===
-      if (cleanMsg.includes('429') || cleanMsg.includes('Quota') || cleanMsg.includes('exhausted')) {
+      if (isQuotaError(cleanMsg)) {
           quotaError = error; // 抓到了！這是最有價值的錯誤
       } else if (cleanMsg.includes('503') || cleanMsg.includes('overloaded') || cleanMsg.includes('UNAVAILABLE') || cleanMsg.includes('TIMEOUT')) {
           serverOverloadedError = error; // 抓到了！伺服器忙碌或超時
@@ -672,8 +749,8 @@ export const analyzeCharacter = async (data: DashboardData, geminiApiKey: string
       
       lastError = error;
       
-      // 短暫退避後立即嘗試備援，避免健檢卡在舊模型重試鏈。
-      await new Promise(r => setTimeout(r, 1200));
+      if (isCredentialError(cleanMsg)) break;
+      onProgress?.(`⚠️ ${currentModel.replace('gemini-', '')} 無回應或暫時不可用，立即切換備用模型...`);
     }
   }
 
@@ -684,12 +761,16 @@ export const analyzeCharacter = async (data: DashboardData, geminiApiKey: string
       const errorMsg = extractErrorMessage(finalError);
       console.error("All Gemini Models Failed. Final Error:", errorMsg);
 
-      if (errorMsg.includes('429') || errorMsg.includes('Quota') || errorMsg.includes('exhausted')) {
-        return "⚠️ **AI 額度已達上限 (Rate Limit Exceeded)**\n\n因使用人數眾多，公用額度暫時耗盡。請稍等 1 分鐘後再試，或更換您自己的 Google Gemini API Key。";
+      if (isCredentialError(errorMsg)) {
+        return "AI Analysis Failed: ⚠️ **Gemini API Key 無效或沒有權限**\n\n請在設定中確認 Gemini API Key 與專案權限。";
+      }
+
+      if (isQuotaError(errorMsg)) {
+        return "⚠️ **AI 額度已達上限 (Rate Limit Exceeded)**\n\n所有 Gemini 備用模型皆無法使用，請檢查目前 API Key 的額度，稍後再試或更換另一組 Key。";
       }
 
       if (errorMsg.includes('503') || errorMsg.includes('overloaded') || errorMsg.includes('UNAVAILABLE')) {
-        return "AI Analysis Failed: ⚠️ **AI 伺服器忙碌中 (Server Overloaded)**\n\nGoogle Gemini 伺服器目前負載過高，暫時無法回應。請稍等 30 秒後再試，或嘗試切換至較穩定的 gemini-2.5-flash 模型。";
+        return "AI Analysis Failed: ⚠️ **AI 伺服器忙碌中 (Server Overloaded)**\n\n系統已依序嘗試所有 Gemini 備用模型，但目前皆無法回應，請稍後再試。";
       }
 
       if (errorMsg.includes('TIMEOUT')) {
