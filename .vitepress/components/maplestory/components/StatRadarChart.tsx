@@ -5,6 +5,10 @@ interface StatRadarChartProps {
   data: DashboardData;
 }
 
+const MAIN_STAT_SCALE = 8500;
+// 惡魔復仇者的 HP 與一般主屬性量級不同；約 24 萬 HP 對應一般主屬性的雷達基準。
+const DEMON_AVENGER_HP_SCALE = 240000;
+
 const StatRadarChart: React.FC<StatRadarChartProps> = ({ data }) => {
   const [hoveredIndex, setHoveredIndex] = React.useState<number | null>(null);
 
@@ -20,17 +24,20 @@ const StatRadarChart: React.FC<StatRadarChartProps> = ({ data }) => {
   const int = getVal('INT');
   const luk = getVal('LUK');
   const hp = getVal('HP');
-  
-  let mainStatLabel = 'STR';
-  let mainStatVal = str;
-  
-  // Simple heuristic for main stat (highest value)
-  // Demon Avenger uses HP, Xenon uses STR/DEX/LUK, but for chart simplicity we pick the highest
-  if (dex > mainStatVal) { mainStatLabel = 'DEX'; mainStatVal = dex; }
-  if (int > mainStatVal) { mainStatLabel = 'INT'; mainStatVal = int; }
-  if (luk > mainStatVal) { mainStatLabel = 'LUK'; mainStatVal = luk; }
-  // Special case for HP classes if HP is significantly higher relative to normal stats (scaled down)
-  // But usually we just show the highest primary stat. 
+
+  const characterClass = data.basic?.character_class || data.stat?.character_class || '';
+  const isDemonAvenger = characterClass.includes('惡魔復仇者');
+
+  let mainStatLabel = isDemonAvenger ? 'HP' : 'STR';
+  let mainStatVal = isDemonAvenger ? hp : str;
+  const mainStatScale = isDemonAvenger ? DEMON_AVENGER_HP_SCALE : MAIN_STAT_SCALE;
+
+  // 非惡魔復仇者才使用四大屬性的最高值推定，避免單純因 HP 很高而誤判職業。
+  if (!isDemonAvenger) {
+    if (dex > mainStatVal) { mainStatLabel = 'DEX'; mainStatVal = dex; }
+    if (int > mainStatVal) { mainStatLabel = 'INT'; mainStatVal = int; }
+    if (luk > mainStatVal) { mainStatLabel = 'LUK'; mainStatVal = luk; }
+  }
   
   // 2. Determine Attack Type
   const att = getVal('攻擊力');
@@ -61,7 +68,7 @@ const StatRadarChart: React.FC<StatRadarChartProps> = ({ data }) => {
   };
 
   const stats = [
-    { label: mainStatLabel, value: mainStatVal, normalized: curveNormalize(mainStatVal, 8500) },
+    { label: mainStatLabel, value: mainStatVal, normalized: curveNormalize(mainStatVal, mainStatScale) },
     { label: attackLabel, value: attackVal, normalized: curveNormalize(attackVal, 1800) },
     { label: '最終傷害', value: finalDmg, normalized: curveNormalize(finalDmg, 75) },
     { label: 'BOSS傷害', value: boss, normalized: curveNormalize(boss, 220) },
