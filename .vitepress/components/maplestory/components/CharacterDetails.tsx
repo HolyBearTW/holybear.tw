@@ -662,7 +662,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
   };
 
   return (
-    <div className="flex flex-col gap-6 mt-6">
+    <div className="maple-character-details flex flex-col gap-6 mt-6">
       <div className="bg-[#161b22] p-6 rounded-xl min-w-0 w-full">
         <HyperStatSection hyperStat={hyperStat} />
       </div>
@@ -1163,4 +1163,4 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
   );
 };
 
-export default CharacterDetails;
+export default React.memo(CharacterDetails);

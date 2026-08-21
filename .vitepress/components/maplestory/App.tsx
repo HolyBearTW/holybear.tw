@@ -59,6 +59,11 @@ const App: React.FC = () => {
     getStatVal, detailedStats, getAbilityStyle, currentAbilityInfo
   } = useCharacterStats(data);
 
+  // Keep the first result paint responsive. The primary dashboard renders at once,
+  // while the much larger detail tree is prepared as interruptible background work.
+  const deferredData = React.useDeferredValue(data);
+  const deferredDetailsData = deferredData === data ? deferredData : null;
+
   return (
     <div className="min-h-screen bg-transparent text-slate-200 font-sans pb-20">
       {!apiKey && (
@@ -179,10 +184,12 @@ const App: React.FC = () => {
             progressMessage={progressMessage}
           />
 
-          <CharacterDetails 
-           data={data} 
-           apiKey={apiKey || ''} // 傳入 apiKey
-          />
+          {deferredDetailsData && (
+            <CharacterDetails
+              data={deferredDetailsData}
+              apiKey={apiKey || ''} // 傳入 apiKey
+            />
+          )}
           {showShareModal && <ShareModal characterName={data.basic.character_name} onClose={() => setShowShareModal(false)} />}
           </>
         )}

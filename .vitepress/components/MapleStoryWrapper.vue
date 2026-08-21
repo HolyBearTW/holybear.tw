@@ -177,6 +177,11 @@ onBeforeUnmount(() => {
 
 <style>
 /* MapleStory tool: transparent navigation at the top, glass surface after scrolling. */
+#maplestory-root .maple-character-details {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 3200px;
+}
+
 body:has(#maplestory-root) .VPNav {
   --hb-nav-hover-color: #67e8f9;
   background: transparent !important;
