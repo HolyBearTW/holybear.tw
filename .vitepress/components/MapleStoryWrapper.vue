@@ -735,6 +735,29 @@ html:not(.dark) #maplestory-root .maple-equipment-tooltip [class~="text-indigo-3
   color: #a5b4fc !important;
 }
 
+/* 拼圖彈窗依網站實際主題切換，避免作業系統深色偏好覆蓋手動淺色模式。 */
+html:not(.dark) #maplestory-root .maple-puzzle-board {
+  color: #172033 !important;
+  background: rgba(255, 255, 255, 0.98) !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.2) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-puzzle-board-title {
+  color: #172033 !important;
+}
+
+html:not(.dark) #maplestory-root .maple-puzzle-board-close,
+html:not(.dark) #maplestory-root .maple-puzzle-board-hint {
+  color: #526176 !important;
+}
+
+html:not(.dark) #maplestory-root .maple-puzzle-board-close:hover {
+  color: #172033 !important;
+  background: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+}
+
 html:not(.dark) #maplestory-root .maple-recent-login-tooltip {
   background: rgba(255, 255, 255, 0.96) !important;
   box-shadow: 0 8px 22px rgba(35, 76, 94, 0.16) !important;
@@ -1332,5 +1355,360 @@ html:not(.dark) #maplestory-root .maple-union-live-dot {
 html:not(.dark) #maplestory-root .maple-union-rank {
   color: #704900 !important;
   background: rgba(245, 201, 94, 0.72) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-calculator-open-button {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #087a4b, #0ba978) !important;
+  box-shadow: 0 8px 20px rgba(8, 122, 75, 0.2) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-calculator-open-button:hover {
+  background: linear-gradient(135deg, #06663e, #088e65) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-calculator-backdrop {
+  background: rgba(23, 55, 70, 0.38) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-calculator-panel,
+html:not(.dark) #maplestory-root .maple-calculator-sticky-head,
+html:not(.dark) #maplestory-root .maple-calculator-titlebar {
+  color: var(--maple-light-text) !important;
+  background: rgba(249, 253, 255, 0.98) !important;
+  border-color: var(--maple-light-border-strong) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-calculator-panel .bg-\[\#0d1117\],
+html:not(.dark) #maplestory-root .maple-calculator-panel .bg-\[\#0d1117\]\/65,
+html:not(.dark) #maplestory-root .maple-calculator-panel .bg-\[\#0d1117\]\/70,
+html:not(.dark) #maplestory-root .maple-calculator-panel .bg-\[\#0d1117\]\/75 {
+  background: rgba(229, 242, 247, 0.78) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-calculator-panel .text-white,
+html:not(.dark) #maplestory-root .maple-calculator-panel .text-slate-200,
+html:not(.dark) #maplestory-root .maple-calculator-panel .text-slate-300 {
+  color: var(--maple-light-text-strong) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-calculator-panel .text-slate-400,
+html:not(.dark) #maplestory-root .maple-calculator-panel .text-slate-500,
+html:not(.dark) #maplestory-root .maple-calculator-panel .text-slate-600 {
+  color: var(--maple-light-text-muted) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-calculator-input,
+html:not(.dark) #maplestory-root .maple-calculator-result,
+html:not(.dark) #maplestory-root .maple-calculator-autofill,
+html:not(.dark) #maplestory-root .maple-calculator-guide-hero,
+html:not(.dark) #maplestory-root .maple-calculator-guide-card,
+html:not(.dark) #maplestory-root .maple-calculator-guide-details,
+html:not(.dark) #maplestory-root .maple-calculator-guide-examples,
+html:not(.dark) #maplestory-root .maple-calculator-note {
+  border-color: rgba(36, 94, 112, 0.22) !important;
+  background: rgba(237, 247, 250, 0.9) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-calculator-input input,
+html:not(.dark) #maplestory-root .maple-calculator-select {
+  color: var(--maple-light-text-strong) !important;
+  color-scheme: light;
+}
+
+html:not(.dark) #maplestory-root .maple-calculator-select-menu {
+  color: var(--maple-light-text) !important;
+  background: rgba(249, 253, 255, 0.99) !important;
+  border-color: var(--maple-light-border-strong) !important;
+  box-shadow: 0 18px 44px rgba(35, 76, 94, 0.22) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-calculator-select-option {
+  color: var(--maple-light-text) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-calculator-select-option:hover {
+  color: #075f70 !important;
+  background: rgba(213, 242, 247, 0.98) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-calculator-select-option.is-active {
+  color: #087047 !important;
+  background: rgba(8, 122, 75, 0.12) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-calculator-tab.is-active {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #087a4b, #0ba978) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-calculator-version {
+  color: #087047 !important;
+  background: rgba(8, 122, 75, 0.1) !important;
+  border-color: rgba(8, 122, 75, 0.24) !important;
+}
+
+#maplestory-root .maple-calculator-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #466773 #111a20;
+}
+
+#maplestory-root .maple-calculator-scroll::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+#maplestory-root .maple-calculator-scroll::-webkit-scrollbar-track {
+  background: #111a20;
+}
+
+#maplestory-root .maple-calculator-scroll::-webkit-scrollbar-thumb {
+  background: #466773;
+  border: 3px solid #111a20;
+  border-radius: 999px;
+}
+
+#maplestory-root .maple-calculator-scroll::-webkit-scrollbar-thumb:hover {
+  background: #5d8997;
+}
+
+#maplestory-root .maple-calculator-scroll::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+html:not(.dark) #maplestory-root .maple-calculator-scroll {
+  scrollbar-color: #7899a5 #edf4f6;
+}
+
+html:not(.dark) #maplestory-root .maple-calculator-scroll::-webkit-scrollbar-track {
+  background: #edf4f6;
+}
+
+html:not(.dark) #maplestory-root .maple-calculator-scroll::-webkit-scrollbar-thumb {
+  background: #7899a5;
+  border-color: #edf4f6;
+}
+
+html:not(.dark) #maplestory-root .maple-calculator-scroll::-webkit-scrollbar-thumb:hover {
+  background: #527986;
+}
+
+/* 計算機使用 portal 掛到 body，不能再依賴 #maplestory-root 才能命中淺色模式。 */
+html:not(.dark) .maple-calculator-backdrop {
+  background: rgba(23, 55, 70, 0.38) !important;
+}
+
+html:not(.dark) .maple-calculator-panel,
+html:not(.dark) .maple-calculator-sticky-head,
+html:not(.dark) .maple-calculator-titlebar {
+  color: var(--maple-light-text) !important;
+  background: rgba(249, 253, 255, 0.98) !important;
+  border-color: var(--maple-light-border-strong) !important;
+}
+
+html:not(.dark) .maple-calculator-panel .bg-\[\#0d1117\],
+html:not(.dark) .maple-calculator-panel .bg-\[\#0d1117\]\/55,
+html:not(.dark) .maple-calculator-panel .bg-\[\#0d1117\]\/65,
+html:not(.dark) .maple-calculator-panel .bg-\[\#0d1117\]\/70,
+html:not(.dark) .maple-calculator-panel .bg-\[\#0d1117\]\/75 {
+  background: rgba(229, 242, 247, 0.78) !important;
+}
+
+html:not(.dark) .maple-calculator-panel .text-white,
+html:not(.dark) .maple-calculator-panel .text-slate-200,
+html:not(.dark) .maple-calculator-panel .text-slate-300 {
+  color: var(--maple-light-text-strong) !important;
+}
+
+html:not(.dark) .maple-calculator-panel .text-slate-400,
+html:not(.dark) .maple-calculator-panel .text-slate-500,
+html:not(.dark) .maple-calculator-panel .text-slate-600 {
+  color: var(--maple-light-text-muted) !important;
+}
+
+/* 深色介面的螢光提示色在淺色底上會過亮，改用較深但仍可辨識的語意色。 */
+html:not(.dark) .maple-calculator-panel .text-emerald-200,
+html:not(.dark) .maple-calculator-panel .text-emerald-300,
+html:not(.dark) .maple-calculator-panel .text-emerald-400 {
+  color: #08745a !important;
+}
+
+html:not(.dark) .maple-calculator-panel .text-cyan-200,
+html:not(.dark) .maple-calculator-panel .text-cyan-300,
+html:not(.dark) .maple-calculator-panel .text-cyan-400 {
+  color: #096f84 !important;
+}
+
+html:not(.dark) .maple-calculator-panel .text-indigo-200,
+html:not(.dark) .maple-calculator-panel .text-indigo-300 {
+  color: #4a55a2 !important;
+}
+
+html:not(.dark) .maple-calculator-panel .text-amber-200,
+html:not(.dark) .maple-calculator-panel .text-amber-300 {
+  color: #965b08 !important;
+}
+
+html:not(.dark) .maple-calculator-panel .text-rose-200,
+html:not(.dark) .maple-calculator-panel .text-rose-300 {
+  color: #a13c55 !important;
+}
+
+html:not(.dark) .maple-calculator-input,
+html:not(.dark) .maple-calculator-result,
+html:not(.dark) .maple-calculator-autofill,
+html:not(.dark) .maple-calculator-guide-hero,
+html:not(.dark) .maple-calculator-guide-card,
+html:not(.dark) .maple-calculator-guide-api,
+html:not(.dark) .maple-calculator-guide-details,
+html:not(.dark) .maple-calculator-guide-examples,
+html:not(.dark) .maple-calculator-note {
+  border-color: rgba(36, 94, 112, 0.22) !important;
+  background: rgba(237, 247, 250, 0.9) !important;
+}
+
+html:not(.dark) .maple-calculator-input input,
+html:not(.dark) .maple-calculator-select {
+  color: var(--maple-light-text-strong) !important;
+  color-scheme: light;
+}
+
+html:not(.dark) .maple-calculator-select-menu {
+  color: var(--maple-light-text) !important;
+  background: rgba(249, 253, 255, 0.99) !important;
+  border-color: var(--maple-light-border-strong) !important;
+  box-shadow: 0 18px 44px rgba(35, 76, 94, 0.22) !important;
+}
+
+html:not(.dark) .maple-calculator-select-option {
+  color: var(--maple-light-text) !important;
+}
+
+html:not(.dark) .maple-calculator-select-option:hover {
+  color: #075f70 !important;
+  background: rgba(213, 242, 247, 0.98) !important;
+}
+
+html:not(.dark) .maple-calculator-select-option.is-active {
+  color: #087047 !important;
+  background: rgba(8, 122, 75, 0.12) !important;
+}
+
+html:not(.dark) .maple-calculator-tab.is-active {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #087a4b, #0ba978) !important;
+}
+
+html:not(.dark) .maple-calculator-version {
+  color: #087047 !important;
+  background: rgba(8, 122, 75, 0.1) !important;
+  border-color: rgba(8, 122, 75, 0.24) !important;
+}
+
+.maple-calculator-version {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+@media (max-width: 639px) {
+  .maple-calculator-titlebar {
+    padding-right: 10px !important;
+    padding-left: 10px !important;
+  }
+
+  .maple-calculator-titlebar > div:first-child {
+    gap: 9px !important;
+  }
+
+  .maple-calculator-titlebar > div:first-child > span:first-child {
+    padding: 8px !important;
+  }
+
+  .maple-calculator-version {
+    padding: 3px 7px !important;
+    font-size: 10px !important;
+  }
+}
+
+html:not(.dark) .maple-calculator-reset-autofill {
+  border-color: rgba(8, 117, 134, 0.4) !important;
+  background: rgba(8, 145, 164, 0.1) !important;
+  color: #075f70 !important;
+}
+
+html:not(.dark) .maple-calculator-reset-autofill:hover:not(:disabled) {
+  border-color: rgba(8, 117, 134, 0.62) !important;
+  background: rgba(8, 145, 164, 0.17) !important;
+  color: #044f5e !important;
+}
+
+.maple-calculator-input:hover {
+  border-color: rgba(16, 185, 129, 0.42) !important;
+}
+
+.maple-calculator-input-control:focus-within {
+  border-color: rgba(52, 211, 153, 0.78) !important;
+  background: rgba(6, 20, 24, 0.96) !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.13);
+}
+
+html:not(.dark) .maple-calculator-input-control {
+  border-color: rgba(36, 94, 112, 0.34) !important;
+  background: #ffffff !important;
+}
+
+html:not(.dark) .maple-calculator-input-control:focus-within {
+  border-color: rgba(8, 122, 75, 0.66) !important;
+  background: #ffffff !important;
+  box-shadow: 0 0 0 3px rgba(8, 122, 75, 0.12);
+}
+
+.maple-calculator-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #466773 #111a20;
+}
+
+.maple-calculator-scroll::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+.maple-calculator-scroll::-webkit-scrollbar-track {
+  background: #111a20;
+}
+
+.maple-calculator-scroll::-webkit-scrollbar-thumb {
+  background: #466773;
+  border: 3px solid #111a20;
+  border-radius: 999px;
+}
+
+.maple-calculator-scroll::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+html:not(.dark) .maple-calculator-scroll {
+  scrollbar-color: #7899a5 #edf4f6;
+}
+
+html:not(.dark) .maple-calculator-scroll::-webkit-scrollbar-track {
+  background: #edf4f6;
+}
+
+html:not(.dark) .maple-calculator-scroll::-webkit-scrollbar-thumb {
+  background: #7899a5;
+  border-color: #edf4f6;
+}
+
+html:not(.dark) .maple-calculator-scroll::-webkit-scrollbar-thumb:hover {
+  background: #527986;
 }
 </style>

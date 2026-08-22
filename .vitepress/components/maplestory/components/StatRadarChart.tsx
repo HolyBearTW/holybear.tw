@@ -1,5 +1,6 @@
 import React from 'react';
 import { DashboardData } from '../types';
+import { calculateDefenseMultiplier } from '../calculator/combatMath';
 
 interface StatRadarChartProps {
   data: DashboardData;
@@ -54,18 +55,14 @@ const StatRadarChart: React.FC<StatRadarChartProps> = ({ data }) => {
 
   // 4. Scaling
   // 使用固定曲線基準，避免「每一項都約落在 83%」導致強勢屬性不明顯。
-  // 另外對無視防禦做遞減，降低其在高區間的視覺壓制。
   const clamp01 = (v: number) => Math.max(0, Math.min(v, 1));
   const curveNormalize = (value: number, scale: number, power = 1) => {
     if (scale <= 0) return 0;
     const curved = 1 - Math.exp(-Math.max(value, 0) / scale);
     return clamp01(Math.pow(curved, power));
   };
-  const normalizeIed = (value: number) => {
-    // 70% 前視為基礎門檻，70% 後才開始顯著計分，並加入遞減。
-    const effective = Math.max(value - 70, 0);
-    return curveNormalize(effective, 16, 1.3);
-  };
+  // 與實戰計算機共用 380% BOSS 防禦公式；以實際保留的輸出比例作為雷達半徑。
+  const normalizeIed = (value: number) => clamp01(calculateDefenseMultiplier(value));
 
   const stats = [
     { label: mainStatLabel, value: mainStatVal, normalized: curveNormalize(mainStatVal, mainStatScale) },
@@ -172,9 +169,10 @@ const StatRadarChart: React.FC<StatRadarChartProps> = ({ data }) => {
             strokeWidth="2"
           />
 
-          {/* Data Points & Tooltips */}
+          {/* Data Points */}
           {dataPoints.map((p, i) => (
-            <g key={i} 
+            <g key={i}
+               data-radar-index={i}
                onMouseEnter={() => setHoveredIndex(i)}
                onMouseLeave={() => setHoveredIndex(null)}
                style={{ cursor: 'pointer' }}
@@ -183,34 +181,6 @@ const StatRadarChart: React.FC<StatRadarChartProps> = ({ data }) => {
               <circle cx={p.x} cy={p.y} r="10" fill="transparent" />
               {/* Visible point */}
               <circle cx={p.x} cy={p.y} r={hoveredIndex === i ? 4 : 2} fill={hoveredIndex === i ? "#fff" : "#818cf8"} />
-              
-              {/* Tooltip */}
-              {hoveredIndex === i && (
-                <g pointerEvents="none" style={{ zIndex: 50 }}>
-                  <rect 
-                    x={p.x - 35} 
-                    y={p.y - 30} 
-                    width="70" 
-                    height="24" 
-                    rx="4" 
-                    fill="rgba(15, 23, 42, 0.95)" 
-                    stroke="#64748b" 
-                    strokeWidth="1" 
-                  />
-                  <text 
-                    x={p.x} 
-                    y={p.y - 18} 
-                    textAnchor="middle" 
-                    dominantBaseline="middle" 
-                    fill="#fff" 
-                    fontSize="11" 
-                    fontWeight="bold"
-                  >
-                    {stats[i].value.toLocaleString()}
-                    {['最終傷害', 'BOSS傷害', '爆擊傷害', '無視防禦'].includes(stats[i].label) ? '%' : ''}
-                  </text>
-                </g>
-              )}
             </g>
           ))}
 
@@ -230,6 +200,38 @@ const StatRadarChart: React.FC<StatRadarChartProps> = ({ data }) => {
               </text>
             );
           })}
+
+          {/* SVG 不會套用一般 CSS z-index；最後繪製才能確保 Tooltip 蓋在屬性名稱上方。 */}
+          {hoveredIndex !== null && (() => {
+            const point = dataPoints[hoveredIndex];
+            const stat = stats[hoveredIndex];
+            return (
+              <g pointerEvents="none">
+                <rect
+                  x={point.x - 35}
+                  y={point.y - 30}
+                  width="70"
+                  height="24"
+                  rx="4"
+                  fill="rgba(15, 23, 42, 0.95)"
+                  stroke="#64748b"
+                  strokeWidth="1"
+                />
+                <text
+                  x={point.x}
+                  y={point.y - 18}
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  fill="#fff"
+                  fontSize="11"
+                  fontWeight="bold"
+                >
+                  {stat.value.toLocaleString()}
+                  {['最終傷害', 'BOSS傷害', '爆擊傷害', '無視防禦'].includes(stat.label) ? '%' : ''}
+                </text>
+              </g>
+            );
+          })()}
         </svg>
       </div>
     </div>

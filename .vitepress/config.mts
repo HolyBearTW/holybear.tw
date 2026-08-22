@@ -150,6 +150,10 @@ const config = defineConfig({
                     find: /^.*\/VPNavScreenTranslations\.vue$/,
                     replacement: fileURLToPath(new URL('./theme/MobileNavScreenTranslations.vue', import.meta.url))
                 },
+                {
+                    find: '@maplecombat',
+                    replacement: fileURLToPath(new URL('./components/maplestory/maplecombat-full', import.meta.url))
+                },
                 { find: 'react', replacement: fileURLToPath(new URL('../node_modules/react', import.meta.url)) },
                 { find: 'react-dom', replacement: fileURLToPath(new URL('../node_modules/react-dom', import.meta.url)) },
             ],
@@ -168,7 +172,6 @@ const config = defineConfig({
                 'recharts',
                 'border-beam',
                 '@google/generative-ai',
-                '@esotericsoftware/spine-player',
                 'animejs',
                 'firebase/app',
                 'firebase/firestore',

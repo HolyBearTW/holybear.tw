@@ -126,7 +126,7 @@ const extractExceptionalData = (item: EquipmentItem) => {
   return { count, lines };
 };
 
-const StatLine: React.FC<{ label: string; base: string; add: string; etc: string; star: string; total: string; isPercent?: boolean }> = ({ label, base, add, etc, star, total, isPercent }) => {
+const StatLine: React.FC<{ label: string; base: string; add: string; etc: string; star: string; total: string; isPercent?: boolean; spacious?: boolean }> = ({ label, base, add, etc, star, total, isPercent, spacious = false }) => {
   if (total === '0' || !total) return null;
 
   const baseVal = parseInt(base || '0');
@@ -139,8 +139,8 @@ const StatLine: React.FC<{ label: string; base: string; add: string; etc: string
   const suffix = isPercent ? '%' : '';
   
   return (
-    <div className="flex items-center text-[11px] leading-[12px]">
-      <span className="text-slate-300 w-24 shrink-0 font-medium">{label}:</span>
+    <div className={`flex items-center ${spacious ? 'min-h-6 text-[12px] leading-5' : 'text-[11px] leading-[12px]'}`}>
+      <span className={`text-slate-300 shrink-0 font-medium ${spacious ? 'w-28' : 'w-24'}`}>{label}:</span>
       <div className="flex-1">
         <span className="text-white">+{total}{suffix}</span>
         {hasBreakdown && (
@@ -195,6 +195,7 @@ const formatDescription = (desc: string) => {
 };
 
 const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, characterJob, slotType, showSetEffect }) => {
+  const isPuzzlePiece = slotType === 'PuzzlePiece';
   const getPotGradeInfo = (grade: string) => {
     const g = grade ? grade.toLowerCase() : '';
     if (g.includes('legendary') || g.includes('傳說')) return { color: 'text-green-400', border: 'border-green-500', label: '傳說', char: 'L' };
@@ -326,6 +327,10 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
   const matchedSet = sortedSets.find(s => {
       const setName = s.set_name;
       const itemName = item.item_name;
+
+      // 拼圖片名稱與套裝名稱的詞序不同，例如「真殺人鯨拼圖(攻擊力)1」
+      // 對應「真殺人鯨攻擊力拼圖」，因此直接使用 API 中目前生效的拼圖套裝。
+      if (isPuzzlePiece && setName.includes('拼圖')) return true;
 
       // 1. Smart Name Matching (Auto-detect)
       // Removes "Set", "Effect" AND Job Names from the Set Name to find the core series name.
@@ -473,16 +478,16 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
   
   const renderedStars = renderStars();
   return (
-    <div className="maple-equipment-tooltip relative grid grid-cols-[14px_minmax(0,1fr)_15px] grid-rows-[14px_auto_15px] w-full text-white text-[12px] leading-[1.2] overflow-hidden z-50 text-left pointer-events-none">
+    <div className={`maple-equipment-tooltip relative grid grid-cols-[14px_minmax(0,1fr)_15px] grid-rows-[14px_auto_15px] w-full text-white text-[12px] leading-[1.2] overflow-hidden z-50 text-left pointer-events-none ${isPuzzlePiece ? 'maple-equipment-tooltip-puzzle-piece' : ''}`}>
       <div className="bg-left-top" style={windowBg('window_nw.png')} />
       <div className="bg-repeat-x" style={windowBg('window_n.png')} />
       <div className="bg-left-top" style={windowBg('window_ne.png')} />
 
       <div className="bg-repeat-y" style={windowBg('window_w.png')} />
       <div className="relative [&>*:last-child]:pb-0" style={windowBg('window_c.png')}>
-        <div className="px-3 pt-[0px] pb-[3px] text-center relative leading-none">
+        <div className={`px-3 pt-[0px] text-center relative ${isPuzzlePiece ? 'pb-2 leading-snug' : 'pb-[3px] leading-none'}`}>
           {renderedStars}
-          <h3 className="text-sm font-bold text-white relative z-10 block m-0 p-0 leading-none">
+          <h3 className={`font-bold text-white relative z-10 block m-0 p-0 ${isPuzzlePiece ? 'text-[15px] leading-snug' : 'text-sm leading-none'}`}>
            {item.item_name}
            {item.special_ring_level > 0 && <span className="text-orange-400 ml-1">Lv.{item.special_ring_level}</span>}
            {scrollCount > 0 ? ` (+${scrollCount})` : ''}
@@ -494,7 +499,7 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
 
         <DotDivider />
 
-        <div className="pl-3 pr-1 py-[3px] relative">
+        <div className={`pl-3 pr-1 relative ${isPuzzlePiece ? 'py-3' : 'py-[3px]'}`}>
           <div className="relative flex justify-between items-end gap-3">
             <div className="relative w-[64px] h-[64px] bg-no-repeat bg-[length:64px_64px]" style={windowBg('itemIcon_base.png')}>
               <div className="absolute inset-0 pointer-events-none bg-[length:64px_64px]" style={windowBg('itemIcon_shade.png')} />
@@ -522,8 +527,8 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
 
         <DotDivider />
 
-        <div className={`px-3 py-[3px] ${slotType === 'Puzzle' ? '' : ''} relative z-10 space-y-1`}>
-          <div className="flex items-center text-[11px] leading-tight">
+        <div className={`px-3 ${isPuzzlePiece ? 'py-2 space-y-2' : 'py-[3px] space-y-1'} relative z-10`}>
+          <div className={`flex items-center ${isPuzzlePiece ? 'text-[12px] leading-5' : 'text-[11px] leading-tight'}`}>
              <span className="text-slate-400 w-24 shrink-0 font-medium text-left">裝備職業</span>
              <span className="text-white">
                 {getJobDisplay()}
@@ -541,21 +546,21 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
           {slotType !== 'Puzzle' && <DotDivider />}
 
           {slotType !== 'Puzzle' && (
-          <div className="px-3 py-0 space-y-1 relative z-10 bg-transparent">
+          <div className={`px-3 relative z-10 bg-transparent ${isPuzzlePiece ? 'pt-[10px] pb-2 space-y-2' : 'py-0 space-y-1'}`}>
          {/* Categories */}
-         <div className="space-y-[2px]">
-           <StatLine label="STR" base={item.item_base_option.str} add={item.item_add_option.str} etc={item.item_etc_option.str} star={item.item_starforce_option.str} total={item.item_total_option.str} />
-           <StatLine label="DEX" base={item.item_base_option.dex} add={item.item_add_option.dex} etc={item.item_etc_option.dex} star={item.item_starforce_option.dex} total={item.item_total_option.dex} />
-           <StatLine label="INT" base={item.item_base_option.int} add={item.item_add_option.int} etc={item.item_etc_option.int} star={item.item_starforce_option.int} total={item.item_total_option.int} />
-           <StatLine label="LUK" base={item.item_base_option.luk} add={item.item_add_option.luk} etc={item.item_etc_option.luk} star={item.item_starforce_option.luk} total={item.item_total_option.luk} />
+         <div className={isPuzzlePiece ? 'space-y-1' : 'space-y-[2px]'}>
+           <StatLine label="STR" base={item.item_base_option.str} add={item.item_add_option.str} etc={item.item_etc_option.str} star={item.item_starforce_option.str} total={item.item_total_option.str} spacious={isPuzzlePiece} />
+           <StatLine label="DEX" base={item.item_base_option.dex} add={item.item_add_option.dex} etc={item.item_etc_option.dex} star={item.item_starforce_option.dex} total={item.item_total_option.dex} spacious={isPuzzlePiece} />
+           <StatLine label="INT" base={item.item_base_option.int} add={item.item_add_option.int} etc={item.item_etc_option.int} star={item.item_starforce_option.int} total={item.item_total_option.int} spacious={isPuzzlePiece} />
+           <StatLine label="LUK" base={item.item_base_option.luk} add={item.item_add_option.luk} etc={item.item_etc_option.luk} star={item.item_starforce_option.luk} total={item.item_total_option.luk} spacious={isPuzzlePiece} />
            
-           <StatLine label="最大 HP" base={item.item_base_option.max_hp} add={item.item_add_option.max_hp} etc={item.item_etc_option.max_hp} star={item.item_starforce_option.max_hp} total={item.item_total_option.max_hp} />
-           <StatLine label="最大 MP" base={item.item_base_option.max_mp} add={item.item_add_option.max_mp} etc={item.item_etc_option.max_mp} star={item.item_starforce_option.max_mp} total={item.item_total_option.max_mp} />
-           <StatLine label="攻擊力" base={item.item_base_option.attack_power} add={item.item_add_option.attack_power} etc={item.item_etc_option.attack_power} star={item.item_starforce_option.attack_power} total={item.item_total_option.attack_power} />
-           <StatLine label="魔法攻擊力" base={item.item_base_option.magic_power} add={item.item_add_option.magic_power} etc={item.item_etc_option.magic_power} star={item.item_starforce_option.magic_power} total={item.item_total_option.magic_power} />
-           <StatLine label="BOSS 傷害" base={item.item_base_option.boss_damage} add={item.item_add_option.boss_damage} etc={item.item_etc_option.boss_damage} star="0" total={item.item_total_option.boss_damage} isPercent />
-           <StatLine label="無視防禦率" base={item.item_base_option.ignore_monster_armor} add={item.item_add_option.ignore_monster_armor} etc={item.item_etc_option.ignore_monster_armor} star="0" total={item.item_total_option.ignore_monster_armor} isPercent />
-           <StatLine label="全屬性%" base={item.item_base_option.all_stat} add={item.item_add_option.all_stat} etc={item.item_etc_option.all_stat} star="0" total={item.item_total_option.all_stat} isPercent />
+           <StatLine label="最大 HP" base={item.item_base_option.max_hp} add={item.item_add_option.max_hp} etc={item.item_etc_option.max_hp} star={item.item_starforce_option.max_hp} total={item.item_total_option.max_hp} spacious={isPuzzlePiece} />
+           <StatLine label="最大 MP" base={item.item_base_option.max_mp} add={item.item_add_option.max_mp} etc={item.item_etc_option.max_mp} star={item.item_starforce_option.max_mp} total={item.item_total_option.max_mp} spacious={isPuzzlePiece} />
+           <StatLine label="攻擊力" base={item.item_base_option.attack_power} add={item.item_add_option.attack_power} etc={item.item_etc_option.attack_power} star={item.item_starforce_option.attack_power} total={item.item_total_option.attack_power} spacious={isPuzzlePiece} />
+           <StatLine label="魔法攻擊力" base={item.item_base_option.magic_power} add={item.item_add_option.magic_power} etc={item.item_etc_option.magic_power} star={item.item_starforce_option.magic_power} total={item.item_total_option.magic_power} spacious={isPuzzlePiece} />
+           <StatLine label="BOSS 傷害" base={item.item_base_option.boss_damage} add={item.item_add_option.boss_damage} etc={item.item_etc_option.boss_damage} star="0" total={item.item_total_option.boss_damage} isPercent spacious={isPuzzlePiece} />
+           <StatLine label="無視防禦率" base={item.item_base_option.ignore_monster_armor} add={item.item_add_option.ignore_monster_armor} etc={item.item_etc_option.ignore_monster_armor} star="0" total={item.item_total_option.ignore_monster_armor} isPercent spacious={isPuzzlePiece} />
+           <StatLine label="全屬性%" base={item.item_base_option.all_stat} add={item.item_add_option.all_stat} etc={item.item_etc_option.all_stat} star="0" total={item.item_total_option.all_stat} isPercent spacious={isPuzzlePiece} />
            
            {((item.scroll_upgradable_count || (item as any).scroll_upgradeable_count) !== undefined && String((item.scroll_upgradable_count || (item as any).scroll_upgradeable_count)) !== '0') && (
              <div className="flex items-center text-[11px] leading-none">

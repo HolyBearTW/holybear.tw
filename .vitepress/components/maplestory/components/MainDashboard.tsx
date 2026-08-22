@@ -3,7 +3,7 @@
 import { getJobBackgroundMap, SERVER_ICONS } from '../constants';
 import React from 'react';
 import { calculateWeeklyGrowth } from './ExpTrendChart';
-import { ThumbsUp, Star, Crown, Zap, ChevronUp, ChevronDown, Info, Mail, Share2, Loader2, Wand2, Sword, Shield, Flame } from 'lucide-react';
+import { ThumbsUp, Star, Crown, Zap, ChevronUp, ChevronDown, Info, Mail, Share2, Loader2, Wand2, Sword, Shield, Flame, Calculator } from 'lucide-react';
 import StatRadarChart from './StatRadarChart';
 import PresetSwitcher from './PresetSwitcher';
 import StatTooltip from './StatTooltip';
@@ -17,6 +17,9 @@ import {
 } from '../services/maplerhouseService';
 import MaplerHouseGrowthTracker from './MaplerHouseGrowthTracker';
 import { fetchWeeklyHistory, findBestDateInPastWeek } from '../services/nexonService';
+
+// Keep the calculator and its formula code out of the character result's first paint.
+const CharacterCalculatorModal = React.lazy(() => import('./CharacterCalculatorModal'));
 
 interface MainDashboardProps {
     data: any;
@@ -237,6 +240,7 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
 }) => {
     const hasRecentLogin = String(data.basic.access_flag).toLowerCase() === 'true';
     const [showRecentLoginStatus, setShowRecentLoginStatus] = React.useState(false);
+    const [showCalculator, setShowCalculator] = React.useState(false);
     const recentPowerRankRef = React.useRef<RecentPowerRankHandle>(null);
 
     const handleTrackingComplete = React.useCallback(() => {
@@ -361,6 +365,10 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
                       <button onClick={handleAiAnalyze} disabled={analyzing} className="maple-ai-check-button w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold rounded-lg flex items-center justify-center gap-2 transition-all shadow-lg shadow-indigo-900/20 hover:translate-y-[-1px]">
                          {analyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
                          {aiAnalysis ? '重新分析' : 'AI 健檢'}
+                      </button>
+                      <button onClick={() => setShowCalculator(true)} className="maple-calculator-open-button mt-2.5 w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold rounded-lg flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-900/20 hover:translate-y-[-1px]">
+                         <Calculator className="w-4 h-4" />
+                         戰力計算機
                       </button>
                    </div>
                </div>
@@ -527,6 +535,17 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
                />
                      {data.cashItemEquipment && <CashEquipmentGrid cashEquipment={data.cashItemEquipment} beautyEquipment={data.beautyEquipment} characterImage={data.basic.character_image} />}
             </div>
+            {showCalculator && (
+              <React.Suspense fallback={(
+                <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/70 backdrop-blur-sm">
+                  <div className="flex items-center gap-2 rounded-xl border border-slate-700 bg-[#161b22] px-5 py-3 text-sm font-bold text-emerald-300 shadow-2xl">
+                    <Loader2 className="h-4 w-4 animate-spin" /> 正在開啟計算機...
+                  </div>
+                </div>
+              )}>
+                <CharacterCalculatorModal data={data} onClose={() => setShowCalculator(false)} />
+              </React.Suspense>
+            )}
           </div>
     );
 };

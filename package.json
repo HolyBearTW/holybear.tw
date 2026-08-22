@@ -32,6 +32,7 @@
     "markdown-it-front-matter": "^0.2.4",
     "medium-zoom": "^1.1.0",
     "opencc-js": "^1.4.1",
+    "pinia": "^3.0.4",
     "postcss": "^8.5.26",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
@@ -59,6 +60,7 @@
   "scripts": {
     "dev": "vitepress dev",
     "build": "vitepress build",
+    "check:maple-calculator": "node scripts/check-maple-calculator.mjs",
     "preview": "vitepress preview",
     "gen-en-blog": "node en/blog/gen-en-blog-placeholders.js",
     "postinstall": "node scripts/silence-react-warn.js"

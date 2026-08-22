@@ -3,7 +3,7 @@ import { BorderBeam } from 'border-beam';
 import { EquipmentItem, CharacterEquipment, CharacterSetEffect } from '../types';
 import EquipmentTooltip from './EquipmentTooltip';
 import PresetSwitcher from './PresetSwitcher';
-import { Square, CheckSquare } from 'lucide-react';
+import { Square, CheckSquare, X } from 'lucide-react';
 
 import { CharacterAndroidEquipment } from '../types';
 
@@ -121,7 +121,104 @@ const resolveItemIcon = (item: EquipmentItem | undefined, slotKey: string): stri
   return item.item_icon;
 };
 
-const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'left' | 'right'; mobileDir?: 'up' | 'down'; setEffect?: CharacterSetEffect; characterJob?: string; showSetEffect?: boolean; disabled?: boolean }> = ({ slotKey, item, tooltipSide = 'left', mobileDir = 'down', setEffect, characterJob, showSetEffect, disabled = false }) => {
+const getPuzzleSlotIndex = (item: EquipmentItem) => {
+  const match = String(item.item_equipment_slot || '').match(/(\d+)/);
+  return match ? Number(match[1]) : Number.MAX_SAFE_INTEGER;
+};
+
+const PuzzleBoard: React.FC<{
+  items: EquipmentItem[];
+  setEffect?: CharacterSetEffect;
+  characterJob?: string;
+  showSetEffect?: boolean;
+  onClose: () => void;
+}> = ({ items, setEffect, characterJob, showSetEffect = false, onClose }) => {
+  const [hoveredPiece, setHoveredPiece] = useState<EquipmentItem | null>(null);
+  const [selectedPiece, setSelectedPiece] = useState<EquipmentItem | null>(null);
+  const sortedItems = [...items].sort((a, b) => getPuzzleSlotIndex(a) - getPuzzleSlotIndex(b));
+  const piecesBySlot = new Map(sortedItems.map((item) => [getPuzzleSlotIndex(item), item]));
+  const activePiece = hoveredPiece || selectedPiece;
+
+  return (
+    <div
+      className="maple-puzzle-board relative w-[176px] rounded-lg border border-slate-300 bg-white p-3 !text-slate-900 shadow-[0_18px_45px_rgba(15,23,42,0.24)] dark:border-slate-700 dark:bg-[#111827] dark:!text-slate-100 dark:shadow-2xl"
+      role="dialog"
+      aria-label="目前裝備的拼圖"
+      onClick={(event) => event.stopPropagation()}
+    >
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <span className="maple-puzzle-board-title text-sm font-bold tracking-wide !text-slate-900 dark:!text-slate-100">拼圖</span>
+        <button
+          type="button"
+          aria-label="關閉拼圖"
+          className="maple-puzzle-board-close flex h-6 w-6 items-center justify-center rounded-md border border-transparent !text-slate-500 transition-colors hover:border-slate-300 hover:bg-slate-100 hover:!text-slate-900 dark:!text-slate-400 dark:hover:border-slate-600 dark:hover:bg-slate-800 dark:hover:!text-white"
+          onClick={onClose}
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+
+      <div
+        className="grid grid-cols-3 gap-0 overflow-hidden rounded border border-slate-400 bg-black shadow-inner dark:border-slate-700"
+        onMouseLeave={() => setHoveredPiece(null)}
+      >
+        {Array.from({ length: 12 }, (_, index) => {
+          const piece = piecesBySlot.get(index + 1);
+          if (!piece) {
+            return <div key={index} className="h-12 w-12 bg-slate-950" aria-hidden="true" />;
+          }
+
+          const isSelected = selectedPiece === piece;
+          return (
+            <button
+              key={`${piece.item_equipment_slot}-${piece.item_name}`}
+              type="button"
+              aria-label={`查看${piece.item_name}`}
+              aria-pressed={isSelected}
+              className={`relative m-0 h-12 w-12 overflow-hidden border-0 bg-black p-0 focus-visible:z-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-300 ${isSelected ? 'z-10 shadow-[inset_0_0_0_2px_rgba(34,211,238,0.9)]' : ''}`}
+              onMouseEnter={() => setHoveredPiece(piece)}
+              onFocus={() => setHoveredPiece(piece)}
+              onBlur={() => setHoveredPiece(null)}
+              onClick={() => setSelectedPiece((current) => current === piece ? null : piece)}
+            >
+              <img
+                src={piece.item_icon}
+                alt=""
+                aria-hidden="true"
+                className="absolute -inset-[2px] h-[calc(100%+4px)] w-[calc(100%+4px)] max-w-none object-fill"
+                style={{ imageRendering: 'pixelated' }}
+              />
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="maple-puzzle-board-hint mt-2 text-center text-[10px] leading-4 !text-slate-500 dark:!text-slate-400">
+        移入或點選拼圖片查看能力
+      </div>
+
+      {activePiece && (
+        <div className="absolute left-1/2 top-full z-[300] mt-2 w-[300px] max-w-[calc(100vw-20px)] -translate-x-1/2 md:left-auto md:right-[calc(100%+8px)] md:top-8 md:mt-0 md:translate-x-0">
+          <EquipmentTooltip
+            item={activePiece}
+            setEffect={setEffect}
+            characterJob={characterJob}
+            slotType="PuzzlePiece"
+            showSetEffect={showSetEffect}
+          />
+        </div>
+      )}
+    </div>
+  );
+};
+
+interface SkillRingToggle {
+  isOpen: boolean;
+  ringName: string;
+  onToggle: () => void;
+}
+
+const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'left' | 'right'; mobileDir?: 'up' | 'down'; setEffect?: CharacterSetEffect; characterJob?: string; showSetEffect?: boolean; disabled?: boolean; skillRingToggle?: SkillRingToggle; puzzleItems?: EquipmentItem[] }> = ({ slotKey, item, tooltipSide = 'left', mobileDir = 'down', setEffect, characterJob, showSetEffect, disabled = false, skillRingToggle, puzzleItems }) => {
   const def = SLOT_DEFINITIONS[slotKey];
   const [isOpen, setIsOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -145,7 +242,8 @@ const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'lef
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
 
-  const showTooltip = isOpen || isHovered;
+  const isPuzzleBoard = slotKey === 'Puzzle' && Boolean(puzzleItems?.length);
+  const showTooltip = isOpen || (!isPuzzleBoard && isHovered);
 
   // Smart Tooltip Positioning
   useLayoutEffect(() => {
@@ -211,7 +309,16 @@ const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'lef
     >
       <div 
         className={`w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0 ${bgColor} border-2 ${borderColor} rounded-md flex items-center justify-center relative overflow-hidden ${glow} ${item ? 'cursor-pointer' : 'cursor-default'} ${disabled ? 'opacity-45 saturate-0' : ''}`}
+        role={isPuzzleBoard ? 'button' : undefined}
+        tabIndex={isPuzzleBoard ? 0 : undefined}
+        aria-label={isPuzzleBoard ? '查看目前裝備的拼圖' : undefined}
         onClick={(e) => { e.stopPropagation(); setIsOpen(!isOpen); }}
+        onKeyDown={(event) => {
+          if (isPuzzleBoard && (event.key === 'Enter' || event.key === ' ')) {
+            event.preventDefault();
+            setIsOpen((current) => !current);
+          }
+        }}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
@@ -220,7 +327,7 @@ const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'lef
             <img 
               src={displayIcon} 
               alt={item.item_name} 
-              className={`max-w-full max-h-full object-contain z-10 ${['Gem', 'Pocket', 'Badge', 'Ring1', 'Ring2', 'Ring3', 'Ring4'].includes(slotKey) ? 'translate-x-[1px] translate-y-[1px]' : ''}`} 
+              className={`max-w-full max-h-full object-contain z-10 ${skillRingToggle ? '-translate-x-[2px] -translate-y-[2px]' : ['Gem', 'Pocket', 'Badge', 'Ring1', 'Ring2', 'Ring3', 'Ring4'].includes(slotKey) ? 'translate-x-[1px] translate-y-[1px]' : ''}`}
             />
             {(item.potential_option_grade?.includes('Legendary') || item.potential_option_grade?.includes('傳說')) && <div className="absolute inset-0 bg-green-500/10 animate-pulse z-0" />}
             {parseInt(item.starforce || '0') > 0 && (
@@ -233,17 +340,47 @@ const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'lef
           <span className="text-[10px] text-slate-700 select-none font-medium">{def?.label}</span>
         )}
       </div>
+      {skillRingToggle && (
+        <button
+          type="button"
+          aria-label={`${skillRingToggle.isOpen ? '關閉' : '開啟'}輔助特殊技能戒指：${skillRingToggle.ringName}`}
+          aria-pressed={skillRingToggle.isOpen}
+          title={`${skillRingToggle.isOpen ? '關閉' : '開啟'}輔助特殊技能戒指：${skillRingToggle.ringName}`}
+          className="absolute bottom-0 right-0 z-30 h-[19px] w-[19px] border-0 bg-transparent p-0 transition-[filter,transform] hover:brightness-110 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cyan-300"
+          onClick={(event) => {
+            event.stopPropagation();
+            skillRingToggle.onToggle();
+          }}
+        >
+          <img
+            src={`/image/theme/window/skill-ring-${skillRingToggle.isOpen ? 'open' : 'close'}.png`}
+            alt=""
+            aria-hidden="true"
+            className="block h-[19px] w-[19px] max-w-none"
+          />
+        </button>
+      )}
       {displayItem && (
         <div 
             ref={tooltipRef}
             style={adjustStyle}
             // Use showTooltip state instead of group-hover:block to ensure JS positioning logic runs consistently
-            className={`absolute left-1/2 -translate-x-1/2 z-[200] w-[300px] max-w-[90vw]
+            className={`absolute left-1/2 -translate-x-1/2 z-[200] ${isPuzzleBoard ? 'w-[176px]' : 'w-[300px]'} max-w-[90vw]
                         ${showTooltip ? 'block' : 'hidden'} animate-in fade-in duration-200 shadow-2xl rounded-xl
                         ${mobilePositionClass}
-                        md:absolute ${desktopVerticalClass} ${desktopPositionClass} md:translate-x-0 md:w-[300px] md:max-h-none md:overflow-visible`}
+                        md:absolute ${desktopVerticalClass} ${desktopPositionClass} md:translate-x-0 ${isPuzzleBoard ? 'md:w-[176px]' : 'md:w-[300px]'} md:max-h-none md:overflow-visible`}
         >
-           <EquipmentTooltip item={displayItem} setEffect={setEffect} characterJob={characterJob} slotType={slotKey} showSetEffect={slotKey === 'Puzzle' ? true : showSetEffect} />
+           {isPuzzleBoard && puzzleItems ? (
+             <PuzzleBoard
+               items={puzzleItems}
+               setEffect={setEffect}
+               characterJob={characterJob}
+               showSetEffect={showSetEffect}
+               onClose={() => setIsOpen(false)}
+             />
+           ) : (
+             <EquipmentTooltip item={displayItem} setEffect={setEffect} characterJob={characterJob} slotType={slotKey} showSetEffect={slotKey === 'Puzzle' ? true : showSetEffect} />
+           )}
         </div>
       )}
     </div>
@@ -259,6 +396,7 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, setEffect, cha
   const activePresetNo = parseInt(equipment.preset_no || '1');
   const [selectedPreset, setSelectedPreset] = useState<number>(activePresetNo);
   const [showSetEffect, setShowSetEffect] = useState(false);
+  const [showAuxiliarySkillRing, setShowAuxiliarySkillRing] = useState(false);
 
   useEffect(() => {
     if (equipment.preset_no) {
@@ -280,6 +418,37 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, setEffect, cha
   };
 
   const displayItems = getDisplayItems();
+  const puzzleItems = (equipment.item_equipment || []).filter((item: EquipmentItem) =>
+    normalize(item.item_equipment_part || '') === '拼圖'
+    && /^拼圖\d+$/.test(normalize(item.item_equipment_slot || ''))
+  );
+
+  const isAuxiliarySkillRing = (item: EquipmentItem) => {
+    const slot = normalize(item.item_equipment_slot || '');
+    const part = normalize(item.item_equipment_part || '');
+    return slot === '輔助特殊技能戒指' || part === '輔助特殊技能戒指';
+  };
+  const auxiliarySkillRing = displayItems.find(isAuxiliarySkillRing);
+  const isEquippedSkillRing = (item: EquipmentItem) =>
+    !isAuxiliarySkillRing(item)
+    && Number(item.special_ring_level || 0) > 0
+    && (normalize(item.item_equipment_part || '') === '戒指' || normalize(item.item_equipment_slot || '').startsWith('戒指'));
+  const equippedSkillRing = displayItems.find((item: EquipmentItem) =>
+    isEquippedSkillRing(item) && /(規範|永續)戒指/.test(item.item_name || '')
+  ) || displayItems.find(isEquippedSkillRing);
+  const equippedSkillRingSlotKey = equippedSkillRing
+    ? Object.keys(SLOT_DEFINITIONS).find((slotKey) => {
+        const definition = SLOT_DEFINITIONS[slotKey];
+        const slot = normalize(equippedSkillRing.item_equipment_slot || '');
+        return definition.match.some((match) => normalize(match) === slot);
+      })
+    : undefined;
+
+  useEffect(() => {
+    if (!auxiliarySkillRing || !equippedSkillRingSlotKey) {
+      setShowAuxiliarySkillRing(false);
+    }
+  }, [auxiliarySkillRing, equippedSkillRingSlotKey]);
 
   // ---------------------------------------------------------
   // 核心邏輯修正：針對 TMS 特殊欄位進行強制配對
@@ -287,6 +456,10 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, setEffect, cha
   const findItem = (slotKey: string) => {
     const def = SLOT_DEFINITIONS[slotKey];
     if (!def) return undefined;
+
+    if (showAuxiliarySkillRing && auxiliarySkillRing && slotKey === equippedSkillRingSlotKey) {
+      return auxiliarySkillRing;
+    }
 
     const activeItems = equipment.item_equipment || [];
 
@@ -340,6 +513,16 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, setEffect, cha
 
     // 拼圖處理: 從 Set Effect 猜測
     if (slotKey === 'Puzzle') {
+        if (puzzleItems.length > 0) {
+             return {
+                ...puzzleItems[0],
+                item_equipment_part: 'puzzle',
+                item_equipment_slot: 'Puzzle',
+                item_name: '拼圖盒',
+                item_icon: '/image/theme/maplestory_character/puzzle.png',
+             };
+        }
+
         const foundSet = setEffect?.set_effect?.find(s => s.set_name.includes('拼圖'));
         if (foundSet) {
              return {
@@ -429,10 +612,26 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, setEffect, cha
       {/* Left Columns (Accessories) */}
       <div className="flex gap-2">
         <div className="flex flex-col gap-2">
-          {['Ring4', 'Ring3', 'Ring2', 'Ring1', 'Belt', 'Pocket'].map((key, idx) => <Slot key={key} slotKey={key} item={findItem(key)} tooltipSide="right" mobileDir={idx < 3 ? 'down' : 'up'} setEffect={setEffect} characterJob={characterJob} showSetEffect={showSetEffect} />)}
+          {['Ring4', 'Ring3', 'Ring2', 'Ring1', 'Belt', 'Pocket'].map((key, idx) => (
+            <Slot
+              key={key}
+              slotKey={key}
+              item={findItem(key)}
+              tooltipSide="right"
+              mobileDir={idx < 3 ? 'down' : 'up'}
+              setEffect={setEffect}
+              characterJob={characterJob}
+              showSetEffect={showSetEffect}
+              skillRingToggle={key === equippedSkillRingSlotKey && auxiliarySkillRing ? {
+                isOpen: showAuxiliarySkillRing,
+                ringName: auxiliarySkillRing.item_name,
+                onToggle: () => setShowAuxiliarySkillRing((current) => !current),
+              } : undefined}
+            />
+          ))}
         </div>
         <div className="flex flex-col gap-2">
-           {['Face', 'Eye', 'Earrings', 'Pendant2', 'Pendant', 'Puzzle'].map((key, idx) => <Slot key={key} slotKey={key} item={findItem(key)} tooltipSide="right" mobileDir={idx < 3 ? 'down' : 'up'} setEffect={setEffect} characterJob={characterJob} showSetEffect={showSetEffect} />)}
+           {['Face', 'Eye', 'Earrings', 'Pendant2', 'Pendant', 'Puzzle'].map((key, idx) => <Slot key={key} slotKey={key} item={findItem(key)} tooltipSide="right" mobileDir={idx < 3 ? 'down' : 'up'} setEffect={setEffect} characterJob={characterJob} showSetEffect={showSetEffect} puzzleItems={key === 'Puzzle' ? puzzleItems : undefined} />)}
         </div>
       </div>
 

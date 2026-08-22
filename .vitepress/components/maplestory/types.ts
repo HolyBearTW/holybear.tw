@@ -109,6 +109,11 @@ export interface EquipmentItem {
   item_exceptional_option?: ItemExceptionalOption;
   soul_name?: string;
   soul_option?: string;
+  // 2026 新版靈魂武器系統。舊 soul_* 欄位仍可能同時存在且為 null。
+  soul_weapon_grade?: string;
+  soul_weapon_level?: string;
+  soul_weapon_power_increase?: string;
+  soul_weapon_option?: string;
 }
 
 export interface CharacterEquipment {

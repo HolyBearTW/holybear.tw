@@ -1,0 +1,4015 @@
+:host {
+  display: block;
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  min-height: 680px;
+  overflow: visible;
+  border-radius: 14px;
+  color-scheme: light;
+  font-family: Inter, "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif;
+}
+
+:host *,
+:host *::before,
+:host *::after {
+  box-sizing: border-box;
+}
+
+.maplecombat-shell {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--mc-text, #dbe7ef);
+  font-family: Inter, "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif;
+}
+
+.view-panel,
+.mode-panel.active {
+  display: block;
+}
+
+.mode-panel:not(.active) {
+  display: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+:host([data-theme='dark']) {
+  color-scheme: dark;
+}
+
+#app,
+.maplecombat-shell {
+  width: 100%;
+  min-width: 0;
+  min-height: 680px;
+}
+
+.maplecombat-shell {
+  overflow-x: clip;
+}
+
+.holybear-autofill-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 18px;
+  width: calc(100% - 16px);
+  margin: 8px auto 0;
+  padding: 9px 12px;
+  border: 1px solid rgba(158, 231, 211, 0.42);
+  border-radius: 10px;
+  background: rgba(18, 82, 76, 0.34);
+  color: #e8fff8;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.holybear-autofill-banner > div:first-child {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+}
+
+.holybear-autofill-banner strong {
+  color: #9fffdc;
+}
+
+.holybear-formula-meta {
+  flex: 0 0 auto;
+  color: rgba(230, 242, 255, 0.78);
+  white-space: nowrap;
+}
+
+:host([data-theme='light']) .holybear-autofill-banner {
+  border-color: rgba(33, 145, 130, 0.34);
+  background: rgba(229, 250, 246, 0.84);
+  color: #234c4a;
+}
+
+:host([data-theme='light']) .holybear-autofill-banner strong {
+  color: #08796d;
+}
+
+:host([data-theme='light']) .holybear-formula-meta {
+  color: #5a6f7d;
+}
+
+.holybear-validation-banner,
+.holybear-source-guide {
+  width: calc(100% - 16px);
+  margin: 8px auto 0;
+  border-radius: 10px;
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.holybear-validation-banner {
+  padding: 9px 12px;
+  border: 1px solid rgba(255, 184, 90, 0.48);
+  background: rgba(91, 47, 18, 0.46);
+  color: #ffe7bd;
+}
+
+.holybear-validation-banner strong {
+  color: #ffd181;
+}
+
+.holybear-validation-banner ul,
+.holybear-review-list {
+  margin: 5px 0 0;
+  padding-left: 18px;
+}
+
+:host([data-theme='light']) .holybear-validation-banner {
+  border-color: rgba(178, 107, 17, 0.38);
+  background: rgba(255, 246, 224, 0.9);
+  color: #6b4516;
+}
+
+:host([data-theme='light']) .holybear-validation-banner strong {
+  color: #a35f08;
+}
+
+.holybear-source-guide {
+  border: 1px solid rgba(191, 209, 239, 0.26);
+  background: rgba(31, 43, 72, 0.5);
+  color: #dce9fb;
+}
+
+.holybear-source-guide summary {
+  cursor: pointer;
+  padding: 9px 12px;
+  color: #f3f8ff;
+  font-weight: 800;
+  user-select: none;
+}
+
+.holybear-source-guide[open] summary {
+  border-bottom: 1px solid rgba(191, 209, 239, 0.18);
+}
+
+.holybear-guide-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding: 10px 12px;
+}
+
+.holybear-guide-grid section {
+  padding: 9px 10px;
+  border: 1px solid rgba(210, 226, 248, 0.16);
+  border-radius: 8px;
+  background: rgba(19, 28, 49, 0.34);
+}
+
+.holybear-guide-grid strong {
+  color: #9fe7ff;
+}
+
+.holybear-guide-grid p,
+.holybear-guide-source {
+  margin: 4px 0 0;
+}
+
+.holybear-review-list {
+  margin: 0 12px 9px;
+  color: #ffd99f;
+}
+
+.holybear-guide-source {
+  padding: 0 12px 10px;
+  color: rgba(220, 233, 251, 0.72);
+}
+
+.holybear-guide-source a {
+  color: #8fe2ff;
+  font-weight: 800;
+}
+
+:host([data-theme='light']) .holybear-source-guide {
+  border-color: rgba(66, 105, 145, 0.28);
+  background: rgba(242, 248, 253, 0.88);
+  color: #3d5266;
+}
+
+:host([data-theme='light']) .holybear-source-guide summary {
+  color: #263d52;
+}
+
+:host([data-theme='light']) .holybear-guide-grid section {
+  border-color: rgba(77, 110, 142, 0.2);
+  background: rgba(255, 255, 255, 0.64);
+}
+
+:host([data-theme='light']) .holybear-guide-grid strong,
+:host([data-theme='light']) .holybear-guide-source a {
+  color: #087d9a;
+}
+
+:host([data-theme='light']) .holybear-review-list {
+  color: #8a5a14;
+}
+
+:host([data-theme='light']) .holybear-guide-source {
+  color: #607387;
+}
+
+/* 與 Blog 頁一致的深淺色捲軸；Shadow DOM 內不會影響全站。 */
+:host *::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+:host *::-webkit-scrollbar-track {
+  background: #edf4f6;
+}
+
+:host *::-webkit-scrollbar-thumb {
+  border: 1px solid #edf4f6;
+  border-radius: 999px;
+  background: #7899a5;
+}
+
+:host *::-webkit-scrollbar-thumb:hover {
+  background: #527986;
+}
+
+:host([data-theme='dark']) *::-webkit-scrollbar-track {
+  background: #111a20;
+}
+
+:host([data-theme='dark']) *::-webkit-scrollbar-thumb {
+  border-color: #111a20;
+  background: #466773;
+}
+
+:host([data-theme='dark']) *::-webkit-scrollbar-thumb:hover {
+  background: #5d8997;
+}
+
+@media (max-width: 760px) {
+  :host,
+  #app,
+  .maplecombat-shell {
+    min-height: 620px;
+  }
+
+  .holybear-autofill-banner {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .holybear-formula-meta {
+    white-space: normal;
+  }
+
+  .holybear-guide-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 裝備替換、效率與加權頁的本站結構。 */
+:host .equipment-change-result,
+:host .equipment-efficiency-result,
+:host .weighted-analysis-view,
+:host .weighted-equipment-view {
+  display: grid;
+  gap: 12px;
+}
+
+:host .equipment-result {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(260px, 0.8fr);
+  gap: 10px;
+}
+
+:host .equipment-result-rows,
+:host .equipment-result-row {
+  min-width: 0;
+}
+
+:host .equipment-gain-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+:host .equipment-gain-badge {
+  display: grid;
+  gap: 4px;
+  padding: 11px 13px;
+  border: 1px solid var(--mc-border-soft);
+  border-radius: 10px;
+  background: var(--mc-panel);
+}
+
+:host .equipment-gain-label {
+  color: var(--mc-muted);
+  font-size: 9.5px;
+  font-weight: 800;
+}
+
+:host .equipment-gain-value {
+  color: var(--mc-accent);
+  font-size: 18px;
+  font-weight: 950;
+}
+
+:host .equipment-source-picker {
+  position: relative;
+  z-index: 8;
+  display: grid;
+  grid-template-columns: minmax(240px, 0.72fr) minmax(280px, 1.28fr);
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--mc-border-soft);
+  border-radius: 12px;
+  background: var(--mc-panel);
+}
+
+:host .equipment-source-copy {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 10px;
+}
+
+:host .equipment-source-copy > span {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+:host .equipment-source-copy strong {
+  color: var(--mc-title);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+:host .equipment-source-copy small {
+  color: var(--mc-muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+:host .equipment-source-icon {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  padding: 4px;
+  border: 1px solid var(--mc-border-soft);
+  border-radius: 9px;
+  background: var(--mc-panel-strong);
+  object-fit: contain;
+}
+
+:host .equipment-source-picker > .custom-select {
+  min-width: 0;
+}
+
+:host .equipment-source-picker .custom-select-trigger {
+  width: 100%;
+  min-height: 42px;
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+:host .equipment-source-picker .custom-select-list {
+  width: 100%;
+  max-height: min(360px, 48vh);
+  overflow-y: auto;
+}
+
+:host .equipment-source-picker .custom-select-option {
+  text-align: left;
+}
+
+:host .equipment-grid > .section {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: center;
+  gap: 8px 12px;
+}
+
+:host .equipment-grid > .section > .section-title {
+  grid-column: 1 / -1;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--mc-border-soft);
+}
+
+:host .equipment-input-wrap {
+  position: relative;
+  display: block;
+}
+
+:host .equipment-input-unit {
+  position: absolute;
+  top: 50%;
+  right: 9px;
+  color: var(--mc-muted);
+  font-size: 10px;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+:host .equipment-efficiency-toolbar {
+  padding: 10px;
+  border: 1px solid var(--mc-border-soft);
+  border-radius: 10px;
+  background: var(--mc-panel-strong);
+}
+
+:host .equipment-efficiency-combat-toggle,
+:host .equipment-efficiency-custom-option,
+:host .tower-ring-trial-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--mc-text);
+  font-size: 10.5px;
+  font-weight: 750;
+}
+
+:host .equipment-efficiency-custom-panel {
+  position: relative;
+  margin-left: auto;
+}
+
+:host .equipment-efficiency-custom-panel > summary {
+  list-style: none;
+}
+
+:host .equipment-efficiency-custom-panel > summary::-webkit-details-marker {
+  display: none;
+}
+
+:host .equipment-efficiency-custom-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 7px;
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--mc-border-soft);
+  border-radius: 10px;
+  background: var(--mc-panel);
+}
+
+:host .equipment-efficiency-table {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+:host .equipment-efficiency-group {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--mc-border-soft);
+  border-radius: 11px;
+  background: var(--mc-panel);
+}
+
+:host .equipment-efficiency-group > summary {
+  display: grid;
+  grid-template-columns: 70px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  list-style: none;
+}
+
+:host .equipment-efficiency-group > summary::-webkit-details-marker {
+  display: none;
+}
+
+:host .equipment-equivalence-grid {
+  display: grid;
+  gap: 4px;
+  margin-top: 10px;
+}
+
+:host .equipment-equivalence-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 28px;
+  padding: 4px 7px;
+  border-radius: 6px;
+  background: var(--mc-panel-soft);
+}
+
+:host .equipment-equivalence-name {
+  min-width: 0;
+  color: var(--mc-muted);
+  font-size: 10px;
+  font-weight: 750;
+}
+
+:host .equipment-equivalence-values {
+  display: flex;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+:host .equipment-equivalence-value {
+  color: var(--mc-accent);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+:host .equiv-combat {
+  color: var(--mc-warm);
+}
+
+:host .tower-ring-section {
+  display: grid;
+  gap: 10px;
+}
+
+:host .tower-ring-card {
+  display: grid;
+  gap: 9px;
+  padding: 12px;
+}
+
+:host .tower-ring-name,
+:host .tower-ring-name-main {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--mc-title);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+:host .tower-ring-name {
+  justify-content: space-between;
+}
+
+:host .tower-ring-icon {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+}
+
+:host .tower-ring-rows {
+  display: grid;
+  gap: 3px;
+}
+
+:host .tower-ring-row {
+  display: grid;
+  grid-template-columns: minmax(80px, 1fr) repeat(2, minmax(76px, 0.8fr));
+  align-items: center;
+  gap: 7px;
+  min-height: 30px;
+  padding: 5px 8px;
+  border-radius: 7px;
+  background: var(--mc-panel-soft);
+}
+
+:host .tower-ring-row--head,
+:host .tower-ring-colhead {
+  color: var(--mc-muted);
+  font-size: 9px;
+  font-weight: 800;
+}
+
+:host .tower-ring-level,
+:host .tower-ring-value {
+  color: var(--mc-text);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+:host .tower-ring-value {
+  text-align: right;
+}
+
+:host .weighted-analysis-view {
+  padding: 0;
+}
+
+:host .weighted-head h2,
+:host .weighted-head p {
+  margin: 0;
+}
+
+:host .weighted-weight-grid {
+  margin-top: 10px;
+}
+
+:host .weighted-weight-item {
+  grid-template-columns: minmax(0, 1fr) 76px 12px;
+  padding: 7px 9px;
+  border: 1px solid var(--mc-border-soft);
+  border-radius: 8px;
+  background: var(--mc-panel-soft);
+}
+
+:host .weighted-weight-item b {
+  color: var(--mc-muted);
+  font-size: 10px;
+}
+
+:host .weighted-summary-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+:host .weighted-summary-item {
+  display: grid;
+  gap: 4px;
+}
+
+:host .weighted-summary-item > span {
+  color: var(--mc-muted);
+  font-size: 9.5px;
+  font-weight: 800;
+}
+
+:host .weighted-summary-item > strong {
+  color: var(--mc-cyan);
+  font-size: 19px;
+  font-weight: 950;
+}
+
+:host .buff-info,
+:host .tower-ring-info {
+  position: relative;
+  display: inline-flex;
+}
+
+:host .buff-info-trigger {
+  display: inline-grid;
+  width: 18px;
+  min-height: 18px;
+  place-items: center;
+  padding: 0;
+  appearance: none;
+  border: 1px solid var(--mc-border);
+  border-radius: 50%;
+  background: var(--mc-panel-soft);
+  color: var(--mc-muted);
+  cursor: help;
+}
+
+:host .buff-info-trigger::before {
+  content: '?';
+  font-size: 10px;
+  font-weight: 900;
+}
+
+:host .buff-info-tooltip,
+:host .tower-ring-info-tooltip {
+  display: none;
+  top: calc(100% + 6px);
+  left: 0;
+  width: max-content;
+}
+
+:host .buff-info:hover .buff-info-tooltip,
+:host .buff-info:focus-within .buff-info-tooltip,
+:host .tower-ring-info:hover .tower-ring-info-tooltip,
+:host .tower-ring-info:focus-within .tower-ring-info-tooltip {
+  display: block;
+}
+
+@media (max-width: 900px) {
+  :host .equipment-result,
+  :host .equipment-efficiency-table {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 680px) {
+  :host .equipment-source-picker,
+  :host .equipment-grid > .section,
+  :host .equipment-gain-summary,
+  :host .weighted-summary-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* 共用互動元件：統一為戰力工具的深淺色語言。 */
+:host .mode-tabs,
+:host .stat-card-head-actions,
+:host .buff-master-actions,
+:host .equipment-efficiency-toolbar,
+:host .equipment-gain-summary,
+:host .tower-ring-card-options {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+:host .mode-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(126px, 1fr));
+  width: fit-content;
+  padding: 4px;
+  border: 1px solid var(--mc-border-soft);
+  border-radius: 11px;
+  background: var(--mc-panel-soft);
+}
+
+:host .mode-tab {
+  min-height: 48px;
+  justify-content: center;
+  gap: 7px;
+  padding: 8px 13px;
+  border-radius: 8px;
+}
+
+:host .mode-tab-main {
+  font-size: 13.5px;
+  font-weight: 900;
+}
+
+:host .mode-tab-badge {
+  min-height: 19px;
+  padding: 2px 7px;
+  font-size: 10px;
+}
+
+:host .mode-tab,
+:host .data-copy-btn,
+:host .stat-preview-btn,
+:host .buff-master-btn,
+:host .buff-collapse-toggle,
+:host .buff-correction-compact-trigger,
+:host .tower-ring-settings-btn,
+:host .equipment-efficiency-metric-trigger,
+:host .equipment-efficiency-custom-panel > summary,
+:host .custom-select-trigger,
+:host .job-combobox-toggle,
+:host .power-coefficient-toggle,
+:host .buff-overlay-close,
+:host .buff-quick-all {
+  min-height: 32px;
+  padding: 6px 10px;
+  appearance: none;
+  border: 1px solid var(--mc-border-soft);
+  border-radius: 8px;
+  background: var(--mc-panel-soft);
+  color: var(--mc-text);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.2;
+  text-shadow: none;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+:host .mode-tab:hover,
+:host .data-copy-btn:hover,
+:host .stat-preview-btn:hover,
+:host .buff-master-btn:hover:not(:disabled),
+:host .buff-collapse-toggle:hover,
+:host .buff-correction-compact-trigger:hover,
+:host .tower-ring-settings-btn:hover,
+:host .equipment-efficiency-metric-trigger:hover,
+:host .equipment-efficiency-custom-panel > summary:hover,
+:host .custom-select-trigger:hover,
+:host .job-combobox-toggle:hover,
+:host .power-coefficient-toggle:hover,
+:host .buff-overlay-close:hover,
+:host .buff-quick-all:hover {
+  border-color: color-mix(in srgb, var(--mc-accent) 52%, transparent);
+  background: var(--mc-accent-soft);
+  color: var(--mc-accent);
+}
+
+:host .mode-tab.active,
+:host .data-copy-btn.copied {
+  border-color: transparent;
+  background: var(--mc-accent-strong);
+  color: #fff;
+  box-shadow: none;
+}
+
+:host .mode-tab-badge,
+:host .buff-head-count,
+:host .label-tag,
+:host .checkbox-status,
+:host .final-auto-status,
+:host .tower-ring-current-label {
+  display: inline-flex;
+  align-items: center;
+  min-height: 18px;
+  padding: 2px 6px;
+  border: 1px solid var(--mc-border-soft);
+  border-radius: 999px;
+  background: var(--mc-panel-soft);
+  color: var(--mc-muted);
+  font-size: 9px;
+  font-weight: 800;
+}
+
+:host .stat-card-head {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 8px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--mc-border-soft);
+}
+
+:host .stat-card-head-mode-row,
+:host .stat-card-head-controls,
+:host .stat-card-head-job {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+:host .stat-card-head-controls {
+  justify-content: space-between;
+}
+
+:host .stat-card-head-job {
+  min-width: min(100%, 390px);
+}
+
+:host .scenario-quick-select {
+  position: relative;
+  z-index: 24;
+  display: grid;
+  grid-template-columns: auto 88px;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  min-height: 44px;
+  padding: 4px 5px 4px 9px;
+  border: 1px solid var(--mc-border-soft);
+  border-radius: 11px;
+  background: var(--mc-panel-soft);
+}
+
+:host .scenario-quick-select > span {
+  color: var(--mc-muted);
+  font-size: 11px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+:host .scenario-quick-select .custom-select {
+  min-width: 0;
+}
+
+:host .scenario-quick-select .custom-select-trigger {
+  width: 100%;
+  min-height: 34px;
+  border-color: color-mix(in srgb, var(--mc-accent) 32%, var(--mc-border-soft));
+  background: var(--mc-input);
+  color: var(--mc-title);
+}
+
+:host .scenario-quick-select .custom-select-list {
+  right: 0;
+  left: auto;
+  width: 148px;
+  max-height: 230px;
+  overflow-y: auto;
+}
+
+@media (max-width: 680px) {
+  :host .scenario-quick-select {
+    grid-template-columns: auto 88px;
+  }
+}
+
+:host .stat-card-head-label,
+:host .job-combobox-label {
+  color: var(--mc-muted) !important;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+:host .section,
+:host .buff-panel,
+:host .weighted-card,
+:host .tower-ring-section,
+:host .equipment-efficiency-result {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--mc-border-soft);
+  border-radius: 12px;
+  background: var(--mc-panel);
+  color: var(--mc-text);
+  box-shadow: none;
+}
+
+:host .section-title-row,
+:host .buff-head,
+:host .tower-ring-head,
+:host .weighted-head,
+:host .equipment-result-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+:host .section-title,
+:host .buff-head-title,
+:host .tower-ring-title,
+:host .weighted-head h2,
+:host .weighted-section-title {
+  color: var(--mc-title) !important;
+  font-size: 13px;
+  font-weight: 900;
+  text-shadow: none !important;
+}
+
+:host .section-title::before,
+:host .buff-head-title::before,
+:host .tower-ring-title::before,
+:host .result-label::before,
+:host .equipment-result-label::before {
+  content: none !important;
+}
+
+:host .calc-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(300px, 0.85fr);
+  align-items: start;
+  gap: 12px;
+}
+
+:host .calc-main,
+:host .calc-side {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+:host .compact-result-bar {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+:host .combat-power-summary,
+:host .equipment-result-card,
+:host .weighted-summary-item {
+  min-width: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--mc-border-soft);
+  border-radius: 12px;
+  background: var(--surface-hero-glow), var(--mc-panel);
+  box-shadow: none;
+}
+
+:host .result-item {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+}
+
+:host .result-label,
+:host .equipment-result-label {
+  color: var(--mc-muted) !important;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+:host .result-value,
+:host .equipment-result-value {
+  color: var(--mc-cyan) !important;
+  font-size: clamp(20px, 3vw, 30px);
+  font-weight: 950;
+  line-height: 1.1;
+  text-shadow: none !important;
+}
+
+:host .buff-gain-value {
+  color: var(--mc-violet) !important;
+}
+
+:host .buff-gain-subvalue,
+:host .equipment-result-diff,
+:host .weighted-summary-subvalue,
+:host .equipment-efficiency-status,
+:host .tower-ring-average-hint,
+:host .weighted-head p {
+  color: var(--mc-muted);
+  font-size: 10px;
+}
+
+:host .stat-table {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+:host .st-row {
+  display: grid;
+  grid-template-columns: minmax(70px, 0.72fr) repeat(5, minmax(70px, 1fr));
+  align-items: center;
+  gap: 7px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--mc-border-soft);
+}
+
+:host .stat-table > .st-row:last-child {
+  border-bottom: 0;
+}
+
+:host .stat-table--effmain .st-row {
+  grid-template-columns: minmax(70px, 0.72fr) repeat(3, minmax(80px, 1fr));
+}
+
+:host .st-row--head {
+  color: var(--mc-muted) !important;
+  font-size: 9px;
+}
+
+:host .st-rowhead,
+:host .st-colhead,
+:host .st-cell-label {
+  min-width: 0;
+  color: var(--mc-muted) !important;
+  font-size: 9.5px;
+  font-weight: 800;
+}
+
+:host .st-cell {
+  min-width: 0;
+}
+
+:host .st-cell-label {
+  display: none;
+}
+
+:host input,
+:host select,
+:host textarea,
+:host .custom-select-trigger,
+:host .job-combobox-toggle,
+:host .power-coefficient-toggle {
+  width: 100%;
+  min-width: 0;
+  min-height: 34px;
+  padding: 6px 9px;
+  border: 1px solid var(--mc-border) !important;
+  border-radius: 8px;
+  background: var(--mc-input) !important;
+  color: var(--mc-title) !important;
+  -webkit-text-fill-color: var(--mc-title) !important;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 750;
+  box-shadow: none !important;
+}
+
+:host input[type='checkbox'] {
+  width: 16px;
+  min-height: 16px;
+  padding: 0;
+  accent-color: var(--mc-accent);
+}
+
+:host input:focus,
+:host select:focus,
+:host textarea:focus,
+:host .custom-select-trigger:focus-visible,
+:host .job-combobox-toggle:focus-visible,
+:host .power-coefficient-toggle:focus-visible {
+  outline: none;
+  border-color: var(--mc-accent) !important;
+  box-shadow: 0 0 0 2px var(--mc-accent-soft) !important;
+}
+
+:host .special-stats-grid,
+:host .bonus-extra-grid,
+:host .equipment-grid,
+:host .weighted-summary-grid,
+:host .tower-ring-grid,
+:host .weighted-weight-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+:host .input-group,
+:host .sp-item,
+:host .weighted-weight-item {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr) minmax(90px, 0.85fr);
+  align-items: center;
+  gap: 8px;
+}
+
+:host .input-group label,
+:host .sp-item label,
+:host .weighted-weight-item span {
+  color: var(--mc-muted) !important;
+  font-size: 10px;
+  font-weight: 750;
+}
+
+:host .buff-panel {
+  display: grid;
+  gap: 12px;
+}
+
+:host .buff-section {
+  display: grid;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--mc-border-soft);
+}
+
+:host .buff-section-title {
+  padding-left: 8px;
+  border-left: 3px solid var(--mc-accent);
+  color: var(--mc-title);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+:host .buff-section--non-permanent .buff-section-title {
+  border-left-color: var(--mc-warm);
+}
+
+:host .buff-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(48px, 54px));
+  width: 100%;
+  max-width: 100%;
+  justify-content: start;
+  gap: 7px;
+}
+
+:host .buff-item {
+  display: grid;
+  min-width: 0;
+  place-items: center;
+  gap: 4px;
+  padding: 5px 3px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+}
+
+:host .buff-item--on {
+  border-color: color-mix(in srgb, var(--mc-accent) 50%, transparent);
+  background: var(--mc-accent-soft);
+}
+
+:host .buff-icon-wrap {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  cursor: pointer;
+}
+
+:host .buff-icon {
+  display: block;
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  image-rendering: auto;
+}
+
+:host .buff-level {
+  min-height: 24px;
+  height: 24px;
+  padding: 2px 4px;
+  text-align: center;
+}
+
+:host .buff-name-tooltip,
+:host .buff-info-tooltip,
+:host .tower-ring-info-tooltip {
+  position: absolute;
+  z-index: 500;
+  max-width: min(300px, calc(100vw - 24px));
+  padding: 7px 9px;
+  border: 1px solid var(--mc-border);
+  border-radius: 8px;
+  background: var(--mc-panel-strong);
+  color: var(--mc-text);
+  font-size: 10px;
+  line-height: 1.5;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+}
+
+:host .buff-name-tooltip {
+  left: 50%;
+  bottom: calc(100% + 6px);
+  width: max-content;
+  transform: translateX(-50%);
+}
+
+:host .custom-select,
+:host .job-combobox,
+:host .power-coefficient-combobox,
+:host .equipment-efficiency-metric-picker {
+  position: relative;
+  min-width: 0;
+}
+
+:host .custom-select-native {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+:host .custom-select-list,
+:host .job-option-list,
+:host .power-coefficient-menu,
+:host .equipment-efficiency-metric-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 450;
+  display: none;
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 6px;
+  border: 1px solid var(--mc-border);
+  border-radius: 9px;
+  background: var(--mc-panel-strong);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.28);
+}
+
+:host .custom-select.is-open .custom-select-list,
+:host .job-combobox.is-open .job-option-list,
+:host .power-coefficient-combobox.is-open .power-coefficient-menu,
+:host .equipment-efficiency-metric-picker.is-open .equipment-efficiency-metric-menu {
+  display: grid;
+  gap: 3px;
+}
+
+:host .custom-select.is-up .custom-select-list {
+  top: auto;
+  bottom: calc(100% + 7px);
+}
+
+:host .custom-select-option,
+:host .job-option-button,
+:host .power-coefficient-option,
+:host .equipment-efficiency-metric-option {
+  min-height: 30px;
+  padding: 6px 8px;
+  appearance: none;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--mc-text);
+  font: inherit;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+:host .custom-select-option:hover,
+:host .job-option-button:hover,
+:host .power-coefficient-option:hover,
+:host .equipment-efficiency-metric-option:hover,
+:host .custom-select-option.is-selected,
+:host .job-option-button.is-selected,
+:host .power-coefficient-option.active,
+:host .equipment-efficiency-metric-option.active {
+  background: var(--mc-accent-soft);
+  color: var(--mc-accent);
+}
+
+:host .weighted-view-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin-bottom: 10px;
+  padding: 4px;
+  border: 1px solid var(--mc-border-soft);
+  border-radius: 10px;
+  background: var(--mc-panel-strong);
+}
+
+:host .weighted-view-tabs button {
+  min-height: 34px;
+  padding: 6px 10px;
+  appearance: none;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--mc-muted);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+:host .weighted-view-tabs button:hover {
+  color: var(--mc-accent);
+  background: var(--mc-accent-soft);
+}
+
+:host .weighted-view-tabs button.active {
+  border-color: color-mix(in srgb, var(--mc-accent) 45%, transparent);
+  background: var(--mc-accent-soft);
+  color: var(--mc-accent);
+}
+
+:host .ct-dialog-backdrop,
+:host .stat-preview-backdrop,
+:host .tower-ring-settings-backdrop,
+:host .buff-overlay-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(2, 6, 12, 0.72);
+  backdrop-filter: blur(4px);
+}
+
+:host .ct-dialog,
+:host .stat-preview-dialog,
+:host .tower-ring-settings-dialog,
+:host .buff-overlay {
+  width: min(760px, calc(100vw - 32px));
+  max-height: min(82vh, 780px);
+  overflow: auto;
+  padding: 15px;
+  border: 1px solid var(--mc-border);
+  border-radius: 13px;
+  background: var(--mc-panel-strong);
+  color: var(--mc-text);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.42);
+}
+
+@media (max-width: 760px) {
+  :host .calc-layout,
+  :host .compact-result-bar,
+  :host .special-stats-grid,
+  :host .bonus-extra-grid,
+  :host .equipment-grid,
+  :host .weighted-summary-grid,
+  :host .tower-ring-grid,
+  :host .weighted-weight-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  :host .st-row,
+  :host .stat-table--effmain .st-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 9px 0;
+  }
+
+  :host .st-row--head {
+    display: none;
+  }
+
+  :host .st-rowhead {
+    grid-column: 1 / -1;
+    color: var(--mc-title) !important;
+  }
+
+  :host .st-cell-label {
+    display: block;
+    margin-bottom: 3px;
+  }
+}
+
+/* ==================================================================
+   HolyBear 戰力工具嵌入版
+   只保留 MapleCombat 的公式與功能，不沿用上游桌面程式的背景與皮膚。
+   ================================================================== */
+:host {
+  --mc-bg: transparent;
+  --mc-panel: rgba(13, 17, 23, 0.82);
+  --mc-panel-strong: #111722;
+  --mc-panel-soft: rgba(30, 41, 59, 0.62);
+  --mc-input: rgba(9, 14, 23, 0.9);
+  --mc-border: rgba(71, 85, 105, 0.66);
+  --mc-border-soft: rgba(71, 85, 105, 0.42);
+  --mc-text: #dbe7ef;
+  --mc-title: #f8fafc;
+  --mc-muted: #94a3b8;
+  --mc-accent: #34d399;
+  --mc-accent-strong: #10b981;
+  --mc-accent-soft: rgba(16, 185, 129, 0.14);
+  --mc-cyan: #67e8f9;
+  --mc-violet: #c4b5fd;
+  --mc-warm: #fbbf24;
+  --mc-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+
+  --bg-color: var(--mc-bg);
+  --card-bg: var(--mc-panel);
+  --section-bg: var(--mc-panel);
+  --surface-overlay: linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent);
+  --surface-hero-glow: radial-gradient(circle at 90% 20%, rgba(16, 185, 129, 0.12), transparent 44%);
+  --text-color: var(--mc-text);
+  --muted-color: var(--mc-muted);
+  --accent-color: var(--mc-accent);
+  --accent-strong: var(--mc-accent-strong);
+  --accent-soft: var(--mc-accent-soft);
+  --violet-color: var(--mc-violet);
+  --accent-violet: var(--mc-violet);
+  --warm-color: var(--mc-warm);
+  --input-bg: var(--mc-input);
+  --border-color: var(--mc-border);
+  --result-color: var(--mc-cyan);
+  --header-bg: var(--mc-panel-strong);
+  --disabled-bg: rgba(51, 65, 85, 0.5);
+  --glass-shadow: var(--mc-shadow);
+  --web-glass: var(--mc-panel);
+  --web-glass-strong: var(--mc-panel-strong);
+  --web-glass-soft: var(--mc-panel-soft);
+  --web-line: var(--mc-border-soft);
+  --web-line-strong: var(--mc-border);
+  --web-text: var(--mc-text);
+  --web-muted: var(--mc-muted);
+  --web-blue: var(--mc-accent);
+  --web-blue-strong: var(--mc-accent-strong);
+  --web-cyan: var(--mc-cyan);
+  --web-violet: var(--mc-violet);
+  --web-gold: var(--mc-warm);
+  --web-shadow: var(--mc-shadow);
+
+  min-height: 0;
+  background: transparent !important;
+  color-scheme: dark;
+}
+
+:host([data-theme='light']) {
+  --mc-panel: rgba(249, 253, 255, 0.96);
+  --mc-panel-strong: #f2f8fa;
+  --mc-panel-soft: rgba(230, 244, 248, 0.84);
+  --mc-input: rgba(255, 255, 255, 0.98);
+  --mc-border: rgba(36, 94, 112, 0.3);
+  --mc-border-soft: rgba(36, 94, 112, 0.2);
+  --mc-text: #173746;
+  --mc-title: #082936;
+  --mc-muted: #526b78;
+  --mc-accent: #087a4b;
+  --mc-accent-strong: #0a9664;
+  --mc-accent-soft: rgba(8, 122, 75, 0.1);
+  --mc-cyan: #087d9a;
+  --mc-violet: #6d4fc2;
+  --mc-warm: #a35f08;
+  --mc-shadow: 0 10px 26px rgba(35, 76, 94, 0.11);
+  --surface-overlay: linear-gradient(180deg, rgba(255, 255, 255, 0.7), transparent);
+  --surface-hero-glow: radial-gradient(circle at 90% 20%, rgba(8, 122, 75, 0.08), transparent 44%);
+  --disabled-bg: rgba(212, 226, 231, 0.72);
+  color-scheme: light;
+}
+
+:host,
+:host[data-density='compact'],
+.maplecombat-shell {
+  background: transparent !important;
+  background-image: none !important;
+}
+
+#app,
+.maplecombat-shell {
+  min-height: 0;
+}
+
+:host[data-density='compact'] .maplecombat-shell {
+  align-items: stretch;
+  gap: 10px;
+  padding: 0;
+}
+
+:host[data-density='compact'] .container {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+:host[data-density='compact'] .compact-toolbar {
+  position: relative;
+  top: auto;
+  z-index: 40;
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 13px;
+  gap: 10px;
+  border: 1px solid var(--mc-border-soft);
+  border-radius: 14px;
+  background: var(--mc-panel-strong);
+  box-shadow: var(--mc-shadow);
+}
+
+:host[data-density='compact'] .compact-toolbar::before {
+  display: none;
+}
+
+:host[data-density='compact'] .ct-main-row {
+  display: grid;
+  grid-template-columns: minmax(170px, 0.55fr) minmax(420px, 2fr) auto;
+  gap: 12px;
+  align-items: stretch;
+}
+
+:host[data-density='compact'] .ct-product,
+:host[data-density='compact'] .ct-state-heading {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+}
+
+:host[data-density='compact'] .ct-product strong,
+:host[data-density='compact'] .ct-state-heading strong {
+  color: var(--mc-title);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+:host[data-density='compact'] .ct-product small,
+:host[data-density='compact'] .ct-state-heading small,
+:host[data-density='compact'] .ct-group-label {
+  color: var(--mc-muted);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+:host[data-density='compact'] .ct-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+  width: 100%;
+}
+
+:host[data-density='compact'] .ct-tab {
+  display: flex;
+  min-height: 48px;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+  padding: 7px 11px;
+  appearance: none;
+  border: 1px solid var(--mc-border-soft);
+  border-radius: 10px;
+  background: var(--mc-panel-soft);
+  color: var(--mc-text);
+  text-align: left;
+  text-shadow: none;
+  box-shadow: none;
+}
+
+:host[data-density='compact'] .ct-tab small {
+  color: var(--mc-muted);
+  font-size: 9px;
+  font-weight: 800;
+}
+
+:host[data-density='compact'] .ct-tab span {
+  font-size: 12px;
+  font-weight: 900;
+}
+
+:host[data-density='compact'] .ct-tab:not(.active):hover {
+  border-color: color-mix(in srgb, var(--mc-accent) 55%, transparent);
+  background: var(--mc-accent-soft);
+  color: var(--mc-accent);
+}
+
+:host[data-density='compact'] .ct-tab.active {
+  border-color: color-mix(in srgb, var(--mc-accent) 58%, transparent);
+  background: linear-gradient(135deg, var(--mc-accent-strong), var(--mc-accent));
+  color: #ffffff;
+  text-shadow: none;
+  box-shadow: 0 7px 18px color-mix(in srgb, var(--mc-accent) 22%, transparent);
+}
+
+:host[data-density='compact'] .ct-tab.active small {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+:host[data-density='compact'] .ct-actions {
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  align-content: center;
+  gap: 5px;
+  margin-left: 0;
+}
+
+:host[data-density='compact'] .ct-group-label {
+  grid-column: 1 / -1;
+}
+
+:host[data-density='compact'] .ct-btn,
+:host[data-density='compact'] .ct-state-tab,
+:host[data-density='compact'] .ct-state-menu-trigger {
+  min-height: 30px;
+  padding: 5px 10px;
+  appearance: none;
+  border: 1px solid var(--mc-border-soft);
+  border-radius: 8px;
+  background: var(--mc-panel-soft);
+  color: var(--mc-text);
+  font-weight: 800;
+  box-shadow: none;
+}
+
+:host[data-density='compact'] .ct-btn:hover,
+:host[data-density='compact'] .ct-state-tab:hover,
+:host[data-density='compact'] .ct-state-menu-trigger:hover {
+  border-color: color-mix(in srgb, var(--mc-accent) 55%, transparent);
+  background: var(--mc-accent-soft);
+  color: var(--mc-accent);
+}
+
+:host[data-density='compact'] .ct-state-row {
+  display: grid;
+  grid-template-columns: minmax(170px, 0.55fr) minmax(420px, 2fr) auto;
+  min-height: 0;
+  gap: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--mc-border-soft);
+}
+
+:host[data-density='compact'] .ct-state-tabs {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 5px;
+  overflow: visible;
+}
+
+:host[data-density='compact'] .ct-state-tab {
+  max-width: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+:host[data-density='compact'] .ct-state-tab.active,
+:host[data-density='compact'] .ct-state-tab--weighted.active {
+  border-color: color-mix(in srgb, var(--mc-accent) 55%, transparent);
+  background: var(--mc-accent-soft);
+  color: var(--mc-accent);
+  box-shadow: inset 3px 0 0 var(--mc-accent);
+}
+
+:host[data-density='compact'] .ct-state-menu {
+  margin-left: 0;
+}
+
+:host[data-density='compact'] .ct-state-menu-trigger {
+  min-width: 86px;
+}
+
+:host[data-density='compact'] .ct-state-menu-panel,
+:host[data-density='compact'] .ct-dialog {
+  border-color: var(--mc-border);
+  background: var(--mc-panel-strong);
+  color: var(--mc-text);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.28);
+}
+
+:host[data-density='compact'] .ct-state-menu-panel button,
+:host[data-density='compact'] .ct-dialog,
+:host[data-density='compact'] .ct-dialog p,
+:host[data-density='compact'] .ct-dialog-field,
+:host[data-density='compact'] .ct-dialog-name-row {
+  color: var(--mc-text);
+}
+
+:host[data-density='compact'] .compact-result-bar {
+  position: relative;
+  top: auto;
+  z-index: 15;
+  gap: 10px;
+  padding: 0;
+}
+
+:host[data-density='compact'] .section,
+:host[data-density='compact'] .buff-panel,
+:host[data-density='compact'] .character-data-summary,
+:host[data-density='compact'] .combat-power-summary,
+:host[data-density='compact'] .equipment-result-card,
+:host[data-density='compact'] .weighted-card,
+:host[data-density='compact'] .tower-ring-card,
+:host[data-density='compact'] .equipment-efficiency-group {
+  border: 1px solid var(--mc-border-soft) !important;
+  background: var(--surface-overlay), var(--mc-panel) !important;
+  color: var(--mc-text) !important;
+  box-shadow: var(--mc-shadow) !important;
+  backdrop-filter: none !important;
+}
+
+:host[data-density='compact'] .section:hover {
+  border-color: var(--mc-border) !important;
+  background: var(--surface-overlay), var(--mc-panel) !important;
+  box-shadow: var(--mc-shadow) !important;
+}
+
+:host[data-density='compact'] .stat-table-card:has(> .stat-card-head),
+:host[data-density='compact'] .stat-table-card:has(> .stat-card-head):hover {
+  border-color: var(--mc-border-soft) !important;
+  background: var(--surface-overlay), var(--mc-panel) !important;
+  box-shadow: var(--mc-shadow) !important;
+}
+
+:host[data-density='compact'] #calculatorMode .calc-layout,
+:host[data-density='compact'] #effStatsMode .calc-layout,
+:host[data-density='compact'] #calculatorMode .calc-main,
+:host[data-density='compact'] #effStatsMode .calc-main {
+  width: 100%;
+  max-width: none;
+}
+
+:host[data-density='compact'] #calculatorMode .calc-main {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+:host[data-density='compact'] #calculatorMode .calc-main > .section:has(.stat-table--main),
+:host[data-density='compact'] #calculatorMode .calc-main > .section:has(.stat-table--dmg),
+:host[data-density='compact'] #calculatorMode .calc-main > .section:has(.stat-table--bonus) {
+  grid-column: 1 / -1;
+}
+
+:host[data-density='compact'] #jobSearchInput,
+:host[data-density='compact'] input,
+:host[data-density='compact'] select,
+:host[data-density='compact'] .custom-select-trigger,
+:host[data-density='compact'] .stat-table input,
+:host[data-density='compact'] .equipment-grid .section > .input-group input,
+:host[data-density='compact'] .equipment-grid .section > .input-group select,
+:host[data-density='compact'] .calc-side .section .input-group input,
+:host[data-density='compact'] .calc-side .section .input-group select,
+:host[data-density='compact'] .calc-main > .section.calc-card .input-group input,
+:host[data-density='compact'] .calc-main > .section.calc-card .input-group select {
+  border-color: var(--mc-border) !important;
+  background-color: var(--mc-input) !important;
+  color: var(--mc-title) !important;
+  -webkit-text-fill-color: var(--mc-title) !important;
+  color-scheme: inherit;
+  text-shadow: none;
+  box-shadow: none;
+}
+
+:host[data-density='compact'] input:focus,
+:host[data-density='compact'] select:focus,
+:host[data-density='compact'] .custom-select-trigger:focus-visible {
+  outline: none;
+  border-color: var(--mc-accent) !important;
+  box-shadow: 0 0 0 2px var(--mc-accent-soft) !important;
+}
+
+:host[data-density='compact'] select option {
+  background: var(--mc-panel-strong);
+  color: var(--mc-title);
+}
+
+:host[data-density='compact'] .section-title,
+:host[data-density='compact'] .buff-head-title,
+:host[data-density='compact'] .tower-ring-title,
+:host[data-density='compact'] .weighted-section-title,
+:host[data-density='compact'] .result-label,
+:host[data-density='compact'] .equipment-result-label,
+:host[data-density='compact'] .st-row--head,
+:host[data-density='compact'] .st-colhead,
+:host[data-density='compact'] .st-rowhead,
+:host[data-density='compact'] .input-group label,
+:host[data-density='compact'] .label-value,
+:host[data-density='compact'] .st-cell-label,
+:host[data-density='compact'] .job-combobox-label {
+  color: var(--mc-title) !important;
+  text-shadow: none !important;
+}
+
+:host[data-density='compact'] .result-value,
+:host[data-density='compact'] .equipment-result-value,
+:host[data-density='compact'] .combat-power-summary .result-value {
+  color: var(--mc-cyan) !important;
+}
+
+:host[data-density='compact'] .buff-gain-summary .result-value {
+  color: var(--mc-violet) !important;
+}
+
+:host[data-density='compact'] .mode-tabs,
+:host[data-density='compact'] .tool-tabs-bar {
+  border: 1px solid var(--mc-border-soft);
+  background: var(--mc-panel-soft);
+  box-shadow: none;
+}
+
+:host[data-density='compact'] .mode-tab,
+:host[data-density='compact'] .view-tab {
+  color: var(--mc-muted);
+  text-shadow: none;
+}
+
+:host[data-density='compact'] .mode-tab.active,
+:host[data-density='compact'] .view-tab.active {
+  border-color: transparent;
+  background: var(--mc-accent-strong);
+  color: #fff;
+  text-shadow: none;
+  box-shadow: none;
+}
+
+:host[data-density='compact'] .holybear-context-guide,
+:host[data-density='compact'] .holybear-review-guide {
+  width: 100%;
+  margin: 6px 0 8px;
+  border: 1px solid color-mix(in srgb, var(--mc-accent) 30%, var(--mc-border-soft));
+  border-radius: 10px;
+  background: var(--mc-accent-soft);
+  color: var(--mc-text);
+}
+
+:host[data-density='compact'] .holybear-context-guide summary,
+:host[data-density='compact'] .holybear-review-guide summary {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 10px;
+  cursor: pointer;
+  color: var(--mc-title);
+  font-size: 11px;
+  font-weight: 900;
+  list-style: none;
+}
+
+:host[data-density='compact'] .holybear-context-guide summary::-webkit-details-marker,
+:host[data-density='compact'] .holybear-review-guide summary::-webkit-details-marker {
+  display: none;
+}
+
+:host[data-density='compact'] .holybear-context-guide summary small {
+  margin-left: auto;
+  color: var(--mc-muted);
+  font-size: 9px;
+}
+
+:host[data-density='compact'] .holybear-context-guide-icon {
+  display: inline-grid;
+  width: 17px;
+  height: 17px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--mc-accent);
+  color: #062a1d;
+  font-size: 10px;
+  font-weight: 950;
+}
+
+:host[data-density='compact'] .holybear-context-guide-body {
+  padding: 0 11px 9px 34px;
+  color: var(--mc-muted);
+  font-size: 10.5px;
+  line-height: 1.65;
+}
+
+:host[data-density='compact'] .holybear-context-guide-body ul,
+:host[data-density='compact'] .holybear-review-list {
+  margin: 0;
+  padding-left: 16px;
+}
+
+:host[data-density='compact'] .holybear-field-note {
+  margin: 0 0 4px;
+  padding: 7px 9px;
+  border-left: 3px solid var(--mc-warm);
+  border-radius: 0 7px 7px 0;
+  background: color-mix(in srgb, var(--mc-warm) 8%, transparent);
+  color: var(--mc-muted);
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+:host[data-density='compact'] .holybear-review-guide {
+  width: calc(100% - 16px);
+  margin: 0 auto;
+  border-color: color-mix(in srgb, var(--mc-warm) 35%, var(--mc-border-soft));
+  background: color-mix(in srgb, var(--mc-warm) 8%, var(--mc-panel));
+}
+
+:host[data-density='compact'] .holybear-review-list {
+  padding: 0 12px 10px 30px;
+  color: var(--mc-muted);
+  font-size: 10.5px;
+  line-height: 1.6;
+}
+
+:host([data-theme='light']) .holybear-autofill-banner,
+:host([data-theme='light']) .holybear-validation-banner {
+  box-shadow: none;
+}
+
+@media (max-width: 920px) {
+  :host[data-density='compact'] .ct-main-row,
+  :host[data-density='compact'] .ct-state-row {
+    grid-template-columns: 1fr;
+  }
+
+  :host[data-density='compact'] .ct-product,
+  :host[data-density='compact'] .ct-state-heading {
+    display: none;
+  }
+
+  :host[data-density='compact'] .ct-actions {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  :host[data-density='compact'] .ct-group-label {
+    margin-right: auto;
+    align-self: center;
+  }
+}
+
+/* 最終可讀性基準：維持桌機多欄密度，但不沿用來源專案的超小字。 */
+:host .maplecombat-shell,
+:host[data-density='compact'] .maplecombat-shell {
+  font-size: 14px;
+}
+
+:host .section-title,
+:host .buff-head-title,
+:host .buff-section-title,
+:host .tower-ring-title,
+:host .weighted-section-title,
+:host .weighted-head h2,
+:host .st-row-group-title {
+  font-size: 14px !important;
+}
+
+:host input,
+:host select,
+:host textarea,
+:host button,
+:host .custom-select-trigger,
+:host .custom-select-option,
+:host .job-option-button,
+:host .power-coefficient-option,
+:host .equipment-efficiency-metric-option {
+  font-size: 13px !important;
+}
+
+:host .st-rowhead,
+:host .st-colhead,
+:host .st-cell-label,
+:host .input-group label,
+:host .sp-item label,
+:host .weighted-weight-item span,
+:host .stat-card-head-label,
+:host .job-combobox-label,
+:host .equipment-gain-label,
+:host .equipment-equivalence-name,
+:host .weighted-summary-item span,
+:host .result-label,
+:host .equipment-result-label {
+  font-size: 12px !important;
+}
+
+:host .holybear-autofill-banner,
+:host .holybear-validation-banner,
+:host .holybear-field-note,
+:host .holybear-review-item p,
+:host .holybear-context-guide-body,
+:host .ct-state-tab,
+:host .ct-state-menu-trigger,
+:host .ct-state-menu-panel button,
+:host .buff-correction-chip,
+:host .buff-master-btn,
+:host .buff-collapse-toggle,
+:host .buff-quick-count,
+:host .buff-quick-all {
+  font-size: 12.5px !important;
+}
+
+:host .holybear-context-guide-copy strong,
+:host .holybear-review-head strong,
+:host .ct-state-heading strong {
+  font-size: 13px !important;
+}
+
+:host .holybear-review-head small,
+:host .ct-state-heading small,
+:host .buff-gain-subvalue,
+:host .equipment-result-diff,
+:host .weighted-summary-subvalue,
+:host .equipment-efficiency-status,
+:host .tower-ring-average-hint {
+  font-size: 11.5px !important;
+}
+
+/* ==================================================================
+   角色資料下半部：不同資料列使用各自的欄位結構。
+   上游原本共用六欄表格會讓傷害列與特殊項目錯位，且桌機隱藏標籤後無法辨識。
+   ================================================================== */
+:host .stat-table--dmg,
+:host .stat-table--bonus {
+  gap: 10px;
+}
+
+:host .stat-table--dmg .st-row,
+:host .stat-table--bonus .st-row {
+  align-items: stretch;
+  gap: 6px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--mc-border-soft);
+}
+
+:host .stat-table--dmg .st-row {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+:host .stat-table--bonus .st-row {
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+}
+
+:host .st-row-group-title {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 21px;
+  color: var(--mc-title);
+  font-size: 11.5px;
+  font-weight: 900;
+  letter-spacing: 0.01em;
+}
+
+:host .st-row-group-title::before {
+  width: 3px;
+  height: 14px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: var(--mc-accent);
+  content: '';
+}
+
+:host .stat-table--dmg .st-cell,
+:host .stat-table--bonus .st-cell {
+  display: grid;
+  min-width: 0;
+  align-content: start;
+  gap: 5px;
+  padding: 7px;
+  border: 1px solid var(--mc-border-soft);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--mc-panel-soft) 62%, transparent);
+}
+
+:host .stat-table--dmg .st-cell-label,
+:host .stat-table--bonus .st-cell-label {
+  display: flex;
+  min-width: 0;
+  min-height: 18px;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  color: var(--mc-muted) !important;
+  font-size: 11px !important;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+:host .stat-table--dmg .st-cell > input,
+:host .stat-table--bonus .st-cell > input,
+:host .stat-table--bonus .st-cell > .custom-select,
+:host .stat-table--bonus .st-cell > .power-coefficient-combobox,
+:host .stat-table--bonus .st-cell > .fam-src-wrap {
+  width: 100%;
+}
+
+:host .power-coefficient-combobox {
+  display: block;
+}
+
+:host .power-coefficient-combobox > input {
+  padding-right: 35px !important;
+}
+
+:host .power-coefficient-combobox > .power-coefficient-toggle {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 24px !important;
+  min-width: 24px;
+  height: 24px;
+  min-height: 24px !important;
+  padding: 0 !important;
+  border-radius: 6px;
+}
+
+:host .power-coefficient-combobox > .power-coefficient-toggle::after {
+  display: block;
+  width: 7px;
+  height: 7px;
+  margin: -3px auto 0;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  content: '';
+  transform: rotate(45deg);
+}
+
+:host .power-coefficient-combobox.is-open > .power-coefficient-toggle::after {
+  margin: 3px auto 0;
+  transform: rotate(225deg);
+}
+
+:host .power-coefficient-combobox > .power-coefficient-menu {
+  right: 0;
+  left: auto;
+  min-width: 138px;
+}
+
+:host .weapon-set-group {
+  grid-column: span 2;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+:host .weapon-set-group > .st-cell-label {
+  grid-column: 1 / -1;
+}
+
+:host .weapon-set-group > .custom-select {
+  min-width: 0;
+}
+
+:host .weapon-set-group .custom-select-trigger {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+:host .final-auto-status {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 8px;
+  border: 1px solid var(--mc-border-soft);
+  border-radius: 8px;
+  background: var(--mc-panel-strong);
+  color: var(--mc-muted);
+  font-size: 10px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+:host .final-auto-status.active {
+  border-color: color-mix(in srgb, var(--mc-accent) 45%, transparent);
+  background: var(--mc-accent-soft);
+  color: var(--mc-accent);
+}
+
+/* 萌獸逐條輸入：沿用本站欄位、彈層與動作按鈕語言。 */
+:host .fam-src-wrap {
+  position: relative !important;
+  display: grid !important;
+  grid-template-columns: minmax(74px, 1fr) 34px;
+  align-items: center;
+  gap: 6px !important;
+}
+
+:host .fam-src-wrap > input {
+  min-width: 74px;
+  padding-right: 8px !important;
+}
+
+:host .stat-table--bonus .st-cell:has(.fam-src-wrap) {
+  grid-column: span 2;
+}
+
+:host .special-stats-grid > .input-group:has(.fam-src-wrap) {
+  grid-column: 1 / -1;
+  grid-template-columns: minmax(90px, 0.45fr) minmax(180px, 1.55fr);
+}
+
+:host .equipment-side-panel .input-group:has(.fam-src-wrap),
+:host .equipment-side .input-group:has(.fam-src-wrap),
+:host .equipment-grid .input-group:has(.fam-src-wrap) {
+  grid-template-columns: minmax(86px, 0.55fr) minmax(150px, 1.45fr);
+}
+
+:host .buff-panel,
+:host .buff-section,
+:host .buff-grid {
+  min-width: 0;
+}
+
+:host .fam-src-gear {
+  width: 34px !important;
+  height: 34px !important;
+  border: 1px solid var(--mc-border) !important;
+  border-radius: 8px !important;
+  background: var(--mc-panel-strong) !important;
+  color: var(--mc-muted) !important;
+}
+
+:host .fam-src-gear:hover,
+:host .fam-src-gear.is-active {
+  border-color: color-mix(in srgb, var(--mc-accent) 55%, transparent) !important;
+  background: var(--mc-accent-soft) !important;
+  color: var(--mc-accent) !important;
+}
+
+:host .fam-src-panel {
+  position: absolute !important;
+  top: calc(100% + 7px) !important;
+  right: 0 !important;
+  bottom: auto !important;
+  left: auto !important;
+  z-index: 900 !important;
+  display: block !important;
+  width: min(280px, calc(100vw - 70px)) !important;
+  padding: 11px !important;
+  border: 1px solid var(--mc-border) !important;
+  border-radius: 11px !important;
+  background: var(--mc-panel-strong) !important;
+  color: var(--mc-text) !important;
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.3) !important;
+}
+
+:host .fam-src-panel.is-up {
+  top: auto !important;
+  bottom: calc(100% + 7px) !important;
+}
+
+:host .fam-src-head,
+:host .fam-src-row-label {
+  color: var(--mc-title) !important;
+}
+
+:host .fam-src-head {
+  margin: 0 0 9px !important;
+  font-size: 12px !important;
+  font-weight: 900 !important;
+}
+
+:host .fam-src-list {
+  display: flex !important;
+  max-height: 230px;
+  flex-direction: column;
+  gap: 7px;
+  overflow-y: auto;
+}
+
+:host .fam-src-row {
+  display: grid !important;
+  grid-template-columns: minmax(46px, 0.65fr) minmax(90px, 1fr) 28px !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+:host .fam-src-row-label {
+  min-width: 0;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  white-space: nowrap;
+}
+
+:host .fam-src-panel .fam-src-row > input.fam-src-input {
+  height: 32px !important;
+  padding: 5px 24px 5px 8px !important;
+  border-color: var(--mc-border) !important;
+  background-color: var(--mc-input) !important;
+  color: var(--mc-title) !important;
+}
+
+:host .fam-src-del,
+:host .fam-src-add,
+:host .fam-src-clear,
+:host .fam-src-confirm {
+  appearance: none;
+  border: 1px solid var(--mc-border-soft) !important;
+  border-radius: 8px !important;
+  background: var(--mc-panel-soft) !important;
+  color: var(--mc-text) !important;
+  font: inherit;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  cursor: pointer;
+}
+
+:host .fam-src-del {
+  width: 28px !important;
+  height: 28px !important;
+}
+
+:host .fam-src-add {
+  min-height: 32px !important;
+}
+
+:host .fam-src-confirm {
+  border-color: var(--mc-accent) !important;
+  background: var(--mc-accent-strong) !important;
+  color: #fff !important;
+}
+
+:host .fam-src-sum {
+  color: var(--mc-accent) !important;
+}
+
+:host .fam-src-foot {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  margin-top: 10px !important;
+}
+
+:host .fam-src-btns {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+}
+
+/* 共用展開層：補齊原本未被嵌入版覆蓋的標題、表格與按鈕樣式。 */
+:host .ct-dialog-head,
+:host .stat-preview-head,
+:host .tower-ring-settings-head,
+:host .buff-overlay-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 11px;
+  border-bottom: 1px solid var(--mc-border-soft);
+}
+
+:host .ct-dialog-head strong,
+:host .stat-preview-head h2,
+:host .tower-ring-settings-head h2,
+:host .buff-overlay-head h2 {
+  margin: 0;
+  color: var(--mc-title);
+  font-size: 15px;
+  font-weight: 950;
+}
+
+:host .ct-dialog-close,
+:host .stat-preview-close,
+:host .tower-ring-settings-close {
+  display: inline-grid;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  place-items: center;
+  padding: 0;
+  appearance: none;
+  border: 1px solid var(--mc-border-soft);
+  border-radius: 8px;
+  background: var(--mc-panel-soft);
+  color: var(--mc-muted);
+  font: inherit;
+  font-size: 19px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+:host .ct-dialog-close:hover,
+:host .stat-preview-close:hover,
+:host .tower-ring-settings-close:hover {
+  border-color: color-mix(in srgb, var(--mc-accent) 50%, transparent);
+  background: var(--mc-accent-soft);
+  color: var(--mc-accent);
+}
+
+:host .ct-dialog > p,
+:host .stat-preview-note,
+:host .tower-ring-settings-summary,
+:host .tower-ring-average-note {
+  color: var(--mc-muted) !important;
+  font-size: 11.5px;
+  line-height: 1.65;
+}
+
+:host .ct-dialog-name-grid,
+:host .ct-dialog-state-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+:host .ct-dialog-name-row {
+  display: grid;
+  gap: 5px;
+  color: var(--mc-muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+:host .ct-dialog-state-grid button,
+:host .ct-dialog-actions button,
+:host .stat-preview-toggle button,
+:host .buff-overlay-actions button {
+  min-height: 34px;
+  padding: 6px 11px;
+  appearance: none;
+  border: 1px solid var(--mc-border-soft);
+  border-radius: 8px;
+  background: var(--mc-panel-soft);
+  color: var(--mc-text);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+:host .ct-dialog-state-grid button:hover:not(:disabled),
+:host .ct-dialog-state-grid button.active,
+:host .stat-preview-toggle button:hover,
+:host .stat-preview-toggle button.active,
+:host .buff-overlay-actions button:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--mc-accent) 52%, transparent);
+  background: var(--mc-accent-soft);
+  color: var(--mc-accent);
+}
+
+:host .ct-dialog-state-grid button:disabled,
+:host .ct-dialog-actions button:disabled,
+:host .buff-overlay-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+:host .ct-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 7px;
+  margin-top: 14px;
+  padding-top: 11px;
+  border-top: 1px solid var(--mc-border-soft);
+}
+
+:host .ct-dialog-actions .ct-dialog-primary {
+  border-color: var(--mc-accent);
+  background: var(--mc-accent-strong);
+  color: #fff;
+}
+
+:host .stat-preview-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 11px 0;
+}
+
+:host .stat-preview-mode,
+:host .stat-preview-kicker {
+  color: var(--mc-muted);
+  font-size: 10.5px;
+  font-weight: 800;
+}
+
+:host .stat-preview-toggle {
+  display: inline-flex;
+  gap: 5px;
+}
+
+:host .stat-preview-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+  border: 1px solid var(--mc-border-soft);
+  border-radius: 10px;
+  color: var(--mc-text);
+  font-size: 11px;
+}
+
+:host .stat-preview-table th,
+:host .stat-preview-table td {
+  padding: 8px 9px;
+  border-right: 1px solid var(--mc-border-soft);
+  border-bottom: 1px solid var(--mc-border-soft);
+  text-align: right;
+}
+
+:host .stat-preview-table th {
+  background: var(--mc-panel-soft);
+  color: var(--mc-muted);
+  font-weight: 850;
+}
+
+:host .stat-preview-table .sp-col-item,
+:host .stat-preview-table .sp-item {
+  text-align: left;
+}
+
+:host .stat-preview-table tr:last-child td {
+  border-bottom: 0;
+}
+
+:host .stat-preview-table th:last-child,
+:host .stat-preview-table td:last-child {
+  border-right: 0;
+}
+
+:host .buff-overlay-head {
+  position: sticky;
+  top: -15px;
+  z-index: 10;
+  align-items: center;
+  margin: -15px -15px 12px;
+  padding: 13px 15px 11px;
+  background: var(--mc-panel-strong);
+}
+
+:host .buff-overlay-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+:host .buff-overlay-body {
+  display: grid;
+  gap: 12px;
+}
+
+:host .buff-overlay-soul-orb {
+  padding: 10px;
+  border: 1px solid var(--mc-border-soft);
+  border-radius: 10px;
+  background: var(--mc-panel);
+}
+
+:host .buff-soul-orb-control {
+  display: grid;
+  grid-template-columns: minmax(110px, 0.55fr) minmax(180px, 0.85fr) minmax(210px, 1fr);
+  align-items: end;
+  gap: 8px;
+  width: 100%;
+}
+
+:host .buff-soul-orb-field {
+  display: grid;
+  min-width: 0;
+  gap: 5px;
+}
+
+:host .buff-soul-orb-field > span {
+  color: var(--mc-muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+:host .buff-soul-orb-full {
+  display: flex;
+  min-height: 36px;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 9px;
+  border: 1px solid var(--mc-border-soft);
+  border-radius: 8px;
+  background: var(--mc-panel-soft);
+  color: var(--mc-text);
+  font-size: 12.5px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+:host .buff-soul-orb-full.is-active {
+  border-color: color-mix(in srgb, var(--mc-accent) 50%, transparent);
+  background: var(--mc-accent-soft);
+  color: var(--mc-accent);
+}
+
+:host .buff-soul-orb-full > input {
+  width: 17px !important;
+  min-width: 17px;
+  min-height: 17px !important;
+}
+
+:host .soul-orb-select + .custom-select .custom-select-list {
+  right: 0;
+  left: 0;
+  grid-template-columns: minmax(0, 1fr);
+  width: 100%;
+  max-height: 250px;
+}
+
+@media (max-width: 760px) {
+  :host .buff-soul-orb-control {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+:host .buff-overlay-close {
+  width: 34px;
+  min-width: 34px;
+  padding: 0 !important;
+}
+
+:host .buff-overlay-close-icon {
+  width: 13px;
+  height: 13px;
+  stroke: currentColor;
+  stroke-width: 1.8;
+}
+
+:host .holybear-context-guide-icon {
+  display: grid !important;
+  width: 28px !important;
+  height: 28px !important;
+  flex: 0 0 28px;
+  margin: 0;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--mc-accent) 42%, transparent);
+  border-radius: 9px !important;
+  background: var(--mc-accent-soft) !important;
+  color: var(--mc-accent) !important;
+  grid-column: 1;
+  grid-row: 1;
+}
+
+:host .holybear-context-guide {
+  overflow: hidden;
+  margin: 10px 0 !important;
+  border: 1px solid var(--mc-border-soft) !important;
+  border-radius: 10px !important;
+  background: var(--mc-panel-soft) !important;
+  clip-path: inset(0 round 10px);
+}
+
+:host .holybear-context-guide > summary {
+  display: grid !important;
+  grid-template-columns: 28px minmax(0, 1fr) 18px;
+  grid-template-rows: minmax(28px, auto);
+  align-items: center;
+  gap: 10px;
+  min-height: 46px;
+  padding: 8px 10px;
+  list-style: none !important;
+  list-style-type: none !important;
+}
+
+:host .holybear-context-guide > summary::marker,
+:host .holybear-context-guide > summary::-webkit-details-marker {
+  display: none;
+  content: '';
+}
+
+:host .holybear-context-guide-icon svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+:host .holybear-context-guide-copy {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  grid-column: 2;
+  grid-row: 1;
+}
+
+:host .holybear-context-guide-copy strong {
+  color: var(--mc-title);
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1.35;
+}
+
+:host .holybear-context-guide-copy small {
+  margin: 0;
+  color: var(--mc-muted);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+:host .holybear-context-guide-chevron {
+  display: block;
+  width: 8px;
+  height: 8px;
+  justify-self: center;
+  grid-column: 3;
+  grid-row: 1;
+  border-right: 1.5px solid var(--mc-muted);
+  border-bottom: 1.5px solid var(--mc-muted);
+  transform: rotate(45deg);
+  transition: transform 0.18s ease;
+}
+
+:host .holybear-context-guide[open] .holybear-context-guide-chevron {
+  transform: rotate(225deg);
+}
+
+:host .holybear-context-guide-body {
+  margin: 0;
+  padding: 0 10px 10px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--mc-text);
+  font-size: 11.5px;
+}
+
+:host .holybear-context-guide-body ul {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+  padding: 0;
+  list-style: none;
+  counter-reset: context-guide;
+}
+
+:host .holybear-context-guide-body li {
+  position: relative;
+  min-width: 0;
+  padding: 9px 10px 9px 34px;
+  border: 1px solid var(--mc-border-soft);
+  border-radius: 8px;
+  background: var(--mc-panel);
+  color: var(--mc-text);
+  line-height: 1.55;
+  counter-increment: context-guide;
+}
+
+:host .holybear-context-guide-body li::before {
+  position: absolute;
+  top: 9px;
+  left: 9px;
+  display: grid;
+  width: 17px;
+  height: 17px;
+  place-items: center;
+  border-radius: 5px;
+  background: var(--mc-accent-soft);
+  color: var(--mc-accent);
+  font-size: 9px;
+  font-weight: 900;
+  content: counter(context-guide);
+}
+
+/* 表格標題不使用膠囊標籤，避免「技能・消耗／數值」被切成兩個視覺單位。 */
+:host .stat-table .label-tag {
+  min-height: 0;
+  margin-right: 3px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+@media (max-width: 1120px) {
+  :host .stat-table--dmg .st-row,
+  :host .stat-table--bonus .st-row {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  :host .stat-table--dmg .st-row,
+  :host .stat-table--bonus .st-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  :host .holybear-context-guide-body ul {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 560px) {
+  :host .stat-table--dmg .st-row,
+  :host .stat-table--bonus .st-row,
+  :host .ct-dialog-name-grid,
+  :host .ct-dialog-state-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* 分類共用摘要已由外層 React 統一顯示，嵌入內容不再重複一套戰力卡。 */
+:host([data-calculator-section]) .compact-result-bar,
+:host([data-calculator-section='equipment']) .equipment-change-result > .equipment-result,
+:host([data-calculator-section='weighted'])
+  .weighted-card--summary:not(.weighted-weight-panel) {
+  display: none !important;
+}
+
+/* 角色職業選單：輸入框與箭頭維持同一列，不再被全域 input 規則拆開。 */
+:host .job-picker {
+  width: min(100%, 390px);
+  min-width: 0;
+}
+
+:host .job-combobox-control {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr) 38px;
+  align-items: center;
+  gap: 8px;
+}
+
+:host .job-combobox-control .job-combobox-label {
+  margin: 0;
+  white-space: nowrap;
+}
+
+:host .job-combobox-control > input {
+  grid-column: 2;
+  min-height: 38px;
+  font-size: 12.5px;
+}
+
+:host .job-combobox-control > .job-combobox-toggle {
+  grid-column: 3;
+  width: 38px !important;
+  min-width: 38px;
+  min-height: 38px;
+  padding: 0 !important;
+}
+
+:host .job-option-list {
+  top: calc(100% + 7px);
+  z-index: 700;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-height: 320px;
+  padding: 7px;
+}
+
+:host .job-option-button {
+  min-height: 34px;
+  font-size: 11.5px;
+}
+
+/* 裝備與效率頁的 Buff 快速列改成站內橫向工具列。 */
+:host .buff-summary-bar {
+  width: 100%;
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--mc-border-soft);
+  border-radius: 11px;
+  background: var(--mc-panel-strong);
+  color: var(--mc-text);
+}
+
+:host .buff-quick-row {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 9px;
+}
+
+:host .buff-quick-count {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+  color: var(--mc-muted);
+  font-size: 10px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+:host .buff-quick-count strong {
+  color: var(--mc-title);
+  font-size: 11px;
+}
+
+:host .buff-quick-chips {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 2px;
+}
+
+:host .buff-quick-chip-wrap {
+  flex: 0 0 auto;
+  padding: 2px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+}
+
+:host .buff-quick-chip-wrap.is-active {
+  border-color: color-mix(in srgb, var(--mc-accent) 52%, transparent);
+  background: var(--mc-accent-soft);
+}
+
+:host .buff-quick-chip {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  padding: 0;
+  appearance: none;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  cursor: pointer;
+}
+
+:host .buff-quick-icon-frame {
+  position: relative;
+  display: block;
+  width: 30px;
+  height: 30px;
+}
+
+:host .buff-quick-icon {
+  display: block;
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  object-fit: contain;
+}
+
+:host .buff-quick-level-label {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  display: grid;
+  min-width: 16px;
+  height: 16px;
+  place-items: center;
+  padding: 0 3px;
+  border: 2px solid var(--mc-panel-strong);
+  border-radius: 999px;
+  background: var(--mc-accent-strong);
+  color: #fff;
+  font-size: 8px;
+  font-weight: 900;
+}
+
+:host .buff-quick-all {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+/* Buff 校正與動作鍵使用同一種按鈕，不保留原生灰色按鈕外觀。 */
+:host .buff-correction-controls,
+:host .buff-correction-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+:host .buff-correction-chip {
+  position: relative;
+  min-height: 32px;
+  padding: 6px 10px;
+  appearance: none;
+  border: 1px solid var(--mc-border-soft);
+  border-radius: 8px;
+  background: var(--mc-panel-soft);
+  color: var(--mc-muted);
+  font: inherit;
+  font-size: 10px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+:host .buff-correction-chip:hover,
+:host .buff-correction-chip.is-active {
+  border-color: color-mix(in srgb, var(--mc-accent) 52%, transparent);
+  background: var(--mc-accent-soft);
+  color: var(--mc-accent);
+}
+
+:host .buff-correction-compact-trigger {
+  background: var(--mc-panel-soft) !important;
+  color: var(--mc-text) !important;
+}
+
+/* 待確認項目改為可掃讀的提示卡，而不是原生 details 清單。 */
+:host[data-density='compact'] .holybear-review-guide {
+  display: grid;
+  gap: 9px;
+  padding: 10px 12px;
+}
+
+:host .holybear-review-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+:host .holybear-review-head > span:nth-child(2) {
+  display: grid;
+  min-width: 0;
+  gap: 1px;
+}
+
+:host .holybear-review-head strong {
+  color: var(--mc-title);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+:host .holybear-review-head small {
+  color: var(--mc-muted);
+  font-size: 9px;
+}
+
+:host .holybear-review-head > b {
+  margin-left: auto;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--mc-warm) 15%, transparent);
+  color: var(--mc-warm);
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+:host .holybear-review-icon {
+  display: grid;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--mc-warm) 48%, transparent);
+  border-radius: 50%;
+  color: var(--mc-warm);
+  font-size: 11px;
+  font-weight: 950;
+}
+
+:host .holybear-review-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+:host .holybear-review-item {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  gap: 7px;
+  padding: 8px 9px;
+  border: 1px solid color-mix(in srgb, var(--mc-warm) 20%, var(--mc-border-soft));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--mc-warm) 5%, var(--mc-panel));
+}
+
+:host .holybear-review-item > span {
+  display: grid;
+  width: 17px;
+  height: 17px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--mc-warm) 14%, transparent);
+  color: var(--mc-warm);
+  font-size: 8px;
+  font-weight: 900;
+}
+
+:host .holybear-review-item p {
+  margin: 0;
+  color: var(--mc-text);
+  font-size: 9.5px;
+  line-height: 1.5;
+}
+
+/* 站內彈窗不使用來源專案的超緊湊字級，桌機也維持可閱讀尺度。 */
+:host[data-density='compact'] .maplecombat-shell {
+  font-size: 13px;
+}
+
+:host[data-density='compact'] .holybear-autofill-banner,
+:host[data-density='compact'] .holybear-validation-banner {
+  font-size: 12px;
+}
+
+:host[data-density='compact'] .holybear-review-head strong,
+:host[data-density='compact'] .section-title,
+:host[data-density='compact'] .buff-head-title,
+:host[data-density='compact'] .tower-ring-title,
+:host[data-density='compact'] .weighted-head h2,
+:host[data-density='compact'] .weighted-section-title {
+  font-size: 13px;
+}
+
+:host[data-density='compact'] .holybear-review-head small,
+:host[data-density='compact'] .holybear-review-head > b,
+:host[data-density='compact'] .holybear-review-item p,
+:host[data-density='compact'] .holybear-field-note,
+:host[data-density='compact'] .stat-card-head-label,
+:host[data-density='compact'] .job-combobox-label,
+:host[data-density='compact'] .st-rowhead,
+:host[data-density='compact'] .st-colhead,
+:host[data-density='compact'] .st-cell-label,
+:host[data-density='compact'] .input-group label,
+:host[data-density='compact'] .sp-item label,
+:host[data-density='compact'] .weighted-weight-item span,
+:host[data-density='compact'] .equipment-gain-label,
+:host[data-density='compact'] .equipment-equivalence-name,
+:host[data-density='compact'] .weighted-summary-item span {
+  font-size: 11px !important;
+}
+
+:host[data-density='compact'] input,
+:host[data-density='compact'] select,
+:host[data-density='compact'] textarea,
+:host[data-density='compact'] .custom-select-trigger,
+:host[data-density='compact'] .job-combobox-toggle,
+:host[data-density='compact'] .power-coefficient-toggle,
+:host[data-density='compact'] .custom-select-option,
+:host[data-density='compact'] .job-option-button,
+:host[data-density='compact'] .power-coefficient-option,
+:host[data-density='compact'] .equipment-efficiency-metric-option {
+  font-size: 12px;
+}
+
+:host[data-density='compact'] .holybear-context-guide summary {
+  font-size: 12px;
+}
+
+:host[data-density='compact'] .holybear-context-guide-body {
+  font-size: 11.5px;
+  line-height: 1.7;
+}
+
+:host[data-density='compact'] .buff-section-title,
+:host[data-density='compact'] .buff-correction-chip,
+:host[data-density='compact'] .buff-master-btn,
+:host[data-density='compact'] .buff-collapse-toggle,
+:host[data-density='compact'] .buff-quick-count,
+:host[data-density='compact'] .buff-quick-count strong,
+:host[data-density='compact'] .buff-quick-all {
+  font-size: 11.5px;
+}
+
+:host[data-density='compact'] .equipment-result-label,
+:host[data-density='compact'] .equipment-efficiency-toolbar,
+:host[data-density='compact'] .equipment-efficiency-group,
+:host[data-density='compact'] .tower-ring-section,
+:host[data-density='compact'] .weighted-card {
+  font-size: 12px;
+}
+
+@media (max-width: 720px) {
+  :host .job-combobox-control {
+    grid-template-columns: minmax(0, 1fr) 34px;
+  }
+
+  :host .job-combobox-control .job-combobox-label {
+    grid-column: 1 / -1;
+  }
+
+  :host .job-combobox-control > input {
+    grid-column: 1;
+  }
+
+  :host .job-combobox-control > .job-combobox-toggle {
+    grid-column: 2;
+  }
+
+  :host .buff-quick-row {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  :host .buff-quick-chips {
+    order: 3;
+    flex-basis: 100%;
+  }
+
+  :host .buff-quick-all {
+    margin-left: auto;
+  }
+
+  :host .holybear-review-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* 情境列不依賴已移除的上游 compact CSS。 */
+:host([data-calculator-section='buffs']) .compact-toolbar,
+:host([data-calculator-section='weighted']) .compact-toolbar {
+  position: relative;
+  width: 100%;
+  height: auto;
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--mc-border-soft);
+  border-radius: 12px;
+  background: var(--mc-panel-strong);
+  box-shadow: none;
+}
+
+:host([data-calculator-section='buffs']) .ct-state-row,
+:host([data-calculator-section='weighted']) .ct-state-row {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.45fr) minmax(450px, 2fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 0;
+}
+
+:host([data-calculator-section='buffs']) .ct-state-heading,
+:host([data-calculator-section='weighted']) .ct-state-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+:host([data-calculator-section='buffs']) .ct-state-heading strong,
+:host([data-calculator-section='weighted']) .ct-state-heading strong {
+  color: var(--mc-title);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+:host([data-calculator-section='buffs']) .ct-state-heading small,
+:host([data-calculator-section='weighted']) .ct-state-heading small {
+  color: var(--mc-muted);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+:host([data-calculator-section='buffs']) .ct-state-tabs,
+:host([data-calculator-section='weighted']) .ct-state-tabs {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 5px;
+  min-width: 0;
+}
+
+:host([data-calculator-section='buffs']) .ct-state-tab,
+:host([data-calculator-section='weighted']) .ct-state-tab,
+:host([data-calculator-section='buffs']) .ct-state-menu-trigger,
+:host([data-calculator-section='weighted']) .ct-state-menu-trigger {
+  display: inline-flex;
+  min-width: 0;
+  min-height: 34px;
+  max-width: none;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 9px;
+  appearance: none;
+  border: 1px solid var(--mc-border-soft);
+  border-radius: 8px;
+  background: var(--mc-panel-soft);
+  color: var(--mc-muted);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 850;
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+:host([data-calculator-section='buffs']) .ct-state-tab:hover,
+:host([data-calculator-section='weighted']) .ct-state-tab:hover,
+:host([data-calculator-section='buffs']) .ct-state-menu-trigger:hover,
+:host([data-calculator-section='weighted']) .ct-state-menu-trigger:hover {
+  border-color: color-mix(in srgb, var(--mc-accent) 48%, transparent);
+  background: var(--mc-accent-soft);
+  color: var(--mc-accent);
+}
+
+:host([data-calculator-section='buffs']) .ct-state-tab.active,
+:host([data-calculator-section='weighted']) .ct-state-tab.active {
+  border-color: color-mix(in srgb, var(--mc-accent) 52%, transparent);
+  background: var(--mc-accent-soft);
+  color: var(--mc-accent);
+  box-shadow: inset 0 -2px 0 var(--mc-accent);
+}
+
+:host([data-calculator-section='buffs']) .ct-state-menu,
+:host([data-calculator-section='weighted']) .ct-state-menu {
+  position: relative;
+  margin: 0;
+}
+
+:host([data-calculator-section='buffs']) .ct-state-menu > summary,
+:host([data-calculator-section='weighted']) .ct-state-menu > summary {
+  min-width: 92px;
+  list-style: none;
+}
+
+:host([data-calculator-section='buffs']) .ct-state-menu > summary::-webkit-details-marker,
+:host([data-calculator-section='weighted']) .ct-state-menu > summary::-webkit-details-marker {
+  display: none;
+}
+
+:host([data-calculator-section='buffs']) .ct-state-menu-panel,
+:host([data-calculator-section='weighted']) .ct-state-menu-panel {
+  position: absolute;
+  top: calc(100% + 7px);
+  right: 0;
+  z-index: 200;
+  display: grid;
+  gap: 4px;
+  width: 210px;
+  padding: 7px;
+  border: 1px solid var(--mc-border);
+  border-radius: 10px;
+  background: var(--mc-panel-strong);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.3);
+}
+
+:host([data-calculator-section='buffs']) .ct-state-menu-panel button,
+:host([data-calculator-section='weighted']) .ct-state-menu-panel button {
+  width: 100%;
+  min-height: 32px;
+  padding: 6px 9px;
+  appearance: none;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--mc-text);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 750;
+  text-align: left;
+  cursor: pointer;
+}
+
+:host([data-calculator-section='buffs']) .ct-state-menu-panel button:hover:not(:disabled),
+:host([data-calculator-section='weighted']) .ct-state-menu-panel button:hover:not(:disabled) {
+  background: var(--mc-accent-soft);
+  color: var(--mc-accent);
+}
+
+:host([data-calculator-section='buffs']) .ct-state-menu-panel button:disabled,
+:host([data-calculator-section='weighted']) .ct-state-menu-panel button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
+@media (max-width: 760px) {
+  :host([data-calculator-section='buffs']) .ct-state-row,
+  :host([data-calculator-section='weighted']) .ct-state-row {
+    grid-template-columns: 1fr auto;
+  }
+
+  :host([data-calculator-section='buffs']) .ct-state-heading,
+  :host([data-calculator-section='weighted']) .ct-state-heading {
+    display: none;
+  }
+
+  :host([data-calculator-section='buffs']) .ct-state-tabs,
+  :host([data-calculator-section='weighted']) .ct-state-tabs {
+    display: flex;
+    overflow-x: auto;
+  }
+
+  :host([data-calculator-section='buffs']) .ct-state-tab,
+  :host([data-calculator-section='weighted']) .ct-state-tab {
+    min-width: 76px;
+  }
+}
+
+@media (max-width: 680px) {
+  :host[data-density='compact'] .compact-toolbar {
+    padding: 9px;
+  }
+
+  :host[data-density='compact'] .ct-tabs {
+    grid-template-columns: 1fr;
+  }
+
+  :host[data-density='compact'] .ct-tab {
+    min-height: 38px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  :host[data-density='compact'] .ct-state-tabs {
+    display: flex;
+    overflow-x: auto;
+  }
+
+  :host[data-density='compact'] .ct-state-tab {
+    min-width: 72px;
+  }
+
+  :host[data-density='compact'] .compact-result-bar,
+  :host[data-density='compact'] #calculatorMode .calc-main {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* 外層 React 已負責主分類；嵌入層只在 Buff／加權頁顯示實戰情境列。 */
+:host([data-calculator-section]) .compact-toolbar {
+  display: none;
+}
+
+:host([data-calculator-section='buffs']) .compact-toolbar,
+:host([data-calculator-section='weighted']) .compact-toolbar {
+  display: block;
+  padding: 10px 12px;
+}
+
+:host([data-calculator-section='buffs']) .compact-toolbar .ct-main-row,
+:host([data-calculator-section='weighted']) .compact-toolbar .ct-main-row {
+  display: none;
+}
+
+:host([data-calculator-section='buffs']) .compact-toolbar .ct-state-row,
+:host([data-calculator-section='weighted']) .compact-toolbar .ct-state-row {
+  display: grid;
+  padding-top: 0;
+  border-top: 0;
+}
+
+:host([data-calculator-section]:not([data-calculator-section='character']))
+  .holybear-autofill-banner,
+:host([data-calculator-section]:not([data-calculator-section='character']))
+  .holybear-validation-banner,
+:host([data-calculator-section]:not([data-calculator-section='character']))
+  .holybear-review-guide {
+  display: none;
+}
+
+:host([data-calculator-section='character']) #calculatorMode .calc-layout,
+:host([data-calculator-section='character']) #effStatsMode .calc-layout,
+:host([data-calculator-section='buffs']) #calculatorMode .calc-layout,
+:host([data-calculator-section='buffs']) #effStatsMode .calc-layout {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+:host([data-calculator-section='character']) .calc-side,
+:host([data-calculator-section='character']) .buff-gain-summary {
+  display: none !important;
+}
+
+:host([data-calculator-section='character']) .compact-result-bar {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+:host([data-calculator-section='buffs']) .calc-main {
+  display: none !important;
+}
+
+:host([data-calculator-section='buffs']) .calc-side {
+  display: block;
+  width: 100%;
+  max-width: none;
+  margin: 0 !important;
+}
+
+:host([data-calculator-section='buffs']) .buff-panel {
+  width: 100%;
+  max-width: none;
+}
+
+:host([data-calculator-section='equipment']) .container,
+:host([data-calculator-section='efficiency']) .container,
+:host([data-calculator-section='weighted']) .container {
+  padding-top: 0 !important;
+}
+
+@media (max-width: 920px) {
+  :host([data-calculator-section='buffs']) .compact-toolbar .ct-state-row,
+  :host([data-calculator-section='weighted']) .compact-toolbar .ct-state-row {
+    grid-template-columns: 1fr auto;
+  }
+
+  :host([data-calculator-section='buffs']) .ct-state-heading,
+  :host([data-calculator-section='weighted']) .ct-state-heading {
+    display: none;
+  }
+}
+
+/* 置於嵌入版覆寫末端，確保上游 compact 字級不會再次壓回 9～11px。 */
+:host[data-density='compact'] .maplecombat-shell {
+  font-size: 14px !important;
+}
+
+:host[data-density='compact'] .section-title,
+:host[data-density='compact'] .buff-head-title,
+:host[data-density='compact'] .buff-section-title,
+:host[data-density='compact'] .tower-ring-title,
+:host[data-density='compact'] .weighted-section-title,
+:host[data-density='compact'] .weighted-head h2,
+:host[data-density='compact'] .st-row-group-title {
+  font-size: 14px !important;
+}
+
+:host[data-density='compact'] input,
+:host[data-density='compact'] select,
+:host[data-density='compact'] textarea,
+:host[data-density='compact'] button,
+:host[data-density='compact'] .custom-select-trigger,
+:host[data-density='compact'] .custom-select-option,
+:host[data-density='compact'] .job-option-button,
+:host[data-density='compact'] .power-coefficient-option,
+:host[data-density='compact'] .equipment-efficiency-metric-option {
+  font-size: 13px !important;
+}
+
+:host[data-density='compact'] .st-rowhead,
+:host[data-density='compact'] .st-colhead,
+:host[data-density='compact'] .st-cell-label,
+:host[data-density='compact'] .input-group label,
+:host[data-density='compact'] .sp-item label,
+:host[data-density='compact'] .weighted-weight-item span,
+:host[data-density='compact'] .job-combobox-label,
+:host[data-density='compact'] .equipment-gain-label,
+:host[data-density='compact'] .equipment-equivalence-name,
+:host[data-density='compact'] .weighted-summary-item span,
+:host[data-density='compact'] .result-label,
+:host[data-density='compact'] .equipment-result-label {
+  font-size: 12px !important;
+}
+
+:host[data-density='compact'] .holybear-autofill-banner,
+:host[data-density='compact'] .holybear-validation-banner,
+:host[data-density='compact'] .holybear-field-note,
+:host[data-density='compact'] .holybear-review-item p,
+:host[data-density='compact'] .holybear-context-guide-body,
+:host[data-density='compact'] .ct-state-tab,
+:host[data-density='compact'] .ct-state-menu-trigger,
+:host[data-density='compact'] .ct-state-menu-panel button,
+:host[data-density='compact'] .buff-correction-chip,
+:host[data-density='compact'] .buff-master-btn,
+:host[data-density='compact'] .buff-collapse-toggle,
+:host[data-density='compact'] .buff-quick-count,
+:host[data-density='compact'] .buff-quick-all {
+  font-size: 12.5px !important;
+}
+
+:host[data-density='compact'] .holybear-context-guide-copy strong,
+:host[data-density='compact'] .holybear-review-head strong,
+:host[data-density='compact'] .ct-state-heading strong {
+  font-size: 13px !important;
+}
+
+/* 待確認項目預設收合；頁面只保留狀態摘要，詳細內容需要時再展開。 */
+:host[data-density='compact'] .holybear-review-guide {
+  display: block;
+  width: calc(100% - 16px);
+  margin: 0 auto;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 10px;
+}
+
+:host[data-density='compact'] .holybear-review-head {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) 18px;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 12px;
+  list-style: none;
+}
+
+:host[data-density='compact'] .holybear-review-head::marker,
+:host[data-density='compact'] .holybear-review-head::-webkit-details-marker {
+  display: none;
+  content: '';
+}
+
+:host .holybear-review-chevron {
+  width: 8px;
+  height: 8px;
+  justify-self: center;
+  border-right: 1.5px solid var(--mc-muted);
+  border-bottom: 1.5px solid var(--mc-muted);
+  transform: rotate(45deg) translateY(-2px);
+  transition: transform 160ms ease;
+}
+
+:host .holybear-review-guide[open] .holybear-review-chevron {
+  transform: rotate(225deg) translate(-1px, -1px);
+}
+
+:host[data-density='compact'] .holybear-review-grid {
+  padding: 0 12px 12px;
+}
+
+:host([data-theme='light']) .holybear-review-guide {
+  border-color: rgba(176, 117, 26, 0.3) !important;
+  background: #fff9ec !important;
+  color: #5f451c !important;
+}
+
+:host([data-theme='light']) .holybear-review-head strong {
+  color: #5a3c10 !important;
+}
+
+:host([data-theme='light']) .holybear-review-head small {
+  color: #766142 !important;
+}
+
+/* 實戰資料：主表維持橫向對照，特殊能力改為同一套緊湊欄位列。 */
+:host .eff-special-title {
+  margin-top: 12px;
+  padding-bottom: 6px;
+}
+
+:host .special-stats-grid.special-stats-grid--eff {
+  grid-template-columns: repeat(7, minmax(96px, 1fr));
+  gap: 8px;
+}
+
+:host .special-stats-grid--eff > .input-group {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  gap: 6px;
+}
+
+:host .special-stats-grid--eff > .input-group > label {
+  min-height: 18px;
+  color: var(--mc-muted) !important;
+}
+
+:host .special-stats-grid--eff > .input-group:has(.fam-src-wrap) {
+  grid-column: span 2;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* 原輸出占比：五個百分比欄位在桌機同列，百分號固定留在輸入框右側。 */
+:host .weighted-weight-grid {
+  grid-template-columns: repeat(5, minmax(118px, 1fr));
+  gap: 10px;
+}
+
+:host .weighted-weight-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 16px;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+:host .weighted-weight-item > span {
+  grid-column: 1 / -1;
+  min-height: 18px;
+}
+
+:host .weighted-weight-item > b {
+  color: var(--mc-muted);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+@media (max-width: 980px) {
+  :host .special-stats-grid.special-stats-grid--eff {
+    grid-template-columns: repeat(4, minmax(110px, 1fr));
+  }
+
+  :host .weighted-weight-grid {
+    grid-template-columns: repeat(3, minmax(118px, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  :host .special-stats-grid.special-stats-grid--eff,
+  :host .weighted-weight-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  :host .special-stats-grid--eff > .input-group:has(.fam-src-wrap) {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 420px) {
+  :host .special-stats-grid.special-stats-grid--eff,
+  :host .weighted-weight-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* 規範戒指平均效益：使用真正的五欄資料列，避免標題與數值黏成直排文字。 */
+:host .tower-ring-settings-dialog {
+  width: min(820px, calc(100vw - 32px));
+  display: grid;
+  gap: 14px;
+}
+
+/* 裝備左右欄使用相同的標籤／輸入欄寬；萌獸齒輪留在輸入區內，不另改整列比例。 */
+:host .equipment-grid > .section > .input-group:has(.fam-src-wrap) {
+  grid-template-columns: minmax(0, 1fr) minmax(90px, 0.85fr);
+}
+
+:host .equipment-grid > .section > .input-group:has(.fam-src-wrap) .fam-src-wrap {
+  width: 100%;
+}
+
+:host .tower-ring-settings-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--mc-border-soft);
+}
+
+:host .tower-ring-settings-head h2,
+:host .tower-ring-settings-head p {
+  margin: 0;
+}
+
+:host .tower-ring-settings-head h2 {
+  color: var(--mc-title);
+  font-size: 16px;
+  font-weight: 900;
+}
+
+:host .tower-ring-settings-summary,
+:host .tower-ring-average-note {
+  color: var(--mc-muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+:host .tower-ring-settings-summary {
+  margin-top: 5px !important;
+}
+
+:host .tower-ring-settings-close {
+  width: 34px !important;
+  min-height: 34px !important;
+  flex: 0 0 auto;
+  padding: 0 !important;
+  border: 1px solid var(--mc-border) !important;
+  border-radius: 9px !important;
+  background: var(--mc-panel-soft) !important;
+  color: var(--mc-muted) !important;
+  cursor: pointer;
+}
+
+:host .tower-ring-settings-close:hover {
+  border-color: color-mix(in srgb, var(--mc-accent) 50%, transparent) !important;
+  background: var(--mc-accent-soft) !important;
+  color: var(--mc-accent) !important;
+}
+
+:host .tower-ring-share-field {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) minmax(150px, 0.48fr);
+  align-items: center;
+  gap: 12px;
+  color: var(--mc-text);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+:host .tower-ring-share-control,
+:host .tower-ring-coverage-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 16px;
+  align-items: center;
+  gap: 6px;
+}
+
+:host .tower-ring-share-control > span,
+:host .tower-ring-coverage-control > span {
+  color: var(--mc-muted);
+  font-weight: 850;
+}
+
+:host .tower-ring-cycle-settings {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  min-width: 0;
+  margin: 0;
+  padding: 10px 12px 11px;
+  border: 1px solid var(--mc-border-soft);
+  border-radius: 10px;
+  background: var(--mc-panel-soft);
+}
+
+:host .tower-ring-cycle-settings legend {
+  padding: 0 5px;
+  color: var(--mc-title);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+:host .tower-ring-cycle-settings label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--mc-text);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+:host .tower-ring-average-note {
+  margin: 0;
+}
+
+:host .tower-ring-coverage-scroll {
+  overflow-x: auto;
+  scrollbar-color: var(--mc-border) transparent;
+}
+
+:host .tower-ring-coverage-table {
+  display: grid;
+  min-width: 650px;
+  gap: 5px;
+}
+
+:host .tower-ring-coverage-row {
+  display: grid;
+  grid-template-columns: 64px 70px 90px minmax(220px, 1fr) 100px;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+  padding: 6px 10px;
+  border: 1px solid var(--mc-border-soft);
+  border-radius: 9px;
+  background: var(--mc-panel-soft);
+  color: var(--mc-text);
+  font-size: 12px;
+}
+
+:host .tower-ring-coverage-row--head {
+  min-height: 30px;
+  padding-block: 4px;
+  border-color: transparent;
+  background: transparent;
+  color: var(--mc-muted);
+  font-size: 11px;
+  font-weight: 850;
+}
+
+:host .tower-ring-coverage-row > :last-child {
+  text-align: right;
+}
+
+:host .tower-ring-atk-percent {
+  color: var(--mc-warm);
+}
+
+:host .tower-ring-average-gain {
+  color: var(--mc-violet);
+}
+
+:host .tower-ring-coverage-fixed {
+  display: flex;
+  min-height: 34px;
+  align-items: center;
+  padding: 6px 9px;
+  border: 1px solid var(--mc-border);
+  border-radius: 8px;
+  background: var(--mc-input);
+  color: var(--mc-title);
+}
+
+@media (max-width: 620px) {
+  :host .tower-ring-settings-dialog {
+    padding: 12px;
+  }
+
+  :host .tower-ring-share-field {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* 靈魂寶珠只依內容分配寬度；窄側欄時讓滿魂切到下一列，避免屬性按鈕撐滿並裁切。 */
+:host .buff-section:has(.buff-soul-orb-control),
+:host .buff-overlay-soul-orb {
+  container-type: inline-size;
+}
+
+:host .buff-soul-orb-control {
+  grid-template-columns: 100px minmax(150px, 190px);
+  justify-content: start;
+}
+
+/* 側欄預設兩欄且滿魂換行；只有內容區真的夠寬時才排成同一列。 */
+:host .buff-soul-orb-full {
+  grid-column: 1 / -1;
+  width: fit-content;
+  max-width: 100%;
+}
+
+@container (min-width: 620px) {
+  :host .buff-soul-orb-control {
+    grid-template-columns: 110px minmax(150px, 190px) minmax(180px, max-content);
+  }
+
+  :host .buff-soul-orb-full {
+    grid-column: auto;
+  }
+}
+
+@container (max-width: 340px) {
+  :host .buff-soul-orb-control {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  :host .buff-soul-orb-full {
+    grid-column: auto;
+  }
+}
+
+/* 職業欄位與箭頭做成同一個控制項，避免右側浮著一顆獨立方形按鈕。 */
+:host .job-combobox-control {
+  grid-template-columns: 46px minmax(0, 1fr);
+}
+
+:host .job-combobox-control > input {
+  grid-column: 2;
+  grid-row: 1;
+  width: 100%;
+  padding-right: 44px !important;
+}
+
+:host .job-combobox-control > .job-combobox-toggle {
+  grid-column: 2;
+  grid-row: 1;
+  z-index: 2;
+  width: 38px !important;
+  min-width: 38px;
+  min-height: 36px;
+  justify-self: end;
+  padding: 0 !important;
+  border: 0 !important;
+  border-left: 1px solid var(--mc-border-soft) !important;
+  border-radius: 0 8px 8px 0 !important;
+  background: transparent !important;
+}
+
+:host .job-combobox-control > .job-combobox-toggle:hover {
+  background: var(--mc-accent-soft) !important;
+}
+
+/* 自訂下拉統一在欄位內顯示箭頭，不再額外佔一顆方形按鈕。 */
+:host .custom-select-trigger {
+  position: relative;
+  padding-right: 30px !important;
+  text-align: left;
+}
+
+:host .custom-select-trigger::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 11px;
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: translateY(-65%) rotate(45deg);
+  transition: transform 150ms ease;
+  pointer-events: none;
+}
+
+:host .custom-select.is-open .custom-select-trigger::after {
+  transform: translateY(-25%) rotate(225deg);
+}
+
+@media (max-width: 720px) {
+  :host .job-combobox-control {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  :host .job-combobox-control .job-combobox-label {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  :host .job-combobox-control > input,
+  :host .job-combobox-control > .job-combobox-toggle {
+    grid-column: 1;
+    grid-row: 2;
+  }
+}
