@@ -101,7 +101,10 @@ const GrowthInsightPanels: React.FC<GrowthInsightPanelsProps> = ({
   setTrendRange,
   allowRangeSelection,
 }) => {
-  const chartDays = useMemo(() => days.slice(-trendRange), [days, trendRange]);
+  const chartDays = useMemo(
+    () => days.filter((day) => !day.expPending).slice(-trendRange),
+    [days, trendRange],
+  );
   const eta = useMemo(() => {
     const sample = days.slice(-30);
     const gains = sample.slice(1).filter((day) => !day.expPending && Number.isFinite(Number(day.expGain)));
@@ -523,7 +526,9 @@ const CharacterGrowthHistory: React.FC<CharacterGrowthHistoryProps> = ({ data, a
                     if (cell.empty) return <span key={cell.key} className="h-3 w-3 justify-self-center" />;
                     const bucket = Math.max(0, Math.min(4, cell.day?.growthBucket || 0));
                     const label = cell.day
-                      ? `${cell.key} · Lv.${cell.day.level} · ${cell.day.expRate}% · +${compactNumber(cell.day.expGain)} EXP`
+                      ? cell.day.expPending
+                        ? `${cell.key} · Lv.${cell.day.level} · ${cell.day.expRate}% · 當日增量尚未結算`
+                        : `${cell.key} · Lv.${cell.day.level} · ${cell.day.expRate}% · +${compactNumber(cell.day.expGain)} EXP`
                       : `${cell.key} · 無資料`;
                     return (
                       <span
