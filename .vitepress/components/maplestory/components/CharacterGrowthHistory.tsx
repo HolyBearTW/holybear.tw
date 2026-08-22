@@ -37,6 +37,16 @@ const HEAT_COLORS = [
 const parseDate = (value: string) => new Date(`${value.slice(0, 10)}T00:00:00Z`);
 const formatDate = (date: Date) => date.toISOString().slice(0, 10);
 const addDays = (date: Date, days: number) => new Date(date.getTime() + days * DAY_MS);
+const getTaiwanDateKey = () => {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Taipei',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date());
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+};
 
 const compactNumber = (value: string | number) => {
   const parsed = typeof value === 'number' ? value : Number(value);
@@ -344,13 +354,26 @@ const CharacterGrowthHistory: React.FC<CharacterGrowthHistoryProps> = ({ data, a
       active: !expPending && expGain > 0,
     };
   }), [weeklyHistory]);
-  const insightDays = deferredHistory?.days ?? weeklyDays;
+  const historyDays = useMemo<MaplerHouseHistoryDay[] | null>(() => {
+    if (!deferredHistory) return null;
+    const today = getTaiwanDateKey();
+    return deferredHistory.days.map((day) => day.date.slice(0, 10) === today
+      ? {
+          ...day,
+          expGain: '0',
+          expPending: true,
+          growthBucket: 0,
+          active: false,
+        }
+      : day);
+  }, [deferredHistory]);
+  const insightDays = historyDays ?? weeklyDays;
 
   const calendar = useMemo(() => {
-    if (!deferredHistory) return null;
+    if (!deferredHistory || !historyDays) return null;
     const end = parseDate(deferredHistory.availableEndDate || deferredHistory.end);
     const start = addDays(end, -364);
-    const dayMap = new Map(deferredHistory.days.map((day) => [day.date, day]));
+    const dayMap = new Map(historyDays.map((day) => [day.date, day]));
     const leading = start.getUTCDay();
     const cells: Array<{ key: string; day: MaplerHouseHistoryDay | null; empty?: boolean }> = [];
     for (let index = 0; index < leading; index += 1) {
@@ -381,7 +404,7 @@ const CharacterGrowthHistory: React.FC<CharacterGrowthHistoryProps> = ({ data, a
       monthLabels,
       weekCount: Math.ceil(cells.length / 7),
     };
-  }, [deferredHistory]);
+  }, [deferredHistory, historyDays]);
 
   if ((loading || historyRenderPending || weeklyLoading) && !deferredHistory && !weeklyDays.length) {
     return (
@@ -419,9 +442,14 @@ const CharacterGrowthHistory: React.FC<CharacterGrowthHistoryProps> = ({ data, a
     );
   }
 
-  if (!deferredHistory || !calendar) return null;
+  if (!deferredHistory || !historyDays || !calendar) return null;
 
-  const bestDay = deferredHistory.stats.bestDay;
+  const bestDay = historyDays.reduce<{ date: string; expGain: string } | null>((best, day) => {
+    if (day.expPending || Number(day.expGain) <= 0) return best;
+    return !best || Number(day.expGain) > Number(best.expGain)
+      ? { date: day.date, expGain: day.expGain }
+      : best;
+  }, null);
   const sortedEvents = [...deferredHistory.events].sort((a, b) => b.date.localeCompare(a.date));
 
   return (
