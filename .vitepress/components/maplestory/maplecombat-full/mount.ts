@@ -31,6 +31,7 @@ import {
   currentEquipmentNewFields,
   currentEquipmentOldFields,
 } from '@maplecombat/services/equipmentCatalog'
+import { exportSaveData, parseImportedData } from '@maplecombat/services/saveData'
 
 import embedCss from './styles/embed-overrides.css?inline'
 
@@ -45,6 +46,8 @@ export interface MapleCombatMountOptions {
 export interface MapleCombatController {
   resetFromCharacter(): void
   clearAll(): void
+  exportBackup(): Promise<void>
+  importBackup(file: File): Promise<void>
   setSection(section: MapleCombatSection): void
   setTheme(theme: CompactTheme): void
   unmount(): void
@@ -342,6 +345,16 @@ export async function mountMapleCombat(
       options.onDirtyChange?.(true)
     },
     clearAll,
+    async exportBackup() {
+      await exportSaveData(character.collectSaveData())
+    },
+    async importBackup(file) {
+      const contents = await file.text()
+      character.applySaveData(parseImportedData(contents))
+      await nextTick()
+      options.onDirtyChange?.(true)
+      publishResult()
+    },
     setSection,
     setTheme(theme) {
       setCompactTheme(theme)

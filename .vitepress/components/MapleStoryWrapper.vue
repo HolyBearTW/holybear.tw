@@ -1609,6 +1609,12 @@ html:not(.dark) .maple-calculator-tab.is-active {
   background: linear-gradient(135deg, #087a4b, #0ba978) !important;
 }
 
+html:not(.dark) .maple-calculator-tab:not(.is-active):hover,
+html:not(.dark) .maple-calculator-tab:not(.is-active):focus-visible {
+  color: #075f46 !important;
+  background: rgba(8, 145, 91, 0.13) !important;
+}
+
 html:not(.dark) .maple-calculator-version {
   color: #087047 !important;
   background: rgba(8, 122, 75, 0.1) !important;
@@ -1654,6 +1660,34 @@ html:not(.dark) .maple-calculator-reset-autofill:hover:not(:disabled) {
   border-color: rgba(8, 117, 134, 0.62) !important;
   background: rgba(8, 145, 164, 0.17) !important;
   color: #044f5e !important;
+}
+
+html:not(.dark) .maple-calculator-data-menu-trigger {
+  border-color: rgba(86, 112, 123, 0.38) !important;
+  background: rgba(226, 238, 243, 0.82) !important;
+  color: #294754 !important;
+}
+
+html:not(.dark) .maple-calculator-data-menu-trigger:hover:not(:disabled),
+html:not(.dark) .maple-calculator-data-menu-trigger[aria-expanded="true"] {
+  border-color: rgba(8, 122, 75, 0.5) !important;
+  background: rgba(8, 145, 91, 0.12) !important;
+  color: #075f46 !important;
+}
+
+html:not(.dark) .maple-calculator-data-menu {
+  border-color: var(--maple-light-border-strong) !important;
+  background: rgba(249, 253, 255, 0.99) !important;
+  box-shadow: 0 14px 36px rgba(35, 70, 83, 0.2) !important;
+}
+
+html:not(.dark) .maple-calculator-data-menu button {
+  color: #294754 !important;
+}
+
+html:not(.dark) .maple-calculator-data-menu button:hover {
+  background: rgba(8, 145, 91, 0.12) !important;
+  color: #075f46 !important;
 }
 
 .maple-calculator-input:hover {

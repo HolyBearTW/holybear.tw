@@ -23,6 +23,8 @@ interface FullMapleCombatEmbedProps {
 export interface FullMapleCombatEmbedHandle {
   resetFromCharacter: () => void;
   clearAll: () => void;
+  exportBackup: () => Promise<void>;
+  importBackup: (file: File) => Promise<void>;
 }
 
 const FullMapleCombatEmbed = React.forwardRef<FullMapleCombatEmbedHandle, FullMapleCombatEmbedProps>(({
@@ -91,7 +93,7 @@ const FullMapleCombatEmbed = React.forwardRef<FullMapleCombatEmbedHandle, FullMa
   const resetFromCharacter = () => {
     if (!controllerRef.current) return;
     const confirmed = window.confirm(
-      '要重新讀取這次查詢到的角色資料嗎？目前手動修改的欄位會被角色資料覆蓋，但先前內容仍可先用右上角「儲存」匯出。',
+      '要重新讀取這次查詢到的角色資料嗎？目前手動修改的欄位會被角色資料覆蓋；如需保留，可先從右上角「資料管理」匯出備份。',
     );
     if (confirmed) controllerRef.current.resetFromCharacter();
   };
@@ -104,7 +106,17 @@ const FullMapleCombatEmbed = React.forwardRef<FullMapleCombatEmbedHandle, FullMa
     if (confirmed) controllerRef.current.clearAll();
   };
 
-  React.useImperativeHandle(ref, () => ({ resetFromCharacter, clearAll }), []);
+  const exportBackup = async () => {
+    if (!controllerRef.current) throw new Error('計算機尚未完成載入');
+    await controllerRef.current.exportBackup();
+  };
+
+  const importBackup = async (file: File) => {
+    if (!controllerRef.current) throw new Error('計算機尚未完成載入');
+    await controllerRef.current.importBackup(file);
+  };
+
+  React.useImperativeHandle(ref, () => ({ resetFromCharacter, clearAll, exportBackup, importBackup }), []);
 
   return (
     <section className="mt-4">

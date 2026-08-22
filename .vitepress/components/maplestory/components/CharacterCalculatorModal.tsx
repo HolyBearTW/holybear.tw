@@ -3,6 +3,8 @@ import { createPortal } from 'react-dom';
 import {
   Calculator,
   BookOpen,
+  ChevronDown,
+  Download,
   Gauge,
   Info,
   Layers3,
@@ -14,6 +16,7 @@ import {
   Sparkles,
   Sword,
   Trash2,
+  Upload,
   X,
 } from 'lucide-react';
 import type { DashboardData } from '../types';
@@ -137,7 +140,10 @@ const adjustmentKeys: Array<{
 
 const CharacterCalculatorModal: React.FC<CharacterCalculatorModalProps> = ({ data, onClose }) => {
   const fullCalculatorRef = React.useRef<FullMapleCombatEmbedHandle>(null);
+  const dataMenuRef = React.useRef<HTMLDivElement>(null);
+  const importInputRef = React.useRef<HTMLInputElement>(null);
   const [fullCalculatorReady, setFullCalculatorReady] = React.useState(false);
+  const [dataMenuOpen, setDataMenuOpen] = React.useState(false);
   const profile = React.useMemo(() => createCalculatorProfile(data), [data]);
   const draftKey = `maple_calculator_draft_${profile.characterName}`;
   const [tab, setTab] = React.useState<CalculatorTab>('character');
@@ -190,6 +196,36 @@ const CharacterCalculatorModal: React.FC<CharacterCalculatorModalProps> = ({ dat
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [requestClose]);
+
+  React.useEffect(() => {
+    if (!dataMenuOpen) return;
+    const closeMenu = (event: MouseEvent) => {
+      if (!dataMenuRef.current?.contains(event.target as Node)) setDataMenuOpen(false);
+    };
+    document.addEventListener('mousedown', closeMenu);
+    return () => document.removeEventListener('mousedown', closeMenu);
+  }, [dataMenuOpen]);
+
+  const handleExportBackup = async () => {
+    setDataMenuOpen(false);
+    try {
+      await fullCalculatorRef.current?.exportBackup();
+    } catch (error) {
+      window.alert(`匯出失敗：${error instanceof Error ? error.message : String(error)}`);
+    }
+  };
+
+  const handleImportBackup = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    try {
+      await fullCalculatorRef.current?.importBackup(file);
+      window.alert('備份資料已匯入。');
+    } catch (error) {
+      window.alert(`匯入失敗：${error instanceof Error ? error.message : String(error)}`);
+    }
+  };
 
   const result = React.useMemo(
     () => calculateProjection(profile, adjustment),
@@ -298,6 +334,30 @@ const CharacterCalculatorModal: React.FC<CharacterCalculatorModalProps> = ({ dat
               >
                 <Trash2 className="h-3.5 w-3.5" /> <span className="hidden sm:inline">清空輸入</span>
               </button>
+              <div ref={dataMenuRef} className="relative">
+                <button
+                  type="button"
+                  onClick={() => setDataMenuOpen((open) => !open)}
+                  disabled={!fullCalculatorReady}
+                  aria-expanded={dataMenuOpen}
+                  aria-haspopup="menu"
+                  title="匯入或匯出計算機備份"
+                  className="maple-calculator-data-menu-trigger inline-flex items-center gap-1.5 rounded-lg border border-slate-600/70 bg-slate-800/60 px-3 py-2 text-xs font-bold text-slate-200 transition hover:border-emerald-400/50 hover:bg-emerald-500/10 hover:text-emerald-200 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Save className="h-3.5 w-3.5" /> <span className="hidden sm:inline">資料管理</span><ChevronDown className={`h-3.5 w-3.5 transition-transform ${dataMenuOpen ? 'rotate-180' : ''}`} />
+                </button>
+                {dataMenuOpen && (
+                  <div role="menu" className="maple-calculator-data-menu absolute right-0 top-full z-50 mt-2 w-44 overflow-hidden rounded-xl border border-slate-700 bg-[#111722] p-1.5 shadow-2xl shadow-black/50">
+                    <button type="button" role="menuitem" onClick={handleExportBackup} className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-xs font-bold text-slate-200 transition hover:bg-emerald-500/15 hover:text-emerald-200">
+                      <Download className="h-4 w-4" /> 匯出備份
+                    </button>
+                    <button type="button" role="menuitem" onClick={() => { setDataMenuOpen(false); importInputRef.current?.click(); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-xs font-bold text-slate-200 transition hover:bg-emerald-500/15 hover:text-emerald-200">
+                      <Upload className="h-4 w-4" /> 匯入備份
+                    </button>
+                  </div>
+                )}
+                <input ref={importInputRef} type="file" accept="application/json,.json" className="hidden" onChange={handleImportBackup} />
+              </div>
               <button
                 type="button"
                 onClick={() => fullCalculatorRef.current?.resetFromCharacter()}
@@ -523,7 +583,7 @@ const CharacterCalculatorModal: React.FC<CharacterCalculatorModalProps> = ({ dat
                   <div className="rounded-lg border border-slate-800/80 p-3">
                     <div className="text-xs font-bold text-cyan-300">自動保存與匯入</div>
                     <p className="mt-1.5 text-xs leading-relaxed text-slate-500">
-                      關閉前會提醒，但輸入內容早已自動保存在瀏覽器。再次開啟同一角色會接續上次進度，也能在情境工具匯出或匯入資料。
+                      關閉前會提醒，但輸入內容早已自動保存在瀏覽器。再次開啟同一角色會接續上次進度，也能從右上角「資料管理」匯出或匯入備份。
                     </p>
                   </div>
                   <div className="rounded-lg border border-slate-800/80 p-3 sm:col-span-2">
