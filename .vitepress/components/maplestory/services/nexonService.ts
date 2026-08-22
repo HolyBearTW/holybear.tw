@@ -420,7 +420,9 @@ const fetchWeeklyHistoryUncached = async (characterName: string, apiKey: string)
                   success: true,
                   isInterpolated: true,
                   level: nextValid.level,
-                  expRate: interpolatedExp
+                  exp: null,
+                  expRate: interpolatedExp,
+                  expPending: true
               };
           }
           else if (prevValid) {
@@ -429,7 +431,9 @@ const fetchWeeklyHistoryUncached = async (characterName: string, apiKey: string)
                   success: true,
                   isEstimated: true,
                   level: prevValid.level,
-                  expRate: prevValid.expRate
+                  exp: null,
+                  expRate: prevValid.expRate,
+                  expPending: true
               };
           }
           else if (nextValid) {
@@ -438,7 +442,9 @@ const fetchWeeklyHistoryUncached = async (characterName: string, apiKey: string)
                   success: true,
                   isEstimated: true,
                   level: nextValid.level,
-                  expRate: nextValid.expRate
+                  exp: null,
+                  expRate: nextValid.expRate,
+                  expPending: true
               };
           }
       }
@@ -453,7 +459,7 @@ const WEEKLY_HISTORY_CACHE_MS = 60 * 1000;
 const weeklyHistoryRequests = new Map<string, { expiresAt: number; request: ReturnType<typeof fetchWeeklyHistoryUncached> }>();
 
 export const fetchWeeklyHistory = (characterName: string, apiKey: string) => {
-  const cacheKey = `${characterName.trim().toLocaleLowerCase('zh-TW')}:${apiKey.slice(-8)}`;
+  const cacheKey = `${characterName.trim().toLocaleLowerCase('zh-TW')}:${apiKey.slice(-8)}:${getTaiwanDate()}`;
   const cached = weeklyHistoryRequests.get(cacheKey);
   if (cached && cached.expiresAt > Date.now()) return cached.request;
 

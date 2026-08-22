@@ -683,6 +683,12 @@ textarea {
   width: max-content;
 }
 
+:host .weapon-correction-info .weapon-correction-tooltip {
+  right: 0;
+  left: auto;
+  width: min(280px, calc(100vw - 32px));
+}
+
 :host .buff-info:hover .buff-info-tooltip,
 :host .buff-info:focus-within .buff-info-tooltip,
 :host .tower-ring-info:hover .tower-ring-info-tooltip,

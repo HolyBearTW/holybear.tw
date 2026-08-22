@@ -41,6 +41,7 @@ export interface MaplerHouseHistoryDay {
   exp: string;
   expRate: string;
   expGain: string;
+  expPending?: boolean;
   growthPercent?: number | null;
   growthBucket: number;
   active: boolean;

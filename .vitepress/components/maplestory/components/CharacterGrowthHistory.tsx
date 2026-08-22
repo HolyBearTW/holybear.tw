@@ -69,7 +69,9 @@ const GrowthTooltip = ({ active, payload }: any) => {
     <div className="maple-growth-tooltip rounded-lg border border-slate-700 bg-[#11151b] px-3 py-2 text-xs shadow-xl">
       <div className="font-semibold text-slate-200">{point.date}</div>
       <div className="mt-1 text-emerald-400">Lv.{point.level} · {point.expRate}%</div>
-      <div className="mt-0.5 text-slate-400">當日增加 {compactNumber(point.expGain)} EXP</div>
+      <div className="mt-0.5 text-slate-400">
+        {point.expPending ? '當日增量等待 Nexon 歷史資料更新' : `當日增加 ${compactNumber(point.expGain)} EXP`}
+      </div>
     </div>
   );
 };
@@ -92,7 +94,7 @@ const GrowthInsightPanels: React.FC<GrowthInsightPanelsProps> = ({
   const chartDays = useMemo(() => days.slice(-trendRange), [days, trendRange]);
   const eta = useMemo(() => {
     const sample = days.slice(-30);
-    const gains = sample.slice(1);
+    const gains = sample.slice(1).filter((day) => !day.expPending && Number.isFinite(Number(day.expGain)));
     const averageDailyExp = gains.reduce((total, day) => total + Math.max(0, Number(day.expGain) || 0), 0)
       / Math.max(1, gains.length);
     const currentLevel = data.basic.character_level;
@@ -312,10 +314,17 @@ const CharacterGrowthHistory: React.FC<CharacterGrowthHistoryProps> = ({ data, a
   const historyRenderPending = history !== deferredHistory;
   const weeklyDays = useMemo<MaplerHouseHistoryDay[]>(() => weeklyHistory.map((day, index) => {
     const previous = weeklyHistory[index - 1];
-    const currentExp = Number(day.exp) || 0;
+    const currentExp = Number(day.exp);
+    const currentExpAvailable = day.exp !== null && day.exp !== undefined && day.exp !== '' && Number.isFinite(currentExp);
+    const previousExp = Number(previous?.exp);
+    const previousExpAvailable = Boolean(previous)
+      && previous.exp !== null
+      && previous.exp !== undefined
+      && previous.exp !== ''
+      && Number.isFinite(previousExp);
+    const expPending = Boolean(day.expPending || previous?.expPending || !previous || !currentExpAvailable || !previousExpAvailable);
     let expGain = 0;
-    if (previous) {
-      const previousExp = Number(previous.exp) || 0;
+    if (!expPending && previous) {
       const levelDiff = Number(day.level) - Number(previous.level);
       if (levelDiff === 0) {
         expGain = Math.max(0, currentExp - previousExp);
@@ -327,11 +336,12 @@ const CharacterGrowthHistory: React.FC<CharacterGrowthHistoryProps> = ({ data, a
     return {
       date: day.fullDate || day.date,
       level: Number(day.level) || 0,
-      exp: String(currentExp),
+      exp: currentExpAvailable ? String(currentExp) : '',
       expRate: String(Number(day.expRate) || 0),
       expGain: String(Math.round(expGain)),
+      expPending,
       growthBucket: 0,
-      active: expGain > 0,
+      active: !expPending && expGain > 0,
     };
   }), [weeklyHistory]);
   const insightDays = deferredHistory?.days ?? weeklyDays;

@@ -1,4 +1,5 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { CheckSquare, Link2, PawPrint, Sparkles, Square } from 'lucide-react';
 import { CharacterFamiliar, DashboardData, FamiliarInfo, FamiliarLinkSlot, FamiliarOption } from '../types';
 
@@ -16,7 +17,7 @@ const FamiliarNameTooltip: React.FC<FamiliarNameTooltipProps> = ({ displayName, 
   const [isHovered, setIsHovered] = useState(false);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [adjustStyle, setAdjustStyle] = useState<React.CSSProperties>({});
+  const [tooltipStyle, setTooltipStyle] = useState<React.CSSProperties>({ visibility: 'hidden' });
 
   const showTooltip = isOpen || isHovered;
 
@@ -35,63 +36,78 @@ const FamiliarNameTooltip: React.FC<FamiliarNameTooltipProps> = ({ displayName, 
   }, [isOpen]);
 
   useLayoutEffect(() => {
-    if (showTooltip && tooltipRef.current && containerRef.current) {
+    if (!showTooltip) return;
+
+    const updatePosition = () => {
+      if (!tooltipRef.current || !containerRef.current) return;
       const tooltipEl = tooltipRef.current;
       const containerEl = containerRef.current;
       const containerRect = containerEl.getBoundingClientRect();
-      const tooltipWidth = tooltipEl.getBoundingClientRect().width;
+      const tooltipRect = tooltipEl.getBoundingClientRect();
       const vw = Math.min(window.innerWidth, document.documentElement.clientWidth || window.innerWidth);
+      const vh = Math.min(window.innerHeight, document.documentElement.clientHeight || window.innerHeight);
       const padding = 10;
-      const containerCenter = containerRect.left + containerRect.width / 2;
-      const currentLeft = containerCenter - tooltipWidth / 2;
-      const currentRight = containerCenter + tooltipWidth / 2;
+      const width = Math.min(220, vw - padding * 2);
+      const height = tooltipRect.height || 64;
+      const left = Math.max(
+        padding,
+        Math.min(vw - width - padding, containerRect.left + containerRect.width / 2 - width / 2),
+      );
+      const hasRoomAbove = containerRect.top >= height + 12;
+      const top = hasRoomAbove
+        ? containerRect.top - height - 8
+        : Math.min(vh - height - padding, containerRect.bottom + 8);
 
-      let shiftX = 0;
+      setTooltipStyle({ top: Math.max(padding, top), left, width, visibility: 'visible' });
+    };
 
-      if (currentLeft < padding) {
-        shiftX = padding - currentLeft;
-      } else if (currentRight > vw - padding) {
-        shiftX = (vw - padding) - currentRight;
-      }
-
-      if (shiftX !== 0) {
-        setAdjustStyle({ left: `calc(50% + ${shiftX}px)` });
-      } else {
-        setAdjustStyle({});
-      }
-    }
+    updatePosition();
+    const frame = window.requestAnimationFrame(updatePosition);
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+    };
   }, [showTooltip]);
 
   return (
-    <div
-      ref={containerRef}
-      className={`relative min-w-0 max-w-full ${showTooltip ? 'z-[100]' : 'z-0'}`}
-    >
-      <button
-        type="button"
-        onClick={(event) => {
-          event.stopPropagation();
-          setIsOpen(value => !value);
-        }}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        onFocus={() => setIsHovered(true)}
-        onBlur={() => setIsHovered(false)}
-        className="min-w-0 max-w-full truncate rounded border-b border-dashed border-sky-400/70 text-left text-base font-bold text-slate-100 transition-colors hover:border-sky-300 hover:text-sky-100 focus:outline-none focus:ring-2 focus:ring-sky-400/40 cursor-help"
-        aria-expanded={showTooltip}
-      >
-        {displayName}
-      </button>
-
+    <>
       <div
-        ref={tooltipRef}
-        style={adjustStyle}
-        className={`absolute bottom-full left-1/2 z-[200] mb-2 w-[min(220px,calc(100vw-20px))] max-w-[calc(100vw-20px)] -translate-x-1/2 rounded-lg border border-sky-500/40 bg-[#1a1d24]/95 p-3 shadow-2xl backdrop-blur-md ${showTooltip ? 'block' : 'hidden'} animate-in fade-in zoom-in-95 duration-200 pointer-events-none`}
+        ref={containerRef}
+        className={`relative min-w-0 max-w-full ${showTooltip ? 'z-[100]' : 'z-0'}`}
       >
-        <div className="text-[11px] font-bold tracking-wide text-sky-300">原始萌獸名稱</div>
-        <div className="mt-1 break-words text-sm font-bold text-white leading-tight">{originalName}</div>
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            setIsOpen(value => !value);
+          }}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+          onFocus={() => setIsHovered(true)}
+          onBlur={() => setIsHovered(false)}
+          className="min-w-0 max-w-full cursor-help truncate rounded border-b border-dashed border-sky-400/70 text-left text-base font-bold text-slate-100 transition-colors hover:border-sky-300 hover:text-sky-100 focus:outline-none focus:ring-2 focus:ring-sky-400/40"
+          aria-expanded={showTooltip}
+        >
+          {displayName}
+        </button>
+
       </div>
-    </div>
+      {showTooltip && typeof document !== 'undefined' && createPortal(
+        <div
+          ref={tooltipRef}
+          style={tooltipStyle}
+          className="maple-familiar-name-tooltip pointer-events-none fixed z-[20000] max-w-[calc(100vw-20px)] rounded-lg border border-sky-500/40 bg-[#1a1d24]/95 p-3 text-left shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-150"
+          role="tooltip"
+        >
+          <div className="text-[11px] font-bold tracking-wide text-sky-300">原始萌獸名稱</div>
+          <div className="mt-1 break-words text-sm font-bold leading-tight text-white">{originalName}</div>
+        </div>,
+        document.body,
+      )}
+    </>
   );
 };
 
