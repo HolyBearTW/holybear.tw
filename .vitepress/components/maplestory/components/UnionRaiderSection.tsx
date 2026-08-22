@@ -4,6 +4,7 @@ import {
   CharacterUnion,
   CharacterUnionRaider,
   UnionBlock,
+  UnionInnerStat,
   UnionRaiderPreset,
 } from '../types';
 
@@ -17,6 +18,93 @@ const BOARD_MAX_X = 10;
 const BOARD_MIN_Y = -9;
 const BOARD_MAX_Y = 10;
 const BOARD_COLUMNS = BOARD_MAX_X - BOARD_MIN_X + 1;
+
+const outerZoneLabels = [
+  { id: 'outer-status-resistance', sector: 'NW_V', label: '異常狀態耐性', left: '34%', top: '10%' },
+  { id: 'outer-exp', sector: 'NE_V', label: '獲得經驗值', left: '66%', top: '10%' },
+  { id: 'outer-crit-damage', sector: 'NW_H', label: '爆擊傷害', left: '12%', top: '35%' },
+  { id: 'outer-crit-rate', sector: 'NE_H', label: '爆擊機率', left: '88%', top: '35%' },
+  { id: 'outer-ignore-defense', sector: 'SW_H', label: '無視防禦率', left: '12%', top: '66%' },
+  { id: 'outer-boss-damage', sector: 'SE_H', label: 'Boss傷害', left: '88%', top: '66%' },
+  { id: 'outer-buff-duration', sector: 'SW_V', label: 'Buff持續時間', left: '28%', top: '86%' },
+  { id: 'outer-normal-damage', sector: 'SE_V', label: '一般傷害', left: '72%', top: '86%' },
+];
+
+const innerZonePositions = [
+  { fieldId: '7', sector: 'NW_H', left: '35%', top: '38%' },
+  { fieldId: '0', sector: 'NW_V', left: '44%', top: '34%' },
+  { fieldId: '1', sector: 'NE_V', left: '56%', top: '34%' },
+  { fieldId: '2', sector: 'NE_H', left: '65%', top: '38%' },
+  { fieldId: '3', sector: 'SE_H', left: '65%', top: '58%' },
+  { fieldId: '4', sector: 'SE_V', left: '56%', top: '62%' },
+  { fieldId: '5', sector: 'SW_V', left: '44%', top: '62%' },
+  { fieldId: '6', sector: 'SW_H', left: '35%', top: '58%' },
+];
+
+type BoardSector = 'NW_H' | 'NW_V' | 'NE_V' | 'NE_H' | 'SE_H' | 'SE_V' | 'SW_V' | 'SW_H';
+
+const innerFieldIdBySector = new Map<BoardSector, string>(
+  innerZonePositions.map((zone) => [zone.sector as BoardSector, zone.fieldId]),
+);
+const outerZoneIdBySector = new Map<BoardSector, string>(
+  outerZoneLabels.map((zone) => [zone.sector as BoardSector, zone.id]),
+);
+
+const getBoardSector = (x: number, y: number): BoardSector => {
+  const xRank = x < 0 ? -x : x + 1;
+  const yRank = y <= 0 ? 1 - y : y;
+  const horizontal = xRank > yRank;
+
+  if (x < 0 && y >= 1) return horizontal ? 'NW_H' : 'NW_V';
+  if (x >= 0 && y >= 1) return horizontal ? 'NE_H' : 'NE_V';
+  if (x >= 0 && y <= 0) return horizontal ? 'SE_H' : 'SE_V';
+  return horizontal ? 'SW_H' : 'SW_V';
+};
+
+const getBoardZoneId = (x: number, y: number) => {
+  const xRank = x < 0 ? -x : x + 1;
+  const yRank = y <= 0 ? 1 - y : y;
+  const sector = getBoardSector(x, y);
+  const isInnerZone = xRank <= 6 && yRank <= 5;
+  return isInnerZone
+    ? `inner-${innerFieldIdBySector.get(sector)}`
+    : outerZoneIdBySector.get(sector) || 'outer-unknown';
+};
+
+const defaultInnerStats: UnionInnerStat[] = [
+  { stat_field_id: '0', stat_field_effect: '聯盟STR' },
+  { stat_field_id: '1', stat_field_effect: '聯盟DEX' },
+  { stat_field_id: '2', stat_field_effect: '聯盟INT' },
+  { stat_field_id: '3', stat_field_effect: '聯盟LUK' },
+  { stat_field_id: '4', stat_field_effect: '聯盟攻擊力' },
+  { stat_field_id: '5', stat_field_effect: '聯盟魔力' },
+  { stat_field_id: '6', stat_field_effect: '聯盟最大HP' },
+  { stat_field_id: '7', stat_field_effect: '聯盟最大MP' },
+];
+
+const formatInnerZoneLabel = (effect?: string) => effect?.replace(/^聯盟/, '').trim() || '';
+
+const getUnionCellEffect = (zoneLabel: string) => {
+  const effects: Array<[RegExp, string]> = [
+    [/異常狀態耐性/, '異常狀態耐性 +1%'],
+    [/獲得經驗/, '獲得經驗值 +0.25%'],
+    [/爆擊傷害/, '爆擊傷害 +0.5%'],
+    [/爆擊機率/, '爆擊機率 +1%'],
+    [/無視防禦/, '無視防禦率 +1%'],
+    [/Boss傷害/i, 'Boss 傷害 +1%'],
+    [/Buff持續時間/i, 'Buff 持續時間 +1%'],
+    [/一般傷害/, '一般怪物傷害 +1%'],
+    [/最大HP/i, '最大 HP +250'],
+    [/最大MP/i, '最大 MP +250'],
+    [/攻擊力/, '攻擊力 +1'],
+    [/魔力/, '魔力 +1'],
+    [/STR/i, 'STR +5'],
+    [/DEX/i, 'DEX +5'],
+    [/INT/i, 'INT +5'],
+    [/LUK/i, 'LUK +5'],
+  ];
+  return effects.find(([pattern]) => pattern.test(zoneLabel))?.[1] || zoneLabel;
+};
 
 const classColors: Record<string, string> = {
   劍士: 'border-rose-400/60 bg-rose-950 text-rose-200',
@@ -287,8 +375,9 @@ const getPreset = (raider: CharacterUnionRaider, presetNo: number): UnionRaiderP
   };
 };
 
-const UnionBoard: React.FC<{ blocks: UnionBlock[]; memberBonuses: string[] }> = ({ blocks, memberBonuses }) => {
+const UnionBoard: React.FC<{ blocks: UnionBlock[]; memberBonuses: string[]; innerStats: UnionInnerStat[] }> = ({ blocks, memberBonuses, innerStats }) => {
   const [hoveredBlockIndex, setHoveredBlockIndex] = useState<number | null>(null);
+  const [hoveredZoneId, setHoveredZoneId] = useState<string | null>(null);
   const blockCells = useMemo(() => {
     const cells = new Map<string, { block: UnionBlock; blockIndex: number; isControl: boolean }>();
     blocks.forEach((block, blockIndex) => {
@@ -300,9 +389,19 @@ const UnionBoard: React.FC<{ blocks: UnionBlock[]; memberBonuses: string[] }> = 
     return cells;
   }, [blocks]);
 
-  useEffect(() => setHoveredBlockIndex(null), [blocks]);
+  useEffect(() => {
+    setHoveredBlockIndex(null);
+    setHoveredZoneId(null);
+  }, [blocks]);
 
-  const hoveredBlock = hoveredBlockIndex === null ? null : blocks[hoveredBlockIndex];
+  const innerStatsByField = useMemo(
+    () => new Map((innerStats.length ? innerStats : defaultInnerStats).map((stat) => [String(stat.stat_field_id), stat.stat_field_effect])),
+    [innerStats],
+  );
+  const zoneLabelsById = useMemo(() => new Map([
+    ...outerZoneLabels.map((zone) => [zone.id, zone.label] as const),
+    ...innerZonePositions.map((zone) => [`inner-${zone.fieldId}`, formatInnerZoneLabel(innerStatsByField.get(zone.fieldId))] as const),
+  ]), [innerStatsByField]);
 
   const cells = [];
   for (let y = BOARD_MAX_Y; y >= BOARD_MIN_Y; y -= 1) {
@@ -310,15 +409,37 @@ const UnionBoard: React.FC<{ blocks: UnionBlock[]; memberBonuses: string[] }> = 
       const occupied = blockCells.get(`${x},${y}`);
       const label = occupied ? getUnionBlockName(occupied.block) : '?';
       const memberBonus = occupied ? memberBonuses[occupied.blockIndex] || '暫無成員加成資料' : '';
+      const zoneId = getBoardZoneId(x, y);
+      const zoneLabel = zoneLabelsById.get(zoneId) || '未知屬性區域';
+      const cellEffect = getUnionCellEffect(zoneLabel);
+      const tooltip = occupied
+        ? `${label} · Lv.${occupied.block.block_level}\n攻擊隊員效果：${memberBonus}\n拼圖格子效果：${cellEffect}`
+        : `${zoneLabel}\n拼圖格子效果：${cellEffect}`;
       cells.push(
         <div
           key={`${x},${y}`}
-          title={occupied ? `${label} · Lv.${occupied.block.block_level}\n${memberBonus}` : undefined}
-          onMouseEnter={() => setHoveredBlockIndex(occupied?.blockIndex ?? null)}
-          className={`maple-union-board-cell relative aspect-square border-b border-r border-slate-700/45 transition-[opacity,filter,box-shadow] duration-150 ${occupied ? blockColors[occupied.block.block_type] || 'bg-slate-500/70' : 'is-empty bg-slate-900/45'} ${hoveredBlockIndex !== null && occupied ? occupied.blockIndex === hoveredBlockIndex ? 'is-highlighted z-20 brightness-125 ring-1 ring-inset ring-white/90' : 'opacity-25 saturate-50' : ''}`}
+          data-zone-id={zoneId}
+          title={tooltip}
+          onMouseEnter={() => {
+            setHoveredBlockIndex(occupied?.blockIndex ?? null);
+            setHoveredZoneId(zoneId);
+          }}
+          className={`maple-union-board-cell relative aspect-square border-b border-r border-slate-700/45 transition-[opacity,filter,box-shadow] duration-150 ${occupied ? blockColors[occupied.block.block_type] || 'bg-slate-500/70' : 'is-empty bg-slate-900/45'} ${hoveredZoneId === zoneId ? 'is-zone-highlighted z-[1] brightness-110 ring-1 ring-inset ring-amber-300/90' : ''} ${hoveredBlockIndex !== null && occupied ? occupied.blockIndex === hoveredBlockIndex ? 'is-highlighted z-20 brightness-125 ring-1 ring-inset ring-white/90' : 'opacity-25 saturate-50' : ''}`}
         >
           {occupied?.isControl && (
-            <span className="absolute inset-[-28%] z-10 overflow-hidden rounded-full border border-white/60 bg-slate-950 shadow-md" title={label}>
+            <span
+              className="absolute inset-[-28%] z-10 overflow-hidden rounded-full border border-white/60 bg-slate-950 shadow-md"
+              title={tooltip}
+              onMouseEnter={(event) => {
+                event.stopPropagation();
+                setHoveredBlockIndex(occupied.blockIndex);
+                setHoveredZoneId(null);
+              }}
+              onMouseLeave={() => {
+                setHoveredBlockIndex(null);
+                setHoveredZoneId(zoneId);
+              }}
+            >
               <img src={getClassPortrait(occupied.block.block_class)} alt="" className="h-full w-full object-cover" loading="lazy" />
             </span>
           )}
@@ -328,22 +449,41 @@ const UnionBoard: React.FC<{ blocks: UnionBlock[]; memberBonuses: string[] }> = 
   }
 
   return (
-    <div onMouseLeave={() => setHoveredBlockIndex(null)}>
-      <div className="mb-2 flex min-h-10 items-end justify-end text-[11px] text-slate-500">
-        {hoveredBlock ? (
-          <span className="maple-union-hover-label flex max-w-full items-center gap-2 whitespace-nowrap rounded-md bg-slate-800 px-2 py-1 text-right text-slate-300">
-            <strong>{getUnionBlockName(hoveredBlock)} · Lv.{hoveredBlock.block_level}</strong>
-            <span className="text-[10px] text-slate-400">{memberBonuses[hoveredBlockIndex ?? -1] || '暫無成員加成資料'}</span>
-          </span>
-        ) : (
-          <span>移到拼圖上查看完整範圍</span>
-        )}
-      </div>
-      <div
-        className="maple-union-board grid overflow-visible border-l border-t border-slate-700/45 bg-[#111722]"
-        style={{ gridTemplateColumns: `repeat(${BOARD_COLUMNS}, minmax(0, 1fr))` }}
-      >
-        {cells}
+    <div onMouseLeave={() => {
+      setHoveredBlockIndex(null);
+      setHoveredZoneId(null);
+    }}>
+      <div className="relative">
+        <div
+          className="maple-union-board grid overflow-visible border-l border-t border-slate-700/45 bg-[#111722]"
+          style={{ gridTemplateColumns: `repeat(${BOARD_COLUMNS}, minmax(0, 1fr))` }}
+        >
+          {cells}
+        </div>
+        <div className="pointer-events-none absolute inset-0 z-[5]" aria-label="聯盟棋盤區域屬性">
+          {outerZoneLabels.map((zone) => (
+            <span
+              key={zone.label}
+              className={`maple-union-zone-label absolute -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded px-1 py-0.5 text-[8px] font-semibold drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)] transition-all sm:text-[9px] ${hoveredZoneId === zone.id ? 'is-active scale-110 bg-amber-400 text-slate-950' : 'text-slate-400/75'}`}
+              style={{ left: zone.left, top: zone.top }}
+            >
+              {zone.label}
+            </span>
+          ))}
+          {innerZonePositions.map((zone) => {
+            const label = formatInnerZoneLabel(innerStatsByField.get(zone.fieldId));
+            if (!label) return null;
+            return (
+              <span
+                key={zone.fieldId}
+                className={`maple-union-zone-label absolute -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded px-1 py-0.5 text-[8px] font-semibold drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)] transition-all sm:text-[9px] ${hoveredZoneId === `inner-${zone.fieldId}` ? 'is-active scale-110 bg-amber-400 text-slate-950' : 'text-slate-400/75'}`}
+                style={{ left: zone.left, top: zone.top }}
+              >
+                {label}
+              </span>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
@@ -437,7 +577,7 @@ const UnionRaiderSection: React.FC<UnionRaiderSectionProps> = ({ union, unionRai
           <div className="maple-union-panel rounded-xl border border-slate-800 bg-slate-900/35 p-4">
             <h4 className="mb-4 flex items-center gap-2 text-sm font-bold text-slate-200"><Grid3X3 className="h-4 w-4 text-indigo-400" />聯盟棋盤</h4>
             <div className="maple-union-board-frame mx-auto max-w-[520px] overflow-visible rounded-lg border border-slate-800 bg-[#0d1117] p-3">
-              {preset.union_block.length ? <UnionBoard blocks={preset.union_block} memberBonuses={memberBonuses} /> : <div className="py-20 text-center text-xs text-slate-500">此預設尚未配置棋盤</div>}
+              {preset.union_block.length ? <UnionBoard blocks={preset.union_block} memberBonuses={memberBonuses} innerStats={preset.union_inner_stat || []} /> : <div className="py-20 text-center text-xs text-slate-500">此預設尚未配置棋盤</div>}
             </div>
           </div>
           <div className="maple-union-panel rounded-xl border border-slate-800 bg-slate-900/35 p-4">

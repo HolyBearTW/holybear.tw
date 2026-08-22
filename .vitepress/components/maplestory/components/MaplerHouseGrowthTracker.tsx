@@ -10,6 +10,8 @@ interface MaplerHouseGrowthTrackerProps {
   ocid: string;
   characterName: string;
   onTrackingComplete?: () => void;
+  createButtonRef?: React.Ref<HTMLButtonElement>;
+  onTrackingStatusChange?: (status: 'loading' | 'tracked' | 'untracked' | 'unavailable') => void;
 }
 
 const isCreating = (status: MaplerHouseHistoryStatus | null) => {
@@ -34,6 +36,8 @@ const MaplerHouseGrowthTracker: React.FC<MaplerHouseGrowthTrackerProps> = ({
   ocid,
   characterName,
   onTrackingComplete,
+  createButtonRef,
+  onTrackingStatusChange,
 }) => {
   const [status, setStatus] = React.useState<MaplerHouseHistoryStatus | null>(null);
   const [loading, setLoading] = React.useState(true);
@@ -80,6 +84,16 @@ const MaplerHouseGrowthTracker: React.FC<MaplerHouseGrowthTrackerProps> = ({
       active = false;
     };
   }, [ocid]);
+
+  React.useEffect(() => {
+    if (loading) {
+      onTrackingStatusChange?.('loading');
+    } else if (status) {
+      onTrackingStatusChange?.(status.tracked ? 'tracked' : 'untracked');
+    } else {
+      onTrackingStatusChange?.('unavailable');
+    }
+  }, [loading, onTrackingStatusChange, status]);
 
   React.useEffect(() => {
     if (!isCreating(status)) return;
@@ -137,7 +151,10 @@ const MaplerHouseGrowthTracker: React.FC<MaplerHouseGrowthTrackerProps> = ({
         onFocus={() => setShowNote(true)}
         onBlur={() => setShowNote(false)}
         onClick={() => setShowNote(true)}
-        className="maple-growth-note-button flex h-7 w-7 items-center justify-center rounded-full text-emerald-100/80 transition-colors hover:bg-emerald-700/70 hover:text-white focus-visible:bg-emerald-700/70 focus-visible:text-white focus-visible:outline-none"
+        className={`maple-growth-note-button flex h-7 w-7 items-center justify-center rounded-full transition-colors focus-visible:outline-none ${showNote
+          ? 'bg-amber-700/75 text-white'
+          : 'text-amber-100/85 hover:bg-amber-700/70 hover:text-white focus-visible:bg-amber-700/70 focus-visible:text-white'
+        }`}
       >
         <Info className="h-4 w-4" />
       </button>
@@ -155,7 +172,7 @@ const MaplerHouseGrowthTracker: React.FC<MaplerHouseGrowthTrackerProps> = ({
 
   if (creating || submitted || status?.tracked) {
     return (
-      <div className="relative mb-3 w-full">
+      <div className="relative mb-2.5 w-full">
         <div className="maple-growth-progress-card flex min-h-10 w-full items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 px-10 py-2 text-xs text-emerald-800 dark:border-emerald-500/20 dark:bg-emerald-950/20 dark:text-emerald-300">
           {creating ? (
             <div className="flex w-full max-w-44 flex-col items-center gap-1.5">
@@ -187,13 +204,14 @@ const MaplerHouseGrowthTracker: React.FC<MaplerHouseGrowthTrackerProps> = ({
   }
 
   return (
-    <div className="mb-3 w-full">
+    <div className="mb-2.5 w-full">
       <div className="relative w-full">
         <button
+          ref={createButtonRef}
           type="button"
           disabled={creating || !ocid}
           onClick={handleCreate}
-          className="maple-growth-create-button flex min-h-10 w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-10 py-2 text-xs font-bold text-white shadow-lg shadow-emerald-900/20 transition-all hover:translate-y-[-1px] hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
+          className="maple-growth-create-button flex min-h-10 w-full items-center justify-center gap-2 rounded-lg bg-amber-500 px-10 py-2 text-xs font-bold text-white shadow-lg shadow-amber-900/25 transition-all hover:translate-y-[-1px] hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 dark:bg-amber-600 dark:hover:bg-amber-500"
         >
           {creating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Database className="h-3.5 w-3.5" />}
           {creating ? '正在生成成長檔案...' : '生成成長檔案'}

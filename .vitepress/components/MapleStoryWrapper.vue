@@ -1082,13 +1082,14 @@ html:not(.dark) #maplestory-root .maple-growth-create-button {
 }
 
 html:not(.dark) #maplestory-root .maple-growth-note-button {
-  color: #527168 !important;
+  color: #75500a !important;
 }
 
 html:not(.dark) #maplestory-root .maple-growth-note-button:hover,
-html:not(.dark) #maplestory-root .maple-growth-note-button:focus-visible {
-  color: #087a4b !important;
-  background: rgba(8, 122, 75, 0.1) !important;
+html:not(.dark) #maplestory-root .maple-growth-note-button:focus-visible,
+html:not(.dark) #maplestory-root .maple-growth-note-button[aria-expanded="true"] {
+  color: #442700 !important;
+  background: rgba(217, 119, 6, 0.22) !important;
 }
 
 html:not(.dark) #maplestory-root .maple-growth-create-tooltip {
@@ -1301,13 +1302,20 @@ html:not(.dark) #maplestory-root .maple-union-board-cell.is-highlighted {
   filter: brightness(1.04) saturate(1.1) !important;
 }
 
-html:not(.dark) #maplestory-root .maple-union-hover-label {
-  color: #5145cd !important;
-  background: rgba(231, 229, 255, 0.94) !important;
+html:not(.dark) #maplestory-root .maple-union-board-cell.is-zone-highlighted {
+  --tw-ring-color: rgba(217, 119, 6, 0.9) !important;
+  filter: brightness(1.035) saturate(1.12) !important;
 }
 
-html:not(.dark) #maplestory-root .maple-union-hover-label span {
-  color: #526b78 !important;
+html:not(.dark) #maplestory-root .maple-union-zone-label {
+  color: rgba(50, 76, 89, 0.72) !important;
+  filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.9)) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-union-zone-label.is-active {
+  color: #422006 !important;
+  background: rgba(251, 191, 36, 0.96) !important;
+  filter: drop-shadow(0 2px 3px rgba(146, 64, 14, 0.25)) !important;
 }
 
 html:not(.dark) #maplestory-root .maple-union-member-tooltip {
