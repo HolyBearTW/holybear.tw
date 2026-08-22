@@ -218,7 +218,14 @@ interface SkillRingToggle {
   onToggle: () => void;
 }
 
-const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'left' | 'right'; mobileDir?: 'up' | 'down'; setEffect?: CharacterSetEffect; characterJob?: string; showSetEffect?: boolean; disabled?: boolean; skillRingToggle?: SkillRingToggle; puzzleItems?: EquipmentItem[] }> = ({ slotKey, item, tooltipSide = 'left', mobileDir = 'down', setEffect, characterJob, showSetEffect, disabled = false, skillRingToggle, puzzleItems }) => {
+interface ZeroWeaponToggle {
+  isAlternate: boolean;
+  currentName: string;
+  nextName: string;
+  onToggle: () => void;
+}
+
+const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'left' | 'right'; mobileDir?: 'up' | 'down'; setEffect?: CharacterSetEffect; characterJob?: string; showSetEffect?: boolean; disabled?: boolean; skillRingToggle?: SkillRingToggle; zeroWeaponToggle?: ZeroWeaponToggle; puzzleItems?: EquipmentItem[] }> = ({ slotKey, item, tooltipSide = 'left', mobileDir = 'down', setEffect, characterJob, showSetEffect, disabled = false, skillRingToggle, zeroWeaponToggle, puzzleItems }) => {
   const def = SLOT_DEFINITIONS[slotKey];
   const [isOpen, setIsOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -327,7 +334,7 @@ const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'lef
             <img 
               src={displayIcon} 
               alt={item.item_name} 
-              className={`max-w-full max-h-full object-contain z-10 ${skillRingToggle ? '-translate-x-[2px] -translate-y-[2px]' : ['Gem', 'Pocket', 'Badge', 'Ring1', 'Ring2', 'Ring3', 'Ring4'].includes(slotKey) ? 'translate-x-[1px] translate-y-[1px]' : ''}`}
+              className={`max-w-full max-h-full object-contain z-10 ${skillRingToggle || zeroWeaponToggle ? '-translate-x-[2px] -translate-y-[2px]' : ['Gem', 'Pocket', 'Badge', 'Ring1', 'Ring2', 'Ring3', 'Ring4'].includes(slotKey) ? 'translate-x-[1px] translate-y-[1px]' : ''}`}
             />
             {(item.potential_option_grade?.includes('Legendary') || item.potential_option_grade?.includes('傳說')) && <div className="absolute inset-0 bg-green-500/10 animate-pulse z-0" />}
             {parseInt(item.starforce || '0') > 0 && (
@@ -354,6 +361,26 @@ const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'lef
         >
           <img
             src={`/image/theme/window/skill-ring-${skillRingToggle.isOpen ? 'open' : 'close'}.png`}
+            alt=""
+            aria-hidden="true"
+            className="block h-[19px] w-[19px] max-w-none"
+          />
+        </button>
+      )}
+      {zeroWeaponToggle && (
+        <button
+          type="button"
+          aria-label={`切換神之子武器：${zeroWeaponToggle.currentName} → ${zeroWeaponToggle.nextName}`}
+          aria-pressed={zeroWeaponToggle.isAlternate}
+          title={`切換為 ${zeroWeaponToggle.nextName}`}
+          className="absolute bottom-0 right-0 z-30 h-[19px] w-[19px] border-0 bg-transparent p-0 transition-[filter,transform] hover:brightness-110 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cyan-300"
+          onClick={(event) => {
+            event.stopPropagation();
+            zeroWeaponToggle.onToggle();
+          }}
+        >
+          <img
+            src={`/image/theme/window/skill-ring-${zeroWeaponToggle.isAlternate ? 'open' : 'close'}.png`}
             alt=""
             aria-hidden="true"
             className="block h-[19px] w-[19px] max-w-none"
@@ -397,6 +424,7 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, setEffect, cha
   const [selectedPreset, setSelectedPreset] = useState<number>(activePresetNo);
   const [showSetEffect, setShowSetEffect] = useState(false);
   const [showAuxiliarySkillRing, setShowAuxiliarySkillRing] = useState(false);
+  const [showZeroAlternateWeapon, setShowZeroAlternateWeapon] = useState(false);
 
   useEffect(() => {
     if (equipment.preset_no) {
@@ -422,6 +450,28 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, setEffect, cha
     normalize(item.item_equipment_part || '') === '拼圖'
     && /^拼圖\d+$/.test(normalize(item.item_equipment_slot || ''))
   );
+
+  const isZeroCharacter = normalize(characterJob || '') === '神之子';
+  const isZeroAstraSecondary = (item: EquipmentItem) => {
+    const slot = normalize(item.item_equipment_slot || '');
+    const part = normalize(item.item_equipment_part || '');
+    return slot === '阿斯特拉輔助武器神之子' || part === '阿斯特拉輔助武器神之子';
+  };
+  const zeroPrimaryWeapon = isZeroCharacter
+    ? displayItems.find((item: EquipmentItem) =>
+        normalize(item.item_equipment_slot || '') === '武器'
+        && !isZeroAstraSecondary(item)
+      )
+    : undefined;
+  const zeroAlternateWeapon = isZeroCharacter
+    ? displayItems.find((item: EquipmentItem) =>
+        normalize(item.item_equipment_slot || '') === '輔助武器'
+        && normalize(item.item_equipment_part || '') === '琉'
+      )
+    : undefined;
+  const zeroAstraSecondary = isZeroCharacter
+    ? displayItems.find(isZeroAstraSecondary)
+    : undefined;
 
   const isAuxiliarySkillRing = (item: EquipmentItem) => {
     const slot = normalize(item.item_equipment_slot || '');
@@ -450,6 +500,12 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, setEffect, cha
     }
   }, [auxiliarySkillRing, equippedSkillRingSlotKey]);
 
+  useEffect(() => {
+    if (!zeroPrimaryWeapon || !zeroAlternateWeapon) {
+      setShowZeroAlternateWeapon(false);
+    }
+  }, [zeroPrimaryWeapon, zeroAlternateWeapon]);
+
   // ---------------------------------------------------------
   // 核心邏輯修正：針對 TMS 特殊欄位進行強制配對
   // ---------------------------------------------------------
@@ -459,6 +515,14 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, setEffect, cha
 
     if (showAuxiliarySkillRing && auxiliarySkillRing && slotKey === equippedSkillRingSlotKey) {
       return auxiliarySkillRing;
+    }
+
+    if (isZeroCharacter && slotKey === 'Weapon' && zeroPrimaryWeapon && zeroAlternateWeapon) {
+      return showZeroAlternateWeapon ? zeroAlternateWeapon : zeroPrimaryWeapon;
+    }
+
+    if (isZeroCharacter && slotKey === 'Secondary' && zeroAstraSecondary) {
+      return zeroAstraSecondary;
     }
 
     const activeItems = equipment.item_equipment || [];
@@ -654,7 +718,21 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, setEffect, cha
          {/* Weapon Row */}
          <div className="flex flex-col gap-2 items-center w-full">
             <div className="flex gap-2">
-               <Slot slotKey="Weapon" item={findItem('Weapon')} tooltipSide="left" mobileDir="up" setEffect={setEffect} characterJob={characterJob} showSetEffect={showSetEffect} />
+               <Slot
+                 slotKey="Weapon"
+                 item={findItem('Weapon')}
+                 tooltipSide="left"
+                 mobileDir="up"
+                 setEffect={setEffect}
+                 characterJob={characterJob}
+                 showSetEffect={showSetEffect}
+                 zeroWeaponToggle={zeroPrimaryWeapon && zeroAlternateWeapon ? {
+                   isAlternate: showZeroAlternateWeapon,
+                   currentName: showZeroAlternateWeapon ? zeroAlternateWeapon.item_name : zeroPrimaryWeapon.item_name,
+                   nextName: showZeroAlternateWeapon ? zeroPrimaryWeapon.item_name : zeroAlternateWeapon.item_name,
+                   onToggle: () => setShowZeroAlternateWeapon((current) => !current),
+                 } : undefined}
+               />
                <Slot slotKey="Secondary" item={findItem('Secondary')} tooltipSide="left" mobileDir="up" setEffect={setEffect} characterJob={characterJob} showSetEffect={showSetEffect} />
                <Slot slotKey="Emblem" item={findItem('Emblem')} tooltipSide="left" mobileDir="up" setEffect={setEffect} characterJob={characterJob} showSetEffect={showSetEffect} />
             </div>
