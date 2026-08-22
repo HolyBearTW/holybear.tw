@@ -373,7 +373,12 @@ const fetchWeeklyHistoryUncached = async (characterName: string, apiKey: string)
           level: data.character_level,
           exp: Number(data.character_exp) || 0,
           expRate: parseFloat(data.character_exp_rate),
-          diffDays: i 
+          diffDays: i,
+          // The undated endpoint is the latest live value, while the most recent
+          // dated response is not a reliable Taiwan-midnight baseline. Keep the
+          // live percentage on the chart, but do not label their difference as
+          // today's EXP gain until Nexon publishes the completed daily snapshot.
+          expPending: i === 0,
         };
       } catch (e) {
         return { success: false, diffDays: i };
