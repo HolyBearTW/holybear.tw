@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { fetchCharacterData, findBestDateInPastWeek, fetchWeeklyHistory } from '../services/nexonService';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { fetchCharacterData, findBestDateInPastWeek } from '../services/nexonService';
 import { DashboardData } from '../types';
 
 export const useMapleSearch = (
@@ -15,8 +15,6 @@ export const useMapleSearch = (
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const [favorites, setFavorites] = useState<string[]>([]);
-  const [historyData, setHistoryData] = useState<any[]>([]);
-  const [bestCombatPowerRecord, setBestCombatPowerRecord] = useState<{ date: string; combatPower: number } | null>(null);
   
   const initialSearchDone = useRef(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -33,17 +31,6 @@ export const useMapleSearch = (
   }, []);
 
   useEffect(() => {
-    if (!data?.basic?.character_name || !apiKey) return;
-    setBestCombatPowerRecord(null);
-    fetchWeeklyHistory(data.basic.character_name, apiKey)
-      .then(history => setHistoryData(history || []))
-      .catch(() => setHistoryData([]));
-    findBestDateInPastWeek(data.basic.character_name, apiKey)
-      .then(record => setBestCombatPowerRecord(record))
-      .catch(() => setBestCombatPowerRecord(null));
-  }, [data?.basic?.character_name, apiKey]);
-
-  useEffect(() => {
     let lastHandledLocation = '';
 
     const resetToMapleHome = () => {
@@ -53,8 +40,6 @@ export const useMapleSearch = (
       setLoading(false);
       setIsScanningBest(false);
       setShowHistory(false);
-      setHistoryData([]);
-      setBestCombatPowerRecord(null);
       setError(null);
     };
 
@@ -121,7 +106,7 @@ export const useMapleSearch = (
     localStorage.setItem('maple_search_history', JSON.stringify(newHistory));
   };
 
-  const toggleFavorite = (e: React.MouseEvent | undefined | null, name: string) => {
+  const toggleFavorite = useCallback((e: React.MouseEvent | undefined | null, name: string) => {
     e?.stopPropagation(); 
     let newFavs;
     if (favorites.includes(name)) {
@@ -131,7 +116,7 @@ export const useMapleSearch = (
     }
     setFavorites(newFavs);
     localStorage.setItem('maple_favorites', JSON.stringify(newFavs));
-  };
+  }, [favorites]);
 
   const handleSearch = async (e?: React.FormEvent, overrideName?: string, overrideKey?: string, skipHistoryPush?: boolean) => {
     if (e) e.preventDefault();
@@ -213,8 +198,6 @@ export const useMapleSearch = (
     searchHistory, setSearchHistory,
     showHistory, setShowHistory,
     favorites, setFavorites,
-    historyData, setHistoryData,
-    bestCombatPowerRecord, setBestCombatPowerRecord,
     searchInputRef,
     handleSearch, handleBestSearch,
     addToHistory, removeFromHistory, toggleFavorite

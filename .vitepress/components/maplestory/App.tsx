@@ -32,8 +32,6 @@ const App: React.FC = () => {
     searchHistory, setSearchHistory,
     showHistory, setShowHistory,
     favorites,
-    historyData,
-    bestCombatPowerRecord,
     searchInputRef,
     handleSearch, handleBestSearch,
     removeFromHistory, toggleFavorite
@@ -144,51 +142,50 @@ const App: React.FC = () => {
 
         {data && !loading && (
           <>
-          <MainDashboard 
-            data={data}
-            loading={loading}
-            isScanningBest={isScanningBest}
-            showDetailStats={showDetailStats}
-            setShowDetailStats={setShowDetailStats}
-            getStatVal={getStatVal}
-            getStatBreakdown={getStatBreakdown}
-            detailedStats={detailedStats}
-            favorites={favorites}
-            toggleFavorite={toggleFavorite}
-            setShowShareModal={setShowShareModal}
-            historyData={historyData}
-            bestCombatPowerRecord={bestCombatPowerRecord}
-            analyzing={analyzing}
-            handleAiAnalyze={handleAiAnalyze}
-            aiAnalysis={aiAnalysis}
-            abilityPreset={abilityPreset}
-            setAbilityPreset={setAbilityPreset}
-            currentAbilityInfo={currentAbilityInfo}
-            getAbilityStyle={getAbilityStyle}
-          />
+            <MainDashboard
+              data={data}
+              apiKey={apiKey || ''}
+              loading={loading}
+              isScanningBest={isScanningBest}
+              showDetailStats={showDetailStats}
+              setShowDetailStats={setShowDetailStats}
+              getStatVal={getStatVal}
+              getStatBreakdown={getStatBreakdown}
+              detailedStats={detailedStats}
+              favorites={favorites}
+              toggleFavorite={toggleFavorite}
+              setShowShareModal={setShowShareModal}
+              analyzing={analyzing}
+              handleAiAnalyze={handleAiAnalyze}
+              aiAnalysis={aiAnalysis}
+              abilityPreset={abilityPreset}
+              setAbilityPreset={setAbilityPreset}
+              currentAbilityInfo={currentAbilityInfo}
+              getAbilityStyle={getAbilityStyle}
+            />
 
-          <CharacterGrowthHistory data={data} />
+            <CharacterGrowthHistory data={data} apiKey={apiKey || ''} />
 
-           <AiAnalysisPanel 
-            analyzing={analyzing}
-            aiAnalysis={aiAnalysis}
-            error={error}
-            dropRateWarningData={dropRateWarningData}
-            isHighScore={isHighScore}
-            aiResultRef={aiResultRef}
-            handleAiAnalyze={handleAiAnalyze}
-            setShowKeySettings={setShowKeySettings}
-            setDropRateWarningData={setDropRateWarningData}
-            geminiModel={geminiModel}
-            elapsedTime={elapsedTime}
-            progressMessage={progressMessage}
-          />
+            <AiAnalysisPanel
+              analyzing={analyzing}
+              aiAnalysis={aiAnalysis}
+              error={error}
+              dropRateWarningData={dropRateWarningData}
+              isHighScore={isHighScore}
+              aiResultRef={aiResultRef}
+              handleAiAnalyze={handleAiAnalyze}
+              setShowKeySettings={setShowKeySettings}
+              setDropRateWarningData={setDropRateWarningData}
+              geminiModel={geminiModel}
+              elapsedTime={elapsedTime}
+              progressMessage={progressMessage}
+            />
 
           {deferredDetailsData && (
-            <CharacterDetails
-              data={deferredDetailsData}
-              apiKey={apiKey || ''} // 傳入 apiKey
-            />
+              <CharacterDetails
+                data={deferredDetailsData}
+                apiKey={apiKey || ''} // 傳入 apiKey
+              />
           )}
           {showShareModal && <ShareModal characterName={data.basic.character_name} onClose={() => setShowShareModal(false)} />}
           </>

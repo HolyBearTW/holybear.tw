@@ -1,6 +1,7 @@
 /* import { defineConfig } from 'vitepress' */
 import { defineConfig } from '@lando/vitepress-theme-default-plus/config'
 import react from '@vitejs/plugin-react'
+import { createLogger } from 'vite'
 import { fileURLToPath, URL } from 'node:url'
 import { existsSync, readFileSync } from 'node:fs'
 import locales from './locales/index.ts'
@@ -9,6 +10,19 @@ import sidebar from './sidebars/blog.sidebar.ts'
 import TelegramRoseBotDocsSidebar from './sidebars/Telegram-Rose-Bot-docs.sidebar.ts'
 import VitepressBlogDocsSidebar from './sidebars/Vitepress-Blog-docs-sidebar.ts'
 import SpoilerComponentDocsSidebar from './sidebars/spoiler-component-docs-sidebar.ts'
+
+const viteLogger = createLogger()
+const viteWarn = viteLogger.warn.bind(viteLogger)
+
+viteLogger.warn = (message, options) => {
+    const normalizedMessage = message.replaceAll('\\', '/')
+    const isBrokenTimeagoSourceMap =
+        normalizedMessage.includes('Sourcemap for') &&
+        normalizedMessage.includes('/node_modules/timeago.js/')
+
+    if (normalizedMessage.includes('Something has shimmed') || isBrokenTimeagoSourceMap) return
+    viteWarn(message, options)
+}
 
 const config = defineConfig({
     ignoreDeadLinks: true,
@@ -124,21 +138,8 @@ const config = defineConfig({
                 ]
             })
         ],
-        // 這段會直接告訴 Vite 本機開發伺服器，直接隱藏那些含 shimmed 的雜訊，是真正100%終極解法
-        customLogger: (function() {
-            try {
-                const logger = require('vite').createLogger();
-                const originalWarn = logger.warn;
-                logger.warn = (msg, options) => {
-                    if (msg.includes('Something has shimmed')) return;
-                    originalWarn(msg, options);
-                };
-                return logger;
-            } catch(e) {
-                // 如果編譯時無法讀取 vite logger，就回傳undefined
-                return undefined;
-            }
-        })(),
+        // 只過濾已知且無影響的第三方套件警告，其餘 Vite 警告仍正常顯示。
+        customLogger: viteLogger,
         resolve: {
             alias: [
                 {
@@ -160,10 +161,22 @@ const config = defineConfig({
                 'react-dom', 
                 'react-dom/client',
                 'lucide-react',
+                'lucide-vue-next',
                 'markdown-it',
+                'medium-zoom',
+                'opencc-js',
                 'recharts',
                 'border-beam',
-                '@google/generative-ai'
+                '@google/generative-ai',
+                '@esotericsoftware/spine-player',
+                'animejs',
+                'firebase/app',
+                'firebase/firestore',
+                'swiper/modules',
+                'swiper/vue',
+                'three',
+                'three/examples/jsm/misc/GPUComputationRenderer.js',
+                'timeago.js'
             ],
         },
     },   

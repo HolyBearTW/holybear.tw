@@ -187,6 +187,13 @@ onBeforeUnmount(() => {
   contain-intrinsic-size: auto 1000px;
 }
 
+#maplestory-root .maple-growth-chart,
+#maplestory-root .maple-growth-chart .recharts-wrapper,
+#maplestory-root .maple-growth-chart .recharts-surface,
+#maplestory-root .maple-growth-chart *:focus {
+  outline: none !important;
+}
+
 body:has(#maplestory-root) .VPNav {
   --hb-nav-hover-color: #67e8f9;
   background: transparent !important;

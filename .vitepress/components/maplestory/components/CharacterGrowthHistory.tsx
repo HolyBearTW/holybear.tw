@@ -16,9 +16,11 @@ import {
   MaplerHouseHistoryDay,
   MaplerHouseHistoryEvent,
 } from '../services/maplerhouseService';
+import { fetchWeeklyHistory } from '../services/nexonService';
 
 interface CharacterGrowthHistoryProps {
   data: DashboardData;
+  apiKey: string;
 }
 
 type TrendRange = 7 | 30 | 90;
@@ -72,11 +74,175 @@ const GrowthTooltip = ({ active, payload }: any) => {
   );
 };
 
-const CharacterGrowthHistory: React.FC<CharacterGrowthHistoryProps> = ({ data }) => {
+interface GrowthInsightPanelsProps {
+  data: DashboardData;
+  days: MaplerHouseHistoryDay[];
+  trendRange: TrendRange;
+  setTrendRange: (range: TrendRange) => void;
+  allowRangeSelection: boolean;
+}
+
+const GrowthInsightPanels: React.FC<GrowthInsightPanelsProps> = ({
+  data,
+  days,
+  trendRange,
+  setTrendRange,
+  allowRangeSelection,
+}) => {
+  const chartDays = useMemo(() => days.slice(-trendRange), [days, trendRange]);
+  const eta = useMemo(() => {
+    const sample = days.slice(-30);
+    const gains = sample.slice(1);
+    const averageDailyExp = gains.reduce((total, day) => total + Math.max(0, Number(day.expGain) || 0), 0)
+      / Math.max(1, gains.length);
+    const currentLevel = data.basic.character_level;
+    const currentExp = Number(data.basic.character_exp);
+    const currentRate = Number(data.basic.character_exp_rate);
+    if (currentLevel >= 300) return { maxLevel: true, averageDailyExp, sampleDays: gains.length, days: 0 };
+    if (averageDailyExp <= 0 || currentExp <= 0 || currentRate <= 0) {
+      return { maxLevel: false, averageDailyExp, sampleDays: gains.length, days: null };
+    }
+    const requiredExp = currentExp / (currentRate / 100);
+    return {
+      maxLevel: false,
+      averageDailyExp,
+      sampleDays: gains.length,
+      days: Math.max(0, (requiredExp - currentExp) / averageDailyExp),
+    };
+  }, [data.basic.character_exp, data.basic.character_exp_rate, data.basic.character_level, days]);
+
+  const formatProgressTick = (value: number) => {
+    const rate = ((value % 1) + 1) % 1;
+    return `${(rate * 100).toFixed(1)}%`;
+  };
+
+  const pointStyle = chartDays.length <= 14
+    ? { r: 3, fill: '#34d399', strokeWidth: 0 }
+    : chartDays.length <= 30
+      ? { r: 2.25, fill: '#34d399', strokeWidth: 0 }
+      : false;
+
+  return (
+    <div className="grid items-stretch gap-5 lg:grid-cols-2">
+      <div className="maple-growth-panel flex min-w-0 flex-col rounded-xl border border-slate-800 bg-slate-950/30 p-4">
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
+          <div>
+            <h3 className="font-semibold text-slate-200">經驗趨勢</h3>
+            <p className="mt-1 text-xs text-slate-500">每日等級與經驗進度變化</p>
+          </div>
+          {allowRangeSelection ? (
+            <div className="flex gap-1 rounded-lg bg-slate-900 p-1">
+              {([7, 30, 90] as TrendRange[]).map((range) => (
+                <button
+                  key={range}
+                  type="button"
+                  onClick={() => setTrendRange(range)}
+                  className={`maple-growth-range-button rounded-md px-3 py-1 text-xs transition ${trendRange === range ? 'is-current bg-emerald-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}
+                >
+                  {range} 日
+                </button>
+              ))}
+            </div>
+          ) : (
+            <span className="rounded-md bg-slate-900 px-3 py-1 text-xs text-slate-400">近 7 日</span>
+          )}
+        </div>
+        <div className="maple-growth-chart h-56 w-full outline-none">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart
+              data={chartDays.map((day) => ({
+                ...day,
+                progress: day.level + (Number(day.expRate) || 0) / 100,
+              }))}
+              margin={{ top: 12, right: 12, left: 0, bottom: 0 }}
+              accessibilityLayer={false}
+              style={{ outline: 'none' }}
+            >
+              <XAxis
+                dataKey="date"
+                tickFormatter={(value) => value.slice(5)}
+                tick={{ fill: '#64748b', fontSize: 10 }}
+                tickLine={false}
+                axisLine={{ stroke: '#334155' }}
+                interval="preserveStartEnd"
+                minTickGap={24}
+                padding={{ left: 8, right: 8 }}
+              />
+              <YAxis
+                width={42}
+                tick={{ fill: '#64748b', fontSize: 10 }}
+                tickLine={false}
+                axisLine={false}
+                tickFormatter={formatProgressTick}
+                tickCount={5}
+                domain={['dataMin - 0.01', 'dataMax + 0.01']}
+              />
+              <Tooltip content={<GrowthTooltip />} cursor={{ stroke: '#475569', strokeDasharray: '4 4' }} />
+              <Line
+                type="monotone"
+                dataKey="progress"
+                stroke="#34d399"
+                strokeWidth={2.5}
+                dot={pointStyle}
+                activeDot={{ r: 5 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      <div className="maple-growth-panel flex min-w-0 flex-col rounded-xl border border-slate-800 bg-slate-950/30 p-4">
+        <div className="flex items-center justify-center gap-2 text-center">
+          <Clock3 className="h-4 w-4 text-emerald-400" />
+          <h3 className="font-semibold text-slate-200">升級預估時間</h3>
+        </div>
+        <p className="mt-2 text-center text-xs text-slate-500">
+          近 {eta.sampleDays || 0} 天平均每日 {compactNumber(eta.averageDailyExp || 0)} EXP
+        </p>
+        <div className="maple-growth-eta mt-4 flex flex-1 flex-col items-center justify-center rounded-lg border border-slate-800 bg-slate-900/60 px-4 py-5 text-center">
+          {eta.maxLevel ? (
+            <span className="text-sm text-slate-400">目前已達最高等級</span>
+          ) : eta.days == null ? (
+            <span className="text-sm text-slate-400">累積資料不足，暫時無法預估</span>
+          ) : (
+            <>
+              <div className="text-sm font-semibold text-slate-200">Lv.{data.basic.character_level + 1}</div>
+              <div className="mt-1 text-2xl font-bold text-emerald-400">約 {eta.days < 1 ? '1 天內' : `${eta.days.toFixed(1)} 天`}</div>
+            </>
+          )}
+        </div>
+        <p className="mt-2 text-center text-[11px] text-slate-600">依目前 Nexon 經驗值與近期平均成長速度估算，實際時間可能因活動與練等狀況不同。</p>
+      </div>
+    </div>
+  );
+};
+
+const CharacterGrowthHistory: React.FC<CharacterGrowthHistoryProps> = ({ data, apiKey }) => {
   const [history, setHistory] = useState<MaplerHouseCharacterHistory | null>(null);
+  const [weeklyHistory, setWeeklyHistory] = useState<any[]>([]);
+  const [weeklyLoading, setWeeklyLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [trendRange, setTrendRange] = useState<TrendRange>(30);
+
+  useEffect(() => {
+    let active = true;
+    setWeeklyHistory([]);
+    setWeeklyLoading(true);
+    fetchWeeklyHistory(data.basic.character_name, apiKey)
+      .then((result) => {
+        if (active) setWeeklyHistory(result || []);
+      })
+      .catch(() => {
+        if (active) setWeeklyHistory([]);
+      })
+      .finally(() => {
+        if (active) setWeeklyLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [apiKey, data.basic.character_name]);
 
   useEffect(() => {
     let cancelled = false;
@@ -144,7 +310,31 @@ const CharacterGrowthHistory: React.FC<CharacterGrowthHistoryProps> = ({ data })
   // history request completes at nearly the same time.
   const deferredHistory = React.useDeferredValue(history);
   const historyRenderPending = history !== deferredHistory;
-  const chartDays = useMemo(() => deferredHistory?.days.slice(-trendRange) ?? [], [deferredHistory, trendRange]);
+  const weeklyDays = useMemo<MaplerHouseHistoryDay[]>(() => weeklyHistory.map((day, index) => {
+    const previous = weeklyHistory[index - 1];
+    const currentExp = Number(day.exp) || 0;
+    let expGain = 0;
+    if (previous) {
+      const previousExp = Number(previous.exp) || 0;
+      const levelDiff = Number(day.level) - Number(previous.level);
+      if (levelDiff === 0) {
+        expGain = Math.max(0, currentExp - previousExp);
+      } else if (levelDiff === 1 && Number(previous.expRate) > 0) {
+        const previousRequiredExp = previousExp / (Number(previous.expRate) / 100);
+        expGain = Math.max(0, previousRequiredExp - previousExp + currentExp);
+      }
+    }
+    return {
+      date: day.fullDate || day.date,
+      level: Number(day.level) || 0,
+      exp: String(currentExp),
+      expRate: String(Number(day.expRate) || 0),
+      expGain: String(Math.round(expGain)),
+      growthBucket: 0,
+      active: expGain > 0,
+    };
+  }), [weeklyHistory]);
+  const insightDays = deferredHistory?.days ?? weeklyDays;
 
   const calendar = useMemo(() => {
     if (!deferredHistory) return null;
@@ -183,29 +373,7 @@ const CharacterGrowthHistory: React.FC<CharacterGrowthHistoryProps> = ({ data })
     };
   }, [deferredHistory]);
 
-  const eta = useMemo(() => {
-    if (!deferredHistory) return null;
-    const sample = deferredHistory.days.slice(-30);
-    const gains = sample.slice(1);
-    const averageDailyExp = gains.reduce((total, day) => total + Math.max(0, Number(day.expGain) || 0), 0)
-      / Math.max(1, gains.length);
-    const currentLevel = data.basic.character_level;
-    const currentExp = Number(data.basic.character_exp);
-    const currentRate = Number(data.basic.character_exp_rate);
-    if (currentLevel >= 300) return { maxLevel: true, averageDailyExp, sampleDays: gains.length, days: 0 };
-    if (averageDailyExp <= 0 || currentExp <= 0 || currentRate <= 0) {
-      return { maxLevel: false, averageDailyExp, sampleDays: gains.length, days: null };
-    }
-    const requiredExp = currentExp / (currentRate / 100);
-    return {
-      maxLevel: false,
-      averageDailyExp,
-      sampleDays: gains.length,
-      days: Math.max(0, (requiredExp - currentExp) / averageDailyExp),
-    };
-  }, [data.basic.character_exp, data.basic.character_exp_rate, data.basic.character_level, deferredHistory]);
-
-  if ((loading || historyRenderPending) && !deferredHistory) {
+  if ((loading || historyRenderPending || weeklyLoading) && !deferredHistory && !weeklyDays.length) {
     return (
       <div className="maple-growth-state mt-6 flex min-h-28 items-center justify-center rounded-xl border border-slate-800 bg-[#161b22] text-sm text-slate-500">
         <RefreshCw className="mr-2 h-4 w-4 animate-spin" />讀取成長紀錄中...
@@ -213,13 +381,31 @@ const CharacterGrowthHistory: React.FC<CharacterGrowthHistoryProps> = ({ data })
     );
   }
 
-  if (!deferredHistory && !error) return null;
-
-  if (error) {
+  if (error && !weeklyDays.length) {
     return (
       <div className="maple-growth-state is-error mt-6 rounded-xl border border-rose-900/50 bg-rose-950/20 px-5 py-4 text-sm text-rose-300">
         {error}
       </div>
+    );
+  }
+
+  if (!deferredHistory && weeklyDays.length) {
+    return (
+      <section className="maple-growth-history mt-6 space-y-5 rounded-xl border border-slate-800 bg-[#161b22] p-5 shadow-xl">
+        <header>
+          <div className="flex items-center gap-2 text-lg font-bold text-slate-100">
+            <TrendingUp className="h-5 w-5 text-emerald-400" />經驗成長資訊
+          </div>
+          <p className="mt-1 text-xs text-slate-500">直接使用 Nexon 近 7 日資料；生成成長檔案後可再查看年度日曆與角色大事記。</p>
+        </header>
+        <GrowthInsightPanels
+          data={data}
+          days={weeklyDays}
+          trendRange={7}
+          setTrendRange={setTrendRange}
+          allowRangeSelection={false}
+        />
+      </section>
     );
   }
 
@@ -239,67 +425,13 @@ const CharacterGrowthHistory: React.FC<CharacterGrowthHistoryProps> = ({ data })
         </div>
       </header>
 
-      <div className="grid items-stretch gap-5 lg:grid-cols-2">
-      <div className="maple-growth-panel flex min-w-0 flex-col rounded-xl border border-slate-800 bg-slate-950/30 p-4">
-        <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
-          <div>
-            <h3 className="font-semibold text-slate-200">經驗趨勢</h3>
-            <p className="mt-1 text-xs text-slate-500">每日等級與經驗進度變化</p>
-          </div>
-          <div className="flex gap-1 rounded-lg bg-slate-900 p-1">
-            {([7, 30, 90] as TrendRange[]).map((range) => (
-              <button
-                key={range}
-                type="button"
-                onClick={() => setTrendRange(range)}
-                className={`maple-growth-range-button rounded-md px-3 py-1 text-xs transition ${trendRange === range ? 'is-current bg-emerald-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}
-              >
-                {range} 日
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="h-56 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart
-              data={chartDays.map((day) => ({
-                ...day,
-                progress: day.level + (Number(day.expRate) || 0) / 100,
-              }))}
-              margin={{ top: 12, right: 12, left: 12, bottom: 0 }}
-            >
-              <XAxis dataKey="date" tickFormatter={(value) => value.slice(5)} tick={{ fill: '#64748b', fontSize: 10 }} tickLine={false} axisLine={{ stroke: '#334155' }} minTickGap={24} />
-              <YAxis hide domain={['dataMin - 0.01', 'dataMax + 0.01']} />
-              <Tooltip content={<GrowthTooltip />} cursor={{ stroke: '#475569', strokeDasharray: '4 4' }} />
-              <Line type="monotone" dataKey="progress" stroke="#34d399" strokeWidth={2.5} dot={chartDays.length <= 14 ? { r: 3, fill: '#34d399' } : false} activeDot={{ r: 5 }} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      <div className="maple-growth-panel flex min-w-0 flex-col rounded-xl border border-slate-800 bg-slate-950/30 p-4">
-        <div className="flex items-center justify-center gap-2 text-center">
-          <Clock3 className="h-4 w-4 text-emerald-400" />
-          <h3 className="font-semibold text-slate-200">升級預估時間</h3>
-        </div>
-        <p className="mt-2 text-center text-xs text-slate-500">
-          近 {eta?.sampleDays || 0} 天平均每日 {compactNumber(eta?.averageDailyExp || 0)} EXP
-        </p>
-        <div className="maple-growth-eta flex mt-4 flex-1 flex-col items-center justify-center rounded-lg border border-slate-800 bg-slate-900/60 px-4 py-5 text-center">
-          {eta?.maxLevel ? (
-            <span className="text-sm text-slate-400">目前已達最高等級</span>
-          ) : eta?.days == null ? (
-            <span className="text-sm text-slate-400">累積資料不足，暫時無法預估</span>
-          ) : (
-            <>
-              <div className="text-sm font-semibold text-slate-200">Lv.{data.basic.character_level + 1}</div>
-              <div className="mt-1 text-2xl font-bold text-emerald-400">約 {eta.days < 1 ? '1 天內' : `${eta.days.toFixed(1)} 天`}</div>
-            </>
-          )}
-        </div>
-        <p className="mt-2 text-center text-[11px] text-slate-600">依目前 Nexon 經驗值與近期平均成長速度估算，實際時間可能因活動與練等狀況不同。</p>
-      </div>
-      </div>
+      <GrowthInsightPanels
+        data={data}
+        days={insightDays}
+        trendRange={trendRange}
+        setTrendRange={setTrendRange}
+        allowRangeSelection
+      />
 
       <div className="maple-growth-panel space-y-4 rounded-xl border border-slate-800 bg-slate-950/30 p-4">
         <div>

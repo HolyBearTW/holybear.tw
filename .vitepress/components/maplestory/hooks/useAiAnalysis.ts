@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { analyzeCharacter } from '../services/geminiService';
 import { DashboardData } from '../types';
 import { DEFAULT_AI_MODEL, getRecommendedAiModel, isOpenAiModel } from '../data/aiModels';
@@ -72,7 +72,7 @@ export const useAiAnalysis = (
     }
   }, [aiAnalysis, analyzing]);
 
-  const handleAiAnalyze = async (overrideIgnoreWarnings?: boolean | any) => {
+  const handleAiAnalyze = useCallback(async (overrideIgnoreWarnings?: boolean | any) => {
     if (!data) return;
     const ignoreWarnings = typeof overrideIgnoreWarnings === 'boolean' ? overrideIgnoreWarnings : false;
     
@@ -134,7 +134,7 @@ export const useAiAnalysis = (
     } finally {
       setAnalyzing(false);
     }
-  };
+  }, [data, geminiKey, openAiKey, geminiModel, setError]);
 
   return {
     geminiKey, setGeminiKey,

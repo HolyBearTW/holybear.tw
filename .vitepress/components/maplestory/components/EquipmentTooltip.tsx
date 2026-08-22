@@ -131,12 +131,11 @@ const StatLine: React.FC<{ label: string; base: string; add: string; etc: string
 
   const baseVal = parseInt(base || '0');
   const addVal = parseInt(add || '0'); // Flame (Green)
-  const etcVal = parseInt(etc || '0'); // Scroll
-  const starVal = parseInt(star || '0'); // Starforce
-  const blueVal = etcVal + starVal; // Combined for blue text
+  const etcVal = parseInt(etc || '0'); // Scroll (Yellow)
+  const starVal = parseInt(star || '0'); // Starforce (Purple)
 
-  // Calculate breakdown string: (Base + Flame + Scroll/Star)
-  const hasBreakdown = addVal > 0 || blueVal > 0;
+  // Calculate breakdown string: (Base + Flame + Scroll + Starforce)
+  const hasBreakdown = addVal > 0 || etcVal > 0 || starVal > 0;
   const suffix = isPercent ? '%' : '';
   
   return (
@@ -148,8 +147,9 @@ const StatLine: React.FC<{ label: string; base: string; add: string; etc: string
           <span className="text-xs ml-1">
             (
             <span className="text-white">{baseVal}{suffix}</span>
-            {addVal > 0 && <span className="text-green-400"> + {addVal}{suffix}</span>}
-            {blueVal > 0 && <span className="text-blue-400"> + {blueVal}{suffix}</span>}
+            {addVal > 0 && <span className="text-green-400" title="星火加成"> + {addVal}{suffix}</span>}
+            {etcVal > 0 && <span className="text-yellow-400" title="卷軸加成"> + {etcVal}{suffix}</span>}
+            {starVal > 0 && <span className="text-purple-400" title="星力加成"> + {starVal}{suffix}</span>}
             )
           </span>
         )}

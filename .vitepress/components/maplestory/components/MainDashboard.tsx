@@ -16,9 +16,11 @@ import {
   MaplerHouseCharacterRank,
 } from '../services/maplerhouseService';
 import MaplerHouseGrowthTracker from './MaplerHouseGrowthTracker';
+import { fetchWeeklyHistory, findBestDateInPastWeek } from '../services/nexonService';
 
 interface MainDashboardProps {
     data: any;
+    apiKey: string;
     loading: boolean;
     isScanningBest: boolean;
     showDetailStats: boolean;
@@ -29,8 +31,6 @@ interface MainDashboardProps {
     favorites?: string[];
     toggleFavorite?: (e: any, name: string) => void;
     setShowShareModal?: (show: boolean) => void;
-    historyData?: any[];
-    bestCombatPowerRecord?: { date: string; combatPower: number } | null;
     analyzing?: boolean;
     handleAiAnalyze?: () => void;
     aiAnalysis?: string | null;
@@ -143,8 +143,80 @@ const RecentPowerRankStatus = React.forwardRef<RecentPowerRankHandle, RecentPowe
 
 RecentPowerRankStatus.displayName = 'RecentPowerRankStatus';
 
+const WeeklyGrowthValue = React.memo(({ characterName, apiKey }: { characterName: string; apiKey: string }) => {
+  const [historyData, setHistoryData] = React.useState<any[] | null>(null);
+
+  React.useEffect(() => {
+    let active = true;
+    fetchWeeklyHistory(characterName, apiKey)
+      .then((history) => {
+        if (active) setHistoryData(history || []);
+      })
+      .catch(() => {
+        if (active) setHistoryData([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, [characterName, apiKey]);
+
+  return <>{historyData ? calculateWeeklyGrowth(historyData) : '- %'}</>;
+});
+
+WeeklyGrowthValue.displayName = 'WeeklyGrowthValue';
+
+const BestCombatPowerInfo = React.memo(({ characterName, apiKey }: { characterName: string; apiKey: string }) => {
+  const [record, setRecord] = React.useState<{ date: string; combatPower: number } | null>(null);
+  const [show, setShow] = React.useState(false);
+
+  React.useEffect(() => {
+    let active = true;
+    findBestDateInPastWeek(characterName, apiKey)
+      .then((result) => {
+        if (active) setRecord(result);
+      })
+      .catch(() => {
+        if (active) setRecord(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, [characterName, apiKey]);
+
+  if (!record) return null;
+
+  return (
+    <>
+      <button
+        type="button"
+        className="relative inline-flex h-4 w-4 items-center justify-center rounded-full text-slate-500 transition-colors hover:text-emerald-400 focus-visible:text-emerald-400 focus-visible:outline-none"
+        aria-label="顯示近7日最高戰鬥力"
+        onMouseEnter={() => setShow(true)}
+        onMouseLeave={() => setShow(false)}
+        onFocus={() => setShow(true)}
+        onBlur={() => setShow(false)}
+        onClick={() => setShow(true)}
+      >
+        <Info className="h-3.5 w-3.5" />
+      </button>
+      {show && (
+        <div
+          role="status"
+          className="maple-best-combat-power-tooltip absolute left-3 top-11 z-40 min-w-60 rounded-lg border border-emerald-400/30 bg-black/95 px-3 py-2 text-xs text-slate-200 shadow-xl shadow-black/50 backdrop-blur-sm"
+        >
+          <div className="font-bold text-emerald-300">近7日最高戰鬥力：{formatBigNumber(record.combatPower)}</div>
+          <div className="mt-1 text-slate-400">紀錄時間：{record.date.replace(/-/g, '/')}</div>
+        </div>
+      )}
+    </>
+  );
+});
+
+BestCombatPowerInfo.displayName = 'BestCombatPowerInfo';
+
 const MainDashboard: React.FC<MainDashboardProps> = ({
     data,
+    apiKey,
     loading,
     isScanningBest,
     showDetailStats,
@@ -155,8 +227,6 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
     favorites = [],
     toggleFavorite = () => {},
     setShowShareModal = () => {},
-    historyData = [],
-    bestCombatPowerRecord = null,
     analyzing = false,
     handleAiAnalyze = () => {},
     aiAnalysis = null,
@@ -167,7 +237,6 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
 }) => {
     const hasRecentLogin = String(data.basic.access_flag).toLowerCase() === 'true';
     const [showRecentLoginStatus, setShowRecentLoginStatus] = React.useState(false);
-    const [showBestCombatPower, setShowBestCombatPower] = React.useState(false);
     const recentPowerRankRef = React.useRef<RecentPowerRankHandle>(null);
 
     const handleTrackingComplete = React.useCallback(() => {
@@ -260,7 +329,7 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
                          <div className="flex items-center justify-between border-b border-slate-800/50 pb-1.5">
                            <span className="whitespace-nowrap">七日成長</span>
                            <span className="text-slate-300 font-mono text-right w-24">
-                            {calculateWeeklyGrowth(historyData)}
+                            <WeeklyGrowthValue key={data.basic.character_name} characterName={data.basic.character_name} apiKey={apiKey} />
                            </span>
                          </div>
                          <div className="flex justify-between border-b border-slate-800/50 pb-1.5">
@@ -305,20 +374,7 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
                   <div className="relative bg-[#0d1117] border border-slate-700/50 rounded-lg p-3 mb-4">
                      <div className="mb-1 flex items-center gap-1.5 text-xs text-slate-500">
                         <span>戰鬥力</span>
-                        {bestCombatPowerRecord && (
-                          <button
-                            type="button"
-                            className="relative inline-flex h-4 w-4 items-center justify-center rounded-full text-slate-500 transition-colors hover:text-emerald-400 focus-visible:text-emerald-400 focus-visible:outline-none"
-                            aria-label="顯示近7日最高戰鬥力"
-                            onMouseEnter={() => setShowBestCombatPower(true)}
-                            onMouseLeave={() => setShowBestCombatPower(false)}
-                            onFocus={() => setShowBestCombatPower(true)}
-                            onBlur={() => setShowBestCombatPower(false)}
-                            onClick={() => setShowBestCombatPower(true)}
-                          >
-                            <Info className="h-3.5 w-3.5" />
-                          </button>
-                        )}
+                        <BestCombatPowerInfo key={data.basic.character_name} characterName={data.basic.character_name} apiKey={apiKey} />
                      </div>
                      <div className="text-xl font-bold text-indigo-400 font-mono tracking-tight">{formatBigNumber(getStatVal('Combat Power'))}</div>
                      <div className="mt-1 text-xs">
@@ -329,15 +385,6 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
                          ocid={data.ocid}
                        />
                      </div>
-                     {bestCombatPowerRecord && showBestCombatPower && (
-                       <div
-                         role="status"
-                         className="maple-best-combat-power-tooltip absolute left-3 top-11 z-40 min-w-60 rounded-lg border border-emerald-400/30 bg-black/95 px-3 py-2 text-xs text-slate-200 shadow-xl shadow-black/50 backdrop-blur-sm"
-                       >
-                         <div className="font-bold text-emerald-300">近7日最高戰鬥力：{formatBigNumber(bestCombatPowerRecord.combatPower)}</div>
-                         <div className="mt-1 text-slate-400">紀錄時間：{bestCombatPowerRecord.date.replace(/-/g, '/')}</div>
-                       </div>
-                     )}
                   </div>
                   
                   <div className="space-y-3 mb-6">
@@ -484,4 +531,4 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
     );
 };
 
-export default MainDashboard;
+export default React.memo(MainDashboard);

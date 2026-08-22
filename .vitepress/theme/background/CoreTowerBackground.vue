@@ -25,18 +25,10 @@ const loadSpineWebglRuntime = () => {
   })
   return browserWindow.__coreTowerSpineWebgl
 }
-import '@esotericsoftware/spine-player/dist/spine-player.css'
-
-const back03 = ref<HTMLElement | null>(null)
-const back02 = ref<HTMLElement | null>(null)
-const back01 = ref<HTMLElement | null>(null)
-const foreground = ref<HTMLElement | null>(null)
 const sharedCanvas = ref<HTMLCanvasElement | null>(null)
 const spineReady = ref(false)
 const sharedCanvasEnabled = ref(false)
-const isTouchDevice = ref(false)
 
-let players: Array<{ dispose: () => void }> = []
 let sharedRendererCleanup: (() => void) | null = null
 let componentDisposed = false
 
@@ -60,11 +52,8 @@ onMounted(async () => {
   const isPhonePortrait = window.matchMedia('(max-width: 599px) and (orientation: portrait)').matches
   const isTouchPhoneOrTablet = navigator.maxTouchPoints > 0
     && Math.min(window.screen.width, window.screen.height) <= 1024
-  isTouchDevice.value = isTouchPhoneOrTablet
-  // A SpinePlayer creates its own full-viewport WebGL canvas. Four players
-  // made desktop DevTools docking resize four contexts at once and caused
-  // large renderer/GPU memory spikes. The shared renderer draws the same four
-  // skeletons through one context on every device.
+  // Draw all four skeletons through one WebGL context on every device to avoid
+  // the renderer and GPU-memory spikes caused by multiple full-screen canvases.
   sharedCanvasEnabled.value = true
 
   const applyForegroundOffsets = (skeleton: any, isPortrait: boolean) => {
@@ -253,69 +242,12 @@ onMounted(async () => {
     return
   }
 
-  const { SpinePlayer } = await import('@esotericsoftware/spine-player')
-  const desktopLayers = [
-    [back03.value, ...layerAssets[0]],
-    [back02.value, ...layerAssets[1]],
-    [back01.value, ...layerAssets[2]],
-    [foreground.value, ...layerAssets[3]]
-  ] as const
-  let loadedLayers = 0
-
-  for (const [element, binaryUrl, atlasUrl, layer] of desktopLayers) {
-    if (!element) continue
-
-    const player = new SpinePlayer(element, {
-      binaryUrl,
-      atlasUrl,
-      animation: 'animation',
-      alpha: true,
-      backgroundColor: '#00000000',
-      showControls: false,
-      showLoading: false,
-      premultipliedAlpha: true,
-      preserveDrawingBuffer: false,
-      viewport: {
-        // Map layer origin is (0, -200). Convert the WZ y-down VR to Spine y-up.
-        x: -540,
-        y: -395,
-        width: 1080,
-        height: 785,
-        padLeft: 0,
-        padRight: 0,
-        padTop: 0,
-        padBottom: 0
-      },
-      update(instance) {
-        if (!instance.skeleton) return
-
-        const isPortrait = window.innerHeight > window.innerWidth
-        if (layer === 'foreground') {
-          applyForegroundOffsets(instance.skeleton, isPortrait)
-        }
-
-        instance.skeleton.updateWorldTransform()
-      },
-      success(instance) {
-        instance.speed = 1
-        loadedLayers += 1
-        if (loadedLayers === desktopLayers.length) spineReady.value = true
-      },
-      error(_instance, message) {
-        console.warn(`[Core Tower] Spine layer fallback: ${message}`)
-      }
-    })
-
-    players.push(player)
-  }
 })
 
 onBeforeUnmount(() => {
   componentDisposed = true
   sharedRendererCleanup?.()
   sharedRendererCleanup = null
-  for (const player of players) player.dispose()
-  players = []
 })
 </script>
 
@@ -324,7 +256,6 @@ onBeforeUnmount(() => {
     class="core-tower-background"
     :class="{
       'uses-shared-canvas': sharedCanvasEnabled,
-      'is-touch-device': isTouchDevice,
       'is-spine-ready': spineReady
     }"
     aria-hidden="true"
@@ -344,14 +275,6 @@ onBeforeUnmount(() => {
         decoding="async"
         fetchpriority="high"
       >
-      <div ref="back03" class="core-tower-spine-layer core-tower-spine-back-03"></div>
-      <div ref="back02" class="core-tower-spine-layer core-tower-spine-back-02"></div>
-      <div ref="back01" class="core-tower-spine-layer core-tower-spine-back-01"></div>
-      <!-- WZ particle positions converted from the map's 1080 x 785 VR coordinates. -->
-      <img class="core-tower-wz-particle core-tower-wz-electric" src="/themes/core-tower/core-electric.png" alt="">
-      <img class="core-tower-wz-particle core-tower-wz-glow" src="/themes/core-tower/core-glow.png" alt="">
-      <img class="core-tower-wz-particle core-tower-wz-flare" src="/themes/core-tower/core-flare.png" alt="">
-      <div ref="foreground" class="core-tower-spine-layer core-tower-spine-foreground"></div>
     </div>
 
     <div class="core-tower-reading-mask"></div>
@@ -482,16 +405,6 @@ html:not(.dark) body.theme-coretower .eyebrow {
   visibility: visible;
 }
 
-.core-tower-background.uses-shared-canvas .core-tower-spine-layer {
-  display: none;
-}
-
-/* These very faint CSS particles each create an extra animated blend layer.
-   The shared renderer already contains the actual WZ Spine effects. */
-.core-tower-background.uses-shared-canvas .core-tower-wz-particle {
-  display: none;
-}
-
 @media (max-width: 599px) and (orientation: portrait) {
   .core-tower-background.uses-shared-canvas {
     background-size: auto 114%;
@@ -505,31 +418,6 @@ html:not(.dark) body.theme-coretower .eyebrow {
     height: 114dvh;
   }
 
-  .core-tower-stage .core-tower-spine-back-03,
-  .core-tower-stage .core-tower-spine-back-02,
-  .core-tower-stage .core-tower-spine-back-01 {
-    inset: 15%;
-    width: 70%;
-    height: 70%;
-    -webkit-mask-image: linear-gradient(
-      to bottom,
-      transparent 0,
-      rgb(0 0 0 / 0.55) 5%,
-      #000 11%,
-      #000 89%,
-      rgb(0 0 0 / 0.55) 95%,
-      transparent 100%
-    );
-    mask-image: linear-gradient(
-      to bottom,
-      transparent 0,
-      rgb(0 0 0 / 0.55) 5%,
-      #000 11%,
-      #000 89%,
-      rgb(0 0 0 / 0.55) 95%,
-      transparent 100%
-    );
-  }
 }
 
 /* Desktop only: lower the complete WZ stage slightly without changing mobile. */
@@ -537,10 +425,6 @@ html:not(.dark) body.theme-coretower .eyebrow {
   .core-tower-stage {
     top: calc(50% + min(4vh, max(0px, (100vw * 785 / 1080 - 100vh) / 2)));
     top: calc(50% + min(4dvh, max(0px, (100vw * 785 / 1080 - 100dvh) / 2)));
-  }
-
-  body.theme-coretower .core-tower-stage .core-tower-spine-foreground {
-    transform: translate3d(0, 72px, 0) !important;
   }
 }
 
@@ -560,75 +444,8 @@ html:not(.dark) body.theme-coretower .eyebrow {
   opacity: 0;
 }
 
-.core-tower-spine-layer {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-}
-
 .core-tower-shared-canvas {
   display: none;
-}
-
-.core-tower-spine-layer > div,
-.core-tower-spine-layer .spine-player,
-.core-tower-spine-layer canvas {
-  width: 100% !important;
-  height: 100% !important;
-  background: transparent !important;
-}
-
-.core-tower-spine-layer .spine-player-controls,
-.core-tower-spine-layer .spine-player-error {
-  display: none !important;
-}
-
-.core-tower-spine-back-03 { z-index: 1; }
-.core-tower-spine-back-02 { z-index: 2; }
-.core-tower-spine-back-01 { z-index: 3; }
-.core-tower-spine-foreground { z-index: 6; }
-
-.core-tower-stage:not(.is-spine-ready) .core-tower-spine-layer {
-  opacity: 0;
-}
-
-.core-tower-wz-particle {
-  position: absolute;
-  z-index: 5;
-  pointer-events: none;
-  mix-blend-mode: screen;
-  transform: translate3d(-50%, -50%, 0);
-  animation: coreTowerParticlePulse 7s ease-in-out infinite alternate;
-}
-
-.core-tower-wz-electric {
-  /* Particle chrono_E_03_BackEffect/0: (0, -250). */
-  left: 50%;
-  top: 43.312%;
-  width: 47.407%;
-  opacity: 0.055;
-  filter: hue-rotate(145deg) saturate(2.2) drop-shadow(0 0 14px #743dff);
-}
-
-.core-tower-wz-glow {
-  /* Particle chrono_E_02_MidEffect/2: (0, -100). */
-  left: 50%;
-  top: 62.42%;
-  width: 16.944%;
-  opacity: 0.08;
-  animation-delay: -2.5s;
-}
-
-.core-tower-wz-flare {
-  /* Particle chrono_E_02_MidEffect/4: (0, -500). */
-  left: 50%;
-  top: 11.465%;
-  width: 47.407%;
-  opacity: 0.045;
-  animation-delay: -4.5s;
 }
 
 .core-tower-reading-mask,
@@ -680,14 +497,15 @@ html.dark .core-tower-reading-mask {
     radial-gradient(ellipse at center, transparent 46%, rgba(0, 0, 0, 0.28) 100%);
 }
 
-/* Touch devices use one static overlay instead of three full-screen compositor
-   layers. Desktop keeps the original scanline and vignette treatment. */
-.core-tower-background.uses-shared-canvas.is-touch-device .core-tower-scanlines,
-.core-tower-background.uses-shared-canvas.is-touch-device .core-tower-vignette {
+/* The shared renderer already carries the animated scene. Merge the three
+   full-screen overlays into one static layer on every viewport to avoid extra
+   compositor work without changing the stage sizing or desktop composition. */
+.core-tower-background.uses-shared-canvas .core-tower-scanlines,
+.core-tower-background.uses-shared-canvas .core-tower-vignette {
   display: none;
 }
 
-.core-tower-background.uses-shared-canvas.is-touch-device .core-tower-reading-mask {
+.core-tower-background.uses-shared-canvas .core-tower-reading-mask {
   z-index: 3;
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
@@ -700,18 +518,13 @@ html.dark .core-tower-reading-mask {
     rgba(3, 10, 20, 0.12);
 }
 
-html:not(.dark) .core-tower-background.uses-shared-canvas.is-touch-device .core-tower-reading-mask {
+html:not(.dark) .core-tower-background.uses-shared-canvas .core-tower-reading-mask {
   background:
     repeating-linear-gradient(180deg, transparent 0, transparent 3px, rgba(84, 226, 255, 0.022) 4px),
     linear-gradient(180deg, rgba(0, 0, 0, 0.1), transparent 20%, transparent 74%, rgba(0, 0, 0, 0.2)),
     radial-gradient(ellipse at center, transparent 46%, rgba(0, 0, 0, 0.22) 100%),
     linear-gradient(90deg, rgba(230, 244, 248, 0.14), rgba(226, 241, 246, 0.05) 48%, rgba(231, 244, 248, 0.12)),
     rgba(220, 238, 243, 0.03);
-}
-
-@keyframes coreTowerParticlePulse {
-  from { transform: translate3d(-50%, -50%, 0) scale(0.94); }
-  to { transform: translate3d(-50%, -50%, 0) scale(1.06); }
 }
 
 @keyframes coreTowerScan {
@@ -734,7 +547,6 @@ html:not(.dark) .core-tower-background.uses-shared-canvas.is-touch-device .core-
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .core-tower-wz-particle,
   .core-tower-scanlines {
     animation: none !important;
   }

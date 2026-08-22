@@ -326,7 +326,7 @@ export const findBestDateInPastWeek = async (characterName: string, apiKey: stri
  * 取得過去 7 天的等級與經驗值變化
  * 修正版：包含「今天」的最新資料
  */
-export const fetchWeeklyHistory = async (characterName: string, apiKey: string) => {
+const fetchWeeklyHistoryUncached = async (characterName: string, apiKey: string) => {
   const headers = { 'x-nxopen-api-key': apiKey, 'accept': 'application/json' };
 
   let ocid = ocidCache[characterName];
@@ -371,6 +371,7 @@ export const fetchWeeklyHistory = async (characterName: string, apiKey: string) 
           date: displayDate,
           fullDate: queryDate,
           level: data.character_level,
+          exp: Number(data.character_exp) || 0,
           expRate: parseFloat(data.character_exp_rate),
           diffDays: i 
         };
@@ -446,4 +447,21 @@ export const fetchWeeklyHistory = async (characterName: string, apiKey: string) 
   return rawData
     .filter(r => r && r.success)
     .sort((a, b) => b.diffDays - a.diffDays);
+};
+
+const WEEKLY_HISTORY_CACHE_MS = 60 * 1000;
+const weeklyHistoryRequests = new Map<string, { expiresAt: number; request: ReturnType<typeof fetchWeeklyHistoryUncached> }>();
+
+export const fetchWeeklyHistory = (characterName: string, apiKey: string) => {
+  const cacheKey = `${characterName.trim().toLocaleLowerCase('zh-TW')}:${apiKey.slice(-8)}`;
+  const cached = weeklyHistoryRequests.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) return cached.request;
+
+  const request = fetchWeeklyHistoryUncached(characterName, apiKey);
+  weeklyHistoryRequests.set(cacheKey, {
+    expiresAt: Date.now() + WEEKLY_HISTORY_CACHE_MS,
+    request,
+  });
+  request.catch(() => weeklyHistoryRequests.delete(cacheKey));
+  return request;
 };
