@@ -152,7 +152,9 @@ const MapleFeatureTour: React.FC<MapleFeatureTourProps> = ({
 
     rememberStep(currentStep.id);
     const currentIndex = steps.findIndex((step) => step.id === currentStep.id);
-    const nextStep = steps.slice(currentIndex + 1).find((step) => !hasSeenStep(step.id));
+    // 只在導覽開始時判斷「是否看過」。一旦開始，就依序走完後續功能，
+    // 避免舊版或先前測試留下的單一步驟紀錄讓導覽在中途直接結束。
+    const nextStep = steps[currentIndex + 1];
     setCurrentStepId(nextStep?.id ?? null);
   };
 
@@ -171,9 +173,7 @@ const MapleFeatureTour: React.FC<MapleFeatureTourProps> = ({
     ? spotlightRect.top + spotlightRect.height + 16
     : Math.max(12, spotlightRect.top - estimatedCardHeight - 16);
   const visibleStepIndex = steps.findIndex((step) => step.id === currentStep.id) + 1;
-  const hasNextStep = steps
-    .slice(visibleStepIndex)
-    .some((step) => !hasSeenStep(step.id));
+  const hasNextStep = visibleStepIndex < steps.length;
 
   return createPortal(
     <div className="fixed inset-0 z-[2147483000]" role="dialog" aria-modal="true" aria-labelledby="maple-feature-tour-title">
