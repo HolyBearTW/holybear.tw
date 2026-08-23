@@ -170,6 +170,8 @@ export interface LinkSkill {
 }
 
 export interface CharacterLinkSkill {
+  preset_no?: number | string;
+  use_preset_no?: number | string;
   character_link_skill: LinkSkill[];
   character_owned_link_skill: LinkSkill;
   character_link_skill_preset_1?: LinkSkill[];

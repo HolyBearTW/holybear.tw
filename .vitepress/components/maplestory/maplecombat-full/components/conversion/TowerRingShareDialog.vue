@@ -3,12 +3,14 @@ import { computed, onBeforeUnmount, onMounted } from 'vue'
 import { useCheckboxField, useStringField } from '@maplecombat/composables/useField'
 import {
   getTowerRingAtkPercent,
+  SOUL_FIGHTING_SPIRIT_ID,
   TOWER_RING_SETTINGS_ROWS,
   type TowerRingLevelGain,
 } from '@maplecombat/core/buffs/towerRing'
 import { formatPercentDecimals } from '@maplecombat/core/format'
 import { useCharacterStore } from '@maplecombat/stores/character'
 import { useBuffsStore } from '@maplecombat/stores/buffs'
+import CustomSelect from '@maplecombat/components/character/shared/CustomSelect.vue'
 
 const emit = defineEmits<{ close: [] }>()
 const props = defineProps<{ gains: TowerRingLevelGain[] }>()
@@ -19,6 +21,30 @@ const totalShare = useStringField('towerRingTotalSharePercent')
 const cycle1 = useCheckboxField('towerRingMugongCycle1')
 const cycle2 = useCheckboxField('towerRingMugongCycle2')
 const cycle3 = useCheckboxField('towerRingMugongCycle3')
+const soulCycle1 = useCheckboxField('towerRingSoulCycle1')
+const soulCycle2 = useCheckboxField('towerRingSoulCycle2')
+const soulCycle3 = useCheckboxField('towerRingSoulCycle3')
+const soulLevel = useStringField('towerRingSoulLevel')
+const mugongCycles = [cycle1, cycle2, cycle3]
+const soulCycles = [soulCycle1, soulCycle2, soulCycle3]
+const cycleNames = ['第一週期', '第二週期', '第三週期']
+const soulLevelOptions = computed(() =>
+  (buffs.table.buffIndex[SOUL_FIGHTING_SPIRIT_ID]?.levelKeys ?? []).map((level) => ({
+    value: String(level),
+    label: `階級 ${level}`,
+  })),
+)
+
+function setCycleBuff(kind: 'mugong' | 'soul', index: number, event: Event) {
+  const enabled = (event.target as HTMLInputElement).checked
+  if (kind === 'mugong') {
+    mugongCycles[index].value = enabled
+    if (enabled) soulCycles[index].value = false
+  } else {
+    soulCycles[index].value = enabled
+    if (enabled) mugongCycles[index].value = false
+  }
+}
 
 function onKeydown(event: KeyboardEvent) {
   if (event.key === 'Escape') emit('close')
@@ -43,11 +69,10 @@ function averageGainText(level: number): string {
 
 const settingsSummary = computed(() => {
   const share = String(store.fields.towerRingTotalSharePercent ?? '').trim() || '未設定'
-  const cycles = [cycle1.value, cycle2.value, cycle3.value]
-    .map((enabled, index) => (enabled ? String(index + 1) : ''))
-    .filter(Boolean)
-    .join('、')
-  return `塔戒占比： ${share}%｜武公套用週期： ${cycles || '無'}`
+  const cycles = mugongCycles.map((cycle, index) =>
+    cycle.value ? `${index + 1}:武公` : soulCycles[index].value ? `${index + 1}:鬥志` : `${index + 1}:無`,
+  )
+  return `塔戒占比： ${share}%｜靈魂技能： ${cycles.join(' / ')}`
 })
 
 onMounted(() => document.addEventListener('keydown', onKeydown))
@@ -94,11 +119,37 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
           </span>
         </label>
 
-        <fieldset class="tower-ring-cycle-settings">
-          <legend>武公套用週期</legend>
-          <label><input v-model="cycle1" type="checkbox" /> 第一週期</label>
-          <label><input v-model="cycle2" type="checkbox" /> 第二週期</label>
-          <label><input v-model="cycle3" type="checkbox" /> 第三週期</label>
+        <fieldset class="tower-ring-cycle-settings tower-ring-soul-cycle-settings">
+          <legend>每個爆發週期套用的靈魂技能</legend>
+          <div v-for="(cycleName, index) in cycleNames" :key="cycleName" class="tower-ring-cycle-row">
+            <strong>{{ cycleName }}</strong>
+            <label>
+              <input
+                type="checkbox"
+                :checked="mugongCycles[index].value"
+                @change="setCycleBuff('mugong', index, $event)"
+              />
+              武公
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                :checked="soulCycles[index].value"
+                @change="setCycleBuff('soul', index, $event)"
+              />
+              靈魂鬥志
+            </label>
+          </div>
+          <label class="tower-ring-soul-level-field">
+            <span>靈魂鬥志階級</span>
+            <CustomSelect
+              v-model="soulLevel"
+              :options="soulLevelOptions"
+              select-class="tower-ring-trial-level-select tower-ring-soul-level-select"
+              aria-label="平均效益靈魂鬥志階級"
+              :blur-on-choose="true"
+            />
+          </label>
         </fieldset>
 
         <p class="tower-ring-average-note">

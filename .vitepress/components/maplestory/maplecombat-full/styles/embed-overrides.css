@@ -1234,6 +1234,28 @@ textarea {
   text-align: center;
 }
 
+:host .buff-control {
+  position: relative;
+}
+
+:host .buff-api-detected {
+  position: absolute;
+  right: -5px;
+  bottom: -5px;
+  min-width: 20px;
+  padding: 1px 3px;
+  border: 1px solid color-mix(in srgb, var(--mc-accent) 55%, var(--mc-border));
+  border-radius: 999px;
+  background: var(--mc-panel);
+  color: var(--mc-accent);
+  font-size: 8px;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+  text-align: center;
+  pointer-events: none;
+}
+
 :host .buff-name-tooltip,
 :host .buff-info-tooltip,
 :host .tower-ring-info-tooltip {
@@ -1254,7 +1276,17 @@ textarea {
   left: 50%;
   bottom: calc(100% + 6px);
   width: max-content;
+  margin: 0;
+  pointer-events: none;
   transform: translateX(-50%);
+}
+
+:host .buff-name-tooltip:popover-open {
+  display: block;
+}
+
+:host .custom-select.is-disabled {
+  opacity: 0.5;
 }
 
 :host .custom-select,
@@ -2654,6 +2686,95 @@ textarea {
   max-height: 250px;
 }
 
+:host .buff-soul-weapon-control {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+  container-type: inline-size;
+}
+
+:host .buff-soul-weapon-toggle {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1px solid var(--mc-border-soft);
+  border-radius: 9px;
+  background: var(--mc-panel-soft);
+  color: var(--mc-text);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+:host .buff-soul-weapon-control.is-enabled .buff-soul-weapon-toggle {
+  border-color: color-mix(in srgb, var(--mc-accent) 55%, transparent);
+  background: var(--mc-accent-soft);
+  color: var(--mc-accent);
+}
+
+:host .buff-soul-weapon-fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(110px, 1fr));
+  gap: 8px;
+}
+
+:host .buff-soul-weapon-field {
+  display: grid;
+  min-width: 0;
+  gap: 5px;
+}
+
+:host .buff-soul-weapon-field > span {
+  color: var(--mc-muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+:host .buff-soul-weapon-option-stat {
+  grid-column: span 2;
+}
+
+:host .soul-weapon-select + .custom-select,
+:host .soul-weapon-option-select + .custom-select {
+  width: 100%;
+}
+
+:host .soul-weapon-option-select + .custom-select .custom-select-list {
+  right: 0;
+  left: 0;
+  min-width: min(280px, calc(100vw - 32px));
+  max-height: 260px;
+}
+
+:host .buff-soul-weapon-note {
+  margin: 0;
+  color: var(--mc-muted);
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+@container (max-width: 480px) {
+  :host .buff-soul-weapon-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  :host .buff-soul-weapon-option-stat {
+    grid-column: 1 / -1;
+  }
+}
+
+@container (max-width: 300px) {
+  :host .buff-soul-weapon-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  :host .buff-soul-weapon-option-stat {
+    grid-column: auto;
+  }
+}
+
 @media (max-width: 760px) {
   :host .buff-soul-orb-control {
     grid-template-columns: minmax(0, 1fr);
@@ -3870,6 +3991,53 @@ textarea {
   color: var(--mc-text);
   font-size: 12px;
   font-weight: 750;
+}
+
+:host .tower-ring-soul-cycle-settings {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 8px;
+}
+
+:host .tower-ring-cycle-row {
+  display: grid;
+  grid-template-columns: minmax(70px, 1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 8px 9px;
+  border: 1px solid var(--mc-border-soft);
+  border-radius: 8px;
+  background: var(--mc-panel);
+}
+
+:host .tower-ring-cycle-row > strong {
+  color: var(--mc-title);
+  font-size: 12px;
+}
+
+:host .tower-ring-soul-level-field {
+  grid-column: 1 / -1;
+  justify-self: start;
+}
+
+:host .tower-ring-soul-level-field .custom-select {
+  width: 116px;
+}
+
+:host .tower-ring-soul-level-select .custom-select-list {
+  width: 132px;
+}
+
+@media (max-width: 760px) {
+  :host .tower-ring-soul-cycle-settings {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  :host .tower-ring-cycle-row {
+    grid-template-columns: minmax(76px, 1fr) auto auto;
+  }
 }
 
 :host .tower-ring-average-note {

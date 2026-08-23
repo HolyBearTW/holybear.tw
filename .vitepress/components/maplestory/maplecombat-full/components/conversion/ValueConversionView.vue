@@ -9,6 +9,7 @@ import {
   buildTowerRingScenarioState,
   getTowerRingGains,
   MUGONG_BUFF_ID,
+  SOUL_FIGHTING_SPIRIT_ID,
   TOWER_RING_COVERAGE,
   TOWER_RING_EQUIVALENT_ID,
   TOWER_RING_IDS,
@@ -186,7 +187,9 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocumentClick))
 
 // ── 各塔戒卡片獨立試算，不寫回或鏡像全域 Buff 狀態 ──
 const regulationTrialMugong = ref(false)
+const regulationTrialSoul = ref(false)
 const continuousTrialMugong = ref(false)
+const continuousTrialSoul = ref(false)
 const continuousTrialGauge = ref(false)
 const averageTrialOpen = ref(false)
 const continuousTrialGaugeLevel = computed(() => buffs.preferredLevel(TOWER_RING_EQUIVALENT_ID))
@@ -202,6 +205,38 @@ const continuousGaugeLevelModel = computed<string>({
   get: () => String(continuousTrialGaugeLevel.value),
   set: (v) => buffs.rememberPreferredLevel(TOWER_RING_EQUIVALENT_ID, Number(v)),
 })
+const soulLevelOptions = computed(() =>
+  (buffs.table.buffIndex[SOUL_FIGHTING_SPIRIT_ID]?.levelKeys ?? []).map((level) => ({
+    value: String(level),
+    label: `階級 ${level}`,
+  })),
+)
+const soulLevelModel = computed<string>({
+  get: () => String(store.fields.towerRingSoulLevel || '1'),
+  set: (value) => store.setField('towerRingSoulLevel', value),
+})
+
+function onTrialMugongToggle(scope: 'regulation' | 'continuous', event: Event) {
+  const enabled = (event.target as HTMLInputElement).checked
+  if (scope === 'regulation') {
+    regulationTrialMugong.value = enabled
+    if (enabled) regulationTrialSoul.value = false
+  } else {
+    continuousTrialMugong.value = enabled
+    if (enabled) continuousTrialSoul.value = false
+  }
+}
+
+function onTrialSoulToggle(scope: 'regulation' | 'continuous', event: Event) {
+  const enabled = (event.target as HTMLInputElement).checked
+  if (scope === 'regulation') {
+    regulationTrialSoul.value = enabled
+    if (enabled) regulationTrialMugong.value = false
+  } else {
+    continuousTrialSoul.value = enabled
+    if (enabled) continuousTrialMugong.value = false
+  }
+}
 
 function onContinuousGaugeToggle(event: Event) {
   continuousTrialGauge.value = (event.target as HTMLInputElement).checked
@@ -209,11 +244,15 @@ function onContinuousGaugeToggle(event: Event) {
 
 function scenarioPicks(ringId: string): Record<string, number> {
   if (ringId === TOWER_RING_EQUIVALENT_ID) {
-    return { [MUGONG_BUFF_ID]: regulationTrialMugong.value ? 1 : 0 }
+    return {
+      [MUGONG_BUFF_ID]: regulationTrialMugong.value ? 1 : 0,
+      [SOUL_FIGHTING_SPIRIT_ID]: regulationTrialSoul.value ? Number(soulLevelModel.value) : 0,
+    }
   }
   const regulationLevel = buffs.preferredLevel(TOWER_RING_EQUIVALENT_ID)
   return {
     [MUGONG_BUFF_ID]: continuousTrialMugong.value ? 1 : 0,
+    [SOUL_FIGHTING_SPIRIT_ID]: continuousTrialSoul.value ? Number(soulLevelModel.value) : 0,
     [TOWER_RING_EQUIVALENT_ID]: continuousTrialGauge.value ? regulationLevel : 0,
   }
 }
@@ -246,6 +285,12 @@ const towerRings = computed(() => {
       store.fields.towerRingMugongCycle2 === true,
       store.fields.towerRingMugongCycle3 === true,
     ] as const,
+    soulCycles: [
+      store.fields.towerRingSoulCycle1 === true,
+      store.fields.towerRingSoulCycle2 === true,
+      store.fields.towerRingSoulCycle3 === true,
+    ] as const,
+    soulLevel: Number(store.fields.towerRingSoulLevel) || 1,
     coveragePercentages: TOWER_RING_COVERAGE.map((entry) => {
       const raw = String(store.fields[entry.field] ?? '').trim()
       return raw === '' ? NaN : Number(raw)
@@ -284,7 +329,7 @@ function ringGainText(value: number | null, current = false): string {
       <ul>
         <li>先選基準，例如「1% 主屬」；表格會列出其他能力要多少，才有相近的實際或戰鬥力提升。</li>
         <li>綠色是實際輸出換算，黃色是官方戰鬥力換算；兩者用途不同，換裝時建議同時比較。</li>
-        <li>規範平均試算的未開戒指占比，是 5 分 40 秒內三次未開規範的 20 秒爆發占比總和；武公週期請依你的實戰勾選。</li>
+        <li>規範平均試算的未開戒指占比，是 5 分 40 秒內三次未開規範的 20 秒爆發占比總和；每週期可依實戰選擇武公或靈魂鬥志。</li>
       </ul>
     </ContextGuide>
     <div id="equipmentEfficiencyResult" class="equipment-efficiency-result">
@@ -428,7 +473,7 @@ function ringGainText(value: number | null, current = false): string {
               aria-label="塔戒效益計算說明"
             ></button>
             <span class="tower-ring-info-tooltip" role="tooltip">
-              此區計算排除套用中的武公/規範，依是否勾選為主。
+              此區計算排除套用中的武公、靈魂鬥志與規範，依此卡片的勾選為主。
             </span>
           </span>
         </div>
@@ -453,14 +498,40 @@ function ringGainText(value: number | null, current = false): string {
                 平均效益試算
               </button>
               <div class="tower-ring-card-options" aria-label="此戒指的局部搭配試算">
-                <label v-if="ring.id === TOWER_RING_EQUIVALENT_ID" class="tower-ring-trial-option">
-                  <input v-model="regulationTrialMugong" type="checkbox" />
-                  <span>武公</span>
-                </label>
+                <template v-if="ring.id === TOWER_RING_EQUIVALENT_ID">
+                  <label class="tower-ring-trial-option">
+                    <input
+                      :checked="regulationTrialMugong"
+                      type="checkbox"
+                      @change="onTrialMugongToggle('regulation', $event)"
+                    />
+                    <span>武公</span>
+                  </label>
+                  <label class="tower-ring-trial-option">
+                    <input
+                      :checked="regulationTrialSoul"
+                      type="checkbox"
+                      @change="onTrialSoulToggle('regulation', $event)"
+                    />
+                    <span>靈魂鬥志</span>
+                  </label>
+                </template>
                 <template v-else>
                   <label class="tower-ring-trial-option">
-                    <input v-model="continuousTrialMugong" type="checkbox" />
+                    <input
+                      :checked="continuousTrialMugong"
+                      type="checkbox"
+                      @change="onTrialMugongToggle('continuous', $event)"
+                    />
                     <span>武公</span>
+                  </label>
+                  <label class="tower-ring-trial-option">
+                    <input
+                      :checked="continuousTrialSoul"
+                      type="checkbox"
+                      @change="onTrialSoulToggle('continuous', $event)"
+                    />
+                    <span>靈魂鬥志</span>
                   </label>
                   <label class="tower-ring-trial-option">
                     <input
@@ -480,6 +551,19 @@ function ringGainText(value: number | null, current = false): string {
                     />
                   </span>
                 </template>
+                <span
+                  v-if="ring.id === TOWER_RING_EQUIVALENT_ID ? regulationTrialSoul : continuousTrialSoul"
+                  class="tower-ring-trial-level-slot tower-ring-soul-level-slot"
+                  @click.stop
+                >
+                  <CustomSelect
+                    v-model="soulLevelModel"
+                    :options="soulLevelOptions"
+                    select-class="tower-ring-trial-level-select tower-ring-soul-level-select"
+                    aria-label="靈魂鬥志階級"
+                    :blur-on-choose="true"
+                  />
+                </span>
               </div>
             </div>
             <div class="tower-ring-rows">

@@ -51,6 +51,11 @@ interface SavedScenario {
   projectedPower: number;
 }
 
+interface CalculatorActionNotice {
+  type: 'clear' | 'reset';
+  message: string;
+}
+
 const formatPower = (value: number) => Math.round(value || 0).toLocaleString();
 const formatSigned = (value: number) => `${value >= 0 ? '+' : ''}${Math.round(value).toLocaleString()}`;
 
@@ -82,36 +87,82 @@ const NumberInput = ({
 );
 
 const ResultSummary = ({
+  officialPower,
   currentPower,
   projectedPower,
   difference,
   percentChange,
   actualPercentChange,
   projectedLabel = '模擬後戰力',
-}: ReturnType<typeof calculateProjection> & { actualPercentChange?: number | null; projectedLabel?: string }) => {
+  showProjection = true,
+}: ReturnType<typeof calculateProjection> & {
+  officialPower: number;
+  actualPercentChange?: number | null;
+  projectedLabel?: string;
+  showProjection?: boolean;
+}) => {
+  const positive = difference >= 0;
+  const formulaError = currentPower - officialPower;
+  const formulaErrorPercent = officialPower > 0 ? (formulaError / officialPower) * 100 : 0;
+  const formulaMatched = officialPower > 0 && Math.abs(formulaErrorPercent) < 0.001;
+  return (
+    <div className={`maple-calculator-result grid grid-cols-2 gap-2 rounded-xl border border-emerald-400/25 bg-emerald-950/20 p-2.5 sm:gap-3 sm:p-3 ${showProjection ? 'sm:grid-cols-5' : 'sm:grid-cols-3'}`}>
+      <div className="min-w-0">
+        <div className="text-[11px] font-semibold text-slate-500">官方面板戰力</div>
+        <div className="mt-1 truncate font-mono text-xs font-bold text-slate-200 min-[420px]:text-sm sm:text-lg">{formatPower(officialPower)}</div>
+      </div>
+      <div className="min-w-0">
+        <div className="text-[11px] font-semibold text-slate-500">公式估算戰力</div>
+        <div className="mt-1 truncate font-mono text-xs font-bold text-emerald-300 min-[420px]:text-sm sm:text-lg">{formatPower(currentPower)}</div>
+      </div>
+      <div className="min-w-0">
+        <div className="text-[11px] font-semibold text-slate-500">與官方誤差</div>
+        <div className={`mt-1 truncate font-mono text-xs font-bold min-[420px]:text-sm sm:text-lg ${formulaMatched ? 'text-emerald-300' : 'text-amber-300'}`}>
+          {formatSigned(formulaError)} <span className="text-[10px] sm:text-sm">({formulaErrorPercent >= 0 ? '+' : ''}{formulaErrorPercent.toFixed(3)}%)</span>
+        </div>
+      </div>
+      {showProjection && <>
+        <div className="min-w-0">
+          <div className="text-[11px] font-semibold text-slate-500">{projectedLabel}</div>
+          <div className="mt-1 truncate font-mono text-xs font-bold text-cyan-300 min-[420px]:text-sm sm:text-lg">{formatPower(projectedPower)}</div>
+          <div className={`mt-0.5 truncate font-mono text-[10px] font-bold ${positive ? 'text-cyan-300' : 'text-rose-300'}`}>
+            {formatSigned(difference)} ({percentChange >= 0 ? '+' : ''}{percentChange.toFixed(3)}%)
+          </div>
+        </div>
+        <div className="min-w-0">
+          <div className="text-[11px] font-semibold text-slate-500">實際增幅</div>
+          <div className="mt-1 truncate font-mono text-xs font-bold text-emerald-300 min-[420px]:text-sm sm:text-lg">
+            {actualPercentChange === null || actualPercentChange === undefined
+              ? '—'
+              : `${actualPercentChange >= 0 ? '+' : ''}${actualPercentChange.toFixed(3)}%`}
+          </div>
+        </div>
+      </>}
+    </div>
+  );
+};
+
+const QuickSimulationSummary = ({
+  currentPower,
+  projectedPower,
+  difference,
+  percentChange,
+}: ReturnType<typeof calculateProjection>) => {
   const positive = difference >= 0;
   return (
-    <div className="maple-calculator-result grid grid-cols-2 gap-2 rounded-xl border border-emerald-400/25 bg-emerald-950/20 p-2.5 sm:grid-cols-4 sm:gap-3 sm:p-3">
+    <div className="maple-calculator-result grid grid-cols-2 gap-2 rounded-xl border border-cyan-400/25 bg-cyan-950/15 p-2.5 sm:grid-cols-3 sm:gap-3 sm:p-3">
       <div className="min-w-0">
-        <div className="text-[11px] font-semibold text-slate-500">目前官方戰力</div>
+        <div className="text-[11px] font-semibold text-slate-500">目前面板戰力</div>
         <div className="mt-1 truncate font-mono text-xs font-bold text-slate-200 min-[420px]:text-sm sm:text-lg">{formatPower(currentPower)}</div>
       </div>
       <div className="min-w-0">
-        <div className="text-[11px] font-semibold text-slate-500">{projectedLabel}</div>
-        <div className="mt-1 truncate font-mono text-xs font-bold text-emerald-300 min-[420px]:text-sm sm:text-lg">{formatPower(projectedPower)}</div>
+        <div className="text-[11px] font-semibold text-slate-500">模擬後戰力</div>
+        <div className="mt-1 truncate font-mono text-xs font-bold text-cyan-300 min-[420px]:text-sm sm:text-lg">{formatPower(projectedPower)}</div>
       </div>
       <div className="min-w-0">
-        <div className="text-[11px] font-semibold text-slate-500">預估變化</div>
+        <div className="text-[11px] font-semibold text-slate-500">本次模擬變化</div>
         <div className={`mt-1 truncate font-mono text-xs font-bold min-[420px]:text-sm sm:text-lg ${positive ? 'text-cyan-300' : 'text-rose-300'}`}>
           {formatSigned(difference)} <span className="text-[10px] sm:text-sm">({percentChange >= 0 ? '+' : ''}{percentChange.toFixed(3)}%)</span>
-        </div>
-      </div>
-      <div className="min-w-0">
-        <div className="text-[11px] font-semibold text-slate-500">實際增幅</div>
-        <div className="mt-1 truncate font-mono text-xs font-bold text-emerald-300 min-[420px]:text-sm sm:text-lg">
-          {actualPercentChange === null || actualPercentChange === undefined
-            ? '—'
-            : `${actualPercentChange >= 0 ? '+' : ''}${actualPercentChange.toFixed(3)}%`}
         </div>
       </div>
     </div>
@@ -157,6 +208,8 @@ const CharacterCalculatorModal: React.FC<CharacterCalculatorModalProps> = ({ dat
   });
   const [fullCalculatorDirty, setFullCalculatorDirty] = React.useState(false);
   const [fullResult, setFullResult] = React.useState<MapleCombatSectionResult | null>(null);
+  const [actionNotice, setActionNotice] = React.useState<CalculatorActionNotice | null>(null);
+  const actionNoticeTimerRef = React.useRef<number | null>(null);
   const handleFullDirtyChange = React.useCallback((dirty: boolean) => setFullCalculatorDirty(dirty), []);
   const handleFullResultChange = React.useCallback((next: MapleCombatSectionResult) => setFullResult(next), []);
   const storageKey = `maple_calculator_scenarios_${profile.characterName}`;
@@ -172,6 +225,19 @@ const CharacterCalculatorModal: React.FC<CharacterCalculatorModalProps> = ({ dat
   React.useEffect(() => {
     localStorage.setItem(draftKey, JSON.stringify(adjustment));
   }, [adjustment, draftKey]);
+
+  React.useEffect(() => () => {
+    if (actionNoticeTimerRef.current !== null) window.clearTimeout(actionNoticeTimerRef.current);
+  }, []);
+
+  const announceAction = React.useCallback((notice: CalculatorActionNotice) => {
+    if (actionNoticeTimerRef.current !== null) window.clearTimeout(actionNoticeTimerRef.current);
+    setActionNotice(notice);
+    actionNoticeTimerRef.current = window.setTimeout(() => {
+      setActionNotice(null);
+      actionNoticeTimerRef.current = null;
+    }, 6000);
+  }, []);
 
   const requestClose = React.useCallback(() => {
     const hasQuickDraft = Object.values(adjustment).some((value) => Math.abs(Number(value) || 0) > 0);
@@ -231,6 +297,10 @@ const CharacterCalculatorModal: React.FC<CharacterCalculatorModalProps> = ({ dat
     () => calculateProjection(profile, adjustment),
     [profile, adjustment],
   );
+  const hasQuickAdjustment = React.useMemo(
+    () => Object.values(adjustment).some((value) => Math.abs(Number(value) || 0) > 0),
+    [adjustment],
+  );
 
   const embeddedSection = tab === 'character'
     ? 'character'
@@ -253,27 +323,46 @@ const CharacterCalculatorModal: React.FC<CharacterCalculatorModalProps> = ({ dat
   };
 
   const displayedResult = React.useMemo(() => {
-    if (!embeddedSection || fullResult?.section !== embeddedSection || fullResult.baselinePower <= 0) {
+    if (!embeddedSection || fullResult?.section !== embeddedSection) {
       return { ...result, actualPercentChange: null };
     }
-    const projectedPower = Math.max(
-      0,
-      Math.round(profile.currentCombatPower * (fullResult.projectedPower / fullResult.baselinePower)),
-    );
-    const difference = projectedPower - profile.currentCombatPower;
+    const currentPower = Math.max(0, Math.round(fullResult.baselinePower));
+    const projectedPower = Math.max(0, Math.round(fullResult.projectedPower));
+    const difference = projectedPower - currentPower;
     return {
-      currentPower: profile.currentCombatPower,
+      currentPower,
       projectedPower,
       difference,
-      percentChange: profile.currentCombatPower > 0
-        ? (difference / profile.currentCombatPower) * 100
+      percentChange: currentPower > 0
+        ? (difference / currentPower) * 100
         : 0,
+      rawRatio: currentPower > 0 ? projectedPower / currentPower : 1,
       actualPercentChange: fullResult.actualPercentChange,
     };
-  }, [embeddedSection, fullResult, profile.currentCombatPower, result]);
+  }, [embeddedSection, fullResult, result]);
 
   const updateAdjustment = (key: keyof CalculatorAdjustment, value: number) => {
     setAdjustment((current) => ({ ...current, [key]: value }));
+  };
+
+  const handleClearAll = () => {
+    const cleared = fullCalculatorRef.current?.clearAll() ?? false;
+    if (!cleared) return;
+    setAdjustment({ ...EMPTY_ADJUSTMENT });
+    announceAction({
+      type: 'clear',
+      message: '已清空計算機、Buff 情境與數值模擬。',
+    });
+  };
+
+  const handleResetFromCharacter = () => {
+    const summary = fullCalculatorRef.current?.resetFromCharacter();
+    if (!summary) return;
+    setAdjustment({ ...EMPTY_ADJUSTMENT });
+    announceAction({
+      type: 'reset',
+      message: `${summary}。這是刷新角色基準，不是套用增益，因此增幅維持 0% 是正常的。`,
+    });
   };
 
   const saveScenario = () => {
@@ -312,7 +401,7 @@ const CharacterCalculatorModal: React.FC<CharacterCalculatorModalProps> = ({ dat
               <div className="min-w-0">
                 <h2 id="maple-calculator-title" className="truncate text-lg font-black text-white">角色戰力計算機</h2>
                 <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-slate-400">
-                  <span>{profile.characterName}・{profile.jobName}・已自動讀取目前裝備與面板資料</span>
+                  <span>{profile.characterName}・{profile.jobName}・已讀取 API 可確認資料；來源顯示欄位請依遊戲核對</span>
                   <span
                     className="maple-calculator-version rounded-full border border-emerald-400/25 bg-emerald-500/10 px-2 py-0.5 font-semibold text-emerald-300"
                     title={`已對照 ${CALCULATOR_FORMULA_META.source} ${CALCULATOR_FORMULA_META.sourceVersion}（上游更新 ${CALCULATOR_FORMULA_META.sourceUpdatedAt}，commit ${CALCULATOR_FORMULA_META.sourceCommit.slice(0, 7)}）`}
@@ -326,13 +415,13 @@ const CharacterCalculatorModal: React.FC<CharacterCalculatorModalProps> = ({ dat
             <div className="flex shrink-0 items-center gap-2">
               <button
                 type="button"
-                onClick={() => fullCalculatorRef.current?.clearAll()}
+                onClick={handleClearAll}
                 disabled={!fullCalculatorReady}
                 aria-label="清空計算機輸入"
                 title="清空計算機輸入"
                 className="maple-calculator-clear-input inline-flex items-center gap-1.5 rounded-lg border border-rose-400/30 bg-rose-500/10 px-3 py-2 text-xs font-bold text-rose-200 transition hover:border-rose-300/60 hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <Trash2 className="h-3.5 w-3.5" /> <span className="hidden sm:inline">清空輸入</span>
+                <Trash2 className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{actionNotice?.type === 'clear' ? '已清空' : '清空輸入'}</span>
               </button>
               <div ref={dataMenuRef} className="relative">
                 <button
@@ -360,13 +449,13 @@ const CharacterCalculatorModal: React.FC<CharacterCalculatorModalProps> = ({ dat
               </div>
               <button
                 type="button"
-                onClick={() => fullCalculatorRef.current?.resetFromCharacter()}
+                onClick={handleResetFromCharacter}
                 disabled={!fullCalculatorReady}
-                aria-label="重新帶入角色資料"
-                title="重新帶入角色資料"
+                aria-label="重新帶入 API 可確認的角色資料"
+                title="重新帶入 API 可確認資料；不覆蓋需依遊戲來源顯示填寫的欄位"
                 className="maple-calculator-reset-autofill inline-flex items-center gap-1.5 rounded-lg border border-cyan-400/30 bg-cyan-500/10 px-3 py-2 text-xs font-bold text-cyan-200 transition hover:border-cyan-300/60 hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <RefreshCcw className="h-3.5 w-3.5" /> <span className="hidden sm:inline">重新帶入角色資料</span>
+                <RefreshCcw className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{actionNotice?.type === 'reset' ? '已重新帶入' : '重新帶入角色資料'}</span>
               </button>
               <button type="button" onClick={requestClose} className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-800 hover:text-white" aria-label="關閉計算機">
                 <X className="h-5 w-5" />
@@ -375,10 +464,27 @@ const CharacterCalculatorModal: React.FC<CharacterCalculatorModalProps> = ({ dat
           </header>
 
           <div className="px-3 pb-3 sm:px-6 sm:pb-4">
-          <ResultSummary
-            {...displayedResult}
-            projectedLabel={sectionLabels[tab] || '模擬後戰力'}
-          />
+            {actionNotice && (
+              <div
+                role="status"
+                aria-live="polite"
+                className={`maple-calculator-action-notice mb-2 flex items-start gap-2 rounded-lg border px-3 py-2 text-xs font-semibold leading-relaxed ${actionNotice.type === 'clear' ? 'border-rose-400/25 bg-rose-950/20 text-rose-200' : 'border-cyan-400/25 bg-cyan-950/20 text-cyan-200'}`}
+              >
+                {actionNotice.type === 'clear' ? <Trash2 className="mt-0.5 h-3.5 w-3.5 shrink-0" /> : <RefreshCcw className="mt-0.5 h-3.5 w-3.5 shrink-0" />}
+                <span>{actionNotice.message}</span>
+              </div>
+            )}
+          {tab === 'adjust' && hasQuickAdjustment && (
+            <QuickSimulationSummary {...result} />
+          )}
+          {tab !== 'guide' && tab !== 'adjust' && (
+            <ResultSummary
+              {...displayedResult}
+              officialPower={profile.currentCombatPower}
+              projectedLabel={sectionLabels[tab] || '模擬後戰力'}
+              showProjection={tab !== 'character'}
+            />
+          )}
           <div className="mt-2 flex gap-1 overflow-x-auto rounded-xl bg-[#0d1117] p-1">
             {([
               ['character', PanelsTopLeft, '角色資料'],
@@ -406,7 +512,7 @@ const CharacterCalculatorModal: React.FC<CharacterCalculatorModalProps> = ({ dat
 
           {!embeddedSection && <div className="maple-calculator-autofill mb-3 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-slate-800 bg-[#0d1117]/65 px-4 py-3 text-xs">
             <span className="flex items-center gap-1.5 font-bold text-emerald-300"><Sparkles className="h-3.5 w-3.5" /> 已自動帶入</span>
-            <span className="text-slate-400">官方面板戰力、{profile.mainStat}/{profile.subStat}、{profile.usesMagic ? '魔攻' : '攻擊'}、裝備與潛能</span>
+            <span className="text-slate-400">職業、裝備、武器、新版靈魂與使用中萌獸等 API 可確認資料；來源顯示三欄保留手動輸入</span>
             <span className="text-slate-400">
               召喚中／啟用插槽萌獸終傷：{profile.familiarFinalDamageSources.length > 0
                 ? `${profile.familiarFinalDamageSources.map((value) => `${value}%`).join(' + ')}（加總 ${profile.familiarFinalDamageEquivalent.toFixed(2)}%）`
@@ -430,7 +536,7 @@ const CharacterCalculatorModal: React.FC<CharacterCalculatorModalProps> = ({ dat
               <div className="maple-calculator-guide-hero rounded-xl border border-emerald-400/20 bg-emerald-950/20 p-4">
                 <h3 className="flex items-center gap-2 font-black text-white"><BookOpen className="h-4 w-4 text-emerald-300" /> 先確認資料，再挑你要比較的功能</h3>
                 <p className="mt-2 text-sm leading-relaxed text-slate-400">
-                  計算機開啟時會自動合併官方戰力、面板、裝備、潛能、新版靈魂武器屬性，以及召喚中或已啟用插槽的萌獸。API 無法判斷的當下 Buff 與實戰情境仍保留給你確認；所有輸入都會自動保存在這隻角色名下。
+                  計算機會從公式欄位獨立算出戰力，官方面板只拿來顯示誤差，不會反向縮放結果。裝備、新版靈魂武器與使用中萌獸等 API 能精確確認的內容會自動帶入；主要能力值必須依遊戲「詳細屬性 → 來源顯示」最上方三欄填寫，來源中的「技能」則另填到「技能・消耗」。所有手動輸入都會保存在這隻角色名下。
                 </p>
                 <p className="mt-2 text-xs leading-relaxed text-slate-500">
                   本教學依 MapleCombat 作者的使用說明整理，並調整為本站「查詢後自動帶入」的操作流程。
@@ -443,12 +549,12 @@ const CharacterCalculatorModal: React.FC<CharacterCalculatorModalProps> = ({ dat
                   {
                     step: '1',
                     title: '角色資料',
-                    body: '先核對自動帶入的面板、裝備與武器資料。初始公式會用官方戰力校準，因此兩者相等不代表 API 能看見所有狀態；仍要檢查技能／消耗、活動 Buff 與職業特殊項目。',
+                    body: '先在遊戲開啟「詳細屬性」，把滑鼠移到主副屬與攻擊力。將「套用中的數值」的基本、%、%未套用三欄填入同名欄位，再把來源中的「技能」填到技能・消耗；不要直接填面板總值。',
                   },
                   {
                     step: '2',
                     title: 'Buff 與情境',
-                    body: '只勾實戰確定會使用的技能、藥水與傳授；數值若已含某個 Buff 就不要重複勾選。武公與規範不在一般預設內，可另存成爆發情境。',
+                    body: '原始公式不會把主動技能、公會技能或藥水當成已開啟。只勾實戰確定會使用且等級正確的項目；公會技能 API 讀不到，不會替你假設四招滿等。武公與規範可另存成爆發情境。',
                   },
                   {
                     step: '3',
@@ -515,14 +621,14 @@ const CharacterCalculatorModal: React.FC<CharacterCalculatorModalProps> = ({ dat
               <div className="maple-calculator-guide-api rounded-xl border border-amber-400/20 bg-amber-950/10 p-4">
                 <h4 className="text-base font-black text-white">哪些資料仍需要你手動確認？</h4>
                 <p className="mt-1.5 text-sm leading-relaxed text-slate-400">
-                  Nexon API 能判斷的資料都會自動帶入；下面四類會隨遊戲內狀態改變，請以角色當下的面板與實際設定為準。
+                  Nexon API 只提供結算後面板總值，沒有提供上游公式要求的完整來源拆分。下面項目請以遊戲「來源顯示」與角色當下狀態為準。
                 </p>
                 <div className="mt-3 grid gap-2 sm:grid-cols-2">
                   {[
-                    ['技能・消耗', '把面板中兩項合計填入；飛鏢、箭矢與彈丸不列入消耗數值。'],
+                    ['主要能力值', '照遊戲來源顯示最上方的基本數值、% 數值、% 未套用數值逐欄填入；本站來源分析只供參考。'],
+                    ['技能・消耗', '把來源顯示中「技能」列出的數值與百分比填入；飛鏢、箭矢與彈丸不列入。'],
                     ['活動與挑戰 Buff', '活動 Buff、挑戰者 Buff、結界與師徒數值會隨狀態改變，需要自行確認。'],
                     ['實戰資料', '先在遊戲內切到要比較的常駐或爆發狀態，再依面板填入對應情境。'],
-                    ['萌獸與新版靈魂', '萌獸以召喚中／啟用插槽為準；新版靈魂武器屬性已合併到面板基準，不會再硬性要求舊制滿魂 Buff。'],
                   ].map(([title, body], index) => (
                     <div key={title} className="flex gap-3 rounded-lg border border-slate-800/80 bg-[#0d1117]/55 p-3">
                       <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-amber-400/10 text-xs font-black text-amber-300">{index + 1}</span>
@@ -565,7 +671,7 @@ const CharacterCalculatorModal: React.FC<CharacterCalculatorModalProps> = ({ dat
                   <div className="rounded-lg border border-slate-800/80 p-3">
                     <div className="text-xs font-bold text-cyan-300">只補 API 無法判斷的狀態</div>
                     <p className="mt-1.5 text-xs leading-relaxed text-slate-500">
-                      API 能讀的內容已經帶入；只需要補當下技能、消耗、活動 Buff 與實戰情境。若數值明顯超出合理範圍，計算機會顯示防呆提醒。
+                      API 可精確確認的裝備與系統資料會帶入；來源顯示三欄、技能・消耗、活動 Buff 與實戰情境仍需依遊戲核對。若數值明顯超出合理範圍，計算機會顯示防呆提醒。
                     </p>
                   </div>
                   <div className="rounded-lg border border-slate-800/80 p-3">
@@ -658,7 +764,7 @@ const CharacterCalculatorModal: React.FC<CharacterCalculatorModalProps> = ({ dat
           <div className="maple-calculator-note mt-5 flex gap-2 rounded-xl border border-indigo-400/20 bg-indigo-950/20 p-3 text-xs leading-relaxed text-slate-400">
             <Info className="mt-0.5 h-4 w-4 shrink-0 text-indigo-300" />
             <p>
-              初始戰力以 Nexon Open API 的官方面板值校準；裝備、潛能、角色屬性，以及召喚中或啟用插槽萌獸的終傷詞條都會自動讀取。活動 Buff、技能施放狀態等 API 無法可靠判斷的內容，請用「數值模擬」補上。結果適合比較方案，不代表實際打王秒數。
+              戰力由 MapleCombat 公式獨立計算，Nexon Open API 的官方面板值只用於顯示誤差，不參與校準或比例縮放。API 能精確確認的裝備、新版靈魂武器及使用中萌獸會自動讀取；上游要求的「來源顯示」三欄、技能・消耗、公會技能、活動 Buff 與部分職業特殊值需依遊戲補齊。重新帶入不會覆蓋這些手動欄位。結果適合比較方案，不代表實際打王秒數。
               <a className="ml-1 font-semibold text-indigo-300 hover:text-indigo-200 hover:underline" href="https://github.com/centre173/MapleCombat" target="_blank" rel="noreferrer">公式參考 MapleCombat</a>
             </p>
           </div>

@@ -1,5 +1,6 @@
 // 欄位註冊表：所有可儲存輸入欄位（150 個）。
 // id 同時是 localStorage key 與匯出 JSON values 的 key，不可更動。
+import { SOUL_WEAPON_OPTION_STAT_KEYS } from '@maplecombat/core/soulWeapon'
 
 export type FieldKind = 'number' | 'checkbox' | 'select' | 'hidden'
 
@@ -36,6 +37,9 @@ export const fieldDefs: FieldDef[] = [
   s('weaponSet', 'fortune', ['fortune', 'genesis', 'arcane', 'absolab', 'fafnir']),
   s('flameLevel', '3', ['0', '1', '2', '3', '4', '5', '6', '7']),
   n('currentWeaponAtk'), n('scrollAtk', '72'), n('starCount', '22'),
+  // ── 2026 新版靈魂武器：共鳴攻擊、階級與靈魂烙印 ──
+  c('soulWeaponEnabled'), n('soulWeaponGrade'), n('soulWeaponLevel'), n('soulWeaponPowerIncrease'),
+  s('soulWeaponOptionStat', 'none', [...SOUL_WEAPON_OPTION_STAT_KEYS]), n('soulWeaponOptionValue'),
   n('adjEmpressBless', '30'), n('adjPetAtk', '0'), n('famFinal'), h('famFinalSources', ''),
   n('adjEventBossDmg'), n('adjEventCritDmg'), n('adjEventAtk'), n('adjEventAllStat'), n('adjEventHP'),
   n('adjBarrierMainStat'), n('adjBarrierSubStat'), n('adjBarrierAtk'), n('adjBarrierMainStatPercent'),
@@ -75,6 +79,8 @@ export const fieldDefs: FieldDef[] = [
   // ── 塔戒整場增幅設定 ──
   n('towerRingTotalSharePercent', '36'),
   c('towerRingMugongCycle1', true), c('towerRingMugongCycle2'), c('towerRingMugongCycle3', true),
+  c('towerRingSoulCycle1'), c('towerRingSoulCycle2'), c('towerRingSoulCycle3'),
+  n('towerRingSoulLevel', '7'),
   n('towerRingCoverageLv1', '45'), n('towerRingCoverageLv2', '55'),
   n('towerRingCoverageLv3', '65'), n('towerRingCoverageLv4', '75'),
   // ── 數值換算：基準單位 ──

@@ -21,8 +21,8 @@ interface FullMapleCombatEmbedProps {
 }
 
 export interface FullMapleCombatEmbedHandle {
-  resetFromCharacter: () => void;
-  clearAll: () => void;
+  resetFromCharacter: () => string | null;
+  clearAll: () => boolean;
   exportBackup: () => Promise<void>;
   importBackup: (file: File) => Promise<void>;
 }
@@ -91,19 +91,22 @@ const FullMapleCombatEmbed = React.forwardRef<FullMapleCombatEmbedHandle, FullMa
   }, [section]);
 
   const resetFromCharacter = () => {
-    if (!controllerRef.current) return;
+    if (!controllerRef.current) return null;
     const confirmed = window.confirm(
-      '要重新讀取這次查詢到的角色資料嗎？目前手動修改的欄位會被角色資料覆蓋；如需保留，可先從右上角「資料管理」匯出備份。',
+      '要重新讀取這次查詢到的角色資料嗎？系統只會更新 API 可確認欄位，遊戲「來源顯示」與「技能・消耗」等手動欄位會保留；如需完整備份，可先從右上角「資料管理」匯出。',
     );
-    if (confirmed) controllerRef.current.resetFromCharacter();
+    if (!confirmed) return null;
+    return controllerRef.current.resetFromCharacter();
   };
 
   const clearAll = () => {
-    if (!controllerRef.current) return;
+    if (!controllerRef.current) return false;
     const confirmed = window.confirm(
       '要清空這隻角色的計算機輸入與所有 Buff 情境嗎？清空後可按「重新帶入角色資料」恢復 API 基準。',
     );
-    if (confirmed) controllerRef.current.clearAll();
+    if (!confirmed) return false;
+    controllerRef.current.clearAll();
+    return true;
   };
 
   const exportBackup = async () => {

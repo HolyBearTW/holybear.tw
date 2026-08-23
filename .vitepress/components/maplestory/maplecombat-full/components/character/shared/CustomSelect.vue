@@ -11,6 +11,7 @@ const props = defineProps<{
   selectClass?: string
   ariaLabel?: string
   blurOnChoose?: boolean
+  disabled?: boolean
 }>()
 const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
 
@@ -69,6 +70,7 @@ const selectedLabel = computed(
 )
 
 function choose(optionValue: string) {
+  if (props.disabled) return
   value.value = optionValue
   isOpen.value = false
   if (props.blurOnChoose) {
@@ -77,12 +79,14 @@ function choose(optionValue: string) {
 }
 
 function step(direction: number) {
+  if (props.disabled) return
   const index = props.options.findIndex((o) => o.value === value.value)
   const next = Math.min(Math.max(index + direction, 0), props.options.length - 1)
   if (props.options[next]) value.value = props.options[next].value
 }
 
 function onTriggerKeydown(event: KeyboardEvent) {
+  if (props.disabled) return
   if (event.key === 'Enter' || event.key === ' ') {
     event.preventDefault()
     isOpen.value = !isOpen.value
@@ -115,19 +119,21 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocumentClick))
       class="custom-select-native"
       :class="selectClass"
       :aria-label="ariaLabel"
+      :disabled="disabled"
     >
       <option v-for="option in options" :key="option.value" :value="option.value">
         {{ option.label }}
       </option>
     </select>
-    <div class="custom-select" :class="{ 'is-open': isOpen, 'is-up': openUp }">
+    <div class="custom-select" :class="{ 'is-open': isOpen, 'is-up': openUp, 'is-disabled': disabled }">
       <button
         type="button"
         class="custom-select-trigger"
         aria-haspopup="listbox"
         :aria-expanded="isOpen"
         :aria-label="ariaLabel"
-        @click="isOpen = !isOpen"
+        :disabled="disabled"
+        @click="isOpen = !disabled && !isOpen"
         @keydown="onTriggerKeydown"
       >
         {{ selectedLabel }}

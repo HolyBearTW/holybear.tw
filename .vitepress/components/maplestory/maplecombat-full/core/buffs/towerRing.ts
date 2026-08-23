@@ -1,4 +1,4 @@
-// 塔戒整場輸出增幅：以三次爆發週期占比、各週期武公狀態與塔戒覆蓋率計算。
+// 塔戒整場輸出增幅：以三次爆發週期占比、各週期靈魂技能與塔戒覆蓋率計算。
 import { calculateEquipmentOutput, type ActualDamageContext } from '../actualDamage'
 import type { FieldValues } from '../types'
 import {
@@ -13,6 +13,7 @@ import type { BuffAbility, BuffDefinition, ParsedBuffTable } from './parse'
 export const TOWER_RING_IDS: readonly string[] = ['skill:規範戒指', 'skill:永續戒指']
 export const TOWER_RING_EQUIVALENT_ID = 'skill:規範戒指'
 export const MUGONG_BUFF_ID = 'skill:無雙之力'
+export const SOUL_FIGHTING_SPIRIT_ID = 'skill:靈魂鬥志'
 
 export const TOWER_RING_COVERAGE = [
   { level: 1, seconds: 9, defaultPercent: 45, field: 'towerRingCoverageLv1' },
@@ -30,11 +31,14 @@ export const TOWER_RING_SETTINGS_ROWS = [
 export interface TowerRingCycleSettings {
   totalSharePercent: number | null
   mugongCycles: readonly [boolean, boolean, boolean]
+  soulCycles: readonly [boolean, boolean, boolean]
+  soulLevel: number
 }
 
 export interface TowerRingWholeBattleInput extends TowerRingCycleSettings {
   baseAtkPercent: number | null
   mugongAtkPercent: number
+  soulAtkPercent: number
   ringAtkPercent: number
   coverage: number
 }
@@ -120,14 +124,18 @@ function gainPercent(base: number, changed: number): number | null {
 }
 
 /**
- * 取得未套用塔戒、未套用武公的攻擊力%。
- * 其他已選 Buff 仍照目前狀態計入；前方 Buff 區的武公開關會被強制忽略。
+ * 取得未套用塔戒、武公或靈魂鬥志的攻擊力%。
+ * 其他已選 Buff 仍照目前狀態計入；前方 Buff 區的靈魂技能開關會被強制忽略。
  */
 export function resolveTowerRingBaseAtkPercent(input: TowerRingGainInput): number | null {
   const raw = String(input.baseAtkPercentRaw ?? '').trim()
   if (raw === '' || !Number.isFinite(Number(raw))) return null
 
-  const baseState: BuffState = { ...input.state, [MUGONG_BUFF_ID]: 0 }
+  const baseState: BuffState = {
+    ...input.state,
+    [MUGONG_BUFF_ID]: 0,
+    [SOUL_FIGHTING_SPIRIT_ID]: 0,
+  }
   for (const ringId of TOWER_RING_IDS) baseState[ringId] = 0
   const delta = getEffBuffDelta(input.table, baseState, input.ctx)
   const value = Number(raw) + Number(delta.effPercentAtk || 0)
@@ -137,10 +145,22 @@ export function resolveTowerRingBaseAtkPercent(input: TowerRingGainInput): numbe
 export function calculateTowerRingCycleShares(
   input: Pick<
     TowerRingWholeBattleInput,
-    'totalSharePercent' | 'baseAtkPercent' | 'mugongAtkPercent' | 'mugongCycles'
+    | 'totalSharePercent'
+    | 'baseAtkPercent'
+    | 'mugongAtkPercent'
+    | 'soulAtkPercent'
+    | 'mugongCycles'
+    | 'soulCycles'
   >,
 ): [number, number, number] | null {
-  const { totalSharePercent, baseAtkPercent, mugongAtkPercent, mugongCycles } = input
+  const {
+    totalSharePercent,
+    baseAtkPercent,
+    mugongAtkPercent,
+    soulAtkPercent,
+    mugongCycles,
+    soulCycles,
+  } = input
   if (
     totalSharePercent === null ||
     !Number.isFinite(totalSharePercent) ||
@@ -148,16 +168,25 @@ export function calculateTowerRingCycleShares(
     totalSharePercent > 100 ||
     baseAtkPercent === null ||
     !Number.isFinite(baseAtkPercent) ||
-    !Number.isFinite(mugongAtkPercent)
+    !Number.isFinite(mugongAtkPercent) ||
+    !Number.isFinite(soulAtkPercent)
   ) {
     return null
   }
 
   const baseDenominator = 100 + baseAtkPercent
-  if (baseDenominator <= 0 || 100 + baseAtkPercent + mugongAtkPercent <= 0) return null
+  if (
+    baseDenominator <= 0 ||
+    100 + baseAtkPercent + mugongAtkPercent <= 0 ||
+    100 + baseAtkPercent + soulAtkPercent <= 0
+  ) return null
 
-  const mugongMultiplier = (100 + baseAtkPercent + mugongAtkPercent) / (100 + baseAtkPercent)
-  const weights = mugongCycles.map((enabled) => (enabled ? mugongMultiplier : 1))
+  const cycleAtkPercent = mugongCycles.map((mugongEnabled, index) =>
+    mugongEnabled ? mugongAtkPercent : soulCycles[index] ? soulAtkPercent : 0,
+  )
+  const weights = cycleAtkPercent.map(
+    (attackPercent) => (100 + baseAtkPercent + attackPercent) / (100 + baseAtkPercent),
+  )
   const weightTotal = weights.reduce((sum, weight) => sum + weight, 0)
   if (!Number.isFinite(weightTotal) || weightTotal <= 0) return null
 
@@ -182,8 +211,10 @@ export function calculateTowerRingWholeBattleGain(input: TowerRingWholeBattleInp
   if (!shares || input.baseAtkPercent === null) return null
 
   return shares.reduce((total, share, index) => {
-    const denominator =
-      100 + input.baseAtkPercent! + (input.mugongCycles[index] ? input.mugongAtkPercent : 0)
+    const soulEnabled = !input.mugongCycles[index] && input.soulCycles[index]
+    const soulAttackPercent = soulEnabled ? input.soulAtkPercent : 0
+    const mugongAttackPercent = input.mugongCycles[index] ? input.mugongAtkPercent : 0
+    const denominator = 100 + input.baseAtkPercent! + mugongAttackPercent + soulAttackPercent
     return total + (share * input.coverage * input.ringAtkPercent) / denominator
   }, 0)
 }
@@ -208,6 +239,8 @@ export function getTowerRingGains(
   const baseAtkPercent = resolveTowerRingBaseAtkPercent(input)
   const mugong = input.table.buffIndex[MUGONG_BUFF_ID]
   const mugongAtkPercent = rawPercentAtk(mugong, 1)
+  const soulFightingSpirit = input.table.buffIndex[SOUL_FIGHTING_SPIRIT_ID]
+  const soulAtkPercent = rawPercentAtk(soulFightingSpirit, input.soulLevel)
 
   return [0, ...ring.levelKeys].map((level) => {
     const ringState: BuffState = { ...input.state, [ringId]: level }
@@ -223,7 +256,10 @@ export function getTowerRingGains(
               totalSharePercent: input.totalSharePercent,
               baseAtkPercent,
               mugongAtkPercent,
+              soulAtkPercent,
               mugongCycles: input.mugongCycles,
+              soulCycles: input.soulCycles,
+              soulLevel: input.soulLevel,
               ringAtkPercent: rawPercentAtk(ring, level),
               coverage: ringCoverage(input, level),
             })

@@ -10,7 +10,7 @@ export const CALCULATOR_FORMULA_META = {
   sourceVersion: '1.2.1',
   sourceCommit: 'e6037dc89d8810beadb091859d530cc34cdf50a2',
   sourceUpdatedAt: '2026-08-09',
-  verifiedAt: '2026-08-22',
+  verifiedAt: '2026-08-23',
 } as const;
 
 export type CalculatorJobCategory = 'normal' | 'xenon' | 'da' | 'dual';
@@ -56,7 +56,7 @@ export interface CalculatorProfile {
   familiarFinalDamageEquivalent: number;
   ignoreDefense: number;
   usesMagic: boolean;
-  confidence: 'high' | 'calibrated';
+  confidence: 'high' | 'formula';
 }
 
 export interface CalculatorResult {
@@ -271,7 +271,7 @@ export function createCalculatorProfile(data: DashboardData): CalculatorProfile 
     familiarFinalDamageEquivalent,
     ignoreDefense: statValue(data, '無視防禦率', 'Ignore Defense Rate'),
     usesMagic,
-    confidence: currentCombatPower > 0 ? 'calibrated' : 'high',
+    confidence: currentCombatPower > 0 ? 'formula' : 'high',
   };
 }
 
@@ -343,9 +343,13 @@ export function calculateProjection(
   const baselineRaw = combatFormula(profile, EMPTY_ADJUSTMENT);
   const projectedRaw = combatFormula(profile, adjustment);
   const rawRatio = baselineRaw > 0 ? projectedRaw / baselineRaw : 1;
-  const currentPower = profile.currentCombatPower > 0
-    ? profile.currentCombatPower
-    : Math.max(0, Math.round(baselineRaw));
+  // 快速模擬只負責比較「這次差值」造成的相對變化，因此以官方面板戰力
+  // 作為目前基準，再套用公式前後倍率。完整 MapleCombat 計算機仍維持
+  // 從欄位獨立計算，用來檢查公式與資料缺口，兩者不可混為同一種用途。
+  const currentPower = Math.max(
+    0,
+    Math.round(profile.currentCombatPower > 0 ? profile.currentCombatPower : baselineRaw),
+  );
   const projectedPower = Math.max(0, Math.round(currentPower * rawRatio));
   const difference = projectedPower - currentPower;
   const percentChange = currentPower > 0 ? difference / currentPower * 100 : 0;

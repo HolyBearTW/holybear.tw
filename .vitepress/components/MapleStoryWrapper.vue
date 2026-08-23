@@ -1572,6 +1572,7 @@ html:not(.dark) .maple-calculator-guide-card,
 html:not(.dark) .maple-calculator-guide-api,
 html:not(.dark) .maple-calculator-guide-details,
 html:not(.dark) .maple-calculator-guide-examples,
+html:not(.dark) .maple-calculator-action-notice,
 html:not(.dark) .maple-calculator-note {
   border-color: rgba(36, 94, 112, 0.22) !important;
   background: rgba(237, 247, 250, 0.9) !important;

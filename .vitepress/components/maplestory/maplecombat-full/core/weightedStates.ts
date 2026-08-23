@@ -1,6 +1,7 @@
 import { fieldDefs } from '@maplecombat/constants/fields'
 import { getJobStatLabelsByName } from '@maplecombat/data/jobs'
 import { parseFamSources } from './familiar'
+import { applySoulWeaponBonuses } from './soulWeapon'
 import { calculatePower, powerValue, type CombatPowerContext } from './combatPower'
 import { calculateEquipmentOutput } from './actualDamage'
 import {
@@ -146,7 +147,12 @@ function resolveFields(workspace: CompactStateWorkspaceV1, id: StateSlotId): Fie
   const correction = runWeaponCorrection(weaponInput(workspace, values))
   fields.adjWeaponAtk = correction.correction
   fields.baseAtk = correction.baseAtk
-  return fields
+  return applySoulWeaponBonuses(
+    fields,
+    values,
+    getJobStatLabelsByName(workspace.shared.selectedJobName),
+    workspace.shared.selectedJob as JobCategory,
+  )
 }
 
 function combatCtx(
@@ -180,6 +186,7 @@ function buffCtx(
   values: Record<string, string | boolean>,
   soulOrb: SoulOrbState,
   combatCorrections: CombatCorrectionState = defaultCombatCorrections(),
+  apiDetectedBuffIds: readonly string[] = [],
 ): BuffComputeContext {
   const wIn = weaponInput(workspace, values)
   return {
@@ -188,6 +195,7 @@ function buffCtx(
     currentWeaponAtk: wIn.currentWeaponAtk,
     combatWeaponAtk: calculateCombatWeaponAttackBasis(wIn, combatCorrections),
     soulOrb,
+    apiDetectedBuffIds: new Set(apiDetectedBuffIds),
   }
 }
 
@@ -203,7 +211,13 @@ function slotResult(
   const buffState = (state.buffState?.levels || {}) as BuffState
   const soulOrb = state.buffState?.soulOrb || { value: 0, stat: 'percentStr', fullSoul: true }
   const combatCorrections = normalizeCombatCorrections(state.buffState?.combatCorrections)
-  const context = buffCtx(workspace, values, soulOrb, combatCorrections)
+  const context = buffCtx(
+    workspace,
+    values,
+    soulOrb,
+    combatCorrections,
+    state.buffState?.apiDetectedBuffIds,
+  )
   const combatBuffDelta = getCombatBuffDelta(table, buffState, context)
   const effBuffDelta = getEffBuffDelta(table, buffState, context)
   const ignoreFactor = getEffBuffIgnoreFactor(table, buffState, soulOrb)
@@ -354,7 +368,14 @@ export function buildWeightedMetrics(
         stat: 'percentStr',
         fullSoul: true,
       }
-      const effBuffDelta = getEffBuffDelta(table, buffState, buffCtx(workspace, values, soulOrb))
+      const stateContext = buffCtx(
+        workspace,
+        values,
+        soulOrb,
+        defaultCombatCorrections(),
+        state.buffState?.apiDetectedBuffIds,
+      )
+      const effBuffDelta = getEffBuffDelta(table, buffState, stateContext)
       const ignoreFactor = getEffBuffIgnoreFactor(table, buffState, soulOrb)
       const changedOutput = calculateEquipmentOutput(
         slot.fields,

@@ -7,6 +7,7 @@ import { useBuffsStore } from './buffs'
 import { getDefaultJobByCategory, getJobByName, getJobStatLabelsByName } from '@maplecombat/data/jobs'
 import { weaponDatabase, zeroWeaponDatabase } from '@maplecombat/data/weapons'
 import { parseFamSources } from '@maplecombat/core/familiar'
+import { applySoulWeaponBonuses } from '@maplecombat/core/soulWeapon'
 import type { BuffDelta, FieldValues, JobCategory, PowerResult, WeaponSetKey } from '@maplecombat/core/types'
 import {
   calculatePower,
@@ -65,6 +66,12 @@ const fieldsAddedAfterLegacySaveFormats = new Set([
   'adjBarrierSubStat',
   'adjBarrierAtk',
   'adjBarrierMainStatPercent',
+  'soulWeaponEnabled',
+  'soulWeaponGrade',
+  'soulWeaponLevel',
+  'soulWeaponPowerIncrease',
+  'soulWeaponOptionStat',
+  'soulWeaponOptionValue',
 ])
 
 export const useCharacterStore = defineStore('character', () => {
@@ -127,7 +134,7 @@ export const useCharacterStore = defineStore('character', () => {
     }
     out.adjWeaponAtk = weaponCorrection.value.correction
     out.baseAtk = weaponCorrection.value.baseAtk
-    return out
+    return applySoulWeaponBonuses(out, fields, statLabels.value, selectedJob.value)
   })
 
   function combatCtx(useBuff: boolean): CombatPowerContext {
@@ -165,6 +172,7 @@ export const useCharacterStore = defineStore('character', () => {
       currentWeaponAtk: num('currentWeaponAtk'),
       combatWeaponAtk: combatSoulOrbWeaponAtk.value,
       soulOrb: buffs.soulOrb,
+      apiDetectedBuffIds: buffs.apiDetectedBuffIdSet,
     }
   }
 

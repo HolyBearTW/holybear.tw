@@ -3,9 +3,16 @@ import { createCalculatorProfile } from '../calculator/mapleCombatCalculator'
 import { fieldDefs } from '@maplecombat/constants/fields'
 import { emptyBuffState, clampBuffLevel } from '@maplecombat/core/buffs/delta'
 import { parseBuffTable } from '@maplecombat/core/buffs/parse'
+import type { ParsedBuffTable } from '@maplecombat/core/buffs/parse'
 import { buffTableText } from '@maplecombat/data/buffSource'
 import { getDefaultJobByCategory, getJobByName, normalizeJobText } from '@maplecombat/data/jobs'
 import { weaponDatabase, zeroWeaponDatabase } from '@maplecombat/data/weapons'
+import {
+  parseSoulWeaponGrade,
+  parseSoulWeaponOption,
+  soulWeaponResonanceAttack,
+} from '@maplecombat/core/soulWeapon'
+import { defaultCombatCorrections } from '@maplecombat/core/combatCorrections'
 import type { SaveDataV1 } from '@maplecombat/services/saveData'
 
 export interface MapleCombatAutoFillResult {
@@ -29,14 +36,6 @@ const activeEquipment = (data: DashboardData): EquipmentItem[] => {
       ? data.equipment?.[`item_equipment_preset_${preset}` as keyof typeof data.equipment]
       : undefined
   return (Array.isArray(presetItems) ? presetItems : data.equipment?.item_equipment) || []
-}
-
-const splitPanelTotal = (total: number, knownPercent: number) => {
-  const percent = Math.max(0, knownPercent || 0)
-  const multiplier = 1 + percent / 100
-  const base = Math.max(0, Math.floor(total / Math.max(0.01, multiplier)))
-  const applied = Math.floor((base * (100 + percent)) / 100)
-  return { base, percent, noApply: Math.max(0, total - applied) }
 }
 
 const weaponSetFromItem = (weapon?: EquipmentItem) => {
@@ -120,61 +119,111 @@ const xenonStarConversionStat = (items: EquipmentItem[]): number => {
 }
 
 const currentLinkSkills = (data: DashboardData): LinkSkill[] => {
-  const links = [...(data.linkSkill?.character_link_skill || [])]
+  const linkData = data.linkSkill as (DashboardData['linkSkill'] & Record<string, unknown>) | undefined
+  const presetNo = Math.max(
+    1,
+    Math.min(3, numberValue(linkData?.preset_no ?? linkData?.use_preset_no) || 1),
+  )
+  const preset = linkData?.[`character_link_skill_preset_${presetNo}`]
+  const links = [
+    ...(Array.isArray(preset) ? (preset as LinkSkill[]) : data.linkSkill?.character_link_skill || []),
+  ]
   if (data.linkSkill?.character_owned_link_skill) links.push(data.linkSkill.character_owned_link_skill)
   return links
 }
 
+const normalizedSkillName = (value: unknown): string =>
+  normalizeJobText(String(value ?? ''))
+    .replace(/[\s·・:：()（）\[\]【】]/g, '')
+    .replace(/的/g, '')
+
+const skillNamesMatch = (left: unknown, right: unknown): boolean => {
+  const a = normalizedSkillName(left)
+  const b = normalizedSkillName(right)
+  if (!a || !b) return false
+  if (a === b) return true
+  return Math.min(a.length, b.length) >= 4 && (a.includes(b) || b.includes(a))
+}
+
+const currentCharacterSkills = (data: DashboardData) =>
+  [data.skill0, data.skill1, data.skill2, data.skill3, data.skill4, data.skill5, data.skill6]
+    .filter(Boolean)
+    .flatMap((group) => group?.character_skill || [])
+
+const currentVCoreSkills = (data: DashboardData) =>
+  (data.vMatrix?.character_v_core_equipment || []).flatMap((core) => {
+    const level = Math.max(1, numberValue(core.v_core_level) + numberValue(core.slot_level))
+    return [core.v_core_name, core.v_core_skill_1, core.v_core_skill_2, core.v_core_skill_3]
+      .filter(Boolean)
+      .map((skillName) => ({ skill_name: skillName, skill_level: level }))
+  })
+
+const detectedBuffAbilities = (
+  table: ParsedBuffTable,
+  buffId: string,
+  rawLevel: unknown,
+): { level: number } | null => {
+  const buff = table.buffIndex[buffId]
+  if (!buff) return null
+  const level = buff.type === 'check' ? 1 : clampBuffLevel(buff, rawLevel)
+  if (level <= 0) return null
+  return { level }
+}
+
 const createBuffState = (data: DashboardData, items: EquipmentItem[]) => {
   const table = parseBuffTable(buffTableText)
-  // API 面板已包含角色當下的常駐與被動數值；初始情境不可再套用作者的
-  // 「全套 Buff 預設」，否則傳授、藥水、公會技與塔戒會重複灌入。
+  // API 只證明技能已裝備／已學會，不代表主動或條件效果正在發動。
+  // 因此所有 Buff 維持 0；等級只作為使用者點擊後的精確試算偏好。
   const levels = emptyBuffState(table)
   const equippedLinks = currentLinkSkills(data)
-  const apiBuffIds: string[] = []
+  const characterSkills = [...currentCharacterSkills(data), ...currentVCoreSkills(data)]
+  const apiBuffIds = new Set<string>()
   const preferredLevels: Record<string, number> = {}
+
+  const applyDetectedBuff = (id: string, rawLevel: unknown): void => {
+    const detected = detectedBuffAbilities(table, id, rawLevel)
+    if (!detected) return
+    apiBuffIds.add(id)
+    if (table.buffIndex[id].type === 'level') preferredLevels[id] = detected.level
+  }
 
   table.categories.forEach((category) =>
     category.buffs.forEach((buff) => {
-      if (!buff.id.startsWith('pass:')) return
-      apiBuffIds.push(buff.id)
-      const buffName = normalizeJobText(buff.name)
-      const matched = equippedLinks.find((skill) => {
-        const skillName = normalizeJobText(skill.skill_name)
-        return skillName === buffName || skillName.includes(buffName) || buffName.includes(skillName)
-      })
-      if (!matched) {
-        return
-      }
-      preferredLevels[buff.id] = clampBuffLevel(buff, matched.skill_level || 1)
+      if (buff.id.startsWith('pot:')) return
+      const sources = buff.id.startsWith('pass:') ? equippedLinks : characterSkills
+      const matched = sources.find((skill) => skillNamesMatch(skill.skill_name, buff.name))
+      if (matched) applyDetectedBuff(buff.id, matched.skill_level || 1)
     }),
   )
 
   const continuousRing = items.find((item) => /永續戒指/.test(item.item_name || ''))
   const gaugeRing = items.find((item) => /規範戒指/.test(item.item_name || ''))
-  apiBuffIds.push('skill:永續戒指', 'skill:規範戒指')
   if (continuousRing) {
-    preferredLevels['skill:永續戒指'] = Math.max(1, numberValue(continuousRing.special_ring_level) || 1)
+    applyDetectedBuff(
+      'skill:永續戒指',
+      Math.max(1, numberValue(continuousRing.special_ring_level) || 1),
+    )
   }
   if (gaugeRing) {
-    preferredLevels['skill:規範戒指'] = Math.max(1, numberValue(gaugeRing.special_ring_level) || 1)
+    applyDetectedBuff(
+      'skill:規範戒指',
+      Math.max(1, numberValue(gaugeRing.special_ring_level) || 1),
+    )
   }
 
-  return { levels, apiBuffIds, preferredLevels }
+  const weapon = items.find(
+    (item) => item.item_equipment_part === '武器' || item.item_equipment_slot === '武器',
+  )
+  const legacySoulName = String(weapon?.soul_name || '')
+  if (/武公/.test(legacySoulName)) applyDetectedBuff('skill:無雙之力', 1)
+  else if (/艾畢奈亞/.test(legacySoulName)) applyDetectedBuff('skill:妖精密語', 1)
+
+  return { levels, apiBuffIds: [...apiBuffIds], preferredLevels }
 }
 
 const parseSoulOrb = (weapon?: EquipmentItem) => {
-  const hasNewSoulFields = Boolean(
-    weapon &&
-      (Object.prototype.hasOwnProperty.call(weapon, 'soul_weapon_option') ||
-        Object.prototype.hasOwnProperty.call(weapon, 'soul_weapon_grade')),
-  )
-  const hasLegacySoulFields = Boolean(
-    weapon &&
-      (Object.prototype.hasOwnProperty.call(weapon, 'soul_option') ||
-        Object.prototype.hasOwnProperty.call(weapon, 'soul_name')),
-  )
-  const text = weapon?.soul_weapon_option || weapon?.soul_option || ''
+  const hasLegacySoulFields = Boolean(weapon?.soul_name || weapon?.soul_option)
+  const text = weapon?.soul_option || ''
   const value = numberValue(text.match(/[-+]?\d+(?:\.\d+)?/)?.[0])
   let stat = 'percentStr'
   if (/DEX|敏捷/i.test(text)) stat = 'percentDex'
@@ -188,22 +237,30 @@ const parseSoulOrb = (weapon?: EquipmentItem) => {
   return {
     value,
     stat,
-    // 新制 API 沒有舊制即時「滿魂」狀態；不得因為有常駐屬性就預設勾滿魂。
-    fullSoul: hasNewSoulFields ? false : Boolean(weapon?.soul_name),
-    permanent: hasNewSoulFields,
-    sourceAvailable: hasNewSoulFields || hasLegacySoulFields,
+    fullSoul: Boolean(weapon?.soul_name),
+    sourceAvailable: hasLegacySoulFields,
   }
 }
 
-const soulPercentForStat = (
-  soul: ReturnType<typeof parseSoulOrb>,
-  statName: string | undefined,
-): number => {
-  if (!soul.permanent || !statName || statName === 'HP') return 0
-  const normalized = statName.toUpperCase()
-  if (soul.stat === 'allStatPercent') return soul.value
-  if (soul.stat === `percent${normalized[0]}${normalized.slice(1).toLowerCase()}`) return soul.value
-  return 0
+const parseSoulWeapon = (weapon?: EquipmentItem) => {
+  const grade = parseSoulWeaponGrade(weapon?.soul_weapon_grade)
+  const levelText = String(weapon?.soul_weapon_level ?? '')
+  const level = Math.max(
+    0,
+    Math.min(
+      100,
+      Math.trunc(numberValue(weapon?.soul_weapon_level) || numberValue(levelText.match(/\d+/)?.[0])),
+    ),
+  )
+  const powerText = String(weapon?.soul_weapon_power_increase ?? '')
+  const powerIncrease =
+    numberValue(weapon?.soul_weapon_power_increase) ||
+    numberValue(powerText.match(/[-+]?\d+(?:\.\d+)?/)?.[0]) ||
+    soulWeaponResonanceAttack(level)
+  const optionText = String(weapon?.soul_weapon_option || '')
+  const option = parseSoulWeaponOption(optionText)
+  const enabled = Boolean(grade || level || powerIncrease || optionText.trim())
+  return { enabled, grade, level, powerIncrease, optionText, ...option }
 }
 
 /**
@@ -217,24 +274,11 @@ export function createMapleCombatAutoFill(data: DashboardData): MapleCombatAutoF
   const weapon = items.find((item) => item.item_equipment_part === '武器' || item.item_equipment_slot === '武器')
   const job = getJobByName(profile.jobName) || getDefaultJobByCategory(profile.category)
   const soulOrb = parseSoulOrb(weapon)
-  // 新制靈魂武器屬性已包含在 API 面板，拆分基本值時要算入已知百分比，
-  // 但不再以舊制「滿魂 Buff」重複套用。
-  const main = splitPanelTotal(
-    profile.main,
-    profile.mainPercent + soulPercentForStat(soulOrb, profile.mainStat),
-  )
-  const sub = splitPanelTotal(
-    profile.sub,
-    profile.subPercent + soulPercentForStat(soulOrb, profile.subStat),
-  )
-  const second = splitPanelTotal(
-    profile.secondSub,
-    profile.secondSubPercent + soulPercentForStat(soulOrb, profile.secondSubStat),
-  )
-  const attack = splitPanelTotal(
-    profile.attack,
-    profile.attackPercent + (soulOrb.permanent && soulOrb.stat === 'percentAtk' ? soulOrb.value : 0),
-  )
+  const soulWeapon = parseSoulWeapon(weapon)
+  // MapleCombat 的主要欄位定義來自遊戲「來源顯示」的完整拆分，並非
+  // Nexon API 的 final_stat 或本站來源分析小計。API 沒有回傳「套用中的數值」
+  // 三欄與「技能」分類，因此不得再用可歸屬來源小計冒充完整輸入。
+  // 這些欄位由使用者依遊戲 tooltip 填寫並保留；此處只帶入 API 能精確確認的資料。
   const weaponSet = weaponSetFromItem(weapon)
   const isZero = profile.jobName === '神之子'
   const petSetAttack = petSetAttackFromApi(data)
@@ -242,23 +286,13 @@ export function createMapleCombatAutoFill(data: DashboardData): MapleCombatAutoF
     numberValue(weapon?.item_base_option?.boss_damage) +
     numberValue(weapon?.item_add_option?.boss_damage)
   const defaults = Object.fromEntries(fieldDefs.map((field) => [field.id, field.default]))
+  const {
+    levels: buffLevels,
+    apiBuffIds: autoFilledBuffIds,
+    preferredLevels: preferredBuffLevels,
+  } = createBuffState(data, items)
   const apiValues: Record<string, unknown> = {
-    baseMain: String(main.base),
-    percentMain: String(main.percent),
-    noApplyMain: String(main.noApply),
-    baseSub: String(sub.base),
-    percentSub: String(sub.percent),
-    noApplySub: String(sub.noApply),
     includeSecondSub: Boolean(profile.secondSubStat),
-    baseSubtwo: String(second.base),
-    percentSubtwo: String(second.percent),
-    noApplySubtwo: String(second.noApply),
-    atk: String(attack.base),
-    percentAtk: String(attack.percent),
-    noApplyAtk: String(attack.noApply),
-    dmg: String(profile.damage),
-    bossDmg: String(profile.bossDamage),
-    critDmg: String(profile.criticalDamage),
     famFinal: String(profile.familiarFinalDamageSources.reduce((sum, value) => sum + value, 0)),
     famFinalSources: profile.familiarFinalDamageSources.join(','),
     genesisFinalCheck: weaponSet === 'genesis',
@@ -267,8 +301,17 @@ export function createMapleCombatAutoFill(data: DashboardData): MapleCombatAutoF
     currentWeaponAtk: String(weaponAttack(weapon, profile.usesMagic, 'total')),
     scrollAtk: String(weaponAttack(weapon, profile.usesMagic, 'etc')),
     starCount: String(numberValue(weapon?.starforce)),
-    adjEmpressBless: String(findBlessingLevel(data) || 30),
+    soulWeaponEnabled: soulWeapon.enabled,
+    soulWeaponGrade: String(soulWeapon.grade),
+    soulWeaponLevel: String(soulWeapon.level),
+    soulWeaponPowerIncrease: String(soulWeapon.powerIncrease),
+    soulWeaponOptionStat: soulWeapon.stat,
+    soulWeaponOptionValue: String(soulWeapon.value),
+    towerRingSoulLevel: String(soulWeapon.grade || 7),
+    adjEmpressBless: String(findBlessingLevel(data)),
     ...(petSetAttack !== null ? { adjPetAtk: String(petSetAttack) } : {}),
+    adjMentorBossDmg: '0',
+    adjMentorAtk: '0',
     adjDAHP: String(profile.baseHp),
     ...(profile.jobName === '傑諾'
       ? { adjXenonStar: String(xenonStarConversionStat(items)) }
@@ -277,22 +320,7 @@ export function createMapleCombatAutoFill(data: DashboardData): MapleCombatAutoF
       ? { adjZeroWeaponFlameBossDmg: String(zeroWeaponBaseBossDamage) }
       : {}),
     ruinFinal: hasRuinForceShield(items) ? '10' : '0',
-    effBaseMain: String(main.base),
-    effPercentMain: String(main.percent),
-    effNoApplyMain: String(main.noApply),
-    effBaseSub: String(sub.base),
-    effPercentSub: String(sub.percent),
-    effNoApplySub: String(sub.noApply),
     effIncludeSecondSub: Boolean(profile.secondSubStat),
-    effBaseSubtwo: String(second.base),
-    effPercentSubtwo: String(second.percent),
-    effNoApplySubtwo: String(second.noApply),
-    effAtk: String(attack.base),
-    effPercentAtk: String(attack.percent),
-    effNoApplyAtk: String(attack.noApply),
-    effDmg: String(profile.damage),
-    effBossDmg: String(profile.bossDamage),
-    effCritDmg: String(profile.criticalDamage),
     effFamFinal: String(profile.familiarFinalDamageSources.reduce((sum, value) => sum + value, 0)),
     effFamFinalSources: profile.familiarFinalDamageSources.join(','),
     effIgnoreDefense: String(profile.ignoreDefense),
@@ -301,11 +329,12 @@ export function createMapleCombatAutoFill(data: DashboardData): MapleCombatAutoF
   }
   const values: Record<string, unknown> = { ...defaults, ...apiValues }
   const autoFilledFields = Object.keys(apiValues)
-  const {
-    levels: buffLevels,
-    apiBuffIds: autoFilledBuffIds,
-    preferredLevels: preferredBuffLevels,
-  } = createBuffState(data, items)
+  if (soulWeapon.enabled && soulWeapon.grade > 0) {
+    if (!autoFilledBuffIds.includes('skill:靈魂鬥志')) {
+      autoFilledBuffIds.push('skill:靈魂鬥志')
+    }
+    preferredBuffLevels['skill:靈魂鬥志'] = soulWeapon.grade
+  }
 
   return {
     saveData: {
@@ -320,10 +349,12 @@ export function createMapleCombatAutoFill(data: DashboardData): MapleCombatAutoF
         master: true,
         levels: buffLevels,
         soulOrb,
-        combatCorrections: { mentor: false, empress: false, genesis: false },
+        // 上游校正只影響「含 Buff 戰力」的特殊規則；原始戰力永遠獨立計算。
+        combatCorrections: defaultCombatCorrections(),
+        apiDetectedBuffIds: autoFilledBuffIds,
       },
     },
-    summary: `已填入 ${autoFilledFields.length}/150 欄：職業、面板基準、潛能、武器、無視、傳授、塔戒與使用中萌獸`,
+    summary: `已重新帶入 ${autoFilledFields.length} 個 API 可確認欄位；遊戲「來源顯示」與「技能・消耗」仍保留原本手動數值`,
     autoFilledFields,
     autoFilledBuffIds,
     preferredBuffLevels,

@@ -20,19 +20,31 @@ let headerResizeObserver: ResizeObserver | null = null
 const LAYOUT_SAFETY_PX = 12
 const DEFAULT_HEADER_GAP_PX = 8
 
-const correctionMeta: Record<CombatCorrectionKey, { label: string; tooltip: string }> = {
+const correctionMeta: Record<
+  CombatCorrectionKey,
+  { label: string; activeLabel: string; tooltip: string }
+> = {
   mentor: {
     label: '師徒系統校正',
-    tooltip: '師徒能力計入含Buff戰鬥力(原始戰鬥力未計入)',
+    activeLabel: '含 Buff 納入師徒',
+    tooltip: '只在「含 Buff 戰力」納入師徒能力；原始公式仍依上游規則排除師徒。',
   },
   empress: {
     label: '女皇祝福校正',
-    tooltip: '女皇祝福計入含Buff戰鬥力(海外職業原始戰鬥力未計入)',
+    activeLabel: '含 Buff 納入女皇',
+    tooltip: '海外職業原始戰力不計女皇祝福；開啟後只在「含 Buff 戰力」納入。',
   },
   genesis: {
     label: '創世武器校正',
-    tooltip: '武器攻擊校正基準更正為與原廠職業相同',
+    activeLabel: '創世基準已修正',
+    tooltip: '只修正海外職業使用創世武器時的武器攻擊基準，不會把公式結果貼齊官方戰力。',
   },
+}
+
+function correctionLabel(key: CombatCorrectionKey): string {
+  return buffs.combatCorrections[key]
+    ? correctionMeta[key].activeLabel
+    : correctionMeta[key].label
 }
 
 const applicableKeys = computed(() =>
@@ -205,7 +217,7 @@ watch(
         @blur="hideCorrectionTooltip('inline', key)"
         @click="buffs.toggleCombatCorrection(key)"
       >
-        <span class="buff-correction-chip-label">{{ correctionMeta[key].label }}</span>
+        <span class="buff-correction-chip-label">{{ correctionLabel(key) }}</span>
         <span
           v-show="activeTooltipId === correctionTooltipId('inline', key)"
           :id="correctionTooltipDomId('inline', key)"
@@ -250,7 +262,7 @@ watch(
           :aria-describedby="correctionTooltipDomId('compact', key)"
           @change="onCorrectionChange(key, $event)"
         />
-        <span class="buff-correction-option-label">{{ correctionMeta[key].label }}</span>
+        <span class="buff-correction-option-label">{{ correctionLabel(key) }}</span>
         <span
           v-show="activeTooltipId === correctionTooltipId('compact', key)"
           :id="correctionTooltipDomId('compact', key)"

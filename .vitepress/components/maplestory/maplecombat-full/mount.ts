@@ -44,7 +44,7 @@ export interface MapleCombatMountOptions {
 }
 
 export interface MapleCombatController {
-  resetFromCharacter(): void
+  resetFromCharacter(): string
   clearAll(): void
   exportBackup(): Promise<void>
   importBackup(file: File): Promise<void>
@@ -54,9 +54,24 @@ export interface MapleCombatController {
 }
 
 const INITIALIZED_KEY = 'holybearAutoFillVersion'
-const AUTO_FILL_VERSION = '2026-08-22-v5'
+const AUTO_FILL_VERSION = '2026-08-23-v12'
 const AUTO_FILL_SNAPSHOT_KEY = 'holybearAutoFillSnapshotV2'
 const embeddedCss = embedCss
+
+// 上游公式要求照遊戲「來源顯示」填入，Nexon API 並沒有提供這些完整拆分。
+// v11 曾把可歸屬來源小計寫進這些欄位；升級時只清掉仍等於舊自動值的資料，
+// 使用者已自行核對／修改的數字必須保留。
+const GAME_TOOLTIP_FIELDS = [
+  'baseMain', 'percentMain', 'noApplyMain', 'skillBaseMain', 'skillPercentMain',
+  'baseSub', 'percentSub', 'noApplySub', 'skillBaseSub', 'skillPercentSub',
+  'baseSubtwo', 'percentSubtwo', 'noApplySubtwo', 'skillBaseSubtwo', 'skillPercentSubtwo',
+  'atk', 'percentAtk', 'noApplyAtk', 'skillAtk', 'skillPercentAtk',
+  'dmg', 'skillDmg', 'bossDmg', 'skillBossDmg', 'critDmg', 'skillCritDmg',
+  'effBaseMain', 'effPercentMain', 'effNoApplyMain',
+  'effBaseSub', 'effPercentSub', 'effNoApplySub',
+  'effBaseSubtwo', 'effPercentSubtwo', 'effNoApplySubtwo',
+  'effAtk', 'effPercentAtk', 'effNoApplyAtk', 'effDmg', 'effBossDmg', 'effCritDmg',
+] as const
 
 interface AutoFillSnapshot {
   values: Record<string, string | boolean>
@@ -170,6 +185,19 @@ export async function mountMapleCombat(
     workspace.shared.selectedJobName = autoFill.saveData.selectedJobName
     workspace.shared.effSelectedJob = autoFill.saveData.effSelectedJob
 
+    if (firstV2Merge && previous) {
+      GAME_TOOLTIP_FIELDS.forEach((id) => {
+        const previousValue = previous.values?.[id]
+        if (previousValue === undefined) return
+        const target = isSharedField(id)
+          ? workspace.shared.values
+          : isScenarioField(id)
+            ? state1.values
+            : workspace.weighted.values
+        if (sameValue(target[id], previousValue)) target[id] = fieldDefById[id]?.default ?? ''
+      })
+    }
+
     const snapshotValues: Record<string, string | boolean> = {}
     autoFill.autoFilledFields.forEach((id) => {
       const next = autoFillValue(id, autoFill.saveData.values[id])
@@ -248,7 +276,15 @@ export async function mountMapleCombat(
         const isStillAutoFilled = previous?.soulOrb && JSON.stringify(currentSoul) === JSON.stringify(previous.soulOrb)
         if (overwriteApiFields || !previous?.soulOrb || isStillAutoFilled) currentBuffState.soulOrb = nextSoul
       }
+      currentBuffState.apiDetectedBuffIds = [...(apiBuffState.apiDetectedBuffIds || [])]
       state1.buffState = currentBuffState
+      // v10 修正舊版把上游預設當成角色現況的問題。只在版本遷移時清理其餘
+      // 情境的假定 Buff；同版重新帶入仍保留使用者自己建立的情境。
+      if (firstV2Merge) {
+        workspace.states.forEach((state) => {
+          state.buffState = JSON.parse(JSON.stringify(apiBuffState))
+        })
+      }
     }
 
     slots.importWorkspace(workspace)
@@ -292,6 +328,7 @@ export async function mountMapleCombat(
     slots.importWorkspace(workspace)
     character.reloadWorkspaceSlot()
     options.onDirtyChange?.(true)
+    publishResult()
   }
 
   const setSection = (section: MapleCombatSection) => {
@@ -343,6 +380,8 @@ export async function mountMapleCombat(
     resetFromCharacter() {
       applyApiData(true)
       options.onDirtyChange?.(true)
+      publishResult()
+      return autoFill.summary
     },
     clearAll,
     async exportBackup() {

@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { nextTick, onBeforeUnmount, onMounted, ref, type CSSProperties } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, type CSSProperties } from 'vue'
 import { useBuffsStore } from '@maplecombat/stores/buffs'
+import { LEGACY_SOUL_SKILL_IDS } from '@maplecombat/core/buffs/delta'
 import { useUiStore } from '@maplecombat/stores/ui'
 import BuffPanel from './BuffPanel.vue'
 import SoulOrbControl from './SoulOrbControl.vue'
+import SoulWeaponControl from './SoulWeaponControl.vue'
 
 const props = defineProps<{
   panelId: string
@@ -15,6 +17,9 @@ const buffs = useBuffsStore()
 const dialogRef = ref<HTMLElement | null>(null)
 const closeButtonRef = ref<HTMLButtonElement | null>(null)
 const dialogStyle = ref<CSSProperties>({})
+const showLegacySoulOrb = computed(() =>
+  LEGACY_SOUL_SKILL_IDS.some((id) => (buffs.state[id] || 0) > 0),
+)
 let previousBodyOverflow = ''
 let previousBodyPaddingRight = ''
 let previousHtmlOverflow = ''
@@ -122,9 +127,10 @@ onBeforeUnmount(() => {
               type="button"
               class="buff-master-btn"
               :disabled="buffs.matchesDefaultForMode('eff')"
+              title="套用一般試算預設；公會技能、冠軍庇護與塔戒需依角色實際狀況選擇"
               @click="buffs.resetDefaultsForMode('eff')"
             >
-              套用預設
+              套用一般預設
             </button>
             <button type="button" class="buff-master-btn" @click="buffs.clearAllForMode('eff')">
               全部清除
@@ -150,8 +156,12 @@ onBeforeUnmount(() => {
         </header>
 
         <div class="buff-overlay-body">
-          <section class="buff-overlay-soul-orb">
-            <span class="buff-section-title">靈魂寶珠</span>
+          <section class="buff-overlay-soul-orb buff-overlay-soul-weapon">
+            <span class="buff-section-title">新版靈魂武器</span>
+            <SoulWeaponControl />
+          </section>
+          <section v-if="showLegacySoulOrb" class="buff-overlay-soul-orb">
+            <span class="buff-section-title">舊版靈魂寶珠</span>
             <SoulOrbControl mode="eff" />
           </section>
           <BuffPanel mode="eff" embedded :panel-id="panelId" />

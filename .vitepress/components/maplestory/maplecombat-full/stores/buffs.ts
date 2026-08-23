@@ -27,6 +27,8 @@ export interface BuffExportState {
   levels: BuffState
   soulOrb: SoulOrbState
   combatCorrections: CombatCorrectionState
+  /** 由 Nexon API 辨識為目前已裝備／已學會；只供顯示與等級偏好，不參與是否啟用的判定。 */
+  apiDetectedBuffIds?: string[]
 }
 
 const PREFERRED_LEVELS_KEY = 'buffPreferredLevels'
@@ -136,6 +138,8 @@ export const useBuffsStore = defineStore('buffs', () => {
   }
 
   const combatCorrections = reactive<CombatCorrectionState>(defaultCombatCorrections())
+  const apiDetectedBuffIds = reactive<string[]>([])
+  const apiDetectedBuffIdSet = computed(() => new Set(apiDetectedBuffIds))
   try {
     Object.assign(
       combatCorrections,
@@ -223,9 +227,19 @@ export const useBuffsStore = defineStore('buffs', () => {
   }
 
   function toggle(id: string): void {
-    const next = (state[id] || 0) > 0 ? 0 : 1
-    state[id] = exceedsPassLimit(id, next) ? 0 : next
-    enforceExclusive(id)
+    const buff = table.buffIndex[id]
+    if (!buff) return
+    if ((state[id] || 0) > 0) {
+      setLevel(id, 0)
+      return
+    }
+    const preferred = preferredLevels[id] || 0
+    const fallback = buff.defaultLevel || buff.minLevel || buff.levelKeys[0] || 1
+    const activationLevel =
+      buff.type === 'level' && preferred > 0 && buff.levelKeys.includes(preferred)
+        ? preferred
+        : fallback
+    setLevel(id, activationLevel)
   }
 
   function resetDefaults(): void {
@@ -276,6 +290,15 @@ export const useBuffsStore = defineStore('buffs', () => {
     combatCorrections[key] = value === true
   }
 
+  function setApiDetectedBuffIds(ids: readonly string[]): void {
+    const next = [...new Set(ids.filter((id) => Boolean(table.buffIndex[id])))]
+    apiDetectedBuffIds.splice(0, apiDetectedBuffIds.length, ...next)
+  }
+
+  function isApiDetected(id: string): boolean {
+    return apiDetectedBuffIdSet.value.has(id)
+  }
+
   function toggleCombatCorrection(key: CombatCorrectionKey): void {
     combatCorrections[key] = !combatCorrections[key]
   }
@@ -287,6 +310,7 @@ export const useBuffsStore = defineStore('buffs', () => {
       levels: { ...state },
       soulOrb: { ...soulOrb },
       combatCorrections: { ...combatCorrections },
+      apiDetectedBuffIds: [...apiDetectedBuffIds],
     }
   }
 
@@ -307,6 +331,11 @@ export const useBuffsStore = defineStore('buffs', () => {
       soulOrb.fullSoul = true
     }
     Object.assign(combatCorrections, normalizeCombatCorrections(obj.combatCorrections))
+    setApiDetectedBuffIds(
+      Array.isArray(obj.apiDetectedBuffIds)
+        ? obj.apiDetectedBuffIds.map((id) => String(id))
+        : [],
+    )
     if (lv && typeof lv === 'object') {
       for (const id in lv) {
         if (Object.prototype.hasOwnProperty.call(state, id)) {
@@ -323,6 +352,7 @@ export const useBuffsStore = defineStore('buffs', () => {
     state,
     soulOrb,
     combatCorrections,
+    apiDetectedBuffIdSet,
     matchesDefault,
     matchesDefaultForMode,
     preferredLevel,
@@ -339,6 +369,8 @@ export const useBuffsStore = defineStore('buffs', () => {
     setSoulOrbFullSoul,
     setCombatCorrection,
     toggleCombatCorrection,
+    setApiDetectedBuffIds,
+    isApiDetected,
     collectState,
     applyState,
   }

@@ -1,14 +1,16 @@
 <script setup lang="ts">
 // Buff 選擇面板（combat = 全部；eff = 僅含主動效果的 Buff）。
-import { computed, ref, type CSSProperties } from 'vue'
+import { computed, ref, watch, type CSSProperties } from 'vue'
 import { useBuffsStore } from '@maplecombat/stores/buffs'
 import { useCharacterStore } from '@maplecombat/stores/character'
 import { useUiStore } from '@maplecombat/stores/ui'
 import { applicableCombatCorrectionKeys } from '@maplecombat/core/combatCorrections'
+import { LEGACY_SOUL_SKILL_IDS } from '@maplecombat/core/buffs/delta'
 import type { BuffCategory, BuffDefinition } from '@maplecombat/core/buffs/parse'
 import BuffItem from './BuffItem.vue'
 import CombatCorrectionControls from './CombatCorrectionControls.vue'
 import SoulOrbControl from './SoulOrbControl.vue'
+import SoulWeaponControl from './SoulWeaponControl.vue'
 import ContextGuide from '@maplecombat/components/layout/ContextGuide.vue'
 
 const props = withDefaults(
@@ -68,6 +70,14 @@ const selectedCount = computed(() =>
     0,
   ),
 )
+const showLegacySoulOrb = computed(() =>
+  LEGACY_SOUL_SKILL_IDS.some((id) => (buffs.state[id] || 0) > 0),
+)
+watch(showLegacySoulOrb, (legacyEnabled) => {
+  if (legacyEnabled && character.fields.soulWeaponEnabled === true) {
+    character.setField('soulWeaponEnabled', false)
+  }
+})
 const bodyVisible = computed(() => props.embedded || ui.buffPanelOpen)
 const panelId = computed(
   () => props.panelId || (props.mode === 'combat' ? 'buffPanelCombat' : 'buffPanelEff'),
@@ -161,9 +171,10 @@ function clearMode() {
           type="button"
           class="buff-master-btn"
           :disabled="matchesModeDefault"
+          title="套用一般試算預設；公會技能、冠軍庇護與塔戒仍需依角色實際狀況選擇"
           @click="resetModeDefaults"
         >
-          套用預設
+          套用一般預設
         </button>
         <button type="button" class="buff-master-btn" @click="clearMode">全部清除</button>
       </span>
@@ -186,9 +197,11 @@ function clearMode() {
 
     <ContextGuide v-if="!embedded && bodyVisible" title="Buff 要怎麼選？">
       <ul>
-        <li>先完成角色資料核對，再按「套用預設」並依實際技能、藥水與傳授調整。</li>
-        <li>武公、規範戒指與非常駐爆發不視為常駐預設；請放進各自的實戰情境或戒指試算。</li>
-        <li>官方已調整靈魂寶珠系統，這裡只在你確定需要校正時使用，不會硬性要求。</li>
+        <li>重新帶入角色時所有主動效果都從 0 開始；「可用」只表示 API 找到技能或裝備，不代表正在生效。</li>
+        <li>「套用一般預設」不會假設公會技能、冠軍庇護或塔戒等級；這些項目請依角色實際狀況選擇。</li>
+        <li>武公、靈魂鬥志、規範戒指與非常駐爆發不視為常駐預設；請放進各自的實戰情境或戒指試算。</li>
+        <li>新版靈魂武器會分開計算共鳴攻擊、靈魂烙印與靈魂鬥志；API 有資料時會自動帶入。</li>
+        <li>舊版「靈魂寶珠」數值與滿魂攻擊力，只會在武公、艾畢奈亞等舊版靈魂技能啟用時顯示。</li>
       </ul>
     </ContextGuide>
 
@@ -230,8 +243,17 @@ function clearMode() {
       </div>
     </div>
 
-    <div v-if="!embedded" v-show="bodyVisible" class="buff-section buff-section--soul-orb">
-      <div class="buff-section-title">靈魂寶珠</div>
+    <div v-if="!embedded" v-show="bodyVisible" class="buff-section buff-section--soul-weapon">
+      <div class="buff-section-title">新版靈魂武器</div>
+      <SoulWeaponControl />
+    </div>
+
+    <div
+      v-if="!embedded && showLegacySoulOrb"
+      v-show="bodyVisible"
+      class="buff-section buff-section--soul-orb"
+    >
+      <div class="buff-section-title">舊版靈魂寶珠</div>
       <SoulOrbControl :mode="mode" />
     </div>
   </div>

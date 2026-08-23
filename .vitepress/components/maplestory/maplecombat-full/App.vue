@@ -16,8 +16,8 @@ const character = useCharacterStore()
 const validationWarnings = computed(() => {
   const warnings: string[] = []
   const fieldNumber = (id: string) => Number(character.fields[id]) || 0
-  // Nexon API 回傳的是已結算面板，MapleCombat 原公式則要求拆分部分技能與校正來源。
-  // 兩者的原始戰力差距不等於漏抓資料；外層會以官方戰力作基準進行比例校正。
+  // Nexon API 回傳的是已結算面板，MapleCombat 原公式則要求拆分「技能・消耗」與特殊來源。
+  // 公式結果必須維持獨立計算；與官方面板的差距用來找缺漏，禁止再用官方戰力比例縮放。
   if (fieldNumber('baseMain') <= 0 || fieldNumber('atk') <= 0) {
     warnings.push('主屬基本數值或攻擊力為 0，後續換算會失真。')
   }

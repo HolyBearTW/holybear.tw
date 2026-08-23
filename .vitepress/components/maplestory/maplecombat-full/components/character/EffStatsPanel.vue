@@ -23,7 +23,7 @@ const includeSecondSub = computed(() => effJob.value === 'xenon' || effJob.value
           <ul>
             <li>可先按「套用戰鬥力資料」，再補上實戰時才會開啟的職業主動 Buff。</li>
             <li>如果輸入值本身已包含某個 Buff，右側就不要再勾同一個 Buff，避免重複計算。</li>
-            <li>每個實戰情境都有自己的實戰數值與 Buff；常駐、爆發、武公或規範可以分開設定。</li>
+            <li>每個實戰情境都有自己的實戰數值與 Buff；常駐、爆發、武公、靈魂鬥志或規範可以分開設定。</li>
           </ul>
         </ContextGuide>
         <div class="stat-table stat-table--effmain">

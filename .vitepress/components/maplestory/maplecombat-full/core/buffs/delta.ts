@@ -12,12 +12,20 @@ export interface SoulOrbState {
 }
 
 /** 互斥 Buff 群組：同組內同時只能啟用一個（遊戲規則） */
+export const LEGACY_SOUL_SKILL_IDS = [
+  'skill:無雙之力',
+  'skill:妖精密語',
+  'skill:瑪麗西亞靈魂寶珠',
+] as const
+
 export const EXCLUSIVE_BUFF_GROUPS: ReadonlyArray<ReadonlyArray<string>> = [
   ['pot:閃閃發亮的紅色星星藥水', 'pot:閃閃發亮的藍色星星藥水'],
   ['pot:VIP超級力量券', 'pot:VIP終極力量券'],
   ['pot:榮譽靈藥', 'pot:275等椅子'],
   ['pot:地圖天氣', 'pot:一片鮮奶油蛋糕', 'pot:瑪瑙蘋果'],
-  ['skill:無雙之力', 'skill:妖精密語'],
+  // 新版靈魂武器的「靈魂鬥志」不可與武公、瑪麗西亞、艾畢奈亞靈魂技能並用。
+  // 目前表內無瑪麗西亞項目，仍保留 id 以避免後續加入時漏掉官方互斥規則。
+  [...LEGACY_SOUL_SKILL_IDS, 'skill:靈魂鬥志'],
   ['skill:夕陽的現身', 'skill:午夜的現身'],
 ]
 
@@ -45,6 +53,8 @@ export interface BuffComputeContext {
   /** 武器攻擊校正後的基準總攻（含 Buff 戰鬥力滿魂使用） */
   combatWeaponAtk: number
   soulOrb: SoulOrbState
+  /** API 面板已結算這些來源的被動能力；試算時只再套用其主動效果。 */
+  apiDetectedBuffIds?: ReadonlySet<string>
 }
 
 type AddFn = (key: string, value: number) => void
@@ -113,7 +123,7 @@ export const STAT_DEFS: Record<StatCategoryKey, StatDef> = {
 function eachSelectedAbility(
   table: ParsedBuffTable,
   state: BuffState,
-  fn: (a: BuffAbility) => void,
+  fn: (a: BuffAbility, buff: BuffDefinition) => void,
   useInstant = false,
 ): void {
   table.categories.forEach((c) =>
@@ -123,7 +133,7 @@ function eachSelectedAbility(
       const key = b.type === 'check' ? 1 : lvl
       const abis = (useInstant && b.instantLevels[key]) || b.levels[key]
       if (!abis) return
-      abis.forEach(fn)
+      abis.forEach((ability) => fn(ability, b))
     }),
   )
 }
