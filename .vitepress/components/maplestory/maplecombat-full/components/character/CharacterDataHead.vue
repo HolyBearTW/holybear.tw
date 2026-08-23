@@ -94,6 +94,10 @@ function switchMode(mode: CalculatorMode) {
         </span>
       </span>
     </div>
+    <p v-if="ui.calculatorMode === 'effStats'" class="scenario-linkage-note">
+      <strong>狀態 1～5</strong>
+      各自保存「實戰資料、Buff、塔戒」，並用於「加權比較、裝備替換、效率與戒指」計算。
+    </p>
     <div class="stat-card-head-controls">
       <div class="stat-card-head-job">
         <JobCombobox />

@@ -689,6 +689,12 @@ textarea {
   width: min(280px, calc(100vw - 32px));
 }
 
+:host .character-data-help .character-data-help-tooltip {
+  right: 0;
+  left: auto;
+  width: min(280px, calc(100vw - 48px));
+}
+
 :host .buff-info:hover .buff-info-tooltip,
 :host .buff-info:focus-within .buff-info-tooltip,
 :host .tower-ring-info:hover .tower-ring-info-tooltip,
@@ -894,6 +900,25 @@ textarea {
   width: 148px;
   max-height: 230px;
   overflow-y: auto;
+}
+
+:host .scenario-linkage-note {
+  width: 100%;
+  margin: 8px 0 0;
+  padding: 7px 10px;
+  border: 1px solid color-mix(in srgb, var(--mc-accent) 24%, var(--mc-border-soft));
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--mc-accent-soft) 62%, var(--mc-panel));
+  color: var(--mc-muted);
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 1.55;
+}
+
+:host .scenario-linkage-note strong {
+  margin-right: 4px;
+  color: var(--mc-accent);
+  font-weight: 900;
 }
 
 @media (max-width: 680px) {
@@ -2818,10 +2843,20 @@ textarea {
 
 @media (max-width: 560px) {
   :host .stat-table--dmg .st-row,
-  :host .stat-table--bonus .st-row,
   :host .ct-dialog-name-grid,
   :host .ct-dialog-state-grid {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 340px) {
+  :host .stat-table--bonus .st-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  :host .stat-table--bonus .weapon-set-group,
+  :host .stat-table--bonus .st-cell:has(.fam-src-wrap) {
+    grid-column: 1 / -1;
   }
 }
 

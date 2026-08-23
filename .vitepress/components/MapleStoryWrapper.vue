@@ -1631,13 +1631,65 @@ html:not(.dark) .maple-calculator-version {
 }
 
 @media (max-width: 639px) {
+  .maple-calculator-backdrop {
+    align-items: flex-start !important;
+    justify-content: center !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    padding: max(8px, env(safe-area-inset-top)) 8px max(8px, env(safe-area-inset-bottom)) !important;
+  }
+
+  .maple-calculator-panel {
+    min-height: calc(100dvh - 16px) !important;
+    max-height: none !important;
+    overflow: hidden !important;
+  }
+
+  .maple-calculator-sticky-head {
+    flex: none !important;
+  }
+
+  .maple-calculator-scroll {
+    flex: none !important;
+    overflow: visible !important;
+    padding-right: 12px !important;
+    padding-left: 12px !important;
+  }
+
   .maple-calculator-titlebar {
+    position: relative !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
     padding-right: 10px !important;
     padding-left: 10px !important;
   }
 
   .maple-calculator-titlebar > div:first-child {
+    width: 100% !important;
     gap: 9px !important;
+    padding-right: 42px !important;
+  }
+
+  .maple-calculator-titlebar > div:first-child > div {
+    flex: 1 1 auto !important;
+  }
+
+  .maple-calculator-titlebar h2 {
+    overflow: visible !important;
+    white-space: normal !important;
+    text-overflow: clip !important;
+  }
+
+  .maple-calculator-titlebar > div:last-child {
+    width: 100% !important;
+    justify-content: flex-end !important;
+  }
+
+  .maple-calculator-titlebar > div:last-child > button:last-child {
+    position: absolute !important;
+    top: 10px !important;
+    right: 8px !important;
   }
 
   .maple-calculator-titlebar > div:first-child > span:first-child {
