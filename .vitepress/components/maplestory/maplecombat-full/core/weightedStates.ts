@@ -245,9 +245,9 @@ function slotResult(
   )
   const equipmentChangedPower = calculatePower(
     fields,
-    combatCtx(workspace, values, false, combatCorrections),
+    combatCtx(workspace, values, true, combatCorrections),
     getEquipmentDelta(fields, job, combatFamSources),
-    {},
+    combatBuffDelta,
   )
   const equipmentChangedActualOutput = calculateEquipmentOutput(
     fields,
@@ -319,7 +319,7 @@ export function calculateWeightedSummary(
     equipmentBattleGain: weightedPercentGain(
       slots.map((slot) => ({
         share: slot.weight,
-        before: powerValue(slot.powerNoBuff),
+        before: powerValue(slot.powerWithBuff),
         after: powerValue(slot.equipmentChangedPower),
       })),
     ),
@@ -368,13 +368,15 @@ export function buildWeightedMetrics(
         stat: 'percentStr',
         fullSoul: true,
       }
+      const combatCorrections = normalizeCombatCorrections(state.buffState?.combatCorrections)
       const stateContext = buffCtx(
         workspace,
         values,
         soulOrb,
-        defaultCombatCorrections(),
+        combatCorrections,
         state.buffState?.apiDetectedBuffIds,
       )
+      const combatBuffDelta = getCombatBuffDelta(table, buffState, stateContext)
       const effBuffDelta = getEffBuffDelta(table, buffState, stateContext)
       const ignoreFactor = getEffBuffIgnoreFactor(table, buffState, soulOrb)
       const changedOutput = calculateEquipmentOutput(
@@ -391,8 +393,13 @@ export function buildWeightedMetrics(
         metric.fieldIds.forEach((fieldId) => {
           delta[effFieldToCombatKey(fieldId)] = metric.unit
         })
-        const changedPower = calculatePower(slot.fields, combatCtx(workspace, values, false), delta, {})
-        const powerGain = ratioGain(powerValue(changedPower), powerValue(slot.powerNoBuff))
+        const changedPower = calculatePower(
+          slot.fields,
+          combatCtx(workspace, values, true, combatCorrections),
+          delta,
+          combatBuffDelta,
+        )
+        const powerGain = ratioGain(powerValue(changedPower), powerValue(slot.powerWithBuff))
         if (powerGain == null) invalidCombatGain = true
         else combatGain += (slot.weight / 100) * powerGain
       }

@@ -242,7 +242,9 @@ export const useCharacterStore = defineStore('character', () => {
   const equipmentDelta = computed(() =>
     getEquipmentDelta(numericFields.value, selectedJob.value, equipmentCombatFamSources.value),
   )
-  const equipmentChangedPower = computed(() => computePower(false, equipmentDelta.value))
+  // 換裝前後必須沿用相同的 Buff 情境，否則上方已勾選 Buff，
+  // 換裝後戰力卻仍會停在未套用 Buff 的數值。
+  const equipmentChangedPower = computed(() => computePower(true, equipmentDelta.value))
   const equipmentActualGain = computed<number | null>(() => {
     const baseOutput = computeEffOutput(true)
     if (!baseOutput || baseOutput <= 0 || !isFinite(baseOutput)) return null

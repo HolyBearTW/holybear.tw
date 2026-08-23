@@ -144,7 +144,7 @@ export async function mountMapleCombat(
     slots.workspace.activeSlot === 'weighted' ? 'state1' : slots.workspace.activeSlot
 
   const publishResult = () => {
-    const baselinePower = character.powerValue(character.powerNoBuff)
+    let baselinePower = character.powerValue(character.powerNoBuff)
     let projectedPower = baselinePower
     let actualPercentChange: number | null = null
 
@@ -157,14 +157,19 @@ export async function mountMapleCombat(
       projectedPower = character.powerValue(character.powerWithBuff)
       actualPercentChange = percentGain(character.effOutputNoBuff, character.effOutputWithBuff)
     } else if (activeSection === 'equipment') {
+      baselinePower = character.powerValue(character.powerWithBuff)
       projectedPower = character.powerValue(character.equipmentChangedPower)
       actualPercentChange = character.equipmentActualGain
+    } else if (activeSection === 'efficiency') {
+      projectedPower = character.powerValue(character.powerWithBuff)
+      actualPercentChange = percentGain(character.effOutputNoBuff, character.effOutputWithBuff)
     } else if (activeSection === 'weighted') {
       const summary = calculateWeightedSummary(slots.workspace, buffs.table)
       if (ui.activeView === 'characterInput') {
         projectedPower = summary.combatBuffPower
         actualPercentChange = summary.actualBuffGain
       } else if (ui.activeView === 'equipmentChange') {
+        baselinePower = summary.combatBuffPower
         projectedPower = summary.equipmentChangedPower
         actualPercentChange = summary.equipmentActualGain
       }

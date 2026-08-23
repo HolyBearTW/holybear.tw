@@ -67,8 +67,8 @@ export interface TowerRingLevelGain {
 }
 
 /**
- * 塔戒卡片的局部情境：先移除所有非常駐 Buff，再套用該卡片明示的搭配。
- * 非常駐清單由資料表判定，避免新增 Buff 後漏進試算基準。
+ * 塔戒卡片沿用目前已選 Buff，只清除卡片本身會重新指定的塔戒、武公與靈魂鬥志。
+ * 這樣可避免互斥效果重複計算，也不會讓「套用 Buff」在塔戒試算中失效。
  */
 export function buildTowerRingScenarioState(
   table: ParsedBuffTable,
@@ -76,11 +76,9 @@ export function buildTowerRingScenarioState(
   picks: Readonly<Record<string, number>> = {},
 ): BuffState {
   const scenario: BuffState = { ...state }
-  table.categories.forEach((category) => {
-    category.buffs.forEach((buff) => {
-      if (buff.nonPermanent) scenario[buff.id] = 0
-    })
-  })
+  for (const ringId of TOWER_RING_IDS) scenario[ringId] = 0
+  scenario[MUGONG_BUFF_ID] = 0
+  scenario[SOUL_FIGHTING_SPIRIT_ID] = 0
   Object.entries(picks).forEach(([id, level]) => {
     scenario[id] = clampBuffLevel(table.buffIndex[id], level)
   })

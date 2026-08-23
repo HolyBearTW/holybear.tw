@@ -65,7 +65,7 @@ interface MetricResult extends EfficiencyMetric {
 }
 
 const metricResults = computed<MetricResult[]>(() => {
-  const combatBaseValue = showCombatGain.value ? store.powerValue(store.computePower(false)) : 0
+  const combatBaseValue = showCombatGain.value ? store.powerValue(store.computePower(true)) : 0
   return metrics.value.map((metric) => {
     const metricDelta = getEfficiencyActualDelta(metric)
     const changedOutput = store.computeEffOutput(true, metricDelta)
@@ -76,7 +76,7 @@ const metricResults = computed<MetricResult[]>(() => {
       metric.fieldIds.forEach((fieldId) => {
         delta[effFieldToCombatKey(fieldId)] = metric.unit
       })
-      combatGain = store.powerValue(store.computePower(false, delta)) - combatBaseValue
+      combatGain = store.powerValue(store.computePower(true, delta)) - combatBaseValue
     }
     return { ...metric, gain, combatGain }
   })
