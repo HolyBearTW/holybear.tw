@@ -1,5 +1,6 @@
 import VPLTheme from '@lando/vitepress-theme-default-plus';
 import MyCustomLayout from './MyCustomLayout.vue';
+import './assets/fonts/line-seed/LINESeed.css';
 import './style.css';
 import OpenCCConverter from '../components/OpenCCConverter.vue';
 import Spoiler from './Spoiler.vue';

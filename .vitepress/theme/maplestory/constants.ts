@@ -1,4 +1,5 @@
 import { DashboardData, ItemOption } from './types';
+import { mapleAsset } from './assets';
 
 const EMPTY_OPTION: ItemOption = {
   str: "0", dex: "0", int: "0", luk: "0", max_hp: "0", max_mp: "0",
@@ -17,7 +18,7 @@ export const SERVER_ICONS: Record<string, string> = {
   '賽蓮': 'https://tw.hicdn.beanfun.com/beanfun/event/MapleStory/UnionWebRank/assets/img/silien.png',
   '米特拉': 'https://tw.hicdn.beanfun.com/beanfun/event/MapleStory/UnionWebRank/assets/img/reboot.png',
   'Reboot': 'https://tw.hicdn.beanfun.com/beanfun/event/MapleStory/UnionWebRank/assets/img/reboot.png',
-  '挑戰者': '/image/theme/ChallengerServer.png'
+  '挑戰者': mapleAsset('ChallengerServer.png')
 };
 
 export const getJobBackgroundMap = (jobName: string): string => {

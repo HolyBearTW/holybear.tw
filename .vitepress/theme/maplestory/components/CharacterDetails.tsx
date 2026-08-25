@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import Familiar from './Familiar';
 import UnionRaiderSection from './UnionRaiderSection';
+import { mapleAsset } from '../assets';
 
 interface CharacterDetailsProps {
   data: DashboardData;
@@ -17,11 +18,11 @@ interface CharacterDetailsProps {
 // ---------------------------
 
 const artifactCrystalImages = [
-  '/image/theme/artifact/Artifact1.png', '/image/theme/artifact/Artifact2.png',
-  '/image/theme/artifact/Artifact3.png', '/image/theme/artifact/Artifact4.png',
-  '/image/theme/artifact/Artifact5.png', '/image/theme/artifact/Artifact6.png',
-  '/image/theme/artifact/Artifact7.png', '/image/theme/artifact/Artifact8.png',
-  '/image/theme/artifact/Artifact9.png',
+  mapleAsset('artifact/Artifact1.png'), mapleAsset('artifact/Artifact2.png'),
+  mapleAsset('artifact/Artifact3.png'), mapleAsset('artifact/Artifact4.png'),
+  mapleAsset('artifact/Artifact5.png'), mapleAsset('artifact/Artifact6.png'),
+  mapleAsset('artifact/Artifact7.png'), mapleAsset('artifact/Artifact8.png'),
+  mapleAsset('artifact/Artifact9.png'),
 ];
 
 const artifactCrystalNames = [
@@ -36,11 +37,11 @@ const artifactCrystalNames = [
   '水晶：拉圖斯',
 ];
 
-const CHAMPION_PATH = '/image/theme/unionChampion';
+const championAsset = (name: string) => mapleAsset(`unionChampion/${name}`);
 const HEXA_STAT_CORE_ICONS = [
-  '/image/theme/hexa/hexa-stat1.png',
-  '/image/theme/hexa/hexa-stat2.png',
-  '/image/theme/hexa/hexa-stat3.png',
+  mapleAsset('hexa/hexa-stat1.png'),
+  mapleAsset('hexa/hexa-stat2.png'),
+  mapleAsset('hexa/hexa-stat3.png'),
 ];
 
 // HEXA 六轉技能設定
@@ -468,7 +469,7 @@ const ChampionCard: React.FC<{ champ: any; apiKey: string }> = ({ champ, apiKey 
     return (
       <div className="maple-champion-card bg-[#0e141e] rounded-xl p-4 relative overflow-hidden min-h-[280px] border border-slate-800 shadow-md group hover:border-slate-600 transition-all flex flex-col justify-between">
         <div className="absolute inset-0 w-full h-full pointer-events-none">
-            <img src={`${CHAMPION_PATH}/${bgImage}`} alt="Background" className="w-full h-full object-cover opacity-30 transition-transform duration-500 group-hover:scale-110" />
+            <img src={championAsset(bgImage)} alt="Background" className="w-full h-full object-cover opacity-30 transition-transform duration-500 group-hover:scale-110" />
             <div className="maple-champion-shade absolute inset-0 bg-gradient-to-t from-[#0e141e] via-[#0e141e]/50 to-transparent"></div>
         </div>
         <div className="absolute top-3 left-4 z-10"><span className="font-bold text-lg text-slate-300 tracking-wider drop-shadow-md">{champ.champion_grade}</span></div>
@@ -490,11 +491,11 @@ const ChampionCard: React.FC<{ champ: any; apiKey: string }> = ({ champ, apiKey 
           </div>
         </div>
         <div className="relative z-10 flex items-center justify-center -space-x-2.5 mt-4 pt-3 border-t border-slate-800/50">
-            <BadgeImage active={hasStat('全屬性') || hasStat('All Stat')} src={`${CHAMPION_PATH}/01.png`} title="全屬性" />
-            <BadgeImage active={hasStat('攻擊力') || hasStat('Attack')} src={`${CHAMPION_PATH}/02.png`} title="攻擊力/魔力" />
-            <BadgeImage active={hasStat('Boss') || hasStat('BOSS')} src={`${CHAMPION_PATH}/03.png`} title="BOSS 傷害" />
-            <BadgeImage active={hasStat('爆擊傷害') || hasStat('Critical Damage')} src={`${CHAMPION_PATH}/04.png`} title="爆擊傷害" />
-            <BadgeImage active={hasStat('無視') || hasStat('Ignore')} src={`${CHAMPION_PATH}/05.png`} title="無視防禦" />
+            <BadgeImage active={hasStat('全屬性') || hasStat('All Stat')} src={championAsset('01.png')} title="全屬性" />
+            <BadgeImage active={hasStat('攻擊力') || hasStat('Attack')} src={championAsset('02.png')} title="攻擊力/魔力" />
+            <BadgeImage active={hasStat('Boss') || hasStat('BOSS')} src={championAsset('03.png')} title="BOSS 傷害" />
+            <BadgeImage active={hasStat('爆擊傷害') || hasStat('Critical Damage')} src={championAsset('04.png')} title="爆擊傷害" />
+            <BadgeImage active={hasStat('無視') || hasStat('Ignore')} src={championAsset('05.png')} title="無視防禦" />
         </div>
       </div>
     );

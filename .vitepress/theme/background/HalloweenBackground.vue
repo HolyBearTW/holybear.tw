@@ -4,6 +4,8 @@
 
 <script setup>
 import { onMounted, onUnmounted } from 'vue'
+import halloweenBatUrl from './assets/halloween/halloween2.png?url'
+import halloweenPumpkinUrl from './assets/halloween/halloween1.png?url'
 
 // 萬聖節主題背景元件
 // 注意：不要在模組載入時就寫入 root 變數，會導致其他主題被覆蓋
@@ -84,19 +86,20 @@ function startHalloween() {
 
   for (let i = 0; i < 12; i++) {
     const bat = document.createElement('img');
-    bat.src = '/image/halloween/halloween2.png';
+    bat.src = halloweenBatUrl;
     bat.style.position = 'absolute';
-    bat.style.left = `${Math.random()*100}vw`;
-    bat.style.top = `${Math.random()*100}vh`;
+    bat.style.left = '0';
+    bat.style.top = '0';
+    bat.style.translate = `${Math.random()*100}vw ${Math.random()*100}vh`;
     bat.style.width = '48px';
     bat.style.height = 'auto';
     bat.style.opacity = '0.7';
-    bat.style.transition = 'transform 1.2s, left 3s, top 3s';
+    bat.style.transition = 'transform 1.2s, translate 3s';
+    bat.style.willChange = 'transform, translate';
     batContainer.appendChild(bat);
 
     const id = setInterval(()=>{
-      bat.style.left = `${Math.random()*100}vw`;
-      bat.style.top = `${Math.random()*100}vh`;
+      bat.style.translate = `${Math.random()*100}vw ${Math.random()*100}vh`;
       bat.style.transform = `translateY(${Math.random()*40-20}px) rotate(${Math.random()*40-20}deg)`;
     }, 2000 + Math.random()*1500);
     batIntervalIds.push(id);
@@ -135,7 +138,7 @@ function startHalloween() {
 
     pumpkin.innerHTML = `
     <div style="position:relative;width:320px;height:220px;">
-      <img src="/image/halloween/halloween1.png" style="width:100%;filter:drop-shadow(0 0 48px #ff9800) brightness(1.2);transition:filter 1.2s;" id="pumpkin-img">
+      <img src="${halloweenPumpkinUrl}" style="width:100%;filter:drop-shadow(0 0 48px #ff9800) brightness(1.2);transition:filter 1.2s;" id="pumpkin-img">
       <div id="pumpkin-glow" style="position:absolute;left:80px;top:120px;width:160px;height:80px;background:radial-gradient(circle,#fff200 60%,#ff9800 100%);border-radius:50%;opacity:0.7;filter:blur(16px);transition:background 1.2s; pointer-events: none;"></div>
     </div>
   `;
@@ -281,7 +284,7 @@ body.theme-halloween {
   position: fixed;
   inset: 0;
   z-index: -1;
-  background: #1a1a1a url('/image/halloween/halloween2.png') repeat;
+  background: #1a1a1a url('./assets/halloween/halloween2.png') repeat;
 }
 
 /* 強制覆蓋 VitePress 導航欄、標題、全站顏色 */
@@ -289,7 +292,7 @@ body.theme-halloween .VPNav,
 body.theme-halloween .VPNavBar,
 body.theme-halloween header {
   /* Apply the semi-transparent background directly to the nav bar */
-  background: rgba(34,34,34,0.7) url('/image/halloween/halloween1.png') repeat-x !important;
+  background: rgba(34,34,34,0.7) url('./assets/halloween/halloween1.png') repeat-x !important;
   background-size: 90px auto !important;
   border-bottom: 2px solid #ff9800 !important;
   color: #ff9800 !important;
@@ -449,10 +452,10 @@ body.theme-halloween .VPHome .VPButton.brand {
 
 /* Change logo and hero image for Halloween theme */
 body.theme-halloween .VPImage.logo {
-  content: url('/image/halloween/halloween.png');
+  content: url('./assets/halloween/halloween.png');
 }
 
 body.theme-halloween .VPHero .image-container .VPImage {
-  content: url('/image/halloween/halloween.png');
+  content: url('./assets/halloween/halloween.png');
 }
 </style>

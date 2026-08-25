@@ -276,6 +276,12 @@ jobs:
         run: |
           rm -rf .vitepress/.cache .vitepress/dist .vite node_modules/.vite
 
+      - name: 產生部署用 WebP 圖片
+        run: |
+          # 只改這次 runner 的暫存工作區，不提交 package.json / yarn.lock。
+          yarn add --dev --ignore-scripts --pure-lockfile --non-interactive sharp@0.35.3
+          yarn run optimize:deploy-images
+
       - name: 建置 VitePress 網站
         env:
           VITE_NEXON_API_KEY: ${{ secrets.VITE_NEXON_API_KEY }}

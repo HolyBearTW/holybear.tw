@@ -6,6 +6,12 @@ import { animate as animeAnimate, stagger } from 'animejs'
 // Canvas 引用
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 let animationId: number | null = null
+let canvasContext: CanvasRenderingContext2D | null = null
+let backgroundGradient: CanvasGradient | null = null
+let backgroundGlowGradient: CanvasGradient | null = null
+let backgroundWidth = 0
+let backgroundHeight = 0
+let backgroundIsDark = false
 
 // 深色模式檢測
 const { isDark } = useData()
@@ -44,6 +50,7 @@ let lightAnimations: any[] = []
 const mouseX = ref(0)
 const mouseY = ref(0)
 const mouseInfluenceRadius = 150 // 滑鼠影響範圍
+let mousePositionDirty = true
 
 // 檢測是否為手機版面
 const isMobile = ref(false)
@@ -160,38 +167,33 @@ const initFlowingLights = (width: number, height: number) => {
 
 // 繪製背景（根據深色模式調整）
 const drawBackground = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
-  const gradient = ctx.createLinearGradient(0, 0, width, height)
-  
-  if (isDark.value) {
-    // 深色模式：深色漸層背景
-    gradient.addColorStop(0, '#1a1820')    // 深紫灰
-    gradient.addColorStop(0.5, '#1e1e1e')  // 深灰
-    gradient.addColorStop(1, '#1a1420')    // 深粉灰
-  } else {
-    // 淺色模式：粉白漸層背景
-    gradient.addColorStop(0, '#fff5f7')    // 淺粉白
-    gradient.addColorStop(0.5, '#ffffff')  // 純白
-    gradient.addColorStop(1, '#f8f0f2')    // 淺粉灰
+  if (!backgroundGradient || !backgroundGlowGradient || backgroundWidth !== width || backgroundHeight !== height || backgroundIsDark !== isDark.value) {
+    backgroundWidth = width
+    backgroundHeight = height
+    backgroundIsDark = isDark.value
+    backgroundGradient = ctx.createLinearGradient(0, 0, width, height)
+    backgroundGlowGradient = ctx.createRadialGradient(
+      width * 0.5, height * 0.5, 0,
+      width * 0.5, height * 0.5, width * 0.6
+    )
+    if (isDark.value) {
+      backgroundGradient.addColorStop(0, '#1a1820')
+      backgroundGradient.addColorStop(0.5, '#1e1e1e')
+      backgroundGradient.addColorStop(1, '#1a1420')
+      backgroundGlowGradient.addColorStop(0, 'rgba(180, 100, 120, 0.08)')
+      backgroundGlowGradient.addColorStop(1, 'rgba(180, 100, 120, 0)')
+    } else {
+      backgroundGradient.addColorStop(0, '#fff5f7')
+      backgroundGradient.addColorStop(0.5, '#ffffff')
+      backgroundGradient.addColorStop(1, '#f8f0f2')
+      backgroundGlowGradient.addColorStop(0, 'rgba(255, 182, 193, 0.1)')
+      backgroundGlowGradient.addColorStop(1, 'rgba(255, 182, 193, 0)')
+    }
   }
-  
-  ctx.fillStyle = gradient
+
+  ctx.fillStyle = backgroundGradient
   ctx.fillRect(0, 0, width, height)
-  
-  // 添加柔和的徑向光暈
-  const glowGradient = ctx.createRadialGradient(
-    width * 0.5, height * 0.5, 0,
-    width * 0.5, height * 0.5, width * 0.6
-  )
-  
-  if (isDark.value) {
-    glowGradient.addColorStop(0, 'rgba(180, 100, 120, 0.08)') // 深色模式暗粉紅光暈
-    glowGradient.addColorStop(1, 'rgba(180, 100, 120, 0)')
-  } else {
-    glowGradient.addColorStop(0, 'rgba(255, 182, 193, 0.1)') // 淺色模式淺粉紅光暈
-    glowGradient.addColorStop(1, 'rgba(255, 182, 193, 0)')
-  }
-  
-  ctx.fillStyle = glowGradient
+  ctx.fillStyle = backgroundGlowGradient
   ctx.fillRect(0, 0, width, height)
 }
 
@@ -240,6 +242,8 @@ const drawParticles = (ctx: CanvasRenderingContext2D, time: number) => {
 
 // 更新流光軌跡位置（根據滑鼠影響 - 平滑圓形偏移，避免點纏繞）
 const updateFlowingLights = () => {
+  if (!mousePositionDirty) return
+  mousePositionDirty = false
   flowingLights.forEach(light => {
     // 第一步：計算每個點的偏移
     const offsets = light.originalPoints.map((originalPoint) => {
@@ -303,19 +307,10 @@ const drawFlowingLights = (ctx: CanvasRenderingContext2D, time: number) => {
     
     const offset = (time * light.speed) % 1000
     
-    // 使用 Path2D 繪製完整軌跡，避免分節點圓形
-    const path = new Path2D()
-    
-    // 先繪製完整路徑
-    if (light.points.length > 0) {
-      path.moveTo(light.points[0].x, light.points[0].y)
-      for (let i = 1; i < light.points.length; i++) {
-        path.lineTo(light.points[i].x, light.points[i].y)
-      }
-    }
-    
     // 先繪製主體路徑（無陰影，避免端點可見）
     ctx.shadowBlur = 0
+    ctx.lineCap = 'round'
+    ctx.lineJoin = 'round'
     
     for (let i = 0; i < light.points.length - 1; i++) {
       const progress = (i / light.points.length + offset / 1000) % 1
@@ -346,56 +341,12 @@ const drawFlowingLights = (ctx: CanvasRenderingContext2D, time: number) => {
       // 計算當前線條寬度（應用動畫縮放）
       const scaledWidth = currentWidth * animScale
       
-      // 繪製漸變線段（使用 round 讓線段平滑連接）
-      const gradient = ctx.createLinearGradient(
-        point.x, point.y,
-        nextPoint.x, nextPoint.y
-      )
-      gradient.addColorStop(0, `hsla(${hue}, 100%, 65%, ${alpha})`)
-      gradient.addColorStop(1, `hsla(${(hue + 30) % 360}, 100%, 65%, ${alpha})`)
-      
-      ctx.strokeStyle = gradient
+      // 每個短線段僅相差少量色相，使用中間色可保留流光漸變並避免每幀建立數百個 Gradient。
+      ctx.strokeStyle = `hsla(${(hue + 15) % 360}, 100%, 65%, ${alpha})`
       ctx.lineWidth = scaledWidth
-      ctx.lineCap = 'round' // 使用圓頭讓線段自然連接
-      ctx.lineJoin = 'round' // 保持轉角平滑
       ctx.beginPath()
       ctx.moveTo(point.x, point.y)
       ctx.lineTo(nextPoint.x, nextPoint.y)
-      ctx.stroke()
-    }
-    
-    // 第二層：只繪製光暈效果（透明度更低，不顯示端點）
-    for (let i = 0; i < light.points.length - 1; i++) {
-      const progress = (i / light.points.length + offset / 1000) % 1
-      const point = light.points[i]
-      const nextPoint = light.points[i + 1]
-      
-      const thicknessProgress = i / light.points.length
-      const maxWidth = light.customThickness?.max || 10
-      const minWidth = light.customThickness?.min || 1.5
-      
-      let currentWidth
-      if (light.reverseThickness) {
-        currentWidth = minWidth + (maxWidth - minWidth) * thicknessProgress
-      } else {
-        currentWidth = maxWidth - (maxWidth - minWidth) * thicknessProgress
-      }
-      
-      const hue = (light.hueOffset + progress * 360) % 360
-      const alpha = Math.sin(progress * Math.PI) * 0.3 * animOpacity // 光暈透明度也應用動畫
-      
-      // 只在線段中間添加光暈
-      const midX = (point.x + nextPoint.x) / 2
-      const midY = (point.y + nextPoint.y) / 2
-      
-      ctx.shadowColor = `hsla(${hue}, 100%, 60%, ${alpha})`
-      ctx.shadowBlur = currentWidth * animScale * 3 // 光暈也應用縮放
-      ctx.strokeStyle = `hsla(${hue}, 100%, 65%, 0)` // 完全透明的線條只為了光暈
-      ctx.lineWidth = currentWidth * animScale * 0.5
-      ctx.lineCap = 'round'
-      ctx.beginPath()
-      ctx.moveTo(midX, midY)
-      ctx.lineTo(midX, midY) // 單點光暈
       ctx.stroke()
     }
     
@@ -406,17 +357,13 @@ const drawFlowingLights = (ctx: CanvasRenderingContext2D, time: number) => {
 // 繪製角落光效已移除（根據用戶要求）
 
 // 主動畫循環
-const animate = () => {
+const animate = (time: number) => {
   const canvas = canvasRef.value
-  if (!canvas) return
-  
-  const ctx = canvas.getContext('2d', { willReadFrequently: true })
-  if (!ctx) return
+  const ctx = canvasContext
+  if (!canvas || !ctx || document.hidden) return
   
   const width = canvas.width
   const height = canvas.height
-  const time = Date.now()
-  
   // 清空畫布
   ctx.clearRect(0, 0, width, height)
   
@@ -444,6 +391,20 @@ const animate = () => {
   animationId = requestAnimationFrame(animate)
 }
 
+const startAnimation = () => {
+  if (animationId !== null || document.hidden) return
+  animationId = requestAnimationFrame(animate)
+}
+
+const handleVisibilityChange = () => {
+  if (document.hidden) {
+    if (animationId !== null) cancelAnimationFrame(animationId)
+    animationId = null
+  } else {
+    startAnimation()
+  }
+}
+
 // 調整 Canvas 大小
 let resizeTimeout: number | null = null
 let lastWidth = 0
@@ -463,6 +424,8 @@ const resizeCanvas = () => {
   lastWidth = width
   canvas.width = width
   canvas.height = height
+  backgroundGradient = null
+  backgroundGlowGradient = null
   
   // 更新響應式狀態
   updateResponsive()
@@ -470,6 +433,7 @@ const resizeCanvas = () => {
   // 重新初始化
   initParticles(width, height)
   initFlowingLights(width, height)
+  mousePositionDirty = true
 }
 
 // Debounced resize handler
@@ -486,12 +450,15 @@ const debouncedResize = () => {
 const handleMouseMove = (e: MouseEvent) => {
   mouseX.value = e.clientX
   mouseY.value = e.clientY
+  mousePositionDirty = true
 }
 
 // 初始化
 onMounted(() => {
   const canvas = canvasRef.value
   if (!canvas) return
+  canvasContext = canvas.getContext('2d')
+  if (!canvasContext) return
   
   // 初始化響應式狀態
   updateResponsive()
@@ -501,25 +468,29 @@ onMounted(() => {
   
   window.addEventListener('resize', debouncedResize)
   window.addEventListener('mousemove', handleMouseMove)
+  document.addEventListener('visibilitychange', handleVisibilityChange)
   
   // 開始動畫
-  animate()
+  startAnimation()
 })
 
 // 清理
 onUnmounted(() => {
-  if (animationId) {
+  if (animationId !== null) {
     cancelAnimationFrame(animationId)
   }
+  animationId = null
   if (resizeTimeout) {
     clearTimeout(resizeTimeout)
   }
   // 停止所有 anime.js 動畫
   lightAnimations.forEach(anim => anim.pause && anim.pause())
   lightAnimations = []
+  canvasContext = null
   
   window.removeEventListener('resize', debouncedResize)
   window.removeEventListener('mousemove', handleMouseMove)
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
 })
 </script>
 

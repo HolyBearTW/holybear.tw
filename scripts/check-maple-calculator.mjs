@@ -1,5 +1,5 @@
 const moduleUrl = process.env.MAPLE_CALCULATOR_MODULE_URL
-  || 'http://localhost:5173/.vitepress/components/maplestory/calculator/mapleCombatCalculator.ts';
+  || 'http://localhost:5173/.vitepress/theme/maplestory/calculator/mapleCombatCalculator.ts';
 
 const response = await fetch(moduleUrl);
 if (!response.ok) throw new Error(`無法讀取計算機模組：HTTP ${response.status}`);

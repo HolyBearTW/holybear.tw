@@ -117,6 +117,7 @@ three/.vitepress/cache/
 # vitepress temp and cache directory
 .vitepress/temp
 .vitepress/cache
+.vitepress/image-optimization-manifest.json
 
 # Docusaurus cache and generated files
 .docusaurus

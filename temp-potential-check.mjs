@@ -1,4 +1,4 @@
-import { explainPotentialLineGrade, inferPotentialLineGrade } from './.vitepress/components/maplestory/potentialInference.ts';
+import { explainPotentialLineGrade, inferPotentialLineGrade } from './.vitepress/theme/maplestory/potentialInference.ts';
 
 const item = {
   item_name: '創世長劍',

@@ -13,6 +13,8 @@ import {
   Sparkles,
   Terminal
 } from 'lucide-vue-next'
+import homeLogoUrl from '../theme/assets/animations/logo.webp?url'
+import homeAvatarUrl from '../theme/assets/images/holybear-800.webp?url'
 
 const units = [
   {
@@ -258,7 +260,7 @@ onBeforeUnmount(() => {
         <div class="hero-copy">
           <div class="hero-brand-lockup">
             <div class="hero-logo-card">
-              <img src="/animations/logo.png" alt="HolyBearTW" class="hero-logo no-zoom">
+              <img :src="homeLogoUrl" alt="HolyBearTW" class="hero-logo no-zoom" decoding="async" fetchpriority="high">
             </div>
           </div>
           <div class="hero-title-group">
@@ -312,7 +314,7 @@ onBeforeUnmount(() => {
           <div class="avatar-rig">
             <div class="avatar-halo" aria-hidden="true"></div>
             <div class="avatar-frame">
-              <img src="/holybear.png" alt="聖小熊" class="no-zoom">
+              <img :src="homeAvatarUrl" alt="聖小熊" class="no-zoom" decoding="async" fetchpriority="high">
             </div>
           </div>
 

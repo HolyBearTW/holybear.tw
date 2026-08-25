@@ -14,6 +14,7 @@ let mouseY = 0
 let time = 0
 let glitchTime = 0
 let nextGlitchTime = Math.random() * 300 + 200 // 隨機 200-500 幀後觸發 glitch
+let previousFrameTime = 0
 
 interface Node {
   x: number
@@ -203,8 +204,8 @@ const drawGlitch = (ctx: CanvasRenderingContext2D, width: number, height: number
     const h = Math.random() * 3 + 1
     const offset = (Math.random() - 0.5) * 10 * intensity
     
-    const imageData = ctx.getImageData(0, y, width, h)
-    ctx.putImageData(imageData, offset, y)
+    // Canvas 自身切片即可保留錯位效果，避免同步讀回整條像素資料造成 GPU 停頓。
+    ctx.drawImage(ctx.canvas, 0, y, width, h, offset, y, width, h)
   }
   
   // RGB 分離效果
@@ -220,20 +221,19 @@ const drawGlitch = (ctx: CanvasRenderingContext2D, width: number, height: number
 const drawScanlines = (ctx: CanvasRenderingContext2D, width: number, height: number, offset: number) => {
   ctx.strokeStyle = colors.value.scanline
   ctx.lineWidth = 1
-  
+  ctx.beginPath()
   for (let y = offset % 4; y < height; y += 4) {
-    ctx.beginPath()
     ctx.moveTo(0, y)
     ctx.lineTo(width, y)
-    ctx.stroke()
   }
+  ctx.stroke()
 }
 
 // 主動畫循環
-const animate = () => {
-  if (!canvas.value) return
+const animate = (now: number) => {
+  if (!canvas.value || document.hidden) return
   if (!ctx) {
-    ctx = canvas.value.getContext('2d', { alpha: false, willReadFrequently: true }) as CanvasRenderingContext2D | null
+    ctx = canvas.value.getContext('2d', { alpha: false }) as CanvasRenderingContext2D | null
   }
   if (!ctx) return
   const c = ctx as CanvasRenderingContext2D
@@ -241,7 +241,9 @@ const animate = () => {
   const width = canvas.value.width
   const height = canvas.value.height
   
-  time += 0.3
+  const frameScale = previousFrameTime ? Math.min((now - previousFrameTime) / 16.667, 2) : 1
+  previousFrameTime = now
+  time += 0.3 * frameScale
   
   // 清除畫布
   c.fillStyle = isDark.value ? 'rgba(10, 15, 25, 0.95)' : 'rgba(250, 252, 255, 0.95)'
@@ -276,21 +278,23 @@ const animate = () => {
     // 滑鼠互動
     const dx = mouseX - node.x
     const dy = mouseY - node.y
-    const distance = Math.sqrt(dx * dx + dy * dy)
+    const distanceSquared = dx * dx + dy * dy
     
-    if (distance < 200) {
+    if (distanceSquared > 0 && distanceSquared < 200 * 200) {
+      const distance = Math.sqrt(distanceSquared)
       const force = (200 - distance) / 200
-      node.vx -= (dx / distance) * force * 0.05
-      node.vy -= (dy / distance) * force * 0.05
+      node.vx -= (dx / distance) * force * 0.05 * frameScale
+      node.vy -= (dy / distance) * force * 0.05 * frameScale
     }
     
     // 更新位置
-    node.x += node.vx
-    node.y += node.vy
+    node.x += node.vx * frameScale
+    node.y += node.vy * frameScale
     
     // 阻力
-    node.vx *= 0.98
-    node.vy *= 0.98
+    const damping = Math.pow(0.98, frameScale)
+    node.vx *= damping
+    node.vy *= damping
     
     // 邊界反彈
     if (node.x < 0 || node.x > width) node.vx *= -1
@@ -305,12 +309,14 @@ const animate = () => {
     c.fill()
     
     // 繪製連線
-    nodes.slice(i + 1).forEach(other => {
+    for (let otherIndex = i + 1; otherIndex < nodes.length; otherIndex++) {
+      const other = nodes[otherIndex]
       const dx = node.x - other.x
       const dy = node.y - other.y
-      const dist = Math.sqrt(dx * dx + dy * dy)
+      const distanceSquared = dx * dx + dy * dy
       
-      if (dist < 150) {
+      if (distanceSquared < 150 * 150) {
+        const dist = Math.sqrt(distanceSquared)
         const opacity = (1 - dist / 150) * 0.3
         c.beginPath()
         c.moveTo(node.x, node.y)
@@ -321,12 +327,12 @@ const animate = () => {
         c.lineWidth = 0.5
         c.stroke()
       }
-    })
+    }
   })
   
   // 4. 繪製數據流
   dataFlows.forEach(flow => {
-    flow.position += flow.speed
+    flow.position += flow.speed * frameScale
     if (flow.position >= flow.path.length) {
       flow.position = 0
     }
@@ -376,6 +382,21 @@ const animate = () => {
   drawGlitch(c, width, height)
   
   animationId = requestAnimationFrame(animate)
+}
+
+const startAnimation = () => {
+  if (animationId !== null || document.hidden) return
+  previousFrameTime = 0
+  animationId = requestAnimationFrame(animate)
+}
+
+const handleVisibilityChange = () => {
+  if (document.hidden) {
+    if (animationId !== null) cancelAnimationFrame(animationId)
+    animationId = null
+  } else {
+    startAnimation()
+  }
 }
 
 // 滑鼠移動處理
@@ -429,24 +450,27 @@ onMounted(() => {
   initDataFlows(canvas.value.width, canvas.value.height)
   initHexagons(canvas.value.width, canvas.value.height)
   // 背景每幀都完整重繪，不需要保留透明通道，可降低部分手機瀏覽器的合成閃爍。
-  ctx = canvas.value.getContext('2d', { alpha: false, willReadFrequently: true }) as CanvasRenderingContext2D | null
-  animate()
+  ctx = canvas.value.getContext('2d', { alpha: false }) as CanvasRenderingContext2D | null
+  startAnimation()
   
   window.addEventListener('mousemove', handleMouseMove)
   window.addEventListener('resize', debouncedResize)
+  document.addEventListener('visibilitychange', handleVisibilityChange)
 })
 
 // 組件卸載
 onUnmounted(() => {
-  if (animationId) {
+  if (animationId !== null) {
     cancelAnimationFrame(animationId)
   }
+  animationId = null
   ctx = null
   if (resizeTimeout) {
     clearTimeout(resizeTimeout)
   }
   window.removeEventListener('mousemove', handleMouseMove)
   window.removeEventListener('resize', debouncedResize)
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
 })
 </script>
 

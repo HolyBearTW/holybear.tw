@@ -108,12 +108,23 @@ const RecentPowerRanking: React.FC<RecentPowerRankingProps> = ({ onSelectCharact
                 alt={item.characterName}
                 className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 object-cover"
                 src={item.characterImage}
+                loading={idx < 3 ? 'eager' : 'lazy'}
+                decoding="async"
+                fetchPriority={idx < 3 ? 'high' : 'auto'}
               />
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1">
                 {SERVER_ICONS[item.worldName] ? (
-                  <img alt={item.worldName} width={14} height={14} className="shrink-0" src={SERVER_ICONS[item.worldName]} />
+                  <img
+                    alt={item.worldName}
+                    width={14}
+                    height={14}
+                    className="shrink-0"
+                    src={SERVER_ICONS[item.worldName]}
+                    loading={idx < 3 ? 'eager' : 'lazy'}
+                    decoding="async"
+                  />
                 ) : null}
                 <p className="text-xs font-semibold truncate text-slate-200">{item.characterName}</p>
               </div>

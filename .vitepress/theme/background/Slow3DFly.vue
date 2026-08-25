@@ -1,11 +1,21 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { useData } from 'vitepress'
 import { animate as animeAnimate } from 'animejs'
+import flowerUrl from './assets/flower.svg?url'
 
 // Canvas 引用
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 let animationId: number | null = null
+let canvasContext: CanvasRenderingContext2D | null = null
+let backgroundGradient: CanvasGradient | null = null
+let backgroundGradientWidth = 0
+let backgroundGradientHeight = 0
+let backgroundGradientIsDark = false
+let animationStartedAt = 0
+const activeAnimeAnimations: Array<{ cancel?: () => void }> = []
+const inkTimeoutIds = new Set<number>()
+let inkIntervalId: number | null = null
 
 // 深色模式檢測
 const { isDark } = useData()
@@ -14,7 +24,12 @@ const { isDark } = useData()
 let flowerImage: HTMLImageElement | null = null
 const loadFlowerSVG = () => {
   flowerImage = new Image()
-  flowerImage.src = '/image/theme/flower.svg'
+  flowerImage.onload = () => {
+    petals.forEach(petal => {
+      petal.sprite = createPetalSprite(petal)
+    })
+  }
+  flowerImage.src = flowerUrl
 }
 
 // 1. 花瓣/雪花定義
@@ -28,6 +43,7 @@ interface Petal {
   sway: number
   color: string
   shape: 'petal' | 'snowflake'
+  sprite?: HTMLCanvasElement
 }
 
 // 2. 深海氣泡定義
@@ -39,6 +55,8 @@ interface Bubble {
   speed: number
   sway: number
   wobble: number
+  sprite?: HTMLCanvasElement
+  spriteIsDark?: boolean
 }
 
 // 3. 水墨暈染定義 - 參考 untitled-1.html 的多墨點設計
@@ -62,18 +80,133 @@ interface InkBlot {
 interface Firefly {
   x: number
   y: number
+  originX: number
+  originY: number
   brightness: number
   size: number
   color: string
   animationIndex: number // 用於選擇不同的動畫軌跡
   animationDuration: number // 動畫持續時間
   animationDelay: number // 動畫延遲
+  glowSprite?: HTMLCanvasElement
+  glowRadius: number
 }
 
 const petals: Petal[] = []
 const bubbles: Bubble[] = []
 const inkBlots: InkBlot[] = []
 const fireflies: Firefly[] = []
+
+const trackAnimation = (animation: { cancel?: () => void }) => {
+  activeAnimeAnimations.push(animation)
+}
+
+const clearSceneAnimations = () => {
+  activeAnimeAnimations.splice(0).forEach(animation => animation.cancel?.())
+  inkTimeoutIds.forEach(id => clearTimeout(id))
+  inkTimeoutIds.clear()
+  if (inkIntervalId !== null) {
+    clearInterval(inkIntervalId)
+    inkIntervalId = null
+  }
+}
+
+const scheduleInkTimeout = (callback: () => void, delay: number) => {
+  const id = window.setTimeout(() => {
+    inkTimeoutIds.delete(id)
+    callback()
+  }, delay)
+  inkTimeoutIds.add(id)
+}
+
+const createPetalSprite = (petal: Petal) => {
+  if (!flowerImage?.complete || flowerImage.naturalWidth === 0) return undefined
+
+  const imageSize = petal.size * 3
+  const padding = 18
+  const sprite = document.createElement('canvas')
+  sprite.width = Math.ceil(imageSize + padding * 2)
+  sprite.height = Math.ceil(imageSize + padding * 2)
+  const spriteCtx = sprite.getContext('2d')
+  if (!spriteCtx) return undefined
+
+  spriteCtx.shadowColor = petal.color
+  spriteCtx.shadowBlur = 15
+  spriteCtx.drawImage(flowerImage, padding, padding, imageSize, imageSize)
+  spriteCtx.globalCompositeOperation = 'source-in'
+  spriteCtx.fillStyle = petal.color
+  spriteCtx.fillRect(0, 0, sprite.width, sprite.height)
+  return sprite
+}
+
+const createBubbleSprite = (bubble: Bubble) => {
+  const padding = 3
+  const diameter = Math.ceil((bubble.size + padding) * 2)
+  const center = diameter / 2
+  const sprite = document.createElement('canvas')
+  sprite.width = diameter
+  sprite.height = diameter
+  const spriteCtx = sprite.getContext('2d')
+  if (!spriteCtx) return undefined
+
+  const gradient = spriteCtx.createRadialGradient(center, center, 0, center, center, bubble.size)
+  gradient.addColorStop(0, isDark.value
+    ? `rgba(100, 200, 255, ${bubble.opacity * 0.6})`
+    : `rgba(100, 180, 255, ${bubble.opacity * 0.8})`)
+  gradient.addColorStop(0.7, isDark.value
+    ? `rgba(50, 150, 200, ${bubble.opacity * 0.3})`
+    : `rgba(50, 150, 255, ${bubble.opacity * 0.5})`)
+  gradient.addColorStop(1, 'rgba(0, 0, 0, 0)')
+  spriteCtx.fillStyle = gradient
+  spriteCtx.beginPath()
+  spriteCtx.arc(center, center, bubble.size, 0, Math.PI * 2)
+  spriteCtx.fill()
+  spriteCtx.strokeStyle = isDark.value
+    ? `rgba(150, 220, 255, ${bubble.opacity * 0.8})`
+    : `rgba(50, 150, 255, ${bubble.opacity * 0.9})`
+  spriteCtx.lineWidth = 1.5
+  spriteCtx.beginPath()
+  spriteCtx.arc(center, center, bubble.size * 0.9, 0, Math.PI * 2)
+  spriteCtx.stroke()
+  spriteCtx.fillStyle = isDark.value
+    ? `rgba(255, 255, 255, ${bubble.opacity * 0.6})`
+    : `rgba(255, 255, 255, ${bubble.opacity * 0.9})`
+  spriteCtx.beginPath()
+  spriteCtx.arc(center - bubble.size * 0.3, center - bubble.size * 0.3, bubble.size * 0.2, 0, Math.PI * 2)
+  spriteCtx.fill()
+  bubble.spriteIsDark = isDark.value
+  return sprite
+}
+
+const createFireflyGlowSprite = (firefly: Firefly) => {
+  const glowRadius = firefly.size * 14 * 1.5
+  const diameter = Math.ceil(glowRadius * 2 + 4)
+  const center = diameter / 2
+  const sprite = document.createElement('canvas')
+  sprite.width = diameter
+  sprite.height = diameter
+  const spriteCtx = sprite.getContext('2d')
+  if (!spriteCtx) return undefined
+
+  const outerGradient = spriteCtx.createRadialGradient(center, center, 0, center, center, glowRadius)
+  outerGradient.addColorStop(0, firefly.color.replace('hsl', 'hsla').replace(')', ', 0.3)'))
+  outerGradient.addColorStop(0.5, firefly.color.replace('hsl', 'hsla').replace(')', ', 0.1)'))
+  outerGradient.addColorStop(1, 'rgba(0, 0, 0, 0)')
+  spriteCtx.fillStyle = outerGradient
+  spriteCtx.fillRect(0, 0, diameter, diameter)
+
+  const innerRadius = firefly.size * 14
+  const innerGradient = spriteCtx.createRadialGradient(center, center, 0, center, center, innerRadius)
+  innerGradient.addColorStop(0, firefly.color.replace('hsl', 'hsla').replace(')', ', 1)'))
+  innerGradient.addColorStop(0.4, firefly.color.replace('hsl', 'hsla').replace(')', ', 0.5)'))
+  innerGradient.addColorStop(1, 'rgba(0, 0, 0, 0)')
+  spriteCtx.fillStyle = innerGradient
+  spriteCtx.beginPath()
+  spriteCtx.arc(center, center, innerRadius, 0, Math.PI * 2)
+  spriteCtx.fill()
+  firefly.glowRadius = glowRadius
+  return sprite
+}
 
 // 初始化花瓣/雪花
 const initPetals = (width: number, height: number) => {
@@ -103,7 +236,7 @@ const initPetals = (width: number, height: number) => {
     }
     
     // 使用 anime.js 控制飄落和旋轉
-    animeAnimate(petal, {
+    trackAnimation(animeAnimate(petal, {
       y: height + 100,
       rotation: petal.rotation + Math.PI * 4,
       x: petal.x + petal.sway,
@@ -116,7 +249,7 @@ const initPetals = (width: number, height: number) => {
         petal.x = Math.random() * width
         petal.y = -50
       }
-    })
+    }))
     
     petals.push(petal)
   }
@@ -141,7 +274,7 @@ const initBubbles = (width: number, height: number) => {
     }
     
     // 使用 anime.js 控制上升和搖擺
-    animeAnimate(bubble, {
+    trackAnimation(animeAnimate(bubble, {
       y: -100,
       duration: (15000 + Math.random() * 10000) / bubble.speed, // 更快：20000+15000 → 15000+10000
       delay: i * 150, // 更頻繁出現：300 → 150
@@ -152,10 +285,10 @@ const initBubbles = (width: number, height: number) => {
         bubble.x = Math.random() * width
         bubble.y = height + 50
       }
-    })
+    }))
     
     // 左右搖擺動畫
-    animeAnimate(bubble, {
+    trackAnimation(animeAnimate(bubble, {
       sway: [
         { value: bubble.wobble, duration: 2000, ease: 'inOut(2)' },
         { value: -bubble.wobble, duration: 2000, ease: 'inOut(2)' },
@@ -163,7 +296,7 @@ const initBubbles = (width: number, height: number) => {
       ],
       loop: true,
       autoplay: true
-    })
+    }))
     
     bubbles.push(bubble)
   }
@@ -217,6 +350,7 @@ const initInkBlots = (width: number, height: number) => {
     
     // 使用 anime.js 控制墨點擴散 (參考 untitled-1.html 的 2000-4000ms duration)
     blot.dots.forEach((dot, i) => {
+      // 單次墨點動畫會自行結束，不放進長期追蹤陣列，避免每五秒累積參照。
       animeAnimate(dot, {
         scale: () => Math.random() * 3 + 1, // 隨機放大：1-5倍 → 1-4倍
         opacity: [0.8, 0], // 從 0.8 開始消失
@@ -228,7 +362,7 @@ const initInkBlots = (width: number, height: number) => {
     })
     
     // 整體暈染在所有墨點消失後移除
-    setTimeout(() => {
+    scheduleInkTimeout(() => {
       const index = inkBlots.indexOf(blot)
       if (index > -1) inkBlots.splice(index, 1)
     }, 4500) // 略長於最長動畫時間
@@ -238,11 +372,11 @@ const initInkBlots = (width: number, height: number) => {
   
   // 初始創建減少：3 → 2
   for (let i = 0; i < 2; i++) {
-    setTimeout(() => createInkBlot(), i * 1500)
+    scheduleInkTimeout(() => createInkBlot(), i * 1500)
   }
   
   // 持續創建新的，間隔增加：3秒 → 5秒
-  setInterval(createInkBlot, 5000)
+  inkIntervalId = window.setInterval(createInkBlot, 5000)
 }
 
 // 初始化螢火蟲 - 使用 CSS 動畫風格 (參考 HyperOS)
@@ -253,9 +387,13 @@ const initFireflies = (width: number, height: number) => {
   const count = isMobile ? 10 : 30 // 移動端：5 個，桌面端：10 個（原 20）
   
   for (let i = 0; i < count; i++) {
+    const originX = Math.random() * width
+    const originY = Math.random() * height
     const firefly: Firefly = {
-      x: Math.random() * width,
-      y: Math.random() * height,
+      x: originX,
+      y: originY,
+      originX,
+      originY,
       brightness: Math.random() * 0.8 + 0.2,
       size: Math.random() * 3 + 1.5,
       color: isDark.value
@@ -263,42 +401,43 @@ const initFireflies = (width: number, height: number) => {
         : `hsl(${Math.random() * 60 + 30}, 100%, 55%)`, // 淺色模式：亮橙黃色（更暖色調）
       animationIndex: i % 4, // 4 種不同的移動軌跡
       animationDuration: 200000 + Math.random() * 100000, // 200-300 秒 (超級緩慢，3-5 分鐘一個循環)
-      animationDelay: i * 300 // 交錯啟動延遲增加
+      animationDelay: i * 300, // 交錯啟動延遲增加
+      glowRadius: 0
     }
-    
+    firefly.glowSprite = createFireflyGlowSprite(firefly)
     fireflies.push(firefly)
   }
 }
 
 // 更新螢火蟲位置 (模擬 CSS 關鍵幀動畫)
-const updateFireflies = (width: number, height: number) => {
-  const now = Date.now()
+const updateFireflies = (width: number, height: number, now: number) => {
   // 根據屏幕寬度調整移動幅度
   const isMobile = width < 1024
   const moveScale = isMobile ? 0.3 : 0.6 // 移動端幅度減少 70%，桌面端減少 40%
   
   fireflies.forEach(firefly => {
-    const elapsed = (now - firefly.animationDelay) % firefly.animationDuration
+    const elapsed = (now - animationStartedAt + firefly.animationDelay) % firefly.animationDuration
     const progress = elapsed / firefly.animationDuration
+    const elapsedSeconds = firefly.animationDuration / 1000
     
     // 根據不同的 animationIndex 使用不同的移動軌跡 (大幅減少移動量)
     switch (firefly.animationIndex) {
       case 0: // 軌跡 1：橢圓形移動 (幅度大幅減少)
-        firefly.x = (firefly.x % width) + Math.sin(progress * Math.PI * 2) * 3 * moveScale
-        firefly.y = (firefly.y % height) + Math.cos(progress * Math.PI * 2) * 2 * moveScale
+        firefly.x = firefly.originX + Math.sin(progress * Math.PI * 2) * 3 * moveScale
+        firefly.y = firefly.originY + Math.cos(progress * Math.PI * 2) * 2 * moveScale
         break
       case 1: // 軌跡 2：波浪形移動 (幾乎靜止)
-        firefly.x = (firefly.x + 0.005 * moveScale) % width
-        firefly.y = (firefly.y % height) + Math.sin(progress * Math.PI * 4) * 1.5 * moveScale
+        firefly.x = firefly.originX + progress * 0.005 * moveScale * 60 * elapsedSeconds
+        firefly.y = firefly.originY + Math.sin(progress * Math.PI * 4) * 1.5 * moveScale
         break
       case 3: // 軌跡 3：對角線移動 (微小移動)
-        firefly.x = (firefly.x + 0.004 * moveScale) % width
-        firefly.y = (firefly.y + 0.005 * moveScale) % height
+        firefly.x = firefly.originX + progress * 0.004 * moveScale * 60 * elapsedSeconds
+        firefly.y = firefly.originY + progress * 0.005 * moveScale * 60 * elapsedSeconds
         break
       case 2: // 軌跡 4：隨機漂移 (極微小)
       default:
-        firefly.x = (firefly.x + Math.sin(progress * Math.PI * 3) * 0.008 * moveScale) % width
-        firefly.y = (firefly.y + Math.cos(progress * Math.PI * 2.5) * 0.006 * moveScale) % height
+        firefly.x = firefly.originX + Math.sin(progress * Math.PI * 3) * 2.4 * moveScale
+        firefly.y = firefly.originY + Math.cos(progress * Math.PI * 2.5) * 1.8 * moveScale
         break
     }
     
@@ -323,38 +462,10 @@ const drawPetals = (ctx: CanvasRenderingContext2D) => {
     ctx.globalAlpha = petal.opacity
     
     if (petal.shape === 'petal') {
-      // 使用 SVG 圖片繪製花瓣
-      if (flowerImage && flowerImage.complete) {
-        const size = petal.size * 3 // 放大尺寸以適配 SVG
-        
-        ctx.save()
-        
-        // 先繪製彩色陰影光暈
-        ctx.shadowColor = petal.color
-        ctx.shadowBlur = 15
-        ctx.shadowOffsetX = 0
-        ctx.shadowOffsetY = 0
-        
-        // 創建一個臨時 canvas 來處理 SVG 著色
-        const tempCanvas = document.createElement('canvas')
-        tempCanvas.width = size
-        tempCanvas.height = size
-        const tempCtx = tempCanvas.getContext('2d', { willReadFrequently: true })
-        
-        if (tempCtx) {
-          // 在臨時 canvas 上繪製 SVG
-          tempCtx.drawImage(flowerImage, 0, 0, size, size)
-          
-          // 使用 source-in 混合模式填充顏色
-          tempCtx.globalCompositeOperation = 'source-in'
-          tempCtx.fillStyle = petal.color
-          tempCtx.fillRect(0, 0, size, size)
-          
-          // 將著色後的圖片繪製到主 canvas
-          ctx.drawImage(tempCanvas, -size / 2, -size / 2, size, size)
-        }
-        
-        ctx.restore()
+      // SVG 著色與光暈只預先繪製一次，動畫幀只需貼上快取圖像。
+      if (!petal.sprite) petal.sprite = createPetalSprite(petal)
+      if (petal.sprite) {
+        ctx.drawImage(petal.sprite, -petal.sprite.width / 2, -petal.sprite.height / 2)
       }
     } else {
       // 繪製雪花（六角星形）
@@ -392,38 +503,12 @@ const drawPetals = (ctx: CanvasRenderingContext2D) => {
 const drawBubbles = (ctx: CanvasRenderingContext2D) => {
   bubbles.forEach(bubble => {
     const x = bubble.x + bubble.sway
-    
-    // 外圈光暈 - 淺色模式使用更鮮豔的顏色
-    const gradient = ctx.createRadialGradient(x, bubble.y, 0, x, bubble.y, bubble.size)
-    gradient.addColorStop(0, isDark.value 
-      ? `rgba(100, 200, 255, ${bubble.opacity * 0.6})`
-      : `rgba(100, 180, 255, ${bubble.opacity * 0.8})`) // 淺色模式：更亮的藍色
-    gradient.addColorStop(0.7, isDark.value
-      ? `rgba(50, 150, 200, ${bubble.opacity * 0.3})`
-      : `rgba(50, 150, 255, ${bubble.opacity * 0.5})`) // 淺色模式：更鮮豔
-    gradient.addColorStop(1, 'rgba(0, 0, 0, 0)')
-    
-    ctx.fillStyle = gradient
-    ctx.beginPath()
-    ctx.arc(x, bubble.y, bubble.size, 0, Math.PI * 2)
-    ctx.fill()
-    
-    // 氣泡邊緣 - 淺色模式使用更明顯的顏色
-    ctx.strokeStyle = isDark.value
-      ? `rgba(150, 220, 255, ${bubble.opacity * 0.8})`
-      : `rgba(50, 150, 255, ${bubble.opacity * 0.9})` // 淺色模式：更深的藍色邊緣
-    ctx.lineWidth = 1.5
-    ctx.beginPath()
-    ctx.arc(x, bubble.y, bubble.size * 0.9, 0, Math.PI * 2)
-    ctx.stroke()
-    
-    // 高光 - 淺色模式也保持明亮
-    ctx.fillStyle = isDark.value
-      ? `rgba(255, 255, 255, ${bubble.opacity * 0.6})`
-      : `rgba(255, 255, 255, ${bubble.opacity * 0.9})` // 淺色模式：更明顯的高光
-    ctx.beginPath()
-    ctx.arc(x - bubble.size * 0.3, bubble.y - bubble.size * 0.3, bubble.size * 0.2, 0, Math.PI * 2)
-    ctx.fill()
+    if (!bubble.sprite || bubble.spriteIsDark !== isDark.value) {
+      bubble.sprite = createBubbleSprite(bubble)
+    }
+    if (bubble.sprite) {
+      ctx.drawImage(bubble.sprite, x - bubble.sprite.width / 2, bubble.y - bubble.sprite.height / 2)
+    }
   })
 }
 
@@ -465,42 +550,16 @@ const drawFireflies = (ctx: CanvasRenderingContext2D) => {
   fireflies.forEach(firefly => {
     // 根據亮度調整光暈大小（亮度越高，光暈越大）
     const glowSize = firefly.size * (6 + firefly.brightness * 8)
-    
-    // 外層大光暈（柔和擴散）
-    const outerGradient = ctx.createRadialGradient(
-      firefly.x, firefly.y, 0,
-      firefly.x, firefly.y, glowSize * 1.5
-    )
-    
-    const hslaColorOuter = firefly.color.replace('hsl', 'hsla').replace(')', `, ${firefly.brightness * 0.3})`)
-    const hslaColorOuterFade = firefly.color.replace('hsl', 'hsla').replace(')', `, ${firefly.brightness * 0.1})`)
-    
-    outerGradient.addColorStop(0, hslaColorOuter)
-    outerGradient.addColorStop(0.5, hslaColorOuterFade)
-    outerGradient.addColorStop(1, 'rgba(0, 0, 0, 0)')
-    
-    ctx.fillStyle = outerGradient
-    ctx.beginPath()
-    ctx.arc(firefly.x, firefly.y, glowSize * 1.5, 0, Math.PI * 2)
-    ctx.fill()
-    
-    // 內層核心光暈（明亮集中）
-    const innerGradient = ctx.createRadialGradient(
-      firefly.x, firefly.y, 0,
-      firefly.x, firefly.y, glowSize
-    )
-    
-    const hslaColor = firefly.color.replace('hsl', 'hsla').replace(')', `, ${firefly.brightness})`)
-    const hslaColorFade = firefly.color.replace('hsl', 'hsla').replace(')', `, ${firefly.brightness * 0.5})`)
-    
-    innerGradient.addColorStop(0, hslaColor)
-    innerGradient.addColorStop(0.4, hslaColorFade)
-    innerGradient.addColorStop(1, 'rgba(0, 0, 0, 0)')
-    
-    ctx.fillStyle = innerGradient
-    ctx.beginPath()
-    ctx.arc(firefly.x, firefly.y, glowSize, 0, Math.PI * 2)
-    ctx.fill()
+    if (firefly.glowSprite && firefly.glowRadius > 0) {
+      const renderedRadius = glowSize * 1.5
+      const scale = renderedRadius / firefly.glowRadius
+      const width = firefly.glowSprite.width * scale
+      const height = firefly.glowSprite.height * scale
+      ctx.save()
+      ctx.globalAlpha = firefly.brightness
+      ctx.drawImage(firefly.glowSprite, firefly.x - width / 2, firefly.y - height / 2, width, height)
+      ctx.restore()
+    }
     
     // 螢火蟲核心（明亮的白色中心）
     ctx.fillStyle = isDark.value
@@ -522,38 +581,38 @@ const drawFireflies = (ctx: CanvasRenderingContext2D) => {
 
 // 繪製背景
 const drawBackground = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
-  const gradient = ctx.createLinearGradient(0, 0, 0, height)
-  
-  if (isDark.value) {
-    // 深色模式：深紫色漸變
-    gradient.addColorStop(0, '#0a0a1a')
-    gradient.addColorStop(0.5, '#1a1430')
-    gradient.addColorStop(1, '#0f0820')
-  } else {
-    // 淺色模式：粉色漸變（明亮溫暖）
-    gradient.addColorStop(0, '#ffe8f5')
-    gradient.addColorStop(0.3, '#fff0f8')
-    gradient.addColorStop(0.7, '#fef5fa')
-    gradient.addColorStop(1, '#ffe8f0')
+  if (!backgroundGradient || backgroundGradientWidth !== width || backgroundGradientHeight !== height || backgroundGradientIsDark !== isDark.value) {
+    backgroundGradient = ctx.createLinearGradient(0, 0, 0, height)
+    backgroundGradientWidth = width
+    backgroundGradientHeight = height
+    backgroundGradientIsDark = isDark.value
+    if (isDark.value) {
+      backgroundGradient.addColorStop(0, '#0a0a1a')
+      backgroundGradient.addColorStop(0.5, '#1a1430')
+      backgroundGradient.addColorStop(1, '#0f0820')
+    } else {
+      backgroundGradient.addColorStop(0, '#ffe8f5')
+      backgroundGradient.addColorStop(0.3, '#fff0f8')
+      backgroundGradient.addColorStop(0.7, '#fef5fa')
+      backgroundGradient.addColorStop(1, '#ffe8f0')
+    }
   }
-  
-  ctx.fillStyle = gradient
+
+  ctx.fillStyle = backgroundGradient
   ctx.fillRect(0, 0, width, height)
 }
 
 // 主動畫循環
-const animate = () => {
+const animate = (now: number) => {
   const canvas = canvasRef.value
-  if (!canvas) return
-  
-  const ctx = canvas.getContext('2d', { willReadFrequently: true })
-  if (!ctx) return
+  const ctx = canvasContext
+  if (!canvas || !ctx || document.hidden) return
   
   const width = canvas.width
   const height = canvas.height
   
   // 更新螢火蟲位置和亮度
-  updateFireflies(width, height)
+  updateFireflies(width, height, now)
   
   // 清空並繪製背景
   drawBackground(ctx, width, height)
@@ -567,25 +626,54 @@ const animate = () => {
   animationId = requestAnimationFrame(animate)
 }
 
+const startAnimation = () => {
+  if (animationId !== null || document.hidden) return
+  animationId = requestAnimationFrame(animate)
+}
+
+const handleVisibilityChange = () => {
+  if (document.hidden) {
+    if (animationId !== null) cancelAnimationFrame(animationId)
+    animationId = null
+  } else {
+    startAnimation()
+  }
+}
+
 // 調整 Canvas 大小
 let resizeTimeout: number | null = null
 let lastWidth = 0
 
 const resizeCanvas = () => {
   const canvas = canvasRef.value
-  if (!canvas) return
+  if (!canvas) return false
   
   const width = window.innerWidth
   const height = window.innerHeight
   
   // 忽略只有高度變化的 resize (移動端工具列顯示/隱藏)
   if (lastWidth !== 0 && Math.abs(width - lastWidth) < 10) {
-    return
+    return false
   }
   
   lastWidth = width
   canvas.width = width
   canvas.height = height
+  backgroundGradient = null
+  return true
+}
+
+
+const resetScene = () => {
+  const canvas = canvasRef.value
+  if (!canvas) return
+  clearSceneAnimations()
+  inkBlots.length = 0
+  initPetals(canvas.width, canvas.height)
+  initBubbles(canvas.width, canvas.height)
+  initInkBlots(canvas.width, canvas.height)
+  initFireflies(canvas.width, canvas.height)
+  animationStartedAt = performance.now()
 }
 
 // Debounced resize handler - 防止頻繁觸發
@@ -594,7 +682,8 @@ const handleResize = () => {
     clearTimeout(resizeTimeout)
   }
   resizeTimeout = window.setTimeout(() => {
-    resizeCanvas()
+    if (resizeCanvas()) resetScene()
+    resizeTimeout = null
   }, 150) // 150ms 延遲
 }
 
@@ -602,6 +691,8 @@ const handleResize = () => {
 onMounted(() => {
   const canvas = canvasRef.value
   if (!canvas) return
+  canvasContext = canvas.getContext('2d')
+  if (!canvasContext) return
   
   // 載入 SVG 圖片
   loadFlowerSVG()
@@ -609,29 +700,32 @@ onMounted(() => {
   resizeCanvas()
   lastWidth = window.innerWidth
   
-  const width = canvas.width
-  const height = canvas.height
-  
-  initPetals(width, height)
-  initBubbles(width, height)
-  initInkBlots(width, height)
-  initFireflies(width, height)
+  resetScene()
   
   window.addEventListener('resize', handleResize)
+  document.addEventListener('visibilitychange', handleVisibilityChange)
   
   // 開始動畫
-  animate()
+  startAnimation()
+})
+
+watch(isDark, () => {
+  backgroundGradient = null
+  if (canvasRef.value) resetScene()
 })
 
 // 清理
 onUnmounted(() => {
-  if (animationId) {
+  if (animationId !== null) {
     cancelAnimationFrame(animationId)
   }
   if (resizeTimeout) {
     clearTimeout(resizeTimeout)
   }
+  clearSceneAnimations()
+  canvasContext = null
   window.removeEventListener('resize', handleResize)
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
 })
 </script>
 

@@ -1,6 +1,7 @@
 import React from 'react';
 import { EquipmentItem, ItemOption, CharacterSetEffect } from '../types';
 import { inferPotentialLineGrade } from '../potentialInference';
+import { mapleAsset } from '../assets';
 
 interface EquipmentTooltipProps {
   item: EquipmentItem;
@@ -10,9 +11,9 @@ interface EquipmentTooltipProps {
   showSetEffect?: boolean;
 }
 
-const WINDOW_ASSET_BASE = '/image/theme/window';
+const windowAsset = (name: string) => mapleAsset(`window/${name}`);
 
-const windowBg = (name: string) => ({ backgroundImage: `url('${WINDOW_ASSET_BASE}/${name}')` });
+const windowBg = (name: string) => ({ backgroundImage: `url('${windowAsset(name)}')` });
 
 const DotDivider: React.FC<{ className?: string }> = ({ className = '' }) => (
   <div className={`h-[3px] bg-repeat-x ${className}`.trim()} style={windowBg('window_dotline.png')} />
@@ -22,7 +23,7 @@ const StarForceIcon: React.FC<{ filled: boolean }> = ({ filled }) => (
   <img
     className="block w-[11px] h-[10px] -mr-[1px]"
     alt={filled ? '★' : '☆'}
-    src={`${WINDOW_ASSET_BASE}/${filled ? 'starForce_filled.png' : 'starForce_empty.png'}`}
+    src={windowAsset(filled ? 'starForce_filled.png' : 'starForce_empty.png')}
     aria-hidden="true"
   />
 );
@@ -39,7 +40,7 @@ const CategoryBadge: React.FC<{ label: string }> = ({ label }) => (
 
 const PotentialLine: React.FC<{ text: string; icon: string }> = ({ text, icon }) => (
   <div className="flex items-center gap-x-[5px] text-white">
-    <img className="w-[10px] h-[10px]" alt="" src={`${WINDOW_ASSET_BASE}/${icon}`} aria-hidden="true" />
+    <img className="w-[10px] h-[10px]" alt="" src={windowAsset(icon)} aria-hidden="true" />
     <span>{text}</span>
   </div>
 );
@@ -461,7 +462,7 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
             <div className="relative z-10 mb-[8px]">
               {is25Star && (
                 <img
-                  src={`${WINDOW_ASSET_BASE}/starForce_anim.png`}
+                  src={windowAsset('starForce_anim.png')}
                   alt=""
                   className="absolute top-[-8px] left-0 w-full h-auto max-w-none pointer-events-none select-none z-0"
                   aria-hidden="true"
@@ -583,7 +584,7 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
           {item.potential_option_grade && (
           <div className="px-3 py-[2px] relative z-10">
             <div className={`flex items-center gap-1.5 text-xs font-bold mb-[1px] ${potInfo.color}`}>
-                <img className="w-[10px] h-[10px]" alt={potInfo.label} src={`${WINDOW_ASSET_BASE}/${potentialTitleIcon}`} />
+                <img className="w-[10px] h-[10px]" alt={potInfo.label} src={windowAsset(potentialTitleIcon)} />
               <span>潛在能力 : {potInfo.label}</span>
            </div>
             {mainPotentialSealed ? (
@@ -601,7 +602,7 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
           {item.additional_potential_option_grade && (
           <div className="px-3 py-[2px] relative z-10">
             <div className={`flex items-center gap-1.5 text-xs font-bold mb-[1px] ${addPotInfo.color}`}>
-                <img className="w-[10px] h-[10px]" alt={addPotInfo.label} src={`${WINDOW_ASSET_BASE}/${additionalPotentialTitleIcon}`} />
+                <img className="w-[10px] h-[10px]" alt={addPotInfo.label} src={windowAsset(additionalPotentialTitleIcon)} />
               <span>附加潛在能力 : {addPotInfo.label}</span>
            </div>
             {additionalPotentialSealed ? (
@@ -622,7 +623,7 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
               <img
                 className="w-[14px] h-[14px] mt-[1px] shrink-0"
                 alt="EX"
-                src={`${WINDOW_ASSET_BASE}/exceptional_enhanced.png`}
+                src={windowAsset('exceptional_enhanced.png')}
               />
               <div className="min-w-0 flex-1">
                 <div className="text-[#F0D38A] leading-[1.35]">

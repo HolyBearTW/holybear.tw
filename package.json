@@ -60,6 +60,7 @@
   "scripts": {
     "dev": "vitepress dev",
     "build": "vitepress build",
+    "optimize:deploy-images": "node scripts/optimize-deploy-images.mjs",
     "check:maple-calculator": "node scripts/check-maple-calculator.mjs",
     "preview": "vitepress preview",
     "gen-en-blog": "node en/blog/gen-en-blog-placeholders.js",

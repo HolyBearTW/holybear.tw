@@ -115,17 +115,16 @@ function startChristmas() {
 
     // 1. 初始化位置
     snowflake.style.transition = 'none';
-    snowflake.style.top = `${-size - 30}px`; 
+    snowflake.style.top = '0';
     snowflake.style.left = `${startLeft}vw`;
+    snowflake.style.transform = `translate3d(0, ${-size - 30}px, 0)`;
     snowflake.style.opacity = startOpacity;
 
     // 2. 開始動畫
     setTimeout(() => {
       // opacity transition: 配合 duration，如果是消失雪，會變為 0
-      snowflake.style.transition = `top ${duration}s linear, left ${duration}s ease-in-out, opacity ${duration}s ease-in`;
-      
-      snowflake.style.top = `${endTop}vh`;
-      snowflake.style.left = `${endLeft}vw`;
+      snowflake.style.transition = `transform ${duration}s linear, opacity ${duration}s ease-in`;
+      snowflake.style.transform = `translate3d(${endLeft - startLeft}vw, ${endTop}vh, 0)`;
       
       if (isVanishing) {
         snowflake.style.opacity = 0; 
@@ -142,9 +141,11 @@ function startChristmas() {
     }
   };
 
-  snowflakeIntervalIds = new Array(130);
+  // 依畫面面積維持相近雪花密度，避免手機也建立桌面用的 130 個合成圖層。
+  const snowflakeCount = window.innerWidth < 640 ? 48 : window.innerWidth < 1024 ? 80 : 130;
+  snowflakeIntervalIds = new Array(snowflakeCount);
 
-  for (let i = 0; i < 130; i++) {
+  for (let i = 0; i < snowflakeCount; i++) {
     const snowflake = document.createElement('div');
     snowflake.style.cssText = `position:absolute; pointer-events:none; will-change: transform, opacity;`;
     snowflakeContainer.appendChild(snowflake);
@@ -171,7 +172,7 @@ function startChristmas() {
   sleigh.id = 'christmas-sleigh';
   sleigh.style.cssText = `
     position: fixed; top: 18%; left: 0; width: 200px; height: 100px;
-    background-image: url('/image/christmas/christmas1.png');
+    background-image: url('./assets/christmas/christmas1.png');
     background-size: contain; background-repeat: no-repeat;
     animation: fly-by 60s linear infinite; animation-delay: 15s;
     transform: translateX(-150%); z-index: 9997; pointer-events: none;
@@ -275,7 +276,7 @@ body.theme-christmas .VPNavBar,
 body.theme-christmas header,
 body.theme-christmas .VPPage .VPNav,
 body.theme-christmas .VPPage .VPNavBar {
-  background: linear-gradient(rgba(18, 18, 18, 0.75), rgba(18, 18, 18, 0.75)), url('/image/christmas/christmas2.png') repeat-x 0% 0% !important;
+  background: linear-gradient(rgba(18, 18, 18, 0.75), rgba(18, 18, 18, 0.75)), url('./assets/christmas/christmas2.png') repeat-x 0% 0% !important;
   background-size: auto 60px !important;
   border-bottom: 2px solid rgb(240, 196, 76) !important;
 }
@@ -399,10 +400,10 @@ body.theme-christmas.is-blog-page header {
 
 /* Change logo and hero image for Christmas theme */
 body.theme-christmas .VPImage.logo {
-  content: url('/image/christmas/christmas.png');
+  content: url('./assets/christmas/christmas.png');
 }
 
 body.theme-christmas .VPHero .image-container .VPImage {
-  content: url('/image/christmas/christmas.png');
+  content: url('./assets/christmas/christmas.png');
 }
 </style>

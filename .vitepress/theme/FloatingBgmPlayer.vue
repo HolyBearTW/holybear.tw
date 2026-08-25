@@ -1,6 +1,9 @@
 <script setup>
 import { ref, watch, onMounted, onUnmounted, computed, nextTick } from 'vue'
+import { useRoute } from 'vitepress'
 import { defaultTheme, THEME_CHANGE_EVENT, getInitialBackgroundTheme } from './background/themes'
+
+const route = useRoute()
 
 /* --- 音樂清單 --- */
 const originalMusicList = ref([
@@ -116,6 +119,19 @@ let mediaSessionSeekEnabled = false
 let initialPlaybackPending = false
 let currentBackgroundTheme = defaultTheme
 
+function isMapleStoryToolRoute(path = route.path) {
+  const normalizedPath = String(path || (typeof window !== 'undefined' ? window.location.pathname : ''))
+    .split(/[?#]/, 1)[0]
+    .replace(/\/+$/, '') || '/'
+  return normalizedPath === '/maplestory'
+}
+
+function clearAutoplayOnInteraction() {
+  if (!autoPlayListener || typeof document === 'undefined') return
+  document.body.removeEventListener('click', autoPlayListener, true)
+  autoPlayListener = null
+}
+
 function rememberCoreTowerMusicChoice() {
   if (currentBackgroundTheme === 'coretower') {
     localStorage.setItem(CORE_TOWER_MUSIC_INTRO_KEY, 'true')
@@ -141,6 +157,12 @@ function handleLoadingComplete() {
 function startInitialPlaybackWhenReady() {
   if (!isPageLoaded.value || !initialPlaybackPending) return
 
+  if (isMapleStoryToolRoute()) {
+    intendedToPlay = false
+    clearAutoplayOnInteraction()
+    return
+  }
+
   initialPlaybackPending = false
   if (canAttemptPlaybackNow()) {
     selectAndPlaySong(currentIndex.value, { forceRestart: true })
@@ -159,10 +181,15 @@ function canAttemptPlaybackNow() {
 }
 
 function armAutoplayOnInteraction() {
-  if (autoPlayListener) return
+  if (autoPlayListener || isMapleStoryToolRoute()) return
 
   autoPlayListener = () => {
     autoPlayListener = null
+    if (isMapleStoryToolRoute()) {
+      intendedToPlay = false
+      initialPlaybackPending = true
+      return
+    }
     playMusic()
   }
 
@@ -196,6 +223,7 @@ const themeHandler = (e) => {
   };
   const isChristmasSongInList = musicList.value.some(m => m.src === christmasSong.src);
   const wasPlaying = playing.value; // 保存切換前是否正在播放
+  const automaticPlaybackAllowed = !isMapleStoryToolRoute() || wasPlaying;
 
   if (isChristmasTheme) {
     if (!isChristmasSongInList) {
@@ -203,7 +231,11 @@ const themeHandler = (e) => {
       musicList.value.unshift(christmasSong);
     }
     // 無論是否在播放，切換到聖誕主題時都強制播放聖誕音樂
-    selectAndPlaySong(0, { forceRestart: true });
+    if (automaticPlaybackAllowed) {
+      selectAndPlaySong(0, { forceRestart: true });
+    } else {
+      currentIndex.value = 0;
+    }
   } else {
     // 從聖誕主題切換到其他主題
     if (isChristmasSongInList) {
@@ -236,7 +268,7 @@ const themeHandler = (e) => {
     }
   }
 
-  if (shouldForceCoreTowerMusic) {
+  if (shouldForceCoreTowerMusic && automaticPlaybackAllowed) {
     repeatOne.value = true;
     localStorage.setItem(REPEAT_ONE_KEY, 'true');
     if (audio.value) audio.value.loop = true;
@@ -328,10 +360,16 @@ onMounted(async () => {
     // 統一處理初始播放邏輯
     const savedPlayingState = localStorage.getItem(PLAYING_KEY)
     const shouldStartOnInteraction = savedTheme === 'christmas' || savedPlayingState !== 'false'
-    intendedToPlay = shouldStartOnInteraction
+    const suppressInitialAutoplay = isMapleStoryToolRoute() && shouldStartOnInteraction
+    intendedToPlay = shouldStartOnInteraction && !suppressInitialAutoplay
 
-    if (playerOpen.value && shouldStartOnInteraction) {
+    if (playerOpen.value && shouldStartOnInteraction && !suppressInitialAutoplay) {
         initialPlaybackPending = true
+    } else if (playerOpen.value && suppressInitialAutoplay) {
+      // 保留原本的播放偏好，離開工具頁後再恢復全站既有的自動播放流程。
+      initialPlaybackPending = true
+      playing.value = false
+      clearAutoplayOnInteraction()
     } else if (playerOpen.value) {
       intendedToPlay = false
       syncPlayingState(false)
@@ -374,7 +412,7 @@ onUnmounted(() => {
   }
 
   if (autoPlayListener) {
-    document.body.removeEventListener('click', autoPlayListener)
+    document.body.removeEventListener('click', autoPlayListener, true)
   }
   if (hoverTimer) clearTimeout(hoverTimer)
   if (leaveTimer) clearTimeout(leaveTimer)
@@ -407,6 +445,26 @@ watch(isPlaylistVisible, async (visible) => {
   await scrollActivePlaylistItem(false)
 })
 
+watch(() => route.path, (path, previousPath) => {
+  if (isMapleStoryToolRoute(path)) {
+    if (!playing.value) {
+      const savedPlayingState = localStorage.getItem(PLAYING_KEY)
+      initialPlaybackPending = playerOpen.value
+        && (currentBackgroundTheme === 'christmas' || savedPlayingState !== 'false')
+      intendedToPlay = false
+      resumeOnVisibilityReturn = false
+      cancelPlaybackRecovery()
+      clearAutoplayOnInteraction()
+    }
+    return
+  }
+
+  if (isMapleStoryToolRoute(previousPath) && initialPlaybackPending && playerOpen.value) {
+    intendedToPlay = true
+    startInitialPlaybackWhenReady()
+  }
+})
+
 watch(volume, (newVolume) => {
   if (audio.value) audio.value.volume = newVolume
   localStorage.setItem(VOLUME_KEY, newVolume.toString())
@@ -421,8 +479,7 @@ watch(playerOpen, (val) => {
     resumeOnVisibilityReturn = false
     cancelPlaybackRecovery()
     if (autoPlayListener) {
-      document.body.removeEventListener('click', autoPlayListener)
-      autoPlayListener = null
+      clearAutoplayOnInteraction()
     }
     setTimeout(() => { showPlayerToggle.value = true }, 400)
   } else {
@@ -464,6 +521,7 @@ function ensureCurrentAudioSource() {
 
 function playMusic() {
   if (!audio.value || !ensureCurrentAudioSource()) return
+  initialPlaybackPending = false
   intendedToPlay = true
   resumeOnVisibilityReturn = false
   cancelPlaybackRecovery()
@@ -471,8 +529,7 @@ function playMusic() {
   audio.value.loop = repeatOne.value
 
   if (autoPlayListener) { // 如果存在未觸發的自動播放監聽器，先移除
-    document.body.removeEventListener('click', autoPlayListener);
-    autoPlayListener = null;
+    clearAutoplayOnInteraction()
   }
 
   audio.value.play().then(() => {
@@ -850,8 +907,7 @@ async function selectAndPlaySong(index, options = {}) {
       // 如果播放失敗，且是瀏覽器阻止，重新設置監聽器
       if (e.name === 'NotAllowedError') {
         if (autoPlayListener) {
-          document.body.removeEventListener('click', autoPlayListener);
-          autoPlayListener = null
+          clearAutoplayOnInteraction()
         }
         armAutoplayOnInteraction()
         return

@@ -8,7 +8,8 @@ import * as THREE from 'three'
 import { GPUComputationRenderer } from 'three/examples/jsm/misc/GPUComputationRenderer.js'
 
 // --- 參數設定 ---
-const WIDTH = 300
+// 手機畫面面積較小，220² 顆仍維持足夠密度，同時把 GPGPU 粒子計算量降近一半。
+let particleTextureSize = 300
 const BOUNDS = 2000 
 const FORCE_MULTIPLIER = 2.0 
 
@@ -21,6 +22,7 @@ let positionUniforms, velocityUniforms
 let particleUniforms
 let particleMesh
 let animationId
+let lastFrameTime = 0
 
 let accumulatedTime = 0
 let isPlaying = false
@@ -29,6 +31,10 @@ let lastWidth = 0
 let audioContext, audioAnalyser, audioSource
 let frequencyData
 let checkTimer = null
+let mediaElement = null
+const handleMediaPlay = () => { isPlaying = true }
+const handleMediaPause = () => { isPlaying = false }
+let resumeAudioContext = null
 
 let musicUniforms = {
   bass: { value: 0.0 },
@@ -36,6 +42,7 @@ let musicUniforms = {
 }
 
 const gravitySpheres = []
+const gravityColors = [new THREE.Color(), new THREE.Color(), new THREE.Color()]
 const gravityPoints = [
   new THREE.Vector3(),
   new THREE.Vector3(),
@@ -159,11 +166,12 @@ const particleFragmentShader = `
 
 const initAudio = () => {
   checkTimer = setInterval(() => {
-    const mediaElement = document.getElementById('global-audio-player') || document.querySelector('audio');
+    mediaElement = document.getElementById('global-audio-player') || document.querySelector('audio');
     if (mediaElement) {
       clearInterval(checkTimer);
-      mediaElement.addEventListener('play', () => { isPlaying = true });
-      mediaElement.addEventListener('pause', () => { isPlaying = false });
+      checkTimer = null;
+      mediaElement.addEventListener('play', handleMediaPlay);
+      mediaElement.addEventListener('pause', handleMediaPause);
       isPlaying = !mediaElement.paused;
       if (!audioContext) setupAudioContext(mediaElement);
     }
@@ -180,9 +188,9 @@ const setupAudioContext = (mediaElement) => {
     audioSource = audioContext.createMediaElementSource(mediaElement);
     audioSource.connect(audioAnalyser);
     audioAnalyser.connect(audioContext.destination);
-    const resumeCtx = () => { if (audioContext.state === 'suspended') audioContext.resume(); }
-    document.addEventListener('click', resumeCtx, { once: true });
-    mediaElement.addEventListener('play', resumeCtx);
+    resumeAudioContext = () => { if (audioContext.state === 'suspended') audioContext.resume(); }
+    document.addEventListener('click', resumeAudioContext, { once: true });
+    mediaElement.addEventListener('play', resumeAudioContext);
   } catch (e) { console.error(e); }
 }
 
@@ -208,6 +216,7 @@ const init = () => {
   const container = canvasContainer.value
   const width = window.innerWidth
   const height = window.innerHeight
+  particleTextureSize = width < 1024 ? 220 : 300
   lastWidth = width
 
   camera = new THREE.PerspectiveCamera( 75, width / height, 5, 15000 )
@@ -218,7 +227,8 @@ const init = () => {
   scene.fog = new THREE.Fog( 0x000000, 1000, 4000 )
 
   renderer = new THREE.WebGLRenderer( { alpha: true, antialias: true } )
-  renderer.setPixelRatio( window.devicePixelRatio )
+  // 高 DPR 全螢幕 WebGL 成本會平方成長；2 倍已足以保留粒子銳利度。
+  renderer.setPixelRatio( Math.min(window.devicePixelRatio || 1, window.innerWidth < 1024 ? 1.5 : 2) )
   renderer.setSize( width, height )
   renderer.domElement.style.position = 'fixed'
   renderer.domElement.style.top = '0'
@@ -234,11 +244,12 @@ const init = () => {
 
   initComputeRenderer()
   initParticles()
+  gravitySpheres.length = 0
   initGravityVisuals()
   initAudio()
 
   window.addEventListener( 'resize', onWindowResize )
-  animate()
+  startAnimation()
 }
 
 const initGravityVisuals = () => {
@@ -257,7 +268,7 @@ const initGravityVisuals = () => {
 }
 
 const initComputeRenderer = () => {
-  gpuCompute = new GPUComputationRenderer( WIDTH, WIDTH, renderer )
+  gpuCompute = new GPUComputationRenderer( particleTextureSize, particleTextureSize, renderer )
   const dtPosition = gpuCompute.createTexture()
   const dtVelocity = gpuCompute.createTexture()
   fillTextures( dtPosition, dtVelocity )
@@ -301,13 +312,13 @@ const fillTextures = ( texturePosition, textureVelocity ) => {
 
 const initParticles = () => {
   const geometry = new THREE.BufferGeometry()
-  const positions = new Float32Array( WIDTH * WIDTH * 3 )
-  const uvs = new Float32Array( WIDTH * WIDTH * 2 )
+  const positions = new Float32Array( particleTextureSize * particleTextureSize * 3 )
+  const uvs = new Float32Array( particleTextureSize * particleTextureSize * 2 )
   let p = 0
-  for ( let j = 0; j < WIDTH; j++ ) {
-      for ( let i = 0; i < WIDTH; i++ ) {
-          uvs[ p * 2 + 0 ] = i / ( WIDTH - 1 )
-          uvs[ p * 2 + 1 ] = j / ( WIDTH - 1 )
+  for ( let j = 0; j < particleTextureSize; j++ ) {
+      for ( let i = 0; i < particleTextureSize; i++ ) {
+          uvs[ p * 2 + 0 ] = i / ( particleTextureSize - 1 )
+          uvs[ p * 2 + 1 ] = j / ( particleTextureSize - 1 )
           positions[ p * 3 + 0 ] = 0; positions[ p * 3 + 1 ] = 0; positions[ p * 3 + 2 ] = 0;
           p++;
       }
@@ -349,14 +360,16 @@ const onWindowResize = () => {
   camera.aspect = width / height
   camera.updateProjectionMatrix()
   renderer.setSize( width, height )
+  renderer.setPixelRatio( Math.min(window.devicePixelRatio || 1, width < 1024 ? 1.5 : 2) )
   particleUniforms[ "cameraConstant" ].value = getCameraConstant( camera )
 }
 
-const animate = () => {
-  animationId = requestAnimationFrame( animate )
+const animate = (now) => {
+  if (document.hidden) return
   updateAudioData();
 
-  const delta = 0.016;
+  const delta = lastFrameTime ? Math.min((now - lastFrameTime) / 1000, 0.033) : 0.016;
+  lastFrameTime = now
   if (isPlaying) {
     accumulatedTime += delta * 1.5;
   } else {
@@ -376,7 +389,7 @@ const animate = () => {
     if(gravitySpheres[i]) {
       gravitySpheres[i].position.copy(gravityPoints[i])
       const hue = (accumulatedTime * 0.1 + i * 0.3) % 1.0;
-      const color = new THREE.Color().setHSL(hue, 0.8, 0.5);
+      const color = gravityColors[i].setHSL(hue, 0.8, 0.5);
       gravitySpheres[i].material.color.copy(color);
       gravitySpheres[i].children[0].color.copy(color);
       gravitySpheres[i].scale.setScalar(1.0);
@@ -392,14 +405,44 @@ const animate = () => {
   particleUniforms[ "texturePosition" ].value = gpuCompute.getCurrentRenderTarget( positionVariable ).texture
   particleUniforms[ "textureVelocity" ].value = gpuCompute.getCurrentRenderTarget( velocityVariable ).texture
   renderer.render( scene, camera )
+  animationId = requestAnimationFrame( animate )
 }
 
-onMounted(() => { init() })
+const startAnimation = () => {
+  if (animationId || document.hidden) return
+  lastFrameTime = 0
+  animationId = requestAnimationFrame(animate)
+}
+
+const handleVisibilityChange = () => {
+  if (document.hidden) {
+    if (animationId) cancelAnimationFrame(animationId)
+    animationId = null
+  } else {
+    startAnimation()
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+  init()
+})
 onBeforeUnmount(() => {
   window.removeEventListener('resize', onWindowResize)
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
   if (animationId) cancelAnimationFrame(animationId)
+  animationId = null
   if (checkTimer) clearInterval(checkTimer)
-  if (audioContext) audioContext.close();
+  checkTimer = null
+  if (mediaElement) {
+    mediaElement.removeEventListener('play', handleMediaPlay)
+    mediaElement.removeEventListener('pause', handleMediaPause)
+    if (resumeAudioContext) mediaElement.removeEventListener('play', resumeAudioContext)
+  }
+  if (resumeAudioContext) document.removeEventListener('click', resumeAudioContext)
+  mediaElement = null
+  resumeAudioContext = null
+  gravitySpheres.length = 0
   if (renderer) { renderer.dispose(); renderer.forceContextLoss(); renderer.domElement.remove() }
 })
 </script>

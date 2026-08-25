@@ -11,7 +11,12 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div style="display:none"></div>
+  <div class="hyperos2-mobile-background" aria-hidden="true">
+    <span class="hyperos2-mobile-blob hyperos2-mobile-blue"></span>
+    <span class="hyperos2-mobile-blob hyperos2-mobile-amber"></span>
+    <span class="hyperos2-mobile-blob hyperos2-mobile-pink"></span>
+    <span class="hyperos2-mobile-blob hyperos2-mobile-purple"></span>
+  </div>
 </template>
 
 <style>
@@ -161,5 +166,115 @@ html:not(.dark) .hyperos2-bg:has(.VPHome)::after {
   opacity: 0.5;
   transform: scale(2) translate3d(0, 0, 0) !important;
   backface-visibility: hidden !important;
+}
+
+.hyperos2-mobile-background {
+  display: none;
+}
+
+/* 手機降耗：改為只移動已光柵化的光團，避免持續重繪全螢幕 background-position。 */
+@media (max-width: 640px) {
+  .hyperos2-bg::before,
+  .hyperos2-bg::after {
+    content: none !important;
+  }
+
+  .hyperos2-mobile-background {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    overflow: hidden;
+    contain: paint;
+    background: linear-gradient(135deg, #0a0a14 0%, #14141e 50%, #1e1e28 100%);
+  }
+
+  .hyperos2-mobile-blob {
+    position: absolute;
+    width: 58vmax;
+    height: 58vmax;
+    border-radius: 50%;
+    opacity: 0.72;
+    filter: blur(18px);
+    will-change: transform;
+    backface-visibility: hidden;
+  }
+
+  .hyperos2-mobile-blue {
+    left: -22vmax;
+    top: -12vmax;
+    background: radial-gradient(circle, #005094 0%, transparent 68%);
+    animation: hyperos2MobileDrift1 16s ease-in-out infinite;
+  }
+
+  .hyperos2-mobile-amber {
+    right: -25vmax;
+    top: 5vh;
+    background: radial-gradient(circle, #874a26 0%, transparent 68%);
+    animation: hyperos2MobileDrift2 19s ease-in-out infinite;
+  }
+
+  .hyperos2-mobile-pink {
+    right: -18vmax;
+    bottom: -20vmax;
+    background: radial-gradient(circle, #761045 0%, transparent 68%);
+    animation: hyperos2MobileDrift3 17s ease-in-out infinite;
+  }
+
+  .hyperos2-mobile-purple {
+    left: -20vmax;
+    bottom: -18vmax;
+    background: radial-gradient(circle, #291e73 0%, transparent 68%);
+    animation: hyperos2MobileDrift4 21s ease-in-out infinite;
+  }
+
+  html:not(.dark) .hyperos2-mobile-background {
+    background: linear-gradient(135deg, #f8f7ff 0%, #fef9fb 50%, #f5f8ff 100%);
+  }
+
+  html:not(.dark) .hyperos2-mobile-blue {
+    background: radial-gradient(circle, #91c2fa 0%, transparent 68%);
+  }
+
+  html:not(.dark) .hyperos2-mobile-amber {
+    background: radial-gradient(circle, #f9d9ad 0%, transparent 68%);
+  }
+
+  html:not(.dark) .hyperos2-mobile-pink {
+    background: radial-gradient(circle, #fbc0ed 0%, transparent 68%);
+  }
+
+  html:not(.dark) .hyperos2-mobile-purple {
+    background: radial-gradient(circle, #bab2fa 0%, transparent 68%);
+  }
+}
+
+@keyframes hyperos2MobileDrift1 {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(24vw, 14vh, 0) scale(1.12); }
+}
+
+@keyframes hyperos2MobileDrift2 {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1.08); }
+  50% { transform: translate3d(-22vw, 18vh, 0) scale(0.96); }
+}
+
+@keyframes hyperos2MobileDrift3 {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(-18vw, -20vh, 0) scale(1.1); }
+}
+
+@keyframes hyperos2MobileDrift4 {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1.06); }
+  50% { transform: translate3d(20vw, -16vh, 0) scale(0.98); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hyperos2-bg::before,
+  .hyperos2-bg::after,
+  .hyperos2-mobile-blob {
+    animation: none !important;
+  }
 }
 </style>

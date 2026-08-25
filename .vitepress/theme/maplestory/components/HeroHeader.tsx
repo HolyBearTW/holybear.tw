@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Settings, X, Crown } from 'lucide-react';
+import { mapleAsset } from '../assets';
 
 interface HeroHeaderProps {
   apiKey: string | null;
@@ -22,7 +23,12 @@ export default function HeroHeader({ apiKey, onShowKeySettings, onClearApiKey }:
 
       <div className="flex items-center gap-3">
         <div className="w-12 h-12 flex items-center justify-center">
-          <img src="/image/theme/Maple_Icon.png" alt="MapleStory Icon" />
+          <img
+            src={mapleAsset('Maple_Icon.webp')}
+            alt="MapleStory Icon"
+            decoding="async"
+            fetchPriority="high"
+          />
         </div>
         <h1 className="maple-hero-title font-bold text-2xl text-white">新楓之谷戰力分析</h1>
       </div>

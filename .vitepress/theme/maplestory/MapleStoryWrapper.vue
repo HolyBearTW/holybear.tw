@@ -6,7 +6,7 @@
 import { onMounted, onBeforeUnmount } from 'vue'
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import App from './maplestory/App'
+import App from './App'
 
 let root = null
 let readyObserver = null

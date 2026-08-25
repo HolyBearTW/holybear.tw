@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
+import loadingOrbUrl from './assets/animations/holy-bear-orb-navbar.webp?inline'
 
 const isVisible = ref(true)
 const isPopping = ref(false)
@@ -124,7 +125,9 @@ onUnmounted(() => {
     <div class="brand-loading-ball">
       <img
         class="brand-loading-orb"
-        src="/animations/holy-bear-orb-navbar.png"
+        :src="loadingOrbUrl"
+        decoding="sync"
+        fetchpriority="high"
         alt=""
       />
     </div>

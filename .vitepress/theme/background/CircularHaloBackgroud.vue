@@ -18,6 +18,7 @@
   z-index: -1;
   pointer-events: none;
   overflow: hidden;
+  contain: paint;
     background: linear-gradient(135deg, #f8f7ff 0%, #fef9fb 50%, #f5f8ff 100%);
   }
   html:not(.dark) .animated-background {
@@ -44,22 +45,12 @@ html.dark .animated-background {
     border-radius: 50%;
     opacity: 0.4;
       filter: blur(20px);
-      transform: scale(2) translate3d(0, 0, 0) !important;
+      transform: translate3d(0, 0, 0) scale(2);
       backface-visibility: hidden !important;
-    pointer-events: auto;
+    will-change: transform;
+    pointer-events: none;
     mix-blend-mode: lighten;
     z-index: 0;
-  }
-  /* blob 樣式（基礎） */
-  .blob {
-    position: absolute;
-    border-radius: 50%;
-    opacity: 0.4;
-      filter: blur(20px);
-      transform: scale(2) translate3d(0, 0, 0) !important;
-      backface-visibility: hidden !important;
-    pointer-events: auto;
-    mix-blend-mode: lighten;
   }
 /* 淺色模式 blob 強化 */
 html:not(.dark) .blob {
@@ -124,28 +115,24 @@ html:not(.dark) .blob-4 {
 html:not(.dark) .blob-5 {
   background: radial-gradient(circle, #3576e6 0%, #4facfe 60%, transparent 80%);
 }
-@keyframes blobMove3 {
-  0%,100% { left: 30vw; top: 60vh; }
-  50% { left: 35vw; top: 65vh; }
-}
 @keyframes blobMove1 {
-  0%,100% { left: 10vw; top: 20vh; }
-  50% { left: 30vw; top: 40vh; }
+  0%,100% { transform: translate3d(0, 0, 0) scale(2); }
+  50% { transform: translate3d(20vw, 20vh, 0) scale(2); }
 }
 @keyframes blobMove2 {
-  0%,100% { left: 60vw; top: 10vh; }
-  50% { left: 75vw; top: 35vh; }
+  0%,100% { transform: translate3d(0, 0, 0) scale(2); }
+  50% { transform: translate3d(15vw, 25vh, 0) scale(2); }
 }
 @keyframes blobMove3 {
-  0%,100% { left: 30vw; top: 60vh; }
-  50% { left: 50vw; top: 80vh; }
+  0%,100% { transform: translate3d(0, 0, 0) scale(2); }
+  50% { transform: translate3d(20vw, 20vh, 0) scale(2); }
 }
 @keyframes blobMove4 {
-  0%,100% { left: 80vw; top: 70vh; }
-  50% { left: 60vw; top: 90vh; }
+  0%,100% { transform: translate3d(0, 0, 0) scale(2); }
+  50% { transform: translate3d(-20vw, 20vh, 0) scale(2); }
 }
 @keyframes blobMove5 {
-  0%,100% { left: 50vw; top: 40vh; }
-  50% { left: 70vw; top: 60vh; }
+  0%,100% { transform: translate3d(0, 0, 0) scale(2); }
+  50% { transform: translate3d(20vw, 20vh, 0) scale(2); }
 }
 </style>

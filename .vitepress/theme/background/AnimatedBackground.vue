@@ -5,6 +5,12 @@ import { useData } from 'vitepress'
 const { isDark } = useData()
 const canvas = ref<HTMLCanvasElement | null>(null)
 let animationId: number | null = null
+let canvasContext: CanvasRenderingContext2D | null = null
+let backgroundGradient: CanvasGradient | null = null
+let backgroundWidth = 0
+let backgroundHeight = 0
+let backgroundIsDark = false
+let previousFrameTime = 0
 let particles: Particle[] = []
 let mouseX = 0
 let mouseY = 0
@@ -40,31 +46,33 @@ const initParticles = (width: number, height: number) => {
 }
 
 // 動畫循環
-const animate = () => {
-  if (!canvas.value) return
-  
-  const ctx = canvas.value.getContext('2d', { willReadFrequently: true })
-  if (!ctx) return
+const animate = (now: number) => {
+  if (!canvas.value || !canvasContext || document.hidden) return
+  const ctx = canvasContext
   
   const width = canvas.value.width
   const height = canvas.value.height
   
   // 清除畫布並添加微妙的漸變背景
-  const gradient = ctx.createLinearGradient(0, 0, width, height)
-  
-  if (isDark.value) {
-    // 暗色模式：深色漸變
-    gradient.addColorStop(0, 'rgba(15, 18, 25, 0.02)')
-    gradient.addColorStop(0.5, 'rgba(20, 25, 35, 0.03)')
-    gradient.addColorStop(1, 'rgba(25, 30, 40, 0.02)')
-  } else {
-    // 亮色模式：淺色漸變
-    gradient.addColorStop(0, 'rgba(240, 242, 248, 0.02)')
-    gradient.addColorStop(0.5, 'rgba(235, 238, 245, 0.03)')
-    gradient.addColorStop(1, 'rgba(230, 235, 242, 0.02)')
+  if (!backgroundGradient || backgroundWidth !== width || backgroundHeight !== height || backgroundIsDark !== isDark.value) {
+    backgroundWidth = width
+    backgroundHeight = height
+    backgroundIsDark = isDark.value
+    backgroundGradient = ctx.createLinearGradient(0, 0, width, height)
+    if (isDark.value) {
+      backgroundGradient.addColorStop(0, 'rgba(15, 18, 25, 0.02)')
+      backgroundGradient.addColorStop(0.5, 'rgba(20, 25, 35, 0.03)')
+      backgroundGradient.addColorStop(1, 'rgba(25, 30, 40, 0.02)')
+    } else {
+      backgroundGradient.addColorStop(0, 'rgba(240, 242, 248, 0.02)')
+      backgroundGradient.addColorStop(0.5, 'rgba(235, 238, 245, 0.03)')
+      backgroundGradient.addColorStop(1, 'rgba(230, 235, 242, 0.02)')
+    }
   }
-  
-  ctx.fillStyle = gradient
+
+  const frameScale = previousFrameTime ? Math.min((now - previousFrameTime) / 16.667, 2) : 1
+  previousFrameTime = now
+  ctx.fillStyle = backgroundGradient
   ctx.fillRect(0, 0, width, height)
   
   // 更新和繪製粒子
@@ -72,21 +80,23 @@ const animate = () => {
     // 滑鼠互動效果（非常微妙）
     const dx = mouseX - particle.x
     const dy = mouseY - particle.y
-    const distance = Math.sqrt(dx * dx + dy * dy)
+    const distanceSquared = dx * dx + dy * dy
     
-    if (distance < 150) {
+    if (distanceSquared > 0 && distanceSquared < 150 * 150) {
+      const distance = Math.sqrt(distanceSquared)
       const force = (150 - distance) / 150
-      particle.vx -= (dx / distance) * force * 0.02
-      particle.vy -= (dy / distance) * force * 0.02
+      particle.vx -= (dx / distance) * force * 0.02 * frameScale
+      particle.vy -= (dy / distance) * force * 0.02 * frameScale
     }
     
     // 更新粒子位置
-    particle.x += particle.vx
-    particle.y += particle.vy
+    particle.x += particle.vx * frameScale
+    particle.y += particle.vy * frameScale
     
     // 添加輕微的阻力
-    particle.vx *= 0.99
-    particle.vy *= 0.99
+    const damping = Math.pow(0.99, frameScale)
+    particle.vx *= damping
+    particle.vy *= damping
     
     // 邊界檢測和反彈
     if (particle.x < 0 || particle.x > width) {
@@ -105,12 +115,14 @@ const animate = () => {
     ctx.fill()
     
     // 繪製粒子之間的連線（非常微妙）
-    particles.slice(index + 1).forEach(otherParticle => {
+    for (let otherIndex = index + 1; otherIndex < particles.length; otherIndex++) {
+      const otherParticle = particles[otherIndex]
       const dx = particle.x - otherParticle.x
       const dy = particle.y - otherParticle.y
-      const distance = Math.sqrt(dx * dx + dy * dy)
+      const distanceSquared = dx * dx + dy * dy
       
-      if (distance < 120) {
+      if (distanceSquared < 120 * 120) {
+        const distance = Math.sqrt(distanceSquared)
         const opacity = (1 - distance / 120) * 0.08 // 極低的線條透明度
         ctx.beginPath()
         ctx.moveTo(particle.x, particle.y)
@@ -121,19 +133,34 @@ const animate = () => {
         ctx.lineWidth = 0.5
         ctx.stroke()
       }
-    })
+    }
   })
   
   // 繪製緩慢移動的抽象波浪形狀
-  drawAbstractWaves(ctx, width, height)
+  drawAbstractWaves(ctx, width, height, frameScale)
   
   animationId = requestAnimationFrame(animate)
 }
 
+const startAnimation = () => {
+  if (animationId !== null || document.hidden) return
+  previousFrameTime = 0
+  animationId = requestAnimationFrame(animate)
+}
+
+const handleVisibilityChange = () => {
+  if (document.hidden) {
+    if (animationId !== null) cancelAnimationFrame(animationId)
+    animationId = null
+  } else {
+    startAnimation()
+  }
+}
+
 // 繪製抽象波浪動畫
 let waveOffset = 0
-const drawAbstractWaves = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
-  waveOffset += 0.002 // 非常緩慢的移動
+const drawAbstractWaves = (ctx: CanvasRenderingContext2D, width: number, height: number, frameScale: number) => {
+  waveOffset += 0.002 * frameScale // 非常緩慢的移動
   
   // 繪製多層波浪
   for (let i = 0; i < 3; i++) {
@@ -184,6 +211,7 @@ const handleResize = () => {
   lastWidth = width
   canvas.value.width = width
   canvas.value.height = height
+  backgroundGradient = null
   initParticles(width, height)
 }
 
@@ -200,28 +228,34 @@ const debouncedResize = () => {
 // 組件掛載時初始化
 onMounted(() => {
   if (!canvas.value) return
+  canvasContext = canvas.value.getContext('2d')
+  if (!canvasContext) return
   
   canvas.value.width = window.innerWidth
   canvas.value.height = window.innerHeight
   lastWidth = window.innerWidth
   
   initParticles(canvas.value.width, canvas.value.height)
-  animate()
+  startAnimation()
   
   window.addEventListener('mousemove', handleMouseMove)
   window.addEventListener('resize', debouncedResize)
+  document.addEventListener('visibilitychange', handleVisibilityChange)
 })
 
 // 組件卸載時清理
 onUnmounted(() => {
-  if (animationId) {
+  if (animationId !== null) {
     cancelAnimationFrame(animationId)
   }
+  animationId = null
+  canvasContext = null
   if (resizeTimeout) {
     clearTimeout(resizeTimeout)
   }
   window.removeEventListener('mousemove', handleMouseMove)
   window.removeEventListener('resize', debouncedResize)
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
 })
 </script>
 

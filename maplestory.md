@@ -12,6 +12,6 @@ description: 新楓之谷角色戰力分析工具，支援查詢台版角色裝�
 import { defineAsyncComponent } from 'vue'
 
 const MapleStoryWrapper = defineAsyncComponent(() =>
-  import('./.vitepress/components/MapleStoryWrapper.vue')
+  import('./.vitepress/theme/maplestory/MapleStoryWrapper.vue')
 )
 </script>

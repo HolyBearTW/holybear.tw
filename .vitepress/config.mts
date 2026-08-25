@@ -13,6 +13,43 @@ import SpoilerComponentDocsSidebar from './sidebars/spoiler-component-docs-sideb
 
 const viteLogger = createLogger()
 const viteWarn = viteLogger.warn.bind(viteLogger)
+const imageManifestPath = fileURLToPath(new URL('./image-optimization-manifest.json', import.meta.url))
+const optimizedImageUrls: Record<string, string> = (() => {
+    if (!existsSync(imageManifestPath)) return {}
+
+    try {
+        return JSON.parse(readFileSync(imageManifestPath, 'utf8'))
+    } catch (error) {
+        console.warn('無法讀取部署圖片對照表，將使用原圖：', error)
+        return {}
+    }
+})()
+
+const getOptimizedImageUrl = (sourceUrl: string | null) => {
+    if (!sourceUrl || !sourceUrl.startsWith('/')) return null
+    const suffixIndex = sourceUrl.search(/[?#]/)
+    const path = suffixIndex === -1 ? sourceUrl : sourceUrl.slice(0, suffixIndex)
+    const suffix = suffixIndex === -1 ? '' : sourceUrl.slice(suffixIndex)
+
+    try {
+        const optimizedPath = optimizedImageUrls[decodeURI(path)]
+        return optimizedPath ? `${optimizedPath}${suffix}` : null
+    } catch {
+        return null
+    }
+}
+
+const escapeHtmlAttribute = (value: string) => value
+    .replaceAll('&', '&amp;')
+    .replaceAll('"', '&quot;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+
+const wrapWithOptimizedSource = (imageHtml: string, sourceUrl: string | null) => {
+    const optimizedUrl = getOptimizedImageUrl(sourceUrl)
+    if (!optimizedUrl) return imageHtml
+    return `<picture style="display: contents"><source type="image/webp" srcset="${escapeHtmlAttribute(optimizedUrl)}">${imageHtml}</picture>`
+}
 
 viteLogger.warn = (message, options) => {
     const normalizedMessage = message.replaceAll('\\', '/')
@@ -70,6 +107,45 @@ const config = defineConfig({
     },
     // 啟用 cleanUrls，移除路由中的 .html 後綴
     cleanUrls: true,
+    markdown: {
+        config(md) {
+            const addDeferredImageAttributes = (html: string) => html.replace(/<img\b[^>]*>/gi, (tag) => {
+                let optimizedTag = tag
+                if (!/\bloading\s*=/i.test(optimizedTag)) {
+                    optimizedTag = optimizedTag.replace(/^<img\b/i, '<img loading="lazy"')
+                }
+                if (!/\bdecoding\s*=/i.test(optimizedTag)) {
+                    optimizedTag = optimizedTag.replace(/^<img\b/i, '<img decoding="async"')
+                }
+                return optimizedTag
+            })
+
+            const renderImage = md.renderer.rules.image
+            md.renderer.rules.image = (tokens, index, options, env, self) => {
+                tokens[index].attrSet('loading', 'lazy')
+                tokens[index].attrSet('decoding', 'async')
+                const imageHtml = renderImage
+                    ? renderImage(tokens, index, options, env, self)
+                    : self.renderToken(tokens, index, options)
+                return wrapWithOptimizedSource(imageHtml, tokens[index].attrGet('src'))
+            }
+
+            for (const ruleName of ['html_block', 'html_inline'] as const) {
+                const renderHtml = md.renderer.rules[ruleName]
+                md.renderer.rules[ruleName] = (tokens, index, options, env, self) => {
+                    const html = renderHtml
+                        ? renderHtml(tokens, index, options, env, self)
+                        : tokens[index].content
+                    const deferredHtml = addDeferredImageAttributes(html)
+                    if (/<picture\b/i.test(deferredHtml)) return deferredHtml
+                    return deferredHtml.replace(/<img\b[^>]*>/gi, (imageTag) => {
+                        const sourceMatch = imageTag.match(/\ssrc\s*=\s*(["'])(.*?)\1/i)
+                        return wrapWithOptimizedSource(imageTag, sourceMatch?.[2] ?? null)
+                    })
+                }
+            }
+        }
+    },
     appearance: 'dark',
     head: [
         ['meta', { name: 'theme-color', content: '#00FFEE' }],
@@ -94,10 +170,6 @@ const config = defineConfig({
 
         ['meta', { name: 'msapplication-TileColor', content: '#00FFEE' }],
         ['meta', { name: 'msapplication-TileImage', content: '/favicon.png?v=20260816-face-cutout' }],
-        ['link', {
-            rel: 'stylesheet',
-            href: '/fonts/LINESeed.css'
-        }],
         ['meta', { name: 'description', content: '聖小熊的個人網站，收錄 HyperOS 模組、技術筆記與開發心得，專注於 Android 客製化與開源創作分享。' }],
         ['meta', { name: 'keywords', content: '聖小熊, HolyBear, HyperOS, 模組, Mod, MIUI, Android, GitHub, 技術部落格, Blog' }],
         
@@ -152,7 +224,7 @@ const config = defineConfig({
                 },
                 {
                     find: '@maplecombat',
-                    replacement: fileURLToPath(new URL('./components/maplestory/maplecombat-full', import.meta.url))
+                    replacement: fileURLToPath(new URL('./theme/maplestory/maplecombat-full', import.meta.url))
                 },
                 { find: 'react', replacement: fileURLToPath(new URL('../node_modules/react', import.meta.url)) },
                 { find: 'react-dom', replacement: fileURLToPath(new URL('../node_modules/react-dom', import.meta.url)) },

@@ -3,13 +3,14 @@ import { BorderBeam } from 'border-beam';
 import { CharacterCashItemEquipment, CashItemEquipmentPreset, CharacterBeautyEquipment } from '../types';
 import PresetSwitcher from './PresetSwitcher';
 import DyePreview from './DyePreview';
+import { mapleAsset } from '../assets';
 
-const WINDOW_ASSET_BASE = '/image/theme/window';
+const windowAsset = (name: string) => mapleAsset(`window/${name}`);
 const CUSTOM_CASH_ITEM_ICON_MAPPING = [
-  { name: '神諭者的戒指', path: '/image/theme/maplestory_character/raw1.png' },
+  { name: '神諭者的戒指', path: mapleAsset('maplestory_character/raw1.png') },
 ];
 
-const windowBg = (name: string) => ({ backgroundImage: `url('${WINDOW_ASSET_BASE}/${name}')` });
+const windowBg = (name: string) => ({ backgroundImage: `url('${windowAsset(name)}')` });
 
 const resolveCashItemIcon = (item?: CashItemEquipmentPreset): string | undefined => {
   if (!item) return undefined;
@@ -265,9 +266,9 @@ const BeautySlot: React.FC<BeautySlotProps> = ({ label, name, baseColor, mixColo
   const glow = name ? 'shadow-[0_0_10px_-2px_rgba(148,163,184,0.18)]' : '';
   
   let iconSrc = '';
-  if (label.includes('髮型')) iconSrc = '/image/theme/hair.png';
-  else if (label.includes('臉型')) iconSrc = '/image/theme/face.png';
-  else if (label.includes('皮膚')) iconSrc = '/image/theme/skin.png';
+  if (label.includes('髮型')) iconSrc = mapleAsset('hair.png');
+  else if (label.includes('臉型')) iconSrc = mapleAsset('face.png');
+  else if (label.includes('皮膚')) iconSrc = mapleAsset('skin.png');
 
   // Beauty slots are typically at the top, so we show tooltip BELOW by default
   const mobileTooltipClass = 'top-full mt-2';
@@ -425,7 +426,7 @@ const CashSlot: React.FC<{ label: string; item?: CashItemEquipmentPreset; toolti
                     value={prism.value} 
                     className="max-w-full max-h-full object-contain z-10 bg-transparent translate-x-[1px] translate-y-[1px]"
                 />
-                <img src="/image/theme/cashitem.png" alt="染色" className="absolute bottom-[3px] left-[3px] w-3 h-3 z-20" title="染色" />
+                <img src={mapleAsset('cashitem.png')} alt="染色" className="absolute bottom-[3px] left-[3px] w-3 h-3 z-20" title="染色" />
               </>
             ) : (
               <img src={displayIcon} alt={item.cash_item_name} className="max-w-full max-h-full object-contain z-10 translate-x-[1px] translate-y-[1px]" />

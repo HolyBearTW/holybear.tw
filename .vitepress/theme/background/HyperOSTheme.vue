@@ -11,7 +11,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 
 interface Block {
   color: string
@@ -64,9 +64,6 @@ const getBlockStyle = (block: Block) => {
   }
 }
 
-onMounted(() => {
-  console.log('HyperOS Theme 已載入')
-})
 </script>
 
 <style scoped>
@@ -380,7 +377,17 @@ onMounted(() => {
     min-width: 300px;
     min-height: 300px;
     opacity: 0.45;
+    /* 手機只保留合成層位移；持續變形 border-radius 會讓大型模糊色塊反覆重繪。 */
+    animation-name: float1;
+    animation-duration: 30s;
+    animation-timing-function: cubic-bezier(0.45, 0.05, 0.55, 0.95);
+    animation-iteration-count: infinite;
+    filter: blur(28px) !important;
   }
+
+  .block-2 { animation-name: float2; }
+  .block-3 { animation-name: float3; }
+  .block-4 { animation-name: float4; }
 }
 
 /* 暗色模式適配 */

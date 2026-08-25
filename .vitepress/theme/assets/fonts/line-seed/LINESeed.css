@@ -6,7 +6,7 @@
 /* LINESeedTW_OTF_Th.ttf (Thin) */
 @font-face {
     font-family: 'LINESeed';
-    src: url('/fonts/LINESeedTW_OTF_Th.woff2') format('woff2'), url('/fonts/LINESeedTW_OTF_Th.woff') format('woff');
+    src: url('./LINESeedTW_OTF_Th.woff2') format('woff2'), url('./LINESeedTW_OTF_Th.woff') format('woff');
     font-weight: 100; /* Thin (細體) 對應 100 */
     font-style: normal;
     font-display: swap;
@@ -15,7 +15,7 @@
 /* LINESeedTW_OTF_Rg.ttf (Regular) */
 @font-face {
     font-family: 'LINESeed';
-    src: url('/fonts/LINESeedTW_OTF_Rg.woff2') format('woff2'), url('/fonts/LINESeedTW_OTF_Rg.woff') format('woff');
+    src: url('./LINESeedTW_OTF_Rg.woff2') format('woff2'), url('./LINESeedTW_OTF_Rg.woff') format('woff');
     font-weight: 400; /* Regular (標準) 對應 400 */
     font-style: normal;
     font-display: swap;
@@ -24,7 +24,7 @@
 /* LINESeedTW_OTF_Bd.ttf (Bold) */
 @font-face {
     font-family: 'LINESeed';
-    src: url('/fonts/LINESeedTW_OTF_Bd.woff2') format('woff2'), url('/fonts/LINESeedTW_OTF_Bd.woff') format('woff');
+    src: url('./LINESeedTW_OTF_Bd.woff2') format('woff2'), url('./LINESeedTW_OTF_Bd.woff') format('woff');
     font-weight: 700; /* Bold (粗體) 對應 700 */
     font-style: normal;
     font-display: swap;
@@ -33,7 +33,7 @@
 /* LINESeedTW_OTF_Eb.ttf (Extra Bold) */
 @font-face {
     font-family: 'LINESeed';
-    src: url('/fonts/LINESeedTW_OTF_Eb.woff2') format('woff2'), url('/fonts/LINESeedTW_OTF_Eb.woff') format('woff');
+    src: url('./LINESeedTW_OTF_Eb.woff2') format('woff2'), url('./LINESeedTW_OTF_Eb.woff') format('woff');
     font-weight: 900; /* Extra Bold (特粗體) 對應 900 */
     font-style: normal;
     font-display: swap;

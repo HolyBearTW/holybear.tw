@@ -6,6 +6,10 @@ import PresetSwitcher from './PresetSwitcher';
 import { Square, CheckSquare, X } from 'lucide-react';
 
 import { CharacterAndroidEquipment } from '../types';
+import { mapleAsset } from '../assets';
+
+const characterAsset = (name: string) => mapleAsset(`maplestory_character/${name}`);
+const windowAsset = (name: string) => mapleAsset(`window/${name}`);
 
 interface EquipmentGridProps {
   equipment: CharacterEquipment;
@@ -60,37 +64,37 @@ const SLOT_DEFINITIONS: Record<string, { label: string, match: string[] }> = {
 // Custom Totem Image Mapping
 // 使用者待填寫對應名稱
 const TOTEM_MAPPING = [
-  { name: '姆嗚圖騰', path: '/image/theme/maplestory_character/totem1.png' },
-  { name: '彩虹月石寶石圖騰', path: '/image/theme/maplestory_character/totem2.png' },
-  { name: '真和真圖騰', path: '/image/theme/maplestory_character/totem3.png' },
-  { name: '真阿克婭圖騰', path: '/image/theme/maplestory_character/totem4.png' },
-  { name: '真惠惠圖騰', path: '/image/theme/maplestory_character/totem5.png' },
-  { name: '真達克妮絲圖騰', path: '/image/theme/maplestory_character/totem6.png' },
-  { name: '勇敢挑戰者的圖騰', path: '/image/theme/maplestory_character/totem7.png' },
-  { name: '赤之寶石圖騰', path: '/image/theme/maplestory_character/totem8.png' },
-  { name: '綠之寶石圖騰', path: '/image/theme/maplestory_character/totem9.png' },
-  { name: '青之寶石圖騰', path: '/image/theme/maplestory_character/totem10.png' },
-  { name: '黃之寶石圖騰', path: '/image/theme/maplestory_character/totem11.png' },
-  { name: '五個碎片的橘子樂園圖騰', path: '/image/theme/maplestory_character/totem12.png' },
-  { name: '超越的圖騰', path: '/image/theme/maplestory_character/totem13.png' },
-  { name: '醫院長圖騰', path: '/image/theme/maplestory_character/totem14.png' },
-  { name: '女護士圖騰', path: '/image/theme/maplestory_character/totem15.png' },
-  { name: '輔助人員圖騰', path: '/image/theme/maplestory_character/totem16.png' },
-  { name: '小筱精靈圖騰', path: '/image/theme/maplestory_character/totem17.png' },
-  { name: '拉尼亞的美味便當圖騰', path: '/image/theme/maplestory_character/totem18.png' },
-  { name: '異界的西格諾斯圖騰', path: '/image/theme/maplestory_character/totem19.png' },
-  { name: '輪迴碑石', path: '/image/theme/maplestory_character/totem20.png' },
-  { name: '古代石板複製品', path: '/image/theme/maplestory_character/totem21.png' },
-  { name: '貝奧武夫的痕跡', path: '/image/theme/maplestory_character/totem22.png' },
-  { name: '萬事的痕跡', path: '/image/theme/maplestory_character/totem23.png' },
-  { name: '阿德勒的痕跡', path: '/image/theme/maplestory_character/totem24.png' },
-  { name: '柏林的痕跡', path: '/image/theme/maplestory_character/totem25.png' },
-  { name: 'TMS勇者號意念', path: '/image/theme/maplestory_character/totem26.png' },
-  { name: '時空挑戰者的圖騰', path: '/image/theme/maplestory_character/totem27.png' },
+  { name: '姆嗚圖騰', path: characterAsset('totem1.png') },
+  { name: '彩虹月石寶石圖騰', path: characterAsset('totem2.png') },
+  { name: '真和真圖騰', path: characterAsset('totem3.png') },
+  { name: '真阿克婭圖騰', path: characterAsset('totem4.png') },
+  { name: '真惠惠圖騰', path: characterAsset('totem5.png') },
+  { name: '真達克妮絲圖騰', path: characterAsset('totem6.png') },
+  { name: '勇敢挑戰者的圖騰', path: characterAsset('totem7.png') },
+  { name: '赤之寶石圖騰', path: characterAsset('totem8.png') },
+  { name: '綠之寶石圖騰', path: characterAsset('totem9.png') },
+  { name: '青之寶石圖騰', path: characterAsset('totem10.png') },
+  { name: '黃之寶石圖騰', path: characterAsset('totem11.png') },
+  { name: '五個碎片的橘子樂園圖騰', path: characterAsset('totem12.png') },
+  { name: '超越的圖騰', path: characterAsset('totem13.png') },
+  { name: '醫院長圖騰', path: characterAsset('totem14.png') },
+  { name: '女護士圖騰', path: characterAsset('totem15.png') },
+  { name: '輔助人員圖騰', path: characterAsset('totem16.png') },
+  { name: '小筱精靈圖騰', path: characterAsset('totem17.png') },
+  { name: '拉尼亞的美味便當圖騰', path: characterAsset('totem18.png') },
+  { name: '異界的西格諾斯圖騰', path: characterAsset('totem19.png') },
+  { name: '輪迴碑石', path: characterAsset('totem20.png') },
+  { name: '古代石板複製品', path: characterAsset('totem21.png') },
+  { name: '貝奧武夫的痕跡', path: characterAsset('totem22.png') },
+  { name: '萬事的痕跡', path: characterAsset('totem23.png') },
+  { name: '阿德勒的痕跡', path: characterAsset('totem24.png') },
+  { name: '柏林的痕跡', path: characterAsset('totem25.png') },
+  { name: 'TMS勇者號意念', path: characterAsset('totem26.png') },
+  { name: '時空挑戰者的圖騰', path: characterAsset('totem27.png') },
 ];
 
 const CUSTOM_ITEM_ICON_MAPPING = [
-  { name: '神諭者的戒指', path: '/image/theme/maplestory_character/raw1.png' },
+  { name: '神諭者的戒指', path: characterAsset('raw1.png') },
 ];
 
 const resolveItemIcon = (item: EquipmentItem | undefined, slotKey: string): string | undefined => {
@@ -98,12 +102,12 @@ const resolveItemIcon = (item: EquipmentItem | undefined, slotKey: string): stri
   
   // 0. Puzzle uses custom icon
   if (slotKey === 'Puzzle') {
-      return '/image/theme/maplestory_character/puzzle.png';
+      return characterAsset('puzzle.png');
   }
 
   // 1. Gem always uses custom icon
   if (slotKey === 'Gem') {
-    return '/image/theme/maplestory_character/gem.png';
+    return characterAsset('gem.png');
   }
 
   // 2. Totems check mapping
@@ -360,7 +364,7 @@ const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'lef
           }}
         >
           <img
-            src={`/image/theme/window/skill-ring-${skillRingToggle.isOpen ? 'open' : 'close'}.png`}
+            src={windowAsset(`skill-ring-${skillRingToggle.isOpen ? 'open' : 'close'}.png`)}
             alt=""
             aria-hidden="true"
             className="block h-[19px] w-[19px] max-w-none"
@@ -380,7 +384,7 @@ const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'lef
           }}
         >
           <img
-            src={`/image/theme/window/skill-ring-${zeroWeaponToggle.isAlternate ? 'open' : 'close'}.png`}
+            src={windowAsset(`skill-ring-${zeroWeaponToggle.isAlternate ? 'open' : 'close'}.png`)}
             alt=""
             aria-hidden="true"
             className="block h-[19px] w-[19px] max-w-none"
@@ -583,7 +587,7 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, setEffect, cha
                 item_equipment_part: 'puzzle',
                 item_equipment_slot: 'Puzzle',
                 item_name: '拼圖盒',
-                item_icon: '/image/theme/maplestory_character/puzzle.png',
+                item_icon: characterAsset('puzzle.png'),
              };
         }
 
@@ -593,7 +597,7 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, setEffect, cha
                 item_equipment_part: 'puzzle',
                 item_equipment_slot: 'Puzzle',
                 item_name: foundSet.set_name,
-                item_icon: '/image/theme/maplestory_character/puzzle.png', 
+                item_icon: characterAsset('puzzle.png'),
                 item_description: '由套組效果判定的拼圖道具',
                 // Dummy values to satisfy type
                 item_shape_name: '', item_shape_icon: '', item_gender: '',

@@ -7,6 +7,7 @@ import {
   UnionInnerStat,
   UnionRaiderPreset,
 } from '../types';
+import { mapleAsset } from '../assets';
 
 interface UnionRaiderSectionProps {
   union?: CharacterUnion;
@@ -187,7 +188,7 @@ const normalizedClassPortraits = new Map(
 );
 const getClassPortrait = (className?: string | null) => {
   const file = className ? normalizedClassPortraits.get(normalizeClassName(className)) : null;
-  return `/image/theme/maplestory_class/${file || 'all.jpg'}`;
+  return mapleAsset(`maplestory_class/${file || 'all.jpg'}`);
 };
 
 const getUnionBlockName = (block: UnionBlock) => {
