@@ -1,10 +1,10 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { Calculator, Database, Sparkles } from 'lucide-react';
+import { Calculator, Database, Flame, Sparkles } from 'lucide-react';
 
 export type GrowthTrackingState = 'loading' | 'tracked' | 'untracked' | 'unavailable';
 
-type TourStepId = 'growth-profile' | 'ai-check' | 'combat-calculator';
+type TourStepId = 'growth-profile' | 'boss-damage-calculator' | 'ai-check' | 'combat-calculator';
 
 interface TourTargetRef {
   current: HTMLButtonElement | null;
@@ -16,6 +16,7 @@ interface MapleFeatureTourProps {
   growthTargetRef: TourTargetRef;
   aiTargetRef: TourTargetRef;
   calculatorTargetRef: TourTargetRef;
+  bossCalculatorTargetRef: TourTargetRef;
 }
 
 interface TourStep {
@@ -59,6 +60,7 @@ const MapleFeatureTour: React.FC<MapleFeatureTourProps> = ({
   growthTargetRef,
   aiTargetRef,
   calculatorTargetRef,
+  bossCalculatorTargetRef,
 }) => {
   const [currentStepId, setCurrentStepId] = React.useState<TourStepId | null>(null);
   const [spotlightRect, setSpotlightRect] = React.useState<SpotlightRect | null>(null);
@@ -81,7 +83,7 @@ const MapleFeatureTour: React.FC<MapleFeatureTourProps> = ({
       {
         id: 'ai-check',
         title: '讓 AI 幫角色做一次健檢',
-        description: 'AI 會整理目前裝備與養成方向，提供帶點幽默、但仍然實用的改善建議。',
+        description: 'AI 會整理目前裝備與養成方向；BOSS 攻略能力只會採用已保存的實測輸出，不再用面板戰力猜測。',
         targetRef: aiTargetRef,
         icon: <Sparkles className="h-5 w-5" />,
       },
@@ -92,10 +94,17 @@ const MapleFeatureTour: React.FC<MapleFeatureTourProps> = ({
         targetRef: calculatorTargetRef,
         icon: <Calculator className="h-5 w-5" />,
       },
+      {
+        id: 'boss-damage-calculator',
+        title: '用實戰時間估算打王能力',
+        description: '選擇實際擊破的 BOSS，填入總時間與剩餘時間；系統會反推平均輸出，這份結果也會提供給 AI 健檢使用。',
+        targetRef: bossCalculatorTargetRef,
+        icon: <Flame className="h-5 w-5" />,
+      },
     );
 
     return availableSteps;
-  }, [aiTargetRef, calculatorTargetRef, growthTargetRef, growthTrackingState]);
+  }, [aiTargetRef, bossCalculatorTargetRef, calculatorTargetRef, growthTargetRef, growthTrackingState]);
 
   React.useEffect(() => {
     if (!characterKey || growthTrackingState === 'loading') return;

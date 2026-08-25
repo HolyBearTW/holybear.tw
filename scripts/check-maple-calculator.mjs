@@ -21,6 +21,8 @@ const profile = {
   subPercent: 100,
   secondSubPercent: 0,
   attack: 5_000,
+  equipmentAttackPercent: 100,
+  familiarAttackPercent: 0,
   attackPercent: 100,
   damage: 100,
   bossDamage: 400,
@@ -36,6 +38,25 @@ const profile = {
 const baseline = calculator.calculateProjection(profile, { ...calculator.EMPTY_ADJUSTMENT });
 if (baseline.projectedPower !== profile.currentCombatPower) {
   throw new Error(`官方戰力校準失敗：${baseline.projectedPower}`);
+}
+
+const radar = calculator.calculateRadarEquivalentProfile(profile);
+const radarScores = Object.fromEntries(radar.axes.map((axis) => [axis.key, axis.equivalentMain]));
+const expectedRadarScores = {
+  main: 50_000,
+  attack: 26_250,
+  attackPercent: 26_250,
+  bossTotal: 43_750,
+  criticalDamage: 52_500 * 100 / 235,
+  ignoreDefense: 52_500 * 0.81,
+};
+if (radar.overallEquivalentMain !== 52_500 || radar.axes.length !== 6) {
+  throw new Error(`雷達圖整體等價換算失敗：${JSON.stringify(radar)}`);
+}
+for (const [key, expected] of Object.entries(expectedRadarScores)) {
+  if (Math.abs(radarScores[key] - expected) > 1e-8) {
+    throw new Error(`雷達圖 ${key} 等價換算失敗：${radarScores[key]}，預期 ${expected}`);
+  }
 }
 
 const finalDamage = calculator.calculateProjection(profile, {
@@ -106,15 +127,22 @@ const familiarProfile = calculator.createCalculatorProfile({
   equipment: { preset_no: 0, item_equipment: [] },
   familiar: {
     familiar_list: [
-      { slot_id: '1', summoned_flag: 'false', option: [{ option_name: '最終傷害', option_value: '+20%' }] },
-      { slot_id: '2', summoned_flag: 'true', option: [{ option_name: '最終傷害', option_value: '+20%' }] },
-      { slot_id: '3', summoned_flag: 'false', option: [{ option_name: '最終傷害', option_value: '+25%' }] },
+      { slot_id: '1', summoned_flag: 'false', familiar_grade: '傳說', familiar_special_flag: 'false', option: [{ option_name: '最終傷害', option_value: '+20%' }, { option_name: '物理攻擊力', option_value: '+14%' }] },
+      { slot_id: '2', summoned_flag: 'true', familiar_grade: '傳說', familiar_special_flag: 'false', option: [{ option_name: '最終傷害', option_value: '+20%' }, { option_name: '攻擊力', option_value: '+14%' }] },
+      { slot_id: '3', summoned_flag: 'false', option: [{ option_name: '最終傷害', option_value: '+25%' }, { option_name: '魔法攻擊力', option_value: '+25%' }] },
     ],
     familiar_link_slot: [{ slot_id: '1', active_flag: 'true' }],
   },
 });
-if (familiarProfile.familiarFinalDamageSources.join(',') !== '20,20') {
+if (familiarProfile.familiarFinalDamageSources.join(',') !== '2,20') {
   throw new Error(`萌獸召喚／啟用插槽判定失敗：${familiarProfile.familiarFinalDamageSources}`);
+}
+if (familiarProfile.equipmentAttackPercent !== 0 || familiarProfile.familiarAttackPercent !== 18 || familiarProfile.attackPercent !== 18) {
+  throw new Error(`萌獸攻魔% 判定失敗：${JSON.stringify({
+    equipment: familiarProfile.equipmentAttackPercent,
+    familiar: familiarProfile.familiarAttackPercent,
+    total: familiarProfile.attackPercent,
+  })}`);
 }
 
 const xenonProfile = {
@@ -162,3 +190,124 @@ if (daResult.projectedPower !== expectedDaPower) {
 console.log(
   `Maple calculator checks passed (formula ${calculator.CALCULATOR_FORMULA_META.sourceVersion}, verified ${calculator.CALCULATOR_FORMULA_META.verifiedAt}).`,
 );
+
+const bossModuleUrl = process.env.MAPLE_BOSS_CALCULATOR_MODULE_URL
+  || 'http://localhost:5173/.vitepress/theme/maplestory/calculator/bossDamageCalculator.ts';
+const bossResponse = await fetch(bossModuleUrl);
+if (!bossResponse.ok) throw new Error(`無法讀取 BOSS 計算機模組：HTTP ${bossResponse.status}`);
+const bossSource = await bossResponse.text();
+const bossCalculator = await import(`data:text/javascript;base64,${Buffer.from(bossSource).toString('base64')}`);
+
+const sourceBoss = bossCalculator.BOSS_HEALTH_DATA.find(
+  (row) => row.name === '最初的敵對者' && row.difficulty === '普通',
+);
+if (bossCalculator.BOSS_NAMES[0] !== '尤比太') {
+  throw new Error(`BOSS 預設排序錯誤：${bossCalculator.BOSS_NAMES[0]}`);
+}
+const yupitaNormal = bossCalculator.BOSS_HEALTH_DATA.find((row) => row.name === '尤比太' && row.difficulty === '普通');
+if (yupitaNormal?.hpTrillion !== 10266 || yupitaNormal?.crystalRewardHundredMillion !== 17) {
+  throw new Error(`尤比太普通資料錯誤：${JSON.stringify(yupitaNormal)}`);
+}
+const yupitaCombat = bossCalculator.getBossCombatMultiplier(yupitaNormal, { level: 300, arc: 0, aut: 810 });
+if (yupitaCombat.bossLevel !== 295 || yupitaCombat.forceRequired !== 810 || yupitaCombat.combinedMultiplier !== 1.2) {
+  throw new Error(`尤比太等級／AUT 倍率錯誤：${JSON.stringify(yupitaCombat)}`);
+}
+const lotusNormal = bossCalculator.BOSS_HEALTH_DATA.find((row) => row.name === '史烏' && row.difficulty === '普通');
+const lotusCombat = bossCalculator.getBossCombatMultiplier(lotusNormal, { level: 300, arc: 0, aut: 0 });
+if (lotusCombat.bossLevel !== 190 || lotusCombat.levelMultiplier !== 1.2 || lotusCombat.forceMultiplier !== 1 || lotusCombat.combinedMultiplier !== 1.2) {
+  throw new Error(`無 ARC／AUT BOSS 等級倍率錯誤：${JSON.stringify(lotusCombat)}`);
+}
+const bossResult = bossCalculator.calculateBossDamage(sourceBoss, 1800, 1264);
+if (!bossResult || bossResult.elapsedSeconds !== 536) {
+  throw new Error(`BOSS 實際戰鬥時間計算失敗：${bossResult?.elapsedSeconds}`);
+}
+const expectedDps = 1650 / 536;
+if (Math.abs(bossResult.dpsTrillion - expectedDps) > 1e-12) {
+  throw new Error(`BOSS DPS 反推失敗：${bossResult.dpsTrillion}`);
+}
+if (Math.abs(bossResult.projectedDamageTrillion - expectedDps * 1800) > 1e-9) {
+  throw new Error(`BOSS 總時間傷害量計算失敗：${bossResult.projectedDamageTrillion}`);
+}
+
+const eligible = bossCalculator.getEligibleBosses(
+  bossResult.projectedDamageTrillion,
+  1800,
+  1800,
+  3600,
+);
+if (!eligible.some((row) => row.name === '最初的敵對者' && row.difficulty === '普通')) {
+  throw new Error('BOSS 可擊破清單缺少來源 BOSS');
+}
+const blackMage = eligible.find((row) => row.name === '黑魔法師' && row.difficulty === '極限');
+if (!blackMage || blackMage.timeLimitSeconds !== 3600) {
+  throw new Error(`黑魔法師獨立時限失敗：${blackMage?.timeLimitSeconds}`);
+}
+
+const apiCombat = bossCalculator.createBossPlayerContext({
+  basic: { character_level: 280 },
+  stat: { final_stat: [
+    { stat_name: '神秘力量', stat_value: '1,320' },
+    { stat_name: '真實之力', stat_value: '350' },
+  ] },
+  symbolEquipment: { symbol: [] },
+});
+if (apiCombat.level !== 280 || apiCombat.arc !== 1320 || apiCombat.aut !== 350) {
+  throw new Error(`BOSS API 等級／力量讀取失敗：${JSON.stringify(apiCombat)}`);
+}
+if (bossCalculator.getLevelDamageMultiplier(280, 280) !== 1.1
+  || bossCalculator.getLevelDamageMultiplier(275, 280) !== 0.875
+  || bossCalculator.getLevelDamageMultiplier(240, 280) !== 0) {
+  throw new Error('BOSS 等級壓制倍率失敗');
+}
+if (bossCalculator.getArcDamageMultiplier(1320, 1320) !== 1
+  || bossCalculator.getArcDamageMultiplier(1980, 1320) !== 1.5
+  || bossCalculator.getAutDamageMultiplier(350, 320) !== 1.15
+  || bossCalculator.getAutDamageMultiplier(220, 320) !== 0.05) {
+  throw new Error('BOSS ARC／AUT 倍率失敗');
+}
+const sourceAdjusted = bossCalculator.getEligibleBosses(
+  bossResult.projectedDamageTrillion,
+  1800,
+  1800,
+  3600,
+  sourceBoss,
+  apiCombat,
+);
+const adjustedSourceBoss = sourceAdjusted.find((row) => row.name === '最初的敵對者' && row.difficulty === '普通');
+if (!adjustedSourceBoss || Math.abs(adjustedSourceBoss.adjustmentRatio - 1) > 1e-12 || Math.abs(adjustedSourceBoss.estimatedSeconds - 536) > 1e-9) {
+  throw new Error(`來源 BOSS 倍率被重複計算：${JSON.stringify(adjustedSourceBoss)}`);
+}
+
+const bossStorage = new Map();
+globalThis.localStorage = {
+  getItem: (key) => bossStorage.get(key) ?? null,
+  setItem: (key, value) => bossStorage.set(key, String(value)),
+  removeItem: (key) => bossStorage.delete(key),
+};
+const aiStorageKey = `${bossCalculator.bossDamageStorageRoot('公式測試角色')}_auto`;
+bossStorage.set(aiStorageKey, JSON.stringify({
+  bossName: '最初的敵對者',
+  difficulty: '普通',
+  total: { min: '30', sec: '00' },
+  remaining: { min: '21', sec: '04' },
+  normalLimit: { min: '30', sec: '00' },
+  blackMageMinutes: '60',
+  selfAuto: true,
+  selfDamage: '',
+  teammates: ['100'],
+  measurementConfirmed: true,
+  savedAt: 1,
+}));
+const aiSnapshot = bossCalculator.readBossDamageAiSnapshot('公式測試角色', apiCombat);
+if (!aiSnapshot || Math.abs(aiSnapshot.personal.dpsTrillion - expectedDps) > 1e-12) {
+  throw new Error(`AI 未讀取 BOSS 實測 DPS：${aiSnapshot?.personal.dpsTrillion}`);
+}
+if (aiSnapshot.team?.memberCount !== 2 || aiSnapshot.team.damageTrillion <= aiSnapshot.personal.damageTrillion) {
+  throw new Error('AI BOSS 快照未正確分離個人與隊伍輸出');
+}
+bossStorage.set(aiStorageKey, JSON.stringify({ ...JSON.parse(bossStorage.get(aiStorageKey)), measurementConfirmed: false }));
+if (bossCalculator.readBossDamageAiSnapshot('公式測試角色', apiCombat) !== null) {
+  throw new Error('AI 不應讀取尚未確認的 BOSS 預設資料');
+}
+
+console.log(`Boss damage calculator checks passed (${bossCalculator.BOSS_HEALTH_DATA.length} health rows).`);

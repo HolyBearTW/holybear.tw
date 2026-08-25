@@ -21,6 +21,7 @@ import { fetchWeeklyHistory, findBestDateInPastWeek } from '../services/nexonSer
 
 // Keep the calculator and its formula code out of the character result's first paint.
 const CharacterCalculatorModal = React.lazy(() => import('./CharacterCalculatorModal'));
+const BossDamageCalculatorModal = React.lazy(() => import('./BossDamageCalculatorModal'));
 
 interface MainDashboardProps {
     data: any;
@@ -242,11 +243,13 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
     const hasRecentLogin = String(data.basic.access_flag).toLowerCase() === 'true';
     const [showRecentLoginStatus, setShowRecentLoginStatus] = React.useState(false);
     const [showCalculator, setShowCalculator] = React.useState(false);
+    const [showBossDamageCalculator, setShowBossDamageCalculator] = React.useState(false);
     const [growthTrackingState, setGrowthTrackingState] = React.useState<GrowthTrackingState>('loading');
     const recentPowerRankRef = React.useRef<RecentPowerRankHandle>(null);
     const growthButtonRef = React.useRef<HTMLButtonElement>(null);
     const aiCheckButtonRef = React.useRef<HTMLButtonElement>(null);
     const calculatorButtonRef = React.useRef<HTMLButtonElement>(null);
+    const bossCalculatorButtonRef = React.useRef<HTMLButtonElement>(null);
 
     React.useEffect(() => {
       setGrowthTrackingState('loading');
@@ -380,6 +383,10 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
                       <button ref={calculatorButtonRef} onClick={() => setShowCalculator(true)} className="maple-calculator-open-button mt-2.5 w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold rounded-lg flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-900/20 hover:translate-y-[-1px]">
                          <Calculator className="w-4 h-4" />
                          戰力計算機
+                      </button>
+                      <button ref={bossCalculatorButtonRef} onClick={() => setShowBossDamageCalculator(true)} className="maple-boss-calculator-open-button mt-2.5 w-full py-2.5 bg-rose-600 hover:bg-rose-500 text-white text-sm font-bold rounded-lg flex items-center justify-center gap-2 transition-all shadow-lg shadow-rose-900/20 hover:translate-y-[-1px]">
+                         <Flame className="w-4 h-4" />
+                         BOSS 傷害計算機
                       </button>
                    </div>
                </div>
@@ -557,12 +564,24 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
                 <CharacterCalculatorModal data={data} onClose={() => setShowCalculator(false)} />
               </React.Suspense>
             )}
+            {showBossDamageCalculator && (
+              <React.Suspense fallback={(
+                <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/70 backdrop-blur-sm">
+                  <div className="flex items-center gap-2 rounded-xl border border-slate-700 bg-[#161b22] px-5 py-3 text-sm font-bold text-rose-300 shadow-2xl">
+                    <Loader2 className="h-4 w-4 animate-spin" /> 正在開啟 BOSS 傷害計算機...
+                  </div>
+                </div>
+              )}>
+                <BossDamageCalculatorModal data={data} onClose={() => setShowBossDamageCalculator(false)} />
+              </React.Suspense>
+            )}
             <MapleFeatureTour
               characterKey={data.ocid || data.basic.character_name}
               growthTrackingState={growthTrackingState}
               growthTargetRef={growthButtonRef}
               aiTargetRef={aiCheckButtonRef}
               calculatorTargetRef={calculatorButtonRef}
+              bossCalculatorTargetRef={bossCalculatorButtonRef}
             />
           </div>
     );

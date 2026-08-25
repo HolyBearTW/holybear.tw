@@ -1,239 +1,137 @@
 import React from 'react';
 import { DashboardData } from '../types';
-import { calculateDefenseMultiplier } from '../calculator/combatMath';
+import { createRadarEquivalentProfile } from '../calculator/mapleCombatCalculator';
 
 interface StatRadarChartProps {
   data: DashboardData;
 }
 
-const MAIN_STAT_SCALE = 8500;
-// 惡魔復仇者的 HP 與一般主屬性量級不同；約 24 萬 HP 對應一般主屬性的雷達基準。
-const DEMON_AVENGER_HP_SCALE = 240000;
+const formatScore = (value: number) => Math.round(value).toLocaleString('zh-TW');
 
 const StatRadarChart: React.FC<StatRadarChartProps> = ({ data }) => {
   const [hoveredIndex, setHoveredIndex] = React.useState<number | null>(null);
+  const radar = React.useMemo(() => createRadarEquivalentProfile(data), [data]);
+  const overallBaseline = Math.max(1, radar.overallEquivalentMain);
+  const stats = radar.axes.map((axis) => ({
+    ...axis,
+    normalized: Math.max(0, Math.min(1, axis.equivalentMain / overallBaseline)),
+    relativePercent: Math.max(0, axis.equivalentMain / overallBaseline * 100),
+  }));
 
-  // Helper to get stat value
-  const getVal = (name: string) => {
-    const found = data.stat.final_stat.find(s => s.stat_name === name);
-    return found ? parseFloat(found.stat_value.replace(/,/g, '')) : 0;
-  };
-
-  // 1. Determine Main Stat
-  const str = getVal('STR');
-  const dex = getVal('DEX');
-  const int = getVal('INT');
-  const luk = getVal('LUK');
-  const hp = getVal('HP');
-
-  const characterClass = data.basic?.character_class || data.stat?.character_class || '';
-  const isDemonAvenger = characterClass.includes('惡魔復仇者');
-
-  let mainStatLabel = isDemonAvenger ? 'HP' : 'STR';
-  let mainStatVal = isDemonAvenger ? hp : str;
-  const mainStatScale = isDemonAvenger ? DEMON_AVENGER_HP_SCALE : MAIN_STAT_SCALE;
-
-  // 非惡魔復仇者才使用四大屬性的最高值推定，避免單純因 HP 很高而誤判職業。
-  if (!isDemonAvenger) {
-    if (dex > mainStatVal) { mainStatLabel = 'DEX'; mainStatVal = dex; }
-    if (int > mainStatVal) { mainStatLabel = 'INT'; mainStatVal = int; }
-    if (luk > mainStatVal) { mainStatLabel = 'LUK'; mainStatVal = luk; }
-  }
-  
-  // 2. Determine Attack Type
-  const att = getVal('攻擊力');
-  const magic = getVal('魔法攻擊力');
-  const isMagic = int > str && int > dex && int > luk; // Simple check
-  const attackLabel = isMagic ? '魔法攻擊' : '攻擊力';
-  const attackVal = isMagic ? magic : att;
-
-  // 3. Other Stats
-  const finalDmg = getVal('最終傷害');
-  const boss = getVal('BOSS怪物傷害');
-  const critDmg = getVal('爆擊傷害');
-  const ied = getVal('無視防禦率');
-
-  // 4. Scaling
-  // 使用固定曲線基準，避免「每一項都約落在 83%」導致強勢屬性不明顯。
-  const clamp01 = (v: number) => Math.max(0, Math.min(v, 1));
-  const curveNormalize = (value: number, scale: number, power = 1) => {
-    if (scale <= 0) return 0;
-    const curved = 1 - Math.exp(-Math.max(value, 0) / scale);
-    return clamp01(Math.pow(curved, power));
-  };
-  // 與實戰計算機共用 380% BOSS 防禦公式；以實際保留的輸出比例作為雷達半徑。
-  const normalizeIed = (value: number) => clamp01(calculateDefenseMultiplier(value));
-
-  const stats = [
-    { label: mainStatLabel, value: mainStatVal, normalized: curveNormalize(mainStatVal, mainStatScale) },
-    { label: attackLabel, value: attackVal, normalized: curveNormalize(attackVal, 1800) },
-    { label: '最終傷害', value: finalDmg, normalized: curveNormalize(finalDmg, 75) },
-    { label: 'BOSS傷害', value: boss, normalized: curveNormalize(boss, 220) },
-    { label: '爆擊傷害', value: critDmg, normalized: curveNormalize(critDmg, 55, 0.9) },
-    { label: '無視防禦', value: ied, normalized: normalizeIed(ied) },
-  ];
-
-  // SVG Config
-  const size = 200;
+  const size = 240;
   const center = size / 2;
-  const radius = 70;
+  const radius = 78;
   const sides = 6;
-  
-  // Calculate points
   const getPoint = (index: number, normalized: number) => {
     const angle = (Math.PI * 2 * index) / sides - Math.PI / 2;
-    // Minimum 10% display for visibility
-    const r = radius * (normalized < 0.1 ? 0.1 : normalized);
-    const x = center + r * Math.cos(angle);
-    const y = center + r * Math.sin(angle);
-    return { x, y };
+    const r = radius * Math.max(0, Math.min(1, normalized));
+    return { x: center + r * Math.cos(angle), y: center + r * Math.sin(angle) };
   };
-
   const getLabelPoint = (index: number) => {
     const angle = (Math.PI * 2 * index) / sides - Math.PI / 2;
-    const r = radius + 25; // Label offset
-    const x = center + r * Math.cos(angle);
-    const y = center + r * Math.sin(angle);
-    return { x, y };
+    const r = radius + 28;
+    return { x: center + r * Math.cos(angle), y: center + r * Math.sin(angle) };
   };
 
-  // Animation: 進場時由中心展開
   const [progress, setProgress] = React.useState(0);
   React.useEffect(() => {
     let frame: number;
     let start: number | null = null;
-    const duration = 700; // ms
-    function animate(ts: number) {
-      if (start === null) start = ts;
-      const elapsed = ts - start;
-      const t = Math.min(elapsed / duration, 1);
-      setProgress(t);
-      if (t < 1) frame = requestAnimationFrame(animate);
-    }
+    const animate = (timestamp: number) => {
+      if (start === null) start = timestamp;
+      const next = Math.min((timestamp - start) / 700, 1);
+      setProgress(next);
+      if (next < 1) frame = requestAnimationFrame(animate);
+    };
     setProgress(0);
     frame = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(frame);
-  }, []);
+  }, [data]);
 
-  const dataPoints = stats.map((s, i) => {
-    // 動畫進場時，normalized 由 0~實際值
-    return getPoint(i, s.normalized * progress);
-  });
-  const polyPoints = dataPoints.map(p => `${p.x},${p.y}`).join(' ');
-
-  // Grid levels
-  const levels = [0.2, 0.4, 0.6, 0.8, 1];
+  const dataPoints = stats.map((stat, index) => getPoint(index, stat.normalized * progress));
+  const overallNormalized = radar.overallEquivalentMain > 0 ? 1 : 0;
+  const overallPoints = stats.map((_, index) => getPoint(index, overallNormalized * progress));
+  const polygon = (points: Array<{ x: number; y: number }>) => points.map((point) => `${point.x},${point.y}`).join(' ');
 
   return (
     <div className="w-full">
-      <h4 className="text-xs font-bold text-yellow-300 mb-4 uppercase tracking-widest text-center">能力雷達圖</h4>
-      <div className="relative w-[200px] h-[200px]">
-        <svg width={size} height={size} className="overflow-visible">
-          {/* Grid Lines */}
-          {levels.map((level, idx) => (
+      <h4 className="mb-1 text-center text-xs font-bold uppercase tracking-widest text-yellow-300">能力雷達圖</h4>
+      <div className="mb-2 text-center text-[11px] font-semibold text-slate-500">台版公式換算・角色整體基準 100%</div>
+      <div className="relative mx-auto h-[240px] w-[240px]">
+        <svg width={size} height={size} className="overflow-visible" aria-label="台版等價能力雷達圖">
+          {[0.2, 0.4, 0.6, 0.8, 1].map((level) => (
             <polygon
-              key={idx}
-              points={Array.from({ length: sides }).map((_, i) => {
-                const angle = (Math.PI * 2 * i) / sides - Math.PI / 2;
-                const r = radius * level;
-                return `${center + r * Math.cos(angle)},${center + r * Math.sin(angle)}`;
-              }).join(' ')}
+              key={level}
+              points={polygon(Array.from({ length: sides }, (_, index) => getPoint(index, level)))}
               fill="none"
               stroke="#334155"
               strokeWidth="1"
-              strokeDasharray={level === 1 ? "0" : "2 2"}
+              strokeDasharray={level === 1 ? '0' : '2 2'}
             />
           ))}
-
-          {/* Axes */}
-          {Array.from({ length: sides }).map((_, i) => {
-            const angle = (Math.PI * 2 * i) / sides - Math.PI / 2;
-            return (
-              <line
-                key={i}
-                x1={center}
-                y1={center}
-                x2={center + radius * Math.cos(angle)}
-                y2={center + radius * Math.sin(angle)}
-                stroke="#334155"
-                strokeWidth="1"
-              />
-            );
+          {Array.from({ length: sides }, (_, index) => {
+            const point = getPoint(index, 1);
+            return <line key={index} x1={center} y1={center} x2={point.x} y2={point.y} stroke="#334155" strokeWidth="1" />;
           })}
 
-          {/* Data Polygon */}
-          <polygon
-            points={polyPoints}
-            fill="rgba(99, 102, 241, 0.3)" // Indigo-500 with opacity
-            stroke="#818cf8" // Indigo-400
-            strokeWidth="2"
-          />
+          <polygon points={polygon(overallPoints)} fill="none" stroke="#38bdf8" strokeWidth="1.5" strokeDasharray="5 4" />
+          <polygon points={polygon(dataPoints)} fill="rgba(99, 102, 241, 0.30)" stroke="#818cf8" strokeWidth="2" />
 
-          {/* Data Points */}
-          {dataPoints.map((p, i) => (
-            <g key={i}
-               data-radar-index={i}
-               onMouseEnter={() => setHoveredIndex(i)}
-               onMouseLeave={() => setHoveredIndex(null)}
-               style={{ cursor: 'pointer' }}
+          {dataPoints.map((point, index) => (
+            <g
+              key={stats[index].key}
+              onMouseEnter={() => setHoveredIndex(index)}
+              onMouseLeave={() => setHoveredIndex(null)}
+              onClick={() => setHoveredIndex((current) => current === index ? null : index)}
+              style={{ cursor: 'pointer' }}
             >
-              {/* Hit area */}
-              <circle cx={p.x} cy={p.y} r="10" fill="transparent" />
-              {/* Visible point */}
-              <circle cx={p.x} cy={p.y} r={hoveredIndex === i ? 4 : 2} fill={hoveredIndex === i ? "#fff" : "#818cf8"} />
+              <circle cx={point.x} cy={point.y} r="11" fill="transparent" />
+              <circle cx={point.x} cy={point.y} r={hoveredIndex === index ? 4 : 2.5} fill={hoveredIndex === index ? '#fff' : '#818cf8'} />
             </g>
           ))}
 
-          {/* Labels */}
-          {stats.map((s, i) => {
-            const p = getLabelPoint(i);
-            return (
-              <text
-                key={i}
-                x={p.x}
-                y={p.y}
-                textAnchor="middle"
-                dominantBaseline="middle"
-                className="text-[10px] fill-slate-400 font-medium"
-              >
-                {s.label}
-              </text>
-            );
+          {stats.map((stat, index) => {
+            const point = getLabelPoint(index);
+            return <text key={stat.key} x={point.x} y={point.y} textAnchor="middle" dominantBaseline="middle" className="fill-slate-400 text-xs font-semibold">{stat.label}</text>;
           })}
 
-          {/* SVG 不會套用一般 CSS z-index；最後繪製才能確保 Tooltip 蓋在屬性名稱上方。 */}
           {hoveredIndex !== null && (() => {
             const point = dataPoints[hoveredIndex];
             const stat = stats[hoveredIndex];
+            const showsAttackSources = stat.key === 'attackPercent';
+            const tooltipWidth = showsAttackSources ? 166 : 132;
+            const tooltipHeight = showsAttackSources ? 74 : 60;
+            const tooltipX = Math.max(tooltipWidth / 2, Math.min(size - tooltipWidth / 2, point.x));
+            const tooltipY = point.y < center ? point.y + 16 : point.y - tooltipHeight;
             return (
               <g pointerEvents="none">
-                <rect
-                  x={point.x - 35}
-                  y={point.y - 30}
-                  width="70"
-                  height="24"
-                  rx="4"
-                  fill="rgba(15, 23, 42, 0.95)"
-                  stroke="#64748b"
-                  strokeWidth="1"
-                />
-                <text
-                  x={point.x}
-                  y={point.y - 18}
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                  fill="#fff"
-                  fontSize="11"
-                  fontWeight="bold"
-                >
-                  {stat.value.toLocaleString()}
-                  {['最終傷害', 'BOSS傷害', '爆擊傷害', '無視防禦'].includes(stat.label) ? '%' : ''}
+                <rect x={tooltipX - tooltipWidth / 2} y={tooltipY} width={tooltipWidth} height={tooltipHeight} rx="6" fill="rgba(15, 23, 42, 0.97)" stroke="#64748b" strokeWidth="1" />
+                <text x={tooltipX} y={tooltipY + 15} textAnchor="middle" fill="#cbd5e1" fontSize="11" fontWeight="600">
+                  原始值 {stat.rawValue.toLocaleString('zh-TW')}{stat.rawUnit}
+                </text>
+                <text x={tooltipX} y={tooltipY + 32} textAnchor="middle" fill="#fff" fontSize="11" fontWeight="800">
+                  等價主屬 {formatScore(stat.equivalentMain)}
+                </text>
+                {showsAttackSources && (
+                  <text x={tooltipX} y={tooltipY + 47} textAnchor="middle" fill="#cbd5e1" fontSize="9" fontWeight="600">
+                    {stat.detail}
+                  </text>
+                )}
+                <text x={tooltipX} y={tooltipY + (showsAttackSources ? 63 : 48)} textAnchor="middle" fill="#7dd3fc" fontSize="10" fontWeight="700">
+                  整體基準比 {stat.relativePercent.toFixed(1)}%
                 </text>
               </g>
             );
           })()}
         </svg>
       </div>
+      <div className="mt-1 flex flex-wrap justify-center gap-x-3 gap-y-1 text-[10px] font-semibold text-slate-500">
+        <span className="inline-flex items-center gap-1"><i className="h-0.5 w-3 bg-indigo-400" />各項換算</span>
+        <span className="inline-flex items-center gap-1"><i className="w-3 border-t border-dashed border-sky-400" />整體等價 {formatScore(radar.overallEquivalentMain)}</span>
+      </div>
+      <p className="mt-1 text-center text-[10px] leading-4 text-slate-500">
+        依目前配裝的傷害乘區換算；外圈虛線代表角色整體等價主屬。
+      </p>
     </div>
   );
 };

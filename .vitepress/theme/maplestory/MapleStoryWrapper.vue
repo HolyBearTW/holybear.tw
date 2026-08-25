@@ -1375,6 +1375,20 @@ html:not(.dark) #maplestory-root .maple-calculator-open-button:hover {
   background: linear-gradient(135deg, #06663e, #088e65) !important;
 }
 
+#maplestory-root .maple-boss-calculator-open-button {
+  color: #ffffff !important;
+}
+
+html:not(.dark) #maplestory-root .maple-boss-calculator-open-button {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #d90d47, #f20546) !important;
+  box-shadow: 0 8px 20px rgba(217, 13, 71, 0.22) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-boss-calculator-open-button:hover {
+  background: linear-gradient(135deg, #bf0b3f, #dc043d) !important;
+}
+
 html:not(.dark) #maplestory-root .maple-calculator-backdrop {
   background: rgba(23, 55, 70, 0.38) !important;
 }
@@ -1522,6 +1536,81 @@ html:not(.dark) .maple-calculator-panel .bg-\[\#0d1117\]\/65,
 html:not(.dark) .maple-calculator-panel .bg-\[\#0d1117\]\/70,
 html:not(.dark) .maple-calculator-panel .bg-\[\#0d1117\]\/75 {
   background: rgba(229, 242, 247, 0.78) !important;
+}
+
+/* BOSS 計算機使用的額外深色層級；難度選單保留自身漸層。 */
+.maple-boss-calculator-panel .text-\[10px\] {
+  font-size: 0.75rem !important;
+  line-height: 1rem !important;
+}
+
+.maple-boss-calculator-panel .text-\[11px\] {
+  font-size: 0.8125rem !important;
+  line-height: 1.125rem !important;
+}
+
+.maple-boss-calculator-panel .text-xs {
+  font-size: 0.875rem !important;
+  line-height: 1.25rem !important;
+}
+
+.maple-boss-calculator-panel .text-sm {
+  font-size: 0.9375rem !important;
+  line-height: 1.375rem !important;
+}
+
+html:not(.dark) .maple-boss-calculator-panel .bg-\[\#0a0e17\]:not(.maple-boss-difficulty-select),
+html:not(.dark) .maple-boss-calculator-panel .bg-\[\#0d1117\]\/80,
+html:not(.dark) .maple-boss-calculator-panel .bg-\[\#161d29\] {
+  background: rgba(242, 249, 251, 0.98) !important;
+}
+
+html:not(.dark) .maple-boss-calculator-panel .maple-boss-calculator-field:not(.maple-boss-difficulty-select) {
+  color: var(--maple-light-text-strong) !important;
+  background: #ffffff !important;
+  border-color: rgba(36, 94, 112, 0.3) !important;
+  color-scheme: light;
+}
+
+html:not(.dark) .maple-boss-calculator-panel .maple-boss-calculator-field::placeholder {
+  color: #71818a !important;
+  opacity: 1;
+}
+
+html:not(.dark) .maple-boss-calculator-panel select {
+  color-scheme: light;
+}
+
+html:not(.dark) .maple-boss-calculator-panel select option {
+  color: #25343c !important;
+  background: #ffffff !important;
+}
+
+html:not(.dark) .maple-boss-calculator-panel select option:checked {
+  color: #075f70 !important;
+  background: #d9f2f6 !important;
+}
+
+html:not(.dark) .maple-calculator-panel.maple-boss-calculator-panel .maple-boss-difficulty-text-light {
+  color: #ffffff !important;
+}
+
+html:not(.dark) .maple-calculator-panel.maple-boss-calculator-panel .maple-boss-difficulty-text-chaos {
+  color: #ffe7bf !important;
+}
+
+html:not(.dark) .maple-calculator-panel.maple-boss-calculator-panel .maple-boss-difficulty-text-extreme {
+  color: #ff405c !important;
+}
+
+html:not(.dark) .maple-boss-calculator-panel .border-slate-700,
+html:not(.dark) .maple-boss-calculator-panel .border-slate-800,
+html:not(.dark) .maple-boss-calculator-panel .border-slate-800\/80 {
+  border-color: rgba(36, 94, 112, 0.24) !important;
+}
+
+html:not(.dark) .maple-boss-calculator-panel [class~="hover:bg-slate-800/35"]:hover {
+  background-color: rgba(9, 139, 165, 0.09) !important;
 }
 
 html:not(.dark) .maple-calculator-panel .text-white,
@@ -1691,6 +1780,13 @@ html:not(.dark) .maple-calculator-version {
     position: absolute !important;
     top: 10px !important;
     right: 8px !important;
+  }
+
+  .maple-boss-calculator-panel .maple-boss-calculator-close {
+    position: absolute !important;
+    top: 10px !important;
+    right: 8px !important;
+    width: auto !important;
   }
 
   .maple-calculator-titlebar > div:first-child > span:first-child {

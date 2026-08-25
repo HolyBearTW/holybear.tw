@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { analyzeCharacter } from '../services/geminiService';
 import { DashboardData } from '../types';
 import { DEFAULT_AI_MODEL, getRecommendedAiModel, isOpenAiModel } from '../data/aiModels';
+import { createBossPlayerContext, readBossDamageAiSnapshot } from '../calculator/bossDamageCalculator';
 
 const DEFAULT_GEMINI_KEY = ''; 
 
@@ -85,7 +86,13 @@ export const useAiAnalysis = (
     setError(null);
 
     try {
-      const result = await analyzeCharacter(data, keyToUse, openAiKey || '', geminiModel, ignoreWarnings, (msg) => {
+      const bossDamageSnapshot = readBossDamageAiSnapshot(data.basic.character_name, createBossPlayerContext(data));
+      if (!bossDamageSnapshot) {
+        setError('⚠️ **AI 健檢缺少 BOSS 實測資料**\n\n請先開啟角色卡片下方的 **「BOSS 傷害計算機」**，選擇實際擊破的 BOSS 並輸入一場總時間與結束時剩餘時間。AI 健檢將直接使用該計算結果，不再用面板戰力猜測可攻略難度。');
+        return;
+      }
+
+      const result = await analyzeCharacter(data, bossDamageSnapshot, keyToUse, openAiKey || '', geminiModel, ignoreWarnings, (msg) => {
           setProgressMessage(msg);
       });
       

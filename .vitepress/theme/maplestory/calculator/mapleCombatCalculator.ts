@@ -47,6 +47,8 @@ export interface CalculatorProfile {
   subPercent: number;
   secondSubPercent: number;
   attack: number;
+  equipmentAttackPercent: number;
+  familiarAttackPercent: number;
   attackPercent: number;
   damage: number;
   bossDamage: number;
@@ -65,6 +67,20 @@ export interface CalculatorResult {
   difference: number;
   percentChange: number;
   rawRatio: number;
+}
+
+export interface RadarEquivalentAxis {
+  key: 'main' | 'attack' | 'attackPercent' | 'bossTotal' | 'criticalDamage' | 'ignoreDefense';
+  label: string;
+  rawValue: number;
+  rawUnit: string;
+  equivalentMain: number;
+  detail: string;
+}
+
+export interface RadarEquivalentProfile {
+  axes: RadarEquivalentAxis[];
+  overallEquivalentMain: number;
 }
 
 export interface EquipmentContribution {
@@ -139,7 +155,7 @@ const statValue = (data: DashboardData, ...names: string[]): number => {
   return numberValue(found?.stat_value);
 };
 
-const getActiveFamiliarFinalDamageSources = (data: DashboardData): number[] => {
+const getActiveFamiliarOptions = (data: DashboardData) => {
   const familiar = data.familiar;
   const familiarList = familiar?.familiar_list || familiar?.familiar_info || [];
   const activeSlotIds = new Set(
@@ -148,19 +164,54 @@ const getActiveFamiliarFinalDamageSources = (data: DashboardData): number[] => {
       .map((slot) => String(slot.slot_id || ''))
       .filter(Boolean),
   );
-  return familiarList
-    .filter((card) => (
-      String(card.summoned_flag).toLowerCase() === 'true'
-      || activeSlotIds.has(String(card.slot_id || ''))
-    ))
-    .flatMap((card) => card.option || [])
-    .filter((option) => /最終傷害|終傷|Final Damage/i.test(`${option.option_name || ''} ${option.option_value || ''}`))
-    .map((option) => {
+  return familiarList.flatMap((card) => {
+    const summoned = String(card.summoned_flag).toLowerCase() === 'true';
+    const bonded = !summoned && activeSlotIds.has(String(card.slot_id || ''));
+    if (!summoned && !bonded) return [];
+    return (card.option || []).map((option) => ({ card, option, bonded }));
+  });
+};
+
+const familiarBondValue = (
+  rawValue: number,
+  grade: unknown,
+  specialFlag: unknown,
+  kind: 'attackPercent' | 'finalDamage',
+): number => {
+  const isSpecial = String(specialFlag).toLowerCase() === 'true';
+  const gradeText = String(grade || '');
+  const isLegendary = /傳說|legend/i.test(gradeText)
+    || (kind === 'attackPercent' ? rawValue > 8 : rawValue > 12);
+  if (kind === 'attackPercent') return isLegendary ? (isSpecial ? 5 : 4) : (isSpecial ? 3 : 2);
+  return isLegendary ? (isSpecial ? 2.5 : 2) : (isSpecial ? 1.5 : 1);
+};
+
+const getActiveFamiliarFinalDamageSources = (data: DashboardData): number[] =>
+  getActiveFamiliarOptions(data)
+    .filter(({ option }) => /最終傷害|終傷|Final Damage/i.test(`${option.option_name || ''} ${option.option_value || ''}`))
+    .map(({ card, option, bonded }) => {
       const match = `${option.option_value || ''} ${option.option_name || ''}`.match(/-?\d+(?:\.\d+)?/);
-      return match ? numberValue(match[0]) : 0;
+      const rawValue = match ? numberValue(match[0]) : 0;
+      return bonded
+        ? familiarBondValue(rawValue, card.familiar_grade, card.familiar_special_flag, 'finalDamage')
+        : rawValue;
     })
     .filter((value) => value !== 0);
-};
+
+const getActiveFamiliarAttackPercent = (data: DashboardData, usesMagic: boolean): number =>
+  getActiveFamiliarOptions(data).reduce((total, { card, option, bonded }) => {
+    const text = `${option.option_name || ''} ${option.option_value || ''}`;
+    if (!/%/.test(text)) return total;
+    const bothTypes = /攻擊力\s*(?:[／/]|及|和|與)\s*(?:魔法攻擊力|魔力)|物理.*魔法.*攻擊力|ATT.*Magic/i.test(text);
+    const magicOnly = /魔法攻擊力|魔力|Magic\s*(?:ATT|Attack)/i.test(text) && !bothTypes;
+    const physicalOnly = /物理攻擊力|攻擊力|Attack Power|\bATT\b/i.test(text) && !magicOnly && !bothTypes;
+    if (!(bothTypes || (usesMagic ? magicOnly : physicalOnly))) return total;
+    const match = text.match(/-?\d+(?:\.\d+)?/);
+    const rawValue = match ? numberValue(match[0]) : 0;
+    return total + (bonded
+      ? familiarBondValue(rawValue, card.familiar_grade, card.familiar_special_flag, 'attackPercent')
+      : rawValue);
+  }, 0);
 
 const activeEquipment = (data: DashboardData): EquipmentItem[] => {
   const preset = Number(data.equipment?.preset_no || 0);
@@ -242,6 +293,7 @@ export function createCalculatorProfile(data: DashboardData): CalculatorProfile 
   );
   const currentCombatPower = statValue(data, '戰鬥力', 'Combat Power');
   const familiarFinalDamageSources = getActiveFamiliarFinalDamageSources(data);
+  const familiarAttackPercent = getActiveFamiliarAttackPercent(data, usesMagic);
   // 萌獸終傷屬同一系統內加法；依遊戲運算順序逐條以 float32 累加，不可彼此相乘。
   const familiarFinalMultiplier = familiarMultiplierFromSources(familiarFinalDamageSources);
   const familiarFinalDamageEquivalent = (familiarFinalMultiplier - 1) * 100;
@@ -262,7 +314,9 @@ export function createCalculatorProfile(data: DashboardData): CalculatorProfile 
     subPercent: subPotential.percent + (job.sub === 'HP' ? 0 : flameAllStatPercent),
     secondSubPercent: secondPotential.percent + (!job.second || job.second === 'HP' ? 0 : flameAllStatPercent),
     attack: statValue(data, ...attackNames),
-    attackPercent: attackPotential.percent,
+    equipmentAttackPercent: attackPotential.percent,
+    familiarAttackPercent,
+    attackPercent: attackPotential.percent + familiarAttackPercent,
     damage: statValue(data, '傷害', 'Damage'),
     bossDamage: statValue(data, 'BOSS怪物傷害', 'Boss Damage'),
     criticalDamage: statValue(data, '爆擊傷害', 'Critical Damage'),
@@ -273,6 +327,67 @@ export function createCalculatorProfile(data: DashboardData): CalculatorProfile 
     usesMagic,
     confidence: currentCombatPower > 0 ? 'formula' : 'high',
   };
+}
+
+/**
+ * 台版能力雷達：依目前 MapleCombat 戰力公式的各乘區邊際貢獻，
+ * 統一換算成「等價主屬」尺度。這是本站透明換算，不是 MapleScouter 私有公式。
+ */
+export function calculateRadarEquivalentProfile(profile: CalculatorProfile): RadarEquivalentProfile {
+  const daPrimaryEquivalent = profile.baseHp / 3.5
+    + ((profile.main - profile.baseHp) / 3.5) * 0.8;
+  const overallEquivalentMain = Math.max(0, profile.category === 'xenon'
+    ? profile.main + profile.sub + profile.secondSub
+    : profile.category === 'da'
+      ? daPrimaryEquivalent + profile.sub + profile.secondSub
+      : (4 * profile.main + profile.sub + profile.secondSub) / 4);
+  const mainEquivalent = Math.max(0, profile.category === 'da' ? daPrimaryEquivalent : profile.main);
+  const bossTotal = Math.max(0, profile.damage + profile.bossDamage);
+  const attackPercent = Math.max(0, profile.attackPercent);
+  const criticalDamage = Math.max(0, profile.criticalDamage);
+  const attackBaseShare = 100 / Math.max(100, 100 + attackPercent);
+  // 與 combatMath.ts 的 380% BOSS 防禦公式保持一致；此檔需維持可被獨立公式檢查器載入。
+  const defenseMultiplier = Math.max(0, Math.min(1, 1 - 3.8 * (1 - Math.min(100, Math.max(0, profile.ignoreDefense)) / 100)));
+  const share = (value: number, base: number) => value > 0
+    ? overallEquivalentMain * value / Math.max(0.000001, base + value)
+    : 0;
+
+  return {
+    overallEquivalentMain,
+    axes: [
+      {
+        key: 'main', label: '主屬', rawValue: profile.main, rawUnit: '', equivalentMain: mainEquivalent,
+        detail: profile.category === 'da' ? '依惡魔復仇者 HP 係數換算' : `${profile.mainStat} 公式貢獻`,
+      },
+      {
+        key: 'attack', label: profile.usesMagic ? '魔法攻擊' : '攻擊力', rawValue: profile.attack, rawUnit: '',
+        equivalentMain: profile.attack > 0 ? overallEquivalentMain * attackBaseShare : 0,
+        detail: `攻擊乘區扣除已辨識攻魔 ${attackPercent}% 後的固定攻魔占比`,
+      },
+      {
+        key: 'attackPercent', label: '攻魔%', rawValue: attackPercent, rawUnit: '%',
+        equivalentMain: share(attackPercent, 100),
+        detail: `三武潛能 ${profile.equipmentAttackPercent || 0}%＋啟用萌獸 ${profile.familiarAttackPercent || 0}%`,
+      },
+      {
+        key: 'bossTotal', label: 'Boss總傷', rawValue: bossTotal, rawUnit: '%',
+        equivalentMain: share(bossTotal, 100), detail: `傷害 ${profile.damage}%＋Boss ${profile.bossDamage}%`,
+      },
+      {
+        key: 'criticalDamage', label: '爆傷', rawValue: criticalDamage, rawUnit: '%',
+        equivalentMain: share(criticalDamage, 135), detail: '以基礎平均爆擊倍率 135% 換算',
+      },
+      {
+        key: 'ignoreDefense', label: '無視', rawValue: profile.ignoreDefense, rawUnit: '%',
+        equivalentMain: overallEquivalentMain * defenseMultiplier,
+        detail: `380% BOSS 防禦有效輸出 ${(defenseMultiplier * 100).toFixed(1)}%`,
+      },
+    ].map((axis) => ({ ...axis, equivalentMain: Math.max(0, axis.equivalentMain) })),
+  };
+}
+
+export function createRadarEquivalentProfile(data: DashboardData): RadarEquivalentProfile {
+  return calculateRadarEquivalentProfile(createCalculatorProfile(data));
 }
 
 function projectPanelStat(
