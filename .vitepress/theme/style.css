@@ -544,8 +544,8 @@ input[type="range"]::-moz-range-thumb {
   overflow: hidden;
   transition: background 0.3s;
   box-shadow: none !important;
-  backdrop-filter: blur(10px) !important;
   -webkit-backdrop-filter: blur(10px) !important;
+  backdrop-filter: blur(10px) !important;
 }
 html.dark .VPDocAsideOutline {
   background: rgba(12, 18, 26, 0.2) !important;
@@ -4519,8 +4519,8 @@ html:not(.dark) body.is-blog-page .VPDocAsideOutline {
   background: rgba(247, 252, 253, 0.76) !important;
   border-color: rgba(36, 94, 112, 0.2) !important;
   box-shadow: 0 10px 28px rgba(35, 76, 94, 0.12) !important;
-  backdrop-filter: blur(18px) saturate(142%) !important;
   -webkit-backdrop-filter: blur(18px) saturate(142%) !important;
+  backdrop-filter: blur(18px) saturate(142%) !important;
 }
 
 html:not(.dark) body.is-blog-page .VPDocAsideOutline .outline-title,
@@ -4681,16 +4681,16 @@ html:not(.dark) body.is-blog-page .VPDocAsideOutline .outline-marker {
     background: rgba(247, 252, 253, 0.76) !important;
     border: 1px solid rgba(36, 94, 112, 0.2) !important;
     box-shadow: 0 10px 28px rgba(35, 76, 94, 0.12) !important;
-    backdrop-filter: blur(18px) saturate(142%) !important;
     -webkit-backdrop-filter: blur(18px) saturate(142%) !important;
+    backdrop-filter: blur(18px) saturate(142%) !important;
   }
 
 html.dark body.is-blog-page .VPSidebar #VPSidebarNav {
     background: rgba(12, 18, 26, 0.2) !important;
     border: 1px solid var(--hb-border-dark) !important;
     box-shadow: 0 14px 38px rgba(0, 0, 0, 0.22) !important;
-    backdrop-filter: blur(10px) !important;
     -webkit-backdrop-filter: blur(10px) !important;
+    backdrop-filter: blur(10px) !important;
   }
 }
 
