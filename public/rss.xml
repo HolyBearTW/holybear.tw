@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>聖小熊的秘密基地</title>
+    <link>https://holybear.tw/</link>
+    <description>聖小熊的個人網站，展示 HyperOS 模組作品與楓之谷戰力分析工具，分享技術筆記、開發心得與開源創作。</description>
+    <language>zh-TW</language>
+    <atom:link href="https://holybear.tw/rss.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>巴哈姆特30週年板主聚</title>
+      <link>https://holybear.tw/blog/2026-08-03</link>
+      <guid isPermaLink="true">https://holybear.tw/blog/2026-08-03</guid>
+      <pubDate>Sun, 02 Aug 2026 16:00:00 GMT</pubDate>
+      <description>超過10年沒參加的巴哈姆特板主聚實錄。</description>
+    </item>
+    <item>
+      <title>Happy Birthday, holybear！ Have an awesome day！ 🎉</title>
+      <link>https://holybear.tw/blog/2026-06-10</link>
+      <guid isPermaLink="true">https://holybear.tw/blog/2026-06-10</guid>
+      <pubDate>Tue, 09 Jun 2026 16:00:00 GMT</pubDate>
+      <description>今天我生日！</description>
+    </item>
+    <item>
+      <title>快檢查你的LINE！ 三星旗艦用戶發現驚人Bug：拔掉權限反而更好用？</title>
+      <link>https://holybear.tw/blog/2026-03-29</link>
+      <guid isPermaLink="true">https://holybear.tw/blog/2026-03-29</guid>
+      <pubDate>Sat, 28 Mar 2026 16:00:00 GMT</pubDate>
+      <description>軟體優化是什麼？ LINE在Android手錶上的荒謬實錄！</description>
+    </item>
+    <item>
+      <title>不忍小米了！ 換了三星 S26 Ultra</title>
+      <link>https://holybear.tw/blog/2026-03-15</link>
+      <guid isPermaLink="true">https://holybear.tw/blog/2026-03-15</guid>
+      <pubDate>Sat, 14 Mar 2026 16:00:00 GMT</pubDate>
+      <description>終於從小米解脫了，現在起投入三星懷抱！</description>
+    </item>
+    <item>
+      <title>2025台北同志遊行 — 我的彩虹初體驗！</title>
+      <link>https://holybear.tw/blog/2025-10-27</link>
+      <guid isPermaLink="true">https://holybear.tw/blog/2025-10-27</guid>
+      <pubDate>Sun, 26 Oct 2025 16:00:00 GMT</pubDate>
+      <description>人生第一次參加同志遊行！現場白嫖免費酒喝到飽、跟著Google遊行車繞市政府一大圈走到腳快斷、意外遇到群友yuuu本人合照、遊行後跟卡比獸吃豚骨拉麵補血。雖然累到懷疑人生，但現場的彩虹旗、音樂和氣氛真的超棒！Love is Love 🌈</description>
+    </item>
+    <item>
+      <title>咖波屋</title>
+      <link>https://holybear.tw/blog/2025-10-12-capoo</link>
+      <guid isPermaLink="true">https://holybear.tw/blog/2025-10-12-capoo</guid>
+      <pubDate>Sat, 11 Oct 2025 16:00:00 GMT</pubDate>
+      <description>來逛逛咖波屋。</description>
+    </item>
+    <item>
+      <title>來蹭免費Gemini</title>
+      <link>https://holybear.tw/blog/2025-10-12</link>
+      <guid isPermaLink="true">https://holybear.tw/blog/2025-10-12</guid>
+      <pubDate>Sat, 11 Oct 2025 16:00:00 GMT</pubDate>
+      <description>感恩Google讚嘆Google</description>
+    </item>
+    <item>
+      <title>金氏世界紀錄證書！ 我也拼進歷史啦！</title>
+      <link>https://holybear.tw/blog/2025-08-30</link>
+      <guid isPermaLink="true">https://holybear.tw/blog/2025-08-30</guid>
+      <pubDate>Fri, 29 Aug 2025 16:00:00 GMT</pubDate>
+      <description>金氏世界紀錄證書開箱文。</description>
+    </item>
+    <item>
+      <title>日誌列表重構：舊的不能丟，新的也要有！</title>
+      <link>https://holybear.tw/blog/2025-08-28</link>
+      <guid isPermaLink="true">https://holybear.tw/blog/2025-08-28</guid>
+      <pubDate>Wed, 27 Aug 2025 16:00:00 GMT</pubDate>
+      <description>這篇就是來嘴一下，日誌首頁從舊版列表到「舊+新」雙模式的重構過程，過程有多爆肝、細節多到爆炸。</description>
+    </item>
+    <item>
+      <title>從安卓再次換到iOS兩個月後，我的感受是什麼？</title>
+      <link>https://holybear.tw/blog/2025-08-25</link>
+      <guid isPermaLink="true">https://holybear.tw/blog/2025-08-25</guid>
+      <pubDate>Sun, 24 Aug 2025 16:00:00 GMT</pubDate>
+      <description>在這篇文章中，我將分享我從安卓再次換回 iOS 兩個月後的使用心得。這次的轉換是否值得？讓我們一起來探討！</description>
+    </item>
+    <item>
+      <title>衝動購物？才怪！Switch 2 開箱給你看看有多香！🤤</title>
+      <link>https://holybear.tw/blog/2025-07-18</link>
+      <guid isPermaLink="true">https://holybear.tw/blog/2025-07-18</guid>
+      <pubDate>Thu, 17 Jul 2025 16:00:00 GMT</pubDate>
+      <description>搶先體驗！我第一次買任天堂主機就獻給了 Switch 2，開箱給你看全新設計與必備周邊！</description>
+    </item>
+    <item>
+      <title>颱風假咧？！😤 暴風圈是裝飾品膩？！</title>
+      <link>https://holybear.tw/blog/2025-07-06-typhoon</link>
+      <guid isPermaLink="true">https://holybear.tw/blog/2025-07-06-typhoon</guid>
+      <pubDate>Sat, 05 Jul 2025 16:00:00 GMT</pubDate>
+      <description>北北基居然沒放颱風假！外面風雨交加，這是要我們用愛發電上班嗎？</description>
+    </item>
+    <item>
+      <title>發燒啦！🔥 身體當機了！</title>
+      <link>https://holybear.tw/blog/2025-07-06</link>
+      <guid isPermaLink="true">https://holybear.tw/blog/2025-07-06</guid>
+      <pubDate>Sat, 05 Jul 2025 16:00:00 GMT</pubDate>
+      <description>一場突如其來的發燒，讓世界慢了下來</description>
+    </item>
+    <item>
+      <title>鋼索上的日子：一個年輕人的自由渴望</title>
+      <link>https://holybear.tw/blog/2025-06-13</link>
+      <guid isPermaLink="true">https://holybear.tw/blog/2025-06-13</guid>
+      <pubDate>Thu, 12 Jun 2025 16:00:00 GMT</pubDate>
+      <description>這篇文章記錄了我在家庭壓力下，如何尋找自我喘息的空間與片刻的自由，並渴望能主宰自己人生的心路歷程。</description>
+    </item>
+    <item>
+      <title>台東好好玩</title>
+      <link>https://holybear.tw/blog/2025-06-12</link>
+      <guid isPermaLink="true">https://holybear.tw/blog/2025-06-12</guid>
+      <pubDate>Wed, 11 Jun 2025 16:00:00 GMT</pubDate>
+      <description>隨手拍</description>
+    </item>
+    <item>
+      <title>生日禮物</title>
+      <link>https://holybear.tw/blog/2025-06-10-special</link>
+      <guid isPermaLink="true">https://holybear.tw/blog/2025-06-10-special</guid>
+      <pubDate>Mon, 09 Jun 2025 16:00:00 GMT</pubDate>
+      <description>來看看小熊今年收到了什麼禮物！</description>
+    </item>
+    <item>
+      <title>今天我生日！</title>
+      <link>https://holybear.tw/blog/2025-06-10</link>
+      <guid isPermaLink="true">https://holybear.tw/blog/2025-06-10</guid>
+      <pubDate>Mon, 09 Jun 2025 16:00:00 GMT</pubDate>
+      <description>今天我最大！</description>
+    </item>
+    <item>
+      <title>買到 Switch 2 啦！</title>
+      <link>https://holybear.tw/blog/2025-06-06</link>
+      <guid isPermaLink="true">https://holybear.tw/blog/2025-06-06</guid>
+      <pubDate>Thu, 05 Jun 2025 16:00:00 GMT</pubDate>
+      <description>小熊成功買到 Switch 2 的心得分享。</description>
+    </item>
+    <item>
+      <title>明明可以避免的，為什麼還是讓它發生了？</title>
+      <link>https://holybear.tw/blog/2025-05-26</link>
+      <guid isPermaLink="true">https://holybear.tw/blog/2025-05-26</guid>
+      <pubDate>Sun, 25 May 2025 16:00:00 GMT</pubDate>
+      <description>有些事看起來像是突然發生的，其實早就有跡可循。從感情的冷淡、親子的疏離，到身體的警訊，我們是不是早就知道結果，卻還是選擇忽略？</description>
+    </item>
+  </channel>
+</rss>

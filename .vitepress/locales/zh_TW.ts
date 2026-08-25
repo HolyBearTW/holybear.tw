@@ -1,9 +1,8 @@
 import { generateNavThemes } from '../theme/background/themes.ts';
-import { getCopyrightText } from '../theme/copyright.ts';
 
 export default {
   lang: 'zh-TW',
-  description: '聖小熊的個人網站，收錄 HyperOS 模組、技術筆記與開發心得，專注於 Android 客製化與開源創作分享。',
+  description: '聖小熊的個人網站，展示 HyperOS 模組作品與楓之谷戰力分析工具，分享技術筆記、開發心得與開源創作。',
   themeConfig: {
     nav: [
   { text: '日誌', link: '/blog/' },
@@ -48,10 +47,6 @@ export default {
     editLink: {
       pattern: 'https://github.com/HolyBearTW/holybear.tw/edit/main/:path',
       text: '在 GitHub 中編輯此頁'
-    },
-    footer: {
-      message: 'AGPL-3.0 Licensed',
-      copyright: getCopyrightText('聖小熊')
     },
     notFound: {
       title: '找不到頁面',

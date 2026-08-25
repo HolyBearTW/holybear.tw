@@ -4,6 +4,7 @@ import react from '@vitejs/plugin-react'
 import { createLogger } from 'vite'
 import { fileURLToPath, URL } from 'node:url'
 import { existsSync, readFileSync } from 'node:fs'
+import { execFileSync } from 'node:child_process'
 import locales from './locales/index.ts'
 import gitMetaPlugin from './git-meta.ts'
 import sidebar from './sidebars/blog.sidebar.ts'
@@ -14,6 +15,13 @@ import SpoilerComponentDocsSidebar from './sidebars/spoiler-component-docs-sideb
 const viteLogger = createLogger()
 const viteWarn = viteLogger.warn.bind(viteLogger)
 const imageManifestPath = fileURLToPath(new URL('./image-optimization-manifest.json', import.meta.url))
+const gitCommitHash = execFileSync('git', ['rev-parse', '--short', 'HEAD'], { encoding: 'utf8' }).trim()
+const gitCommitDate = new Intl.DateTimeFormat('sv-SE', {
+    dateStyle: 'short',
+    timeStyle: 'medium',
+    hour12: false,
+    timeZone: 'Asia/Taipei',
+}).format(new Date(execFileSync('git', ['log', '-1', '--format=%cI'], { encoding: 'utf8' }).trim()))
 const optimizedImageUrls: Record<string, string> = (() => {
     if (!existsSync(imageManifestPath)) return {}
 
@@ -149,6 +157,7 @@ const config = defineConfig({
     appearance: 'dark',
     head: [
         ['meta', { name: 'theme-color', content: '#00FFEE' }],
+        ['link', { rel: 'alternate', type: 'application/rss+xml', title: '聖小熊的秘密基地', href: 'https://holybear.tw/rss.xml' }],
         ['script', {}, `(() => {
             const root = document.documentElement;
             const savedAppearance = localStorage.getItem('vitepress-theme-appearance');
@@ -170,7 +179,7 @@ const config = defineConfig({
 
         ['meta', { name: 'msapplication-TileColor', content: '#00FFEE' }],
         ['meta', { name: 'msapplication-TileImage', content: '/favicon.png?v=20260816-face-cutout' }],
-        ['meta', { name: 'description', content: '聖小熊的個人網站，收錄 HyperOS 模組、技術筆記與開發心得，專注於 Android 客製化與開源創作分享。' }],
+        ['meta', { name: 'description', content: '聖小熊的個人網站，展示 HyperOS 模組作品與楓之谷戰力分析工具，分享技術筆記、開發心得與開源創作。' }],
         ['meta', { name: 'keywords', content: '聖小熊, HolyBear, HyperOS, 模組, Mod, MIUI, Android, GitHub, 技術部落格, Blog' }],
         
         // 靜態 OG 標籤 - 做為備用，動態邏輯會覆蓋它
@@ -184,6 +193,10 @@ const config = defineConfig({
         ['script', { type: 'text/javascript', src: 'https://openapi.nexon.com/js/analytics.js?app_id=245469', async: '' }]
     ],
     vite: {
+        define: {
+            __GIT_COMMIT_HASH__: JSON.stringify(gitCommitHash),
+            __GIT_COMMIT_DATE__: JSON.stringify(gitCommitDate),
+        },
         server: {
             host: true,
             hmr: {
@@ -412,7 +425,7 @@ const config = defineConfig({
                         "width": 512,
                         "height": 512
                     },
-                    "description": "聖小熊的個人網站，收錄 HyperOS 模組、技術筆記與開發心得。",
+                    "description": "聖小熊的個人網站，展示 HyperOS 模組作品與楓之谷戰力分析工具，分享技術筆記、開發心得與開源創作。",
                     "publisher": {
                          "@type": "Person",
                          "name": "聖小熊",

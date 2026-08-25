@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 132 28" role="img" aria-labelledby="title">
+  <title id="title">Cloudflare</title>
+  <g transform="translate(2 4)">
+    <path fill="#f48120" d="M18.4 17.5H2.1A2.1 2.1 0 0 1 2 13.3l.3-.1A7.2 7.2 0 0 1 15.9 9a5.2 5.2 0 0 1 2.5 8.5Z"/>
+    <path fill="#faae40" d="M29.1 17.5H17.7a4.3 4.3 0 0 1 4-5.8 5.8 5.8 0 0 1 10 3.9c0 1-.8 1.9-2.6 1.9Z"/>
+    <path fill="#fff" d="M12.2 12.4h14.1l-.6 1.8H11.5l.7-1.8Z"/>
+  </g>
+  <text x="38" y="18.5" fill="#404041" font-family="Arial,Helvetica,sans-serif" font-size="14" font-weight="700" letter-spacing="-.3">CLOUDFLARE</text>
+</svg>

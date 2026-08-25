@@ -1,10 +1,9 @@
 import sidebarEn from '../sidebars/blog.sidebar.en.ts'
 import { generateNavThemes } from '../theme/background/themes.ts';
-import { getCopyrightText } from '../theme/copyright.ts';
 
 export default {
   lang: 'en',
-  description: "HolyBear's personal site, featuring HyperOS modules, tech notes, and Android customization & open-source sharing.",
+  description: "HolyBear's personal site, showcasing HyperOS module projects and a MapleStory combat power analysis tool, alongside technical notes and open-source work.",
   themeConfig: {
     nav: [
       { text: 'Blog', link: '/en/blog/' },
@@ -40,10 +39,6 @@ export default {
     editLink: {
       pattern: 'https://github.com/HolyBearTW/holybear.tw/edit/main/:path',
       text: 'Edit this page on GitHub'
-    },
-    footer: {
-      message: 'AGPL-3.0 Licensed',
-      copyright: getCopyrightText('HolyBear')
     },
     notFound: {
       title: 'Page Not Found',

@@ -24,7 +24,6 @@ import Christmas from './background/ChristmasBackground.vue'
 import Halloween from './background/HalloweenBackground.vue'
 import GravityFieldSimulation from './background/GravityFieldSimulation.vue'
 import HolyBearLoadingFrame from './HolyBearLoadingFrame.vue'
-import { getCopyrightText } from './copyright'
 import { 
   defaultTheme, 
   THEME_CHANGE_EVENT,
@@ -33,7 +32,12 @@ import {
 } from './background/themes'
 
 const { isDark } = useData()
-const copyrightText = getCopyrightText('聖小熊')
+declare const __GIT_COMMIT_HASH__: string
+declare const __GIT_COMMIT_DATE__: string
+const copyrightYears = `2023 - ${new Date().getFullYear()}`
+const gitCommitHash = __GIT_COMMIT_HASH__
+const gitCommitDate = __GIT_COMMIT_DATE__
+const gitCommitUrl = `https://github.com/HolyBearTW/holybear.tw/commit/${gitCommitHash}`
 
 // 當前背景主題
 const currentBackgroundTheme = ref(defaultTheme)
@@ -740,12 +744,39 @@ onUnmounted(() => {
             </ClientOnly>
         </template>
     </component>
-    <footer class="BlogVPFooter">
-  <div class="container">
-    <p class="message">AGPL-3.0 Licensed</p>
-        <p class="copyright">{{ copyrightText }}</p>
-  </div>
-</footer>
+    <footer class="BlogVPFooter" aria-label="網站頁尾">
+        <div class="container">
+            <p class="footer-line copyright">
+                <a href="https://github.com/HolyBearTW/holybear.tw/blob/main/LICENSE" target="_blank" rel="license noopener">AGPL-3.0 Licensed</a>
+                &copy; {{ copyrightYears }}
+                <a href="https://github.com/HolyBearTW" target="_blank" rel="noopener">HolyBear</a>
+            </p>
+            <p class="footer-line">
+                <a href="/rss.xml" target="_blank" rel="alternate" type="application/rss+xml">RSS</a>
+                <span aria-hidden="true"> / </span>
+                <a href="/sitemap.xml" target="_blank">網站地圖</a>
+            </p>
+            <p class="footer-line">
+                由
+                <a href="https://vitepress.dev/" target="_blank" rel="noopener">VitePress</a>
+                強力驅動
+            </p>
+            <p class="footer-line">
+                本站程式碼
+                <a href="https://github.com/HolyBearTW/holybear.tw" target="_blank" rel="noopener">已在 GitHub 存檔</a>
+                <a class="footer-commit" :href="gitCommitUrl" target="_blank" rel="noopener">({{ gitCommitHash }} @ {{ gitCommitDate }})</a>
+            </p>
+            <p class="footer-line footer-location">本站立足於台灣，為全球華人提供服務</p>
+            <div class="footer-hosts" aria-label="網站服務">
+                <a class="footer-host" href="https://pages.github.com/" target="_blank" rel="noopener" title="由 GitHub Pages 提供網站托管">
+                    <img src="/cdn/github.svg" alt="GitHub Pages" />
+                </a>
+                <a class="footer-host" href="https://www.cloudflare.com/" target="_blank" rel="noopener" title="使用 Cloudflare 服務">
+                    <img src="/cdn/cloudflare.svg" alt="Cloudflare" />
+                </a>
+            </div>
+        </div>
+    </footer>
 </template>
 
 <style scoped>
@@ -1498,14 +1529,18 @@ html.dark .VPHero .name {
     background-color: transparent !important;
 }
 .BlogVPFooter {
-        width: 100%;
-        padding: 32px 0 24px 0;
-                background: transparent !important;
-                background-color: transparent !important;
-        border-top: none !important;
-        text-align: center;
-        font-size: 14px;
-        color: #67676c !important;
+    display: flex;
+    width: 100%;
+    padding: 32px 20px 24px;
+    background: transparent !important;
+    background-color: transparent !important;
+    border-top: none !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    text-align: center;
+    font-size: 14px;
+    color: #67676c !important;
 }
 .dark .BlogVPFooter {
         background: transparent !important;
@@ -1519,23 +1554,52 @@ html.dark .VPHero .name {
 .BlogVPFooter .container {
     max-width: 960px;
     margin: 0 auto;
-        background: transparent !important;
-        background-color: transparent !important;
+    background: transparent !important;
+    background-color: transparent !important;
 }
-.BlogVPFooter .message {
-    margin-bottom: 4px;
+.BlogVPFooter .footer-line {
+    margin: 0 0 2px;
+    line-height: 1.35;
 }
-.BlogVPFooter .copyright {
-    margin: 0;
+.BlogVPFooter a {
+    color: var(--vp-c-brand-1);
+    font-weight: 500;
+    text-decoration: none;
+    transition: color 0.2s ease;
 }
-/* 1. 預設情況下，先將 .VPFooter 隱藏 */
-.BlogVPFooter {
-  display: none;
+.BlogVPFooter a:hover {
+    color: var(--vp-c-brand-2);
+    text-decoration: underline;
 }
-
-/* 2. 只有當 body 標籤上同時有 .is-blog-page 這個 class 時，才顯示 .VPFooter */
-body.is-blog-page .BlogVPFooter {
-  display: flex; /* 或是 'block'，取決於您原本的佈局 */
+.BlogVPFooter .footer-location {
+    color: color-mix(in srgb, currentColor 76%, transparent);
+    font-size: 12px;
+}
+.BlogVPFooter .footer-commit {
+    margin-left: 4px;
+    color: color-mix(in srgb, currentColor 54%, transparent);
+    font-size: 12px;
+}
+.BlogVPFooter .footer-hosts {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 28px;
+}
+.BlogVPFooter .footer-host {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 2px;
+}
+.BlogVPFooter .footer-host img {
+    display: block;
+    width: auto;
+    height: 22px;
+    padding: 3px 7px;
+    border-radius: 5px;
+    background: #fff;
 }
 
 .back-link {
