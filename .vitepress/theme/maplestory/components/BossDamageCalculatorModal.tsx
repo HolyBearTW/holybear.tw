@@ -1,6 +1,6 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { Calculator, Plus, RefreshCcw, Save, Trash2, Users, X } from 'lucide-react';
+import { Calculator, Loader2, Plus, RefreshCcw, Save, Search, Trash2, Users, X } from 'lucide-react';
 import {
   BOSS_HEALTH_DATA,
   BOSS_NAMES,
@@ -8,20 +8,35 @@ import {
   bossDamageStorageRoot,
   calculateBossDamage,
   createBossPlayerContext,
+  estimateTeammateDamage,
   formatBossHp,
   formatBossNumber,
   formatBossTime,
   getEligibleBosses,
   getBossCombatMultiplier,
 } from '../calculator/bossDamageCalculator';
+import { fetchBossTeammateProfile } from '../services/nexonService';
 import type { DashboardData } from '../types';
 
 interface BossDamageCalculatorModalProps {
   data: DashboardData;
+  apiKey: string;
   onClose: () => void;
 }
 
 interface TimeValue { min: string; sec: string }
+
+interface TeammateEntry {
+  id: string;
+  name: string;
+  damage: string;
+  auto: boolean;
+  characterClass?: string;
+  combatPower?: number;
+  level?: number;
+  arc?: number;
+  aut?: number;
+}
 
 interface StoredBossCalculator {
   bossName: string;
@@ -32,7 +47,8 @@ interface StoredBossCalculator {
   blackMageMinutes: string;
   selfAuto: boolean;
   selfDamage: string;
-  teammates: string[];
+  selfCombatPower: number;
+  teammates: Array<string | TeammateEntry>;
   measurementConfirmed: boolean;
   savedAt?: number;
 }
@@ -42,6 +58,18 @@ const DEFAULT_REMAINING = { min: '', sec: '' };
 const DEFAULT_NORMAL_LIMIT = { min: '30', sec: '00' };
 const DEFAULT_BOSS_NAME = '尤比太';
 const DEFAULT_DIFFICULTY: BossDifficulty = '普通';
+let teammateSequence = 0;
+const createTeammate = (value: Partial<TeammateEntry> = {}): TeammateEntry => ({
+  id: value.id || `teammate-${Date.now()}-${teammateSequence++}`,
+  name: value.name || '',
+  damage: String(value.damage || ''),
+  auto: value.auto === true,
+  characterClass: value.characterClass,
+  combatPower: value.combatPower,
+  level: value.level,
+  arc: value.arc,
+  aut: value.aut,
+});
 
 const DIFFICULTY_STYLE: Record<string, string> = {
   簡單: 'border-white/30 bg-gradient-to-b from-[#b3b3b3] to-[#5f5f5f] text-white',
@@ -139,7 +167,7 @@ function StatCard({ label, value, unit, tone = 'text-white', children }: { label
   );
 }
 
-const BossDamageCalculatorModal: React.FC<BossDamageCalculatorModalProps> = ({ data, onClose }) => {
+const BossDamageCalculatorModal: React.FC<BossDamageCalculatorModalProps> = ({ data, apiKey, onClose }) => {
   const characterName = data.basic.character_name || '';
   const [bossName, setBossName] = React.useState(DEFAULT_BOSS_NAME);
   const [difficulty, setDifficulty] = React.useState<BossDifficulty>(DEFAULT_DIFFICULTY);
@@ -149,7 +177,8 @@ const BossDamageCalculatorModal: React.FC<BossDamageCalculatorModalProps> = ({ d
   const [blackMageMinutes, setBlackMageMinutes] = React.useState('60');
   const [selfAuto, setSelfAuto] = React.useState(true);
   const [selfDamage, setSelfDamage] = React.useState('');
-  const [teammates, setTeammates] = React.useState<string[]>([]);
+  const [teammates, setTeammates] = React.useState<TeammateEntry[]>([]);
+  const [teammateLookup, setTeammateLookup] = React.useState<Record<string, { loading: boolean; message: string; error?: boolean }>>({});
   const [measurementConfirmed, setMeasurementConfirmed] = React.useState(false);
   const [slot, setSlot] = React.useState(1);
   const [saveNotice, setSaveNotice] = React.useState('');
@@ -174,13 +203,33 @@ const BossDamageCalculatorModal: React.FC<BossDamageCalculatorModalProps> = ({ d
   const result = hasCompleteMeasuredTime ? calculateBossDamage(row, totalSeconds, remainingSeconds) : null;
   const automaticDamage = result?.projectedDamageTrillion || 0;
   const personalDamage = selfAuto ? automaticDamage : Math.max(0, Number(selfDamage) || 0);
-  const teamDamage = personalDamage + teammates.reduce((sum, value) => sum + Math.max(0, Number(value) || 0), 0);
+  const selfCombatPower = React.useMemo(() => {
+    const raw = data.stat?.final_stat?.find((stat) => ['戰鬥力', 'Combat Power'].includes(stat.stat_name))?.stat_value;
+    const parsed = Number(String(raw ?? '').replace(/,/g, ''));
+    return Number.isFinite(parsed) ? parsed : 0;
+  }, [data.stat]);
+  const teammateDamage = React.useCallback((entry: TeammateEntry) => {
+    if (!entry.auto || !entry.combatPower || !entry.level) return Math.max(0, Number(entry.damage) || 0);
+    const teammateCombat = getBossCombatMultiplier(row, {
+      level: entry.level,
+      arc: entry.arc || 0,
+      aut: entry.aut || 0,
+    });
+    return estimateTeammateDamage(
+      personalDamage,
+      selfCombatPower,
+      entry.combatPower,
+      sourceCombat.combinedMultiplier,
+      teammateCombat.combinedMultiplier,
+    );
+  }, [personalDamage, row, selfCombatPower, sourceCombat.combinedMultiplier]);
+  const teamDamage = personalDamage + teammates.reduce((sum, entry) => sum + teammateDamage(entry), 0);
   const eligibleBosses = getEligibleBosses(teamDamage, totalSeconds, normalLimitSeconds, blackMageLimitSeconds, row, player);
 
   const payload = React.useCallback((): StoredBossCalculator => ({
     bossName, difficulty, total, remaining, normalLimit, blackMageMinutes,
-    selfAuto, selfDamage, teammates, measurementConfirmed, savedAt: Date.now(),
-  }), [bossName, difficulty, total, remaining, normalLimit, blackMageMinutes, selfAuto, selfDamage, teammates, measurementConfirmed]);
+    selfAuto, selfDamage, selfCombatPower, teammates, measurementConfirmed, savedAt: Date.now(),
+  }), [bossName, difficulty, total, remaining, normalLimit, blackMageMinutes, selfAuto, selfDamage, selfCombatPower, teammates, measurementConfirmed]);
 
   const applyStored = React.useCallback((stored: Partial<StoredBossCalculator>) => {
     const confirmedMeasurement = stored.measurementConfirmed === true;
@@ -200,7 +249,10 @@ const BossDamageCalculatorModal: React.FC<BossDamageCalculatorModalProps> = ({ d
     if (stored.blackMageMinutes) setBlackMageMinutes(cleanDigits(stored.blackMageMinutes, 3) || '60');
     setSelfAuto(stored.selfAuto !== false);
     setSelfDamage(String(stored.selfDamage || ''));
-    setTeammates(Array.isArray(stored.teammates) ? stored.teammates.slice(0, 5).map(String) : []);
+    setTeammates(Array.isArray(stored.teammates) ? stored.teammates.slice(0, 5).map((entry) => (
+      typeof entry === 'string' ? createTeammate({ damage: entry }) : createTeammate(entry)
+    )) : []);
+    setTeammateLookup({});
     setMeasurementConfirmed(confirmedMeasurement);
   }, []);
 
@@ -256,8 +308,51 @@ const BossDamageCalculatorModal: React.FC<BossDamageCalculatorModalProps> = ({ d
     setBossName(DEFAULT_BOSS_NAME); setDifficulty(DEFAULT_DIFFICULTY);
     setTotal(DEFAULT_TOTAL); setRemaining(DEFAULT_REMAINING); setNormalLimit(DEFAULT_NORMAL_LIMIT);
     setBlackMageMinutes('60'); setSelfAuto(true); setSelfDamage(''); setTeammates([]);
+    setTeammateLookup({});
     setMeasurementConfirmed(false);
     setSaveNotice('已重置目前計算；存檔不受影響');
+  };
+
+  const lookupTeammate = async (id: string) => {
+    const entry = teammates.find((item) => item.id === id);
+    if (!entry) return;
+    if (!entry.name.trim()) {
+      setTeammateLookup((current) => ({ ...current, [id]: { loading: false, message: '請先輸入隊友暱稱', error: true } }));
+      return;
+    }
+    setTeammateLookup((current) => ({ ...current, [id]: { loading: true, message: '正在讀取角色資料…' } }));
+    try {
+      const profile = await fetchBossTeammateProfile(entry.name, apiKey);
+      const teammateCombat = getBossCombatMultiplier(row, profile);
+      const estimated = estimateTeammateDamage(
+        personalDamage,
+        selfCombatPower,
+        profile.combatPower,
+        sourceCombat.combinedMultiplier,
+        teammateCombat.combinedMultiplier,
+      );
+      if (estimated <= 0) throw new Error(result ? '目前資料不足，請改用手動輸入' : '請先填完自己的實際擊殺時間');
+      setTeammates((current) => current.map((item) => item.id === id ? {
+        ...item,
+        name: profile.characterName,
+        damage: String(Number(estimated.toFixed(6))),
+        auto: true,
+        characterClass: profile.characterClass,
+        combatPower: profile.combatPower,
+        level: profile.level,
+        arc: profile.arc,
+        aut: profile.aut,
+      } : item));
+      setTeammateLookup((current) => ({
+        ...current,
+        [id]: { loading: false, message: `已帶入 Lv.${profile.level} ${profile.characterClass}・戰力 ${formatBossNumber(profile.combatPower / 10000)} 萬` },
+      }));
+    } catch (error) {
+      setTeammateLookup((current) => ({
+        ...current,
+        [id]: { loading: false, message: error instanceof Error ? error.message : '隊友資料讀取失敗', error: true },
+      }));
+    }
   };
 
   const editBlackMageLimit = () => {
@@ -318,8 +413,8 @@ const BossDamageCalculatorModal: React.FC<BossDamageCalculatorModalProps> = ({ d
             <div className="mt-1.5 text-xs text-slate-500">血量計算：{row.formula}</div>
             {row.crystalRewardHundredMillion !== undefined && <div className="mt-1 text-xs text-slate-500">結晶獎勵：{formatBossNumber(row.crystalRewardHundredMillion)} 億</div>}
             <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] font-bold text-cyan-300">
-              <span>API：Lv.{player.level}・ARC {formatBossNumber(player.arc)}・AUT {formatBossNumber(player.aut)}</span>
-              <span>來源倍率：{combatMultiplierText(sourceCombat)}</span>
+              <span>角色能力：Lv.{player.level}・ARC {formatBossNumber(player.arc)}・AUT {formatBossNumber(player.aut)}</span>
+              <span>目前傷害倍率：{combatMultiplierText(sourceCombat)}</span>
             </div>
           </section>
 
@@ -337,7 +432,7 @@ const BossDamageCalculatorModal: React.FC<BossDamageCalculatorModalProps> = ({ d
             <StatCard label="每秒平均傷害" value={result ? formatBossNumber(result.dpsTrillion) : '—'} unit="兆 / 秒" tone="text-emerald-300" />
             <StatCard label="每分鐘平均傷害" value={result ? formatBossNumber(result.dpmTrillion) : '—'} unit="兆 / 分鐘" tone="text-emerald-300" />
             <StatCard label={`${totalSeconds % 60 === 0 ? `${totalSeconds / 60} 分鐘` : formatBossTime(totalSeconds)}傷害量`} value={result ? formatBossNumber(teamDamage) : '—'} unit={teammates.length ? `兆（隊伍 ${teammates.length + 1} 人合計）` : '兆（個人）'} tone="text-amber-300">
-              <button type="button" disabled={teammates.length >= 5} onClick={() => setTeammates((current) => [...current, ''])} className="mt-2.5 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-amber-400/30 bg-amber-500/10 px-2 py-2 text-[11px] font-black text-amber-200 disabled:cursor-not-allowed disabled:opacity-50"><Plus className="h-3.5 w-3.5" />{teammates.length >= 5 ? '隊伍已滿（6人）' : '增加隊友傷害量'}</button>
+              <button type="button" disabled={teammates.length >= 5} onClick={() => setTeammates((current) => [...current, createTeammate()])} className="mt-2.5 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-amber-400/30 bg-amber-500/10 px-2 py-2 text-[11px] font-black text-amber-200 disabled:cursor-not-allowed disabled:opacity-50"><Plus className="h-3.5 w-3.5" />{teammates.length >= 5 ? '隊伍已滿（6人）' : '增加隊友傷害量'}</button>
             </StatCard>
           </section>
 
@@ -346,10 +441,38 @@ const BossDamageCalculatorModal: React.FC<BossDamageCalculatorModalProps> = ({ d
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2"><div className="flex items-center gap-2 font-black text-white"><Users className="h-4 w-4 text-amber-300" />隊伍傷害量 <span className="text-[11px] font-bold text-slate-500">自己＋最多 5 位隊友</span></div><span className="rounded-full border border-amber-400/25 bg-amber-500/10 px-3 py-1 text-xs font-black text-amber-200">總計 {formatBossNumber(teamDamage)} 兆</span></div>
               <div className="space-y-2">
                 <div className="grid grid-cols-[58px_minmax(0,1fr)_30px_auto] items-center gap-2"><span className="text-xs font-black text-slate-300">自己</span><input className={FIELD_CLASS} type="number" min="0" value={selfAuto ? (result ? String(Number(automaticDamage.toFixed(6))) : '') : selfDamage} onChange={(event) => { setSelfAuto(false); setSelfDamage(event.target.value); }} /><span className="text-xs font-bold text-slate-500">兆</span><button type="button" onClick={() => setSelfAuto(true)} className="h-9 rounded-lg border border-cyan-400/25 bg-cyan-500/10 px-2 text-[10px] font-black text-cyan-200">帶入計算值</button></div>
-                {teammates.map((value, index) => (
-                  <div key={index} className="grid grid-cols-[58px_minmax(0,1fr)_30px_auto] items-center gap-2"><span className="text-xs font-black text-slate-300">隊友 {index + 1}</span><input className={FIELD_CLASS} type="number" min="0" placeholder="輸入傷害量" value={value} onChange={(event) => setTeammates((current) => current.map((item, itemIndex) => itemIndex === index ? event.target.value : item))} /><span className="text-xs font-bold text-slate-500">兆</span><button type="button" onClick={() => setTeammates((current) => current.filter((_, itemIndex) => itemIndex !== index))} className="inline-flex h-9 items-center gap-1 rounded-lg border border-rose-400/25 bg-rose-500/10 px-2 text-[10px] font-black text-rose-200"><Trash2 className="h-3 w-3" />移除</button></div>
+                {teammates.map((entry, index) => (
+                  <div key={entry.id} className="maple-boss-teammate-row rounded-xl border border-amber-400/15 bg-black/10 p-2.5">
+                    <div className="grid gap-2 sm:grid-cols-[58px_minmax(140px,1fr)_auto] sm:items-center">
+                      <span className="text-xs font-black text-slate-300">隊友 {index + 1}</span>
+                      <input
+                        className={FIELD_CLASS}
+                        type="text"
+                        placeholder="輸入隊友暱稱"
+                        value={entry.name}
+                        onChange={(event) => {
+                          const name = event.target.value;
+                          setTeammates((current) => current.map((item) => item.id === entry.id ? { ...item, name, auto: false } : item));
+                          setTeammateLookup((current) => ({ ...current, [entry.id]: { loading: false, message: '' } }));
+                        }}
+                        onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); lookupTeammate(entry.id); } }}
+                        aria-label={`隊友 ${index + 1} 暱稱`}
+                      />
+                      <button type="button" disabled={teammateLookup[entry.id]?.loading} onClick={() => lookupTeammate(entry.id)} className="inline-flex h-11 items-center justify-center gap-1.5 rounded-lg border border-cyan-400/30 bg-cyan-500/10 px-3 text-xs font-black text-cyan-200 disabled:cursor-wait disabled:opacity-60">
+                        {teammateLookup[entry.id]?.loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Search className="h-3.5 w-3.5" />}讀取角色
+                      </button>
+                    </div>
+                    <div className="mt-2 grid grid-cols-[58px_minmax(0,1fr)_30px_auto] items-center gap-2">
+                      <span className="text-[11px] font-bold text-slate-500">傷害量</span>
+                      <input className={FIELD_CLASS} type="number" min="0" placeholder="也可手動輸入" value={entry.auto ? String(Number(teammateDamage(entry).toFixed(6))) : entry.damage} onChange={(event) => setTeammates((current) => current.map((item) => item.id === entry.id ? { ...item, damage: event.target.value, auto: false } : item))} />
+                      <span className="text-xs font-bold text-slate-500">兆</span>
+                      <button type="button" onClick={() => { setTeammates((current) => current.filter((item) => item.id !== entry.id)); setTeammateLookup((current) => { const next = { ...current }; delete next[entry.id]; return next; }); }} className="inline-flex h-9 items-center gap-1 rounded-lg border border-rose-400/25 bg-rose-500/10 px-2 text-[10px] font-black text-rose-200"><Trash2 className="h-3 w-3" />移除</button>
+                    </div>
+                    {teammateLookup[entry.id]?.message && <div role="status" className={`mt-2 text-[11px] font-bold ${teammateLookup[entry.id].error ? 'text-rose-300' : 'text-cyan-300'}`}>{teammateLookup[entry.id].message}</div>}
+                  </div>
                 ))}
               </div>
+              <p className="mt-3 text-[11px] leading-relaxed text-slate-500">輸入暱稱並按「讀取角色」後，會依隊友與自己的官方戰鬥力比例，再套用來源 BOSS 的等級、ARC／AUT 倍率估算；職業輸出、裝備操作與實戰差異仍需手動修正。</p>
             </section>
           )}
 
@@ -362,7 +485,7 @@ const BossDamageCalculatorModal: React.FC<BossDamageCalculatorModalProps> = ({ d
             </div>
             <div className="max-h-[460px] overflow-auto rounded-xl border border-slate-800">
               <table className="w-full min-w-[850px] border-collapse text-left text-xs">
-                <thead className="sticky top-0 z-10 bg-[#161d29] text-[11px] text-slate-500"><tr><th className="p-3">BOSS</th><th className="p-3">難度</th><th className="p-3 text-right">總血量</th><th className="p-3 text-right">API 增傷修正</th><th className="p-3 text-right">預估所需時間</th><th className="p-3 text-right">時限輸出餘裕</th></tr></thead>
+                <thead className="sticky top-0 z-10 bg-[#161d29] text-[11px] text-slate-500"><tr><th className="p-3">BOSS</th><th className="p-3">難度</th><th className="p-3 text-right">總血量</th><th className="p-3 text-right">角色傷害倍率</th><th className="p-3 text-right">預估所需時間</th><th className="p-3 text-right">時限輸出餘裕</th></tr></thead>
                 <tbody>{eligibleBosses.map((item) => (
                   <tr key={`${item.name}-${item.difficulty}`} className="border-t border-slate-800/80 text-slate-300 transition hover:bg-slate-800/35"><td className="p-3 font-bold text-white">{item.name}</td><td className="p-3"><DifficultyBadge difficulty={item.difficulty} /></td><td className={`p-3 text-right font-mono ${item.hpTrillion / item.capacityTrillion > 0.8 ? 'font-bold text-amber-300' : ''}`}>{formatBossHp(item.hpTrillion)}</td><td className="p-3 text-right font-mono"><span className={item.adjustmentRatio >= 1 ? 'text-emerald-300' : 'text-amber-300'}>×{formatBossNumber(item.adjustmentRatio)}</span><div className="mt-1 text-[10px] text-slate-500">{item.combat.requirementKnown ? `Lv.${item.combat.bossLevel}・${combatMultiplierText(item.combat)}` : combatMultiplierText(item.combat)}</div></td><td className="p-3 text-right font-mono">{formatBossTime(item.estimatedSeconds)}{item.name === '黑魔法師' && <><span className="ml-1 text-[10px] text-slate-500">/ 時限 {formatBossTime(item.timeLimitSeconds)}</span><button type="button" onClick={editBlackMageLimit} className="ml-1.5 inline-flex h-[22px] items-center rounded-md border border-amber-400/35 bg-amber-500/10 px-2 text-[10px] font-black text-amber-200 transition hover:border-amber-300/60 hover:bg-amber-500/20">更改</button></>}</td><td className="p-3 text-right font-mono font-black text-emerald-300">+{formatBossNumber(item.marginPercent)}%</td></tr>
                 ))}</tbody>

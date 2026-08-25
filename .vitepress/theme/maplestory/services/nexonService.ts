@@ -33,6 +33,15 @@ const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 // Simple in-memory cache for OCID to save API calls
 const ocidCache: Record<string, string> = {};
 
+export interface BossTeammateApiProfile {
+  characterName: string;
+  characterClass: string;
+  level: number;
+  combatPower: number;
+  arc: number;
+  aut: number;
+}
+
 /**
  * Helper to build the URL.
  * Only appends the 'date' parameter if it is explicitly provided.
@@ -102,6 +111,56 @@ const fetchWithRetry = async (url: string, options: RequestInit, retries = 3, ba
     }
   }
   throw new Error(`Failed to fetch ${url} after ${retries} retries. Last Status: ${lastStatus}`);
+};
+
+export const fetchBossTeammateProfile = async (characterName: string, apiKey: string): Promise<BossTeammateApiProfile> => {
+  const normalizedName = characterName.trim();
+  if (!normalizedName) throw new Error('請先輸入隊友暱稱');
+  if (!apiKey) throw new Error('尚未設定 Nexon API Key');
+
+  const headers = { 'x-nxopen-api-key': apiKey, accept: 'application/json' };
+  let ocid = ocidCache[normalizedName];
+  if (!ocid) {
+    const response = await fetchWithRetry(`${BASE_URL}/id?character_name=${encodeURIComponent(normalizedName)}`, { headers });
+    if (!response.ok) throw new Error('找不到這個角色暱稱');
+    const payload: OcidResponse = await response.json();
+    ocid = payload.ocid;
+    ocidCache[normalizedName] = ocid;
+  }
+
+  const [basicResponse, statResponse, symbolResponse] = await Promise.all([
+    fetchWithRetry(buildUrl('/character/basic', ocid), { headers }),
+    fetchWithRetry(buildUrl('/character/stat', ocid), { headers }),
+    fetchWithRetry(buildUrl('/character/symbol-equipment', ocid), { headers }),
+  ]);
+  if (!basicResponse.ok || !statResponse.ok) throw new Error('無法讀取隊友目前資料');
+
+  const basic = await basicResponse.json();
+  const stat = await statResponse.json();
+  const symbolEquipment = symbolResponse.ok ? await symbolResponse.json() : { symbol: [] };
+  const stats = Array.isArray(stat?.final_stat) ? stat.final_stat : [];
+  const statNumber = (names: string[]) => {
+    const raw = stats.find((item: any) => names.includes(item?.stat_name))?.stat_value;
+    const parsed = Number(String(raw ?? '').replace(/,/g, ''));
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+  const symbols = Array.isArray(symbolEquipment?.symbol) ? symbolEquipment.symbol : [];
+  const symbolNumber = (patterns: RegExp[]) => symbols.reduce((sum: number, symbol: any) => {
+    if (!patterns.some((pattern) => pattern.test(String(symbol?.symbol_name || '')))) return sum;
+    const parsed = Number(String(symbol?.symbol_force ?? '').replace(/,/g, ''));
+    return sum + (Number.isFinite(parsed) ? parsed : 0);
+  }, 0);
+
+  const combatPower = statNumber(['戰鬥力', 'Combat Power']);
+  if (combatPower <= 0) throw new Error('API 未提供這名角色的戰鬥力');
+  return {
+    characterName: String(basic?.character_name || normalizedName),
+    characterClass: String(basic?.character_class || ''),
+    level: Math.max(0, Number(basic?.character_level) || 0),
+    combatPower,
+    arc: statNumber(['神秘力量', 'Arcane Power']) || symbolNumber([/神秘/, /祕法/i, /Arcane/i]),
+    aut: statNumber(['真實之力', '真實力量', 'Authentic Force']) || symbolNumber([/真實/, /異常/i, /Authentic/i]),
+  };
 };
 
 export const fetchCharacterData = async (characterName: string, apiKey: string, specificDate?: string): Promise<DashboardData> => {

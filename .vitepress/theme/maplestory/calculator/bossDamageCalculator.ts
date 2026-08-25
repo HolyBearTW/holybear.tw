@@ -155,6 +155,21 @@ export function createBossPlayerContext(data: any): BossPlayerContext {
   };
 }
 
+export function estimateTeammateDamage(
+  personalDamageTrillion: number,
+  selfCombatPower: number,
+  teammateCombatPower: number,
+  selfCombatMultiplier = 1,
+  teammateCombatMultiplier = 1,
+): number {
+  if (personalDamageTrillion <= 0 || selfCombatPower <= 0 || teammateCombatPower <= 0) return 0;
+  const safeSelfMultiplier = selfCombatMultiplier > 0 ? selfCombatMultiplier : 1;
+  const safeTeammateMultiplier = teammateCombatMultiplier > 0 ? teammateCombatMultiplier : 1;
+  return personalDamageTrillion
+    * (teammateCombatPower / selfCombatPower)
+    * (safeTeammateMultiplier / safeSelfMultiplier);
+}
+
 export function getLevelDamageMultiplier(playerLevel: number, bossLevel: number): number {
   const difference = Math.floor(playerLevel) - Math.floor(bossLevel);
   if (difference >= 5) return 1.2;
@@ -382,12 +397,30 @@ export function readBossDamageAiSnapshot(characterName: string, player: BossPlay
       : measured.projectedDamageTrillion;
     if (!Number.isFinite(personalDamage) || personalDamage <= 0) return null;
 
-    const teammates = Array.isArray(saved.teammates)
-      ? saved.teammates.slice(0, 5).map((value: unknown) => Math.max(0, Number(value) || 0))
-      : [];
-    const teamDamage = personalDamage + teammates.reduce((sum: number, value: number) => sum + value, 0);
     const sourceCombat = getBossCombatMultiplier(row, player);
     const sourceMultiplier = sourceCombat.combinedMultiplier > 0 ? sourceCombat.combinedMultiplier : 1;
+    const teammates = Array.isArray(saved.teammates)
+      ? saved.teammates.slice(0, 5).map((value: unknown) => {
+        if (!value || typeof value !== 'object') return Math.max(0, Number(value) || 0);
+        const entry = value as Record<string, unknown>;
+        if (entry.auto === true && Number(entry.combatPower) > 0 && Number(entry.level) > 0 && Number(saved.selfCombatPower) > 0) {
+          const teammateCombat = getBossCombatMultiplier(row, {
+            level: Number(entry.level) || 0,
+            arc: Number(entry.arc) || 0,
+            aut: Number(entry.aut) || 0,
+          });
+          return estimateTeammateDamage(
+            personalDamage,
+            Number(saved.selfCombatPower),
+            Number(entry.combatPower),
+            sourceMultiplier,
+            teammateCombat.combinedMultiplier,
+          );
+        }
+        return Math.max(0, Number(entry.damage) || 0);
+      })
+      : [];
+    const teamDamage = personalDamage + teammates.reduce((sum: number, value: number) => sum + value, 0);
     const soloEligibleRows = getEligibleBosses(personalDamage, totalSeconds, normalBossSeconds, blackMageSeconds, row, player);
     const soloEligible = soloEligibleRows.map((item) => ({
       name: item.name,

@@ -1613,6 +1613,11 @@ html:not(.dark) .maple-boss-calculator-panel [class~="hover:bg-slate-800/35"]:ho
   background-color: rgba(9, 139, 165, 0.09) !important;
 }
 
+html:not(.dark) .maple-boss-calculator-panel .maple-boss-teammate-row {
+  border-color: rgba(180, 117, 15, 0.24) !important;
+  background: rgba(255, 250, 235, 0.72) !important;
+}
+
 html:not(.dark) .maple-calculator-panel .text-white,
 html:not(.dark) .maple-calculator-panel .text-slate-200,
 html:not(.dark) .maple-calculator-panel .text-slate-300 {
@@ -1721,6 +1726,10 @@ html:not(.dark) .maple-calculator-version {
 }
 
 @media (max-width: 639px) {
+  .maple-boss-calculator-panel .maple-boss-teammate-row {
+    padding: 10px !important;
+  }
+
   .maple-calculator-backdrop {
     align-items: flex-start !important;
     justify-content: center !important;

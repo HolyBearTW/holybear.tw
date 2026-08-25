@@ -243,6 +243,10 @@ if (Math.abs(bossResult.dpsTrillion - expectedDps) > 1e-12) {
 if (Math.abs(bossResult.projectedDamageTrillion - expectedDps * 1800) > 1e-9) {
   throw new Error(`BOSS 總時間傷害量計算失敗：${bossResult.projectedDamageTrillion}`);
 }
+const teammateEstimate = bossCalculator.estimateTeammateDamage(6000, 100_000_000, 150_000_000, 1.2, 0.8);
+if (Math.abs(teammateEstimate - 6000) > 1e-9) {
+  throw new Error(`隊友戰力比例／角色傷害倍率估算失敗：${teammateEstimate}`);
+}
 
 const eligible = bossCalculator.getEligibleBosses(
   bossResult.projectedDamageTrillion,

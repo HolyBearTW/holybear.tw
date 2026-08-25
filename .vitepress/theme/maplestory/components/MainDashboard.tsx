@@ -572,7 +572,7 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
                   </div>
                 </div>
               )}>
-                <BossDamageCalculatorModal data={data} onClose={() => setShowBossDamageCalculator(false)} />
+                <BossDamageCalculatorModal data={data} apiKey={apiKey} onClose={() => setShowBossDamageCalculator(false)} />
               </React.Suspense>
             )}
             <MapleFeatureTour
