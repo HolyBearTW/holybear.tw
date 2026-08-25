@@ -3,12 +3,19 @@ const moduleUrl = process.env.MAPLE_CALCULATOR_MODULE_URL
 
 const response = await fetch(moduleUrl);
 if (!response.ok) throw new Error(`無法讀取計算機模組：HTTP ${response.status}`);
-const source = await response.text();
+const referenceUrl = new URL('../data/tmsRadarReference.json', moduleUrl);
+const referenceResponse = await fetch(referenceUrl);
+if (!referenceResponse.ok) throw new Error(`無法讀取台版雷達參考資料：HTTP ${referenceResponse.status}`);
+const referenceData = await referenceResponse.json();
+const source = (await response.text()).replace(
+  /import tmsRadarReference from "[^"]*tmsRadarReference\.json\?import[^"]*";/,
+  `const tmsRadarReference = ${JSON.stringify(referenceData)};`,
+);
 const calculator = await import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`);
 
 const profile = {
   characterName: '公式測試角色',
-  jobName: '英雄',
+  jobName: '公式測試英雄',
   category: 'normal',
   mainStat: 'STR',
   subStat: 'DEX',
@@ -57,6 +64,14 @@ for (const [key, expected] of Object.entries(expectedRadarScores)) {
   if (Math.abs(radarScores[key] - expected) > 1e-8) {
     throw new Error(`雷達圖 ${key} 等價換算失敗：${radarScores[key]}，預期 ${expected}`);
   }
+}
+
+const referencedRadar = calculator.calculateRadarEquivalentProfile({ ...profile, jobName: '英雄' });
+if (referencedRadar.referenceSampleSize < 1 || referencedRadar.referenceTotalSize < referencedRadar.referenceSampleSize) {
+  throw new Error(`台版雷達樣本資料失敗：${JSON.stringify(referencedRadar)}`);
+}
+if (!referencedRadar.axes.every((axis) => Number.isFinite(axis.equivalentMain) && axis.equivalentMain >= 0)) {
+  throw new Error(`台版雷達分位換算失敗：${JSON.stringify(referencedRadar.axes)}`);
 }
 
 const finalDamage = calculator.calculateProjection(profile, {

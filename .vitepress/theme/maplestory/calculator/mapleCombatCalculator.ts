@@ -1,4 +1,5 @@
 import type { DashboardData, EquipmentItem } from '../types';
+import tmsRadarReference from '../data/tmsRadarReference.json';
 
 /**
  * 維護提醒：遊戲公式、職業係數或海外版校正改動時，需重新對照 MapleCombat
@@ -81,6 +82,10 @@ export interface RadarEquivalentAxis {
 export interface RadarEquivalentProfile {
   axes: RadarEquivalentAxis[];
   overallEquivalentMain: number;
+  referenceMax: number;
+  referenceSampleSize: number;
+  referenceTotalSize: number;
+  referenceGeneratedAt: string;
 }
 
 export interface EquipmentContribution {
@@ -351,36 +356,70 @@ export function calculateRadarEquivalentProfile(profile: CalculatorProfile): Rad
   const share = (value: number, base: number) => value > 0
     ? overallEquivalentMain * value / Math.max(0.000001, base + value)
     : 0;
+  const jobKey = profile.jobName.replace(/[（）(),、\s]/g, '');
+  const reference = tmsRadarReference.jobs[jobKey as keyof typeof tmsRadarReference.jobs];
+  const percentileRank = (values: number[], value: number): number => {
+    if (!values.length || value <= values[0]) return 0;
+    if (value >= values[values.length - 1]) return 1;
+    let upper = 1;
+    while (upper < values.length && values[upper] < value) upper += 1;
+    const lower = upper - 1;
+    const span = Math.max(0.000001, values[upper] - values[lower]);
+    return (lower + (value - values[lower]) / span) / (values.length - 1);
+  };
+  const quantile = (values: number[], percentile: number): number => {
+    if (!values.length) return 0;
+    const position = Math.max(0, Math.min(1, percentile)) * (values.length - 1);
+    const lower = Math.floor(position);
+    const upper = Math.min(values.length - 1, Math.ceil(position));
+    return values[lower] + (values[upper] - values[lower]) * (position - lower);
+  };
+  const referenceEquivalent = (
+    axis: 'effectiveMain' | 'attack' | 'attackPercent' | 'bossTotal' | 'criticalDamage' | 'ignoreDefense',
+    rawValue: number,
+    fallback: number,
+  ) => reference
+    ? quantile(reference.effectiveMain, percentileRank(reference[axis], rawValue))
+    : fallback;
+  const mappedOverallEquivalentMain = reference
+    ? quantile(reference.effectiveMain, percentileRank(reference.combatPower, profile.currentCombatPower))
+    : overallEquivalentMain;
 
   return {
-    overallEquivalentMain,
+    overallEquivalentMain: mappedOverallEquivalentMain,
+    referenceMax: tmsRadarReference.referenceMax,
+    referenceSampleSize: reference?.sampleSize || 0,
+    referenceTotalSize: tmsRadarReference.sourceCount,
+    referenceGeneratedAt: tmsRadarReference.generatedAt,
     axes: [
       {
-        key: 'main', label: '主屬', rawValue: profile.main, rawUnit: '', equivalentMain: mainEquivalent,
+        key: 'main', label: '主屬', rawValue: profile.main, rawUnit: '', equivalentMain: referenceEquivalent('effectiveMain', overallEquivalentMain, mainEquivalent),
         detail: profile.category === 'da' ? '依惡魔復仇者 HP 係數換算' : `${profile.mainStat} 公式貢獻`,
       },
       {
         key: 'attack', label: profile.usesMagic ? '魔法攻擊' : '攻擊力', rawValue: profile.attack, rawUnit: '',
-        equivalentMain: profile.attack > 0 ? overallEquivalentMain * attackBaseShare : 0,
-        detail: `攻擊乘區扣除已辨識攻魔 ${attackPercent}% 後的固定攻魔占比`,
+        equivalentMain: referenceEquivalent('attack', profile.attack, profile.attack > 0 ? overallEquivalentMain * attackBaseShare : 0),
+        detail: '依台版同職業攻魔分位換算',
       },
       {
         key: 'attackPercent', label: '攻魔%', rawValue: attackPercent, rawUnit: '%',
-        equivalentMain: share(attackPercent, 100),
-        detail: `三武潛能 ${profile.equipmentAttackPercent || 0}%＋啟用萌獸 ${profile.familiarAttackPercent || 0}%`,
+        equivalentMain: referenceEquivalent('attackPercent', attackPercent, share(attackPercent, 100)),
+        detail: `三武攻魔 ${profile.equipmentAttackPercent || 0}%｜萌獸攻魔 ${profile.familiarAttackPercent || 0}%${profile.familiarFinalDamageEquivalent > 0
+          ? `｜萌獸終傷 ${profile.familiarFinalDamageEquivalent.toFixed(1)}%（另計）`
+          : ''}`,
       },
       {
         key: 'bossTotal', label: 'Boss總傷', rawValue: bossTotal, rawUnit: '%',
-        equivalentMain: share(bossTotal, 100), detail: `傷害 ${profile.damage}%＋Boss ${profile.bossDamage}%`,
+        equivalentMain: referenceEquivalent('bossTotal', bossTotal, share(bossTotal, 100)), detail: `傷害 ${profile.damage}%＋Boss ${profile.bossDamage}%`,
       },
       {
         key: 'criticalDamage', label: '爆傷', rawValue: criticalDamage, rawUnit: '%',
-        equivalentMain: share(criticalDamage, 135), detail: '以基礎平均爆擊倍率 135% 換算',
+        equivalentMain: referenceEquivalent('criticalDamage', criticalDamage, share(criticalDamage, 135)), detail: '依台版同職業爆傷分位換算',
       },
       {
         key: 'ignoreDefense', label: '無視', rawValue: profile.ignoreDefense, rawUnit: '%',
-        equivalentMain: overallEquivalentMain * defenseMultiplier,
-        detail: `380% BOSS 防禦有效輸出 ${(defenseMultiplier * 100).toFixed(1)}%`,
+        equivalentMain: referenceEquivalent('ignoreDefense', profile.ignoreDefense, overallEquivalentMain * defenseMultiplier),
+        detail: `台版同職業分位；380% 防禦有效輸出 ${(defenseMultiplier * 100).toFixed(1)}%`,
       },
     ].map((axis) => ({ ...axis, equivalentMain: Math.max(0, axis.equivalentMain) })),
   };
