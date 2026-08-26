@@ -265,6 +265,12 @@ const renderMarkdown = async () => {
     };
     
     processedMarkdown = processContainers(processedMarkdown);
+
+    // 相鄰的 half 是 inline-block；移除中間空白，避免 50% + 50% 被擠成上下兩行
+    processedMarkdown = processedMarkdown.replace(
+      /<\/div>\s+(?=<div class="half custom-block">)/g,
+      '</div>'
+    );
     
     // 4. 最終渲染剩餘的 markdown
     const renderedMarkdownHtml = md.render(processedMarkdown);
@@ -462,6 +468,33 @@ onMounted(() => {
   padding: 2rem;
   font-size: 16px;
   line-height: 1.7;
+}
+
+/* markdown-it 會輸出原生 pre/code，補上 VitePress 程式碼區塊外觀 */
+.markdown-preview :deep(pre) {
+  position: relative;
+  margin: 16px 0;
+  padding: 20px 24px;
+  overflow-x: auto;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 8px;
+  background-color: var(--vp-code-block-bg);
+  text-align: left;
+  tab-size: 4;
+  transition: background-color 0.5s, border-color 0.5s;
+}
+
+.markdown-preview :deep(pre code) {
+  display: block;
+  width: fit-content;
+  min-width: 100%;
+  padding: 0;
+  background: transparent;
+  color: var(--vp-code-block-color);
+  font-family: var(--vp-font-family-mono);
+  font-size: var(--vp-code-font-size);
+  line-height: var(--vp-code-line-height);
+  white-space: pre;
 }
 
 /* 空狀態 */

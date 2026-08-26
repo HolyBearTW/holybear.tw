@@ -12,6 +12,9 @@ const historyUpdateKey = ref(0) // 用來強制刷新歷史列表
 const isEditorActive = ref(true) // 用來強制重置編輯器
 const CURRENT_DOC_KEY = 'vitepress-editor-current'
 const HISTORY_KEY = 'vitepress-editor-history'
+const INITIALIZED_KEY = 'vitepress-editor-initialized'
+const TEMPLATE_VERSION_KEY = 'vitepress-editor-template-version'
+const TEMPLATE_VERSION = '2026-08-26-load-example'
 interface HistoryItem {
   id: string
   title: string
@@ -40,12 +43,15 @@ const documentCategoryString = ref('')
 // 主要內容
 const currentDocId = ref<string>('')
 const editorRef = ref<any>(null)
+const markdownTextareaRef = ref<HTMLTextAreaElement | null>(null)
+const markdownSelection = ref({ start: 0, end: 0 })
 const editorContent = ref('')
 const markdownContent = ref('')
 const showPreview = ref(true)
 const showHistory = ref(true)
 const editMode = ref<'visual' | 'markdown'>('markdown') // Default to markdown as Tiptap is removed
 const markdownSource = ref('')
+const showEmojiPicker = ref(false)
 const historyWidth = ref(280)
 const editorWidth = ref(50)
 let autoSaveTimer: number | null = null
@@ -267,73 +273,118 @@ Kalabox Version 1 Dashboard
 // 生成新文檔 ID
 const generateDocId = () => `doc_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
 
-// 載入當前文檔，解析 Front Matter
-const loadCurrentDoc = () => {
-  try {
-    // 檢查是否已經初始化過（是否是第一次進入）
-    const isInitialized = localStorage.getItem('vitepress-editor-initialized')
-    const stored = localStorage.getItem('vitepress-editor-current')
+const createExampleDoc = (): HistoryItem => {
+  const parsed = fm(DEFAULT_EXAMPLE_MARKDOWN)
+  const attrs: Record<string, any> = parsed.attributes || {}
 
-    if (!isInitialized) {
-      // 第一次進入
-      // 1. 將範例檔案加入歷史紀錄，但不直接載入
-      addExampleToHistory()
-      // 2. 建立空白新文檔作為當前文檔
-      createNewDoc()
-      localStorage.setItem('vitepress-editor-initialized', 'true')
-    } else if (stored) {
-      // 非第一次進入且有儲存的文檔，載入它
-      const doc = JSON.parse(stored)
-      currentDocId.value = doc.id
-      const parsed = fm(doc.markdown || '')
-      const attrs: Record<string, any> = parsed.attributes || {}
-      documentTitle.value = 'title' in attrs && typeof attrs.title === 'string' ? attrs.title : (doc.title || '')
-      documentDescription.value = 'description' in attrs && typeof attrs.description === 'string' ? attrs.description : ''
-      documentImage.value = 'image' in attrs && typeof attrs.image === 'string' ? attrs.image : ''
-      documentTag.value = 'tag' in attrs && Array.isArray(attrs.tag) ? attrs.tag.map(String) : ('tag' in attrs && typeof attrs.tag === 'string' ? [attrs.tag] : [])
-      documentCategory.value = 'category' in attrs && Array.isArray(attrs.category) ? attrs.category.map(String) : ('category' in attrs && typeof attrs.category === 'string' ? [attrs.category] : [])
-      documentBlog.value = 'blog' in attrs && typeof attrs.blog === 'boolean' ? attrs.blog : true
-      documentTagString.value = documentTag.value.join('\n')
-      documentCategoryString.value = documentCategory.value.join('\n')
-      editorContent.value = doc.content
-      // 修正: 當 body 為空字串時，不應 fallback 到 doc.markdown (因為 doc.markdown 包含 Front Matter)
-      markdownContent.value = parsed.body !== undefined ? parsed.body : (doc.markdown || '')
-      markdownSource.value = parsed.body !== undefined ? parsed.body : (doc.markdown || '')
-    } else {
-      // 非第一次進入但沒有儲存的文檔（例如被手動刪除），建立空白新文檔
-      createNewDoc()
-    }
-  } catch (error) {
-    console.error('載入文檔失敗:', error)
-    createNewDoc()
+  return {
+    id: 'doc_example_default',
+    title: 'title' in attrs ? String(attrs.title) : '預設範例檔案',
+    content: parsed.body || '',
+    markdown: DEFAULT_EXAMPLE_MARKDOWN,
+    updatedAt: Date.now()
   }
 }
 
-// 將預設範例加入歷史紀錄
-const addExampleToHistory = () => {
+// 確保歷史紀錄中永遠保留一份範例，且不重複新增。
+const ensureExampleInHistory = () => {
+  const exampleDoc = createExampleDoc()
+  let history: HistoryItem[] = []
+  const stored = localStorage.getItem(HISTORY_KEY)
+
+  if (stored) history = JSON.parse(stored)
+
+  const existingExample = history.find(item =>
+    item.id === exampleDoc.id ||
+    item.title === exampleDoc.title ||
+    item.markdown === DEFAULT_EXAMPLE_MARKDOWN
+  )
+
+  if (existingExample) return existingExample
+
+  history.unshift(exampleDoc)
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(history))
+  historyUpdateKey.value++
+  return exampleDoc
+}
+
+const applyDocumentState = (doc: HistoryItem) => {
+  currentDocId.value = doc.id
+  const fullContent = doc.markdown || doc.content || ''
+  const parsed = fm(fullContent)
+  const attrs: Record<string, any> = parsed.attributes || {}
+  const bodyContent = parsed.body !== undefined ? parsed.body : fullContent
+
+  documentTitle.value = 'title' in attrs && typeof attrs.title === 'string' ? attrs.title : (doc.title || '')
+  documentDescription.value = 'description' in attrs && typeof attrs.description === 'string' ? attrs.description : ''
+  documentImage.value = 'image' in attrs && typeof attrs.image === 'string' ? attrs.image : ''
+  documentTag.value = 'tag' in attrs && Array.isArray(attrs.tag) ? attrs.tag.map(String) : ('tag' in attrs && typeof attrs.tag === 'string' ? [attrs.tag] : [])
+  documentCategory.value = 'category' in attrs && Array.isArray(attrs.category) ? attrs.category.map(String) : ('category' in attrs && typeof attrs.category === 'string' ? [attrs.category] : [])
+  documentBlog.value = 'blog' in attrs && typeof attrs.blog === 'boolean' ? attrs.blog : true
+  documentTagString.value = documentTag.value.join('\n')
+  documentCategoryString.value = documentCategory.value.join('\n')
+  editorContent.value = doc.content || ''
+  markdownContent.value = bodyContent
+  markdownSource.value = bodyContent
+}
+
+const hasMeaningfulContent = (doc: HistoryItem) => {
   try {
-    const parsed = fm(DEFAULT_EXAMPLE_MARKDOWN)
+    const parsed = fm(doc.markdown || '')
     const attrs: Record<string, any> = parsed.attributes || {}
-    
-    const exampleDoc: HistoryItem = {
-      id: `doc_example_${Date.now()}`,
-      title: 'title' in attrs ? String(attrs.title) : '預設範例檔案',
-      content: parsed.body || '', // 解析出的內文
-      markdown: DEFAULT_EXAMPLE_MARKDOWN, // 完整 Markdown 內容
-      updatedAt: Date.now()
+    const hasFrontMatter = ['title', 'description', 'image', 'tag', 'category']
+      .some(key => {
+        const value = attrs[key]
+        return Array.isArray(value) ? value.length > 0 : String(value || '').trim().length > 0
+      })
+
+    return Boolean(
+      String(doc.title || '').trim() ||
+      String(doc.content || '').trim() ||
+      String(parsed.body || '').trim() ||
+      hasFrontMatter
+    )
+  } catch {
+    // 無法解析的內容仍可能是使用者草稿，絕不覆蓋。
+    return true
+  }
+}
+
+const loadExampleAsCurrent = (exampleDoc: HistoryItem) => {
+  applyDocumentState({
+    ...exampleDoc,
+    id: generateDocId(),
+    updatedAt: Date.now()
+  })
+  saveCurrentDoc()
+}
+
+// 載入當前文檔，解析 Front Matter
+const loadCurrentDoc = () => {
+  try {
+    const isInitialized = localStorage.getItem(INITIALIZED_KEY)
+    const templateVersion = localStorage.getItem(TEMPLATE_VERSION_KEY)
+    const stored = localStorage.getItem('vitepress-editor-current')
+    const exampleDoc = ensureExampleInHistory()
+
+    if (!isInitialized) {
+      loadExampleAsCurrent(exampleDoc)
+      localStorage.setItem(INITIALIZED_KEY, 'true')
+    } else if (stored) {
+      const doc = JSON.parse(stored)
+      if (templateVersion !== TEMPLATE_VERSION && !hasMeaningfulContent(doc)) {
+        loadExampleAsCurrent(exampleDoc)
+      } else {
+        applyDocumentState(doc)
+      }
+    } else {
+      loadExampleAsCurrent(exampleDoc)
     }
-    
-    let history: HistoryItem[] = []
-    const stored = localStorage.getItem(HISTORY_KEY)
-    if (stored) {
-      history = JSON.parse(stored)
-    }
-    
-    history.unshift(exampleDoc)
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(history))
-    historyUpdateKey.value++
-  } catch (e) {
-    console.error('加入範例檔案至歷史紀錄失敗:', e)
+
+    localStorage.setItem(TEMPLATE_VERSION_KEY, TEMPLATE_VERSION)
+  } catch (error) {
+    console.error('載入文檔失敗:', error)
+    createNewDoc()
   }
 }
 
@@ -550,10 +601,114 @@ const toggleEditMode = () => {
   }
 }
 
+const rememberMarkdownSelection = () => {
+  const textarea = markdownTextareaRef.value
+  if (!textarea) return
+
+  markdownSelection.value = {
+    start: textarea.selectionStart,
+    end: textarea.selectionEnd
+  }
+}
+
 // 更新 Markdown 源碼
 const updateMarkdownSource = () => {
   markdownContent.value = markdownSource.value
+  rememberMarkdownSelection()
   scheduleAutoSave()
+}
+
+type MarkdownInsertAction = 'image' | 'table' | 'center' | 'columns' | 'highlight' | 'code'
+
+const markdownInsertActions: Array<{
+  id: MarkdownInsertAction
+  label: string
+  icon: string
+  title: string
+}> = [
+  { id: 'image', label: '圖片', icon: 'fas fa-image', title: '插入 Blog 使用的置中圖片與說明' },
+  { id: 'table', label: '圖片表格', icon: 'fas fa-table', title: '插入 Blog 使用的雙欄圖片表格' },
+  { id: 'center', label: '置中', icon: 'fas fa-align-center', title: '使用 Blog 既有的 HTML 寫法置中內容' },
+  { id: 'columns', label: '雙欄', icon: 'fas fa-columns', title: '使用 ::: half 建立雙欄' },
+  { id: 'highlight', label: '提示', icon: 'fas fa-highlighter', title: '使用 ::: highlight 插入提示區塊' },
+  { id: 'code', label: '程式碼', icon: 'fas fa-code', title: '插入 fenced code block' }
+]
+
+const commonEmojis = [
+  '😀', '😂', '🥰', '😎', '🤔', '😭',
+  '🎉', '✨', '🔥', '✅', '❌', '⚠️',
+  '💡', '🚀', '🐻', '💻', '📌', '❤️'
+]
+
+const insertMarkdownSnippet = async (action: MarkdownInsertAction) => {
+  const textarea = markdownTextareaRef.value
+  if (!textarea) return
+
+  const { start, end } = markdownSelection.value
+  const selectedText = markdownSource.value.slice(start, end)
+  let snippet = ''
+  let focusText = ''
+
+  switch (action) {
+    case 'image':
+      focusText = '/image/YYYY-MM-DD/圖片.jpg'
+      snippet = `<div style="text-align:center;">\n  <img src="${focusText}" alt="圖片說明" style="display:block; margin:0 auto; max-width:100%; height:auto;">\n  <small style="display: block; text-align: center; color: #777;">${selectedText || '圖片說明'}</small>\n</div>`
+      break
+    case 'table':
+      focusText = '/image/YYYY-MM-DD/圖片1.jpg'
+      snippet = `<table style="width:100%; table-layout: fixed; border-collapse: collapse; border: 1px solid #2D2D2D !important;">\n  <tbody>\n  <tr>\n    <td style="width:50%; text-align:center; padding: 5px;">\n      <img src="${focusText}" alt="圖片1" style="max-width:100%; height:auto; display:block; margin:0 auto;">\n    </td>\n    <td style="width:50%; text-align:center; padding: 5px;">\n      <img src="/image/YYYY-MM-DD/圖片2.jpg" alt="圖片2" style="max-width:100%; height:auto; display:block; margin:0 auto;">\n    </td>\n  </tr>\n  <tr>\n    <td colspan="2" style="text-align:center; padding-top: 10px; border: 1px solid #2D2D2D !important;">\n      <small style="display: block; color: #777; font-size: 0.95em;">${selectedText || '圖片說明'}</small>\n    </td>\n  </tr>\n  </tbody>\n</table>`
+      break
+    case 'center':
+      focusText = selectedText || '置中內容'
+      snippet = `<div style="text-align:center;">\n${focusText}\n</div>`
+      break
+    case 'columns':
+      focusText = selectedText || '左欄內容'
+      snippet = `::: half\n${focusText}\n:::\n\n::: half\n右欄內容\n:::`
+      break
+    case 'highlight':
+      focusText = selectedText || '提示內容'
+      snippet = `::: highlight\n${focusText}\n:::`
+      break
+    case 'code':
+      focusText = selectedText || '程式碼內容'
+      snippet = `\`\`\`text\n${focusText}\n\`\`\``
+      break
+  }
+
+  const before = markdownSource.value.slice(0, start)
+  const after = markdownSource.value.slice(end)
+  const leadingBreak = before && !before.endsWith('\n\n') ? (before.endsWith('\n') ? '\n' : '\n\n') : ''
+  const trailingBreak = after && !after.startsWith('\n\n') ? (after.startsWith('\n') ? '\n' : '\n\n') : ''
+  const insertion = `${leadingBreak}${snippet}${trailingBreak}`
+
+  markdownSource.value = `${before}${insertion}${after}`
+  markdownContent.value = markdownSource.value
+  scheduleAutoSave()
+
+  await nextTick()
+  textarea.focus()
+  const focusOffset = insertion.indexOf(focusText)
+  const selectionStart = start + Math.max(0, focusOffset)
+  textarea.setSelectionRange(selectionStart, selectionStart + focusText.length)
+  rememberMarkdownSelection()
+}
+
+const insertEmoji = async (emoji: string) => {
+  const textarea = markdownTextareaRef.value
+  if (!textarea) return
+
+  const { start, end } = markdownSelection.value
+  markdownSource.value = `${markdownSource.value.slice(0, start)}${emoji}${markdownSource.value.slice(end)}`
+  markdownContent.value = markdownSource.value
+  showEmojiPicker.value = false
+  scheduleAutoSave()
+
+  await nextTick()
+  textarea.focus()
+  const nextPosition = start + emoji.length
+  textarea.setSelectionRange(nextPosition, nextPosition)
+  rememberMarkdownSelection()
 }
 
 // 導出 Markdown 文件（包含 Front Matter）
@@ -868,21 +1023,70 @@ onBeforeUnmount(() => {
           </div>
           
           <!-- Markdown 源碼編輯模式 -->
-          <div v-else class="markdown-editor">
-            <div class="markdown-editor-header">
+           <div v-else class="markdown-editor">
+             <div class="markdown-editor-header">
               <h3>
                 <i class="fas fa-code"></i>
                 Markdown 源碼
               </h3>
               <span class="markdown-tip">
                 💡 直接編輯 Markdown 語法
-              </span>
-            </div>
-            <textarea
-              v-model="markdownSource"
+               </span>
+             </div>
+             <div class="markdown-format-toolbar" role="toolbar" aria-label="Markdown 格式工具">
+               <button
+                 v-for="action in markdownInsertActions"
+                 :key="action.id"
+                 type="button"
+                 class="markdown-format-btn"
+                 :title="action.title"
+                 @pointerdown.prevent
+                 @click="insertMarkdownSnippet(action.id)"
+               >
+                 <i :class="action.icon" aria-hidden="true"></i>
+                 <span>{{ action.label }}</span>
+               </button>
+               <button
+                 type="button"
+                 class="markdown-format-btn"
+                 :class="{ active: showEmojiPicker }"
+                 title="插入 Emoji 表情"
+                 :aria-expanded="showEmojiPicker"
+                 aria-controls="markdown-emoji-picker"
+                 @pointerdown.prevent
+                 @click="showEmojiPicker = !showEmojiPicker"
+               >
+                 <span class="emoji-toolbar-icon" aria-hidden="true">😊</span>
+                 <span>表情</span>
+               </button>
+             </div>
+             <div
+               v-if="showEmojiPicker"
+               id="markdown-emoji-picker"
+               class="emoji-picker"
+               aria-label="常用 Emoji"
+             >
+               <button
+                 v-for="emoji in commonEmojis"
+                 :key="emoji"
+                 type="button"
+                 class="emoji-option"
+                 :title="`插入 ${emoji}`"
+                 @pointerdown.prevent
+                 @click="insertEmoji(emoji)"
+               >
+                 {{ emoji }}
+               </button>
+             </div>
+             <textarea
+               ref="markdownTextareaRef"
+               v-model="markdownSource"
               class="markdown-textarea"
               placeholder="# 開始編寫 Markdown..."
               @input="updateMarkdownSource"
+              @select="rememberMarkdownSelection"
+              @keyup="rememberMarkdownSelection"
+              @click="rememberMarkdownSelection"
               @contextmenu.prevent="() => {}"
             ></textarea>
           </div>
@@ -1162,6 +1366,89 @@ onBeforeUnmount(() => {
   color: var(--vp-c-text-3);
 }
 
+.markdown-format-toolbar {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 0.4rem;
+  padding: 0.55rem 0.75rem;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--vp-c-divider);
+  background: color-mix(in srgb, var(--vp-c-bg-soft) 72%, transparent);
+  scrollbar-width: thin;
+}
+
+.markdown-format-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-height: 32px;
+  padding: 0.35rem 0.65rem;
+  flex: 0 0 auto;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 8px;
+  color: var(--vp-c-text-2);
+  background: var(--vp-c-bg);
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s, background 0.2s, transform 0.2s;
+}
+
+.markdown-format-btn:hover,
+.markdown-format-btn:focus-visible,
+.markdown-format-btn.active {
+  color: var(--vp-c-brand-1);
+  border-color: var(--vp-c-brand-1);
+  background: var(--vp-c-brand-soft);
+  outline: none;
+}
+
+.markdown-format-btn:active {
+  transform: translateY(1px);
+}
+
+.emoji-toolbar-icon {
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.emoji-picker {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid var(--vp-c-divider);
+  background: var(--vp-c-bg-soft);
+}
+
+.emoji-option {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: var(--vp-c-bg);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, transform 0.2s;
+}
+
+.emoji-option:hover,
+.emoji-option:focus-visible {
+  border-color: var(--vp-c-brand-1);
+  background: var(--vp-c-brand-soft);
+  outline: none;
+  transform: translateY(-1px);
+}
+
 .markdown-textarea {
   flex: 1;
   width: 100%;
@@ -1174,6 +1461,7 @@ onBeforeUnmount(() => {
   line-height: 1.7;
   resize: none;
   outline: none;
+  cursor: text !important;
 }
 
 .markdown-textarea::placeholder {
