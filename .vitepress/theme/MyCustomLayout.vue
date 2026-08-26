@@ -426,6 +426,33 @@ onUnmounted(() => {
     // 作者資訊陣列
     const { getAuthorMeta, isEnglish } = useAuthors()
 
+    const footerCopy = computed(() => isEnglish.value
+        ? {
+            ariaLabel: 'Site footer',
+            sitemap: 'Sitemap',
+            poweredPrefix: 'Powered by',
+            poweredSuffix: '',
+            sourcePrefix: 'Source code',
+            archive: 'archived on GitHub',
+            location: 'Based in Taiwan, serving Chinese-speaking communities worldwide.',
+            servicesLabel: 'Website services',
+            githubTitle: 'Hosted on GitHub Pages',
+            cloudflareTitle: 'Using Cloudflare services'
+        }
+        : {
+            ariaLabel: '網站頁尾',
+            sitemap: '網站地圖',
+            poweredPrefix: '由',
+            poweredSuffix: '強力驅動',
+            sourcePrefix: '本站程式碼',
+            archive: '已在 GitHub 存檔',
+            location: '本站立足於台灣，為全球華人提供服務',
+            servicesLabel: '網站服務',
+            githubTitle: '由 GitHub Pages 提供網站托管',
+            cloudflareTitle: '使用 Cloudflare 服務'
+        }
+    )
+
         // skeleton loading 至少顯示 650ms
         const isMetaLoadingRaw = computed(() => {
             if (!allPosts || allPosts.length === 0) return false;
@@ -744,7 +771,7 @@ onUnmounted(() => {
             </ClientOnly>
         </template>
         <template #layout-bottom>
-            <footer class="BlogVPFooter" aria-label="網站頁尾">
+            <footer class="BlogVPFooter" :aria-label="footerCopy.ariaLabel">
                 <div class="container">
                     <p class="footer-line copyright">
                         <a href="https://github.com/HolyBearTW/holybear.tw/blob/main/LICENSE" target="_blank" rel="license noopener">AGPL-3.0 Licensed</a>
@@ -754,24 +781,24 @@ onUnmounted(() => {
                     <p class="footer-line">
                         <a href="/rss.xml" target="_blank" rel="alternate" type="application/rss+xml">RSS</a>
                         <span aria-hidden="true"> / </span>
-                        <a href="/sitemap.xml" target="_blank">網站地圖</a>
+                        <a href="/sitemap.xml" target="_blank">{{ footerCopy.sitemap }}</a>
                     </p>
                     <p class="footer-line">
-                        由
+                        {{ footerCopy.poweredPrefix }}
                         <a href="https://vitepress.dev/" target="_blank" rel="noopener">VitePress</a>
-                        強力驅動
+                        {{ footerCopy.poweredSuffix }}
                     </p>
                     <p class="footer-line">
-                        本站程式碼
-                        <a href="https://github.com/HolyBearTW/holybear.tw" target="_blank" rel="noopener">已在 GitHub 存檔</a>
+                        {{ footerCopy.sourcePrefix }}
+                        <a href="https://github.com/HolyBearTW/holybear.tw" target="_blank" rel="noopener">{{ footerCopy.archive }}</a>
                         <a class="footer-commit" :href="gitCommitUrl" target="_blank" rel="noopener">({{ gitCommitHash }} @ {{ gitCommitDate }})</a>
                     </p>
-                    <p class="footer-line footer-location">本站立足於台灣，為全球華人提供服務</p>
-                    <div class="footer-hosts" aria-label="網站服務">
-                        <a class="footer-host" href="https://pages.github.com/" target="_blank" rel="noopener" title="由 GitHub Pages 提供網站托管">
+                    <p class="footer-line footer-location">{{ footerCopy.location }}</p>
+                    <div class="footer-hosts" :aria-label="footerCopy.servicesLabel">
+                        <a class="footer-host" href="https://pages.github.com/" target="_blank" rel="noopener" :title="footerCopy.githubTitle">
                             <img src="/cdn/github.svg" alt="GitHub Pages" />
                         </a>
-                        <a class="footer-host" href="https://www.cloudflare.com/" target="_blank" rel="noopener" title="使用 Cloudflare 服務">
+                        <a class="footer-host" href="https://www.cloudflare.com/" target="_blank" rel="noopener" :title="footerCopy.cloudflareTitle">
                             <img src="/cdn/cloudflare.svg" alt="Cloudflare" />
                         </a>
                     </div>
