@@ -743,40 +743,42 @@ onUnmounted(() => {
                 <GiscusComments />
             </ClientOnly>
         </template>
+        <template #layout-bottom>
+            <footer class="BlogVPFooter" aria-label="網站頁尾">
+                <div class="container">
+                    <p class="footer-line copyright">
+                        <a href="https://github.com/HolyBearTW/holybear.tw/blob/main/LICENSE" target="_blank" rel="license noopener">AGPL-3.0 Licensed</a>
+                        &copy; {{ copyrightYears }}
+                        <a href="https://github.com/HolyBearTW" target="_blank" rel="noopener">HolyBear</a>
+                    </p>
+                    <p class="footer-line">
+                        <a href="/rss.xml" target="_blank" rel="alternate" type="application/rss+xml">RSS</a>
+                        <span aria-hidden="true"> / </span>
+                        <a href="/sitemap.xml" target="_blank">網站地圖</a>
+                    </p>
+                    <p class="footer-line">
+                        由
+                        <a href="https://vitepress.dev/" target="_blank" rel="noopener">VitePress</a>
+                        強力驅動
+                    </p>
+                    <p class="footer-line">
+                        本站程式碼
+                        <a href="https://github.com/HolyBearTW/holybear.tw" target="_blank" rel="noopener">已在 GitHub 存檔</a>
+                        <a class="footer-commit" :href="gitCommitUrl" target="_blank" rel="noopener">({{ gitCommitHash }} @ {{ gitCommitDate }})</a>
+                    </p>
+                    <p class="footer-line footer-location">本站立足於台灣，為全球華人提供服務</p>
+                    <div class="footer-hosts" aria-label="網站服務">
+                        <a class="footer-host" href="https://pages.github.com/" target="_blank" rel="noopener" title="由 GitHub Pages 提供網站托管">
+                            <img src="/cdn/github.svg" alt="GitHub Pages" />
+                        </a>
+                        <a class="footer-host" href="https://www.cloudflare.com/" target="_blank" rel="noopener" title="使用 Cloudflare 服務">
+                            <img src="/cdn/cloudflare.svg" alt="Cloudflare" />
+                        </a>
+                    </div>
+                </div>
+            </footer>
+        </template>
     </component>
-    <footer class="BlogVPFooter" aria-label="網站頁尾">
-        <div class="container">
-            <p class="footer-line copyright">
-                <a href="https://github.com/HolyBearTW/holybear.tw/blob/main/LICENSE" target="_blank" rel="license noopener">AGPL-3.0 Licensed</a>
-                &copy; {{ copyrightYears }}
-                <a href="https://github.com/HolyBearTW" target="_blank" rel="noopener">HolyBear</a>
-            </p>
-            <p class="footer-line">
-                <a href="/rss.xml" target="_blank" rel="alternate" type="application/rss+xml">RSS</a>
-                <span aria-hidden="true"> / </span>
-                <a href="/sitemap.xml" target="_blank">網站地圖</a>
-            </p>
-            <p class="footer-line">
-                由
-                <a href="https://vitepress.dev/" target="_blank" rel="noopener">VitePress</a>
-                強力驅動
-            </p>
-            <p class="footer-line">
-                本站程式碼
-                <a href="https://github.com/HolyBearTW/holybear.tw" target="_blank" rel="noopener">已在 GitHub 存檔</a>
-                <a class="footer-commit" :href="gitCommitUrl" target="_blank" rel="noopener">({{ gitCommitHash }} @ {{ gitCommitDate }})</a>
-            </p>
-            <p class="footer-line footer-location">本站立足於台灣，為全球華人提供服務</p>
-            <div class="footer-hosts" aria-label="網站服務">
-                <a class="footer-host" href="https://pages.github.com/" target="_blank" rel="noopener" title="由 GitHub Pages 提供網站托管">
-                    <img src="/cdn/github.svg" alt="GitHub Pages" />
-                </a>
-                <a class="footer-host" href="https://www.cloudflare.com/" target="_blank" rel="noopener" title="使用 Cloudflare 服務">
-                    <img src="/cdn/cloudflare.svg" alt="Cloudflare" />
-                </a>
-            </div>
-        </div>
-    </footer>
 </template>
 
 <style scoped>
@@ -1531,7 +1533,7 @@ html.dark .VPHero .name {
 .BlogVPFooter {
     display: flex;
     width: 100%;
-    padding: 32px 20px 24px;
+    padding: 16px 20px 12px;
     background: transparent !important;
     background-color: transparent !important;
     border-top: none !important;
@@ -1573,7 +1575,7 @@ html.dark .VPHero .name {
 }
 .BlogVPFooter .footer-location {
     color: color-mix(in srgb, currentColor 76%, transparent);
-    font-size: 12px;
+    font-size: inherit;
 }
 .BlogVPFooter .footer-commit {
     margin-left: 4px;

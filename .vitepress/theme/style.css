@@ -5234,11 +5234,17 @@ html body .BlogVPFooter {
 }
 
 html body .BlogVPFooter .footer-line {
+  color: rgba(255, 255, 255, 0.9) !important;
   text-shadow: 0 2px 12px rgba(2, 18, 31, 0.72) !important;
 }
 
 html body .BlogVPFooter a {
   text-shadow: 0 2px 10px rgba(2, 18, 31, 0.68) !important;
+}
+
+html body .BlogVPFooter .footer-location,
+html body .BlogVPFooter .footer-commit {
+  color: rgba(239, 249, 252, 0.82) !important;
 }
 
 /* All desktop navigation flyouts share one readable light-mode palette. */
