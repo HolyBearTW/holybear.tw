@@ -1930,7 +1930,7 @@ body.theme-christmas .content-container {
  */
 canvas, 
 [class*="-background"],
-[class*="-bg"]:not(.image-bg) {
+:not(body)[class*="-bg"]:not(.image-bg) {
   transform: translate3d(0, 0, 0) !important;
   contain: paint !important;
   backface-visibility: hidden !important;
