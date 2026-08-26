@@ -149,6 +149,11 @@ const onImgError = (e: Event) => {
   if (img && img.src !== fallbackImg) img.src = fallbackImg
 }
 
+const onAuthorAvatarError = (e: Event) => {
+  const img = e.target as HTMLImageElement
+  if (img && !img.src.endsWith('/logo.png')) img.src = '/logo.png'
+}
+
 // 原始文章數據
 const rawPosts = computed(() => {
   return allPosts.filter(post => 
@@ -720,11 +725,16 @@ watch(isOldVersion, (newValue) => {
           <h3 class="article-title">{{ post.title }}</h3>
           <div class="article-meta">
             <span class="meta-item author">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                <circle cx="12" cy="7" r="4"></circle>
-              </svg>
-              {{ getAuthorMeta(post.author).name }}
+              <span class="author-avatar-slot" aria-hidden="true">
+                <img
+                  class="author-avatar no-zoom"
+                  :src="getAuthorMeta(post.author).login ? `https://github.com/${getAuthorMeta(post.author).login}.png` : '/logo.png'"
+                  alt=""
+                  loading="lazy"
+                  @error="onAuthorAvatarError"
+                >
+              </span>
+              <span class="author-name">{{ getAuthorMeta(post.author).name }}</span>
             </span>
             <span class="meta-item date">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1597,6 +1607,37 @@ html:not(.dark) .filter-btn.active {
   color: var(--vp-c-text-3);
 }
 
+.article-meta .meta-item.author {
+  color: var(--vp-c-brand-1, #00b8b8);
+}
+
+.article-meta .author-avatar-slot {
+  position: relative;
+  width: 22px;
+  height: 14px;
+  flex: 0 0 22px;
+}
+
+.article-meta .author-avatar {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 22px;
+  height: 22px;
+  display: block;
+  margin: 0 !important;
+  border: 1px solid #ddd;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 8px #0001;
+  object-fit: cover;
+  transform: translate(-50%, -50%);
+}
+
+.article-meta .author-name {
+  line-height: 1;
+}
+
 .articles-list.grid .article-summary {
   color: var(--vp-c-text-2);
   line-height: 1.6;
@@ -1625,8 +1666,9 @@ html:not(.dark) .filter-btn.active {
 
 .articles-list.grid .tag.category {
   background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  background-clip: padding-box;
   color: white;
-  border: none;
+  border: 1px solid transparent;
 }
 
 /* 網格模式：手機版調整 */
@@ -1875,14 +1917,15 @@ html:not(.dark) .filter-btn.active {
 /* category 標籤顏色 (匹配網格模式) */
 .articles-list.list .article-tags .tag.category {
   background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%) !important;
+  background-clip: padding-box !important;
   color: white !important;
-  border: none !important;
+  border: 1px solid transparent !important;
 }
 
 .dark .articles-list.list .article-tags .tag.category {
   background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%) !important;
   color: white !important;
-  border: none !important;
+  border: 1px solid transparent !important;
 }
 
 /* 列表模式：article-meta 樣式調整 (匹配網格模式的對齊方式) */
