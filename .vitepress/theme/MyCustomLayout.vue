@@ -34,7 +34,11 @@ import {
 const { isDark } = useData()
 declare const __GIT_COMMIT_HASH__: string
 declare const __GIT_COMMIT_DATE__: string
-const copyrightYears = `2023 - ${new Date().getFullYear()}`
+const copyrightStartYear = 2025
+const currentYear = new Date().getFullYear()
+const copyrightYears = currentYear > copyrightStartYear
+    ? `${copyrightStartYear} - ${currentYear}`
+    : String(copyrightStartYear)
 const gitCommitHash = __GIT_COMMIT_HASH__
 const gitCommitDate = __GIT_COMMIT_DATE__
 const gitCommitUrl = `https://github.com/HolyBearTW/holybear.tw/commit/${gitCommitHash}`
