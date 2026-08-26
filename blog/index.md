@@ -3,6 +3,10 @@ layout: home
 title: 日誌
 image: /holybear.png
 description: 聖小熊與夥伴們的日誌
+head:
+  - - meta
+    - name: robots
+      content: max-image-preview:none
 
 hero:
   name: "聖小熊與夥伴們的日誌"

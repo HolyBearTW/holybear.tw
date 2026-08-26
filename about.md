@@ -2,6 +2,10 @@
 title: 關於我
 image: /holybear.png
 description: 這裡是聖小熊的個人空間，分享我的技術、生活與創作。
+head:
+  - - meta
+    - name: robots
+      content: max-image-preview:none
 sidebar: false
 aside: false
 toc: false

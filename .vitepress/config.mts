@@ -311,7 +311,8 @@ const config = defineConfig({
             // --- 2. 決定頁面類型 ---
             // 修正：將英文首頁也視為首頁，以防止 Google 誤判
             const isHomePage = normalizedPath === '/' || normalizedPath === '' || normalizedPath === '/en/';
-            const isArticle = normalizedPath.startsWith('/blog/') || normalizedPath.startsWith('/en/blog/');
+            const isBlogIndex = normalizedPath === '/blog/' || normalizedPath === '/en/blog/';
+            const isArticle = !isBlogIndex && (normalizedPath.startsWith('/blog/') || normalizedPath.startsWith('/en/blog/'));
             const pageType = isArticle ? 'article' : 'website';
 
             // --- 3. 移除 head 中舊的 OG / canonical / JSON-LD，確保乾淨 ---
@@ -411,6 +412,21 @@ const config = defineConfig({
 
                 cleanHead.push(['script', { type: 'application/ld+json' }, JSON.stringify(articleSchema)]);
             
+            } else if (isBlogIndex) {
+                const blogSchema = {
+                    "@context": "https://schema.org",
+                    "@type": "Blog",
+                    "name": pageTitle,
+                    "url": pageUrl,
+                    "description": pageDescription,
+                    "isPartOf": {
+                        "@type": "WebSite",
+                        "name": globalSiteName,
+                        "url": siteUrl
+                    }
+                };
+
+                cleanHead.push(['script', { type: 'application/ld+json' }, JSON.stringify(blogSchema)]);
             } else if (isHomePage) {
                 // 【關鍵修正】首頁 Schema 極簡化，移除語系判斷與多餘作者資訊
                 // 給 Google 最強烈的單一信號
