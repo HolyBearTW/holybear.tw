@@ -5222,9 +5222,9 @@ html:not(.dark) body.is-blog-page .VPDoc .vp-doc table td[style*="border"]::afte
   pointer-events: none !important;
 }
 
-html:not(.dark) body.blog-index-page .VPFooter,
-html:not(.dark) body.is-blog-page .BlogVPFooter {
-  color: rgba(255, 255, 255, 0.88) !important;
+/* The footer sits directly on animated artwork in both appearances. */
+html body .BlogVPFooter {
+  color: rgba(255, 255, 255, 0.9) !important;
   background: transparent !important;
   background-color: transparent !important;
   border-top-color: transparent !important;
@@ -5233,12 +5233,12 @@ html:not(.dark) body.is-blog-page .BlogVPFooter {
   -webkit-backdrop-filter: none !important;
 }
 
-html:not(.dark) body.blog-index-page .VPFooter .message,
-html:not(.dark) body.blog-index-page .VPFooter .copyright,
-html:not(.dark) body.is-blog-page .BlogVPFooter .message,
-html:not(.dark) body.is-blog-page .BlogVPFooter .copyright {
-  color: rgba(255, 255, 255, 0.88) !important;
-  text-shadow: 0 2px 10px rgba(2, 18, 31, 0.72) !important;
+html body .BlogVPFooter .footer-line {
+  text-shadow: 0 2px 12px rgba(2, 18, 31, 0.72) !important;
+}
+
+html body .BlogVPFooter a {
+  text-shadow: 0 2px 10px rgba(2, 18, 31, 0.68) !important;
 }
 
 /* All desktop navigation flyouts share one readable light-mode palette. */
