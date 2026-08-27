@@ -40,6 +40,9 @@ const App: React.FC = () => {
   const {
     geminiKey, setGeminiKey,
     openAiKey, setOpenAiKey,
+    compatibleAiKey, setCompatibleAiKey,
+    compatibleAiBaseUrl, setCompatibleAiBaseUrl,
+    compatibleAiModel, setCompatibleAiModel,
     geminiModel, setGeminiModel,
     showKeySettings, setShowKeySettings,
     aiAnalysis,
@@ -92,6 +95,12 @@ const App: React.FC = () => {
         setGeminiKey={setGeminiKey}
         openAiKey={openAiKey}
         setOpenAiKey={setOpenAiKey}
+        compatibleAiKey={compatibleAiKey}
+        setCompatibleAiKey={setCompatibleAiKey}
+        compatibleAiBaseUrl={compatibleAiBaseUrl}
+        setCompatibleAiBaseUrl={setCompatibleAiBaseUrl}
+        compatibleAiModel={compatibleAiModel}
+        setCompatibleAiModel={setCompatibleAiModel}
         geminiModel={geminiModel}
         setGeminiModel={setGeminiModel}
       />

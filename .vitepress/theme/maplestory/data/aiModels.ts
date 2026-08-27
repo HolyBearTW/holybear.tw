@@ -1,12 +1,19 @@
 export interface AiModelOption {
   id: string;
   label: string;
-  provider: 'google' | 'openai';
+  provider: 'google' | 'openai' | 'compatible';
   estimatedWait: string;
+}
+
+export interface CompatibleAiServiceConfig {
+  apiKey: string;
+  baseUrl: string;
+  model: string;
 }
 
 export const DEFAULT_GOOGLE_AI_MODEL = 'gemini-3.7-flash';
 export const DEFAULT_OPENAI_AI_MODEL = 'openai:gpt-5.6-terra:standard';
+export const CUSTOM_COMPATIBLE_AI_MODEL = 'compatible:custom';
 export const DEFAULT_AI_MODEL = DEFAULT_GOOGLE_AI_MODEL;
 
 export const getRecommendedAiModel = (hasGeminiKey: boolean, hasOpenAiKey: boolean): string => {
@@ -31,9 +38,12 @@ export const AI_MODEL_OPTIONS: AiModelOption[] = [
   { id: 'openai:gpt-5.6-sol:fast', label: 'GPT-5.6 Sol 快速模式', provider: 'openai', estimatedWait: '15~60' },
   { id: 'openai:gpt-5.6-terra:standard', label: 'GPT-5.6 Terra (平衡)', provider: 'openai', estimatedWait: '20~90' },
   { id: 'openai:gpt-5.6-luna:standard', label: 'GPT-5.6 Luna (快速省費)', provider: 'openai', estimatedWait: '15~60' },
+  { id: CUSTOM_COMPATIBLE_AI_MODEL, label: '自訂相容服務', provider: 'compatible', estimatedWait: '15~120' },
 ];
 
 export const getAiModelOption = (id: string): AiModelOption | undefined =>
   AI_MODEL_OPTIONS.find(option => option.id === id);
 
 export const isOpenAiModel = (id: string): boolean => id.startsWith('openai:');
+
+export const isCompatibleAiModel = (id: string): boolean => id === CUSTOM_COMPATIBLE_AI_MODEL;

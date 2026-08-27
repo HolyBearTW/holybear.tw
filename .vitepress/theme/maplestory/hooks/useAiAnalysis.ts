@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { analyzeCharacter } from '../services/geminiService';
 import { DashboardData } from '../types';
-import { DEFAULT_AI_MODEL, getRecommendedAiModel, isOpenAiModel } from '../data/aiModels';
+import { DEFAULT_AI_MODEL, getRecommendedAiModel, isCompatibleAiModel, isOpenAiModel } from '../data/aiModels';
 import { createBossPlayerContext, readBossDamageAiSnapshot } from '../calculator/bossDamageCalculator';
 
 const DEFAULT_GEMINI_KEY = ''; 
@@ -16,6 +16,18 @@ export const useAiAnalysis = (
 
   const [openAiKey, setOpenAiKey] = useState<string | null>(() => {
     return typeof localStorage !== 'undefined' ? localStorage.getItem('openai_api_key') || null : null;
+  });
+
+  const [compatibleAiKey, setCompatibleAiKey] = useState<string | null>(() => {
+    return typeof localStorage !== 'undefined' ? localStorage.getItem('compatible_ai_api_key') || null : null;
+  });
+
+  const [compatibleAiBaseUrl, setCompatibleAiBaseUrl] = useState<string>(() => {
+    return typeof localStorage !== 'undefined' ? localStorage.getItem('compatible_ai_base_url') || '' : '';
+  });
+
+  const [compatibleAiModel, setCompatibleAiModel] = useState<string>(() => {
+    return typeof localStorage !== 'undefined' ? localStorage.getItem('compatible_ai_model') || '' : '';
   });
 
   const [geminiModel, setGeminiModel] = useState<string>(() => {
@@ -92,7 +104,11 @@ export const useAiAnalysis = (
         return;
       }
 
-      const result = await analyzeCharacter(data, bossDamageSnapshot, keyToUse, openAiKey || '', geminiModel, ignoreWarnings, (msg) => {
+      const result = await analyzeCharacter(data, bossDamageSnapshot, keyToUse, openAiKey || '', {
+        apiKey: compatibleAiKey || '',
+        baseUrl: compatibleAiBaseUrl,
+        model: compatibleAiModel,
+      }, geminiModel, ignoreWarnings, (msg) => {
           setProgressMessage(msg);
       });
       
@@ -117,7 +133,9 @@ export const useAiAnalysis = (
       const isShortErrorWith429 = result && result.length < 500 && result.includes('429');
 
       if (isQuotaError || isShortErrorWith429) {
-        setError(isOpenAiModel(geminiModel)
+        setError(isCompatibleAiModel(geminiModel)
+          ? '⚠️ **自訂服務額度已達上限 (Rate Limit Exceeded)**\n\n請檢查第三方服務的額度、速率限制或 API Key。'
+          : isOpenAiModel(geminiModel)
           ? '⚠️ **OpenAI 額度已達上限 (Rate Limit Exceeded)**\n\n請檢查 OpenAI API 額度或更換 API Key。\n\n👉 [前往 OpenAI Platform 管理 API Key](https://platform.openai.com/api-keys)'
           : '⚠️ **AI 額度已達上限 (Rate Limit Exceeded)**\n\nAI 額度暫時耗盡。請點擊下方的「**設定模型 / API Key**」按鈕，填入或更換另一組您自己的 Google Gemini API Key 即可繼續免費使用。\n\n👉 [取得免費 API Key (Google AI Studio)](https://aistudio.google.com/app/apikey)');
         setAiAnalysis(null);
@@ -131,7 +149,9 @@ export const useAiAnalysis = (
     } catch (err: any) {
       const errorMessage = err?.message || '';
       if (errorMessage.includes('429') || errorMessage.includes('Quota')) {
-        setError(isOpenAiModel(geminiModel)
+        setError(isCompatibleAiModel(geminiModel)
+          ? '⚠️ **自訂服務額度已達上限 (Rate Limit Exceeded)**\n\n請檢查第三方服務的額度、速率限制或 API Key。'
+          : isOpenAiModel(geminiModel)
           ? '⚠️ **OpenAI 額度已達上限 (Rate Limit Exceeded)**\n\n請檢查 OpenAI API 額度或更換 API Key。\n\n👉 [前往 OpenAI Platform 管理 API Key](https://platform.openai.com/api-keys)'
           : '⚠️ **AI 額度已達上限 (Rate Limit Exceeded)**\n\nAI 額度暫時耗盡。請點擊下方的「**設定模型 / API Key**」按鈕，填入或更換另一組您自己的 Google Gemini API Key 即可繼續免費使用。\n\n👉 [取得免費 API Key (Google AI Studio)](https://aistudio.google.com/app/apikey)');
       } else {
@@ -141,11 +161,14 @@ export const useAiAnalysis = (
     } finally {
       setAnalyzing(false);
     }
-  }, [data, geminiKey, openAiKey, geminiModel, setError]);
+  }, [data, geminiKey, openAiKey, compatibleAiKey, compatibleAiBaseUrl, compatibleAiModel, geminiModel, setError]);
 
   return {
     geminiKey, setGeminiKey,
     openAiKey, setOpenAiKey,
+    compatibleAiKey, setCompatibleAiKey,
+    compatibleAiBaseUrl, setCompatibleAiBaseUrl,
+    compatibleAiModel, setCompatibleAiModel,
     geminiModel, setGeminiModel,
     showKeySettings, setShowKeySettings,
     aiAnalysis, setAiAnalysis,

@@ -1,6 +1,6 @@
 import React from 'react';
 import { ExternalLink, Settings, X } from 'lucide-react';
-import { AI_MODEL_OPTIONS } from '../data/aiModels';
+import { AI_MODEL_OPTIONS, isCompatibleAiModel } from '../data/aiModels';
 
 interface KeySettingsModalProps {
   show: boolean;
@@ -9,6 +9,12 @@ interface KeySettingsModalProps {
   setGeminiKey: (key: string | null) => void;
   openAiKey: string | null;
   setOpenAiKey: (key: string | null) => void;
+  compatibleAiKey: string | null;
+  setCompatibleAiKey: (key: string | null) => void;
+  compatibleAiBaseUrl: string;
+  setCompatibleAiBaseUrl: (url: string) => void;
+  compatibleAiModel: string;
+  setCompatibleAiModel: (model: string) => void;
   geminiModel: string;
   setGeminiModel: (model: string) => void;
 }
@@ -20,6 +26,12 @@ const KeySettingsModal: React.FC<KeySettingsModalProps> = ({
   setGeminiKey,
   openAiKey,
   setOpenAiKey,
+  compatibleAiKey,
+  setCompatibleAiKey,
+  compatibleAiBaseUrl,
+  setCompatibleAiBaseUrl,
+  compatibleAiModel,
+  setCompatibleAiModel,
   geminiModel,
   setGeminiModel
 }) => {
@@ -101,8 +113,77 @@ const KeySettingsModal: React.FC<KeySettingsModalProps> = ({
                   <option key={option.id} value={option.id}>{option.label}</option>
                 ))}
               </optgroup>
+              <optgroup label="其他服務">
+                {AI_MODEL_OPTIONS.filter(option => option.provider === 'compatible').map(option => (
+                  <option key={option.id} value={option.id}>{option.label}</option>
+                ))}
+              </optgroup>
             </select>
           </div>
+          {isCompatibleAiModel(geminiModel) && (
+            <div className="rounded-xl border border-cyan-700/30 bg-cyan-50/70 p-4 space-y-4 dark:border-cyan-500/30 dark:bg-cyan-950/20">
+              <div>
+                <h3 className="text-sm font-bold text-cyan-700 dark:text-cyan-300">自訂相容服務</h3>
+                <p className="mt-1 text-xs leading-relaxed text-slate-400">
+                  可使用第三方服務提供的 GPT、Claude、Gemini 或其他模型；服務需支援 OpenAI 相容的 Chat Completions 格式。
+                </p>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">Base URL</label>
+                <input
+                  type="url"
+                  value={compatibleAiBaseUrl}
+                  placeholder="https://example.com/v1"
+                  spellCheck={false}
+                  className="w-full p-3 bg-slate-950 border border-slate-700 rounded-lg text-white focus:border-cyan-500 outline-none"
+                  onChange={(e) => {
+                    const val = e.target.value.trim();
+                    setCompatibleAiBaseUrl(val);
+                    if (val) localStorage.setItem('compatible_ai_base_url', val);
+                    else localStorage.removeItem('compatible_ai_base_url');
+                  }}
+                />
+                <p className="mt-1.5 text-xs text-slate-500">
+                  填服務提供的 HTTPS API 位址；系統會自動接上 <code>/chat/completions</code>。
+                </p>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">模型 ID</label>
+                <input
+                  type="text"
+                  value={compatibleAiModel}
+                  placeholder="例如：provider-model-id"
+                  spellCheck={false}
+                  className="w-full p-3 bg-slate-950 border border-slate-700 rounded-lg text-white focus:border-cyan-500 outline-none"
+                  onChange={(e) => {
+                    const val = e.target.value.trim();
+                    setCompatibleAiModel(val);
+                    if (val) localStorage.setItem('compatible_ai_model', val);
+                    else localStorage.removeItem('compatible_ai_model');
+                  }}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">第三方服務 API Key</label>
+                <input
+                  type="password"
+                  value={compatibleAiKey || ''}
+                  placeholder="貼上第三方服務提供的 API Key..."
+                  autoComplete="off"
+                  className="w-full p-3 bg-slate-950 border border-slate-700 rounded-lg text-white focus:border-cyan-500 outline-none"
+                  onChange={(e) => {
+                    const val = e.target.value.trim();
+                    setCompatibleAiKey(val || null);
+                    if (val) localStorage.setItem('compatible_ai_api_key', val);
+                    else localStorage.removeItem('compatible_ai_api_key');
+                  }}
+                />
+              </div>
+              <p className="text-xs leading-relaxed text-amber-700 dark:text-amber-300/80">
+                金鑰會由目前瀏覽器直接傳送到你填寫的服務，請只使用你信任的 HTTPS 網址。
+              </p>
+            </div>
+          )}
         </div>
         <p className="mb-4 text-xs leading-relaxed text-slate-500">
           API Key 只會儲存在目前瀏覽器的本機儲存空間；請勿在公用裝置輸入或將金鑰分享給他人。

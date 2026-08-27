@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { DashboardData } from "../types";
-import { DEFAULT_AI_MODEL, getAiModelOption, isOpenAiModel } from "../data/aiModels";
+import { DEFAULT_AI_MODEL, getAiModelOption, isCompatibleAiModel, isOpenAiModel } from "../data/aiModels";
+import type { CompatibleAiServiceConfig } from "../data/aiModels";
 import type { BossDamageAiSnapshot } from "../calculator/bossDamageCalculator";
 
 // === Helper: 錯誤訊息美化 ===
@@ -379,8 +380,107 @@ const analyzeWithOpenAi = async (
   return `AI Analysis Failed: ⚠️ **OpenAI 模型皆無回應或分析失敗**\n\n${message || '請稍後再試。'}`;
 };
 
-export const analyzeCharacter = async (data: DashboardData, bossDamageSnapshot: BossDamageAiSnapshot, geminiApiKey: string, openAiApiKey: string, modelId: string = DEFAULT_AI_MODEL, ignoreWarnings: boolean = false, onProgress?: (msg: string) => void): Promise<string> => {
-  if (isOpenAiModel(modelId) ? !openAiApiKey : !geminiApiKey) {
+const getCompatibleChatCompletionsUrl = (baseUrl: string): string => {
+  let url: URL;
+  try {
+    url = new URL(baseUrl.trim());
+  } catch {
+    throw new Error('自訂服務 Base URL 格式不正確');
+  }
+
+  if (url.protocol !== 'https:') {
+    throw new Error('自訂服務 Base URL 必須使用 HTTPS');
+  }
+
+  url.hash = '';
+  url.search = '';
+  const path = url.pathname.replace(/\/+$/, '');
+  url.pathname = /\/chat\/completions$/i.test(path) ? path : `${path}/chat/completions`;
+  return url.toString();
+};
+
+const extractCompatibleResponseText = (payload: any): string => {
+  const content = payload?.choices?.[0]?.message?.content;
+  if (typeof content === 'string') return content;
+  if (!Array.isArray(content)) return '';
+
+  return content
+    .map((part: any) => typeof part === 'string' ? part : part?.text)
+    .filter((part: unknown): part is string => typeof part === 'string')
+    .join('');
+};
+
+const analyzeWithCompatibleService = async (
+  prompt: string,
+  config: CompatibleAiServiceConfig,
+  onProgress?: (msg: string) => void,
+): Promise<string> => {
+  const endpoint = getCompatibleChatCompletionsUrl(config.baseUrl);
+  const controller = new AbortController();
+  let timedOut = false;
+  const timeoutMs = 120000;
+  const timeout = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, timeoutMs);
+
+  onProgress?.(`正在連線自訂服務的 ${config.model}...`);
+
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${config.apiKey}`,
+      },
+      body: JSON.stringify({
+        model: config.model,
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: 10000,
+      }),
+      signal: controller.signal,
+    });
+
+    onProgress?.('自訂服務已接收資料，正在生成精簡健檢報告...');
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const message = payload?.error?.message || payload?.message || `自訂服務回應失敗 (${response.status})`;
+      throw new Error(`${response.status}: ${message}`);
+    }
+
+    const text = extractCompatibleResponseText(payload);
+    if (!text) throw new Error(`自訂服務的 ${config.model} 沒有回傳文字內容`);
+    return `${text}\n\n_(自訂相容服務模型：**${config.model}**)_`;
+  } catch (error: any) {
+    if (timedOut || error?.name === 'AbortError') {
+      return 'AI Analysis Failed: ⚠️ **自訂服務連線逾時**\n\n等待模型回應超過 120 秒，請稍後再試。';
+    }
+
+    const message = extractErrorMessage(error);
+    if (isCredentialError(message)) {
+      return 'AI Analysis Failed: ⚠️ **自訂服務的 API Key 無效或沒有權限**\n\n請確認 Key、模型權限與服務帳戶額度。';
+    }
+    if (isQuotaError(message)) {
+      return '⚠️ **自訂服務額度已達上限 (Rate Limit Exceeded)**\n\n請檢查第三方服務的額度、速率限制或更換 API Key。';
+    }
+    if (message.includes('404') || message.toLowerCase().includes('not found')) {
+      return `AI Analysis Failed: ⚠️ **找不到自訂服務端點或模型**\n\n請確認 Base URL 與模型 ID。\n\n錯誤訊息：${message}`;
+    }
+    if (message.toLowerCase().includes('failed to fetch') || message.toLowerCase().includes('networkerror')) {
+      return 'AI Analysis Failed: ⚠️ **瀏覽器無法連線自訂服務**\n\n請確認 Base URL 正確，且該服務允許瀏覽器跨網域連線（CORS）。';
+    }
+    return `AI Analysis Failed: ⚠️ **自訂服務分析失敗**\n\n${message || '請檢查 Base URL、模型 ID 與 API Key。'}`;
+  } finally {
+    clearTimeout(timeout);
+  }
+};
+
+export const analyzeCharacter = async (data: DashboardData, bossDamageSnapshot: BossDamageAiSnapshot, geminiApiKey: string, openAiApiKey: string, compatibleConfig: CompatibleAiServiceConfig, modelId: string = DEFAULT_AI_MODEL, ignoreWarnings: boolean = false, onProgress?: (msg: string) => void): Promise<string> => {
+  if (isCompatibleAiModel(modelId) && (!compatibleConfig.apiKey || !compatibleConfig.baseUrl || !compatibleConfig.model)) {
+    return 'AI Analysis Failed: 💡 **請先完成自訂相容服務設定**\n\n請填寫 Base URL、模型 ID 與該服務提供的 API Key。';
+  }
+
+  if (!isCompatibleAiModel(modelId) && (isOpenAiModel(modelId) ? !openAiApiKey : !geminiApiKey)) {
     return isOpenAiModel(modelId)
       ? "💡 **請先設定 OpenAI API Key**\n\n請點擊 **「設定模型 / API Key」**，輸入您的 OpenAI API Key 後再執行分析。\n\n👉 [前往 OpenAI Platform 建立 API Key](https://platform.openai.com/api-keys)"
       : "💡 **請在使用前設定您的 API Key**\n\n基於資安考量，本站不再內建公用的 API Key。\n請點擊右下方的 **「設定模型 / API Key」** 按鈕，輸入您專屬的 [Google Gemini API 金鑰](https://aistudio.google.com/app/apikey) 以啟用分析功能。";
@@ -523,6 +623,10 @@ export const analyzeCharacter = async (data: DashboardData, bossDamageSnapshot: 
 
     禁止開場白、中途省略、重複章節或改變 0→1→2→3→4 順序。
   `;
+
+  if (isCompatibleAiModel(modelId)) {
+    return analyzeWithCompatibleService(prompt, compatibleConfig, onProgress);
+  }
 
   if (isOpenAiModel(modelId)) {
     return analyzeWithOpenAi(prompt, openAiApiKey, modelId, onProgress);
