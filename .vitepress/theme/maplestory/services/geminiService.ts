@@ -415,7 +415,10 @@ const analyzeWithCompatibleService = async (
   config: CompatibleAiServiceConfig,
   onProgress?: (msg: string) => void,
 ): Promise<string> => {
-  const endpoint = getCompatibleChatCompletionsUrl(config.baseUrl);
+  let endpoint = config.baseUrl.trim();
+  let responseStatus: number | null = null;
+  let responseStatusText = '';
+  let responsePayload: unknown = null;
   const controller = new AbortController();
   let timedOut = false;
   const timeoutMs = 120000;
@@ -427,6 +430,7 @@ const analyzeWithCompatibleService = async (
   onProgress?.(`正在連線自訂服務的 ${config.model}...`);
 
   try {
+    endpoint = getCompatibleChatCompletionsUrl(config.baseUrl);
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
@@ -443,6 +447,9 @@ const analyzeWithCompatibleService = async (
 
     onProgress?.('自訂服務已接收資料，正在生成精簡健檢報告...');
     const payload = await response.json().catch(() => ({}));
+    responseStatus = response.status;
+    responseStatusText = response.statusText;
+    responsePayload = payload;
     if (!response.ok) {
       const message = payload?.error?.message || payload?.message || `自訂服務回應失敗 (${response.status})`;
       throw new Error(`${response.status}: ${message}`);
@@ -452,24 +459,33 @@ const analyzeWithCompatibleService = async (
     if (!text) throw new Error(`自訂服務的 ${config.model} 沒有回傳文字內容`);
     return `${text}\n\n_(自訂相容服務模型：**${config.model}**)_`;
   } catch (error: any) {
+    const message = extractErrorMessage(error);
+    console.error('[AI 健檢][自訂相容服務] 請求失敗', {
+      endpoint,
+      model: config.model,
+      status: responseStatus,
+      statusText: responseStatusText,
+      response: responsePayload,
+      error: message,
+    });
+
     if (timedOut || error?.name === 'AbortError') {
-      return 'AI Analysis Failed: ⚠️ **自訂服務連線逾時**\n\n等待模型回應超過 120 秒，請稍後再試。';
+      return 'AI Analysis Failed: ⚠️ **AI 自訂服務連線逾時**\n\n等待模型回應超過 120 秒，請稍後再試。';
     }
 
-    const message = extractErrorMessage(error);
     if (isCredentialError(message)) {
-      return 'AI Analysis Failed: ⚠️ **自訂服務的 API Key 無效或沒有權限**\n\n請確認 Key、模型權限與服務帳戶額度。';
+      return 'AI Analysis Failed: ⚠️ **AI 自訂服務的 API Key 無效或沒有權限**\n\n請確認 Key、模型權限與服務帳戶額度；詳細回應已輸出至瀏覽器控制台。';
     }
     if (isQuotaError(message)) {
-      return '⚠️ **自訂服務額度已達上限 (Rate Limit Exceeded)**\n\n請檢查第三方服務的額度、速率限制或更換 API Key。';
+      return '⚠️ **AI 自訂服務額度已達上限 (Rate Limit Exceeded)**\n\n請檢查第三方服務的額度、速率限制或更換 API Key。';
     }
     if (message.includes('404') || message.toLowerCase().includes('not found')) {
-      return `AI Analysis Failed: ⚠️ **找不到自訂服務端點或模型**\n\n請確認 Base URL 與模型 ID。\n\n錯誤訊息：${message}`;
+      return `AI Analysis Failed: ⚠️ **AI 找不到自訂服務端點或模型**\n\n請確認 Base URL 與模型 ID。\n\n錯誤訊息：${message}`;
     }
     if (message.toLowerCase().includes('failed to fetch') || message.toLowerCase().includes('networkerror')) {
-      return 'AI Analysis Failed: ⚠️ **瀏覽器無法連線自訂服務**\n\n請確認 Base URL 正確，且該服務允許瀏覽器跨網域連線（CORS）。';
+      return 'AI Analysis Failed: ⚠️ **AI 瀏覽器無法連線自訂服務**\n\n請確認 Base URL 正確，且該服務允許瀏覽器跨網域連線（CORS）。';
     }
-    return `AI Analysis Failed: ⚠️ **自訂服務分析失敗**\n\n${message || '請檢查 Base URL、模型 ID 與 API Key。'}`;
+    return `AI Analysis Failed: ⚠️ **AI 自訂服務分析失敗**\n\n${message || '請檢查 Base URL、模型 ID 與 API Key。'}`;
   } finally {
     clearTimeout(timeout);
   }
@@ -477,7 +493,7 @@ const analyzeWithCompatibleService = async (
 
 export const analyzeCharacter = async (data: DashboardData, bossDamageSnapshot: BossDamageAiSnapshot, geminiApiKey: string, openAiApiKey: string, compatibleConfig: CompatibleAiServiceConfig, modelId: string = DEFAULT_AI_MODEL, ignoreWarnings: boolean = false, onProgress?: (msg: string) => void): Promise<string> => {
   if (isCompatibleAiModel(modelId) && (!compatibleConfig.apiKey || !compatibleConfig.baseUrl || !compatibleConfig.model)) {
-    return 'AI Analysis Failed: 💡 **請先完成自訂相容服務設定**\n\n請填寫 Base URL、模型 ID 與該服務提供的 API Key。';
+    return 'AI Analysis Failed: 💡 **請先完成 AI 自訂相容服務設定**\n\n請填寫 Base URL、模型 ID 與該服務提供的 API Key。';
   }
 
   if (!isCompatibleAiModel(modelId) && (isOpenAiModel(modelId) ? !openAiApiKey : !geminiApiKey)) {

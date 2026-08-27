@@ -134,7 +134,7 @@ export const useAiAnalysis = (
 
       if (isQuotaError || isShortErrorWith429) {
         setError(isCompatibleAiModel(geminiModel)
-          ? '⚠️ **自訂服務額度已達上限 (Rate Limit Exceeded)**\n\n請檢查第三方服務的額度、速率限制或 API Key。'
+          ? '⚠️ **AI 自訂服務額度已達上限 (Rate Limit Exceeded)**\n\n請檢查第三方服務的額度、速率限制或 API Key。'
           : isOpenAiModel(geminiModel)
           ? '⚠️ **OpenAI 額度已達上限 (Rate Limit Exceeded)**\n\n請檢查 OpenAI API 額度或更換 API Key。\n\n👉 [前往 OpenAI Platform 管理 API Key](https://platform.openai.com/api-keys)'
           : '⚠️ **AI 額度已達上限 (Rate Limit Exceeded)**\n\nAI 額度暫時耗盡。請點擊下方的「**設定模型 / API Key**」按鈕，填入或更換另一組您自己的 Google Gemini API Key 即可繼續免費使用。\n\n👉 [取得免費 API Key (Google AI Studio)](https://aistudio.google.com/app/apikey)');
@@ -150,7 +150,7 @@ export const useAiAnalysis = (
       const errorMessage = err?.message || '';
       if (errorMessage.includes('429') || errorMessage.includes('Quota')) {
         setError(isCompatibleAiModel(geminiModel)
-          ? '⚠️ **自訂服務額度已達上限 (Rate Limit Exceeded)**\n\n請檢查第三方服務的額度、速率限制或 API Key。'
+          ? '⚠️ **AI 自訂服務額度已達上限 (Rate Limit Exceeded)**\n\n請檢查第三方服務的額度、速率限制或 API Key。'
           : isOpenAiModel(geminiModel)
           ? '⚠️ **OpenAI 額度已達上限 (Rate Limit Exceeded)**\n\n請檢查 OpenAI API 額度或更換 API Key。\n\n👉 [前往 OpenAI Platform 管理 API Key](https://platform.openai.com/api-keys)'
           : '⚠️ **AI 額度已達上限 (Rate Limit Exceeded)**\n\nAI 額度暫時耗盡。請點擊下方的「**設定模型 / API Key**」按鈕，填入或更換另一組您自己的 Google Gemini API Key 即可繼續免費使用。\n\n👉 [取得免費 API Key (Google AI Studio)](https://aistudio.google.com/app/apikey)');
