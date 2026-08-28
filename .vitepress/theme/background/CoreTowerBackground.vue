@@ -298,8 +298,8 @@ body.theme-coretower .VPNav,
 body.theme-coretower .VPNavBar {
   background: linear-gradient(180deg, rgba(2, 7, 17, 0.88), rgba(4, 10, 22, 0.62)) !important;
   border-bottom-color: rgba(74, 218, 255, 0.24) !important;
-  backdrop-filter: blur(14px) saturate(1.18);
   -webkit-backdrop-filter: blur(14px) saturate(1.18);
+  backdrop-filter: blur(14px) saturate(1.18);
 }
 
 body.theme-coretower .VPDoc .content:not(.VPDocAsideOutline):not(.VPDocAsideOutline *),

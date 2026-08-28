@@ -263,16 +263,16 @@ html:not(.dark) body:has(#maplestory-root) .VPNavBar:not(.top) {
   background: rgba(255, 255, 255, 0.68) !important;
   border-bottom-color: rgba(15, 23, 42, 0.1) !important;
   box-shadow: 0 8px 28px rgba(15, 23, 42, 0.12) !important;
-  backdrop-filter: blur(20px) saturate(150%) !important;
   -webkit-backdrop-filter: blur(20px) saturate(150%) !important;
+  backdrop-filter: blur(20px) saturate(150%) !important;
 }
 
 html.dark body:has(#maplestory-root) .VPNavBar:not(.top) {
   background: rgba(6, 13, 16, 0.76) !important;
   border-bottom-color: rgba(255, 255, 255, 0.1) !important;
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28) !important;
-  backdrop-filter: blur(20px) saturate(150%) !important;
   -webkit-backdrop-filter: blur(20px) saturate(150%) !important;
+  backdrop-filter: blur(20px) saturate(150%) !important;
 }
 
 body:has(#maplestory-root) .VPNavBar:not(.top) > .wrapper,
@@ -483,8 +483,8 @@ html:not(.dark) #maplestory-root [class~="shadow-2xl"] {
   background: rgba(6, 18, 26, 0.58) !important;
   border-color: rgba(255, 255, 255, 0.14) !important;
   box-shadow: 0 14px 36px rgba(0, 0, 0, 0.2) !important;
-  backdrop-filter: blur(16px) saturate(140%) !important;
   -webkit-backdrop-filter: blur(16px) saturate(140%) !important;
+  backdrop-filter: blur(16px) saturate(140%) !important;
 }
 
 #maplestory-root .maple-ranking-panel [class~="text-slate-400"],
@@ -563,8 +563,8 @@ html:not(.dark) #maplestory-root .maple-ranking-panel [class~="text-slate-300"] 
   color: #e2e8f0;
   background: rgba(8, 18, 28, 0.94);
   border-color: rgba(148, 163, 184, 0.34);
-  backdrop-filter: blur(14px) saturate(135%);
   -webkit-backdrop-filter: blur(14px) saturate(135%);
+  backdrop-filter: blur(14px) saturate(135%);
 }
 
 #maplestory-root .maple-character-search-input,
@@ -572,8 +572,8 @@ html:not(.dark) #maplestory-root .maple-ranking-panel [class~="text-slate-300"] 
   background: rgba(6, 18, 26, 0.5) !important;
   border-color: rgba(255, 255, 255, 0.16) !important;
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18) !important;
-  backdrop-filter: blur(22px) saturate(150%) !important;
   -webkit-backdrop-filter: blur(22px) saturate(150%) !important;
+  backdrop-filter: blur(22px) saturate(150%) !important;
 }
 
 #maplestory-root .maple-search-leading-icon {
@@ -593,8 +593,8 @@ html:not(.dark) #maplestory-root .maple-ranking-panel [class~="text-slate-300"] 
   border-radius: 12px;
   background: rgba(6, 18, 26, 0.46);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
-  backdrop-filter: blur(22px) saturate(150%);
   -webkit-backdrop-filter: blur(22px) saturate(150%);
+  backdrop-filter: blur(22px) saturate(150%);
 }
 
 #maplestory-root .maple-date-control input {
@@ -711,8 +711,8 @@ html:not(.dark) body:has(#maplestory-root) #maplestory-root .custom-vp-tip {
   background: rgba(249, 253, 255, 0.74) !important;
   border-left-color: #087f94 !important;
   box-shadow: 0 14px 36px rgba(35, 76, 94, 0.14) !important;
-  backdrop-filter: blur(24px) saturate(145%) !important;
   -webkit-backdrop-filter: blur(24px) saturate(145%) !important;
+  backdrop-filter: blur(24px) saturate(145%) !important;
 }
 
 html:not(.dark) body:has(#maplestory-root) #maplestory-root .custom-vp-tip .font-bold {

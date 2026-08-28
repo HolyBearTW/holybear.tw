@@ -1424,8 +1424,8 @@ function toggleRepeatOne() {
     z-index: -1;
     border-radius: inherit;
     background: rgba(18, 20, 26, 0.54);
-    backdrop-filter: blur(28px) saturate(160%);
     -webkit-backdrop-filter: blur(28px) saturate(160%);
+    backdrop-filter: blur(28px) saturate(160%);
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     pointer-events: none;
 }
@@ -1511,8 +1511,8 @@ function toggleRepeatOne() {
     transform: translate3d(0, 0, 0);
     backface-visibility: hidden;
     contain: paint;
-    backdrop-filter: blur(84px) saturate(170%) contrast(116%) brightness(108%);
     -webkit-backdrop-filter: blur(84px) saturate(170%) contrast(116%) brightness(108%);
+    backdrop-filter: blur(84px) saturate(170%) contrast(116%) brightness(108%);
   }
 
   .music-info::before {
@@ -1522,8 +1522,8 @@ function toggleRepeatOne() {
     z-index: 0;
     border-radius: inherit;
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(8, 14, 22, 0.22) 28%, rgba(8, 14, 22, 0.3));
-    backdrop-filter: blur(84px) saturate(170%) contrast(116%) brightness(108%);
     -webkit-backdrop-filter: blur(84px) saturate(170%) contrast(116%) brightness(108%);
+    backdrop-filter: blur(84px) saturate(170%) contrast(116%) brightness(108%);
     pointer-events: none;
   }
 
@@ -1577,8 +1577,8 @@ function toggleRepeatOne() {
     width: 30px;
     height: 108px;
     background: rgba(22, 24, 31, 0.84);
-    backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
     border: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow: 0 10px 28px rgba(0, 0, 0, 0.24),
           inset 0 0 0 1px rgba(0, 255, 238, 0.05);
@@ -2001,8 +2001,8 @@ function toggleRepeatOne() {
 @media (max-width: 768px) {
   .music-info,
   .music-info::before {
-    backdrop-filter: blur(24px) saturate(140%) contrast(108%) brightness(104%);
     -webkit-backdrop-filter: blur(24px) saturate(140%) contrast(108%) brightness(104%);
+    backdrop-filter: blur(24px) saturate(140%) contrast(108%) brightness(104%);
   }
 }
 
@@ -2044,8 +2044,8 @@ function toggleRepeatOne() {
 
 :global(html:not(.dark) .music-container::before) {
   background: rgba(246, 252, 255, 0.82);
-  backdrop-filter: blur(28px) saturate(145%);
   -webkit-backdrop-filter: blur(28px) saturate(145%);
+  backdrop-filter: blur(28px) saturate(145%);
 }
 
 :global(html:not(.dark) .music-info) {
@@ -2162,8 +2162,8 @@ function toggleRepeatOne() {
   background: rgba(246, 252, 255, 0.94);
   border: 1px solid rgba(7, 108, 133, 0.2);
   box-shadow: 0 8px 24px rgba(35, 76, 94, 0.2);
-  backdrop-filter: blur(18px) saturate(145%);
   -webkit-backdrop-filter: blur(18px) saturate(145%);
+  backdrop-filter: blur(18px) saturate(145%);
 }
 
 /* ==================== 深色模式 (Dark Mode) ==================== */

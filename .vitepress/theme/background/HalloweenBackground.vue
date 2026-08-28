@@ -310,8 +310,8 @@ body.theme-halloween header::before {
   inset: 0;
   z-index: 0;
   /* This pseudo-element is now ONLY for the blur effect */
-  backdrop-filter: blur(2px) !important;
   -webkit-backdrop-filter: blur(2px) !important;
+  backdrop-filter: blur(2px) !important;
   pointer-events: none;
 }
 body.theme-halloween .VPNav > *,
@@ -334,8 +334,8 @@ body.theme-halloween .VPNav.is-scrolled header::before {
 body.theme-halloween .VPNav.is-scrolled .VPNavBar-bg {
   /* Use a semi-transparent background to allow the blur to be visible. */
   background-color: rgba(34, 34, 34, 0.7) !important;
-  backdrop-filter: blur(2px) !important;
   -webkit-backdrop-filter: blur(2px) !important;
+  backdrop-filter: blur(2px) !important;
 }
 body.theme-halloween {
   --vp-c-brand: #ff9800 !important;
@@ -368,8 +368,8 @@ body.theme-halloween h6 {
     inset: 0 !important;
     z-index: 99999 !important;
     background-color: rgba(34,34,34,0.6) !important;
-    backdrop-filter: blur(8px) !important;
     -webkit-backdrop-filter: blur(8px) !important;
+    backdrop-filter: blur(8px) !important;
     overflow: auto !important;
   }
   body.theme-halloween .VPNavScreen .VPNavScreenMenu {
@@ -387,8 +387,8 @@ body.theme-halloween h6 {
 /* 使用預設的 VPNavScreenMenu 樣式以維持一致性 */
 body.theme-halloween .VPNavScreen {
   background-color: transparent !important;
-  backdrop-filter: blur(8px) !important;
   -webkit-backdrop-filter: blur(8px) !important;
+  backdrop-filter: blur(8px) !important;
 }
 
 /* 非首頁時：與站內預設一致 */
