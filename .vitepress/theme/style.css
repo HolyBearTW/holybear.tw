@@ -774,8 +774,8 @@ body:not(:has(.VPHome)):not(.is-home-page) .VPNavBar .divider-line {
   background-image: none !important;
   border-bottom: none !important;
   box-shadow: none !important;
-  backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
   overflow: visible !important;
 }
 
@@ -827,8 +827,8 @@ body.is-home-page .VPNavBar.top {
   background: transparent !important;
   background-image: none !important;
   box-shadow: none !important;
-  backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
   border-bottom: none !important;
 }
 
@@ -1762,8 +1762,8 @@ body:not(:has(.VPHome)):not(.is-home-page) .VPLocalNav .divider-line {
     background-color: transparent !important;
     border-color: transparent !important;
     box-shadow: none !important;
-    backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
   }
 
   body.is-blog-page .VPNavBar.has-sidebar:has(.VPFlyout:hover)::after,
@@ -3322,8 +3322,8 @@ body.is-home-page .VPNavBar .divider-line {
     background: transparent !important;
     background-image: none !important;
     box-shadow: none !important;
-    backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
   }
 
   body:has(.VPNavBarHamburger[aria-expanded="true"]) .VPNavScreen {
@@ -3336,8 +3336,8 @@ body.is-home-page .VPNavBar .divider-line {
     background-color: transparent !important;
     background-image: none !important;
     box-shadow: none !important;
-    backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
   }
 
   .VPNavBar.top.screen-open,
@@ -3359,8 +3359,8 @@ body.is-home-page .VPNavBar .divider-line {
     background-color: transparent !important;
     background-image: none !important;
     box-shadow: none !important;
-    backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
   }
 
   body:has(.VPNavBarHamburger[aria-expanded="true"]) .VPNavBarTitle,
@@ -4117,8 +4117,8 @@ body:has(.VPHero) .VPNav {
   z-index: 80 !important;
   background: transparent !important;
   box-shadow: none !important;
-  backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
 }
 
 body:has(.hb-home-lobby) .VPNavBar.top,
@@ -4133,8 +4133,8 @@ body:has(.VPHero) .VPNavBar.top .content-body {
   background-image: none !important;
   border-color: transparent !important;
   box-shadow: none !important;
-  backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
 }
 
 body:has(.hb-home-lobby) .VPNavBar:not(.top),
@@ -4161,8 +4161,8 @@ body:has(.VPHero) .VPNavBar::after {
   background: transparent !important;
   border-color: transparent !important;
   box-shadow: none !important;
-  backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
 }
 
 /* VitePress Hero 本身已有導覽列避讓空間，避免在 VPContent 重複計算 */
@@ -4275,8 +4275,8 @@ html body.is-blog-page.hb-at-scroll-top:not(:has(.VPHome)):not(.is-home-page) .V
   background-image: none !important;
   border-color: transparent !important;
   box-shadow: none !important;
-  backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
 }
 
 html body.is-blog-page.hb-at-scroll-top:not(:has(.VPHome)):not(.is-home-page) .VPNavBar.has-sidebar::before,
@@ -4288,8 +4288,8 @@ html body.is-blog-page.hb-at-scroll-top:not(:has(.VPHome)):not(.is-home-page) .V
   background: transparent !important;
   border: 0 !important;
   box-shadow: none !important;
-  backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
 }
 
 /* Blog desktop sidebar shell must stay invisible; only #VPSidebarNav is a card. */
@@ -4372,8 +4372,8 @@ html:not(.dark) body.is-blog-page .VPNavBar {
   background: transparent !important;
   border-bottom-color: transparent !important;
   box-shadow: none !important;
-  backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
 }
 
 @media (min-width: 960px) {
@@ -4711,8 +4711,8 @@ html:not(.dark) body.blog-index-page .VPNavBar .content-body {
   background: transparent !important;
   border-bottom-color: transparent !important;
   box-shadow: none !important;
-  backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
 }
 
 html:not(.dark) body.blog-index-page .VPNavBarTitle .title,
@@ -4768,16 +4768,16 @@ html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPNavBar .content-b
   background: transparent !important;
   border-bottom-color: transparent !important;
   box-shadow: none !important;
-  backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
 }
 
 html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPNav:has(.VPNavBar.top) {
   background: transparent !important;
   border-bottom-color: transparent !important;
   box-shadow: none !important;
-  backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
 }
 
 html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPNavBarTitle .title,
@@ -4876,8 +4876,8 @@ html:not(.dark) body .VPNav:has(.VPNavBar.top) .VPNavBar .content-body {
   background-color: transparent !important;
   border-bottom-color: transparent !important;
   box-shadow: none !important;
-  backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
 }
 
 html:not(.dark) body .VPNav:has(.VPNavBar.top) .VPNavBarTitle .title,
@@ -4910,8 +4910,8 @@ html body .VPNav:has(.VPNavBar.top) .VPNavBar .content-body {
   background-image: none !important;
   border-color: transparent !important;
   box-shadow: none !important;
-  backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
 }
 
 html body .VPNav:has(.VPNavBar.top) .VPNavBar.has-sidebar::before,
@@ -4921,8 +4921,8 @@ html body .VPNav:has(.VPNavBar.top) .VPNavBar.has-sidebar::after {
   background: transparent !important;
   border-color: transparent !important;
   box-shadow: none !important;
-  backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
 }
 
 /* Blog articles: use one full-width glass layer after scrolling. */
@@ -4973,8 +4973,8 @@ html body.is-blog-page .VPNavBar:not(.top) .divider-line {
     background-image: none !important;
     border-color: transparent !important;
     box-shadow: none !important;
-    backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
   }
 
   html:not(.dark) body.is-blog-page .VPLocalNav .menu,
@@ -5034,8 +5034,8 @@ html body.hb-at-scroll-top .VPNavBar .content-body {
   background-image: none !important;
   border-color: transparent !important;
   box-shadow: none !important;
-  backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
 }
 
 html body.hb-at-scroll-top .VPNavBar.has-sidebar::before,
@@ -5044,8 +5044,8 @@ html body.hb-at-scroll-top .VPNavBar.has-sidebar::after {
   content: none !important;
   background: transparent !important;
   box-shadow: none !important;
-  backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
 }
 
 /* Blog article footer controls: readable light glass instead of dark defaults. */
