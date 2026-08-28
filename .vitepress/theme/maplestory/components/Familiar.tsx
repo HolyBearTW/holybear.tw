@@ -305,6 +305,22 @@ const Familiar: React.FC<FamiliarProps> = ({ data }) => {
       return true;
     }
 
+    // 兩條以上相同的重要戰鬥類型，即使單條數值較低也直接列入顯示。
+    const optionTexts = options
+      .filter(option => !isExcludedThresholdOption(option))
+      .map(option => `${option.option_name || ''}${option.option_value || ''}`.replace(/\s+/g, ''));
+    const categoryCounts = {
+      finalDamage: optionTexts.filter(text => text.includes('最終傷害') || text.includes('終傷')).length,
+      physicalAttack: optionTexts.filter(text => text.includes('物理攻擊力') || (text.includes('攻擊力') && !text.includes('魔法攻擊力'))).length,
+      magicAttack: optionTexts.filter(text => text.includes('魔法攻擊力') || text.includes('魔力')).length,
+      ignoreDefense: optionTexts.filter(text => text.includes('無視怪物防禦率') || text.includes('無視防禦率') || text.includes('無視防禦')).length,
+      buffDuration: optionTexts.filter(text => text.includes('加持技能持續時間') || text.includes('加持持續時間')).length,
+    };
+
+    if (Object.values(categoryCounts).some(count => count >= 2)) {
+      return true;
+    }
+
     return options.some(option => !isExcludedThresholdOption(option) && parseOptionValue(option.option_value) >= 10);
   };
 
