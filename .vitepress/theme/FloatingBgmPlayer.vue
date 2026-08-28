@@ -1440,8 +1440,8 @@ function toggleRepeatOne() {
 
 .music-container.minimized::before {
   background: transparent !important;
-  backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
 }
 
 .music-container.minimized > *:not(.music-info) {
@@ -1475,8 +1475,8 @@ function toggleRepeatOne() {
 
 .music-container.info-hidden::before {
   background: transparent !important;
-  backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
 }
 
 .music-container.info-hidden > *:not(.sidebar-toggle) {
