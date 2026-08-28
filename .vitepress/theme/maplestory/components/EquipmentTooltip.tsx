@@ -214,6 +214,26 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
   const additionalPotentialSealed = isPotentialSealed(item.additional_potential_option_flag);
   const { count: exceptionalCount, lines: exceptionalOptions } = extractExceptionalData(item);
   const hasExceptionalEnhancement = exceptionalCount > 0;
+  const legacySoulName = String(item.soul_name || '').trim();
+  const legacySoulOption = String(item.soul_option || '').trim();
+  const hasLegacySoul = Boolean(legacySoulName || legacySoulOption);
+  const legacySoulSkillName = /武公/.test(legacySoulName)
+    ? '無雙之力'
+    : /艾畢奈亞|艾畢/.test(legacySoulName)
+      ? '妖精密語'
+      : /瑪麗西亞/.test(legacySoulName)
+        ? '瑪麗西亞靈魂寶珠'
+        : '';
+  const soulWeaponGrade = String(item.soul_weapon_grade || '').trim();
+  const soulWeaponLevel = String(item.soul_weapon_level || '').trim();
+  const soulWeaponPowerIncrease = String(item.soul_weapon_power_increase || '').trim();
+  const soulWeaponOption = String(item.soul_weapon_option || '').trim();
+  const hasSoulWeapon = Boolean(
+    soulWeaponGrade || soulWeaponLevel || soulWeaponPowerIncrease || soulWeaponOption,
+  );
+  const formattedSoulWeaponPowerIncrease = /^[+-]/.test(soulWeaponPowerIncrease)
+    ? soulWeaponPowerIncrease
+    : `+${soulWeaponPowerIncrease}`;
   const mainPotentialLines = [item.potential_option_1, item.potential_option_2, item.potential_option_3]
     .filter(Boolean)
     .map((text, index) => {
@@ -639,19 +659,49 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
           </div>
           )}
 
-          {item.soul_name && <DotDivider />}
+          {hasLegacySoul && <DotDivider />}
 
-          {item.soul_name && (
+          {hasLegacySoul && (
+          <div className="px-3 py-[2px] relative z-10">
+           <div className="flex items-center gap-1.5 text-xs font-bold mb-[1px] text-white">
+              <div className="w-5 h-5 rounded border border-red-500 flex items-center justify-center text-[10px] bg-slate-800">
+                  魂
+              </div>
+              <span>靈魂寶珠：{legacySoulName || '已裝備'}</span>
+           </div>
+           <div className="text-xs space-y-[1px] text-white pl-1">
+              <p className="mb-0">靈魂武器：0 / 1000（攻擊力 +0，魔力 +0）</p>
+              {legacySoulOption && <p className="mb-0">{legacySoulOption}</p>}
+              {legacySoulSkillName && <p className="mb-0">[{legacySoulSkillName}]技能可使用</p>}
+           </div>
+        </div>
+          )}
+
+          {hasSoulWeapon && <DotDivider />}
+
+          {hasSoulWeapon && (
           <div className="px-3 py-[2px] relative z-10">
            <div className="flex items-center gap-1.5 text-xs font-bold mb-[1px] text-red-400">
               <div className="w-5 h-5 rounded border border-red-500 flex items-center justify-center text-[10px] bg-slate-800">
                   魂
               </div>
-              <span>靈魂寶珠</span>
+              <span>靈魂武器</span>
            </div>
            <div className="text-xs space-y-[1px] text-white pl-1">
-              <p className="font-bold text-red-400 mb-0">{item.soul_name}</p>
-              {item.soul_option && <p className="mb-0">{item.soul_option}</p>}
+              {soulWeaponGrade && (
+                <p className="font-bold text-red-400 mb-0">靈魂武器 - 第{soulWeaponGrade}階段</p>
+              )}
+              {soulWeaponLevel && (
+                <p className="mb-0">
+                  Lv. {soulWeaponLevel}
+                  {soulWeaponPowerIncrease && `（攻擊力/魔力 ${formattedSoulWeaponPowerIncrease}）`}
+                </p>
+              )}
+              {!soulWeaponLevel && soulWeaponPowerIncrease && (
+                <p className="mb-0">攻擊力/魔力 {formattedSoulWeaponPowerIncrease}</p>
+              )}
+              {soulWeaponOption && <p className="mb-0">{soulWeaponOption}</p>}
+              <p className="mb-0">可使用靈魂鬥志技能</p>
            </div>
         </div>
           )}
