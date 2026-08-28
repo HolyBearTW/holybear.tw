@@ -1,7 +1,12 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Search, Loader2, TrendingUp, Star, History, X, AlertCircle } from 'lucide-react';
+import { SERVER_ICONS } from '../constants';
+import { fetchMaplerHouseCharacterRank, MaplerHouseCharacterRank } from '../services/maplerhouseService';
+import { fetchCharacterBasic } from '../services/nexonService';
+import { CharacterBasic } from '../types';
 
 interface SearchFormProps {
+    apiKey?: string | null;
     selectedDate: string;
     setSelectedDate: (date: string) => void;
     characterName: string;
@@ -18,6 +23,7 @@ interface SearchFormProps {
 }
 
 const SearchForm: React.FC<SearchFormProps> = ({
+    apiKey,
     selectedDate,
     setSelectedDate,
     characterName,
@@ -34,6 +40,73 @@ const SearchForm: React.FC<SearchFormProps> = ({
 }) => {
     const [showHistory, setShowHistory] = useState(false);
     const searchInputRef = useRef<HTMLInputElement>(null);
+    const [characterRanks, setCharacterRanks] = useState<Record<string, MaplerHouseCharacterRank | null>>({});
+    const [characterBasics, setCharacterBasics] = useState<Record<string, CharacterBasic | null>>({});
+
+    useEffect(() => {
+        const name = characterName.trim();
+        if (name) localStorage.setItem('maple_last_search_name', name);
+    }, [characterName]);
+
+    useEffect(() => {
+        const names = Array.from(new Set([...favorites, ...searchHistory]));
+        if (names.length === 0) {
+            setCharacterRanks({});
+            return;
+        }
+
+        let active = true;
+        Promise.all(names.map(async (name) => [name, await fetchMaplerHouseCharacterRank(name)] as const))
+            .then((results) => {
+                if (!active) return;
+                setCharacterRanks(Object.fromEntries(results));
+            })
+            .catch(() => {
+                if (active) setCharacterRanks({});
+            });
+
+        return () => {
+            active = false;
+        };
+    }, [favorites, searchHistory]);
+
+    useEffect(() => {
+        if (!showHistory || !apiKey) return;
+        const names = Array.from(new Set([...favorites, ...searchHistory]));
+        let active = true;
+        Promise.all(names.map(async (name) => [name, await fetchCharacterBasic(name, apiKey)] as const))
+            .then((results) => {
+                if (active) setCharacterBasics((current) => ({ ...current, ...Object.fromEntries(results) }));
+            });
+        return () => { active = false; };
+    }, [apiKey, favorites, searchHistory, showHistory]);
+
+    const renderCharacterMeta = (name: string) => {
+        const rankInfo = characterRanks[name];
+        const entry = rankInfo?.entry;
+        const basic = characterBasics[name];
+        const hasRankLookup = Object.prototype.hasOwnProperty.call(characterRanks, name);
+        const characterImage = entry?.characterImage || basic?.character_image;
+        const worldName = entry?.worldName || basic?.world_name;
+        return (
+            <>
+                <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full bg-slate-800 ring-1 ring-slate-600/60">
+                    {characterImage ? (
+                        <img src={characterImage} alt="" className="absolute left-1/2 top-1/2 h-[72px] w-[72px] -translate-x-1/2 -translate-y-1/2 object-cover" aria-hidden="true" />
+                    ) : <span className="flex h-full w-full items-center justify-center text-[10px] text-slate-500">?</span>}
+                </div>
+                <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1">
+                        {worldName && SERVER_ICONS[worldName] ? <img src={SERVER_ICONS[worldName]} alt="" width={12} height={12} className="shrink-0" aria-hidden="true" /> : null}
+                        <span className="truncate">{name}</span>
+                    </div>
+                    <div className="mt-0.5 flex items-center gap-1 text-[11px] text-slate-400">
+                        {!hasRankLookup ? <span>排名資料查詢中…</span> : rankInfo ? <><span>第 {rankInfo.rank.toLocaleString()} 名</span><span>・</span><span>{entry.combatPower.toLocaleString()}</span></> : <span>未列入近期戰力排名</span>}
+                    </div>
+                </div>
+            </>
+        );
+    };
 
     const removeFromHistory = (e: React.MouseEvent, name: string) => {
         e.stopPropagation();
@@ -90,15 +163,15 @@ const SearchForm: React.FC<SearchFormProps> = ({
                 </div>
                 
                 {(showHistory && (searchHistory.length > 0 || favorites.length > 0)) && (
-                    <div className="absolute top-full left-0 right-0 mt-2 bg-[#1a1d24] border border-slate-700 rounded-xl shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
+                    <div className="maple-search-history-panel absolute top-full left-0 right-0 mt-2 rounded-xl border z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
                         {favorites.length > 0 && (
                             <>
-                                <div className="flex items-center justify-between px-4 py-2 border-b border-slate-700/50 bg-[#15171c]">
+                                <div className="flex items-center justify-between px-4 py-2 border-b border-slate-700/50 bg-transparent">
                                     <span className="text-xs font-bold text-yellow-400 flex items-center gap-1"><Star className="w-3 h-3 fill-yellow-400" /> 收藏角色</span>
                                 </div>
                                 {favorites.map((name, idx) => (
-                                    <div key={`fav-${idx}`} onClick={() => { setCharacterName(name); handleSearch(undefined, name); }} className="px-4 py-3 text-sm text-slate-300 hover:bg-indigo-600/20 hover:text-indigo-300 cursor-pointer flex justify-between items-center group/item transition-colors">
-                                        <span>{name}</span>
+                                    <div key={`fav-${idx}`} onClick={() => { setCharacterName(name); setShowHistory(false); handleSearch(undefined, name); }} className="px-4 py-2.5 text-sm text-slate-300 hover:bg-indigo-600/20 hover:text-indigo-300 cursor-pointer flex items-center gap-3 group/item transition-colors">
+                                        {renderCharacterMeta(name)}
                                         <button type="button" onClick={(e) => toggleFavorite(e, name)} className="opacity-0 group-hover/item:opacity-100 p-1 hover:bg-slate-700 rounded text-yellow-500 hover:text-yellow-400 transition-all">
                                             <Star className="w-3 h-3 fill-yellow-500" />
                                         </button>
@@ -109,13 +182,13 @@ const SearchForm: React.FC<SearchFormProps> = ({
                         )}
                         {searchHistory.length > 0 && (
                             <>
-                                <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700/50 bg-[#15171c]">
+                                <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700/50 bg-transparent">
                                     <span className="text-xs font-bold text-slate-400 flex items-center gap-1"><History className="w-3 h-3" /> 搜尋紀錄</span>
                                     <button type="button" onClick={() => { setSearchHistory([]); localStorage.removeItem('maple_search_history'); }} className="text-[10px] text-slate-500 hover:text-red-400 transition-colors">清除全部</button>
                                 </div>
                                 {searchHistory.map((name, idx) => (
-                                    <div key={idx} onClick={() => { setCharacterName(name); handleSearch(undefined, name); }} className="px-4 py-3 text-sm text-slate-300 hover:bg-indigo-600/20 hover:text-indigo-300 cursor-pointer flex justify-between items-center group/item transition-colors">
-                                        <span>{name}</span>
+                                    <div key={idx} onClick={() => { setCharacterName(name); setShowHistory(false); handleSearch(undefined, name); }} className="px-4 py-2.5 text-sm text-slate-300 hover:bg-indigo-600/20 hover:text-indigo-300 cursor-pointer flex items-center gap-3 group/item transition-colors">
+                                        {renderCharacterMeta(name)}
                                         <button type="button" onClick={(e) => removeFromHistory(e, name)} className="opacity-0 group-hover/item:opacity-100 p-1 hover:bg-slate-700 rounded text-slate-500 hover:text-red-400 transition-all"><X className="w-3 h-3" /></button>
                                     </div>
                                 ))}

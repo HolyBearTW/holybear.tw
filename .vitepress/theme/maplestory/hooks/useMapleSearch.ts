@@ -20,6 +20,10 @@ export const useMapleSearch = (
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    const lastSearchName = localStorage.getItem('maple_last_search_name');
+    if (lastSearchName) {
+      setCharacterName(lastSearchName);
+    }
     const history = localStorage.getItem('maple_search_history');
     if (history) {
       setSearchHistory(JSON.parse(history));

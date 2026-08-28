@@ -32,6 +32,40 @@ const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Simple in-memory cache for OCID to save API calls
 const ocidCache: Record<string, string> = {};
+const basicCharacterCache: Record<string, CharacterBasic | null> = {};
+
+/** Fetch only the lightweight basic profile used by search history/favorites. */
+export const fetchCharacterBasic = async (characterName: string, apiKey: string): Promise<CharacterBasic | null> => {
+  const normalizedName = characterName.trim().normalize('NFC').toLocaleLowerCase();
+  if (!normalizedName || !apiKey) return null;
+  if (Object.prototype.hasOwnProperty.call(basicCharacterCache, normalizedName)) {
+    return basicCharacterCache[normalizedName];
+  }
+
+  try {
+    let ocid = ocidCache[characterName];
+    if (!ocid) {
+      const ocidRes = await fetchWithRetry(`${BASE_URL}/id?character_name=${encodeURIComponent(characterName)}`, {
+        headers: { 'x-nxopen-api-key': apiKey, accept: 'application/json' },
+      });
+      if (!ocidRes.ok) throw new Error('OCID lookup failed');
+      const ocidData: OcidResponse = await ocidRes.json();
+      ocid = ocidData.ocid;
+      ocidCache[characterName] = ocid;
+    }
+
+    const basicRes = await fetchWithRetry(`${BASE_URL}/character/basic?ocid=${encodeURIComponent(ocid)}`, {
+      headers: { 'x-nxopen-api-key': apiKey, accept: 'application/json' },
+    });
+    if (!basicRes.ok) throw new Error('Basic profile lookup failed');
+    const basic = await basicRes.json() as CharacterBasic;
+    basicCharacterCache[normalizedName] = basic;
+    return basic;
+  } catch {
+    basicCharacterCache[normalizedName] = null;
+    return null;
+  }
+};
 
 export interface BossTeammateApiProfile {
   characterName: string;

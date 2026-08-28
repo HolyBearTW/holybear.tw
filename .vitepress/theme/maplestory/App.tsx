@@ -120,6 +120,7 @@ const App: React.FC = () => {
         />
 
         <SearchForm 
+          apiKey={apiKey}
           selectedDate={selectedDate}
           setSelectedDate={setSelectedDate}
           characterName={characterName}
@@ -203,7 +204,10 @@ const App: React.FC = () => {
         {!data && !loading && !error && (
           <>
             <SearchEmptyState />
-            <RecentPowerRanking onSelectCharacter={(name) => { setCharacterName(name); handleSearch(undefined, name); }} />
+            <RecentPowerRanking
+              queryName={characterName}
+              onSelectCharacter={(name) => { setCharacterName(name); handleSearch(undefined, name); }}
+            />
           </>
         )}
       </main>

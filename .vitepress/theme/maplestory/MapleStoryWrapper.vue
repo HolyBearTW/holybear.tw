@@ -487,6 +487,45 @@ html:not(.dark) #maplestory-root [class~="shadow-2xl"] {
   -webkit-backdrop-filter: blur(16px) saturate(140%) !important;
 }
 
+#maplestory-root .maple-ranking-panel [class~="text-slate-400"],
+#maplestory-root .maple-ranking-panel [class~="text-slate-500"],
+#maplestory-root .maple-ranking-panel [class~="text-slate-300"] {
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.3);
+}
+
+html:not(.dark) #maplestory-root .maple-ranking-query-card {
+  color: #173746 !important;
+  background: rgba(255, 255, 255, 0.42) !important;
+  border-color: rgba(36, 94, 112, 0.38) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-ranking-query-name {
+  color: #173746 !important;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.7);
+}
+
+html:not(.dark) #maplestory-root .maple-ranking-query-meta {
+  color: #486673 !important;
+}
+
+html:not(.dark) #maplestory-root .maple-ranking-podium-1 {
+  border-color: rgba(180, 125, 0, 0.72) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-ranking-podium-2 {
+  border-color: rgba(78, 102, 116, 0.62) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-ranking-podium-3 {
+  border-color: rgba(184, 99, 22, 0.68) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-ranking-panel [class~="text-slate-400"],
+html:not(.dark) #maplestory-root .maple-ranking-panel [class~="text-slate-500"],
+html:not(.dark) #maplestory-root .maple-ranking-panel [class~="text-slate-300"] {
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.48);
+}
+
 #maplestory-root .maple-character-loading-text {
   color: #e2f3f8 !important;
   text-shadow: 0 1px 8px rgba(0, 0, 0, 0.72);
@@ -528,7 +567,8 @@ html:not(.dark) #maplestory-root [class~="shadow-2xl"] {
   -webkit-backdrop-filter: blur(14px) saturate(135%);
 }
 
-#maplestory-root .maple-character-search-input {
+#maplestory-root .maple-character-search-input,
+#maplestory-root .maple-search-history-panel {
   background: rgba(6, 18, 26, 0.5) !important;
   border-color: rgba(255, 255, 255, 0.16) !important;
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18) !important;
@@ -602,7 +642,8 @@ html:not(.dark) #maplestory-root .maple-ranking-crown.is-bronze {
   color: #a65313 !important;
 }
 
-html:not(.dark) #maplestory-root .maple-character-search-input {
+html:not(.dark) #maplestory-root .maple-character-search-input,
+html:not(.dark) #maplestory-root .maple-search-history-panel {
   color: #173746 !important;
   background: rgba(249, 253, 255, 0.68) !important;
   border-color: rgba(36, 94, 112, 0.24) !important;
