@@ -1,4 +1,5 @@
 import React from 'react';
+import { Flame } from 'lucide-react';
 import { EquipmentItem, ItemOption, CharacterSetEffect } from '../types';
 import { inferPotentialLineGrade } from '../potentialInference';
 import { mapleAsset } from '../assets';
@@ -45,6 +46,12 @@ const PotentialLine: React.FC<{ text: string; icon: string }> = ({ text, icon })
   </div>
 );
 
+const SoulBadge: React.FC = () => (
+  <span className="inline-flex w-[10px] h-[10px] shrink-0 items-center justify-center overflow-hidden rounded-[2px] bg-[#ff3858]">
+    <Flame className="w-[8px] h-[8px] fill-[#2e353d] text-[#2e353d] stroke-[2.5]" aria-hidden="true" />
+  </span>
+);
+
 const isPotentialSealed = (flag?: string) => String(flag || '').toLowerCase() === 'true';
 
 const getPotentialAssetName = (grade: string | undefined, type: 'title' | 'detail') => {
@@ -62,6 +69,52 @@ const getPotentialAssetName = (grade: string | undefined, type: 'title' | 'detai
   }
 
   return `potential_${type}_${suffix}.png`;
+};
+
+type WeaponMetadata = {
+  handedness: '單手' | '雙手';
+};
+
+// Nexon item-equipment 不提供武器持有方式；這些是遊戲武器分類的固定資料，
+// 只用於補齊遊戲 Tooltip 的「武器／單手／雙手」標籤。
+const WEAPON_METADATA: Array<{ matcher: RegExp; metadata: WeaponMetadata }> = [
+  { matcher: /拳套/, metadata: { handedness: '雙手' } },
+  { matcher: /短劍|匕首/, metadata: { handedness: '單手' } },
+  { matcher: /單手劍/, metadata: { handedness: '單手' } },
+  { matcher: /單手斧|單手棍/, metadata: { handedness: '單手' } },
+  { matcher: /雙手劍/, metadata: { handedness: '雙手' } },
+  { matcher: /雙手斧|雙手棍/, metadata: { handedness: '雙手' } },
+  { matcher: /火槍|短槍|手銃/, metadata: { handedness: '雙手' } },
+  { matcher: /槍|矛|長槍|長矛/, metadata: { handedness: '雙手' } },
+  { matcher: /弓/, metadata: { handedness: '雙手' } },
+  { matcher: /弩/, metadata: { handedness: '雙手' } },
+  { matcher: /拳甲|指虎/, metadata: { handedness: '雙手' } },
+  { matcher: /手杖|魔法棒|短杖/, metadata: { handedness: '單手' } },
+  { matcher: /長杖/, metadata: { handedness: '雙手' } },
+];
+
+const getWeaponMetadata = (item: EquipmentItem, slotType?: string): WeaponMetadata | null => {
+  const slot = String(item.item_equipment_slot || '');
+  const part = String(item.item_equipment_part || '');
+  const isWeapon = slotType === 'Weapon' || slot === '武器' || part === '武器';
+  if (!isWeapon) return null;
+
+  const text = `${part} ${slot} ${item.item_name || ''}`;
+  return WEAPON_METADATA.find(({ matcher }) => matcher.test(text))?.metadata || null;
+};
+
+const getScissorUsageLabel = (item: EquipmentItem, setName?: string): string => {
+  const cuttableCount = Number(item.cuttable_count);
+  if (!Number.isFinite(cuttableCount) || cuttableCount <= 0 || cuttableCount >= 255) return '';
+
+  // 台版目前已知會顯示白金神奇剪刀次數的裝備範圍。
+  const itemName = String(item.item_name || '');
+  const isEternal = itemName.includes('永恆') && /斗篷|披風|手套|鞋/.test(itemName);
+  const isBrilliantBoss = setName?.includes('光輝Boss') || /根源的耳語|死亡之誓|不朽的遺產/.test(itemName);
+  const isKnownLimitedCutItem = /米特拉的憤怒|全面控制核心/.test(itemName);
+  if (!isEternal && !isBrilliantBoss && !isKnownLimitedCutItem) return '';
+
+  return `白金神奇剪刀可使用次數 ${cuttableCount}次`;
 };
 
 const ExceptionalLine: React.FC<{ text: string }> = ({ text }) => (
@@ -127,30 +180,38 @@ const extractExceptionalData = (item: EquipmentItem) => {
   return { count, lines };
 };
 
-const StatLine: React.FC<{ label: string; base: string; add: string; etc: string; star: string; total: string; isPercent?: boolean; spacious?: boolean }> = ({ label, base, add, etc, star, total, isPercent, spacious = false }) => {
+const StatLine: React.FC<{ label: string; base: string; add: string; etc: string; star: string; total: string; isPercent?: boolean; spacious?: boolean; gemBreakdown?: boolean }> = ({ label, base, add, etc, star, total, isPercent, spacious = false, gemBreakdown = false }) => {
   if (total === '0' || !total) return null;
 
   const baseVal = parseInt(base || '0');
   const addVal = parseInt(add || '0'); // Flame (Green)
   const etcVal = parseInt(etc || '0'); // Scroll (Yellow)
   const starVal = parseInt(star || '0'); // Starforce (Purple)
+  const totalVal = parseInt(total || '0');
 
   // Calculate breakdown string: (Base + Flame + Scroll + Starforce)
-  const hasBreakdown = addVal > 0 || etcVal > 0 || starVal > 0;
+  const hasRegularBreakdown = addVal > 0 || etcVal > 0 || starVal > 0;
+  // 寶玉的研磨／加工數值只會出現在 item_total_option，API 沒有獨立來源欄位。
+  const hasGemBreakdown = gemBreakdown && !hasRegularBreakdown && totalVal > 0;
+  const hasBreakdown = hasRegularBreakdown || hasGemBreakdown;
   const suffix = isPercent ? '%' : '';
   
   return (
     <div className={`flex items-center ${spacious ? 'min-h-6 text-[12px] leading-5' : 'text-[11px] leading-[12px]'}`}>
       <span className={`text-slate-300 shrink-0 font-medium ${spacious ? 'w-28' : 'w-24'}`}>{label}:</span>
-      <div className="flex-1">
+      <div className="flex-1 min-w-0 whitespace-nowrap">
         <span className="text-white">+{total}{suffix}</span>
         {hasBreakdown && (
-          <span className="text-xs ml-1">
+          <span className="ml-1 whitespace-nowrap">
             (
             <span className="text-white">{baseVal}{suffix}</span>
-            {addVal > 0 && <span className="text-green-400" title="星火加成"> + {addVal}{suffix}</span>}
-            {etcVal > 0 && <span className="text-yellow-400" title="卷軸加成"> + {etcVal}{suffix}</span>}
-            {starVal > 0 && <span className="text-purple-400" title="星力加成"> + {starVal}{suffix}</span>}
+            {hasGemBreakdown
+              ? <span className="text-[#b7b5ff]" title="寶玉強化"> + {totalVal}{suffix}</span>
+              : <>
+                {addVal > 0 && <span className="text-green-400" title="星火加成"> + {addVal}{suffix}</span>}
+                {etcVal > 0 && <span className="text-yellow-400" title="卷軸加成"> + {etcVal}{suffix}</span>}
+                {starVal > 0 && <span className="text-[#b7b5ff]" title="星力加成"> + {starVal}{suffix}</span>}
+              </>}
             )
           </span>
         )}
@@ -159,7 +220,35 @@ const StatLine: React.FC<{ label: string; base: string; add: string; etc: string
   );
 };
 
-const formatDescription = (desc: string) => {
+type DescriptionSupplement = {
+  text: string;
+  className?: string;
+};
+
+const getDescriptionSupplements = (item: EquipmentItem, formattedDescription: string): DescriptionSupplement[] => {
+  const itemName = String(item.item_name || '');
+  const supplements: DescriptionSupplement[] = [];
+
+  const addIfMissing = (text: string, className?: string) => {
+    if (!formattedDescription.includes(text)) supplements.push({ text, className });
+  };
+
+  // 部分活動圖騰的遊戲 Tooltip 會在 item_description 之外追加固定的強化限制；
+  // Nexon API 沒有把這些段落放在獨立欄位，因此在名稱可明確辨識時補回。
+  if (itemName.includes('勇敢挑戰者的圖騰')) {
+    addIfMissing('裝備時，可獲得在特定地區狩獵時追加獲得經驗值。', 'text-yellow-400');
+    addIfMissing('星力、追加屬性 無法強化');
+  } else if (/姆[嗚鳴]圖騰/.test(itemName)) {
+    addIfMissing('在部分情況下為不可見的道具。', 'text-yellow-400');
+    addIfMissing('星力、卷軸、追加屬性 無法強化');
+  } else if (itemName.includes('古代石板複製品')) {
+    addIfMissing('星力、卷軸、追加屬性 無法強化');
+  }
+
+  return supplements;
+};
+
+const formatDescription = (desc: string, itemName = '') => {
   if (!desc) return '';
   let res = desc;
   
@@ -181,6 +270,52 @@ const formatDescription = (desc: string) => {
   // 3. 殘餘處理: 如果只有 "弁" 加上非 ASCII 字元
   res = res.replace(/弁[^\x00-\xff]/g, '功能');
 
+  // 寶玉的固定說明在 API 轉碼後會出現「伊□絲／□磨／□光／□化」等字元。
+  // 這些句型只套用到寶玉，避免把其他道具的未知字元誤判成相同文案。
+  if (itemName.includes('寶玉') || itemName.includes('寶石')) {
+    res = res
+      .replace(/如伊.{0,2}絲眼眸般的寶玉想將一切都奉獻給珍視之人的.{0,3}心。?/g, '如伊妮絲眼眸般的寶玉想將一切都奉獻給珍視之人的單純真心。')
+      .replace(/寶玉可以進行覺醒、.{0,2}磨和加工三種.{0,2}化。?/g, '寶玉可以進行覺醒、研磨和加工三種強化。')
+      .replace(/當佩戴經過.{0,2}光和細工.{0,2}化的寶玉時/g, '當佩戴經過拋光和細工強化的寶玉時');
+  }
+
+  // 圖騰與機器人的固定文案也會被 API 以「□」替代部分字元；只對已知
+  // 類別套用修復，避免誤改其他裝備中真的有未知字元的說明。
+  if (itemName.includes('圖騰') || itemName.includes('古代石板複製品')) {
+    res = res
+      .replace(/這是□了/g, '這是為了')
+      .replace(/充滿姆[嗚鳴]神□力量/g, '充滿姆嗚神奇力量')
+      .replace(/□隨在後/g, '跟隨在後')
+      .replace(/輪□星火/g, '輪迴星火')
+      .replace(/賦予□力/g, '賦予力量');
+  }
+
+  if (itemName.includes('古代石板複製品')) {
+    res = res.replace(
+      /使用噴出岩輪.*?追加素質。?/g,
+      '使用噴出岩輪迴星火可賦予能力追加素質。',
+    );
+  }
+
+  if (itemName.includes('機器人')) {
+    res = res
+      .replace(/戰□機器人/g, '戰鬥機器人')
+      .replace(/經驗□獲得/g, '經驗值獲得')
+      .replace(/經驗□/g, '經驗值')
+      .replace(/視□/g, '視窗')
+      .replace(/按□/g, '按鈕')
+      .replace(/□可/g, '即可')
+      .replace(/□維持/g, '並維持')
+      .replace(/雜貨商店功能[^。]*。/g, '雜貨商店功能。');
+  }
+
+  if (itemName.includes('七日怪物公園看守者')) {
+    res = res.replace(
+      /周圍的人就會知道(?:□)?是收集完7日勳章的怪物公園VIP。?/g,
+      '周圍的人就會知道你是收集完7日勳章的怪物公園VIP。',
+    );
+  }
+
   // 4. 針對其他已知缺字/亂碼模式進行修復 (基於用回報)
   res = res
     .replace(/□使/g, '即使')
@@ -197,6 +332,7 @@ const formatDescription = (desc: string) => {
 
 const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, characterJob, slotType, showSetEffect }) => {
   const isPuzzlePiece = slotType === 'PuzzlePiece';
+  const isGem = item.item_name.includes('寶玉') || item.item_equipment_part === '寶石' || item.item_equipment_slot === '寶石';
   const getPotGradeInfo = (grade: string) => {
     const g = grade ? grade.toLowerCase() : '';
     if (g.includes('legendary') || g.includes('傳說')) return { color: 'text-green-400', border: 'border-green-500', label: '傳說', char: 'L' };
@@ -217,6 +353,8 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
   const legacySoulName = String(item.soul_name || '').trim();
   const legacySoulOption = String(item.soul_option || '').trim();
   const hasLegacySoul = Boolean(legacySoulName || legacySoulOption);
+  const legacySoulAttackIncrease = Math.floor(Number(item.item_base_option.attack_power || 0) * 0.1);
+  const legacySoulMagicIncrease = Math.floor(Number(item.item_base_option.magic_power || 0) * 0.1);
   const legacySoulSkillName = /武公/.test(legacySoulName)
     ? '無雙之力'
     : /艾畢奈亞|艾畢/.test(legacySoulName)
@@ -231,9 +369,17 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
   const hasSoulWeapon = Boolean(
     soulWeaponGrade || soulWeaponLevel || soulWeaponPowerIncrease || soulWeaponOption,
   );
+  const formattedDescription = formatDescription(item.item_description || '', item.item_name);
+  const descriptionSupplements = getDescriptionSupplements(item, formattedDescription);
   const formattedSoulWeaponPowerIncrease = /^[+-]/.test(soulWeaponPowerIncrease)
     ? soulWeaponPowerIncrease
     : `+${soulWeaponPowerIncrease}`;
+  const weaponMetadata = getWeaponMetadata(item, slotType);
+  const itemShapeName = String(item.item_shape_name || '').trim();
+  const itemShapeIcon = String(item.item_shape_icon || '').trim();
+  const hasAlternateShape = Boolean(itemShapeName && itemShapeName !== item.item_name);
+  const hasAppliedShape = item.freestyle_flag === '1' || hasAlternateShape;
+  const displayItemIcon = hasAppliedShape && itemShapeIcon ? itemShapeIcon : item.item_icon;
   const mainPotentialLines = [item.potential_option_1, item.potential_option_2, item.potential_option_3]
     .filter(Boolean)
     .map((text, index) => {
@@ -293,6 +439,7 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
 
   const slotLower = (item.item_equipment_slot || '').toLowerCase();
   const partLower = (item.item_equipment_part || '').toLowerCase();
+  const isWeapon = slotType === 'Weapon' || item.item_equipment_slot === '武器' || item.item_equipment_part === '武器';
   const isSupportWeapon = slotType === 'Secondary';
   const isEmblemTag = slotType === 'Emblem';
 
@@ -436,6 +583,7 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
       
       return false;
   });
+  const scissorUsageLabel = getScissorUsageLabel(item, matchedSet?.set_name);
 
   const renderStars = () => {
       if (sfCount === 0) return null;
@@ -526,7 +674,7 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
               <div className="absolute inset-0 pointer-events-none bg-[length:64px_64px]" style={windowBg('itemIcon_shade.png')} />
               <div className="relative w-full h-full overflow-hidden">
                 <img
-                  src={item.item_icon}
+                  src={displayItemIcon}
                   alt={item.item_name}
                   className="absolute max-w-6 max-h-6 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 scale-[2]"
                 />
@@ -534,6 +682,8 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
             </div>
             <div className="flex flex-col items-end gap-y-[4px] text-[12px] leading-3">
               <div className="flex flex-wrap justify-end gap-1">
+                {isWeapon && <CategoryBadge label="武器" />}
+                {weaponMetadata && <CategoryBadge label={weaponMetadata.handedness} />}
                 {isEmblemTag && <CategoryBadge label="能源" />}
                 {isSupportWeapon && <CategoryBadge label="輔助武器" />}
                 <CategoryBadge label={equipmentCategory} />
@@ -549,6 +699,12 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
         <DotDivider />
 
         <div className={`px-3 ${isPuzzlePiece ? 'py-2 space-y-2' : 'py-[3px] space-y-1'} relative z-10`}>
+          {hasAlternateShape && (
+            <div className="flex items-center text-[11px] leading-tight">
+              <span className="text-slate-400 w-24 shrink-0 font-medium text-left">目前外型</span>
+              <span className="text-white">{itemShapeName}</span>
+            </div>
+          )}
           <div className={`flex items-center ${isPuzzlePiece ? 'text-[12px] leading-5' : 'text-[11px] leading-tight'}`}>
              <span className="text-slate-400 w-24 shrink-0 font-medium text-left">裝備職業</span>
              <span className="text-white">
@@ -570,10 +726,10 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
           <div className={`px-3 relative z-10 bg-transparent ${isPuzzlePiece ? 'pt-[10px] pb-2 space-y-2' : 'py-0 space-y-1'}`}>
          {/* Categories */}
          <div className={isPuzzlePiece ? 'space-y-1' : 'space-y-[2px]'}>
-           <StatLine label="STR" base={item.item_base_option.str} add={item.item_add_option.str} etc={item.item_etc_option.str} star={item.item_starforce_option.str} total={item.item_total_option.str} spacious={isPuzzlePiece} />
-           <StatLine label="DEX" base={item.item_base_option.dex} add={item.item_add_option.dex} etc={item.item_etc_option.dex} star={item.item_starforce_option.dex} total={item.item_total_option.dex} spacious={isPuzzlePiece} />
-           <StatLine label="INT" base={item.item_base_option.int} add={item.item_add_option.int} etc={item.item_etc_option.int} star={item.item_starforce_option.int} total={item.item_total_option.int} spacious={isPuzzlePiece} />
-           <StatLine label="LUK" base={item.item_base_option.luk} add={item.item_add_option.luk} etc={item.item_etc_option.luk} star={item.item_starforce_option.luk} total={item.item_total_option.luk} spacious={isPuzzlePiece} />
+           <StatLine label="STR" base={item.item_base_option.str} add={item.item_add_option.str} etc={item.item_etc_option.str} star={item.item_starforce_option.str} total={item.item_total_option.str} spacious={isPuzzlePiece} gemBreakdown={isGem} />
+           <StatLine label="DEX" base={item.item_base_option.dex} add={item.item_add_option.dex} etc={item.item_etc_option.dex} star={item.item_starforce_option.dex} total={item.item_total_option.dex} spacious={isPuzzlePiece} gemBreakdown={isGem} />
+           <StatLine label="INT" base={item.item_base_option.int} add={item.item_add_option.int} etc={item.item_etc_option.int} star={item.item_starforce_option.int} total={item.item_total_option.int} spacious={isPuzzlePiece} gemBreakdown={isGem} />
+           <StatLine label="LUK" base={item.item_base_option.luk} add={item.item_add_option.luk} etc={item.item_etc_option.luk} star={item.item_starforce_option.luk} total={item.item_total_option.luk} spacious={isPuzzlePiece} gemBreakdown={isGem} />
            
            <StatLine label="最大 HP" base={item.item_base_option.max_hp} add={item.item_add_option.max_hp} etc={item.item_etc_option.max_hp} star={item.item_starforce_option.max_hp} total={item.item_total_option.max_hp} spacious={isPuzzlePiece} />
            <StatLine label="最大 MP" base={item.item_base_option.max_mp} add={item.item_add_option.max_mp} etc={item.item_etc_option.max_mp} star={item.item_starforce_option.max_mp} total={item.item_total_option.max_mp} spacious={isPuzzlePiece} />
@@ -589,10 +745,9 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
                <span className="text-white">{(item.scroll_upgradable_count || (item as any).scroll_upgradeable_count)}</span>
              </div>
            )}
-           {item.cuttable_count !== undefined && String(item.cuttable_count) !== '255' && String(item.cuttable_count) !== '-1' && String(item.cuttable_count) !== '0' && 
-             (item.item_name.includes('永恆') && (item.item_name.includes('斗篷') || item.item_name.includes('手套') || item.item_name.includes('鞋'))) && (
+           {scissorUsageLabel && (
              <div className="flex items-center text-[11px] leading-none">
-               <span className="text-yellow-400 w-auto shrink-0 font-medium">白金神奇剪刀可使用次數 {item.cuttable_count}次</span>
+               <span className="text-yellow-400 w-auto shrink-0 font-medium">{scissorUsageLabel}</span>
              </div>
            )}
          </div>
@@ -663,14 +818,14 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
 
           {hasLegacySoul && (
           <div className="px-3 py-[2px] relative z-10">
-           <div className="flex items-center gap-1.5 text-xs font-bold mb-[1px] text-white">
-              <div className="w-5 h-5 rounded border border-red-500 flex items-center justify-center text-[10px] bg-slate-800">
-                  魂
-              </div>
+           <div className="flex items-center gap-1.5 text-xs font-bold mb-[1px] text-red-400">
+              <SoulBadge />
               <span>靈魂寶珠：{legacySoulName || '已裝備'}</span>
            </div>
            <div className="text-xs space-y-[1px] text-white pl-1">
-              <p className="mb-0">靈魂武器：0 / 1000（攻擊力 +0，魔力 +0）</p>
+              <p className="mb-0">
+                靈魂武器：1000（攻擊力 +{legacySoulAttackIncrease}，魔力 +{legacySoulMagicIncrease}）
+              </p>
               {legacySoulOption && <p className="mb-0">{legacySoulOption}</p>}
               {legacySoulSkillName && <p className="mb-0">[{legacySoulSkillName}]技能可使用</p>}
            </div>
@@ -682,15 +837,10 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
           {hasSoulWeapon && (
           <div className="px-3 py-[2px] relative z-10">
            <div className="flex items-center gap-1.5 text-xs font-bold mb-[1px] text-red-400">
-              <div className="w-5 h-5 rounded border border-red-500 flex items-center justify-center text-[10px] bg-slate-800">
-                  魂
-              </div>
-              <span>靈魂武器</span>
+              <SoulBadge />
+              <span>{soulWeaponGrade ? `靈魂武器 - 第${soulWeaponGrade}階段` : '靈魂武器'}</span>
            </div>
            <div className="text-xs space-y-[1px] text-white pl-1">
-              {soulWeaponGrade && (
-                <p className="font-bold text-red-400 mb-0">靈魂武器 - 第{soulWeaponGrade}階段</p>
-              )}
               {soulWeaponLevel && (
                 <p className="mb-0">
                   Lv. {soulWeaponLevel}
@@ -741,11 +891,14 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
         </div>
         )}
 
-        {item.item_description && <DotDivider />}
+        {(formattedDescription || descriptionSupplements.length > 0) && <DotDivider />}
 
-        {item.item_description && (
+        {(formattedDescription || descriptionSupplements.length > 0) && (
         <div className="px-3 py-[2px] text-xs text-slate-300 text-left relative z-10 leading-relaxed whitespace-pre-wrap break-words">
-          {formatDescription(item.item_description)}
+          {formattedDescription}
+          {descriptionSupplements.map(({ text, className }) => (
+            <div key={text} className={className || 'text-slate-300'}>{text}</div>
+          ))}
         </div>
         )}
       </div>

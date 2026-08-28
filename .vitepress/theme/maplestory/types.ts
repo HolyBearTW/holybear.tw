@@ -114,6 +114,8 @@ export interface EquipmentItem {
   soul_weapon_level?: string;
   soul_weapon_power_increase?: string;
   soul_weapon_option?: string;
+  // 2025-12 API 欄位：自由造型券使用狀態（0：未使用，1：已使用）。
+  freestyle_flag?: string;
 }
 
 export interface CharacterEquipment {

@@ -116,6 +116,12 @@ const resolveItemIcon = (item: EquipmentItem | undefined, slotKey: string): stri
     if (match) return match.path;
   }
 
+  // API 有套用外型時，優先使用變更後的外型圖示；沒有外型資料才回退原圖。
+  const shapeName = String(item.item_shape_name || '').trim();
+  const shapeIcon = String(item.item_shape_icon || '').trim();
+  const hasAppliedShape = item.freestyle_flag === '1' || Boolean(shapeName && shapeName !== item.item_name);
+  if (hasAppliedShape && shapeIcon) return shapeIcon;
+
   const customItemIcon = CUSTOM_ITEM_ICON_MAPPING.find(m => m.name === item.item_name);
   if (customItemIcon) {
     return customItemIcon.path;
