@@ -26,6 +26,13 @@ for (const file of filesToPatch) {
       // 取代寫法二：適用於 react-refresh
       content = content.replace(/console\.warn\([\s\S]*?disabled\."\n?\s*\);?/g, '// Warning permanently silenced by postinstall script');
 
+      // 某些瀏覽器工具會留下 isDisabled 的 hook shim，這會讓 Fast Refresh
+      // 直接 return。解除這個旗標，讓 Vite 仍能掛接 refresh helpers。
+      content = content.replace(
+        /if \(hook\.isDisabled\) \{[\s\S]*?return\n\s*\}/g,
+        'if (hook.isDisabled) {\n    hook.isDisabled = false\n  }'
+      );
+
       if (content.length !== originalLength) {
         fs.writeFileSync(file, content);
         console.log(`✅ [Force Patch] 成功靜音: ${path.basename(file)} 的 React 警告`);
