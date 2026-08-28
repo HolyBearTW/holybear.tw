@@ -2050,6 +2050,13 @@ function toggleRepeatOne() {
   backdrop-filter: blur(28px) saturate(145%);
 }
 
+/* 展開播放清單時，控制器仍維持淺色主題 */
+:global(html:not(.dark) .music-container.panel-open::before) {
+  background: rgba(246, 252, 255, 0.72);
+  -webkit-backdrop-filter: blur(28px) saturate(145%);
+  backdrop-filter: blur(28px) saturate(145%);
+}
+
 :global(html:not(.dark) .music-info) {
   background: rgba(249, 253, 255, 0.76);
   border-color: rgba(7, 108, 133, 0.2);
