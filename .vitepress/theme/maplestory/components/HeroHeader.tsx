@@ -21,7 +21,7 @@ export default function HeroHeader({ apiKey, onShowKeySettings, onClearApiKey }:
         </button>
       </div>
 
-      <div className="flex items-center gap-3">
+      <a href="/maplestory" className="flex items-center gap-3 rounded-lg transition-opacity hover:opacity-85" aria-label="返回新楓之谷戰力分析首頁" title="返回分析首頁">
         <div className="w-12 h-12 flex items-center justify-center">
           <img
             src={mapleAsset('Maple_Icon.webp')}
@@ -31,7 +31,7 @@ export default function HeroHeader({ apiKey, onShowKeySettings, onClearApiKey }:
           />
         </div>
         <h1 className="maple-hero-title font-bold text-2xl text-white">新楓之谷戰力分析</h1>
-      </div>
+      </a>
       <p className="maple-hero-subtitle text-slate-400 text-sm">輸入角色名稱，查看詳細戰力與裝備分析</p>
     </>
   );
