@@ -1421,7 +1421,7 @@ function toggleRepeatOne() {
     content: '';
     position: absolute;
     inset: 0;
-    z-index: -1;
+    z-index: 0;
     border-radius: inherit;
     background: rgba(18, 20, 26, 0.54);
     -webkit-backdrop-filter: blur(28px) saturate(160%);
@@ -1716,6 +1716,8 @@ function toggleRepeatOne() {
     justify-content: center;
     gap: 13px;
     margin-top: 10px;
+    position: relative;
+    z-index: 1;
 }
 
 .action-btn {
@@ -2042,8 +2044,8 @@ function toggleRepeatOne() {
               0 0 0 1px rgba(0, 184, 212, 0.08) inset;
 }
 
-:global(html:not(.dark) .music-container::before) {
-  background: rgba(246, 252, 255, 0.82);
+:global(html:not(.dark) .music-container:not(.panel-open)::before) {
+  background: rgba(246, 252, 255, 0.42);
   -webkit-backdrop-filter: blur(28px) saturate(145%);
   backdrop-filter: blur(28px) saturate(145%);
 }
@@ -2172,8 +2174,8 @@ function toggleRepeatOne() {
     border: 1px solid rgba(255, 255, 255, 0.08);
   }
 
-  .dark .music-container::before {
-    background: rgba(18, 20, 26, 0.82);
+  .dark .music-container:not(.panel-open)::before {
+    background: rgba(18, 20, 26, 0.24);
   }
     
     .dark .action-btn {
