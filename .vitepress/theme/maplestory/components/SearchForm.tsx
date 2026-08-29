@@ -115,6 +115,18 @@ const SearchForm: React.FC<SearchFormProps> = ({
         localStorage.setItem('maple_search_history', JSON.stringify(newHistory));
     };
 
+    const submitSearch = (e: React.FormEvent) => {
+        setShowHistory(false);
+        searchInputRef.current?.blur();
+        handleSearch(e);
+    };
+
+    const startBestSearch = () => {
+        setShowHistory(false);
+        searchInputRef.current?.blur();
+        handleBestSearch();
+    };
+
     return (
         <div className="w-full flex flex-col items-center gap-6 relative">
             <div className="maple-date-control flex items-center gap-2 text-sm text-slate-400">
@@ -127,7 +139,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
                 />
             </div>
 
-            <form onSubmit={handleSearch} className="w-full max-w-2xl relative group">
+            <form onSubmit={submitSearch} className="w-full max-w-2xl relative group">
                 <Search className="maple-search-leading-icon absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors" />
                 <input 
                     ref={searchInputRef}
@@ -153,7 +165,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
                     <div className="w-px h-6 bg-slate-700 mx-1"></div>
                     <button 
                         type="button" 
-                        onClick={handleBestSearch}
+                        onClick={startBestSearch}
                         disabled={loading || isScanningBest}
                         className="p-1.5 hover:bg-indigo-900/50 rounded-lg text-indigo-400 hover:text-indigo-300 transition-colors disabled:opacity-50 group/best relative"
                         title="自動搜尋近七日最高戰力"
