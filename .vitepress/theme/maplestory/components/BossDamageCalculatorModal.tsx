@@ -100,6 +100,14 @@ function combatMultiplierText(combat: ReturnType<typeof getBossCombatMultiplier>
   return `${level} × ${combat.forceType.toUpperCase()} ${formatBossNumber(combat.forceMultiplier * 100)}% = ${formatBossNumber(combat.combinedMultiplier * 100)}%`;
 }
 
+function relativeDamageText(ratio: number): string {
+  const differencePercent = (ratio - 1) * 100;
+  if (Math.abs(differencePercent) < 0.05) return '預估傷害不變';
+  return differencePercent > 0
+    ? `預估傷害多 ${formatBossNumber(differencePercent)}%`
+    : `預估傷害少 ${formatBossNumber(Math.abs(differencePercent))}%`;
+}
+
 const FIELD_CLASS = 'maple-boss-calculator-field h-11 w-full rounded-lg border border-slate-700 bg-[#0a0e17] px-3 text-sm font-bold text-slate-100 outline-none transition focus:border-cyan-400/60 focus:ring-2 focus:ring-cyan-400/10';
 
 function secondsOf(value: TimeValue): number {
@@ -414,7 +422,7 @@ const BossDamageCalculatorModal: React.FC<BossDamageCalculatorModalProps> = ({ d
             {row.crystalRewardHundredMillion !== undefined && <div className="mt-1 text-xs text-slate-500">結晶獎勵：{formatBossNumber(row.crystalRewardHundredMillion)} 億</div>}
             <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] font-bold text-cyan-300">
               <span>角色能力：Lv.{player.level}・ARC {formatBossNumber(player.arc)}・AUT {formatBossNumber(player.aut)}</span>
-              <span>目前傷害倍率：{combatMultiplierText(sourceCombat)}</span>
+              <span>這次通關紀錄的傷害環境：{combatMultiplierText(sourceCombat)}</span>
             </div>
           </section>
 
@@ -478,16 +486,16 @@ const BossDamageCalculatorModal: React.FC<BossDamageCalculatorModalProps> = ({ d
 
           <section className="mt-5">
             <div className="mb-2 flex flex-wrap items-end justify-between gap-3">
-              <div><div className="font-black text-white">依目前輸出可擊破的 BOSS <span className="ml-1 rounded-full border border-emerald-400/25 bg-emerald-500/10 px-2 py-1 text-[11px] text-emerald-300">{eligibleBosses.length} 個</span></div><div className="mt-1 text-[11px] text-slate-500">先扣除來源 BOSS 已含的等級／力量倍率，再依 API 數值套用各目標 BOSS 倍率與時限。</div></div>
+              <div><div className="font-black text-white">依目前輸出可擊破的 BOSS <span className="ml-1 rounded-full border border-emerald-400/25 bg-emerald-500/10 px-2 py-1 text-[11px] text-emerald-300">{eligibleBosses.length} 個</span></div><div className="mt-1 max-w-3xl text-[11px] text-slate-500">你在上方選擇「{row.name}・{row.difficulty}」並填入通關時間，計算機會以這次紀錄換算其他 BOSS。傷害變少不代表未達門檻，而是換到該 BOSS 後，等級／ARC／AUT 的綜合增傷較低。</div></div>
               <div className="flex flex-wrap items-end gap-3">
                 <label className="block"><span className="mb-1 block text-[11px] font-bold text-slate-500">一般 BOSS 時限</span><div className="w-36"><TimeInput value={normalLimit} onChange={setNormalLimit} label="一般 BOSS 時限" /></div></label>
               </div>
             </div>
             <div className="max-h-[460px] overflow-auto rounded-xl border border-slate-800">
-              <table className="w-full min-w-[850px] border-collapse text-left text-xs">
-                <thead className="sticky top-0 z-10 bg-[#161d29] text-[11px] text-slate-500"><tr><th className="p-3">BOSS</th><th className="p-3">難度</th><th className="p-3 text-right">總血量</th><th className="p-3 text-right">角色傷害倍率</th><th className="p-3 text-right">預估所需時間</th><th className="p-3 text-right">時限輸出餘裕</th></tr></thead>
+              <table className="w-full min-w-[940px] border-collapse text-left text-xs">
+                <thead className="sticky top-0 z-10 bg-[#161d29] text-[11px] text-slate-500"><tr><th className="p-3">BOSS</th><th className="p-3">難度</th><th className="p-3 text-right">總血量</th><th className="p-3 text-right">換到這隻 BOSS</th><th className="p-3 text-right">預估所需時間</th><th className="p-3 text-right">時限輸出餘裕</th></tr></thead>
                 <tbody>{eligibleBosses.map((item) => (
-                  <tr key={`${item.name}-${item.difficulty}`} className="border-t border-slate-800/80 text-slate-300 transition hover:bg-slate-800/35"><td className="p-3 font-bold text-white">{item.name}</td><td className="p-3"><DifficultyBadge difficulty={item.difficulty} /></td><td className={`p-3 text-right font-mono ${item.hpTrillion / item.capacityTrillion > 0.8 ? 'font-bold text-amber-300' : ''}`}>{formatBossHp(item.hpTrillion)}</td><td className="p-3 text-right font-mono"><span className={item.adjustmentRatio >= 1 ? 'text-emerald-300' : 'text-amber-300'}>×{formatBossNumber(item.adjustmentRatio)}</span><div className="mt-1 text-[10px] text-slate-500">{item.combat.requirementKnown ? `Lv.${item.combat.bossLevel}・${combatMultiplierText(item.combat)}` : combatMultiplierText(item.combat)}</div></td><td className="p-3 text-right font-mono">{formatBossTime(item.estimatedSeconds)}{item.name === '黑魔法師' && <><span className="ml-1 text-[10px] text-slate-500">/ 時限 {formatBossTime(item.timeLimitSeconds)}</span><button type="button" onClick={editBlackMageLimit} className="ml-1.5 inline-flex h-[22px] items-center rounded-md border border-amber-400/35 bg-amber-500/10 px-2 text-[10px] font-black text-amber-200 transition hover:border-amber-300/60 hover:bg-amber-500/20">更改</button></>}</td><td className="p-3 text-right font-mono font-black text-emerald-300">+{formatBossNumber(item.marginPercent)}%</td></tr>
+                  <tr key={`${item.name}-${item.difficulty}`} className="border-t border-slate-800/80 text-slate-300 transition hover:bg-slate-800/35"><td className="p-3 font-bold text-white">{item.name}</td><td className="p-3"><DifficultyBadge difficulty={item.difficulty} /></td><td className={`p-3 text-right font-mono ${item.hpTrillion / item.capacityTrillion > 0.8 ? 'font-bold text-amber-300' : ''}`}>{formatBossHp(item.hpTrillion)}</td><td className="p-3 text-right font-mono"><span className={`font-black ${item.adjustmentRatio >= 1 ? 'text-emerald-300' : 'text-amber-300'}`}>{relativeDamageText(item.adjustmentRatio)}</span><div className="mt-1 text-[10px] text-slate-500">這隻王倍率 {formatBossNumber(item.combat.combinedMultiplier * 100)}%・換算 ×{formatBossNumber(item.adjustmentRatio)}</div><div className="text-[10px] text-slate-500">{item.combat.requirementKnown ? `Lv.${item.combat.bossLevel}・${combatMultiplierText(item.combat)}` : combatMultiplierText(item.combat)}</div></td><td className="p-3 text-right font-mono">{formatBossTime(item.estimatedSeconds)}{item.name === '黑魔法師' && <><span className="ml-1 text-[10px] text-slate-500">/ 時限 {formatBossTime(item.timeLimitSeconds)}</span><button type="button" onClick={editBlackMageLimit} className="ml-1.5 inline-flex h-[22px] items-center rounded-md border border-amber-400/35 bg-amber-500/10 px-2 text-[10px] font-black text-amber-200 transition hover:border-amber-300/60 hover:bg-amber-500/20">更改</button></>}</td><td className="p-3 text-right font-mono font-black text-emerald-300">+{formatBossNumber(item.marginPercent)}%</td></tr>
                 ))}</tbody>
               </table>
               {eligibleBosses.length === 0 && <div className="px-4 py-10 text-center text-sm text-slate-500">輸入有效擊殺時間後，這裡會列出可擊破的 BOSS。</div>}
