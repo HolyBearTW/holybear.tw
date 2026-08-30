@@ -148,6 +148,10 @@
 .fuwari-article-outline {
   padding: 1rem;
   color: var(--fuwari-muted);
+  background: transparent;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 html body .fuwari-article-outline.fuwari-card-base .VPDocAsideOutline.has-outline {
   margin: 0 !important;
