@@ -213,9 +213,11 @@ html body .fuwari-article-outline.fuwari-card-base .VPDocAsideOutline .outline-l
 .fuwari-calendar__navigation > button { display: grid; width: 1.5rem; height: 1.5rem; padding: 0; place-items: center; border: 0; border-radius: 0.3rem; color: var(--fuwari-muted); background: transparent; cursor: pointer; }
 .fuwari-calendar__navigation > button:hover { color: var(--fuwari-primary); background: var(--fuwari-soft); }
 .fuwari-calendar__selectors { display: flex; min-width: 0; align-items: center; justify-content: center; gap: 0.25rem; }
-.fuwari-calendar__selectors select { flex: none; min-width: 0; padding: 0.22rem 1.35rem 0.22rem 0.45rem; border: 1px solid var(--fuwari-card-border); border-radius: 0.4rem; color: var(--fuwari-text); background-color: color-mix(in srgb, var(--fuwari-card-bg) 58%, transparent); font: inherit; font-size: 0.72rem; font-weight: 700; cursor: pointer; }
-.fuwari-calendar__selectors select:first-child { width: 4rem; }
-.fuwari-calendar__selectors select:last-child { width: 3.5rem; }
+.fuwari-calendar__select-wrap { position: relative; display: block; flex: none; }
+.fuwari-calendar__select-wrap:first-child { width: 4.25rem; }
+.fuwari-calendar__select-wrap:last-child { width: 3.75rem; }
+.fuwari-calendar__select-wrap > svg { position: absolute; top: 50%; right: 0.35rem; color: var(--fuwari-muted); pointer-events: none; transform: translateY(-50%); }
+.fuwari-calendar__selectors select { width: 100%; min-width: 0; appearance: none; padding: 0.22rem 1.15rem 0.22rem 0.4rem; border: 1px solid var(--fuwari-card-border); border-radius: 0.4rem; color: var(--fuwari-text); background-color: color-mix(in srgb, var(--fuwari-card-bg) 58%, transparent); font: inherit; font-size: 0.72rem; font-weight: 700; cursor: pointer; }
 .fuwari-calendar__selectors select:focus-visible { border-color: var(--fuwari-primary); outline: 2px solid color-mix(in srgb, var(--fuwari-primary) 28%, transparent); outline-offset: 1px; }
 .fuwari-calendar__grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 0.12rem; text-align: center; }
 .fuwari-calendar__weekdays { margin-bottom: 0.12rem; color: var(--fuwari-muted); font-size: 0.62rem; font-weight: 650; opacity: 0.55; }

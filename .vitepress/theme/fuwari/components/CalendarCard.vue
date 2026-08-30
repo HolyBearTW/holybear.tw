@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CalendarDays, ChevronLeft, ChevronRight, FileText } from 'lucide-vue-next'
+import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, FileText } from 'lucide-vue-next'
 import { computed, ref } from 'vue'
 import { useData, withBase } from 'vitepress'
 import type { FuwariPost } from '../types'
@@ -114,12 +114,18 @@ function selectDay(item: CalendarDay) {
     <div class="fuwari-calendar__navigation">
       <button type="button" :aria-label="en ? 'Previous month' : '上個月'" @click="changeMonth(-1)"><ChevronLeft :size="16" /></button>
       <div class="fuwari-calendar__selectors">
-        <select v-model.number="year" :aria-label="en ? 'Year' : '年份'" @change="changeCalendarDate">
-          <option v-for="item in calendarYears" :key="item" :value="item">{{ en ? item : `${item} 年` }}</option>
-        </select>
-        <select v-model.number="month" :aria-label="en ? 'Month' : '月份'" @change="changeCalendarDate">
-          <option v-for="item in calendarMonths" :key="item.value" :value="item.value">{{ item.label }}</option>
-        </select>
+        <span class="fuwari-calendar__select-wrap">
+          <select v-model.number="year" :aria-label="en ? 'Year' : '年份'" @change="changeCalendarDate">
+            <option v-for="item in calendarYears" :key="item" :value="item">{{ item }}</option>
+          </select>
+          <ChevronDown :size="12" aria-hidden="true" />
+        </span>
+        <span class="fuwari-calendar__select-wrap">
+          <select v-model.number="month" :aria-label="en ? 'Month' : '月份'" @change="changeCalendarDate">
+            <option v-for="item in calendarMonths" :key="item.value" :value="item.value">{{ item.label }}</option>
+          </select>
+          <ChevronDown :size="12" aria-hidden="true" />
+        </span>
       </div>
       <button type="button" :aria-label="en ? 'Next month' : '下個月'" @click="changeMonth(1)"><ChevronRight :size="16" /></button>
     </div>
