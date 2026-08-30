@@ -350,8 +350,6 @@ jobs:
       - name: 建置 VitePress 網站
         env:
           VITE_NEXON_API_KEY: ${{ secrets.VITE_NEXON_API_KEY }}
-          VITE_GEMINI_API_KEY: ${{ secrets.VITE_GEMINI_API_KEY }}
-          VITE_DEFAULT_GEMINI_KEY: ${{ secrets.VITE_DEFAULT_GEMINI_KEY }}
         run: yarn run build
 
       - name: 設定 GitHub Pages
