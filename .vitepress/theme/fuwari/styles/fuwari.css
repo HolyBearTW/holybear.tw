@@ -173,10 +173,10 @@ html body .fuwari-article-outline.fuwari-card-base .VPDocAsideOutline .outline-l
 .fuwari-post-list > .fuwari-carousel .carousel-container { height: clamp(18rem, 36.5cqi, 26.25rem); }
 .fuwari-right-panel { display: none; flex-direction: column; gap: 1rem; }
 .fuwari-side-card { padding: 1rem; }
-.dark .fuwari-sidebar .fuwari-widget.fuwari-card-base,
-.dark .fuwari-right-panel .fuwari-side-card.fuwari-card-base,
-.dark .fuwari-article-right-panel .fuwari-side-card.fuwari-card-base,
-.dark .fuwari-article-outline.fuwari-card-base {
+.fuwari-sidebar .fuwari-widget.fuwari-card-base,
+.fuwari-right-panel .fuwari-side-card.fuwari-card-base,
+.fuwari-article-right-panel .fuwari-side-card.fuwari-card-base,
+.fuwari-article-outline.fuwari-card-base {
   background: transparent;
   box-shadow: none;
   -webkit-backdrop-filter: blur(14px) saturate(118%);
