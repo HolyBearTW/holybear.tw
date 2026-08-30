@@ -5148,7 +5148,22 @@ html:not(.dark) body.is-blog-page .VPDoc .vp-doc table td[style*="border"]::afte
 }
 
 /* The footer sits directly on animated artwork in both appearances. */
-html body .BlogVPFooter {
+html:not(.dark) body .BlogVPFooter {
+  color: #526b78 !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  border-top-color: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html:not(.dark) body .BlogVPFooter .footer-line {
+  color: #526b78 !important;
+  text-shadow: none !important;
+}
+
+html.dark body .BlogVPFooter {
   color: rgba(255, 255, 255, 0.9) !important;
   background: transparent !important;
   background-color: transparent !important;
@@ -5158,7 +5173,7 @@ html body .BlogVPFooter {
   -webkit-backdrop-filter: none !important;
 }
 
-html body .BlogVPFooter .footer-line {
+html.dark body .BlogVPFooter .footer-line {
   color: rgba(255, 255, 255, 0.9) !important;
   text-shadow: 0 2px 12px rgba(2, 18, 31, 0.72) !important;
 }
@@ -5184,12 +5199,21 @@ html.dark body.is-blog-page .vote-panel .vote-button.active {
   background: color-mix(in srgb, var(--vote-accent) 86%, #12313b);
 }
 
-html body .BlogVPFooter a {
+html:not(.dark) body .BlogVPFooter a {
+  text-shadow: none !important;
+}
+
+html.dark body .BlogVPFooter a {
   text-shadow: 0 2px 10px rgba(2, 18, 31, 0.68) !important;
 }
 
-html body .BlogVPFooter .footer-location,
-html body .BlogVPFooter .footer-commit {
+html:not(.dark) body .BlogVPFooter .footer-location,
+html:not(.dark) body .BlogVPFooter .footer-commit {
+  color: #6b818c !important;
+}
+
+html.dark body .BlogVPFooter .footer-location,
+html.dark body .BlogVPFooter .footer-commit {
   color: rgba(239, 249, 252, 0.82) !important;
 }
 
