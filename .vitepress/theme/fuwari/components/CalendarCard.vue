@@ -46,7 +46,7 @@ const calendarYears = computed(() => [...new Set([
 const calendarMonths = computed(() => Array.from({ length: 12 }, (_, index) => ({
   value: index,
   label: en.value
-    ? new Intl.DateTimeFormat('en', { month: 'long' }).format(new Date(2000, index, 1))
+    ? new Intl.DateTimeFormat('en', { month: 'short' }).format(new Date(2000, index, 1))
     : `${index + 1} 月`,
 })))
 
