@@ -179,8 +179,8 @@ html body .fuwari-article-outline.fuwari-card-base .VPDocAsideOutline .outline-l
 .fuwari-article-outline.fuwari-card-base {
   background: transparent;
   box-shadow: none;
-  -webkit-backdrop-filter: blur(14px) saturate(118%);
-  backdrop-filter: blur(14px) saturate(118%);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 .fuwari-side-card:hover { transform: translateY(-1px); }
 .fuwari-side-card h2 { display: flex; align-items: center; gap: 0.5rem; margin: 0 0 0.8rem; padding: 0; border: 0; color: var(--fuwari-text); font-size: 0.88rem; }
