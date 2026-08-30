@@ -39,6 +39,16 @@ const today = taipeiNow()
 const year = ref(today.getFullYear())
 const month = ref(today.getMonth())
 const selectedDate = ref('')
+const calendarYears = computed(() => [...new Set([
+  today.getFullYear(),
+  ...props.posts.map((post) => Number(dateKey(post.published).slice(0, 4))),
+])].filter(Number.isFinite).sort((a, b) => b - a))
+const calendarMonths = computed(() => Array.from({ length: 12 }, (_, index) => ({
+  value: index,
+  label: en.value
+    ? new Intl.DateTimeFormat('en', { month: 'long' }).format(new Date(2000, index, 1))
+    : `${index + 1} 月`,
+})))
 
 const postsByDate = computed(() => {
   const grouped = new Map<string, FuwariPost[]>()
@@ -84,6 +94,10 @@ function changeMonth(delta: number) {
   selectedDate.value = ''
 }
 
+function changeCalendarDate() {
+  selectedDate.value = ''
+}
+
 function selectDay(item: CalendarDay) {
   if (!item.posts.length) return
   if (item.posts.length === 1) {
@@ -99,7 +113,14 @@ function selectDay(item: CalendarDay) {
     <h2><CalendarDays :size="17" /><span>{{ en ? 'Post Calendar' : '文章日曆' }}</span></h2>
     <div class="fuwari-calendar__navigation">
       <button type="button" :aria-label="en ? 'Previous month' : '上個月'" @click="changeMonth(-1)"><ChevronLeft :size="16" /></button>
-      <strong>{{ en ? new Intl.DateTimeFormat('en', { month: 'long', year: 'numeric' }).format(new Date(year, month, 1)) : `${year} 年 ${month + 1} 月` }}</strong>
+      <div class="fuwari-calendar__selectors">
+        <select v-model.number="year" :aria-label="en ? 'Year' : '年份'" @change="changeCalendarDate">
+          <option v-for="item in calendarYears" :key="item" :value="item">{{ en ? item : `${item} 年` }}</option>
+        </select>
+        <select v-model.number="month" :aria-label="en ? 'Month' : '月份'" @change="changeCalendarDate">
+          <option v-for="item in calendarMonths" :key="item.value" :value="item.value">{{ item.label }}</option>
+        </select>
+      </div>
       <button type="button" :aria-label="en ? 'Next month' : '下個月'" @click="changeMonth(1)"><ChevronRight :size="16" /></button>
     </div>
     <div class="fuwari-calendar__grid fuwari-calendar__weekdays" aria-hidden="true">
