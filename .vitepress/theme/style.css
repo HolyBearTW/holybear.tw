@@ -4739,14 +4739,14 @@ html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPNav:has(.VPNavBar
 html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPNav:has(.VPNavBar.top) .VPNavBarTranslations > .button,
 html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPNav:has(.VPNavBar.top) .VPNavBarTranslations > .button *,
 html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPNav:has(.VPNavBar.top) .VPSocialLink {
-  color: rgba(255, 255, 255, 0.94) !important;
-  text-shadow: 0 2px 10px rgba(2, 18, 31, 0.72) !important;
+  color: #294b59 !important;
+  text-shadow: none !important;
 }
 
 html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPNav:has(.VPNavBar.top) .VPNavBarHamburger .top,
 html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPNav:has(.VPNavBar.top) .VPNavBarHamburger .middle,
 html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPNav:has(.VPNavBar.top) .VPNavBarHamburger .bottom {
-  background-color: rgba(255, 255, 255, 0.94) !important;
+  background-color: #294b59 !important;
 }
 
 html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPLocalNav {
@@ -4819,22 +4819,22 @@ html:not(.dark) body .VPNav:has(.VPNavBar.top) .VPNavBar .content-body {
   backdrop-filter: none !important;
 }
 
-html:not(.dark) body:not(.is-blog-page) .VPNav:has(.VPNavBar.top) .VPNavBarTitle .title,
-html:not(.dark) body:not(.is-blog-page) .VPNav:has(.VPNavBar.top) .VPNavBarTitle .title *,
-html:not(.dark) body:not(.is-blog-page) .VPNav:has(.VPNavBar.top) .VPNavBarMenuLink,
-html:not(.dark) body:not(.is-blog-page) .VPNav:has(.VPNavBar.top) .VPNavBarMenuGroup > .button,
-html:not(.dark) body:not(.is-blog-page) .VPNav:has(.VPNavBar.top) .VPNavBarMenuGroup > .button *,
-html:not(.dark) body:not(.is-blog-page) .VPNav:has(.VPNavBar.top) .VPNavBarTranslations > .button,
-html:not(.dark) body:not(.is-blog-page) .VPNav:has(.VPNavBar.top) .VPNavBarTranslations > .button *,
-html:not(.dark) body:not(.is-blog-page) .VPNav:has(.VPNavBar.top) .VPSocialLink {
-  color: rgba(255, 255, 255, 0.94) !important;
-  text-shadow: 0 2px 10px rgba(2, 18, 31, 0.72) !important;
+html:not(.dark) body .VPNav:has(.VPNavBar.top) .VPNavBarTitle .title,
+html:not(.dark) body .VPNav:has(.VPNavBar.top) .VPNavBarTitle .title *,
+html:not(.dark) body .VPNav:has(.VPNavBar.top) .VPNavBarMenuLink,
+html:not(.dark) body .VPNav:has(.VPNavBar.top) .VPNavBarMenuGroup > .button,
+html:not(.dark) body .VPNav:has(.VPNavBar.top) .VPNavBarMenuGroup > .button *,
+html:not(.dark) body .VPNav:has(.VPNavBar.top) .VPNavBarTranslations > .button,
+html:not(.dark) body .VPNav:has(.VPNavBar.top) .VPNavBarTranslations > .button *,
+html:not(.dark) body .VPNav:has(.VPNavBar.top) .VPSocialLink {
+  color: #294b59 !important;
+  text-shadow: none !important;
 }
 
-html:not(.dark) body:not(.is-blog-page) .VPNav:has(.VPNavBar.top) .VPNavBarHamburger .top,
-html:not(.dark) body:not(.is-blog-page) .VPNav:has(.VPNavBar.top) .VPNavBarHamburger .middle,
-html:not(.dark) body:not(.is-blog-page) .VPNav:has(.VPNavBar.top) .VPNavBarHamburger .bottom {
-  background-color: rgba(255, 255, 255, 0.94) !important;
+html:not(.dark) body .VPNav:has(.VPNavBar.top) .VPNavBarHamburger .top,
+html:not(.dark) body .VPNav:has(.VPNavBar.top) .VPNavBarHamburger .middle,
+html:not(.dark) body .VPNav:has(.VPNavBar.top) .VPNavBarHamburger .bottom {
+  background-color: #294b59 !important;
 }
 
 /* Match the home page: keep every navigation surface clear at scroll top. */
