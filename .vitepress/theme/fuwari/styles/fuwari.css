@@ -148,6 +148,10 @@
 .fuwari-article-outline {
   padding: 1rem;
   color: var(--fuwari-muted);
+  background: transparent;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 html body .fuwari-article-outline.fuwari-card-base .VPDocAsideOutline.has-outline {
   margin: 0 !important;
@@ -175,8 +179,7 @@ html body .fuwari-article-outline.fuwari-card-base .VPDocAsideOutline .outline-l
 .fuwari-side-card { padding: 1rem; }
 .fuwari-sidebar .fuwari-widget.fuwari-card-base,
 .fuwari-right-panel .fuwari-side-card.fuwari-card-base,
-.fuwari-article-right-panel .fuwari-side-card.fuwari-card-base,
-.fuwari-article-outline.fuwari-card-base {
+.fuwari-article-right-panel .fuwari-side-card.fuwari-card-base {
   background: transparent;
   box-shadow: none;
   -webkit-backdrop-filter: none;
