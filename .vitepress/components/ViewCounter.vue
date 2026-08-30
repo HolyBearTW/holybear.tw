@@ -26,7 +26,12 @@
 import { ref, onMounted, watch } from 'vue'
 import { incrementAndGetViews } from './view-count'
 
-const props = defineProps({ slug: String })
+const props = defineProps({
+  slug: String,
+  // Lists and previews may display the total, but only the article page may
+  // increment it.
+  readOnly: { type: Boolean, default: false }
+})
 const views = ref(null)
 
 function hasCounted(slug) {
@@ -44,6 +49,10 @@ function markCounted(slug) {
 async function fetchViews(slug) {
   if (slug) {
     try {
+      if (props.readOnly) {
+        views.value = await incrementAndGetViews(slug, { onlyRead: true })
+        return
+      }
       if (!hasCounted(slug)) {
         views.value = await incrementAndGetViews(slug)
         markCounted(slug)
@@ -65,7 +74,7 @@ onMounted(() => {
   fetchViews(props.slug)
 })
 
-watch(() => props.slug, (newSlug, oldSlug) => {
+watch([() => props.slug, () => props.readOnly], ([newSlug], [oldSlug]) => {
   if (newSlug && newSlug !== oldSlug) {
     fetchViews(newSlug)
   }

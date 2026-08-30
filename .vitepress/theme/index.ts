@@ -7,6 +7,7 @@ import Spoiler from './Spoiler.vue';
 import { defaultTheme, THEME_STORAGE_KEY } from './background/themes';
 import ShareButtons from '../components/ShareButtons.vue';
 import HeroSection from '../components/HeroSection.vue';
+import FuwariPostLayout from './fuwari/components/FuwariPostLayout.vue';
 
 export default {
     extends: VPLTheme,
@@ -16,6 +17,7 @@ export default {
         app.component('Spoiler', Spoiler);
         app.component('ShareButtons', ShareButtons);
         app.component('HeroSection', HeroSection);
+        app.component('fuwari-post', FuwariPostLayout);
 
         if (typeof document === 'undefined') return; // SSR 階段直接跳過
 
@@ -99,6 +101,47 @@ export default {
         let isNavPortalHovered = false;
         let lastNavPortalRect: DOMRect | null = null;
         let navPortalCloseTimer: ReturnType<typeof setTimeout> | null = null;
+        const translatedBlogPaths = new Set(['/blog/2025-06-13']);
+
+        const getBlogLocaleFallback = (href: string) => {
+            const sourcePath = window.location.pathname.replace(/\.html$/, '').replace(/\/$/, '');
+            const targetPath = new URL(href, window.location.href).pathname.replace(/\.html$/, '').replace(/\/$/, '');
+            if (
+                !/^\/blog\/[^/]+$/.test(sourcePath) ||
+                targetPath !== `/en${sourcePath}` ||
+                translatedBlogPaths.has(sourcePath)
+            ) return null;
+
+            return `/en/blog/?source=${encodeURIComponent(sourcePath)}`;
+        };
+
+        const rewriteBlogLocaleLinks = (root: ParentNode = document) => {
+            root.querySelectorAll<HTMLAnchorElement>('a[href]').forEach((anchor) => {
+                const fallback = getBlogLocaleFallback(anchor.href);
+                if (fallback) anchor.setAttribute('href', fallback);
+            });
+        };
+
+        const handleBlogLocaleFallback = (event: MouseEvent) => {
+            if (!(event.target instanceof Element)) return;
+            const anchor = event.target.closest<HTMLAnchorElement>('a[href]');
+            if (!anchor) return;
+            const fallback = getBlogLocaleFallback(anchor.href);
+            if (!fallback) return;
+
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            window.location.assign(fallback);
+        };
+
+        const fallbackWindow = window as Window & {
+            __HB_BLOG_LOCALE_FALLBACK__?: (event: MouseEvent) => void;
+        };
+        if (fallbackWindow.__HB_BLOG_LOCALE_FALLBACK__) {
+            document.removeEventListener('click', fallbackWindow.__HB_BLOG_LOCALE_FALLBACK__, true);
+        }
+        fallbackWindow.__HB_BLOG_LOCALE_FALLBACK__ = handleBlogLocaleFallback;
+        document.addEventListener('click', handleBlogLocaleFallback, true);
 
         const syncCurrentThemeSelection = (root: ParentNode = document) => {
             const currentTheme = localStorage.getItem(THEME_STORAGE_KEY) || defaultTheme;
@@ -290,6 +333,7 @@ export default {
                     }
                 }
                 syncCurrentThemeSelection(nextPanel);
+                rewriteBlogLocaleLinks(nextPanel);
                 nextPanel.style.setProperty('visibility', 'visible', 'important');
                 nextPanel.style.setProperty('opacity', '1', 'important');
                 nextPanel.style.setProperty('pointer-events', 'auto', 'important');
@@ -341,7 +385,11 @@ export default {
 
         // --- Body Class 更新邏輯 (MutationObserver 版) ---
         function isBlogPage(path: string) {
-            return /^\/(en\/)?blog\/(?!$|index|index-new)[\w-]+/.test(path) || /^\/docs\/[\w-]+/.test(path);
+            return isFuwariBlogIndex(path) || /^\/(en\/)?blog\/(?!$|index|index-new)[\w-]+/.test(path) || /^\/docs\/[\w-]+/.test(path);
+        }
+
+        function isFuwariBlogIndex(path: string) {
+            return /^\/(?:en\/)?blog(?:\/|\/index(?:\.html)?)?$/.test(path);
         }
 
         function applyDesktopBlogNavFix() {
@@ -645,11 +693,27 @@ export default {
         });
 
         if (router) {
+            let fuwariRouteTransitionActive = false;
+            const isFuwariBlogRoute = (pathname: string) => /^\/(?:en\/)?blog(?:\/|$)/.test(pathname);
+            const waitForFuwariTransition = (duration = 200) => new Promise<void>((resolve) => window.setTimeout(resolve, duration));
+            const getFuwariTransitionColumn = () => document.querySelector<HTMLElement>('.fuwari-index-grid > .fuwari-post-list, .fuwari-article-grid > .fuwari-article-column');
+
             const previousBeforeRouteChange = router.onBeforeRouteChange;
             router.onBeforeRouteChange = async (to) => {
                 const targetUrl = new URL(to, window.location.origin);
                 const isSameDocument = targetUrl.pathname === window.location.pathname && targetUrl.search === window.location.search;
-                if (!isSameDocument) {
+                const isBlogToBlog = !isSameDocument
+                    && isFuwariBlogRoute(window.location.pathname)
+                    && isFuwariBlogRoute(targetUrl.pathname);
+
+                fuwariRouteTransitionActive = isBlogToBlog;
+                if (isBlogToBlog) {
+                    document.body.classList.add('fuwari-route-transition');
+                    const column = getFuwariTransitionColumn();
+                    column?.classList.add('fuwari-swup-transition', 'is-leaving');
+                    await waitForFuwariTransition();
+                }
+                else if (!isSameDocument) {
                     window.dispatchEvent(new CustomEvent('holybear-route-loading-start'));
                 }
                 return previousBeforeRouteChange?.(to);
@@ -659,7 +723,17 @@ export default {
             router.onAfterRouteChange = async (to) => {
                 await previousAfterRouteChange?.(to);
                 const routePath = new URL(to, window.location.origin).pathname.replace(/\/$/, '');
-                if (routePath !== '/maplestory') {
+                if (fuwariRouteTransitionActive) {
+                    const column = getFuwariTransitionColumn();
+                    column?.classList.add('fuwari-swup-transition', 'is-entering');
+                    await new Promise<void>((resolve) => window.requestAnimationFrame(() => window.requestAnimationFrame(() => resolve())));
+                    column?.classList.remove('is-entering');
+                    await waitForFuwariTransition();
+                    column?.classList.remove('fuwari-swup-transition');
+                    document.body.classList.remove('fuwari-route-transition');
+                    fuwariRouteTransitionActive = false;
+                }
+                else if (routePath !== '/maplestory') {
                     window.dispatchEvent(new CustomEvent('holybear-route-loading-finish'));
                 } else {
                     // React wrapper normally finishes the loading frame as soon as its content mounts.

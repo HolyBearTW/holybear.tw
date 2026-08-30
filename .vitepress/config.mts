@@ -1,13 +1,11 @@
 /* import { defineConfig } from 'vitepress' */
 import { defineConfig } from '@lando/vitepress-theme-default-plus/config'
-import react from '@vitejs/plugin-react'
 import { createLogger } from 'vite'
 import { fileURLToPath, URL } from 'node:url'
 import { existsSync, readFileSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import locales from './locales/index.ts'
 import gitMetaPlugin from './git-meta.ts'
-import sidebar from './sidebars/blog.sidebar.ts'
 import TelegramRoseBotDocsSidebar from './sidebars/Telegram-Rose-Bot-docs.sidebar.ts'
 import VitepressBlogDocsSidebar from './sidebars/Vitepress-Blog-docs-sidebar.ts'
 import SpoilerComponentDocsSidebar from './sidebars/spoiler-component-docs-sidebar.ts'
@@ -83,20 +81,7 @@ const config = defineConfig({
         'zh_TW/**/*.md'
     ],
     sitemap: {
-        hostname: 'https://holybear.tw',
-        transformItems(items) {
-            return items.filter(({ url }) => {
-                const normalizedUrl = url.replace(/^\/+|\/+$/g, '')
-                if (!normalizedUrl.startsWith('en/blog/')) return true
-
-                const sourceFile = fileURLToPath(
-                    new URL(`../${normalizedUrl}.md`, import.meta.url)
-                )
-
-                return !existsSync(sourceFile) ||
-                    !readFileSync(sourceFile, 'utf8').includes('Blog Not Supported in English')
-            })
-        }
+        hostname: 'https://holybear.tw'
     },
     robots: {
         allowAll: false,
@@ -197,6 +182,17 @@ const config = defineConfig({
             __GIT_COMMIT_HASH__: JSON.stringify(gitCommitHash),
             __GIT_COMMIT_DATE__: JSON.stringify(gitCommitDate),
         },
+        // Vite 8 can transform React JSX/TSX through OXC directly. The embedded
+        // MapleStory app intentionally remounts through its Vue wrapper, so a
+        // site-wide React Refresh preamble is unnecessary and conflicts with
+        // system-level content-script shims such as AdGuard's localhost filter.
+        oxc: {
+            jsx: {
+                runtime: 'automatic',
+                importSource: 'react',
+                refresh: false,
+            },
+        },
         server: {
             host: true,
             hmr: {
@@ -214,21 +210,16 @@ const config = defineConfig({
             cors: true,
         },
         plugins: [
-            gitMetaPlugin(), 
-            // 楓谷工具由 Vue wrapper 掛載 React；停用其 Fast Refresh，避免 runtime 版本衝突。
-            react({
-                exclude: [
-                    /[\\/]node_modules[\\/]/,
-                    /[\\/]\.vitepress[\\/]components[\\/]maplestory[\\/]/
-                ]
-            })
+            gitMetaPlugin(),
         ],
         // 只過濾已知且無影響的第三方套件警告，其餘 Vite 警告仍正常顯示。
         customLogger: viteLogger,
         resolve: {
             alias: [
                 {
-                    find: /^.*\/VPAlgoliaSearchBox\.vue$/, 
+                    // VitePress/theme-default-plus still resolves this internal module at compile time.
+                    // Keeping the path alias does not enable the removed Algolia search provider.
+                    find: /^.*\/VPAlgoliaSearchBox\.vue$/,
                     replacement: fileURLToPath(new URL('../node_modules/vitepress/dist/client/theme-default/components/VPAlgoliaSearchBox.vue', import.meta.url))
                 },
                 {
@@ -487,7 +478,6 @@ const config = defineConfig({
             level: [2, 3], // 默認顯示 H2 和 H3 標題
         },
         sidebar: {
-            '/blog/': sidebar,
             '/docs/Telegram-Rose-Bot.md': TelegramRoseBotDocsSidebar,
             '/docs/Vitepress-Blog.md': VitepressBlogDocsSidebar,
             '/docs/spoiler-component.md': SpoilerComponentDocsSidebar
@@ -496,17 +486,6 @@ const config = defineConfig({
             { icon: 'github', link: 'https://github.com/HolyBearTW' },
             { icon: 'telegram', link: 'https://t.me/HolyBearTW' }
         ],
-        search: {
-            provider: 'algolia',
-            options: {
-                appId: 'DO73KQBN99',
-                apiKey: '1696c6834514ebc31df7160f019742fe',
-                indexName: 'holybear.tw',
-                askAi: {
-                    assistantId: 'ZsmQH2xLw8lV',
-                }
-            }
-        }
     },
 
     transformPageData(pageData) {
@@ -516,11 +495,16 @@ const config = defineConfig({
             pageData.frontmatter.pageClass = 'custom-footer-layout';
         }
 
-        // 2. 處理 blog/ 底下的文章側邊欄 (你原本的邏輯)
-        if (pageData.relativePath?.startsWith('blog/')) {
+        // 2. Blog 首頁是 Fuwari PoC 的全寬 page layout；文章頁維持原本文件側欄。
+        if (pageData.relativePath === 'blog/index.md' || pageData.relativePath === 'en/blog/index.md') {
             pageData.frontmatter = pageData.frontmatter || {};
+            pageData.frontmatter.aside = false;
+            pageData.frontmatter.sidebar = false;
+        } else if (pageData.relativePath?.startsWith('blog/') || pageData.relativePath?.startsWith('en/blog/')) {
+            pageData.frontmatter = pageData.frontmatter || {};
+            pageData.frontmatter.layout = 'fuwari-post';
             pageData.frontmatter.aside = true;
-            pageData.frontmatter.sidebar = true;
+            pageData.frontmatter.sidebar = false;
         }
 
         return pageData;
@@ -548,12 +532,5 @@ const config = defineConfig({
         }
     },
 })
-
-// 為了讓舊版主題也能正常運作，將 search.options 自動同步給 algolia
-// 這樣您就只需要維護 search 配置，而不需要重複兩次
-// if (config.themeConfig?.search?.provider === 'algolia') {
-    // @ts-ignore
-//     config.themeConfig.algolia = config.themeConfig.search.options
-// }
 
 export default config

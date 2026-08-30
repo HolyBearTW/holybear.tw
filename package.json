@@ -12,7 +12,6 @@
     "tailwindcss": "^4.3.3",
     "vite": "^8.2.2",
     "vitepress": "^2.0.0-alpha.19",
-    "vitepress-plugin-auto-sidebar": "^1.4.0",
     "vue": "^3.5.41"
   },
   "dependencies": {
@@ -41,8 +40,7 @@
     "swiper": "^14.1.0",
     "three": "^0.185.1",
     "turndown": "^7.2.4",
-    "vue-chartjs": "^5.3.4",
-    "vue-instantsearch": "^4.29.5"
+    "vue-chartjs": "^5.3.4"
   },
   "overrides": {
     "preact": "10.27.3",
@@ -65,8 +63,6 @@
     "generate:rss": "node scripts/generate-rss.mjs",
     "optimize:deploy-images": "node scripts/optimize-deploy-images.mjs",
     "check:maple-calculator": "node scripts/check-maple-calculator.mjs",
-    "preview": "vitepress preview",
-    "gen-en-blog": "node en/blog/gen-en-blog-placeholders.js",
-    "postinstall": "node scripts/silence-react-warn.js"
+    "preview": "vitepress preview"
   }
 }

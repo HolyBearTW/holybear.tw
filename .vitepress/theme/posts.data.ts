@@ -1,5 +1,6 @@
 import { createContentLoader } from 'vitepress';
 import { execSync } from 'child_process';
+import { readFileSync } from 'fs';
 import path from 'path';
 const DEFAULT_IMAGE = '/blog_no_image.svg';
 
@@ -66,6 +67,21 @@ function normalizeUrl(url) {
     return url;
 }
 
+function getReadingStats(src = '') {
+    const plainText = src
+        .replace(/^---[\s\S]*?---/m, '')
+        .replace(/```[\s\S]*?```/g, '')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
+        .replace(/\[[^\]]*\]\([^)]*\)/g, ' ')
+        .replace(/[#>*_~`|\-]/g, ' ');
+    const cjkCount = (plainText.match(/[\u3400-\u9fff\uf900-\ufaff]/g) || []).length;
+    const latinCount = (plainText.match(/[A-Za-z0-9]+/g) || []).length;
+    const words = Math.max(1, cjkCount + latinCount);
+    // Match Fuwari's reading-time defaults: 200 words per minute, rounded.
+    return { words, minutes: Math.max(1, Math.round(words / 200)) };
+}
+
 
 export default createContentLoader(['blog/**/*.md', 'en/blog/**/*.md', 'Mod.md', 'en/Mod.md', 'docs/*.md', 'halloween/index.md'], {
     excerpt: true,
@@ -76,7 +92,7 @@ export default createContentLoader(['blog/**/*.md', 'en/blog/**/*.md', 'Mod.md',
                     url === '/blog/' ||
                     url === '/blog/index.html' ||
                     url === '/en/blog/' ||
-                    url === '/en/blog/index.html'
+                    url === '/en/blog/index.html' ||
                     url === '/docs/';
                 const isUnexpectedMdUrl = url.endsWith('.md') && !url.startsWith('/blog/') && !url.startsWith('/en/blog/');
                 return !isBlogIndexPage && !isUnexpectedMdUrl;
@@ -87,8 +103,17 @@ export default createContentLoader(['blog/**/*.md', 'en/blog/**/*.md', 'Mod.md',
                 const title = fm.title || '無標題文章';
                 // 推測檔案路徑
                 // 直接用 url 推算 md 檔案路徑
-                const rel = url.replace(/^\//, '').replace(/\/$/, '') + '.md';
+                const normalizedUrl = normalizeUrl(url);
+                const rel = normalizedUrl.replace(/^\//, '').replace(/\/$/, '') + '.md';
                 const mdFilePath = path.join(process.cwd(), rel);
+                let markdownSource = typeof src === 'string' ? src : '';
+                if (!markdownSource) {
+                    try {
+                        markdownSource = readFileSync(mdFilePath, 'utf8');
+                    } catch {
+                        markdownSource = '';
+                    }
+                }
                 // 自動補齊作者/日期
                 let author = fm.author;
                 let date = extractDate(fm);
@@ -113,7 +138,7 @@ export default createContentLoader(['blog/**/*.md', 'en/blog/**/*.md', 'Mod.md',
                     const lines = src.split('\n').map(line => line.trim());
                     summary = lines.find(line => line && !line.startsWith('#') && !line.startsWith('![') && !line.startsWith('>')) || '';
                 }
-                const normalizedUrl = normalizeUrl(url);
+                const readingStats = getReadingStats(markdownSource);
                 return {
                     url: normalizedUrl,
                     frontmatter: fm,
@@ -127,6 +152,8 @@ export default createContentLoader(['blog/**/*.md', 'en/blog/**/*.md', 'Mod.md',
                     summary,
                     excerpt: summary,
                     author,
+                    words: readingStats.words,
+                    minutes: readingStats.minutes,
                 };
             })
             .filter(post => !!post && typeof post.url === 'string' && post.url.trim() !== '')

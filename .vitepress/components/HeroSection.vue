@@ -5,6 +5,7 @@ import { Swiper, SwiperSlide } from 'swiper/vue'
 // 🌟 引入 EffectFade 模組
 import { Autoplay, Navigation, Pagination, EffectFade } from 'swiper/modules'
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-vue-next'
+import { taxonomyLabel } from '../theme/fuwari/utils/taxonomy'
 
 import 'swiper/css'
 import 'swiper/css/navigation'
@@ -17,6 +18,7 @@ const props = defineProps({
 })
 
 const { lang } = useData()
+const en = computed(() => lang.value.toLowerCase().startsWith('en'))
 const mounted = ref(false)
 const observer = ref(null)
 let animationUnlockTimer = null
@@ -36,6 +38,12 @@ const carouselPosts = computed(() => props.posts.slice(0, 10))
 const getImageUrl = (image) => {
   if (!image) return '/blog_no_image.svg'
   return image.startsWith('http') ? image : withBase(image)
+}
+
+const getCategory = (post) => {
+  const category = post.category || post.frontmatter?.category
+  const value = Array.isArray(category) ? category[0] : category
+  return value ? taxonomyLabel(value, en.value) : ''
 }
 
 const formatDate = (dateStr) => {
@@ -107,7 +115,7 @@ const modules = [Autoplay, Navigation, Pagination, EffectFade]
               
               <div class="slide-meta">
                 <span class="cat-tag" v-if="post.category || post.frontmatter?.category">
-                  {{ Array.isArray(post.category || post.frontmatter?.category) ? (post.category || post.frontmatter?.category)[0] : (post.category || post.frontmatter?.category) }}
+                  {{ getCategory(post) }}
                 </span>
                 <span class="slide-date" v-if="post.date || post.frontmatter?.date">
                   <Calendar class="date-icon" />

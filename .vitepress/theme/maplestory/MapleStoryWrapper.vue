@@ -24,7 +24,7 @@ function focusCharacterSearch() {
 
 function handleMapleNavSearchClick(event) {
   const target = event.target instanceof Element
-    ? event.target.closest('.VPNavBarSearchButton, .DocSearch-Button')
+    ? event.target.closest('.VPNavBarSearchButton')
     : null
   if (!target) return
 
@@ -52,8 +52,8 @@ function handleMapleNavSearchShortcut(event) {
 function syncMapleNavSearch() {
   const isDesktop = window.innerWidth >= 768
 
-  document.querySelectorAll('.VPNavBarSearchButton, .DocSearch-Button').forEach((button) => {
-    const placeholder = button.querySelector('.text, .DocSearch-Button-Placeholder')
+  document.querySelectorAll('.VPNavBarSearchButton').forEach((button) => {
+    const placeholder = button.querySelector('.text')
     if (!placeholder) return
 
     if (!navSearchOriginals.has(button)) {
@@ -231,12 +231,10 @@ body.maple-nav-over-hero:has(#maplestory-root) .VPNavBar .VPSocialLink {
 
 /* Visual fallback while VitePress is reconciling its desktop search button DOM. */
 @media (min-width: 768px) {
-  body:has(#maplestory-root) .DocSearch-Button-Placeholder,
   body:has(#maplestory-root) .VPNavBarSearchButton .text {
     font-size: 0 !important;
   }
 
-  body:has(#maplestory-root) .DocSearch-Button-Placeholder::after,
   body:has(#maplestory-root) .VPNavBarSearchButton .text::after {
     content: '搜尋角色';
     font-size: 12px;

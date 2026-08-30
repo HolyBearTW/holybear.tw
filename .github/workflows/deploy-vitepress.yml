@@ -196,24 +196,6 @@ jobs:
                 }
             }
 
-      - name: 產生側邊欄
-        if: steps.detect-content-changed.outputs.has_changed == 'true'
-        run: node .vitepress/components/generateSidebar.cjs
-
-      - name: amend sidebar 進最新 commit（如有變更）
-        if: steps.detect-content-changed.outputs.has_changed == 'true'
-        run: |
-          git config --global user.name "${{ github.actor }}"
-          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
-          git add .vitepress/sidebars/blog.sidebar.ts .vitepress/sidebars/blog.sidebar.en.ts
-          if git diff --cached --quiet; then
-            echo "沒有 sidebar 變更，無需 amend"
-          else
-            git commit --amend --no-edit
-            git push --force-with-lease
-            echo "已 amend sidebar 進原本 commit"
-          fi
-
       - name: Commit 並 push yarn.lock
         if: steps.detect-content-changed.outputs.has_changed == 'true'
         run: |
@@ -226,50 +208,6 @@ jobs:
             git commit -m "chore: update yarn.lock [bot]"
             git pull --rebase origin main
             git push || git push --force
-          fi
-
-      - name: 備份、產生、還原並遞交英文 Blog 檔案
-        if: steps.detect-content-changed.outputs.has_changed == 'true'
-        shell: /usr/bin/bash -e {0}
-        run: |
-          # --- 階段 1: 備份所有已存在的英文檔案 ---
-          BACKUP_DIR="tmp_existing_en_files"
-          mkdir -p "$BACKUP_DIR"
-          echo "=> 階段 1: 備份所有已存在的英文文章..."
-
-          if [ -d "en/blog" ] && [ -n "$(ls -A en/blog/*.md 2>/dev/null)" ]; then
-            echo "    - 發現已存在的檔案，正在移至暫存區以避免被覆蓋..."
-            mv en/blog/*.md "$BACKUP_DIR/"
-          else
-            echo "    - en/blog/ 目錄為空或不存在，無需備份。"
-          fi
-
-          echo "=> 階段 2: 執行遞補檔案產生程序 (yarn gen-en-blog)..."
-          yarn gen-en-blog
-          echo "    - 產生程序完成。"
-
-          echo "=> 階段 3: 還原先前已存在的英文檔案..."
-          if [ -n "$(ls -A $BACKUP_DIR 2>/dev/null)" ]; then
-            mv -f "$BACKUP_DIR"/* en/blog/
-            echo "    - 已還原備份的檔案。"
-          else
-            echo "    - 沒有需要還原的檔案。"
-          fi
-          rm -rf "$BACKUP_DIR"
-
-          echo "=> 階段 4: 檢查是否有新檔案需要提交..."
-          git config --global user.name 'System Administrator'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git add en/blog/
-
-          if git diff --cached --quiet; then
-            echo "    - 沒有新產生的遞補檔案需要提交。"
-          else
-            echo "    - 偵測到新產生的遞補檔案，正在提交..."
-            git commit -m "chore: auto-generate en blog placeholders"
-            git pull --rebase origin main
-            git push --set-upstream origin main || git push
-            echo "    - 新檔案已成功提交。"
           fi
 
       - name: 檢查 Cloudflare Pages Git 部署設定

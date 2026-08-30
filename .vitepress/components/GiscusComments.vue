@@ -14,6 +14,11 @@
 import { ref, onMounted, watch, computed } from 'vue'
 import { useRoute, useData } from 'vitepress'
 
+const props = defineProps({
+  reactionsEnabled: { type: Boolean, default: true },
+  inputPosition: { type: String, default: 'bottom' }
+})
+
 const giscusLoaded = ref(false)
 const giscusContainer = ref(null)
 const route = useRoute()
@@ -40,9 +45,9 @@ function loadGiscus() {
       script.setAttribute('data-category-id', 'DIC_kwDOJmguVs4Cqo90')
       script.setAttribute('data-mapping', 'pathname')
       script.setAttribute('data-strict', '0')
-      script.setAttribute('data-reactions-enabled', '1')
+      script.setAttribute('data-reactions-enabled', props.reactionsEnabled ? '1' : '0')
       script.setAttribute('data-emit-metadata', '0')
-      script.setAttribute('data-input-position', 'bottom')
+      script.setAttribute('data-input-position', props.inputPosition)
       script.setAttribute('data-theme', giscusTheme.value)
       script.setAttribute('data-lang', giscusLang.value) // 動態語言
       script.setAttribute('crossorigin', 'anonymous')

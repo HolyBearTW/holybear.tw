@@ -24,6 +24,7 @@ import Christmas from './background/ChristmasBackground.vue'
 import Halloween from './background/HalloweenBackground.vue'
 import GravityFieldSimulation from './background/GravityFieldSimulation.vue'
 import HolyBearLoadingFrame from './HolyBearLoadingFrame.vue'
+import FuwariSearch from './fuwari/components/FuwariSearch.vue'
 import { 
   defaultTheme, 
   THEME_CHANGE_EVENT,
@@ -176,7 +177,7 @@ const updateBodyClass = (theme: string) => {
     const allThemeClasses = allThemeIds.map(id => `theme-${id}`)
     document.body.classList.remove(...allThemeClasses)
 
-    const isAboutPage = page.value?.relativePath === 'about.md'
+    const isAboutPage = /^(?:en\/)?about\.md$/.test(page.value?.relativePath || '')
     document.body.classList.toggle('about-page', !!isAboutPage)
   
   // 添加當前主題 class
@@ -719,6 +720,9 @@ onUnmounted(() => {
         <template #layout-top>
             <NavThemeHandler />
         </template>
+        <template #nav-bar-content-before>
+            <FuwariSearch />
+        </template>
         <!-- Home Page: Carousel between Hero and Features -->
         <template #home-features-before>
             <div v-if="isHomePage" class="VPFeatures VPHomeFeatures" style="padding-top: 0 !important; padding-bottom: 2rem !important; display: flex; justify-content: center;">
@@ -788,9 +792,7 @@ onUnmounted(() => {
                         <a href="/sitemap.xml" target="_blank">{{ footerCopy.sitemap }}</a>
                     </p>
                     <p class="footer-line">
-                        {{ footerCopy.poweredPrefix }}
-                        <a href="https://vitepress.dev/" target="_blank" rel="noopener">VitePress</a>
-                        {{ footerCopy.poweredSuffix }}
+                        {{ footerCopy.poweredPrefix }} <a href="https://vitepress.dev/" target="_blank" rel="noopener">VitePress</a>{{ isEnglish ? ', ' : '、' }}<a href="https://astro.build/" target="_blank" rel="noopener">Astro</a>{{ isEnglish ? ' and ' : ' 和 ' }}<a href="https://github.com/saicaca/fuwari" target="_blank" rel="noopener">Fuwari</a> {{ footerCopy.poweredSuffix }}
                     </p>
                     <p class="footer-line">
                         {{ footerCopy.sourcePrefix }}
