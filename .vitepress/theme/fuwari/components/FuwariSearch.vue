@@ -75,28 +75,30 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
     </button>
   </div>
 
-  <div v-if="open" class="fuwari-search-overlay" role="presentation" @mousedown.self="close">
-    <section class="fuwari-search-panel" role="dialog" aria-modal="true" :aria-label="en ? 'Search site' : '搜尋全站'">
-      <label class="fuwari-search-panel__input">
-        <Search :size="20" aria-hidden="true" />
-        <input ref="input" v-model="query" type="search" :placeholder="en ? 'Search the Blog, docs, and other pages…' : '搜尋 Blog、文件與其他頁面…'">
-        <button type="button" :aria-label="en ? 'Close search' : '關閉搜尋'" @click="close"><X :size="19" /></button>
-      </label>
-      <div class="fuwari-search-panel__results">
-        <button v-for="item in results" :key="item.url" type="button" @click="navigate(item.url)">
-          <strong>{{ item.title }}</strong>
-          <small>{{ item.url }}</small>
-          <span v-if="item.categories.length || item.tags.length" class="fuwari-search-panel__meta">
-            <em v-for="category in item.displayCategories" :key="`category-${category}`">{{ taxonomyLabel(category, en) }}</em>
-            <i v-for="tag in item.displayTags" :key="`tag-${tag}`"># {{ taxonomyLabel(tag, en) }}</i>
-          </span>
-          <span>{{ item.excerpt }}</span>
-        </button>
-        <p v-if="query && !results.length">{{ en ? `No results found for “${query}”.` : `找不到符合「${query}」的內容。` }}</p>
-        <p v-else-if="!query">{{ en ? 'Enter a keyword to start searching.' : '輸入關鍵字開始搜尋。' }}</p>
-      </div>
-    </section>
-  </div>
+  <Teleport to="body">
+    <div v-if="open" class="fuwari-search-overlay" role="presentation" @mousedown.self="close">
+      <section class="fuwari-search-panel" role="dialog" aria-modal="true" :aria-label="en ? 'Search site' : '搜尋全站'">
+        <label class="fuwari-search-panel__input">
+          <Search :size="20" aria-hidden="true" />
+          <input ref="input" v-model="query" type="search" :placeholder="en ? 'Search the Blog, docs, and other pages…' : '搜尋 Blog、文件與其他頁面…'">
+          <button type="button" :aria-label="en ? 'Close search' : '關閉搜尋'" @click="close"><X :size="19" /></button>
+        </label>
+        <div class="fuwari-search-panel__results">
+          <button v-for="item in results" :key="item.url" type="button" @click="navigate(item.url)">
+            <strong>{{ item.title }}</strong>
+            <small>{{ item.url }}</small>
+            <span v-if="item.categories.length || item.tags.length" class="fuwari-search-panel__meta">
+              <em v-for="category in item.displayCategories" :key="`category-${category}`">{{ taxonomyLabel(category, en) }}</em>
+              <i v-for="tag in item.displayTags" :key="`tag-${tag}`"># {{ taxonomyLabel(tag, en) }}</i>
+            </span>
+            <span>{{ item.excerpt }}</span>
+          </button>
+          <p v-if="query && !results.length">{{ en ? `No results found for “${query}”.` : `找不到符合「${query}」的內容。` }}</p>
+          <p v-else-if="!query">{{ en ? 'Enter a keyword to start searching.' : '輸入關鍵字開始搜尋。' }}</p>
+        </div>
+      </section>
+    </div>
+  </Teleport>
 </template>
 
 <style scoped>
