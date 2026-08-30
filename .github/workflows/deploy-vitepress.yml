@@ -62,12 +62,14 @@ jobs:
           fi
 
       - name: 設定 Node.js 與快取
+        if: steps.detect-content-changed.outputs.has_changed == 'true'
         uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: 'yarn'
 
       - name: 安裝相依套件
+        if: steps.detect-content-changed.outputs.has_changed == 'true'
         run: yarn install
 
 
