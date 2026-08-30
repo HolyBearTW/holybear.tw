@@ -5,13 +5,17 @@ permissions:
   id-token: write
   discussions: write
 
-name: 部署 VitePress 靜態網站到 GitHub Pages
+name: 建置並部署 VitePress 靜態網站
 
 on:
   push:
     branches:
       - main
   workflow_dispatch:
+
+concurrency:
+  group: holybear-cloudflare-release
+  queue: max
 
 jobs:
   full-pipeline:
@@ -39,7 +43,7 @@ jobs:
 
       # --- 下方步驟都加上條件判斷 ---
 
-      - name: 部屬日誌
+      - name: 部署日誌
         if: steps.detect-content-changed.outputs.has_changed == 'true'
         run: |
           deleted_any=0
@@ -271,6 +275,67 @@ jobs:
             echo "    - 新檔案已成功提交。"
           fi
 
+      # 過渡期保留 GitHub Pages。Cloudflare 只監聽 cloudflare-production，
+      # pages.dev 與自訂網域都驗證完成後，再移除下方的 GitHub Pages 步驟。
+      - name: 檢查 Cloudflare Pages Git 部署設定
+        id: cloudflare-config
+        shell: bash
+        env:
+          DEPLOYMENT_HEALTH_URL: ${{ vars.DEPLOYMENT_HEALTH_URL }}
+        run: |
+          if [ -z "$DEPLOYMENT_HEALTH_URL" ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::尚未設定 Repository variable：DEPLOYMENT_HEALTH_URL；本次只部署 GitHub Pages。"
+            exit 0
+          fi
+
+          case "$DEPLOYMENT_HEALTH_URL" in
+            https://*) ;;
+            *)
+              echo "::error::DEPLOYMENT_HEALTH_URL 必須是 https:// 開頭的完整網址。"
+              exit 1
+              ;;
+          esac
+
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+
+      - name: 將最終原始碼發布到 Cloudflare 生產分支
+        id: cloudflare-release
+        if: steps.cloudflare-config.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "::error::仍有尚未 Commit 的檔案，停止發布 Cloudflare 生產分支。"
+            git status --short
+            exit 1
+          fi
+
+          readonly release_ref="refs/heads/cloudflare-production"
+          final_sha="$(git rev-parse HEAD)"
+          remote_sha="$(git ls-remote --heads origin "$release_ref" | awk '{print $1}')"
+
+          if [ -n "$remote_sha" ]; then
+            git fetch --no-tags origin "$release_ref:refs/remotes/origin/cloudflare-production"
+
+            if [ "$remote_sha" = "$final_sha" ]; then
+              echo "Cloudflare 生產分支已指向 ${final_sha}，無需重複發布。"
+            elif git merge-base --is-ancestor "$remote_sha" "$final_sha"; then
+              git push origin "${final_sha}:${release_ref}"
+            else
+              echo "::error::拒絕讓 Cloudflare 生產分支倒退或切換到分歧歷史。"
+              echo "目前遠端：${remote_sha}"
+              echo "準備發布：${final_sha}"
+              exit 1
+            fi
+          else
+            git push origin "${final_sha}:${release_ref}"
+          fi
+
+          echo "sha=${final_sha}" >> "$GITHUB_OUTPUT"
+          echo "已發布 Cloudflare Commit：${final_sha}"
+
       # 下面這些步驟建議還是 always run（就是內容沒動時仍可 build/部署/偵測新文/發通知）
       - name: 清除 Vite/VitePress 快取
         run: |
@@ -304,7 +369,42 @@ jobs:
         with:
           artifact_name: github-pages-${{ github.run_attempt }}
 
-      # 新文章偵測 & Telegram 通知照原本邏輯即可
+      - name: 等待指定 Cloudflare 版本上線
+        if: steps.cloudflare-release.outcome == 'success'
+        shell: bash
+        env:
+          EXPECTED_SHA: ${{ steps.cloudflare-release.outputs.sha }}
+          SITE_URL: ${{ vars.DEPLOYMENT_HEALTH_URL }}
+        run: |
+          set -euo pipefail
+
+          timeout=1500
+          interval=10
+          elapsed=0
+
+          while [ "$elapsed" -lt "$timeout" ]; do
+            live_sha="$(
+              curl --fail --silent --show-error \
+                --header 'Cache-Control: no-cache' \
+                "${SITE_URL%/}/__deploy.json?expected=${EXPECTED_SHA}&t=$(date +%s)" \
+                | jq -r '.commit // empty' 2>/dev/null \
+                || true
+            )"
+
+            if [ "$live_sha" = "$EXPECTED_SHA" ]; then
+              echo "Cloudflare 已上線指定版本：${EXPECTED_SHA}"
+              exit 0
+            fi
+
+            echo "等待 Cloudflare 部署，目前版本：${live_sha:-無法取得}"
+            sleep "$interval"
+            elapsed=$((elapsed + interval))
+          done
+
+          echo "::error::等待 Cloudflare 部署逾時；不發送 Telegram 通知。"
+          exit 1
+
+      # Telegram 只在 GitHub workflow 發送，Cloudflare 不保存 Bot Token。
       - name: 偵測新文章
         id: detect-new-files
         run: |
@@ -355,8 +455,12 @@ jobs:
             exit 0
             fi
             BASE_URL="https://holybear.tw"
-            escape_markdownv2() {
-            printf "%s" "$1" | sed -e 's/[\\_*\[\]()~`>#+\-=|{}.!]/\\&/g'
+            escape_telegram_html() {
+            printf "%s" "$1" | sed \
+              -e 's/&/\&amp;/g' \
+              -e 's/</\&lt;/g' \
+              -e 's/>/\&gt;/g' \
+              -e 's/"/\&quot;/g'
             }
 
             for file_path in $NEW_POST_FILES; do
@@ -379,46 +483,23 @@ jobs:
             ARTICLE_SLUG=$(echo "$file_path" | sed -E 's|^blog/(.*)\.md$|\1|')
             ARTICLE_URL="${BASE_URL}/blog/${ARTICLE_SLUG}"
     
-            # ✨ START: 新增的等待檢查邏輯 ✨
-            echo "等待日誌網址生效：${ARTICLE_URL}"
-            timeout=180 # 最長等待 180 秒 (3 分鐘)
-            interval=20 # 每 20 秒檢查一次
-            elapsed=0
-            while [ $elapsed -lt $timeout ]; do
-            # 使用 curl 檢查 HTTP 狀態碼
-            response_code=$(curl -s -o /dev/null -w "%{http_code}" "${ARTICLE_URL}")
-            if [ "$response_code" -eq 200 ]; then
-              echo "✅ 日誌已上線！"
-            break
-            fi
-              echo "日誌網址尚未生效 (HTTP ${response_code})，等待 ${interval} 秒…"
-            sleep $interval
-            elapsed=$((elapsed + interval))
-            done
-
-            # 如果超時後網址仍然無法訪問，則跳過此檔案的通知
-            if [ $elapsed -ge $timeout ]; then
-              echo "❌ 等待日誌網址生效已逾時，跳過以下通知：$file_path"
-            continue # 繼續處理下一個檔案
-            fi
-            # ✨ END: 新增的等待檢查邏輯 ✨
-
             COMMIT_MESSAGE=$(git log -1 --pretty=%B "$ORIGINAL_COMMIT")
             AUTHOR_NAME=$(git log -1 --pretty=%an "$ORIGINAL_COMMIT")
-            ESCAPED_TITLE=$(escape_markdownv2 "$TITLE")
-            ESCAPED_COMMIT_MESSAGE=$(escape_markdownv2 "$COMMIT_MESSAGE")
-            ESCAPED_AUTHOR_NAME=$(escape_markdownv2 "$AUTHOR_NAME")
+            ESCAPED_TITLE=$(escape_telegram_html "$TITLE")
+            ESCAPED_COMMIT_MESSAGE=$(escape_telegram_html "$COMMIT_MESSAGE")
+            ESCAPED_AUTHOR_NAME=$(escape_telegram_html "$AUTHOR_NAME")
+            ESCAPED_ARTICLE_URL=$(escape_telegram_html "$ARTICLE_URL")
     
-            MESSAGE=$'*📢 New push to GitHub*\n'
-            MESSAGE+=$'*'"${ESCAPED_TITLE}"$'*\n'
-            MESSAGE+=$'```commit\n'"${ESCAPED_COMMIT_MESSAGE}"$'\n```'
-            MESSAGE+=$'➡️ [點此閱讀文章]('"${ARTICLE_URL}"$')\n'
-            MESSAGE+='by `'"${ESCAPED_AUTHOR_NAME}"'`'
+            MESSAGE=$'<b>📢 New push to GitHub</b>\n'
+            MESSAGE+="<b>${ESCAPED_TITLE}</b>"
+            MESSAGE+=$'\n<pre><code>'"${ESCAPED_COMMIT_MESSAGE}"$'</code></pre>\n'
+            MESSAGE+="➡️ <a href=\"${ESCAPED_ARTICLE_URL}\">點此閱讀文章</a>"
+            MESSAGE+=$'\nby <code>'"${ESCAPED_AUTHOR_NAME}"$'</code>'
     
             RESPONSE=$(curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
             --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
             --data-urlencode "text=${MESSAGE}" \
-            --data-urlencode "parse_mode=MarkdownV2" \
+            --data-urlencode "parse_mode=HTML" \
             --data-urlencode "disable_web_page_preview=false") # 確保這裡設為 false
       
             if echo "$RESPONSE" | grep -q '"ok":true'; then
