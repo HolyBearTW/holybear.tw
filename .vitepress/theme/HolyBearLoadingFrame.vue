@@ -11,6 +11,7 @@ let routeShowTimer: number | undefined
 let routePopTimer: number | undefined
 let routeLeaveTimer: number | undefined
 let routeHideTimer: number | undefined
+let pageEnterTimer: number | undefined
 let routeLoadingPending = false
 
 function restorePageScroll() {
@@ -40,15 +41,28 @@ function clearRouteTimers() {
   routeHideTimer = undefined
 }
 
+function triggerPageEnter(isRouteNavigation = false) {
+  if (pageEnterTimer) window.clearTimeout(pageEnterTimer)
+  document.body.classList.remove('holy-bear-page-enter', 'holy-bear-route-enter')
+  void document.body.offsetWidth
+
+  window.requestAnimationFrame(() => {
+    document.body.classList.add('holy-bear-page-enter')
+    document.body.classList.toggle('holy-bear-route-enter', isRouteNavigation)
+    window.dispatchEvent(new CustomEvent('holybear-loading-complete'))
+    pageEnterTimer = window.setTimeout(() => {
+      document.body.classList.remove('holy-bear-page-enter', 'holy-bear-route-enter')
+      pageEnterTimer = undefined
+    }, 1400)
+  })
+}
+
 function startRouteLoading() {
   clearRouteTimers()
+  if (pageEnterTimer) window.clearTimeout(pageEnterTimer)
+  pageEnterTimer = undefined
+  document.body.classList.remove('holy-bear-page-enter', 'holy-bear-route-enter')
   routeLoadingPending = true
-  routeShowTimer = window.setTimeout(() => {
-    isVisible.value = true
-    isPopping.value = false
-    isLeaving.value = false
-    lockPageScroll()
-  }, 400)
 }
 
 function handleInternalNavigation(event: MouseEvent) {
@@ -71,14 +85,15 @@ function finishRouteLoading() {
   if (!routeLoadingPending) return
   routeLoadingPending = false
   clearRouteTimers()
-  if (!isVisible.value) return
+  if (!isVisible.value) {
+    triggerPageEnter(true)
+    return
+  }
 
   isPopping.value = true
   routePopTimer = window.setTimeout(() => {
     isLeaving.value = true
-    document.body.classList.add('holy-bear-page-enter')
-    window.dispatchEvent(new CustomEvent('holybear-loading-complete'))
-    window.setTimeout(() => document.body.classList.remove('holy-bear-page-enter'), 1400)
+    triggerPageEnter(true)
 
     routeHideTimer = window.setTimeout(() => {
       isVisible.value = false
@@ -98,11 +113,7 @@ onMounted(() => {
     isPopping.value = true
     window.setTimeout(() => {
       isLeaving.value = true
-      document.body.classList.add('holy-bear-page-enter')
-      window.dispatchEvent(new CustomEvent('holybear-loading-complete'))
-      window.setTimeout(() => {
-        document.body.classList.remove('holy-bear-page-enter')
-      }, 1400)
+      triggerPageEnter(false)
       window.setTimeout(() => {
         isVisible.value = false
         restorePageScroll()
@@ -113,6 +124,8 @@ onMounted(() => {
 
 onUnmounted(() => {
   clearRouteTimers()
+  if (pageEnterTimer) window.clearTimeout(pageEnterTimer)
+  document.body.classList.remove('holy-bear-page-enter', 'holy-bear-route-enter')
   document.removeEventListener('click', handleInternalNavigation, true)
   window.removeEventListener('holybear-route-loading-start', startRouteLoading)
   window.removeEventListener('holybear-route-loading-finish', finishRouteLoading)

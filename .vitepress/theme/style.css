@@ -4062,6 +4062,74 @@ body.holy-bear-page-enter .VPDoc .vp-doc > *:nth-child(3) { animation-delay: 0.1
   100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 
+/* SPA route changes stay visible while replaying the bounce; the full reload is
+   already covered by the loading curtain and keeps the original fade-in. */
+body.holy-bear-page-enter.holy-bear-route-enter .VPHome .VPHero .text,
+body.holy-bear-page-enter.holy-bear-route-enter .VPHome .VPHero .tagline,
+body.holy-bear-page-enter.holy-bear-route-enter .VPHome .VPHero .actions,
+body.holy-bear-page-enter.holy-bear-route-enter .VPHome .VPFeatures .container > *,
+body.holy-bear-page-enter.holy-bear-route-enter .VPDoc .vp-doc > *,
+body.holy-bear-page-enter.holy-bear-route-enter .hb-home-lobby .hero-brand-lockup,
+body.holy-bear-page-enter.holy-bear-route-enter .hb-home-lobby .hero-title-group,
+body.holy-bear-page-enter.holy-bear-route-enter .hb-home-lobby .hero-intro,
+body.holy-bear-page-enter.holy-bear-route-enter .hb-home-lobby .hero-actions,
+body.holy-bear-page-enter.holy-bear-route-enter .hb-home-lobby .scene,
+body.holy-bear-page-enter.holy-bear-route-enter .hb-home-lobby .story-band {
+  animation-name: holyBearRouteBounceIn !important;
+}
+
+body.holy-bear-page-enter .VPDoc .vp-doc > .hb-home-lobby,
+body.holy-bear-page-enter .VPDoc .vp-doc > .days500 {
+  opacity: 1 !important;
+  transform: none !important;
+  animation: none !important;
+}
+
+@keyframes holyBearRouteBounceIn {
+  0% { opacity: 1; transform: translateY(18px) scale(0.985); }
+  72% { opacity: 1; transform: translateY(-3px) scale(1.005); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+body.holy-bear-page-enter .days500 .topline,
+body.holy-bear-page-enter .days500 .eyebrow,
+body.holy-bear-page-enter .days500 h1,
+body.holy-bear-page-enter .days500 .lead,
+body.holy-bear-page-enter .days500 .statement,
+body.holy-bear-page-enter .days500 .hero-actions,
+body.holy-bear-page-enter .days500 .seal-area {
+  animation: holyBearTextBounceIn .85s cubic-bezier(.68, -.6, .32, 1.6) both !important;
+}
+
+body.holy-bear-page-enter .days500 .eyebrow { animation-delay: .05s !important; }
+body.holy-bear-page-enter .days500 h1 { animation-delay: .1s !important; }
+body.holy-bear-page-enter .days500 .lead { animation-delay: .16s !important; }
+body.holy-bear-page-enter .days500 .seal-area { animation-delay: .14s !important; }
+body.holy-bear-page-enter .days500 .statement { animation-delay: .22s !important; }
+body.holy-bear-page-enter .days500 .hero-actions { animation-delay: .28s !important; }
+
+body.holy-bear-page-enter.holy-bear-route-enter .days500 .topline,
+body.holy-bear-page-enter.holy-bear-route-enter .days500 .eyebrow,
+body.holy-bear-page-enter.holy-bear-route-enter .days500 h1,
+body.holy-bear-page-enter.holy-bear-route-enter .days500 .lead,
+body.holy-bear-page-enter.holy-bear-route-enter .days500 .statement,
+body.holy-bear-page-enter.holy-bear-route-enter .days500 .hero-actions,
+body.holy-bear-page-enter.holy-bear-route-enter .days500 .seal-area {
+  animation-name: holyBearRouteBounceIn !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.holy-bear-page-enter .days500 .topline,
+  body.holy-bear-page-enter .days500 .eyebrow,
+  body.holy-bear-page-enter .days500 h1,
+  body.holy-bear-page-enter .days500 .lead,
+  body.holy-bear-page-enter .days500 .statement,
+  body.holy-bear-page-enter .days500 .hero-actions,
+  body.holy-bear-page-enter .days500 .seal-area {
+    animation: none !important;
+  }
+}
+
 /* Hero 頁面：導覽列覆蓋內容；頂端透明、捲動後恢復毛玻璃背景 */
 body:has(.hb-home-lobby) .VPNav,
 body:has(.VPHero) .VPNav {

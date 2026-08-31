@@ -5,6 +5,7 @@ export default {
   description: '聖小熊的個人網站，展示 HyperOS 模組作品與楓之谷戰力分析工具，分享技術筆記、開發心得與開源創作。',
   themeConfig: {
     nav: [
+  { text: '慶祝500日', link: '/500days' },
   { text: '日誌', link: '/blog/' },
   { text: '作品集', link: '/Mod' },
   { text: '關於我', link: '/about' },

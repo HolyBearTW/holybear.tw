@@ -5,6 +5,7 @@ export default {
   description: "HolyBear's personal site, showcasing HyperOS module projects and a MapleStory combat power analysis tool, alongside technical notes and open-source work.",
   themeConfig: {
     nav: [
+      { text: 'Celebrate 500 Days', link: '/500days' },
       { text: 'Blog', link: '/en/blog/' },
       { text: 'Portfolio', link: '/en/Mod' },
       { text: 'About', link: '/en/about' },

@@ -5,6 +5,7 @@ import { computed, onMounted, onUnmounted, watch, ref, provide, nextTick } from 
 import { useRoute } from 'vitepress'
 import { useAuthors } from '../components/useAuthors.js'
 import FloatingBgmPlayer from './FloatingBgmPlayer.vue'
+import CelebrationEntry from './CelebrationEntry.vue'
 import GiscusComments from '../components/GiscusComments.vue'
 import VotePanel from '../components/VotePanel.vue'
 import ViewCounter from '../components/ViewCounter.vue'
@@ -700,6 +701,9 @@ onUnmounted(() => {
     <HolyBearLoadingFrame />
     <MigrationNotice :intro-finished="true" />
     <FloatingBgmPlayer />
+    <ClientOnly>
+        <CelebrationEntry />
+    </ClientOnly>
     <div class="mobile-flash-guard" :style="mobileFlashGuardStyle" aria-hidden="true"></div>
 
     <ClientOnly>
