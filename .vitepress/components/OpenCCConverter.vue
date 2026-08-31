@@ -78,6 +78,10 @@ const clearInput = () => {
   performConversion(); // 確保清空後也更新轉換結果
 };
 
+const toggleLayout = () => {
+  isStacked.value = !isStacked.value;
+};
+
 onMounted(() => {
   const checkMobile = () => {
     isMobile.value = window.innerWidth <= 768;
@@ -95,7 +99,7 @@ performConversion();
 </script>
 
 <template>
-  <div class="page-container">
+  <div class="page-container opencc-converter-page">
     <h1>線上簡繁轉換工具</h1>
     <h3 class="intro-text">
       📝 這是一個基於 OpenCC-JS 建立的線上繁體、簡體中文轉換工具。請在下方的輸入框貼上您想轉換的文字。
@@ -130,7 +134,7 @@ performConversion();
           <textarea v-model="inputText" @input="performConversion" rows="8"></textarea>
           <div class="button-group">
             <button @click="clearInput" class="copy-button">清空</button>
-            <button @click="isStacked = !isStacked" class="copy-button toggle-layout-button" v-show="!isMobile">切換佈局</button>
+            <button @click="toggleLayout" class="copy-button toggle-layout-button" v-show="!isMobile">切換佈局</button>
           </div>
         </div>
         <div class="textarea-wrapper">
@@ -153,9 +157,10 @@ performConversion();
   padding: 0 24px 2rem;
 }
 .intro-text {
-  color: #666666 !important;
+  color: var(--vp-c-text-2) !important;
   margin: 16px 0px 8px !important;
   font-weight: normal; /* 確保字體為非粗體 */
+  line-height: 1.65;
 }
 .intro-text h1 { font-size: 2.2em; font-weight: 600; margin-bottom: 1rem; }
 .intro-text p { 
@@ -172,6 +177,14 @@ performConversion();
   color: var(--panel-text-color, var(--vp-c-text-1));
   backdrop-filter: blur(10px);
 }
+.io-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 1rem;
+}
+.io-grid.stacked { grid-template-columns: minmax(0, 1fr); }
+.textarea-wrapper { min-width: 0; }
 .mode-selector h4 {
   display: flex;
   align-items: center;

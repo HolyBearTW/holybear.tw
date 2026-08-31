@@ -119,12 +119,13 @@
   width: min(73rem, calc(100% - 2rem));
   margin: 0 auto;
   padding-top: 1.5rem;
-  padding-bottom: 5rem;
+  padding-bottom: 1rem;
 }
 
 .fuwari-article-grid {
   grid-template-columns: 17.5rem minmax(0, 1fr) 14rem;
   width: min(88rem, calc(100% - 2rem));
+  padding-bottom: 1rem;
 }
 
 .fuwari-article-right-panel {
@@ -375,7 +376,7 @@ html body .fuwari-article-outline.fuwari-card-base .VPDocAsideOutline .outline-l
 .fuwari-article-content img { max-width: 100%; height: auto; border-radius: 0.7rem; }
 .fuwari-article-content table { display: table; width: 100%; }
 .fuwari-article-content :not(pre) > code { word-break: break-word; }
-.fuwari-article-extras { padding: clamp(0.85rem, 2vw, 1.35rem); }
+.fuwari-article-extras { margin-bottom: 0; padding: clamp(0.85rem, 2vw, 1.35rem); }
 .fuwari-feedback-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-bottom: 0.85rem; border-bottom: 1px dashed var(--fuwari-card-border); }
 .fuwari-article-extras .share-container,
 .fuwari-article-extras .vote-panel,
@@ -434,19 +435,21 @@ html body .fuwari-article-outline.fuwari-card-base .VPDocAsideOutline .outline-l
 
 @media (max-width: 767px) {
   .fuwari-blog { padding-top: 0; }
-  .fuwari-main-grid { grid-template-columns: minmax(0, 1fr); width: min(100% - 1rem, 44rem); padding-top: 0.75rem; padding-bottom: 3.5rem; }
+  .fuwari-main-grid { grid-template-columns: minmax(0, 1fr); width: min(100% - 1rem, 44rem); padding-top: 0.75rem; padding-bottom: 1rem; }
+  .fuwari-article-grid { padding-bottom: 1rem; }
   .fuwari-post-list { order: 1; }
   .fuwari-sidebar { order: 2; }
   .fuwari-sidebar__sticky { position: static; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .fuwari-profile { display: grid; grid-template-columns: minmax(7rem, 35%) minmax(0, 1fr); align-items: center; }
-  .fuwari-post-card { min-height: 10.5rem; grid-template-columns: minmax(0, 1fr) 28%; }
-  .fuwari-post-card__body { padding: 1.15rem 0.45rem 1rem 1.65rem; }
+  .fuwari-post-card { min-height: 0; grid-template-columns: minmax(0, 1fr); }
+  .fuwari-post-card__body { position: relative; grid-row: 2; padding: 1rem 0.85rem 1.15rem 1.65rem; }
   .fuwari-post-card__body::before { top: 1.45rem; left: 0.85rem; }
   .fuwari-post-card__title { margin-bottom: 0.45rem; font-size: 1.08rem; }
   .fuwari-post-card__description { margin-bottom: 0 !important; font-size: 0.85rem; -webkit-line-clamp: 1; }
   .fuwari-post-card__meta { overflow: visible; flex-wrap: wrap; margin-bottom: 0.5rem; }
   .fuwari-post-card__reading { gap: 0.45rem; margin-top: 0.5rem !important; font-size: 0.7rem; }
-  .fuwari-post-card__cover { margin: 0.55rem; }
+  .fuwari-post-card__cover { grid-row: 1; margin: 0; border-radius: 0; }
+  .fuwari-post-card__cover img { display: block; height: auto; object-fit: contain; }
   .fuwari-post-meta__tags--mobile-hidden { display: none; }
   .fuwari-post-meta { gap: 0.35rem; font-size: 0.7rem; }
   .fuwari-meta-icon { width: 1.45rem; height: 1.45rem; }
@@ -464,33 +467,50 @@ html body .fuwari-article-outline.fuwari-card-base .VPDocAsideOutline .outline-l
     gap: 0.65rem;
   }
   .fuwari-article__meta-main {
-    display: grid;
-    grid-template-columns: max-content max-content minmax(0, 1fr);
+    display: flex;
+    min-width: 0;
+    flex-wrap: wrap;
     align-items: center;
     gap: 0.55rem 0.7rem;
   }
-  .fuwari-article__meta-main > .fuwari-author-list { grid-column: 1; grid-row: 1; }
   .fuwari-article__meta-main > .fuwari-post-meta { display: contents; }
-  .fuwari-article__meta-main .fuwari-post-meta__item:first-child {
-    grid-column: 2;
-    grid-row: 1;
+  .fuwari-article__meta-main > .fuwari-author-list,
+  .fuwari-article__meta-main .fuwari-post-meta__item:first-child,
+  .fuwari-article__meta-main .fuwari-post-meta__item:nth-child(2) {
+    flex: 0 0 auto;
     white-space: nowrap;
   }
-  .fuwari-article__meta-main .fuwari-post-meta__item:nth-child(2) {
-    grid-column: 3;
-    grid-row: 1;
-  }
   .fuwari-article__meta-main .fuwari-post-meta__tags {
-    grid-column: 1 / -1;
-    grid-row: 2;
-    min-width: 0;
+    min-width: 9rem;
+    flex: 1 1 9rem;
   }
   .fuwari-article__meta-row > .view-count {
     grid-column: 2;
     grid-row: 1;
     margin-top: 0.35rem;
   }
-  .fuwari-article-content table { display: block; overflow-x: auto; }
+  .fuwari-article-content table {
+    display: table !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    table-layout: fixed !important;
+    overflow: visible !important;
+  }
+  .fuwari-article-content table th,
+  .fuwari-article-content table td {
+    box-sizing: border-box;
+    min-width: 0 !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+  }
+  .fuwari-article-content table tr > :is(th, td):only-child { width: 100% !important; }
+  .fuwari-article-content table img {
+    display: block;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+  }
   .fuwari-feedback-row { align-items: center; flex-direction: column; }
   .fuwari-article-extras .vote-panel,
   .fuwari-article-extras .share-container,
@@ -519,6 +539,19 @@ html body .fuwari-article-outline.fuwari-card-base .VPDocAsideOutline .outline-l
   .fuwari-profile { grid-template-columns: 1fr; }
   .fuwari-profile__image-link { width: calc(100% - 1rem); max-width: none; margin: 0 auto; }
   .fuwari-sidebar__sticky { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 360px) {
+  .fuwari-article__meta-row { position: relative; grid-template-columns: minmax(0, 1fr); }
+  .fuwari-article__meta-main {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+  }
+  .fuwari-article__meta-main > .fuwari-author-list { grid-column: 1; grid-row: 1; }
+  .fuwari-article__meta-main .fuwari-post-meta__item:first-child { grid-column: 2; grid-row: 1; }
+  .fuwari-article__meta-main .fuwari-post-meta__item:nth-child(2) { grid-column: 1; grid-row: 2; }
+  .fuwari-article__meta-main .fuwari-post-meta__tags { grid-column: 2; grid-row: 2; min-width: 0; }
+  .fuwari-article__meta-row > .view-count { position: absolute; top: 0.35rem; right: 0; margin-top: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {

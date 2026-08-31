@@ -5178,6 +5178,107 @@ html.dark body .BlogVPFooter .footer-line {
   text-shadow: 0 2px 12px rgba(2, 18, 31, 0.72) !important;
 }
 
+/* Keep utility/home-layout and technical-document pages close to the shared footer. */
+.Layout:has(.VPHome) .VPHome {
+  margin-bottom: 1rem !important;
+}
+
+.Layout:has(.VPDoc):not(:has(.fuwari-blog)) .VPDoc {
+  padding-bottom: 1rem !important;
+}
+
+.Layout:has(.VPDoc):not(:has(.fuwari-blog)) .VPDoc > .container > .content {
+  padding-bottom: 0 !important;
+}
+
+.Layout:has(.VPDoc):not(:has(.fuwari-blog)) .VPDoc .content-container > .vote-panel:last-child {
+  margin-bottom: 0 !important;
+}
+
+/* OpenCC converter: readable glass surfaces in both appearances. */
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) .Layout:has(.opencc-converter-page) .VPHero .name {
+  color: transparent !important;
+  background-image: linear-gradient(120deg, #fff4df 0%, #ffffff 24%, #7efff4 52%, #b9f9ff 76%, #f1e7ff 100%) !important;
+  background-size: 400% 400% !important;
+  background-clip: text !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  filter: drop-shadow(0 2px 2px rgba(2, 18, 31, 0.9));
+}
+
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) .Layout:has(.opencc-converter-page) .VPHero .text,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) .Layout:has(.opencc-converter-page) .VPHero .tagline {
+  color: #effcff !important;
+  text-shadow: 0 2px 9px rgba(2, 18, 31, 0.92) !important;
+}
+
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) .Layout:has(.opencc-converter-page) .opencc-converter-page > h1 {
+  color: #effcff !important;
+  text-shadow: 0 2px 9px rgba(2, 18, 31, 0.92) !important;
+}
+
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) .Layout:has(.opencc-converter-page) .opencc-converter-page > .intro-text {
+  color: #dcecf1 !important;
+  text-shadow: 0 2px 8px rgba(2, 18, 31, 0.94) !important;
+}
+
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) .Layout:has(.opencc-converter-page) .opencc-converter-page .converter-container {
+  color: #294b59 !important;
+  background: rgba(249, 253, 255, 0.84) !important;
+  border-color: #aac4cc !important;
+  box-shadow: 0 12px 34px rgba(35, 76, 94, 0.14);
+}
+
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) .Layout:has(.opencc-converter-page) .opencc-converter-page .converter-container h2,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) .Layout:has(.opencc-converter-page) .opencc-converter-page .converter-container h4 {
+  color: #173746 !important;
+  text-shadow: none !important;
+}
+
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) .Layout:has(.opencc-converter-page) .opencc-converter-page .group-title {
+  color: #526b78 !important;
+  text-shadow: none !important;
+}
+
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) .Layout:has(.opencc-converter-page) .opencc-converter-page button {
+  color: #294b59 !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-color: #aac4cc !important;
+}
+
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) .Layout:has(.opencc-converter-page) .opencc-converter-page button.active {
+  color: #062f37 !important;
+  background: #58e5df !important;
+  border-color: #21bdb8 !important;
+}
+
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) .Layout:has(.opencc-converter-page) .opencc-converter-page textarea,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) .Layout:has(.opencc-converter-page) .opencc-converter-page .result-box {
+  color: #294b59 !important;
+  background: rgba(255, 255, 255, 0.78) !important;
+  border-color: #9fbcc5 !important;
+}
+
+html.dark body:is(.theme-coretower, .theme-gravityfield) .Layout:has(.opencc-converter-page) .opencc-converter-page .intro-text {
+  color: #d7e3e8 !important;
+}
+
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) .BlogVPFooter,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) .BlogVPFooter .footer-line {
+  color: rgba(242, 251, 255, 0.94) !important;
+  text-shadow: 0 2px 10px rgba(2, 18, 31, 0.92) !important;
+}
+
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) .BlogVPFooter a {
+  color: #54fff4 !important;
+  text-shadow: 0 2px 9px rgba(2, 18, 31, 0.96) !important;
+}
+
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) .BlogVPFooter .footer-location,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) .BlogVPFooter .footer-commit {
+  color: rgba(226, 242, 248, 0.86) !important;
+}
+
 html.dark body.is-blog-page .vote-panel .vote-button {
   color: var(--vp-c-text-2);
   background: rgba(7, 19, 33, 0.82);
