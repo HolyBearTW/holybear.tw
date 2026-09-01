@@ -245,6 +245,8 @@ const config = defineConfig({
                 'react', 
                 'react-dom', 
                 'react-dom/client',
+                'react/jsx-runtime',
+                'react/jsx-dev-runtime',
                 'lucide-react',
                 'lucide-vue-next',
                 'markdown-it',

@@ -522,6 +522,69 @@ onBeforeUnmount(() => {
   --lobby-page-tint: transparent;
 }
 
+/* Gravity Field stays visually dark even when the site appearance is light. */
+:global(html:not(.dark) body.theme-gravityfield .hb-home-lobby .eyebrow) {
+  color: #8beeff;
+  text-shadow: 0 2px 10px rgba(1, 12, 25, 0.9);
+}
+
+:global(html:not(.dark) body.theme-gravityfield .hb-home-lobby .hero-home-text),
+:global(html:not(.dark) body.theme-gravityfield .hb-home-lobby .hero-intro),
+:global(html:not(.dark) body.theme-gravityfield .hb-home-lobby .story-heading h2),
+:global(html:not(.dark) body.theme-gravityfield .hb-home-lobby .node-label) {
+  color: #eefaff;
+  text-shadow: 0 2px 10px rgba(1, 12, 25, 0.96), 0 0 18px rgba(41, 194, 255, 0.18);
+}
+
+:global(html:not(.dark) body.theme-gravityfield .hb-home-lobby .hero-intro) {
+  color: rgba(238, 250, 255, 0.84);
+}
+
+/* Halloween lobby title: warm pumpkin metal with a restrained violet afterglow. */
+:global(body.theme-halloween .hb-home-lobby .hero-copy h1) {
+  color: transparent !important;
+  background-image: linear-gradient(120deg, #fff2bd 0%, #ffc15a 20%, #ff6d00 43%, #c23cff 68%, #75208f 86%, #ffe3a1 100%) !important;
+  background-size: 320% 320% !important;
+  background-clip: text !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  text-shadow: none !important;
+  filter: drop-shadow(0 3px 1px rgba(0, 0, 0, 0.94)) drop-shadow(0 0 8px rgba(255, 109, 0, 0.48)) drop-shadow(0 0 18px rgba(117, 32, 143, 0.5));
+  animation: halloweenLobbyTitleFlow 6.5s ease-in-out infinite alternate !important;
+}
+
+:global(body.theme-halloween .hb-home-lobby .hero-home-text) {
+  color: #fff3e6 !important;
+  text-shadow: 0 2px 2px rgba(0, 0, 0, 0.96), 0 0 12px rgba(117, 32, 143, 0.62) !important;
+}
+
+:global(body.theme-halloween .hb-home-lobby .eyebrow) {
+  color: #ffc44d !important;
+  text-shadow: 0 1px 2px #000, 0 0 10px rgba(255, 109, 0, 0.62) !important;
+}
+
+@keyframes halloweenLobbyTitleFlow {
+  0% {
+    background-position: 0% 45%;
+    filter: drop-shadow(0 3px 1px rgba(0, 0, 0, 0.94)) drop-shadow(0 0 7px rgba(255, 109, 0, 0.42)) drop-shadow(0 0 15px rgba(117, 32, 143, 0.4));
+  }
+  52% {
+    background-position: 62% 55%;
+    filter: drop-shadow(0 3px 1px rgba(0, 0, 0, 0.94)) drop-shadow(0 0 11px rgba(255, 109, 0, 0.58)) drop-shadow(0 0 22px rgba(117, 32, 143, 0.58));
+  }
+  100% {
+    background-position: 100% 45%;
+    filter: drop-shadow(0 3px 1px rgba(0, 0, 0, 0.94)) drop-shadow(0 0 8px rgba(255, 196, 77, 0.5)) drop-shadow(0 0 18px rgba(194, 60, 255, 0.5));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :global(body.theme-halloween .hb-home-lobby .hero-copy h1) {
+    animation: none !important;
+    background-position: 50% 50% !important;
+  }
+}
+
 .hero-shell {
   position: relative;
   z-index: 3;

@@ -288,23 +288,23 @@ body.theme-halloween {
 }
 
 /* 強制覆蓋 VitePress 導航欄、標題、全站顏色 */
-body.theme-halloween .VPNav,
-body.theme-halloween .VPNavBar,
-body.theme-halloween header {
+html body.theme-halloween #app .VPNav,
+html body.theme-halloween #app .VPNavBar,
+html body.theme-halloween #app header {
   /* Apply the semi-transparent background directly to the nav bar */
   background: rgba(34,34,34,0.7) url('./assets/halloween/halloween1.png') repeat-x !important;
   background-size: 90px auto !important;
   border-bottom: 2px solid #ff9800 !important;
   color: #ff9800 !important;
 }
-body.theme-halloween .VPNav *,
-body.theme-halloween .VPNavBar *,
-body.theme-halloween header * {
+html body.theme-halloween #app .VPNav *,
+html body.theme-halloween #app .VPNavBar *,
+html body.theme-halloween #app header * {
   color: #ff9800 !important;
 }
-body.theme-halloween .VPNav::before,
-body.theme-halloween .VPNavBar::before,
-body.theme-halloween header::before {
+html body.theme-halloween #app .VPNav::before,
+html body.theme-halloween #app .VPNavBar::before,
+html body.theme-halloween #app header::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -314,9 +314,9 @@ body.theme-halloween header::before {
   backdrop-filter: blur(2px) !important;
   pointer-events: none;
 }
-body.theme-halloween .VPNav > *,
-body.theme-halloween .VPNavBar > *,
-body.theme-halloween header > * {
+html body.theme-halloween #app .VPNav > *,
+html body.theme-halloween #app .VPNavBar > *,
+html body.theme-halloween #app header > * {
   position: relative;
   z-index: 1;
 }

@@ -3980,6 +3980,10 @@ body.is-home-page .VPNavBar .divider-line {
 /* ==========================================================================
    只有在 Frontmatter 有設定 pageClass: custom-footer-layout 的頁面才會生效
    ========================================================================== */
+.custom-footer-layout .VPDocFooter {
+  margin-top: 32px !important;
+}
+
 .custom-footer-layout .VPDocFooter .edit-info {
   display: flex !important;
   flex-direction: row !important;       /* 橫向並排 */
@@ -3988,7 +3992,7 @@ body.is-home-page .VPNavBar .divider-line {
   align-content: center !important;
   width: 100% !important;               /* 撐滿寬度 */
   margin: 0 !important;
-  padding: 0 !important;
+  padding: 0 0 18px !important;         /* 避免資訊列貼住內容卡片底緣 */
 }
 
 /* 修正左邊「編輯此頁」 */
@@ -4204,7 +4208,11 @@ body:has(.VPHero) .VPHero {
 /* 全站導覽列搜尋：桌面版統一使用冷色玻璃按鈕。 */
 @media (min-width: 768px) {
   .VPNavBarSearchButton {
-    min-height: 38px !important;
+    box-sizing: border-box;
+    width: auto !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    padding-inline: 10px !important;
     color: #294b59 !important;
     background: rgba(247, 252, 253, 0.88) !important;
     border: 1px solid rgba(36, 94, 112, 0.24) !important;
@@ -4799,22 +4807,95 @@ html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPSocialLink {
   text-shadow: none !important;
 }
 
-html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPNav:has(.VPNavBar.top) .VPNavBarTitle .title,
-html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPNav:has(.VPNavBar.top) .VPNavBarTitle .title *,
-html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPNav:has(.VPNavBar.top) .VPNavBarMenuLink,
-html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPNav:has(.VPNavBar.top) .VPNavBarMenuGroup > .button,
-html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPNav:has(.VPNavBar.top) .VPNavBarMenuGroup > .button *,
-html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPNav:has(.VPNavBar.top) .VPNavBarTranslations > .button,
-html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPNav:has(.VPNavBar.top) .VPNavBarTranslations > .button *,
-html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPNav:has(.VPNavBar.top) .VPSocialLink {
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield):not(.is-blog-page) .Layout:has(.VPDoc) .VPNav:has(.VPNavBar.top) .VPNavBarTitle .title,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield):not(.is-blog-page) .Layout:has(.VPDoc) .VPNav:has(.VPNavBar.top) .VPNavBarTitle .title *,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield):not(.is-blog-page) .Layout:has(.VPDoc) .VPNav:has(.VPNavBar.top) .VPNavBarMenuLink,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield):not(.is-blog-page) .Layout:has(.VPDoc) .VPNav:has(.VPNavBar.top) .VPNavBarMenuGroup > .button,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield):not(.is-blog-page) .Layout:has(.VPDoc) .VPNav:has(.VPNavBar.top) .VPNavBarMenuGroup > .button *,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield):not(.is-blog-page) .Layout:has(.VPDoc) .VPNav:has(.VPNavBar.top) .VPNavBarTranslations > .button,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield):not(.is-blog-page) .Layout:has(.VPDoc) .VPNav:has(.VPNavBar.top) .VPNavBarTranslations > .button *,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield):not(.is-blog-page) .Layout:has(.VPDoc) .VPNav:has(.VPNavBar.top) .VPSocialLink {
   color: rgba(255, 255, 255, 0.94) !important;
   text-shadow: 0 2px 10px rgba(2, 18, 31, 0.72) !important;
 }
 
-html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPNav:has(.VPNavBar.top) .VPNavBarHamburger .top,
-html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPNav:has(.VPNavBar.top) .VPNavBarHamburger .middle,
-html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPNav:has(.VPNavBar.top) .VPNavBarHamburger .bottom {
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield):not(.is-blog-page) .Layout:has(.VPDoc) .VPNav:has(.VPNavBar.top) .VPNavBarHamburger .top,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield):not(.is-blog-page) .Layout:has(.VPDoc) .VPNav:has(.VPNavBar.top) .VPNavBarHamburger .middle,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield):not(.is-blog-page) .Layout:has(.VPDoc) .VPNav:has(.VPNavBar.top) .VPNavBarHamburger .bottom {
   background-color: rgba(255, 255, 255, 0.94) !important;
+}
+
+/* Halloween keeps its own orange navigation instead of the shared light palette. */
+html body.theme-halloween #app .VPNav .VPNavBarTitle .title,
+html body.theme-halloween #app .VPNav .VPNavBarTitle .title *,
+html body.theme-halloween #app .VPNav .VPNavBarMenuLink,
+html body.theme-halloween #app .VPNav .VPNavBarMenuLink *,
+html body.theme-halloween #app .VPNav .VPNavBarMenuGroup > .button,
+html body.theme-halloween #app .VPNav .VPNavBarMenuGroup > .button *,
+html body.theme-halloween #app .VPNav .VPNavBarTranslations > .button,
+html body.theme-halloween #app .VPNav .VPNavBarTranslations > .button *,
+html body.theme-halloween #app .VPNav .VPNavBarSearchButton,
+html body.theme-halloween #app .VPNav .VPNavBarSearchButton *,
+html body.theme-halloween #app .VPNav .VPSocialLink {
+  color: #ff9800 !important;
+  text-shadow: 0 1px 2px #000, 0 0 5px #000, 0 0 10px rgba(255, 152, 0, 0.58) !important;
+}
+
+html body.theme-halloween #app .VPNav .VPNavBarHamburger span {
+  background-color: #ff9800 !important;
+}
+
+html body.theme-halloween #app .VPNav,
+html body.theme-halloween #app .VPNavBar {
+  color: #ff9800 !important;
+  background: rgba(34, 34, 34, 0.78) url('./background/assets/halloween/halloween1.png') repeat-x !important;
+  background-size: 90px auto !important;
+  border-bottom-color: #ff9800 !important;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.3) !important;
+  -webkit-backdrop-filter: blur(2px) !important;
+  backdrop-filter: blur(2px) !important;
+}
+
+/* MapleStory owns additional dark-mode selectors, so Halloween wins explicitly. */
+html body.theme-halloween:has(#maplestory-root) #app .VPNav .VPNavBarTitle .title,
+html body.theme-halloween:has(#maplestory-root) #app .VPNav .VPNavBarTitle .title *,
+html body.theme-halloween:has(#maplestory-root) #app .VPNav .VPNavBarMenuLink,
+html body.theme-halloween:has(#maplestory-root) #app .VPNav .VPNavBarMenuLink *,
+html body.theme-halloween:has(#maplestory-root) #app .VPNav .VPNavBarMenuGroup > .button,
+html body.theme-halloween:has(#maplestory-root) #app .VPNav .VPNavBarMenuGroup > .button *,
+html body.theme-halloween:has(#maplestory-root) #app .VPNav .VPNavBarTranslations > .button,
+html body.theme-halloween:has(#maplestory-root) #app .VPNav .VPNavBarTranslations > .button *,
+html body.theme-halloween:has(#maplestory-root) #app .VPNav .VPNavBarSearchButton,
+html body.theme-halloween:has(#maplestory-root) #app .VPNav .VPNavBarSearchButton *,
+html body.theme-halloween:has(#maplestory-root) #app .VPNav .VPSocialLink {
+  color: #ff9800 !important;
+  text-shadow: 0 1px 2px #000, 0 0 5px #000, 0 0 10px rgba(255, 152, 0, 0.58) !important;
+}
+
+html body.theme-halloween:has(#maplestory-root) #app .VPNav .VPNavBar {
+  background: rgba(34, 34, 34, 0.78) url('./background/assets/halloween/halloween1.png') repeat-x !important;
+  background-size: 90px auto !important;
+  border-bottom-color: #ff9800 !important;
+  -webkit-backdrop-filter: blur(2px) !important;
+  backdrop-filter: blur(2px) !important;
+}
+
+/* Keep the pumpkin strip softened at both the top and scrolled positions. */
+html body.theme-halloween #app .VPNavBar::before {
+  display: block !important;
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 0 !important;
+  content: '' !important;
+  background: rgba(5, 9, 12, 0.22) !important;
+  -webkit-backdrop-filter: blur(3.5px) brightness(0.76) saturate(0.88) !important;
+  backdrop-filter: blur(3.5px) brightness(0.76) saturate(0.88) !important;
+  pointer-events: none !important;
+}
+
+html body.theme-halloween #app .VPNavBar > * {
+  position: relative;
+  z-index: 1;
 }
 
 html:not(.dark) body:not(.is-blog-page) .Layout:has(.VPDoc) .VPLocalNav {
@@ -4887,21 +4968,21 @@ html:not(.dark) body .VPNav:has(.VPNavBar.top) .VPNavBar .content-body {
   backdrop-filter: none !important;
 }
 
-html:not(.dark) body .VPNav:has(.VPNavBar.top) .VPNavBarTitle .title,
-html:not(.dark) body .VPNav:has(.VPNavBar.top) .VPNavBarTitle .title *,
-html:not(.dark) body .VPNav:has(.VPNavBar.top) .VPNavBarMenuLink,
-html:not(.dark) body .VPNav:has(.VPNavBar.top) .VPNavBarMenuGroup > .button,
-html:not(.dark) body .VPNav:has(.VPNavBar.top) .VPNavBarMenuGroup > .button *,
-html:not(.dark) body .VPNav:has(.VPNavBar.top) .VPNavBarTranslations > .button,
-html:not(.dark) body .VPNav:has(.VPNavBar.top) .VPNavBarTranslations > .button *,
-html:not(.dark) body .VPNav:has(.VPNavBar.top) .VPSocialLink {
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) .VPNav:has(.VPNavBar.top) .VPNavBarTitle .title,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) .VPNav:has(.VPNavBar.top) .VPNavBarTitle .title *,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) .VPNav:has(.VPNavBar.top) .VPNavBarMenuLink,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) .VPNav:has(.VPNavBar.top) .VPNavBarMenuGroup > .button,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) .VPNav:has(.VPNavBar.top) .VPNavBarMenuGroup > .button *,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) .VPNav:has(.VPNavBar.top) .VPNavBarTranslations > .button,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) .VPNav:has(.VPNavBar.top) .VPNavBarTranslations > .button *,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) .VPNav:has(.VPNavBar.top) .VPSocialLink {
   color: rgba(255, 255, 255, 0.94) !important;
   text-shadow: 0 2px 10px rgba(2, 18, 31, 0.72) !important;
 }
 
-html:not(.dark) body .VPNav:has(.VPNavBar.top) .VPNavBarHamburger .top,
-html:not(.dark) body .VPNav:has(.VPNavBar.top) .VPNavBarHamburger .middle,
-html:not(.dark) body .VPNav:has(.VPNavBar.top) .VPNavBarHamburger .bottom {
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) .VPNav:has(.VPNavBar.top) .VPNavBarHamburger .top,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) .VPNav:has(.VPNavBar.top) .VPNavBarHamburger .middle,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) .VPNav:has(.VPNavBar.top) .VPNavBarHamburger .bottom {
   background-color: rgba(255, 255, 255, 0.94) !important;
 }
 
@@ -5477,6 +5558,32 @@ html.dark body .BlogVPFooter .footer-commit {
     color: var(--hb-nav-hover-color, #67e8f9) !important;
     background: rgba(0, 255, 238, 0.1) !important;
     border-color: rgba(0, 255, 238, 0.16) !important;
+  }
+
+  /* Core Tower and Gravity Field remain dark artworks in light mode, so their
+     navigation interactions keep the brighter theme-brand cyan. */
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav .VPNavBarMenuLink:not([href^="/500days"]):hover,
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav .VPNavBarMenuLink:not([href^="/500days"]):hover *,
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav .VPNavBarMenuLink:not([href^="/500days"]):focus-visible,
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav .VPNavBarMenuLink:not([href^="/500days"]):focus-visible *,
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav .VPNavBarMenuGroup:hover > .button,
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav .VPNavBarMenuGroup:hover > .button *,
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav .VPNavBarMenuGroup > .button:focus-visible,
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav .VPNavBarMenuGroup > .button:focus-visible *,
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav .VPNavBarMenuGroup > .button[aria-expanded="true"],
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav .VPNavBarMenuGroup > .button[aria-expanded="true"] * {
+    color: var(--vp-c-brand, #00ffee) !important;
+  }
+
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) .VPMenu .VPLink.link:hover,
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) .VPMenu .VPLink.link:focus-visible,
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) .hb-nav-menu-portal .VPMenu .VPLink.link:hover,
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) .hb-nav-menu-portal .VPMenu .VPLink.link:focus-visible,
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) .VPMenu .VPLink.link:hover span,
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) .VPMenu .VPLink.link:focus-visible span,
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) .hb-nav-menu-portal .VPMenu .VPLink.link:hover span,
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) .hb-nav-menu-portal .VPMenu .VPLink.link:focus-visible span {
+    color: var(--vp-c-brand, #00ffee) !important;
   }
 }
 

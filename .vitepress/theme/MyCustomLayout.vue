@@ -180,6 +180,9 @@ const updateBodyClass = (theme: string) => {
 
     const isAboutPage = /^(?:en\/)?about\.md$/.test(page.value?.relativePath || '')
     document.body.classList.toggle('about-page', !!isAboutPage)
+
+    const isPortfolioPage = /^(?:en\/)?Mod\.md$/.test(page.value?.relativePath || '')
+    document.body.classList.toggle('portfolio-page', !!isPortfolioPage)
   
   // 添加當前主題 class
   if (theme && theme !== 'none') {
@@ -436,6 +439,7 @@ onUnmounted(() => {
         ? {
             ariaLabel: 'Site footer',
             sitemap: 'Sitemap',
+            privacy: 'Privacy Policy',
             poweredPrefix: 'Powered by',
             poweredSuffix: '',
             sourcePrefix: 'Source code',
@@ -448,6 +452,7 @@ onUnmounted(() => {
         : {
             ariaLabel: '網站頁尾',
             sitemap: '網站地圖',
+            privacy: '隱私政策',
             poweredPrefix: '由',
             poweredSuffix: '強力驅動',
             sourcePrefix: '本站程式碼',
@@ -794,6 +799,8 @@ onUnmounted(() => {
                         <a href="/rss.xml" target="_blank" rel="alternate" type="application/rss+xml">RSS</a>
                         <span aria-hidden="true"> / </span>
                         <a href="/sitemap.xml" target="_blank">{{ footerCopy.sitemap }}</a>
+                        <span aria-hidden="true"> / </span>
+                        <a :href="isEnglish ? '/en/privacy' : '/privacy'">{{ footerCopy.privacy }}</a>
                     </p>
                     <p class="footer-line">
                         {{ footerCopy.poweredPrefix }} <a href="https://vitepress.dev/" target="_blank" rel="noopener">VitePress</a>{{ isEnglish ? ', ' : '、' }}<a href="https://astro.build/" target="_blank" rel="noopener">Astro</a>{{ isEnglish ? ' and ' : ' 和 ' }}<a href="https://github.com/saicaca/fuwari" target="_blank" rel="noopener">Fuwari</a> {{ footerCopy.poweredSuffix }}
@@ -1094,47 +1101,47 @@ onUnmounted(() => {
     }
 }
 
-body.about-page .VPDoc .container,
-body.about-page .VPDoc,
-body.about-page .VPDoc .vp-doc,
-body.about-page .VPDoc .content-body,
-body.about-page .VPDoc .content-container,
-body.about-page .VPDoc .content {
+body:is(.about-page, .portfolio-page) .VPDoc .container,
+body:is(.about-page, .portfolio-page) .VPDoc,
+body:is(.about-page, .portfolio-page) .VPDoc .vp-doc,
+body:is(.about-page, .portfolio-page) .VPDoc .content-body,
+body:is(.about-page, .portfolio-page) .VPDoc .content-container,
+body:is(.about-page, .portfolio-page) .VPDoc .content {
     max-width: none !important;
 }
 
-body.about-page {
+body:is(.about-page, .portfolio-page) {
     --vp-layout-max-width: 1440px;
     --main-width: 1440px;
 }
 
-body.about-page .VPContent,
-body.about-page .VPDoc .container {
+body:is(.about-page, .portfolio-page) .VPContent,
+body:is(.about-page, .portfolio-page) .VPDoc .container {
     width: 100% !important;
     max-width: 100% !important;
     min-width: 0 !important;
 }
 
-body.about-page .VPDoc .content {
+body:is(.about-page, .portfolio-page) .VPDoc .content {
     width: 100% !important;
 }
 
-body.about-page .VPDoc,
-body.about-page .VPDoc .content-container,
-body.about-page .VPDoc .content,
-body.about-page .VPDoc .vp-doc {
+body:is(.about-page, .portfolio-page) .VPDoc,
+body:is(.about-page, .portfolio-page) .VPDoc .content-container,
+body:is(.about-page, .portfolio-page) .VPDoc .content,
+body:is(.about-page, .portfolio-page) .VPDoc .vp-doc {
     overflow-x: visible !important;
 }
 
-body.about-page .VPDoc .vp-doc > *,
-body.about-page .VPDoc .content :not(pre) {
+body:is(.about-page, .portfolio-page) .VPDoc .vp-doc > *,
+body:is(.about-page, .portfolio-page) .VPDoc .content :not(pre) {
     max-width: 100%;
     box-sizing: border-box;
 }
 
 
-body.about-page .VPDoc .container,
-body.about-page .VPContent .container {
+body:is(.about-page, .portfolio-page) .VPDoc .container,
+body:is(.about-page, .portfolio-page) .VPContent .container {
     width: min(1440px, calc(100vw - 64px)) !important;
     max-width: min(1440px, calc(100vw - 64px)) !important;
     min-width: 0 !important;
@@ -1146,42 +1153,42 @@ body.about-page .VPContent .container {
 }
 
 @media (max-width: 767px) {
-    body.about-page .VPDoc .container,
-    body.about-page .VPContent .container {
+    body:is(.about-page, .portfolio-page) .VPDoc .container,
+    body:is(.about-page, .portfolio-page) .VPContent .container {
         width: 100% !important;
         max-width: 100% !important;
         padding-left: 0 !important;
         padding-right: 0 !important;
     }
 
-    body.about-page .VPDoc .content:not(.VPDocAsideOutline):not(.VPDocAsideOutline *) {
+    body:is(.about-page, .portfolio-page) .VPDoc .content:not(.VPDocAsideOutline):not(.VPDocAsideOutline *) {
         padding: 16px !important;
         border-radius: 16px !important;
     }
 }
 
 @media (min-width: 960px) {
-    body.about-page .VPDoc {
+    body:is(.about-page, .portfolio-page) .VPDoc {
         padding: 0 !important;
     }
 
-    body.about-page .VPDoc .aside,
-    body.about-page .VPDocAside,
-    body.about-page .VPDocOutlineDropdown {
+    body:is(.about-page, .portfolio-page) .VPDoc .aside,
+    body:is(.about-page, .portfolio-page) .VPDocAside,
+    body:is(.about-page, .portfolio-page) .VPDocOutlineDropdown {
         display: none !important;
     }
 }
 
 @media (min-width: 1201px) {
-    body.about-page .VPNavBar {
+    body:is(.about-page, .portfolio-page) .VPNavBar {
         padding-left: 0 !important;
         padding-right: 0 !important;
     }
 
-    body.about-page .VPDoc.has-aside .content-container,
-    body.about-page .VPDoc.has-aside .content,
-    body.about-page .VPDoc.has-sidebar .content-container,
-    body.about-page .VPDoc.has-sidebar .content {
+    body:is(.about-page, .portfolio-page) .VPDoc.has-aside .content-container,
+    body:is(.about-page, .portfolio-page) .VPDoc.has-aside .content,
+    body:is(.about-page, .portfolio-page) .VPDoc.has-sidebar .content-container,
+    body:is(.about-page, .portfolio-page) .VPDoc.has-sidebar .content {
         max-width: none !important;
         padding-right: 0 !important;
     }

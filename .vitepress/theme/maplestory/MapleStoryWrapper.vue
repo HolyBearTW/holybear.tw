@@ -215,16 +215,16 @@ body:has(#maplestory-root) .VPNavBar.top .content-body {
   -webkit-backdrop-filter: none !important;
 }
 
-/* The top navigation sits on a dark MapleStory scene in both themes. */
-body.maple-nav-over-hero:has(#maplestory-root) .VPNavBar .VPNavBarTitle .title,
-body.maple-nav-over-hero:has(#maplestory-root) .VPNavBar .VPNavBarTitle .title *,
-body.maple-nav-over-hero:has(#maplestory-root) .VPNavBar .VPNavBarMenuLink,
-body.maple-nav-over-hero:has(#maplestory-root) .VPNavBar .VPNavBarMenuLink *,
-body.maple-nav-over-hero:has(#maplestory-root) .VPNavBar .VPNavBarMenuGroup > .button,
-body.maple-nav-over-hero:has(#maplestory-root) .VPNavBar .VPNavBarMenuGroup > .button *,
-body.maple-nav-over-hero:has(#maplestory-root) .VPNavBar .VPNavBarTranslations > .button,
-body.maple-nav-over-hero:has(#maplestory-root) .VPNavBar .VPNavBarTranslations > .button *,
-body.maple-nav-over-hero:has(#maplestory-root) .VPNavBar .VPSocialLink {
+/* In dark mode the top navigation always needs light text. */
+html.dark body.maple-nav-over-hero:has(#maplestory-root) .VPNavBar .VPNavBarTitle .title,
+html.dark body.maple-nav-over-hero:has(#maplestory-root) .VPNavBar .VPNavBarTitle .title *,
+html.dark body.maple-nav-over-hero:has(#maplestory-root) .VPNavBar .VPNavBarMenuLink,
+html.dark body.maple-nav-over-hero:has(#maplestory-root) .VPNavBar .VPNavBarMenuLink *,
+html.dark body.maple-nav-over-hero:has(#maplestory-root) .VPNavBar .VPNavBarMenuGroup > .button,
+html.dark body.maple-nav-over-hero:has(#maplestory-root) .VPNavBar .VPNavBarMenuGroup > .button *,
+html.dark body.maple-nav-over-hero:has(#maplestory-root) .VPNavBar .VPNavBarTranslations > .button,
+html.dark body.maple-nav-over-hero:has(#maplestory-root) .VPNavBar .VPNavBarTranslations > .button *,
+html.dark body.maple-nav-over-hero:has(#maplestory-root) .VPNavBar .VPSocialLink {
   color: rgba(255, 255, 255, 0.9) !important;
   text-shadow: 0 1px 5px rgba(0, 0, 0, 0.42);
 }
@@ -242,17 +242,25 @@ body.maple-nav-over-hero:has(#maplestory-root) .VPNavBar .VPSocialLink {
 }
 
 @media (max-width: 767px) {
-  body.maple-nav-over-hero:has(#maplestory-root) .VPNavBarSearchButton,
-  body.maple-nav-over-hero:has(#maplestory-root) .VPNavBarSearchButton .vpi-search {
+  html.dark body.maple-nav-over-hero:has(#maplestory-root) .VPNavBarSearchButton,
+  html.dark body.maple-nav-over-hero:has(#maplestory-root) .VPNavBarSearchButton .vpi-search,
+  html:not(.dark) body.maple-nav-over-hero:is(.theme-coretower, .theme-gravityfield):has(#maplestory-root) .VPNavBarSearchButton,
+  html:not(.dark) body.maple-nav-over-hero:is(.theme-coretower, .theme-gravityfield):has(#maplestory-root) .VPNavBarSearchButton .vpi-search {
     color: rgba(255, 255, 255, 0.94) !important;
   }
 
-  body.maple-nav-over-hero:has(#maplestory-root) .VPNavBarHamburger .top,
-  body.maple-nav-over-hero:has(#maplestory-root) .VPNavBarHamburger .middle,
-  body.maple-nav-over-hero:has(#maplestory-root) .VPNavBarHamburger .bottom,
-  body.maple-nav-over-hero:has(#maplestory-root) .VPNavBarHamburger.active:hover .top,
-  body.maple-nav-over-hero:has(#maplestory-root) .VPNavBarHamburger.active:hover .middle,
-  body.maple-nav-over-hero:has(#maplestory-root) .VPNavBarHamburger.active:hover .bottom {
+  html.dark body.maple-nav-over-hero:has(#maplestory-root) .VPNavBarHamburger .top,
+  html.dark body.maple-nav-over-hero:has(#maplestory-root) .VPNavBarHamburger .middle,
+  html.dark body.maple-nav-over-hero:has(#maplestory-root) .VPNavBarHamburger .bottom,
+  html.dark body.maple-nav-over-hero:has(#maplestory-root) .VPNavBarHamburger.active:hover .top,
+  html.dark body.maple-nav-over-hero:has(#maplestory-root) .VPNavBarHamburger.active:hover .middle,
+  html.dark body.maple-nav-over-hero:has(#maplestory-root) .VPNavBarHamburger.active:hover .bottom,
+  html:not(.dark) body.maple-nav-over-hero:is(.theme-coretower, .theme-gravityfield):has(#maplestory-root) .VPNavBarHamburger .top,
+  html:not(.dark) body.maple-nav-over-hero:is(.theme-coretower, .theme-gravityfield):has(#maplestory-root) .VPNavBarHamburger .middle,
+  html:not(.dark) body.maple-nav-over-hero:is(.theme-coretower, .theme-gravityfield):has(#maplestory-root) .VPNavBarHamburger .bottom,
+  html:not(.dark) body.maple-nav-over-hero:is(.theme-coretower, .theme-gravityfield):has(#maplestory-root) .VPNavBarHamburger.active:hover .top,
+  html:not(.dark) body.maple-nav-over-hero:is(.theme-coretower, .theme-gravityfield):has(#maplestory-root) .VPNavBarHamburger.active:hover .middle,
+  html:not(.dark) body.maple-nav-over-hero:is(.theme-coretower, .theme-gravityfield):has(#maplestory-root) .VPNavBarHamburger.active:hover .bottom {
     background-color: rgba(255, 255, 255, 0.94) !important;
   }
 }
@@ -733,15 +741,37 @@ html:not(.dark) body:has(#maplestory-root) #maplestory-root .custom-vp-tip form 
   background: #087f94 !important;
 }
 
-html:not(.dark) #maplestory-root .maple-hero-title {
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #maplestory-root .maple-hero-title {
   color: #ffffff !important;
   text-shadow: 0 2px 9px rgba(0, 0, 0, 0.5);
 }
 
-html:not(.dark) #maplestory-root .maple-hero-subtitle,
-html:not(.dark) #maplestory-root .maple-settings-button {
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #maplestory-root .maple-hero-subtitle,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #maplestory-root .maple-settings-button {
   color: rgba(255, 255, 255, 0.82) !important;
   text-shadow: 0 1px 6px rgba(0, 0, 0, 0.48);
+}
+
+html:not(.dark) body:not(.theme-coretower):not(.theme-gravityfield):not(.theme-halloween) #maplestory-root .maple-hero-title {
+  color: #173746 !important;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.62);
+}
+
+html:not(.dark) body:not(.theme-coretower):not(.theme-gravityfield):not(.theme-halloween) #maplestory-root .maple-hero-subtitle,
+html:not(.dark) body:not(.theme-coretower):not(.theme-gravityfield):not(.theme-halloween) #maplestory-root .maple-settings-button {
+  color: #526b78 !important;
+  text-shadow: none;
+}
+
+html body.theme-halloween #maplestory-root .maple-hero-title {
+  color: #ff5722 !important;
+  text-shadow: 0 2px 7px rgba(0, 0, 0, 0.72);
+}
+
+html body.theme-halloween #maplestory-root .maple-hero-subtitle,
+html body.theme-halloween #maplestory-root .maple-settings-button {
+  color: #ffcc80 !important;
+  text-shadow: 0 1px 5px rgba(0, 0, 0, 0.68);
 }
 
 html:not(.dark) #maplestory-root .maple-ranking-go-button {

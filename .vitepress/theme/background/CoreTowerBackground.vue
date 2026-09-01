@@ -294,39 +294,28 @@ body.theme-coretower {
   background-color: #02040a !important;
 }
 
-body.theme-coretower .VPNav,
-body.theme-coretower .VPNavBar {
-  background: linear-gradient(180deg, rgba(2, 7, 17, 0.88), rgba(4, 10, 22, 0.62)) !important;
-  border-bottom-color: rgba(74, 218, 255, 0.24) !important;
-  -webkit-backdrop-filter: blur(14px) saturate(1.18);
-  backdrop-filter: blur(14px) saturate(1.18);
-}
-
-html:not(.dark) body.theme-coretower #app .VPNavBar:not(.top) {
-  background: linear-gradient(180deg, rgba(2, 7, 17, 0.86), rgba(4, 10, 22, 0.72)) !important;
-  background-color: rgba(3, 9, 20, 0.82) !important;
-  border-bottom: 1px solid rgba(74, 218, 255, 0.24) !important;
-  box-shadow: 0 10px 32px rgba(0, 3, 10, 0.28) !important;
-  -webkit-backdrop-filter: blur(18px) saturate(1.22) !important;
-  backdrop-filter: blur(18px) saturate(1.22) !important;
-}
-
-/* Core Tower always sits on a dark canvas, including VitePress light mode. */
-html:not(.dark) body.theme-coretower .VPNavBarTitle .title,
-html:not(.dark) body.theme-coretower .VPNavBarTitle .title *,
-html:not(.dark) body.theme-coretower .VPNavBarMenuLink:not([href='/500days']),
-html:not(.dark) body.theme-coretower .VPNavBarMenuGroup > .button,
-html:not(.dark) body.theme-coretower .VPNavBarMenuGroup > .button *,
-html:not(.dark) body.theme-coretower .VPNavBarTranslations > .button,
-html:not(.dark) body.theme-coretower .VPNavBarTranslations > .button *,
-html:not(.dark) body.theme-coretower .VPSocialLink {
+/* At the top, the transparent navbar sits directly on Core Tower's dark art.
+   Once it scrolls away from the artwork, the shared site navbar owns both its
+   surface and colors. The 500-day page keeps its separate scoped dark navbar. */
+html:not(.dark) body.theme-coretower .VPNavBar.top .VPNavBarTitle .title,
+html:not(.dark) body.theme-coretower .VPNavBar.top .VPNavBarTitle .title *,
+html:not(.dark) body.theme-coretower .VPNavBar.top .VPNavBarMenuLink:not([href='/500days']),
+html:not(.dark) body.theme-coretower .VPNavBar.top .VPNavBarMenuGroup > .button,
+html:not(.dark) body.theme-coretower .VPNavBar.top .VPNavBarMenuGroup > .button *,
+html:not(.dark) body.theme-coretower .VPNavBar.top .VPNavBarTranslations > .button,
+html:not(.dark) body.theme-coretower .VPNavBar.top .VPNavBarTranslations > .button *,
+html:not(.dark) body.theme-coretower .VPNavBar.top .VPSocialLink,
+html:not(.dark) body.theme-coretower .VPNavBar.top .VPNavBarSearchButton,
+html:not(.dark) body.theme-coretower .VPNavBar.top .VPNavBarSearchButton .DocSearch-Button-Placeholder,
+html:not(.dark) body.theme-coretower .VPNavBar.top .VPNavBarSearchButton .vpi-search,
+html:not(.dark) body.theme-coretower .VPNavBar.top .VPNavBarSearchButton .vpi-search::before {
   color: rgba(244, 251, 255, 0.96) !important;
   text-shadow: 0 2px 10px rgba(0, 7, 16, 0.82) !important;
 }
 
-html:not(.dark) body.theme-coretower .VPNavBarHamburger .top,
-html:not(.dark) body.theme-coretower .VPNavBarHamburger .middle,
-html:not(.dark) body.theme-coretower .VPNavBarHamburger .bottom {
+html:not(.dark) body.theme-coretower .VPNavBar.top .VPNavBarHamburger .top,
+html:not(.dark) body.theme-coretower .VPNavBar.top .VPNavBarHamburger .middle,
+html:not(.dark) body.theme-coretower .VPNavBar.top .VPNavBarHamburger .bottom {
   background-color: rgba(244, 251, 255, 0.96) !important;
 }
 

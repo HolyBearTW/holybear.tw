@@ -218,37 +218,24 @@ onBeforeUnmount(() => {
   display: none !important;
 }
 
-:global(body.has-days500-campaign .VPNav a[href^="/500days"]) {
-  color: #8a5100 !important;
+:global(html body.has-days500-campaign #app .VPNav a[href^="/500days"]) {
+  color: #f2c96d !important;
   font-weight: 800 !important;
-  text-shadow: none !important;
+  text-shadow: 0 0 18px rgba(242,201,109,.18) !important;
 }
 
-:global(body.has-days500-campaign .VPNavBarMenu a[href^="/500days"]) {
+:global(html body.has-days500-campaign #app .VPNav .VPNavBarMenu a.VPNavBarMenuLink[href^="/500days"]) {
   align-self: center;
   height: 34px;
   margin-inline: 5px;
   padding-inline: 11px;
-  border: 1px solid rgba(150, 91, 9, .34);
+  border: 1px solid rgba(242,201,109,.3);
   border-radius: 999px;
-  background: linear-gradient(145deg, #ffe7a3, #f2c96d);
-  box-shadow: 0 5px 14px rgba(120, 71, 8, .14);
-}
-
-:global(html.dark body.has-days500-campaign .VPNav a[href^="/500days"]),
-:global(html:not(.dark) body.is-days500-page.has-days500-campaign .VPNav a[href^="/500days"]) {
-  color: #f2c96d !important;
-  text-shadow: 0 0 18px rgba(242,201,109,.18) !important;
-}
-
-:global(html.dark body.has-days500-campaign .VPNavBarMenu a[href^="/500days"]),
-:global(html:not(.dark) body.is-days500-page.has-days500-campaign .VPNavBarMenu a[href^="/500days"]) {
-  border-color: rgba(242,201,109,.3);
   background: rgba(242,201,109,.1);
   box-shadow: inset 0 0 0 1px rgba(255,255,255,.025);
 }
 
-:global(body.has-days500-campaign .VPNav a[href^="/500days"]:hover) {
+:global(html body.has-days500-campaign #app .VPNav a[href^="/500days"]:hover) {
   color: #ff7657 !important;
 }
 </style>
