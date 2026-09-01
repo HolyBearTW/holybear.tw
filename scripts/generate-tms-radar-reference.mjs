@@ -139,5 +139,5 @@ const allEffectiveMain = records.map((record) => record.effectiveMain).sort((a, 
 const percentile = (values, p) => values[Math.min(values.length - 1, Math.max(0, Math.round((values.length - 1) * p)))] || 1;
 const referenceMax = Math.ceil(percentile(allEffectiveMain, 0.99) / 5000) * 5000;
 fs.mkdirSync(path.dirname(outputPath), { recursive: true });
-fs.writeFileSync(outputPath, `${JSON.stringify({ generatedAt: new Date().toISOString(), sourceCount: records.length, referenceMax, jobs }, null, 2)}\n`);
-process.stdout.write(`Wrote ${outputPath} with ${records.length} records; max ${referenceMax}\n`);
+fs.writeFileSync(outputPath, `${JSON.stringify({ generatedAt: new Date().toISOString(), sourceCount: ranking.length, usableCount: records.length, referenceMax, jobs }, null, 2)}\n`);
+process.stdout.write(`Wrote ${outputPath} with ${records.length} usable records from ${ranking.length} tracked characters; max ${referenceMax}\n`);
