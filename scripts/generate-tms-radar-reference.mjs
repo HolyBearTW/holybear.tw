@@ -109,9 +109,13 @@ async function readCharacter(entry) {
 }
 
 const ranking = [];
-for (let page = 1; page <= 9; page += 1) {
-  const response = await getJson(`https://api.maplerhouse.cn/api/v1/tms/characters/history/tracked?page=${page}&page_size=100&sort=combat_power&sort_order=desc&min_level=260`);
-  ranking.push(...(response.data?.items || []));
+const rankingPageSize = 100;
+for (let page = 1; ; page += 1) {
+  const response = await getJson(`https://api.maplerhouse.cn/api/v1/tms/characters/history/tracked?page=${page}&page_size=${rankingPageSize}&sort=combat_power&sort_order=desc&min_level=260`);
+  const items = response.data?.items || [];
+  const total = Number(response.data?.total);
+  ranking.push(...items);
+  if (items.length === 0 || items.length < rankingPageSize || (Number.isFinite(total) && ranking.length >= total)) break;
 }
 
 const records = [];
