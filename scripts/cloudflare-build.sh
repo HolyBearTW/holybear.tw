@@ -48,11 +48,11 @@ if [ -n "${CF_PAGES_COMMIT_SHA:-}" ] && [ "$CF_PAGES_COMMIT_SHA" != "$git_sha" ]
   exit 1
 fi
 
-echo "清除 Vite / VitePress 快取..."
-rm -rf .vitepress/.cache .vitepress/dist .vite node_modules/.vite
+echo "清除上一版輸出，保留可復用的 Vite / VitePress 快取..."
+rm -rf .vitepress/dist
 
 echo "安裝鎖定版本的專案套件..."
-yarn install --frozen-lockfile --non-interactive
+yarn install --frozen-lockfile --non-interactive --prefer-offline
 
 echo "安裝部署用 Sharp（不修改 package.json / yarn.lock）..."
 yarn add \
@@ -60,6 +60,7 @@ yarn add \
   --ignore-scripts \
   --pure-lockfile \
   --non-interactive \
+  --prefer-offline \
   sharp@0.35.3
 
 echo "最佳化部署圖片..."
