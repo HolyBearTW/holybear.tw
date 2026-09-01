@@ -3,9 +3,8 @@ title: 隱私政策
 description: 了解 holybear.tw 如何處理瀏覽資料、本機儲存、網站互動與第三方服務。
 sidebar: false
 aside: true
-editLink: false
-lastUpdated: false
 class: privacy-page
+pageClass: custom-footer-layout
 ---
 
 <div class="privacy-hero">

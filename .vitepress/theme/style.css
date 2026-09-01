@@ -4486,6 +4486,11 @@ body.is-blog-page .VPDoc .vp-doc > div > h2:first-child > .header-anchor {
   margin-top: 0 !important;
 }
 
+/* Privacy-style pages use roomier headings, so their H2 hash markers sit lower. */
+html body:has(.privacy-hero) .VPDoc .vp-doc h2[id] > .header-anchor {
+  transform: translateY(2px) !important;
+}
+
 /* Keep hash/outline targets below the site's fixed navigation layers. */
 body.is-blog-page .VPDoc .vp-doc h1[id],
 body.is-blog-page .VPDoc .vp-doc h2[id],
@@ -5585,6 +5590,181 @@ html.dark body .BlogVPFooter .footer-commit {
   html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) .hb-nav-menu-portal .VPMenu .VPLink.link:focus-visible span {
     color: var(--vp-c-brand, #00ffee) !important;
   }
+}
+
+/* Core Tower and Gravity Field always sit on dark artwork, including when the
+   site appearance is light. Keep both desktop and local outlines readable. */
+html body:is(.theme-coretower, .theme-gravityfield) .VPDocAsideOutline {
+  color: rgba(239, 249, 252, 0.94) !important;
+}
+
+html body:is(.theme-coretower, .theme-gravityfield) .VPDocAsideOutline .VPDocAsideOutlineTitle,
+html body:is(.theme-coretower, .theme-gravityfield) .VPDocAsideOutline .outline-title {
+  color: rgba(239, 249, 252, 0.96) !important;
+  text-shadow: 0 2px 10px rgba(2, 18, 31, 0.68) !important;
+}
+
+html body:is(.theme-coretower, .theme-gravityfield) .VPDocAsideOutline .outline-link,
+html body:is(.theme-coretower, .theme-gravityfield) .VPDocAsideOutline .outline-link .text,
+html body:is(.theme-coretower, .theme-gravityfield) .VPDocAsideOutline .outline-link .label {
+  color: rgba(211, 231, 239, 0.86) !important;
+  text-shadow: 0 1px 8px rgba(2, 18, 31, 0.52) !important;
+}
+
+html body:is(.theme-coretower, .theme-gravityfield) .VPDocAsideOutline .outline-link:hover,
+html body:is(.theme-coretower, .theme-gravityfield) .VPDocAsideOutline .outline-link:focus-visible,
+html body:is(.theme-coretower, .theme-gravityfield) .VPDocAsideOutline .outline-link.active,
+html body:is(.theme-coretower, .theme-gravityfield) .VPDocAsideOutline .outline-link:hover *,
+html body:is(.theme-coretower, .theme-gravityfield) .VPDocAsideOutline .outline-link:focus-visible *,
+html body:is(.theme-coretower, .theme-gravityfield) .VPDocAsideOutline .outline-link.active * {
+  color: var(--vp-c-brand, #00ffee) !important;
+}
+
+html body:is(.theme-coretower, .theme-gravityfield) .VPDocAsideOutline .outline-link:hover,
+html body:is(.theme-coretower, .theme-gravityfield) .VPDocAsideOutline .outline-link:focus-visible,
+html body:is(.theme-coretower, .theme-gravityfield) .VPDocAsideOutline .outline-link.active {
+  background: rgba(0, 255, 238, 0.1) !important;
+  opacity: 1 !important;
+}
+
+html body:is(.theme-coretower, .theme-gravityfield) .VPDocAsideOutline .outline-marker {
+  background-color: var(--vp-c-brand, #00ffee) !important;
+}
+
+/* Final desktop-outline authority over the shared light Blog/document palette. */
+html body:is(.theme-coretower, .theme-gravityfield) #app .VPDocAsideOutline .VPDocAsideOutlineTitle,
+html body:is(.theme-coretower, .theme-gravityfield) #app .VPDocAsideOutline .outline-title {
+  color: rgba(239, 249, 252, 0.96) !important;
+  text-shadow: 0 2px 10px rgba(2, 18, 31, 0.68) !important;
+}
+
+html body:is(.theme-coretower, .theme-gravityfield) #app .VPDocAsideOutline .outline-link,
+html body:is(.theme-coretower, .theme-gravityfield) #app .VPDocAsideOutline .outline-link .text,
+html body:is(.theme-coretower, .theme-gravityfield) #app .VPDocAsideOutline .outline-link .label {
+  color: rgba(211, 231, 239, 0.86) !important;
+  text-shadow: 0 1px 8px rgba(2, 18, 31, 0.52) !important;
+}
+
+html body:is(.theme-coretower, .theme-gravityfield) #app .VPDocAsideOutline .outline-link:hover,
+html body:is(.theme-coretower, .theme-gravityfield) #app .VPDocAsideOutline .outline-link:focus-visible,
+html body:is(.theme-coretower, .theme-gravityfield) #app .VPDocAsideOutline .outline-link.active,
+html body:is(.theme-coretower, .theme-gravityfield) #app .VPDocAsideOutline .outline-link:hover *,
+html body:is(.theme-coretower, .theme-gravityfield) #app .VPDocAsideOutline .outline-link:focus-visible *,
+html body:is(.theme-coretower, .theme-gravityfield) #app .VPDocAsideOutline .outline-link.active * {
+  color: var(--vp-c-brand, #00ffee) !important;
+}
+
+html body:is(.theme-coretower, .theme-gravityfield) #app .VPDocAsideOutline .outline-marker {
+  background-color: var(--vp-c-brand, #00ffee) !important;
+}
+
+/* Every document outline uses a genuinely light card in light appearance. */
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPDocAsideOutline,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPDocAsideOutline .VPDocAsideOutlineTitle,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPDocAsideOutline .outline-title {
+  color: #173746 !important;
+  text-shadow: none !important;
+}
+
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPDocAsideOutline .outline-link,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPDocAsideOutline .outline-link .text,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPDocAsideOutline .outline-link .label {
+  color: #365967 !important;
+  text-shadow: none !important;
+}
+
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPDocAsideOutline .outline-link:hover,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPDocAsideOutline .outline-link:focus-visible,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPDocAsideOutline .outline-link.active,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPDocAsideOutline .outline-link:hover *,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPDocAsideOutline .outline-link:focus-visible *,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPDocAsideOutline .outline-link.active * {
+  color: #007f91 !important;
+  text-shadow: none !important;
+}
+
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPDocAsideOutline .outline-link:hover,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPDocAsideOutline .outline-link:focus-visible,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPDocAsideOutline .outline-link.active {
+  background: rgba(36, 94, 112, 0.09) !important;
+}
+
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPDocAsideOutline .outline-marker {
+  background-color: #0a9b8e !important;
+}
+
+html body:is(.theme-coretower, .theme-gravityfield) .VPLocalNav .menu,
+html body:is(.theme-coretower, .theme-gravityfield) .VPLocalNav .menu-text,
+html body:is(.theme-coretower, .theme-gravityfield) .VPLocalNav .menu-icon,
+html body:is(.theme-coretower, .theme-gravityfield) .VPLocalNav .title,
+html body:is(.theme-coretower, .theme-gravityfield) .VPLocalNav .VPLocalNavOutlineDropdown > button,
+html body:is(.theme-coretower, .theme-gravityfield) .VPLocalNav .VPLocalNavOutlineDropdown > button * {
+  color: rgba(239, 249, 252, 0.94) !important;
+  text-shadow: 0 2px 10px rgba(2, 18, 31, 0.68) !important;
+}
+
+html body:is(.theme-coretower, .theme-gravityfield) .VPLocalNavOutlineDropdown .outline-link,
+html body:is(.theme-coretower, .theme-gravityfield) .VPLocalNavOutlineDropdown .outline-link * {
+  color: rgba(211, 231, 239, 0.9) !important;
+}
+
+html body:is(.theme-coretower, .theme-gravityfield) .VPLocalNavOutlineDropdown .outline-link:hover,
+html body:is(.theme-coretower, .theme-gravityfield) .VPLocalNavOutlineDropdown .outline-link:focus-visible,
+html body:is(.theme-coretower, .theme-gravityfield) .VPLocalNavOutlineDropdown .outline-link.active,
+html body:is(.theme-coretower, .theme-gravityfield) .VPLocalNavOutlineDropdown .outline-link:hover *,
+html body:is(.theme-coretower, .theme-gravityfield) .VPLocalNavOutlineDropdown .outline-link:focus-visible *,
+html body:is(.theme-coretower, .theme-gravityfield) .VPLocalNavOutlineDropdown .outline-link.active * {
+  color: var(--vp-c-brand, #00ffee) !important;
+}
+
+/* One scrolled-navbar glass treatment across ordinary pages. Seasonal themes
+   and the 500-day campaign retain their purpose-built navigation surfaces. */
+html:not(.dark) body:not(.theme-halloween):not(.theme-christmas):not(.is-days500-page) #app .VPNav:has(.VPNavBar:not(.top)) {
+  background: rgba(237, 246, 249, 0.76) !important;
+  background-image: none !important;
+  border-bottom: 1px solid rgba(36, 94, 112, 0.14) !important;
+  box-shadow: 0 8px 26px rgba(35, 76, 94, 0.1) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(148%) !important;
+  backdrop-filter: blur(22px) saturate(148%) !important;
+}
+
+html.dark body:not(.theme-halloween):not(.theme-christmas):not(.is-days500-page) #app .VPNav:has(.VPNavBar:not(.top)) {
+  background: transparent !important;
+  background-image: none !important;
+  border-bottom-color: transparent !important;
+  box-shadow: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+html:not(.dark) body:not(.theme-halloween):not(.theme-christmas):not(.is-days500-page) #app .VPNav .VPNavBar:not(.top) {
+  background: transparent !important;
+  background-image: none !important;
+  border-bottom-color: transparent !important;
+  box-shadow: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+html.dark body:not(.theme-halloween):not(.theme-christmas):not(.is-days500-page) #app .VPNav .VPNavBar:not(.top) {
+  background: rgba(12, 18, 26, 0.34) !important;
+  background-image: none !important;
+  border-bottom-color: transparent !important;
+  box-shadow: none !important;
+  -webkit-backdrop-filter: blur(20px) saturate(140%) !important;
+  backdrop-filter: blur(20px) saturate(140%) !important;
+}
+
+html body:not(.theme-halloween):not(.theme-christmas):not(.is-days500-page) #app .VPNav .VPNavBar:not(.top) > .wrapper,
+html body:not(.theme-halloween):not(.theme-christmas):not(.is-days500-page) #app .VPNav .VPNavBar:not(.top) > .container,
+html body:not(.theme-halloween):not(.theme-christmas):not(.is-days500-page) #app .VPNav .VPNavBar:not(.top) .content,
+html body:not(.theme-halloween):not(.theme-christmas):not(.is-days500-page) #app .VPNav .VPNavBar:not(.top) .content-body {
+  background: transparent !important;
+  background-image: none !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
 }
 
 /* Mobile Blog sidebar: keep the expanded list below both navigation rows. */

@@ -3,9 +3,8 @@ title: Privacy Policy
 description: Learn how holybear.tw handles browsing data, local storage, site interactions, and third-party services.
 sidebar: false
 aside: true
-editLink: false
-lastUpdated: false
 class: privacy-page
+pageClass: custom-footer-layout
 ---
 
 <div class="privacy-hero">
