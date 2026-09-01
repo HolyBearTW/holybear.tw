@@ -1535,25 +1535,6 @@ html.dark .VPHero .name {
   100% { background-position: 0% 50%; }
 }
 
-/* === 全站自動進場動畫（由下到上） === */
-.main,
-.items,
-.box,
-.post-item,
- .VPDoc .vp-doc > * {
-  animation: fadeInUp 0.6s ease !important;
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
 </style>
 
 <style>
