@@ -10,7 +10,7 @@ export default {
   { text: '作品集', link: '/Mod' },
   { text: '關於我', link: '/about' },
   { text: '技術文件', link: '/docs/' },
-  { text: '贊助', link: 'https://paypal.me/holybear0610' },
+  { text: '贊助', link: '/sponsor' },
   {
     text: '服務',
     items: [

@@ -10,7 +10,7 @@ export default {
       { text: 'Portfolio', link: '/en/Mod' },
       { text: 'About', link: '/en/about' },
       { text: 'Shortlink', link: 'https://go.holybear.tw/' },
-      { text: 'Donate', link: 'https://paypal.me/holybear0610' },
+      { text: 'Donate', link: '/en/sponsor' },
       { 
         text: 'Themes', 
         items: generateNavThemes('en')
