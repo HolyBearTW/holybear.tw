@@ -14,7 +14,7 @@ const eventState = computed(() => {
 })
 
 const confetti = Array.from({ length: 22 }, (_, index) => ({
-  left: `${4 + ((index * 47) % 92)}%`,
+  left: `${4 + ((index * 29) % 92)}%`,
   delay: `${(index % 7) * -0.7}s`,
   duration: `${5.8 + (index % 5) * 0.75}s`,
   rotate: `${(index * 37) % 180}deg`
