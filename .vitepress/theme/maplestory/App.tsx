@@ -172,6 +172,11 @@ const App: React.FC = () => {
               setAbilityPreset={setAbilityPreset}
               currentAbilityInfo={currentAbilityInfo}
               getAbilityStyle={getAbilityStyle}
+              onSelectCharacter={(name) => {
+                setCharacterName(name);
+                void handleSearch(undefined, name);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
             />
 
             <CharacterGrowthHistory data={data} apiKey={apiKey || ''} />

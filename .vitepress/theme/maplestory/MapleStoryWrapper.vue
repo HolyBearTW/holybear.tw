@@ -1727,6 +1727,24 @@ html:not(.dark) .maple-calculator-panel .text-rose-300 {
   color: #a13c55 !important;
 }
 
+html:not(.dark) .maple-appearance-preview-panel .maple-appearance-preview-field {
+  color: var(--maple-light-text-strong) !important;
+  background: #ffffff !important;
+  border-color: rgba(36, 94, 112, 0.3) !important;
+  color-scheme: light;
+}
+
+html:not(.dark) .maple-appearance-preview-panel .maple-appearance-preview-field option {
+  color: #25343c;
+  background: #ffffff;
+}
+
+html:not(.dark) .maple-appearance-preview-panel .maple-appearance-preview-close {
+  color: var(--maple-light-text-muted) !important;
+  background: rgba(229, 242, 247, 0.82) !important;
+  border-color: rgba(36, 94, 112, 0.24) !important;
+}
+
 html:not(.dark) .maple-calculator-input,
 html:not(.dark) .maple-calculator-result,
 html:not(.dark) .maple-calculator-autofill,

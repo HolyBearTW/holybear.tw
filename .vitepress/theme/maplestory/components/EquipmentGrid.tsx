@@ -3,7 +3,8 @@ import { BorderBeam } from 'border-beam';
 import { EquipmentItem, CharacterEquipment, CharacterSetEffect } from '../types';
 import EquipmentTooltip from './EquipmentTooltip';
 import PresetSwitcher from './PresetSwitcher';
-import { Square, CheckSquare, X } from 'lucide-react';
+import CharacterAppearancePreviewModal from './CharacterAppearancePreviewModal';
+import { Eye, Square, CheckSquare, X } from 'lucide-react';
 
 import { CharacterAndroidEquipment } from '../types';
 import { mapleAsset } from '../assets';
@@ -435,6 +436,7 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, setEffect, cha
   const [showSetEffect, setShowSetEffect] = useState(false);
   const [showAuxiliarySkillRing, setShowAuxiliarySkillRing] = useState(false);
   const [showZeroAlternateWeapon, setShowZeroAlternateWeapon] = useState(false);
+  const [showAppearancePreview, setShowAppearancePreview] = useState(false);
 
   useEffect(() => {
     if (equipment.preset_no) {
@@ -658,10 +660,27 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, setEffect, cha
   });
 
   return (
-    <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner relative">
-      <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
-         <span className="w-2 h-2 rounded-full bg-indigo-500"></span> 裝備 (Equipment)
+    <div className="relative rounded-xl border border-slate-800 bg-[#161b22] p-6 shadow-inner">
+      <h3 className="mb-6 flex items-center justify-between gap-3 text-sm font-bold uppercase tracking-widest text-slate-400">
+         <span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-indigo-500"></span> 裝備 (Equipment)</span>
+         {characterImage && (
+           <button
+             type="button"
+             onClick={() => setShowAppearancePreview(true)}
+             className="flex shrink-0 items-center gap-1.5 rounded-md border border-slate-700 bg-slate-800 px-2.5 py-1.5 text-xs font-bold normal-case tracking-normal text-slate-300 transition hover:border-cyan-500/60 hover:text-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+           >
+             <Eye className="h-3.5 w-3.5" aria-hidden="true" />
+             外型預覽
+           </button>
+         )}
       </h3>
+
+      {showAppearancePreview && characterImage && (
+        <CharacterAppearancePreviewModal
+          characterImage={characterImage}
+          onClose={() => setShowAppearancePreview(false)}
+        />
+      )}
 
       <PresetSwitcher 
         currentPreset={selectedPreset}
