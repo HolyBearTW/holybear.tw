@@ -83,7 +83,7 @@ function getReadingStats(src = '') {
 }
 
 
-export default createContentLoader(['blog/**/*.md', 'en/blog/**/*.md', 'Mod.md', 'en/Mod.md', 'docs/*.md', 'halloween/index.md'], {
+export default createContentLoader(['blog/**/*.md', 'en/blog/**/*.md', 'mod.md', 'en/mod.md', 'docs/*.md', 'halloween/index.md'], {
     excerpt: true,
     transform(raw) {
         return raw

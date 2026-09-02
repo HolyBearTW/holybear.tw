@@ -181,7 +181,7 @@ const updateBodyClass = (theme: string) => {
     const isAboutPage = /^(?:en\/)?about\.md$/.test(page.value?.relativePath || '')
     document.body.classList.toggle('about-page', !!isAboutPage)
 
-    const isPortfolioPage = /^(?:en\/)?Mod\.md$/.test(page.value?.relativePath || '')
+    const isPortfolioPage = /^(?:en\/)?mod\.md$/.test(page.value?.relativePath || '')
     document.body.classList.toggle('portfolio-page', !!isPortfolioPage)
   
   // 添加當前主題 class

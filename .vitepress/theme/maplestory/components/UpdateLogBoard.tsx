@@ -31,7 +31,7 @@ export default function UpdateLogBoard() {
   };
 
   return (
-    <div className="my-8 flex flex-col items-center gap-4">
+    <div className="mt-8 flex flex-col items-center gap-4">
       {/* 🔴 緊急紅色公告 (顯示到 2026/03/31) */}
       {showImportantNotice && (
         <div className="vp-tip custom-vp-tip-danger p-4 sm:p-6 rounded-lg border-l-4 border-red-500 bg-red-50/90 text-red-900 dark:bg-red-950/30 dark:text-red-200 shadow-sm transition-all duration-300 w-full max-w-2xl">
