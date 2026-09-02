@@ -34,7 +34,7 @@ const units = [
     message: '做過的模組、工具和小專案集中放這，想挖寶可以先點一圈。',
     accent: '#ffcf3f',
     icon: Rocket,
-    link: '/Mod',
+    link: '/mod',
     x: 35,
     y: 11,
     depth: 24

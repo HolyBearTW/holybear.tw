@@ -16,7 +16,7 @@ hero:
       link: /en/blog/
     - theme: alt
       text: View Work
-      link: /en/Mod
+      link: /en/mod
     - theme: alt
       text: MapleStory
       link: /maplestory
@@ -24,7 +24,7 @@ hero:
 features:
   - title: HyperOS Mods
     details: A focused archive for module work, release context, and practical notes around Android customization.
-    link: /en/Mod
+    link: /en/mod
   - title: Technical Notes
     details: Debugging records, implementation details, and reusable decisions kept close to the work that produced them.
     link: /docs/

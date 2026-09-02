@@ -7,9 +7,8 @@ export default {
     nav: [
       { text: 'Celebrate 500 Days', link: '/500days' },
       { text: 'Blog', link: '/en/blog/' },
-      { text: 'Portfolio', link: '/en/Mod' },
+      { text: 'Portfolio', link: '/en/mod' },
       { text: 'About', link: '/en/about' },
-      { text: 'Shortlink', link: 'https://go.holybear.tw/' },
       { text: 'Donate', link: '/en/sponsor' },
       { 
         text: 'Themes', 

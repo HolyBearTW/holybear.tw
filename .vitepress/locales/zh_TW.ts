@@ -7,7 +7,7 @@ export default {
     nav: [
   { text: '慶祝500日', link: '/500days' },
   { text: '日誌', link: '/blog/' },
-  { text: '作品集', link: '/Mod' },
+  { text: '作品集', link: '/mod' },
   { text: '關於我', link: '/about' },
   { text: '技術文件', link: '/docs/' },
   { text: '贊助', link: '/sponsor' },

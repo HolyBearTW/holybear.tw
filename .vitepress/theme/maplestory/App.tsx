@@ -73,7 +73,7 @@ const App: React.FC = () => {
   const deferredDetailsData = deferredData === data ? deferredData : null;
 
   return (
-    <div className="min-h-screen bg-transparent text-slate-200 font-sans pb-20">
+    <div className="min-h-screen bg-transparent text-slate-200 font-sans">
       {!apiKey && (
         <ApiKeyModal 
           defaultNexonKey={apiKey || ''}
