@@ -18,6 +18,7 @@ import {
 import MaplerHouseGrowthTracker from './MaplerHouseGrowthTracker';
 import MapleFeatureTour, { GrowthTrackingState } from './MapleFeatureTour';
 import { fetchWeeklyHistory, findBestDateInPastWeek } from '../services/nexonService';
+import RelatedCharacters from './RelatedCharacters';
 
 // Keep the calculator and its formula code out of the character result's first paint.
 const CharacterCalculatorModal = React.lazy(() => import('./CharacterCalculatorModal'));
@@ -43,6 +44,7 @@ interface MainDashboardProps {
     setAbilityPreset?: (preset: number) => void;
     currentAbilityInfo?: any[];
     getAbilityStyle?: (grade: string) => string;
+    onSelectCharacter: (name: string) => void;
 }
 
 const formatNumber = (val: string | number) => {
@@ -238,7 +240,8 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
     abilityPreset = 1,
     setAbilityPreset = () => {},
     currentAbilityInfo = [],
-    getAbilityStyle = () => ''
+    getAbilityStyle = () => '',
+    onSelectCharacter,
 }) => {
     const hasRecentLogin = String(data.basic.access_flag).toLowerCase() === 'true';
     const [showRecentLoginStatus, setShowRecentLoginStatus] = React.useState(false);
@@ -261,8 +264,8 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <div className="lg:col-span-3 space-y-4">
-               <div className="bg-[#161b22] border border-slate-800 rounded-xl overflow-hidden shadow-xl relative group">
+            <div className="h-full space-y-4 lg:col-span-3">
+               <div className="relative h-full overflow-hidden rounded-xl border border-slate-800 bg-[#161b22] shadow-xl group">
                   <div className="maple-profile-banner h-32 bg-slate-800 relative overflow-hidden">
                       <div className="maple-profile-city absolute inset-0 bg-cover bg-center opacity-[0.68] transition-all duration-700 group-hover:scale-110 group-hover:opacity-[0.82]" style={{ backgroundImage: `url('https://maplestory.io/api/GMS/248/map/${getJobBackgroundMap(data.basic.character_class)}/render/back')` }}></div>
                       <div className="maple-profile-shade absolute inset-0 bg-gradient-to-b from-transparent to-[#161b22]"></div>
@@ -392,7 +395,8 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
                </div>
             </div>
 
-            <div className="lg:col-span-5 space-y-6">
+            <div className="grid grid-cols-1 content-start gap-6 lg:col-span-9 lg:grid-cols-9">
+            <div className="space-y-6 lg:col-span-5">
                <div className="bg-[#161b22] border border-slate-800 rounded-xl p-5 flex flex-col">
                   <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                      <Sword className="w-4 h-4" /> 焦點屬性
@@ -544,7 +548,7 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
                </div>
             </div>
 
-            <div className="lg:col-span-4 space-y-6">
+            <div className="flex flex-col gap-6 lg:col-span-4 [&>*]:min-h-0 [&>*]:grow [&>*]:basis-auto">
                       <EquipmentGrid 
                  equipment={data.equipment} 
                  setEffect={data.setEffect}
@@ -552,6 +556,13 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
                  androidEquipment={data.androidEquipment?.[`android_preset_${data.equipment?.preset_no || 1}`] || data.androidEquipment?.android_preset_1} 
                />
                      {data.cashItemEquipment && <CashEquipmentGrid cashEquipment={data.cashItemEquipment} beautyEquipment={data.beautyEquipment} characterImage={data.basic.character_image} />}
+            </div>
+            <div className="lg:col-span-9">
+              <RelatedCharacters
+                currentCharacterName={data.basic.character_name}
+                onSelectCharacter={onSelectCharacter}
+              />
+            </div>
             </div>
             {showCalculator && (
               <React.Suspense fallback={(
