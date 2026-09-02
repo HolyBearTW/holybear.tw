@@ -1,6 +1,6 @@
 /* import { defineConfig } from 'vitepress' */
 import { defineConfig } from '@lando/vitepress-theme-default-plus/config'
-import { createLogger } from 'vite'
+import { createLogger, type Plugin } from 'vite'
 import { fileURLToPath, URL } from 'node:url'
 import { existsSync, readFileSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
@@ -30,6 +30,259 @@ const optimizedImageUrls: Record<string, string> = (() => {
         return {}
     }
 })()
+
+const earlyLoadingMarkup = `<div id="holy-bear-boot-frame" class="brand-loading-frame" aria-hidden="true">
+    <div class="brand-loading-ball">
+        <img class="brand-loading-orb" src="/animations/holy-bear-orb-navbar.webp" decoding="sync" fetchpriority="high" alt="">
+    </div>
+    <div class="brand-loading-marquee">
+        <div class="brand-loading-marquee-track">
+            <span>Loading...&nbsp;</span><span>Loading...&nbsp;</span><span>Loading...&nbsp;</span><span>Loading...&nbsp;</span><span>Loading...&nbsp;</span>
+        </div>
+    </div>
+    <div class="brand-loading-timeout" role="alert">
+        <strong>載入時間較長</strong>
+        <span>頁面資源可能暫時無法完成載入。</span>
+        <button type="button">重新整理</button>
+    </div>
+    <div class="brand-loading-curtain"></div>
+</div>`
+
+const earlyLoadingStyle = `
+    @font-face {
+        font-family: 'LINESeed';
+        src: url('/fonts/LINESeedTW_OTF_Bd.woff2') format('woff2');
+        font-weight: 700;
+        font-style: normal;
+        font-display: swap;
+    }
+    html.holy-bear-booting {
+        background: #f8fcfd;
+    }
+    html.dark.holy-bear-booting {
+        background: #061018;
+    }
+    #holy-bear-boot-frame {
+        display: none;
+        position: fixed;
+        z-index: 2147483000;
+        inset: 0;
+        overflow: hidden;
+        background:
+            radial-gradient(circle at 50% 50%, rgba(0, 184, 212, 0.16), transparent 31%),
+            radial-gradient(circle at 18% 16%, rgba(143, 112, 255, 0.12), transparent 34%),
+            radial-gradient(circle at 88% 82%, rgba(0, 255, 238, 0.1), transparent 30%),
+            linear-gradient(135deg, #f8fcfd 0%, #eef9fb 52%, #f7f3ff 100%);
+        color: rgba(16, 91, 108, 0.42);
+        font-family: 'LINESeed', sans-serif;
+    }
+    html.holy-bear-booting #holy-bear-boot-frame {
+        display: block;
+    }
+    html.dark #holy-bear-boot-frame {
+        background:
+            radial-gradient(circle at 50% 50%, rgba(0, 255, 238, 0.1), transparent 30%),
+            radial-gradient(circle at 18% 16%, rgba(143, 112, 255, 0.12), transparent 34%),
+            #061018;
+        color: #c2ccd2;
+    }
+    #holy-bear-boot-frame .brand-loading-ball {
+        position: absolute;
+        z-index: 5;
+        top: 50%;
+        left: 50%;
+        width: clamp(180px, 28vw, 320px);
+        height: clamp(180px, 28vw, 320px);
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(0.45);
+        isolation: isolate;
+    }
+    #holy-bear-boot-frame .brand-loading-orb {
+        position: relative;
+        z-index: 1;
+        display: block;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
+        animation: holy-bear-boot-orb-float 4s ease-in-out infinite;
+        transform: scale(1.12);
+    }
+    html:not(.dark) #holy-bear-boot-frame .brand-loading-orb {
+        filter:
+            drop-shadow(0 18px 30px rgba(7, 108, 133, 0.2))
+            drop-shadow(0 0 26px rgba(143, 112, 255, 0.2));
+    }
+    html:not(.dark) #holy-bear-boot-frame .brand-loading-ball::after {
+        position: absolute;
+        z-index: 0;
+        inset: 5%;
+        border: 1px solid rgba(7, 108, 133, 0.2);
+        border-radius: 50%;
+        background: radial-gradient(circle at 34% 28%, rgba(247, 253, 255, 0.94), rgba(201, 241, 247, 0.84) 48%, rgba(224, 215, 255, 0.76));
+        box-shadow: 0 18px 46px rgba(7, 108, 133, 0.18), 0 0 36px rgba(143, 112, 255, 0.18);
+        content: '';
+        pointer-events: none;
+    }
+    #holy-bear-boot-frame .brand-loading-ball::before {
+        position: absolute;
+        z-index: 2;
+        inset: -6%;
+        border-radius: 50%;
+        background: conic-gradient(from 0deg, transparent 0deg 35deg, #00ffee 62deg 92deg, transparent 120deg 205deg, #8f70ff 235deg 280deg, transparent 310deg 360deg);
+        content: '';
+        pointer-events: none;
+        -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3px));
+        mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3px));
+        animation: holy-bear-boot-orbit-spin 2.8s linear infinite;
+        filter: drop-shadow(0 0 7px rgba(0, 255, 238, 0.75));
+    }
+    html:not(.dark) #holy-bear-boot-frame .brand-loading-ball::before {
+        background: conic-gradient(from 0deg, transparent 0deg 35deg, #00b8d4 62deg 92deg, transparent 120deg 205deg, #7c4dff 235deg 280deg, transparent 310deg 360deg);
+        filter: drop-shadow(0 0 8px rgba(0, 184, 212, 0.82)) drop-shadow(0 0 10px rgba(124, 77, 255, 0.66));
+    }
+    #holy-bear-boot-frame .brand-loading-marquee {
+        position: absolute;
+        right: 0;
+        bottom: clamp(16px, 8.14vw, 48px);
+        left: 0;
+        overflow: hidden;
+        padding-bottom: 0.12em;
+        color: inherit;
+        font-size: 22.39vw;
+        letter-spacing: -5.28px;
+        font-weight: 700;
+        line-height: 1;
+        white-space: nowrap;
+    }
+    #holy-bear-boot-frame .brand-loading-marquee-track {
+        display: flex;
+        width: max-content;
+        animation: holy-bear-boot-marquee 8s linear infinite;
+    }
+    #holy-bear-boot-frame .brand-loading-timeout {
+        position: absolute;
+        z-index: 6;
+        top: calc(50% + clamp(72px, 13vw, 132px));
+        left: 50%;
+        display: none;
+        width: min(360px, calc(100vw - 40px));
+        align-items: center;
+        flex-direction: column;
+        gap: 6px;
+        color: #557481;
+        font-size: 13px;
+        text-align: center;
+        transform: translateX(-50%);
+    }
+    #holy-bear-boot-frame.is-timeout .brand-loading-timeout {
+        display: flex;
+    }
+    #holy-bear-boot-frame .brand-loading-timeout strong {
+        color: #163b49;
+        font-size: 16px;
+    }
+    #holy-bear-boot-frame .brand-loading-timeout button {
+        margin-top: 6px;
+        padding: 7px 16px;
+        border: 1px solid rgba(0, 184, 212, 0.42);
+        border-radius: 999px;
+        color: #075f70;
+        background: rgba(255, 255, 255, 0.62);
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+    }
+    html.dark #holy-bear-boot-frame .brand-loading-timeout {
+        color: #8ca9b5;
+    }
+    html.dark #holy-bear-boot-frame .brand-loading-timeout strong {
+        color: #e2f7f8;
+    }
+    html.dark #holy-bear-boot-frame .brand-loading-timeout button {
+        border-color: rgba(0, 255, 238, 0.34);
+        color: #c9ffff;
+        background: rgba(13, 34, 44, 0.82);
+    }
+    #holy-bear-boot-frame .brand-loading-curtain {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(135deg, #00ffee 0%, #8f70ff 100%);
+        transform: translateY(100%);
+    }
+    @keyframes holy-bear-boot-marquee {
+        from { transform: translateX(0); }
+        to { transform: translateX(-20%); }
+    }
+    @keyframes holy-bear-boot-orb-float {
+        0%, 100% { transform: translateY(0) scale(1.12); }
+        50% { transform: translateY(-7px) scale(1.14); }
+    }
+    @keyframes holy-bear-boot-orbit-spin {
+        to { transform: rotate(360deg); }
+    }
+    @media (min-width: 640px) {
+        #holy-bear-boot-frame .brand-loading-marquee { font-size: 16.15vw; letter-spacing: -7.44px; }
+    }
+    @media (min-width: 1024px) {
+        #holy-bear-boot-frame .brand-loading-marquee { font-size: 11.24vw; letter-spacing: -0.67vw; line-height: 1.2; }
+    }
+    @media (max-width: 392px) {
+        #holy-bear-boot-frame .brand-loading-ball { width: 190px; height: 190px; }
+        #holy-bear-boot-frame .brand-loading-marquee { bottom: 24px; font-size: 23vw; letter-spacing: -3px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        #holy-bear-boot-frame .brand-loading-marquee-track,
+        #holy-bear-boot-frame .brand-loading-orb,
+        #holy-bear-boot-frame .brand-loading-ball::before {
+            animation-duration: 0.01ms !important;
+        }
+    }
+`
+
+const earlyLoadingScript = `(() => {
+    const root = document.documentElement;
+    const savedAppearance = localStorage.getItem('vitepress-theme-appearance');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const shouldUseDark = savedAppearance === 'light'
+        ? false
+        : savedAppearance === 'auto'
+            ? prefersDark
+            : true;
+    root.classList.toggle('dark', shouldUseDark);
+    root.classList.add('holy-bear-booting');
+    window.setTimeout(() => {
+        const frame = document.getElementById('holy-bear-boot-frame');
+        if (!frame || !root.classList.contains('holy-bear-booting')) return;
+
+        frame.classList.add('is-timeout');
+        frame.querySelector('button')?.addEventListener('click', () => window.location.reload(), { once: true });
+    }, 12000);
+})()`
+
+const devEarlyLoadingPlugin: Plugin = {
+    name: 'holybear-dev-early-loading',
+    apply: 'serve',
+    transformIndexHtml(html) {
+        return {
+            html: html.replace(/<body([^>]*)>/, `<body$1>${earlyLoadingMarkup}`),
+            tags: [
+                {
+                    tag: 'style',
+                    attrs: { id: 'holy-bear-boot-style' },
+                    children: earlyLoadingStyle,
+                    injectTo: 'head-prepend',
+                },
+                {
+                    tag: 'script',
+                    attrs: { id: 'holy-bear-boot-script' },
+                    children: earlyLoadingScript,
+                    injectTo: 'head-prepend',
+                },
+            ],
+        }
+    },
+}
 
 const getOptimizedImageUrl = (sourceUrl: string | null) => {
     if (!sourceUrl || !sourceUrl.startsWith('/')) return null
@@ -159,6 +412,8 @@ const config = defineConfig({
                     : true;
             root.classList.toggle('dark', shouldUseDark);
         })()`],
+        ['style', { id: 'holy-bear-boot-style' }, earlyLoadingStyle],
+        ['script', { id: 'holy-bear-boot-script' }, earlyLoadingScript],
         // Favicon 完整配置 - 使用透明 PNG/ICO，降低 Google 抓到不透明備案的機率
         ['link', { rel: 'icon', type: 'image/png', sizes: '512x512', href: '/favicon.png?v=20260816-face-cutout' }],
         ['link', { rel: 'icon', type: 'image/png', sizes: '192x192', href: '/favicon-192.png?v=20260816-face-cutout' }],
@@ -229,6 +484,7 @@ const config = defineConfig({
             cors: true,
         },
         plugins: [
+            devEarlyLoadingPlugin,
             gitMetaPlugin(),
         ],
         // 只過濾已知且無影響的第三方套件警告，其餘 Vite 警告仍正常顯示。
@@ -268,7 +524,6 @@ const config = defineConfig({
                 'opencc-js',
                 'recharts',
                 'border-beam',
-                '@google/generative-ai',
                 'animejs',
                 'firebase/app',
                 'firebase/firestore',
@@ -543,7 +798,11 @@ const config = defineConfig({
         // 2. 清理 HTML body class
         // 避免構建環境或快取導致 theme-christmas 等主題 class 被寫入靜態檔案
         if (id.endsWith('.html')) {
-            return code.replace(/(<body[^>]*class=")([^"]*)(")/, (match, prefix, classList, suffix) => {
+            const codeWithLoadingFrame = code.includes('id="holy-bear-boot-frame"')
+                ? code
+                : code.replace(/<body([^>]*)>/, `<body$1>${earlyLoadingMarkup}`);
+
+            return codeWithLoadingFrame.replace(/(<body[^>]*class=")([^"]*)(")/, (match, prefix, classList, suffix) => {
                 // 過濾掉所有 theme- 開頭的 class
                 const newClassList = classList.split(' ')
                     .filter(c => !c.startsWith('theme-'))

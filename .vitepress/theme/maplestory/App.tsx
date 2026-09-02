@@ -1,20 +1,27 @@
 import React, { useState } from 'react';
 import ApiKeyModal from './components/ApiKeyModal';
-import ShareModal from './components/ShareModal';
-import CharacterDetails from './components/CharacterDetails';
-import { getStatBreakdown } from './services/statCalculator';
 import SearchForm, { SearchStatus, SearchEmptyState } from './components/SearchForm';
-import MainDashboard from './components/MainDashboard';
-import AiAnalysisPanel from './components/AiAnalysisPanel';
 import UpdateLogBoard from './components/UpdateLogBoard';
 import HeroHeader from './components/HeroHeader';
 import KeySettingsModal from './components/KeySettingsModal';
 import RecentPowerRanking from './components/RecentPowerRanking';
-import CharacterGrowthHistory from './components/CharacterGrowthHistory';
 
 import { useMapleSearch } from './hooks/useMapleSearch';
 import { useAiAnalysis } from './hooks/useAiAnalysis';
 import { useCharacterStats } from './hooks/useCharacterStats';
+
+const MainDashboard = React.lazy(() => import('./components/MainDashboard'));
+const CharacterGrowthHistory = React.lazy(() => import('./components/CharacterGrowthHistory'));
+const AiAnalysisPanel = React.lazy(() => import('./components/AiAnalysisPanel'));
+const CharacterDetails = React.lazy(() => import('./components/CharacterDetails'));
+const ShareModal = React.lazy(() => import('./components/ShareModal'));
+
+const ResultSectionLoading = ({ label }: { label: string }) => (
+  <div className="my-6 flex min-h-40 items-center justify-center rounded-xl border border-slate-800 bg-[#161b22]/80 px-4 text-sm font-medium text-slate-400">
+    <span className="mr-3 h-5 w-5 animate-spin rounded-full border-2 border-cyan-400/25 border-t-cyan-400" aria-hidden="true" />
+    {label}
+  </div>
+);
 
 const App: React.FC = () => {
   const [apiKey, setApiKey] = useState<string | null>(() => {
@@ -152,6 +159,7 @@ const App: React.FC = () => {
 
         {data && !loading && (
           <>
+            <React.Suspense fallback={<ResultSectionLoading label="正在準備角色主要資料…" />}>
             <MainDashboard
               data={data}
               apiKey={apiKey || ''}
@@ -160,7 +168,6 @@ const App: React.FC = () => {
               showDetailStats={showDetailStats}
               setShowDetailStats={setShowDetailStats}
               getStatVal={getStatVal}
-              getStatBreakdown={getStatBreakdown}
               detailedStats={detailedStats}
               favorites={favorites}
               toggleFavorite={toggleFavorite}
@@ -178,9 +185,13 @@ const App: React.FC = () => {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
             />
+            </React.Suspense>
 
+            <React.Suspense fallback={<ResultSectionLoading label="正在準備角色成長資料…" />}>
             <CharacterGrowthHistory data={data} apiKey={apiKey || ''} />
+            </React.Suspense>
 
+            <React.Suspense fallback={<ResultSectionLoading label="正在準備 AI 健檢面板…" />}>
             <AiAnalysisPanel
               analyzing={analyzing}
               aiAnalysis={aiAnalysis}
@@ -195,14 +206,21 @@ const App: React.FC = () => {
               elapsedTime={elapsedTime}
               progressMessage={progressMessage}
             />
+            </React.Suspense>
 
           {deferredDetailsData && (
+            <React.Suspense fallback={<ResultSectionLoading label="正在準備角色詳細資料…" />}>
               <CharacterDetails
                 data={deferredDetailsData}
                 apiKey={apiKey || ''} // 傳入 apiKey
               />
+            </React.Suspense>
           )}
-          {showShareModal && <ShareModal characterName={data.basic.character_name} onClose={() => setShowShareModal(false)} />}
+          {showShareModal && (
+            <React.Suspense fallback={null}>
+              <ShareModal characterName={data.basic.character_name} onClose={() => setShowShareModal(false)} />
+            </React.Suspense>
+          )}
           </>
         )}
 

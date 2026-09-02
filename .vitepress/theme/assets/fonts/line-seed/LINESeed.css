@@ -24,7 +24,7 @@
 /* LINESeedTW_OTF_Bd.ttf (Bold) */
 @font-face {
     font-family: 'LINESeed';
-    src: url('./LINESeedTW_OTF_Bd.woff2') format('woff2'), url('./LINESeedTW_OTF_Bd.woff') format('woff');
+    src: url('/fonts/LINESeedTW_OTF_Bd.woff2') format('woff2');
     font-weight: 700; /* Bold (粗體) 對應 700 */
     font-style: normal;
     font-display: swap;
