@@ -18,6 +18,7 @@ import {
 import MaplerHouseGrowthTracker from './MaplerHouseGrowthTracker';
 import MapleFeatureTour, { GrowthTrackingState } from './MapleFeatureTour';
 import { fetchWeeklyHistory, findBestDateInPastWeek } from '../services/nexonService';
+import { getStatBreakdown } from '../services/statCalculator';
 import RelatedCharacters from './RelatedCharacters';
 
 // Keep the calculator and its formula code out of the character result's first paint.
@@ -32,7 +33,6 @@ interface MainDashboardProps {
     showDetailStats: boolean;
     setShowDetailStats: (show: boolean) => void;
     getStatVal: (key: string) => string | number;
-    getStatBreakdown: (data: any, key: string) => any;
     detailedStats: any[];
     favorites?: string[];
     toggleFavorite?: (e: any, name: string) => void;
@@ -229,7 +229,6 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
     showDetailStats,
     setShowDetailStats,
     getStatVal,
-    getStatBreakdown,
     detailedStats,
     favorites = [],
     toggleFavorite = () => {},

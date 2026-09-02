@@ -13,6 +13,13 @@ let routeLeaveTimer: number | undefined
 let routeHideTimer: number | undefined
 let pageEnterTimer: number | undefined
 let routeLoadingPending = false
+let initialMinimumTimer: number | undefined
+let initialSafetyTimer: number | undefined
+let initialLoadHandler: (() => void) | undefined
+let initialMinimumElapsed = false
+let initialFinishRequested = false
+let initialLoadingFinished = false
+let loadingStartedAt = 0
 
 function restorePageScroll() {
   document.body.style.overflow = previousBodyOverflow
@@ -63,6 +70,23 @@ function startRouteLoading() {
   pageEnterTimer = undefined
   document.body.classList.remove('holy-bear-page-enter', 'holy-bear-route-enter')
   routeLoadingPending = true
+  loadingStartedAt = performance.now()
+  isLeaving.value = false
+  isPopping.value = false
+
+  // 站內頁面若能在一秒內完成，不打斷使用者，也不顯示載入動畫。
+  routeShowTimer = window.setTimeout(() => {
+    if (!routeLoadingPending) return
+
+    if (!isVisible.value) {
+      isVisible.value = true
+      lockPageScroll()
+    }
+    window.requestAnimationFrame(() => {
+      if (routeLoadingPending) isPopping.value = true
+    })
+  }, 1000)
+  routePopTimer = window.setTimeout(finishRouteLoading, 12000)
 }
 
 function handleInternalNavigation(event: MouseEvent) {
@@ -83,6 +107,12 @@ function handleInternalNavigation(event: MouseEvent) {
 
 function finishRouteLoading() {
   if (!routeLoadingPending) return
+
+  if (!initialLoadingFinished && !initialMinimumElapsed) {
+    initialFinishRequested = true
+    return
+  }
+
   routeLoadingPending = false
   clearRouteTimers()
   if (!isVisible.value) {
@@ -91,41 +121,66 @@ function finishRouteLoading() {
   }
 
   isPopping.value = true
-  routePopTimer = window.setTimeout(() => {
+  const minimumVisibleTime = initialLoadingFinished ? 240 : 0
+  const elapsed = performance.now() - loadingStartedAt
+  routeLeaveTimer = window.setTimeout(() => {
     isLeaving.value = true
-    triggerPageEnter(true)
+    triggerPageEnter(initialLoadingFinished)
 
     routeHideTimer = window.setTimeout(() => {
       isVisible.value = false
+      initialLoadingFinished = true
       restorePageScroll()
-    }, 1000)
-  }, 850)
+    }, 760)
+  }, Math.max(0, minimumVisibleTime - elapsed))
 }
 
 onMounted(() => {
   lockPageScroll()
+  // Vue 畫面已在同一位置掛載，移除原始 HTML 的同款靜態畫面並直接接手。
+  document.getElementById('holy-bear-boot-frame')?.remove()
+  document.documentElement.classList.remove('holy-bear-booting')
   document.addEventListener('click', handleInternalNavigation, true)
   window.addEventListener('holybear-route-loading-start', startRouteLoading)
   window.addEventListener('holybear-route-loading-finish', finishRouteLoading)
 
-  // 內容準備好後，品牌球先在中央彈出，再揭開頁面。
-  window.setTimeout(() => {
-    isPopping.value = true
-    window.setTimeout(() => {
-      isLeaving.value = true
-      triggerPageEnter(false)
-      window.setTimeout(() => {
-        isVisible.value = false
-        restorePageScroll()
-      }, 1000)
-    }, 850)
-  }, 1800)
+  // 首次進站不再使用固定時間關閉；內容完成後才退場，慢速裝置不會露出空白頁。
+  routeLoadingPending = true
+  loadingStartedAt = performance.now()
+  window.requestAnimationFrame(() => {
+    if (routeLoadingPending) isPopping.value = true
+  })
+
+  initialMinimumTimer = window.setTimeout(() => {
+    initialMinimumElapsed = true
+    if (initialFinishRequested) finishRouteLoading()
+  }, 650)
+
+  const requestInitialFinish = () => {
+    const path = window.location.pathname.replace(/\/$/, '')
+    // 此頁會在 React 主畫面實際掛載後自行送出完成事件。
+    if (path !== '/maplestory') finishRouteLoading()
+  }
+
+  initialLoadHandler = requestInitialFinish
+  if (document.readyState === 'complete') {
+    window.requestAnimationFrame(() => window.requestAnimationFrame(requestInitialFinish))
+  } else {
+    window.addEventListener('load', requestInitialFinish, { once: true })
+  }
+
+  // 個別外部資源失敗時仍要讓使用者取回頁面操作權。
+  initialSafetyTimer = window.setTimeout(finishRouteLoading, 12000)
 })
 
 onUnmounted(() => {
   clearRouteTimers()
+  if (initialMinimumTimer) window.clearTimeout(initialMinimumTimer)
+  if (initialSafetyTimer) window.clearTimeout(initialSafetyTimer)
+  if (initialLoadHandler) window.removeEventListener('load', initialLoadHandler)
   if (pageEnterTimer) window.clearTimeout(pageEnterTimer)
   document.body.classList.remove('holy-bear-page-enter', 'holy-bear-route-enter')
+  document.documentElement.classList.remove('holy-bear-booting')
   document.removeEventListener('click', handleInternalNavigation, true)
   window.removeEventListener('holybear-route-loading-start', startRouteLoading)
   window.removeEventListener('holybear-route-loading-finish', finishRouteLoading)
@@ -162,7 +217,7 @@ onUnmounted(() => {
   z-index: 2147483000;
   overflow: hidden;
   background:
-    radial-gradient(circle at 50% 42%, rgba(0, 184, 212, 0.16), transparent 31%),
+    radial-gradient(circle at 50% 50%, rgba(0, 184, 212, 0.16), transparent 31%),
     radial-gradient(circle at 18% 16%, rgba(143, 112, 255, 0.12), transparent 34%),
     radial-gradient(circle at 88% 82%, rgba(0, 255, 238, 0.1), transparent 30%),
     linear-gradient(135deg, #f8fcfd 0%, #eef9fb 52%, #f7f3ff 100%);
@@ -172,7 +227,7 @@ onUnmounted(() => {
 
 :global(html.dark .brand-loading-frame) {
   background:
-    radial-gradient(circle at 50% 42%, rgba(0, 255, 238, 0.1), transparent 30%),
+    radial-gradient(circle at 50% 50%, rgba(0, 255, 238, 0.1), transparent 30%),
     radial-gradient(circle at 18% 16%, rgba(143, 112, 255, 0.12), transparent 34%),
     #061018;
   color: #c2ccd2;

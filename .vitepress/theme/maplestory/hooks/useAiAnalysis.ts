@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { analyzeCharacter } from '../services/geminiService';
 import { DashboardData } from '../types';
 import { DEFAULT_AI_MODEL, getRecommendedAiModel, isCompatibleAiModel, isOpenAiModel } from '../data/aiModels';
 import { createBossPlayerContext, readBossDamageAiSnapshot } from '../calculator/bossDamageCalculator';
@@ -104,6 +103,8 @@ export const useAiAnalysis = (
         return;
       }
 
+      // AI provider SDKs are large and are only needed after the user starts an analysis.
+      const { analyzeCharacter } = await import('../services/geminiService');
       const result = await analyzeCharacter(data, bossDamageSnapshot, keyToUse, openAiKey || '', {
         apiKey: compatibleAiKey || '',
         baseUrl: compatibleAiBaseUrl,
