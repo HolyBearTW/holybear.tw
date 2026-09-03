@@ -1,0 +1,29 @@
+{
+  "id": "66f0c84ca03af3ab",
+  "members": [
+    {
+      "characterName": "悲傷拉姆達",
+      "worldName": "艾麗亞",
+      "characterClass": "劍豪",
+      "characterLevel": 295,
+      "characterImage": "https://open.api.nexon.com/static/maplestorytw/character/look/EGLDEAMOKCEHCOOPAIMCAFICGBLDODLGBBDGNLHEHPLAEOBKNMIFMIDBCLODAALHNDPIMHPEOMJNHFLCDANNIIEHJGMJOKLCGOHBLLDBKEEOOPLBGOCLFACFLAKEJHAELKGDNAEMGJALHHAOPGEDHPCHHLGEDLIFFFAJCFFDCPCBGFHANFIKEDBLDPOAJBGPAIOLOILJGMKJIJEOOCOAILBEAOIAGBFGFBPNDPPDFFFPBLMNDJAAEAJAONFBLEGI",
+      "characterPower": "58987260",
+      "maxCharacterPower": "58987260",
+      "combatPowerRank": 1011,
+      "characterGuildName": null,
+      "characterDateCreate": "2022-04-18T00:00+08:00"
+    },
+    {
+      "characterName": "萊芙啵啵",
+      "worldName": "艾麗亞",
+      "characterClass": "阿戴爾",
+      "characterLevel": 280,
+      "characterImage": "https://open.api.nexon.com/static/maplestorytw/character/look/NBJDBBJIPLFJJFJBBAIJHJIEBEFCCHJPFBHAOFBACCIMGGOFJCGGMKBHEDKEPKAJOHJJLDIJHPKNCPDLCDEMPJGIPGOLEJNMNGFFILNAPEPHMGFHKAAOAILEMPDOPKMLCGHLGBJKMBPOEJHDPBLACCDOCIBIKOGMBFBAKGHOHOFLMACFMEIHCHEAJKENEMHCOMEJJDDGEGOGAIHEPGMGDNFFJGGENFAPMNOCAHDMFFLMFMHJGCOHMPOOLFGKDNKE",
+      "characterPower": "33920089",
+      "maxCharacterPower": "33920089",
+      "combatPowerRank": null,
+      "characterGuildName": "被絕緣人邊緣",
+      "characterDateCreate": "2021-05-25T00:00+08:00"
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "id": "b38c95a439d37bc7",
+  "members": [
+    {
+      "characterName": "可愛兔兔劍聖",
+      "worldName": "殺人鯨",
+      "characterClass": "蓮",
+      "characterLevel": 279,
+      "characterImage": "https://open.api.nexon.com/static/maplestorytw/character/look/OGOHDONDOKODNEONJDKKABDHJKHNOFJPBGDBJDJOBEMOOIJLOEGDICHNBDONPIKGDFNOABDBMICNOAIADOMCAFJAEGHMJNLJLKNMCEELMGFDJIPIAPEEAKJANFLMHLGOHIEKBIEMODJDCIJGJOFFGHJODJKHBIBADNGFMHJGDNBJIFGPLILNNEHGIOEIHKJKDKLLMBINIGJLKPBKDBJDCLDCKCIIOKLDKCBHIFHEBOPJDFEBGKOMNMENJEKPMNEC",
+      "characterPower": "27179887",
+      "maxCharacterPower": "27179887",
+      "combatPowerRank": null,
+      "characterGuildName": "Nest",
+      "characterDateCreate": "2025-12-03T00:00+08:00"
+    },
+    {
+      "characterName": "破風法詩",
+      "worldName": "殺人鯨",
+      "characterClass": "破風使者",
+      "characterLevel": 295,
+      "characterImage": "https://open.api.nexon.com/static/maplestorytw/character/look/IHOPGDPNCEGMHGAJGGEFGCENKLNGGDJKCLJAILJBHBGBLMJBFFOHEGMPPPOMHOJCOABOCCEOILBJOBCEEEOKKCKHGACGIEPOCHMEKOIFCDFPJEGIJNMCNNPBIBNMGPNLPKHLHIHKCODNHLMBENICKAMBJPGGGMFFKDPBCBJMKEFFPDDCGFEJGMIELJDFMLMAADNABKKKJNNONNNJBIMPNMKBFEJDNNAPBMLGDBDJGIPOGCKBFBOFNALJHJFODAOH",
+      "characterPower": "2010759344",
+      "maxCharacterPower": "2010759344",
+      "combatPowerRank": 250,
+      "characterGuildName": "Nest",
+      "characterDateCreate": "2023-10-01T00:00+08:00"
+    },
+    {
+      "characterName": "路邊袋鼠",
+      "worldName": "殺人鯨",
+      "characterClass": "琳恩",
+      "characterLevel": 277,
+      "characterImage": "https://open.api.nexon.com/static/maplestorytw/character/look/MGKJAPDFJOHFGLAGFKCMJGINHCFLIJAFAEACEJECFJBJNCOHOKGJPPPAPCFGELFLNFHGMEMGIGAHPJOEKDMPKIMDEFHNKIFGKMGKKMLLLMAANJJEOGCIMHABMBIPHLAGDMFKCOGJBLGMBCAIIEGPIOMIHAKAHCDPDCKCDECOKNBEMKMBCGLDDGOPNMEIDAAKICIAKDDMGMHBIFHDJPMOBKMBKEEPCOJJHOIKCLOHMIDCFFFOEGLLKEBFFGDOBMEP",
+      "characterPower": "133357604",
+      "maxCharacterPower": "133357604",
+      "combatPowerRank": null,
+      "characterGuildName": "Nest",
+      "characterDateCreate": "2020-07-03T00:00+08:00"
+    }
+  ]
+}

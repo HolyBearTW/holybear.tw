@@ -1,0 +1,41 @@
+{
+  "id": "a6d4f464c46a6370",
+  "members": [
+    {
+      "characterName": "小柳久久實",
+      "worldName": "艾麗亞",
+      "characterClass": "暗影神偷",
+      "characterLevel": 282,
+      "characterImage": "https://open.api.nexon.com/static/maplestorytw/character/look/DHMNEGOICMDAPCECDEEGAOODMEHCOLDGCPMEADLPONKHOLIMEBIPFLFFPGCIICHANFKHPMIIJNIKPFDHFNLHMEOAJFOBJEKDCCDEOEMOOPIHPMFOLBNEDKFBGGPOODNBILNFNGNAOEKKKDOJCCIOJADHEBGDJJMCPIGOMLINMNABJHNEGAFEDJIKJHAEAHKIOCBBBEGHDBEMDDDDJHMJBKLNPMEOACJPIBBPHHAKEDCEGKPDDGEACILNCEINCJCG",
+      "characterPower": "69519060",
+      "maxCharacterPower": "69519060",
+      "combatPowerRank": null,
+      "characterGuildName": "超甜",
+      "characterDateCreate": "2022-08-27T00:00+08:00"
+    },
+    {
+      "characterName": "幼女使者",
+      "worldName": "艾麗亞",
+      "characterClass": "卡莉",
+      "characterLevel": 297,
+      "characterImage": "https://open.api.nexon.com/static/maplestorytw/character/look/GCBCGDNBFKCMOPHPMCOHNEAHJIEJBJMGDGJALEOFFGBJOJJLDGGMCFPDFNMPCNMPHCAMNOGMMAMIMAOEFBFGBOHKJIJHNOLKEILECDJLKOKAJDGPDFEFDOELFHPPAJCDLKFNJGCFADCJPPBJKODDCGFPJIPBGFCAKDNMDKNAAGMGIBBHPNLLLKPJOGKEEICFOLBLALPLJHLHEFPFFBFIJEEFDDPPOJBNFJFPKDDMJDNFPMLMHKDCGMLDEFBHEAPL",
+      "characterPower": "2219466126",
+      "maxCharacterPower": "2219466126",
+      "combatPowerRank": 212,
+      "characterGuildName": "伊豆",
+      "characterDateCreate": "2023-07-13T00:00+08:00"
+    },
+    {
+      "characterName": "赤城由伊奈",
+      "worldName": "艾麗亞",
+      "characterClass": "影武者",
+      "characterLevel": 282,
+      "characterImage": "https://open.api.nexon.com/static/maplestorytw/character/look/PKHMJPFPNBBOCILADHJAIMIDKHAAEKMHCCIFFOJHGLEKAPOFCCNNGIIIJFFLIEMFNELONDMNBBKPAPJCPHIIBFOEDGDOKDBNKHKDJJIKGAICDMNMCDGPOGKOOEJILACHAHFAAEOGPAABFBJKLDEPKGPGHOCEMGDIMBICEGMFFIOPKCMPBJHLOGLDIIECMIDDHGDNLEGMPGDOGJBMGCJMMFBBLNOJEHKHEIMNICPCPKNKDAEGGBPOEEEGIMKEJGAD",
+      "characterPower": "44165967",
+      "maxCharacterPower": "44165967",
+      "combatPowerRank": null,
+      "characterGuildName": "超甜",
+      "characterDateCreate": "2022-08-27T00:00+08:00"
+    }
+  ]
+}

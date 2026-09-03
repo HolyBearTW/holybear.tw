@@ -1,0 +1,53 @@
+{
+  "id": "5852c02ab41c080b",
+  "members": [
+    {
+      "characterName": "陰燭陽",
+      "worldName": "艾麗亞",
+      "characterClass": "陰陽師",
+      "characterLevel": 286,
+      "characterImage": "https://open.api.nexon.com/static/maplestorytw/character/look/LEMGDIDPILFHLOPFGJMHIHFGEAHAHPDHMDHCPKEAEJBKFFFPJOHAEOIGEDAPIHLNPIFPLGFEHCDIJOGNKAMCOBGGDEOGMPKEAONCAENKDCNEIGKOOOLNFIDMCEHOJILACHKHJJKIGGGFNGAPNGNEPNKCKCHPANLNAJGBHMPGNICCJCMJHGKNINGHMGNDIOOHHMJDOIHHDJFFFHIPGIFDGBEKCLEONJHMOLNGDAAJDOELIPNPPMEFAPNNLDMKPLBG",
+      "characterPower": "138147425",
+      "maxCharacterPower": "138147425",
+      "combatPowerRank": null,
+      "characterGuildName": "兔兔",
+      "characterDateCreate": "2026-01-20T00:00+08:00"
+    },
+    {
+      "characterName": "無敵暴龍炭炭",
+      "worldName": "艾麗亞",
+      "characterClass": "英雄",
+      "characterLevel": 280,
+      "characterImage": "https://open.api.nexon.com/static/maplestorytw/character/look/FGFKBKDCKMNEPOJHECGDAAMCILMHAECEKNEEHCHKPGOGIJFLOFMBADFCFLBGBIHMCFAIPDLLOAIEKEGOENFHNJJMIJEIPFFJDCNHIIELNAEEPNGMMOJAILPMJGFLLGKLFDKJCNODFNFLDNNAMLCHDEBDLAACEGFOKOIJLNIKIFDLMAIBELDCDOKMAMEIAGKKGPNNOMFHOGCOGMOACDGHFMCFEKGKKDOHLANIJLOIPBPIAINPNCKDGDOKFNHDPDIL",
+      "characterPower": "15398585",
+      "maxCharacterPower": "15398585",
+      "combatPowerRank": null,
+      "characterGuildName": null,
+      "characterDateCreate": "2025-04-23T00:00+08:00"
+    },
+    {
+      "characterName": "萌新琳恩Lynn",
+      "worldName": "艾麗亞",
+      "characterClass": "琳恩",
+      "characterLevel": 281,
+      "characterImage": "https://open.api.nexon.com/static/maplestorytw/character/look/LKPDGBEKCDGCPCOOGJLGMGJPIGPLDMHMCDBCNECBPMDHHAMNDMOCKKBBELKOJEICKEKOKELFIAPCEIPMHAAEKKKAAJFIGFLBAGLEBDIBKCIPKLJGBJLNMMKBLAPOHBHFGEIFPNLCOAHJDCMNMBPOFLFKGEDOEJOIMKBCOLNPNCFBADGGBBEMKJDOFMAGCJNIMMKLGCFDGKOABNPGDFNMFLCJJEMHDOLNKKLLPNFKODHKCGINMMADKFMHNODBGICP",
+      "characterPower": "0",
+      "maxCharacterPower": "0",
+      "combatPowerRank": null,
+      "characterGuildName": null,
+      "characterDateCreate": "2023-06-22T00:00+08:00"
+    },
+    {
+      "characterName": "簡單脆脆鯊",
+      "worldName": "艾麗亞",
+      "characterClass": "閃雷悍將",
+      "characterLevel": 295,
+      "characterImage": "https://open.api.nexon.com/static/maplestorytw/character/look/BBFAEKCCBGKHDELBCKMIONAKGIJALNCFADKFGAKKNGGDLBOEJHLDFCBDPNCHKFJMKHECLFJONLDHOFLHOFMLCNKBIPJJFEGBFPEHHABDDLOEIBCOIAMPBIGIEIKJBMJDIDAOJDCFHPJIAHLANKBEPHAHGHJGDGEADNAJKKBHBFKBKBFGMENJLILGGKBNHLKJEDHEDHBOGONBCKGOFDJKEHEHBNCHJDPMMIHDMCKJHFLBAIIPNCHNGMKCLGOPDAIB",
+      "characterPower": "2059176261",
+      "maxCharacterPower": "2059176261",
+      "combatPowerRank": 243,
+      "characterGuildName": "書院",
+      "characterDateCreate": "2023-03-01T00:00+08:00"
+    }
+  ]
+}

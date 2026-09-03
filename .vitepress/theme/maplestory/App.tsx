@@ -9,6 +9,7 @@ import RecentPowerRanking from './components/RecentPowerRanking';
 import { useMapleSearch } from './hooks/useMapleSearch';
 import { useAiAnalysis } from './hooks/useAiAnalysis';
 import { useCharacterStats } from './hooks/useCharacterStats';
+import { preloadAliasIndex } from './services/aliasService';
 
 const loadMainDashboard = () => import('./components/MainDashboard');
 const loadCharacterGrowthHistory = () => import('./components/CharacterGrowthHistory');
@@ -26,6 +27,7 @@ const preloadResultSections = () => Promise.allSettled([
   loadCharacterGrowthHistory(),
   loadAiAnalysisPanel(),
   loadCharacterDetails(),
+  preloadAliasIndex(),
 ]);
 
 const ResultLoading = () => {
