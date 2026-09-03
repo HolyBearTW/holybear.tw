@@ -9,6 +9,7 @@ import { CharacterAndroidEquipment } from '../types';
 import { mapleAsset, mapleAssetOrNull } from '../assets';
 import { CharacterAppearanceSettings } from '../characterAppearance';
 import { MAP_SCENE_ANCHORS, MAP_SCENE_OPTIONS, getMaplestoryIoMapVersion } from '../constants';
+import { useEquipmentLayoutScale } from './useEquipmentLayoutScale';
 
 const characterAsset = (name: string) => mapleAsset(`maplestory_character/${name}`);
 const windowAsset = (name: string) => mapleAsset(`window/${name}`);
@@ -308,7 +309,7 @@ const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'lef
     }
   }, [showTooltip]);
   
-  if (!def) return <div className="w-10 h-10 sm:w-12 sm:h-12 invisible flex-shrink-0" />;
+  if (!def) return <div className="invisible h-12 w-12 flex-shrink-0" />;
 
   // Restore style variables logic
   let borderColor = disabled ? 'border-slate-700' : 'border-slate-800';
@@ -338,7 +339,7 @@ const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'lef
       className={`relative group ${showTooltip ? 'z-[100]' : 'z-0'} !transform-none !transition-none !translate-y-0 !m-0`}
     >
       <div 
-        className={`w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0 ${bgColor} border-2 ${borderColor} rounded-md flex items-center justify-center relative overflow-hidden ${glow} ${item ? 'cursor-pointer' : 'cursor-default'} ${disabled ? 'opacity-45 saturate-0' : ''}`}
+        className={`h-12 w-12 flex-shrink-0 ${bgColor} border-2 ${borderColor} rounded-md flex items-center justify-center relative overflow-hidden ${glow} ${item ? 'cursor-pointer' : 'cursor-default'} ${disabled ? 'opacity-45 saturate-0' : ''}`}
         role={isPuzzleBoard ? 'button' : undefined}
         tabIndex={isPuzzleBoard ? 0 : undefined}
         aria-label={isPuzzleBoard ? '查看目前裝備的拼圖' : undefined}
@@ -459,6 +460,7 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, setEffect, cha
   const [showAppearancePreview, setShowAppearancePreview] = useState(false);
   const [showMapSelector, setShowMapSelector] = useState(false);
   const [loadedCharacterImage, setLoadedCharacterImage] = useState<string | null>(null);
+  const { cardRef, layoutScale } = useEquipmentLayoutScale();
   const characterImageRef = useRef<HTMLImageElement>(null);
   const mapSelectorRef = useRef<HTMLDivElement>(null);
   const mapImageRetryTimerRef = useRef<number | null>(null);
@@ -722,7 +724,7 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, setEffect, cha
   });
 
   return (
-    <div className="relative rounded-xl border border-slate-800 bg-[#161b22] p-6 shadow-inner">
+    <div ref={cardRef} className="relative rounded-xl border border-slate-800 bg-[#161b22] p-6 shadow-inner">
       <h3 className="mb-6 flex items-center justify-between gap-3 text-sm font-bold uppercase tracking-widest text-slate-400">
          <span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-indigo-500"></span> 裝備 (Equipment)</span>
          {characterImage && (
@@ -764,7 +766,11 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, setEffect, cha
         }
       />
 
-      <div className="mt-4 flex justify-center gap-0.5 sm:gap-4 lg:gap-6">
+      <div className="-mx-6 mt-4 flex justify-center sm:mx-0">
+      <div
+        className="flex w-96 shrink-0 justify-center gap-6"
+        style={{ zoom: layoutScale }}
+      >
       
       {/* Left Columns (Accessories) */}
       <div className="flex gap-2">
@@ -793,8 +799,8 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, setEffect, cha
       </div>
 
       {/* Center Character */}
-       <div className="relative flex w-[9.25rem] flex-col items-center justify-start gap-2 sm:w-28 lg:w-32">
-         <div className="group relative z-20 h-[152px] w-[8.5rem] shrink-0 self-center overflow-visible rounded-xl border border-slate-700/50 bg-[#111820] shadow-inner sm:h-[184px] sm:w-40 lg:h-[216px]">
+       <div className="relative flex w-32 flex-col items-center justify-start gap-2">
+         <div className="group relative z-20 h-[216px] w-40 shrink-0 self-center overflow-visible rounded-xl border border-slate-700/50 bg-[#111820] shadow-inner">
            <div className="absolute inset-0 overflow-hidden rounded-xl">
             {isCharacterImageLoaded && localMapScene && (
               <img
@@ -813,7 +819,7 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, setEffect, cha
                 loading="lazy"
                 decoding="async"
                 fetchPriority="low"
-                className="pointer-events-none absolute left-1/2 top-[calc(100%-30px)] z-0 max-h-none max-w-none select-none opacity-80 sm:top-[calc(100%-36px)] lg:top-[calc(100%-44px)]"
+                className="pointer-events-none absolute left-1/2 top-[calc(100%-44px)] z-0 max-h-none max-w-none select-none opacity-80"
                 style={{
                   transform: `translate(-${selectedMapAnchor.x}px, -${selectedMapAnchor.y}px)`,
                 }}
@@ -829,9 +835,9 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, setEffect, cha
             )}
             <div className="pointer-events-none absolute inset-0 z-0 bg-[linear-gradient(180deg,rgba(8,12,18,0.12),transparent_48%,rgba(8,12,18,0.18))]" aria-hidden="true" />
              {characterImage ? (
-             <img ref={characterImageRef} src={characterImage} alt="Character" onLoad={() => setLoadedCharacterImage(characterImage)} className="pointer-events-none absolute bottom-[20px] left-1/2 z-10 max-w-full -translate-x-1/2 origin-bottom scale-100 drop-shadow-2xl sm:bottom-[25px] sm:scale-110 lg:bottom-[33px] lg:scale-[1.35]" />
+             <img ref={characterImageRef} src={characterImage} alt="Character" onLoad={() => setLoadedCharacterImage(characterImage)} className="pointer-events-none absolute bottom-[33px] left-1/2 z-10 max-w-full -translate-x-1/2 origin-bottom scale-[1.35] drop-shadow-2xl" />
              ) : (
-                <div className="absolute bottom-[30px] left-1/2 z-10 h-24 w-24 -translate-x-1/2 rounded-full bg-slate-800/50 sm:bottom-[36px] lg:bottom-[44px]" />
+                <div className="absolute bottom-[44px] left-1/2 z-10 h-24 w-24 -translate-x-1/2 rounded-full bg-slate-800/50" />
              )}
            </div>
             <div ref={mapSelectorRef} className="absolute right-1 top-1 z-[80] flex flex-col items-center gap-0.5">
@@ -932,6 +938,7 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, setEffect, cha
           <div className="flex flex-col gap-2">
             {['Cape', 'Gloves', 'Shoes', 'Medal', 'Heart', 'Badge'].map((key, idx) => <Slot key={key} slotKey={key} item={findItem(key)} tooltipSide="left" mobileDir={idx < 3 ? 'down' : 'up'} setEffect={setEffect} characterJob={characterJob} showSetEffect={showSetEffect} />)}
           </div>
+      </div>
       </div>
       </div>
 
