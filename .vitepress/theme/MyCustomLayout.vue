@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import DefaultTheme from 'vitepress/theme'
 import { useData } from 'vitepress'
-import { computed, onMounted, onUnmounted, watch, ref, provide, nextTick } from 'vue'
+import { computed, defineAsyncComponent, onMounted, onUnmounted, watch, ref, provide, nextTick } from 'vue'
 import { useRoute } from 'vitepress'
 import { useAuthors } from '../components/useAuthors.js'
 import FloatingBgmPlayer from './FloatingBgmPlayer.vue'
@@ -13,17 +13,6 @@ import MigrationNotice from '../components/MigrationNotice.vue'
 import mediumZoom from 'medium-zoom'
 import { data as allPosts } from './posts.data.ts'
 import NavThemeHandler from './NavThemeHandler.vue'
-import Tech from './background/TechBackground.vue'
-import Animated from './background/AnimatedBackground.vue'
-import GamingRGB from './background/GamingRGB.vue'
-import Slow3DFly from './background/Slow3DFly.vue'
-import Halo from './background/CircularHaloBackgroud.vue'
-import HyperOS from './background/HyperOSTheme.vue'
-import HyperOS2 from './background/HyperOS2Theme.vue'
-import CoreTower from './background/CoreTowerBackground.vue'
-import Christmas from './background/ChristmasBackground.vue'
-import Halloween from './background/HalloweenBackground.vue'
-import GravityFieldSimulation from './background/GravityFieldSimulation.vue'
 import HolyBearLoadingFrame from './HolyBearLoadingFrame.vue'
 import FuwariSearch from './fuwari/components/FuwariSearch.vue'
 import { 
@@ -32,6 +21,19 @@ import {
   getAllThemeIds,
   getInitialBackgroundTheme
 } from './background/themes'
+
+// 背景主題只在實際選用時載入，避免首次進站解析全部動畫元件。
+const Tech = defineAsyncComponent(() => import('./background/TechBackground.vue'))
+const Animated = defineAsyncComponent(() => import('./background/AnimatedBackground.vue'))
+const GamingRGB = defineAsyncComponent(() => import('./background/GamingRGB.vue'))
+const Slow3DFly = defineAsyncComponent(() => import('./background/Slow3DFly.vue'))
+const Halo = defineAsyncComponent(() => import('./background/CircularHaloBackgroud.vue'))
+const HyperOS = defineAsyncComponent(() => import('./background/HyperOSTheme.vue'))
+const HyperOS2 = defineAsyncComponent(() => import('./background/HyperOS2Theme.vue'))
+const CoreTower = defineAsyncComponent(() => import('./background/CoreTowerBackground.vue'))
+const Christmas = defineAsyncComponent(() => import('./background/ChristmasBackground.vue'))
+const Halloween = defineAsyncComponent(() => import('./background/HalloweenBackground.vue'))
+const GravityFieldSimulation = defineAsyncComponent(() => import('./background/GravityFieldSimulation.vue'))
 
 const { isDark } = useData()
 declare const __GIT_COMMIT_HASH__: string
@@ -47,6 +49,9 @@ const gitCommitUrl = `https://github.com/HolyBearTW/holybear.tw/commit/${gitComm
 
 // 當前背景主題
 const currentBackgroundTheme = ref(defaultTheme)
+const isConstrainedDevice = ref(
+    typeof document !== 'undefined' && document.documentElement.classList.contains('holy-bear-constrained-device')
+)
 
 const mobileFallbackBackground = computed(() => {
     const theme = currentBackgroundTheme.value
@@ -185,7 +190,7 @@ const updateBodyClass = (theme: string) => {
     document.body.classList.toggle('portfolio-page', !!isPortfolioPage)
   
   // 添加當前主題 class
-  if (theme && theme !== 'none') {
+  if (theme && theme !== 'none' && !isConstrainedDevice.value) {
     document.body.classList.add(`theme-${theme}`)
   }
 }
@@ -712,17 +717,17 @@ onUnmounted(() => {
     <div class="mobile-flash-guard" :style="mobileFlashGuardStyle" aria-hidden="true"></div>
 
     <ClientOnly>
-        <Tech v-if="currentBackgroundTheme === 'tech'" />
-        <Animated v-if="currentBackgroundTheme === 'animated'" />
-        <GamingRGB v-if="currentBackgroundTheme === 'gaming'" />
-        <Slow3DFly v-if="currentBackgroundTheme === 'slow3dfly'" />
-        <Halo v-if="currentBackgroundTheme === 'halo'" />
-        <HyperOS v-if="currentBackgroundTheme === 'hyperos'" />
-        <HyperOS2 v-if="currentBackgroundTheme === 'hyperos2'" />
-        <CoreTower v-if="currentBackgroundTheme === 'coretower'" />
-        <Halloween v-if="currentBackgroundTheme === 'halloween'" />
-        <GravityFieldSimulation v-if="currentBackgroundTheme === 'gravityfield'" />
-        <Christmas v-if="currentBackgroundTheme === 'christmas'" />
+        <Tech v-if="!isConstrainedDevice && currentBackgroundTheme === 'tech'" />
+        <Animated v-if="!isConstrainedDevice && currentBackgroundTheme === 'animated'" />
+        <GamingRGB v-if="!isConstrainedDevice && currentBackgroundTheme === 'gaming'" />
+        <Slow3DFly v-if="!isConstrainedDevice && currentBackgroundTheme === 'slow3dfly'" />
+        <Halo v-if="!isConstrainedDevice && currentBackgroundTheme === 'halo'" />
+        <HyperOS v-if="!isConstrainedDevice && currentBackgroundTheme === 'hyperos'" />
+        <HyperOS2 v-if="!isConstrainedDevice && currentBackgroundTheme === 'hyperos2'" />
+        <CoreTower v-if="!isConstrainedDevice && currentBackgroundTheme === 'coretower'" />
+        <Halloween v-if="!isConstrainedDevice && currentBackgroundTheme === 'halloween'" />
+        <GravityFieldSimulation v-if="!isConstrainedDevice && currentBackgroundTheme === 'gravityfield'" />
+        <Christmas v-if="!isConstrainedDevice && currentBackgroundTheme === 'christmas'" />
     </ClientOnly>
 
     <component :is="DefaultTheme.Layout">

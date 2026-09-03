@@ -116,6 +116,24 @@ const MapleFeatureTour: React.FC<MapleFeatureTourProps> = ({
   }, [characterKey, growthTrackingState, steps]);
 
   const currentStep = steps.find((step) => step.id === currentStepId) ?? null;
+  const isTourOpen = currentStep !== null;
+
+  React.useEffect(() => {
+    if (!isTourOpen) return;
+
+    const root = document.documentElement;
+    const body = document.body;
+    const previousRootOverflow = root.style.overflow;
+    const previousBodyOverflow = body.style.overflow;
+
+    root.style.overflow = 'hidden';
+    body.style.overflow = 'hidden';
+
+    return () => {
+      root.style.overflow = previousRootOverflow;
+      body.style.overflow = previousBodyOverflow;
+    };
+  }, [isTourOpen]);
 
   React.useEffect(() => {
     if (!currentStep) {

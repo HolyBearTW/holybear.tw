@@ -5,6 +5,7 @@ import loadingOrbUrl from './assets/animations/holy-bear-orb-navbar.webp?inline'
 const isVisible = ref(true)
 const isPopping = ref(false)
 const isLeaving = ref(false)
+const areInitialVisualsReady = ref(false)
 let previousBodyOverflow = ''
 let previousDocumentOverflow = ''
 let routeShowTimer: number | undefined
@@ -16,6 +17,8 @@ let routeLoadingPending = false
 let initialMinimumTimer: number | undefined
 let initialSafetyTimer: number | undefined
 let initialLoadHandler: (() => void) | undefined
+let initialVisualReadyFrame: number | undefined
+let initialPopFrame: number | undefined
 let initialMinimumElapsed = false
 let initialFinishRequested = false
 let initialLoadingFinished = false
@@ -137,7 +140,8 @@ function finishRouteLoading() {
 
 onMounted(() => {
   lockPageScroll()
-  // Vue 畫面已在同一位置掛載，移除原始 HTML 的同款靜態畫面並直接接手。
+  // 先移除原始 HTML 的靜態圖像，再隔一個繪製週期顯示 Vue 圖像。
+  // 避免低效能裝置在兩套 Loading 交接時留下縮小 Logo 的合成殘影。
   document.getElementById('holy-bear-boot-frame')?.remove()
   document.documentElement.classList.remove('holy-bear-booting')
   document.addEventListener('click', handleInternalNavigation, true)
@@ -147,8 +151,15 @@ onMounted(() => {
   // 首次進站不再使用固定時間關閉；內容完成後才退場，慢速裝置不會露出空白頁。
   routeLoadingPending = true
   loadingStartedAt = performance.now()
-  window.requestAnimationFrame(() => {
-    if (routeLoadingPending) isPopping.value = true
+  initialVisualReadyFrame = window.requestAnimationFrame(() => {
+    initialVisualReadyFrame = window.requestAnimationFrame(() => {
+      areInitialVisualsReady.value = true
+      initialVisualReadyFrame = undefined
+      initialPopFrame = window.requestAnimationFrame(() => {
+        initialPopFrame = undefined
+        if (routeLoadingPending) isPopping.value = true
+      })
+    })
   })
 
   initialMinimumTimer = window.setTimeout(() => {
@@ -178,6 +189,8 @@ onUnmounted(() => {
   if (initialMinimumTimer) window.clearTimeout(initialMinimumTimer)
   if (initialSafetyTimer) window.clearTimeout(initialSafetyTimer)
   if (initialLoadHandler) window.removeEventListener('load', initialLoadHandler)
+  if (initialVisualReadyFrame) window.cancelAnimationFrame(initialVisualReadyFrame)
+  if (initialPopFrame) window.cancelAnimationFrame(initialPopFrame)
   if (pageEnterTimer) window.clearTimeout(pageEnterTimer)
   document.body.classList.remove('holy-bear-page-enter', 'holy-bear-route-enter')
   document.documentElement.classList.remove('holy-bear-booting')
@@ -190,7 +203,7 @@ onUnmounted(() => {
 
 <template>
   <div v-show="isVisible" class="brand-loading-frame" :class="{ 'is-popping': isPopping, 'is-leaving': isLeaving }" aria-hidden="true">
-    <div class="brand-loading-ball">
+    <div v-if="areInitialVisualsReady" class="brand-loading-ball">
       <img
         class="brand-loading-orb"
         :src="loadingOrbUrl"
@@ -200,7 +213,7 @@ onUnmounted(() => {
       />
     </div>
 
-    <div class="brand-loading-marquee">
+    <div v-if="areInitialVisualsReady" class="brand-loading-marquee">
       <div class="brand-loading-marquee-track" :class="{ 'is-paused': isLeaving }">
         <span v-for="i in 5" :key="i">Loading...&nbsp;</span>
       </div>
@@ -416,6 +429,44 @@ onUnmounted(() => {
     font-size: 23vw;
     letter-spacing: -3px;
   }
+}
+
+:global(html.holy-bear-constrained-device .brand-loading-frame) {
+  background: linear-gradient(135deg, #f8fcfd, #eef9fb 58%, #f7f3ff);
+  font-family: "Segoe UI", system-ui, sans-serif;
+}
+
+:global(html.dark.holy-bear-constrained-device .brand-loading-frame) {
+  background: #061018;
+}
+
+:global(html.holy-bear-constrained-device .brand-loading-orb) {
+  filter: none !important;
+}
+
+:global(html.holy-bear-constrained-device .brand-loading-ball::after) {
+  box-shadow: none;
+}
+
+:global(html.holy-bear-constrained-device .brand-loading-ball::before) {
+  inset: -4%;
+  border: 4px solid rgba(0, 184, 212, 0.34);
+  border-top-color: #00b8d4;
+  border-right-color: #7c4dff;
+  background: none !important;
+  -webkit-mask: none;
+  mask: none;
+  filter: none !important;
+}
+
+:global(html.dark.holy-bear-constrained-device .brand-loading-ball::before) {
+  border-color: rgba(0, 255, 238, 0.26);
+  border-top-color: #00ffee;
+  border-right-color: #8f70ff;
+}
+
+:global(html.holy-bear-constrained-device .brand-loading-frame.is-leaving .brand-loading-ball) {
+  transform: translate(-50%, -50%) scale(1.65);
 }
 
 @media (prefers-reduced-motion: reduce) {
