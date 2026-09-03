@@ -231,6 +231,37 @@ const earlyLoadingStyle = `
         #holy-bear-boot-frame .brand-loading-ball { width: 190px; height: 190px; }
         #holy-bear-boot-frame .brand-loading-marquee { bottom: 24px; font-size: 23vw; letter-spacing: -3px; }
     }
+    html.holy-bear-constrained-device body,
+    html.holy-bear-constrained-device #holy-bear-boot-frame {
+        font-family: "Segoe UI", system-ui, sans-serif !important;
+    }
+    html.holy-bear-constrained-device #holy-bear-boot-frame {
+        background: linear-gradient(135deg, #f8fcfd, #eef9fb 58%, #f7f3ff);
+    }
+    html.dark.holy-bear-constrained-device #holy-bear-boot-frame {
+        background: #061018;
+    }
+    html.holy-bear-constrained-device #holy-bear-boot-frame .brand-loading-orb {
+        filter: none !important;
+    }
+    html.holy-bear-constrained-device #holy-bear-boot-frame .brand-loading-ball::after {
+        box-shadow: none;
+    }
+    html.holy-bear-constrained-device #holy-bear-boot-frame .brand-loading-ball::before {
+        inset: -4%;
+        border: 4px solid rgba(0, 184, 212, 0.34);
+        border-top-color: #00b8d4;
+        border-right-color: #7c4dff;
+        background: none !important;
+        -webkit-mask: none;
+        mask: none;
+        filter: none !important;
+    }
+    html.dark.holy-bear-constrained-device #holy-bear-boot-frame .brand-loading-ball::before {
+        border-color: rgba(0, 255, 238, 0.26);
+        border-top-color: #00ffee;
+        border-right-color: #8f70ff;
+    }
     @media (prefers-reduced-motion: reduce) {
         #holy-bear-boot-frame .brand-loading-marquee-track,
         #holy-bear-boot-frame .brand-loading-orb,
@@ -242,6 +273,27 @@ const earlyLoadingStyle = `
 
 const earlyLoadingScript = `(() => {
     const root = document.documentElement;
+    const deviceMemory = Number(navigator.deviceMemory || 0);
+    const logicalProcessors = Number(navigator.hardwareConcurrency || 0);
+    const hasLimitedMemory = deviceMemory > 0 && deviceMemory <= 4;
+    const hasLimitedCpu = logicalProcessors > 0 && logicalProcessors <= 4;
+    root.classList.toggle('holy-bear-constrained-device', hasLimitedMemory || hasLimitedCpu);
+
+    const runCpuProbe = (iterations) => {
+        let checksum = 0;
+        for (let index = 1; index <= iterations; index += 1) {
+            checksum = (checksum + Math.sqrt(index) * 1.000001) % 1000003;
+        }
+        return checksum;
+    };
+    runCpuProbe(50000);
+    const cpuProbeStartedAt = performance.now();
+    const cpuProbeChecksum = runCpuProbe(400000);
+    const cpuProbeDuration = performance.now() - cpuProbeStartedAt;
+    if (Number.isFinite(cpuProbeChecksum) && cpuProbeDuration >= 12) {
+        root.classList.add('holy-bear-constrained-device');
+    }
+
     const savedAppearance = localStorage.getItem('vitepress-theme-appearance');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     const shouldUseDark = savedAppearance === 'light'
