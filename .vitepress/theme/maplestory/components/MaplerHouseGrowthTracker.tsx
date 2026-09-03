@@ -32,6 +32,14 @@ const calculateCreationProgress = (status: MaplerHouseHistoryStatus | null) => {
   return Math.max(0, Math.min(100, ((processed - start) / (end - start)) * 100));
 };
 
+const formatGrowthTrackerError = (error: unknown, fallback: string) => {
+  const message = error instanceof Error ? error.message : '';
+  if (/failed to fetch|networkerror|load failed/i.test(message)) {
+    return '成長檔案服務暫時無法連線，請稍後再試';
+  }
+  return message || fallback;
+};
+
 const MaplerHouseGrowthTracker: React.FC<MaplerHouseGrowthTrackerProps> = ({
   ocid,
   characterName,
@@ -74,7 +82,7 @@ const MaplerHouseGrowthTracker: React.FC<MaplerHouseGrowthTrackerProps> = ({
         if (active) setStatus(result);
       })
       .catch((err: unknown) => {
-        if (active) setError(err instanceof Error ? err.message : '無法確認成長檔案狀態');
+        if (active) setError(formatGrowthTrackerError(err, '無法確認成長檔案狀態'));
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -107,7 +115,7 @@ const MaplerHouseGrowthTracker: React.FC<MaplerHouseGrowthTrackerProps> = ({
           }
         })
         .catch((err: unknown) => {
-          setError(err instanceof Error ? err.message : '無法更新成長檔案狀態');
+          setError(formatGrowthTrackerError(err, '無法更新成長檔案狀態'));
         });
     }, 5000);
 
@@ -126,7 +134,7 @@ const MaplerHouseGrowthTracker: React.FC<MaplerHouseGrowthTrackerProps> = ({
         notifyTrackingComplete();
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : '生成成長檔案失敗');
+      setError(formatGrowthTrackerError(err, '生成成長檔案失敗'));
     } finally {
       setSubmitting(false);
     }

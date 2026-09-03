@@ -1,9 +1,16 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { Eye, Info, RotateCcw, X } from 'lucide-react';
+import {
+  buildCharacterAppearanceUrl,
+  CharacterAppearanceSettings,
+  DEFAULT_CHARACTER_APPEARANCE,
+} from '../characterAppearance';
 
 interface CharacterAppearancePreviewModalProps {
   characterImage: string;
+  settings: CharacterAppearanceSettings;
+  onSettingsChange: (settings: CharacterAppearanceSettings) => void;
   onClose: () => void;
 }
 
@@ -67,11 +74,10 @@ const PreviewSelect = ({
 
 const CharacterAppearancePreviewModal: React.FC<CharacterAppearancePreviewModalProps> = ({
   characterImage,
+  settings,
+  onSettingsChange,
   onClose,
 }) => {
-  const [action, setAction] = React.useState('A00');
-  const [emotion, setEmotion] = React.useState('E00');
-  const [weaponMotion, setWeaponMotion] = React.useState('W00');
   const [imageError, setImageError] = React.useState(false);
 
   React.useEffect(() => {
@@ -88,24 +94,15 @@ const CharacterAppearancePreviewModal: React.FC<CharacterAppearancePreviewModalP
     };
   }, [onClose]);
 
-  const previewUrl = React.useMemo(() => {
-    try {
-      const url = new URL(characterImage);
-      url.searchParams.set('action', action);
-      url.searchParams.set('emotion', emotion);
-      url.searchParams.set('wmotion', weaponMotion);
-      return url.toString();
-    } catch {
-      return characterImage;
-    }
-  }, [action, characterImage, emotion, weaponMotion]);
+  const previewUrl = React.useMemo(
+    () => buildCharacterAppearanceUrl(characterImage, settings),
+    [characterImage, settings],
+  );
 
   React.useEffect(() => setImageError(false), [previewUrl]);
 
   const resetPreview = () => {
-    setAction('A00');
-    setEmotion('E00');
-    setWeaponMotion('W00');
+    onSettingsChange({ ...DEFAULT_CHARACTER_APPEARANCE });
   };
 
   if (typeof document === 'undefined') return null;
@@ -166,14 +163,14 @@ const CharacterAppearancePreviewModal: React.FC<CharacterAppearancePreviewModalP
         </div>
 
         <div className="mt-4 space-y-3">
-          <PreviewSelect id="appearance-action" label="動作" value={action} options={ACTION_OPTIONS} onChange={setAction} />
-          <PreviewSelect id="appearance-emotion" label="表情" value={emotion} options={EMOTION_OPTIONS} onChange={setEmotion} />
-          <PreviewSelect id="appearance-weapon-motion" label="武器動作" value={weaponMotion} options={WEAPON_MOTION_OPTIONS} onChange={setWeaponMotion} />
+          <PreviewSelect id="appearance-action" label="動作" value={settings.action} options={ACTION_OPTIONS} onChange={(action) => onSettingsChange({ ...settings, action })} />
+          <PreviewSelect id="appearance-emotion" label="表情" value={settings.emotion} options={EMOTION_OPTIONS} onChange={(emotion) => onSettingsChange({ ...settings, emotion })} />
+          <PreviewSelect id="appearance-weapon-motion" label="武器動作" value={settings.weaponMotion} options={WEAPON_MOTION_OPTIONS} onChange={(weaponMotion) => onSettingsChange({ ...settings, weaponMotion })} />
         </div>
 
         <div className="mt-4 flex items-start gap-2 rounded-lg border border-slate-700/60 bg-slate-800/70 px-3 py-2 text-xs leading-relaxed text-slate-400">
           <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-          <span>圖像由 NEXON Open API 產生，部分動作或裝備組合可能無法正常顯示。</span>
+          <span>圖像由 NEXON Open API 產生；選擇會自動套用至角色頭像與裝備區，並儲存在目前瀏覽器。部分動作或裝備組合可能無法正常顯示。</span>
         </div>
         </div>
       </div>

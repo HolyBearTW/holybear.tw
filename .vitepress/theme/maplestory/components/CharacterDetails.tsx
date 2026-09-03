@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import Familiar from './Familiar';
 import UnionRaiderSection from './UnionRaiderSection';
+import CharacterAvatar from './CharacterAvatar';
 import { mapleAsset } from '../assets';
 
 interface CharacterDetailsProps {
@@ -474,9 +475,9 @@ const ChampionCard: React.FC<{ champ: any; apiKey: string }> = ({ champ, apiKey 
         </div>
         <div className="absolute top-3 left-4 z-10"><span className="font-bold text-lg text-slate-300 tracking-wider drop-shadow-md">{champ.champion_grade}</span></div>
         <div className="relative z-10 flex flex-col items-center gap-3 pt-6 h-full flex-1">
-          <div className="relative flex items-center justify-center w-32 h-32">
+          <div className="relative flex items-center justify-center w-32 h-32 overflow-hidden rounded-full bg-slate-900/70">
               {image ? (
-                <img src={image} alt={champ.champion_name} className="w-full h-full object-contain rounded-full drop-shadow-2xl" />
+                <CharacterAvatar characterName={champ.champion_name} characterClass={champ.champion_class} characterImage={image} alt={champ.champion_name} className="relative z-10 w-full h-full object-contain rounded-full drop-shadow-2xl" />
               ) : (
                 <div className="w-full h-full rounded-full flex items-center justify-center border border-slate-700"><User className="w-12 h-12 text-slate-500" strokeWidth={1} /></div>
               )}

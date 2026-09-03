@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, Search, User, Users } from 'lucide-react';
 import { findRelatedCharacters } from '../services/aliasService';
 import type { RelatedCharacter } from '../services/aliasService';
 import type { DashboardData } from '../types';
+import CharacterAvatar from './CharacterAvatar';
 
 interface RelatedCharactersProps {
   data: DashboardData;
@@ -152,9 +153,9 @@ const RelatedCharacters: React.FC<RelatedCharactersProps> = ({
             className="maple-related-character group flex min-w-0 items-center gap-3 rounded-lg border border-slate-700/80 bg-[#0e141e] p-3 text-left transition hover:-translate-y-0.5 hover:border-cyan-500/60 hover:bg-slate-800/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
             aria-label={`查詢分身 ${character.characterName}`}
           >
-            <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-slate-900/80">
+            <span className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-slate-900/80">
               {character.characterImage ? (
-                <img src={character.characterImage} alt="" className="h-full w-full object-contain" loading="lazy" />
+                <CharacterAvatar characterName={character.characterName} characterClass={character.characterClass} characterImage={character.characterImage} alt="" className="relative z-10 h-full w-full object-contain" loading="lazy" />
               ) : (
                 <User className="h-5 w-5 text-cyan-300" aria-hidden="true" />
               )}

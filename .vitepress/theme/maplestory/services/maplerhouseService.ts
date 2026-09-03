@@ -116,12 +116,39 @@ const MAPLERHOUSE_TRACKED_API = 'https://api.maplerhouse.cn/api/v1/tms/character
 const RANKING_PAGE_SIZE = 10;
 const FULL_RANKING_PAGE_SIZE = 100;
 const FULL_RANKING_CACHE_MS = 5 * 60 * 1000;
+const FULL_RANKING_STORAGE_KEY = 'maplestory_recent_power_ranking_cache_v1';
 
 let fullRankingCache: { items: MaplerHousePowerRankingEntry[]; expiresAt: number } | null = null;
 let fullRankingPromise: Promise<MaplerHousePowerRankingEntry[]> | null = null;
 
 export const invalidateMaplerHouseRankingCache = () => {
   fullRankingCache = null;
+};
+
+const readStoredFullRankingCache = () => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem(FULL_RANKING_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { items?: MaplerHousePowerRankingEntry[]; expiresAt?: number };
+    const expiresAt = Number(parsed.expiresAt);
+    if (!Array.isArray(parsed.items) || !Number.isFinite(expiresAt)) return null;
+    return {
+      items: parsed.items,
+      expiresAt,
+    };
+  } catch {
+    return null;
+  }
+};
+
+const storeFullRankingCache = (cache: { items: MaplerHousePowerRankingEntry[]; expiresAt: number }) => {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(FULL_RANKING_STORAGE_KEY, JSON.stringify(cache));
+  } catch {
+    // 儲存空間不可用時仍保留同一頁面生命週期內的記憶體快取。
+  }
 };
 
 const parseCombatPower = (value: string | number): number => {
@@ -185,8 +212,15 @@ export const fetchMaplerHousePowerRanking = async (
 };
 
 const fetchFullMaplerHousePowerRanking = async (): Promise<MaplerHousePowerRankingEntry[]> => {
-  if (fullRankingCache && fullRankingCache.expiresAt > Date.now()) {
+  const now = Date.now();
+  if (fullRankingCache && fullRankingCache.expiresAt > now) {
     return fullRankingCache.items;
+  }
+
+  const storedCache = readStoredFullRankingCache();
+  if (storedCache?.expiresAt && storedCache.expiresAt > now) {
+    fullRankingCache = storedCache;
+    return storedCache.items;
   }
 
   if (!fullRankingPromise) {
@@ -198,10 +232,12 @@ const fetchFullMaplerHousePowerRanking = async (): Promise<MaplerHousePowerRanki
         ),
       );
       const items = [firstPage, ...remainingPages].flatMap((result) => result.items);
-      fullRankingCache = {
+      const nextCache = {
         items,
         expiresAt: Date.now() + FULL_RANKING_CACHE_MS,
       };
+      fullRankingCache = nextCache;
+      storeFullRankingCache(nextCache);
       return items;
     })().finally(() => {
       fullRankingPromise = null;

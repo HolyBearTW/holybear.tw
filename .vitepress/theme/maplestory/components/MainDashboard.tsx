@@ -1,6 +1,6 @@
 
 
-import { getJobBackgroundMap, SERVER_ICONS } from '../constants';
+import { getJobBackgroundMap, getJobFallbackVillageMap, getMaplestoryIoMapVersion, SERVER_ICONS } from '../constants';
 import React from 'react';
 import { calculateWeeklyGrowth } from './ExpTrendChart';
 import { ThumbsUp, Star, Crown, Zap, ChevronUp, ChevronDown, Info, Mail, Share2, Loader2, Wand2, Sword, Shield, Flame, Calculator } from 'lucide-react';
@@ -20,6 +20,14 @@ import MapleFeatureTour, { GrowthTrackingState } from './MapleFeatureTour';
 import { fetchWeeklyHistory, findBestDateInPastWeek } from '../services/nexonService';
 import { getStatBreakdown } from '../services/statCalculator';
 import RelatedCharacters from './RelatedCharacters';
+import CharacterAvatar, { useCharacterMapScene } from './CharacterAvatar';
+import { resetCharacterMapScene, storeCharacterMapScene } from '../mapScenePreference';
+import {
+  buildCharacterAppearanceUrl,
+  CharacterAppearanceSettings,
+  readCharacterAppearance,
+  storeCharacterAppearance,
+} from '../characterAppearance';
 
 // Keep the calculator and its formula code out of the character result's first paint.
 const CharacterCalculatorModal = React.lazy(() => import('./CharacterCalculatorModal'));
@@ -252,6 +260,67 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
     const aiCheckButtonRef = React.useRef<HTMLButtonElement>(null);
     const calculatorButtonRef = React.useRef<HTMLButtonElement>(null);
     const bossCalculatorButtonRef = React.useRef<HTMLButtonElement>(null);
+    const appearanceCharacterKey = String(data.ocid || data.basic.character_name || '');
+    const [appearanceState, setAppearanceState] = React.useState<{
+      characterKey: string;
+      settings: CharacterAppearanceSettings;
+    }>(() => ({
+      characterKey: appearanceCharacterKey,
+      settings: readCharacterAppearance(appearanceCharacterKey),
+    }));
+    const appearanceSettings = appearanceState.characterKey === appearanceCharacterKey
+      ? appearanceState.settings
+      : readCharacterAppearance(appearanceCharacterKey);
+    const characterAppearanceImage = React.useMemo(
+      () => buildCharacterAppearanceUrl(data.basic.character_image, appearanceSettings),
+      [appearanceSettings, data.basic.character_image],
+    );
+    const profileMapId = getJobBackgroundMap(data.basic.character_class);
+    const fallbackVillageMapId = getJobFallbackVillageMap(data.basic.character_class);
+    const [profileCharacterLoaded, setProfileCharacterLoaded] = React.useState(false);
+    const [bannerRemoteMapId, setBannerRemoteMapId] = React.useState(profileMapId);
+    const [bannerRemoteLoaded, setBannerRemoteLoaded] = React.useState(false);
+    const [bannerRemoteFailed, setBannerRemoteFailed] = React.useState(false);
+    const selectedMapId = useCharacterMapScene(
+      data.basic.character_name,
+      data.basic.character_class,
+    );
+
+    React.useEffect(() => {
+      setAppearanceState({
+        characterKey: appearanceCharacterKey,
+        settings: readCharacterAppearance(appearanceCharacterKey),
+      });
+    }, [appearanceCharacterKey]);
+
+    React.useEffect(() => {
+      setProfileCharacterLoaded(false);
+      setBannerRemoteMapId(profileMapId);
+      setBannerRemoteLoaded(false);
+      setBannerRemoteFailed(false);
+    }, [characterAppearanceImage, profileMapId]);
+
+    React.useEffect(() => {
+      if (!profileCharacterLoaded || bannerRemoteLoaded || bannerRemoteMapId !== profileMapId || profileMapId === fallbackVillageMapId) return;
+      const timer = window.setTimeout(() => {
+        setBannerRemoteMapId(fallbackVillageMapId);
+        setBannerRemoteLoaded(false);
+      }, 4000);
+      return () => window.clearTimeout(timer);
+    }, [bannerRemoteLoaded, bannerRemoteMapId, fallbackVillageMapId, profileCharacterLoaded, profileMapId]);
+
+    const handleAppearanceSettingsChange = React.useCallback((settings: CharacterAppearanceSettings) => {
+      setAppearanceState({ characterKey: appearanceCharacterKey, settings });
+      storeCharacterAppearance(appearanceCharacterKey, settings);
+    }, [appearanceCharacterKey]);
+
+    const handleSelectedMapIdChange = React.useCallback((mapId: string) => {
+      storeCharacterMapScene(data.basic.character_name, mapId);
+    }, [data.basic.character_name]);
+
+    const handleResetMapScene = React.useCallback(() => {
+      resetCharacterMapScene(data.basic.character_name, data.basic.character_class);
+    }, [data.basic.character_class, data.basic.character_name]);
 
     React.useEffect(() => {
       setGrowthTrackingState('loading');
@@ -266,7 +335,27 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
             <div className="h-full space-y-4 lg:col-span-3">
                <div className="relative h-full overflow-hidden rounded-xl border border-slate-800 bg-[#161b22] shadow-xl group">
                   <div className="maple-profile-banner h-32 bg-slate-800 relative overflow-hidden">
-                      <div className="maple-profile-city absolute inset-0 bg-cover bg-center opacity-[0.68] transition-all duration-700 group-hover:scale-110 group-hover:opacity-[0.82]" style={{ backgroundImage: `url('https://maplestory.io/api/GMS/248/map/${getJobBackgroundMap(data.basic.character_class)}/render/back')` }}></div>
+                      {profileCharacterLoaded && !bannerRemoteFailed && (
+                        <img
+                          key={bannerRemoteMapId}
+                          src={`https://maplestory.io/api/GMS/${getMaplestoryIoMapVersion(bannerRemoteMapId)}/map/${bannerRemoteMapId}/render/back`}
+                          alt=""
+                          aria-hidden="true"
+                          loading="lazy"
+                          decoding="async"
+                          fetchPriority="low"
+                          className="maple-profile-city absolute inset-0 h-full w-full object-cover object-center opacity-[0.68] transition-all duration-700 group-hover:scale-110 group-hover:opacity-[0.82]"
+                          onLoad={() => setBannerRemoteLoaded(true)}
+                          onError={() => {
+                            if (bannerRemoteMapId !== fallbackVillageMapId) {
+                              setBannerRemoteMapId(fallbackVillageMapId);
+                              setBannerRemoteLoaded(false);
+                            } else {
+                              setBannerRemoteFailed(true);
+                            }
+                          }}
+                        />
+                      )}
                       <div className="maple-profile-shade absolute inset-0 bg-gradient-to-b from-transparent to-[#161b22]"></div>
                   </div>
                   <div className="px-5 relative -mt-16 flex flex-col items-center pb-5">
@@ -288,7 +377,14 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
                             aria-hidden="true"
                           />
                           <div className="relative w-32 h-32 rounded-full bg-[#0a0c10] border-4 border-[#1f242e] shadow-2xl overflow-hidden flex items-center justify-center">
-                              <img src={data.basic.character_image} alt="Character" className="w-[150%] h-[150%] object-cover mt-8" />
+                              <CharacterAvatar
+                                characterName={data.basic.character_name}
+                                characterClass={data.basic.character_class}
+                                characterImage={characterAppearanceImage}
+                                alt="Character"
+                                className="relative z-10 w-[150%] h-[150%] object-cover mt-8"
+                                onLoad={() => setProfileCharacterLoaded(true)}
+                              />
                           </div>
                           {showRecentLoginStatus && (
                             <span
@@ -551,8 +647,13 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
                       <EquipmentGrid 
                  equipment={data.equipment} 
                  setEffect={data.setEffect}
-                 characterImage={data.basic.character_image} 
+                 characterImage={characterAppearanceImage}
                  androidEquipment={data.androidEquipment?.[`android_preset_${data.equipment?.preset_no || 1}`] || data.androidEquipment?.android_preset_1} 
+                 appearanceSettings={appearanceSettings}
+                 onAppearanceSettingsChange={handleAppearanceSettingsChange}
+                 selectedMapId={selectedMapId}
+                 onSelectedMapIdChange={handleSelectedMapIdChange}
+                 onResetMapScene={handleResetMapScene}
                />
                      {data.cashItemEquipment && <CashEquipmentGrid cashEquipment={data.cashItemEquipment} beautyEquipment={data.beautyEquipment} characterImage={data.basic.character_image} />}
             </div>
