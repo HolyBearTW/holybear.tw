@@ -1,5 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import crypto from 'node:crypto';
+import { createAliasSignatureInputs } from '../.vitepress/theme/maplestory/services/aliasFingerprint.js';
 
 const root = path.resolve(import.meta.dirname, '..');
 const envPath = path.join(root, '.env');
@@ -9,6 +11,7 @@ const apiKey = process.env.VITE_NEXON_API_KEY
 if (!apiKey) throw new Error('VITE_NEXON_API_KEY is missing');
 
 const outputPath = path.join(root, '.vitepress/theme/maplestory/data/tmsRadarReference.json');
+const aliasOutputPath = path.join(root, '.vitepress/theme/maplestory/data/tmsAliasIndex.json');
 const apiBase = 'https://open.api.nexon.com/maplestorytw/v1';
 const headers = { 'x-nxopen-api-key': apiKey };
 
@@ -39,6 +42,17 @@ async function getJson(url, attempt = 0) {
   if (!response.ok) throw new Error(`${response.status} ${url}`);
   return response.json();
 }
+
+async function getOptionalJson(url) {
+  try {
+    return await getJson(url);
+  } catch (error) {
+    if (/^(400|404)\s/.test(String(error?.message || error))) return null;
+    throw error;
+  }
+}
+
+const hashSignature = (value) => crypto.createHash('sha256').update(value).digest('hex');
 
 const statNumber = (stats, name) => Number(stats.find((item) => item.stat_name === name)?.stat_value || 0);
 const potentialLines = (item) => [
@@ -80,10 +94,13 @@ function familiarAttackPercent(familiar, magic) {
 async function readCharacter(entry) {
   const id = await getJson(`${apiBase}/id?character_name=${encodeURIComponent(entry.name)}`);
   const query = `ocid=${encodeURIComponent(id.ocid)}`;
-  const [stat, equipment, familiar] = await Promise.all([
+  const [basic, stat, equipment, familiar, unionRaider, unionChampion] = await Promise.all([
+    getJson(`${apiBase}/character/basic?${query}`),
     getJson(`${apiBase}/character/stat?${query}`),
     getJson(`${apiBase}/character/item-equipment?${query}`),
     getJson(`${apiBase}/character/familiar?${query}`),
+    getOptionalJson(`${apiBase}/user/union-raider?${query}`),
+    getOptionalJson(`${apiBase}/user/union-champion?${query}`),
   ]);
   const info = jobInfo(entry.job);
   const stats = stat.final_stat || [];
@@ -96,48 +113,128 @@ async function readCharacter(entry) {
       ? statNumber(stats, 'AP配點HP') / 3.5 + (main - statNumber(stats, 'AP配點HP')) / 3.5 * 0.8
       : (4 * main + sub + second) / 4;
   return {
-    job: info.normalized,
-    effectiveMain,
-    combatPower: Number(entry.combatPower || 0),
-    main,
-    attack: statNumber(stats, info.magic ? '魔法攻擊力' : '攻擊力'),
-    attackPercent: equipmentAttackPercent(equipment, info.magic) + familiarAttackPercent(familiar, info.magic),
-    bossTotal: statNumber(stats, '傷害') + statNumber(stats, 'BOSS怪物傷害'),
-    criticalDamage: statNumber(stats, '爆擊傷害'),
-    ignoreDefense: statNumber(stats, '無視防禦率'),
+    radar: {
+      job: info.normalized,
+      effectiveMain,
+      combatPower: Number(entry.combatPower || 0),
+      main,
+      attack: statNumber(stats, info.magic ? '魔法攻擊力' : '攻擊力'),
+      attackPercent: equipmentAttackPercent(equipment, info.magic) + familiarAttackPercent(familiar, info.magic),
+      bossTotal: statNumber(stats, '傷害') + statNumber(stats, 'BOSS怪物傷害'),
+      criticalDamage: statNumber(stats, '爆擊傷害'),
+      ignoreDefense: statNumber(stats, '無視防禦率'),
+    },
+    alias: {
+      characterName: String(basic.character_name || entry.name),
+      worldName: String(basic.world_name || entry.world || ''),
+      characterClass: String(basic.character_class || entry.job || ''),
+      characterLevel: Number(basic.character_level || entry.level || 0),
+      characterImage: String(basic.character_image || entry.avatar || ''),
+      characterPower: String(entry.combatPower || 0),
+      maxCharacterPower: String(entry.combatPower || 0),
+      combatPowerRank: Number(entry.combatPowerRank || 0) || null,
+      characterGuildName: basic.character_guild_name || null,
+      characterDateCreate: basic.character_date_create || null,
+      signatures: createAliasSignatureInputs(unionRaider, unionChampion).map(hashSignature),
+    },
   };
 }
 
 const ranking = [];
 const rankingPageSize = 100;
 for (let page = 1; ; page += 1) {
-  const response = await getJson(`https://api.maplerhouse.cn/api/v1/tms/characters/history/tracked?page=${page}&page_size=${rankingPageSize}&sort=combat_power&sort_order=desc&min_level=260`);
+  const response = await getJson(`https://api.maplerhouse.cn/api/v1/tms/characters/history/tracked?page=${page}&page_size=${rankingPageSize}&sort=combat_power&sort_order=desc`);
   const items = response.data?.items || [];
   const total = Number(response.data?.total);
   ranking.push(...items);
   if (items.length === 0 || items.length < rankingPageSize || (Number.isFinite(total) && ranking.length >= total)) break;
 }
+const trackedByName = new Map();
+for (const entry of ranking) {
+  if (!entry?.name) continue;
+  const normalizedName = String(entry.name).normalize('NFC');
+  // The source is already ordered by combat power, so the first duplicate is
+  // the same row used by the site's recent-power ranking.
+  if (!trackedByName.has(normalizedName)) trackedByName.set(normalizedName, entry);
+}
+const trackedCharacters = [...trackedByName.values()]
+  .map((entry, index) => ({ ...entry, combatPowerRank: index + 1 }));
 
 const records = [];
-for (let start = 0; start < ranking.length; start += 8) {
-  const settled = await Promise.allSettled(ranking.slice(start, start + 8).map(readCharacter));
+for (let start = 0; start < trackedCharacters.length; start += 8) {
+  const settled = await Promise.allSettled(trackedCharacters.slice(start, start + 8).map(readCharacter));
   records.push(...settled.filter((item) => item.status === 'fulfilled').map((item) => item.value));
-  if ((start + 8) % 40 === 0 || start + 8 >= ranking.length) {
-    process.stdout.write(`Fetched ${Math.min(start + 8, ranking.length)}/${ranking.length}; usable ${records.length}\n`);
+  if ((start + 8) % 40 === 0 || start + 8 >= trackedCharacters.length) {
+    process.stdout.write(`Fetched ${Math.min(start + 8, trackedCharacters.length)}/${trackedCharacters.length}; usable ${records.length}\n`);
   }
 }
 
+const radarRecords = records
+  .filter((record) => record.alias.characterLevel >= 260)
+  .map((record) => record.radar);
+const radarSourceCount = trackedCharacters.filter((entry) => Number(entry.level || 0) >= 260).length;
 const axes = ['effectiveMain', 'combatPower', 'main', 'attack', 'attackPercent', 'bossTotal', 'criticalDamage', 'ignoreDefense'];
-const jobs = Object.fromEntries([...new Set(records.map((record) => record.job))].sort().map((job) => {
-  const rows = records.filter((record) => record.job === job);
+const jobs = Object.fromEntries([...new Set(radarRecords.map((record) => record.job))].sort().map((job) => {
+  const rows = radarRecords.filter((record) => record.job === job);
   return [job, Object.fromEntries([
     ['sampleSize', rows.length],
     ...axes.map((axis) => [axis, rows.map((row) => row[axis]).filter(Number.isFinite).sort((a, b) => a - b)]),
   ])];
 }));
-const allEffectiveMain = records.map((record) => record.effectiveMain).sort((a, b) => a - b);
+const allEffectiveMain = radarRecords.map((record) => record.effectiveMain).sort((a, b) => a - b);
 const percentile = (values, p) => values[Math.min(values.length - 1, Math.max(0, Math.round((values.length - 1) * p)))] || 1;
 const referenceMax = Math.ceil(percentile(allEffectiveMain, 0.99) / 5000) * 5000;
 fs.mkdirSync(path.dirname(outputPath), { recursive: true });
-fs.writeFileSync(outputPath, `${JSON.stringify({ generatedAt: new Date().toISOString(), sourceCount: ranking.length, usableCount: records.length, referenceMax, jobs }, null, 2)}\n`);
-process.stdout.write(`Wrote ${outputPath} with ${records.length} usable records from ${ranking.length} tracked characters; max ${referenceMax}\n`);
+const generatedAt = new Date().toISOString();
+fs.writeFileSync(outputPath, `${JSON.stringify({ generatedAt, sourceCount: radarSourceCount, usableCount: radarRecords.length, referenceMax, jobs }, null, 2)}\n`);
+
+const aliasProfiles = records.map((record) => record.alias).filter((profile) => profile.signatures.length > 0);
+const parent = aliasProfiles.map((_, index) => index);
+const find = (index) => {
+  while (parent[index] !== index) {
+    parent[index] = parent[parent[index]];
+    index = parent[index];
+  }
+  return index;
+};
+const unite = (left, right) => {
+  const leftRoot = find(left);
+  const rightRoot = find(right);
+  if (leftRoot !== rightRoot) parent[rightRoot] = leftRoot;
+};
+const firstBySignature = new Map();
+aliasProfiles.forEach((profile, index) => {
+  for (const signature of profile.signatures) {
+    const first = firstBySignature.get(signature);
+    if (first === undefined) firstBySignature.set(signature, index);
+    else unite(first, index);
+  }
+});
+
+const connected = new Map();
+aliasProfiles.forEach((profile, index) => {
+  const rootIndex = find(index);
+  if (!connected.has(rootIndex)) connected.set(rootIndex, []);
+  connected.get(rootIndex).push(profile);
+});
+const aliasGroups = [...connected.values()]
+  .filter((members) => members.length > 1)
+  .map((members) => {
+    const sortedMembers = [...members].sort((left, right) => left.characterName.localeCompare(right.characterName));
+    return {
+      id: hashSignature(sortedMembers.map((member) => member.characterName).join('\n')).slice(0, 16),
+      signatures: [...new Set(sortedMembers.flatMap((member) => member.signatures))].sort(),
+      members: sortedMembers.map(({ signatures, ...member }) => member),
+    };
+  })
+  .sort((left, right) => left.id.localeCompare(right.id));
+
+fs.writeFileSync(aliasOutputPath, `${JSON.stringify({
+  generatedAt,
+  fingerprintVersion: 1,
+  sourceCount: trackedCharacters.length,
+  usableCount: aliasProfiles.length,
+  groups: aliasGroups,
+}, null, 2)}\n`);
+process.stdout.write(`Wrote ${outputPath} with ${radarRecords.length} radar records from ${trackedCharacters.length} tracked characters; max ${referenceMax}\n`);
+process.stdout.write(`Wrote ${aliasOutputPath} with ${aliasGroups.length} alias groups from ${aliasProfiles.length} usable characters\n`);

@@ -1,4 +1,4 @@
-name: Update TMS radar reference
+name: Update TMS character references
 
 on:
   schedule:
@@ -26,24 +26,24 @@ jobs:
         with:
           node-version: 22
 
-      - name: Generate anonymized TMS radar curves
+      - name: Generate TMS radar curves and alias index
         env:
           VITE_NEXON_API_KEY: ${{ secrets.VITE_NEXON_API_KEY }}
         run: node scripts/generate-tms-radar-reference.mjs
 
-      - name: Commit refreshed curves
+      - name: Commit refreshed character references
         id: commit
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .vitepress/theme/maplestory/data/tmsRadarReference.json
+          git add .vitepress/theme/maplestory/data/tmsRadarReference.json .vitepress/theme/maplestory/data/tmsAliasIndex.json
           if git diff --cached --quiet; then
-            echo "Radar reference is unchanged."
+            echo "Character references are unchanged."
             echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          git commit -m "chore: refresh TMS radar reference"
+          git commit -m "chore: refresh TMS character references"
           git pull --rebase origin main
           git push origin HEAD:main
           echo "changed=true" >> "$GITHUB_OUTPUT"
