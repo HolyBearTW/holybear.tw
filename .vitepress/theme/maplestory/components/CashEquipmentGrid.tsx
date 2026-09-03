@@ -4,6 +4,7 @@ import { CharacterCashItemEquipment, CashItemEquipmentPreset, CharacterBeautyEqu
 import PresetSwitcher from './PresetSwitcher';
 import DyePreview from './DyePreview';
 import { mapleAsset } from '../assets';
+import { useEquipmentLayoutScale } from './useEquipmentLayoutScale';
 
 const windowAsset = (name: string) => mapleAsset(`window/${name}`);
 const CUSTOM_CASH_ITEM_ICON_MAPPING = [
@@ -281,7 +282,7 @@ const BeautySlot: React.FC<BeautySlotProps> = ({ label, name, baseColor, mixColo
       className={`relative group ${showTooltip ? 'z-[300] isolate' : 'z-0'} !transform-none !transition-none !translate-y-0 !m-0`}
     >
       <div 
-        className={`w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0 bg-[#1a1d24] border-2 ${borderColor} rounded-md flex flex-col items-center justify-center relative overflow-hidden ${glow} cursor-pointer p-1`}
+        className={`h-12 w-12 flex-shrink-0 bg-[#1a1d24] border-2 ${borderColor} rounded-md flex flex-col items-center justify-center relative overflow-hidden ${glow} cursor-pointer p-1`}
         onClick={(e) => { e.stopPropagation(); setIsOpen(!isOpen); }}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
@@ -410,7 +411,7 @@ const CashSlot: React.FC<{ label: string; item?: CashItemEquipmentPreset; toolti
     >
       {/* 1. 格子本體 (Slot) */}
       <div 
-        className={`w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0 ${disabled ? 'bg-[#11151b]' : 'bg-[#1a1d24]'} border-2 ${borderColor} rounded-md flex items-center justify-center relative overflow-hidden ${glow} ${item ? 'cursor-pointer' : 'cursor-default'} ${disabled ? 'opacity-45 saturate-0' : ''}`}
+        className={`h-12 w-12 flex-shrink-0 ${disabled ? 'bg-[#11151b]' : 'bg-[#1a1d24]'} border-2 ${borderColor} rounded-md flex items-center justify-center relative overflow-hidden ${glow} ${item ? 'cursor-pointer' : 'cursor-default'} ${disabled ? 'opacity-45 saturate-0' : ''}`}
         onClick={(e) => { e.stopPropagation(); setIsOpen(!isOpen); }}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
@@ -455,6 +456,7 @@ const CashSlot: React.FC<{ label: string; item?: CashItemEquipmentPreset; toolti
 };
 
 const CashEquipmentGrid: React.FC<CashEquipmentGridProps> = ({ cashEquipment, beautyEquipment, characterImage }) => {
+  const { cardRef, layoutScale } = useEquipmentLayoutScale();
   const activePresetNo = cashEquipment.preset_no ? parseInt(cashEquipment.preset_no) : 0;
   // 初始預設：如果有指定預設，直接選定該預設，否則顯示現
   const [selectedPreset, setSelectedPreset] = useState<number>(activePresetNo);
@@ -534,7 +536,7 @@ const CashEquipmentGrid: React.FC<CashEquipmentGridProps> = ({ cashEquipment, be
     );
 
   return (
-    <div className="relative rounded-xl border border-slate-800 bg-[#161b22] p-6 shadow-inner">
+    <div ref={cardRef} className="relative rounded-xl border border-slate-800 bg-[#161b22] p-6 shadow-inner">
       <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
         <span className="w-2 h-2 rounded-full bg-sky-400"></span> 時裝 (Cash Items)
       </h3>
@@ -550,7 +552,11 @@ const CashEquipmentGrid: React.FC<CashEquipmentGridProps> = ({ cashEquipment, be
         className="-mx-3 sm:mx-0"
       />
       
-      <div className="mt-4 flex justify-center gap-0.5 sm:gap-4 lg:gap-6">
+      <div className="-mx-6 mt-4 flex justify-center sm:mx-0">
+      <div
+        className="flex w-96 shrink-0 justify-center gap-6"
+        style={{ zoom: layoutScale }}
+      >
          {/* Left Column */}
          <div className="flex gap-2">
             <div className="flex flex-col gap-2">
@@ -567,9 +573,9 @@ const CashEquipmentGrid: React.FC<CashEquipmentGridProps> = ({ cashEquipment, be
          </div>
 
          {/* Center Character & Beauty */}
-         <div className="w-[9.25rem] sm:w-28 lg:w-32 flex flex-col items-center gap-2 relative">
-           <div className="relative flex min-h-0 w-full flex-1 items-center justify-center">
-            <div className="absolute inset-x-0 top-1/2 pointer-events-none h-24 -translate-y-1/2 scale-65 transform sm:h-32 sm:scale-75">
+         <div className="relative flex w-32 flex-col items-center gap-2">
+           <div className="relative flex h-40 w-full flex-none items-center justify-center">
+            <div className="pointer-events-none absolute inset-x-0 top-1/2 h-32 -translate-y-1/2 scale-75 transform">
                  <BorderBeam colorVariant="colorful">
                    <div className="w-full h-full rounded-full" />
                  </BorderBeam>
@@ -578,7 +584,7 @@ const CashEquipmentGrid: React.FC<CashEquipmentGridProps> = ({ cashEquipment, be
                  <img
                    src={`${characterImage}${characterImage.includes('?') ? '&' : '?'}action=A06`}
                    alt="Character"
-                   className="relative z-10 max-w-full scale-95 transform drop-shadow-2xl sm:scale-110 lg:scale-125"
+                   className="relative z-10 max-w-full scale-125 transform drop-shadow-2xl"
                  />
              ) : (
                 <div className="h-24 w-24 rounded-full bg-slate-800/50" />
@@ -659,6 +665,7 @@ const CashEquipmentGrid: React.FC<CashEquipmentGridProps> = ({ cashEquipment, be
                 <CashSlot label="副武" item={findByKeywords(['副武', '輔助武器', 'Secondary', 'Shield'])} tooltipSide="left" mobileDir="up" />
             </div>
          </div>
+      </div>
       </div>
     </div>
   );
