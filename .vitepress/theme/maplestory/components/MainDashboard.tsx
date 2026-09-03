@@ -558,7 +558,7 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
             </div>
             <div className="lg:col-span-9">
               <RelatedCharacters
-                currentCharacterName={data.basic.character_name}
+                data={data}
                 onSelectCharacter={onSelectCharacter}
               />
             </div>

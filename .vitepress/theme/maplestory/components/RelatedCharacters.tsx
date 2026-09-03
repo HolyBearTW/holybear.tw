@@ -1,10 +1,11 @@
 import React from 'react';
 import { ChevronLeft, ChevronRight, Search, User, Users } from 'lucide-react';
-import { fetchMapleKitAliases } from '../services/maplekitService';
-import type { MapleKitAliasMember } from '../services/maplekitService';
+import { findRelatedCharacters } from '../services/aliasService';
+import type { RelatedCharacter } from '../services/aliasService';
+import type { DashboardData } from '../types';
 
 interface RelatedCharactersProps {
-  currentCharacterName: string;
+  data: DashboardData;
   onSelectCharacter: (name: string) => void;
 }
 
@@ -33,10 +34,11 @@ const formatCreateDate = (value: string | null) => {
 };
 
 const RelatedCharacters: React.FC<RelatedCharactersProps> = ({
-  currentCharacterName,
+  data,
   onSelectCharacter,
 }) => {
-  const [members, setMembers] = React.useState<MapleKitAliasMember[]>([]);
+  const currentCharacterName = data.basic.character_name;
+  const [members, setMembers] = React.useState<RelatedCharacter[]>([]);
   const [status, setStatus] = React.useState<'loading' | 'ready' | 'empty' | 'error'>('loading');
   const [page, setPage] = React.useState(1);
   const [pageSize, setPageSize] = React.useState(getResponsivePageSize);
@@ -53,12 +55,10 @@ const RelatedCharacters: React.FC<RelatedCharactersProps> = ({
     setStatus('loading');
     setPage(1);
 
-    fetchMapleKitAliases(currentCharacterName, controller.signal)
+    findRelatedCharacters(data, controller.signal)
       .then((result) => {
         const resolvedMembers = result.filter((member) => (
           member.characterName
-          && member.isResolved
-          && !member.isSelf
           && member.characterName !== currentCharacterName
         ));
         setMembers(resolvedMembers);
@@ -71,7 +71,7 @@ const RelatedCharacters: React.FC<RelatedCharactersProps> = ({
       });
 
     return () => controller.abort();
-  }, [currentCharacterName]);
+  }, [currentCharacterName, data.unionChampion, data.unionRaider]);
 
   const pageCount = Math.max(1, Math.ceil(members.length / pageSize));
 
@@ -146,7 +146,7 @@ const RelatedCharacters: React.FC<RelatedCharactersProps> = ({
       {status === 'ready' && <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-5">
         {pageCharacters.map((character) => (
           <button
-            key={character.ocid || character.characterName}
+            key={character.characterName}
             type="button"
             onClick={() => onSelectCharacter(character.characterName)}
             className="maple-related-character group flex min-w-0 items-center gap-3 rounded-lg border border-slate-700/80 bg-[#0e141e] p-3 text-left transition hover:-translate-y-0.5 hover:border-cyan-500/60 hover:bg-slate-800/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
@@ -160,16 +160,27 @@ const RelatedCharacters: React.FC<RelatedCharactersProps> = ({
               )}
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-sm font-bold text-slate-100">{character.characterName}</span>
+              <span className="flex min-w-0 items-center gap-1.5">
+                <span className="min-w-0 truncate text-sm font-bold text-slate-100">{character.characterName}</span>
+                {character.combatPowerRank && (
+                  <span
+                    className="shrink-0 text-[10px] font-bold text-amber-300"
+                    title="近期戰力排行"
+                    aria-label={`近期戰力排行第 ${character.combatPowerRank} 名`}
+                  >
+                    #{character.combatPowerRank}
+                  </span>
+                )}
+              </span>
               <span className="mt-0.5 block truncate text-xs text-slate-300">
                 Lv.{character.characterLevel} · {character.characterClass}
               </span>
               <span className="mt-0.5 block truncate text-[11px] text-cyan-300/80">
                 {character.characterGuildName || '無公會'}
               </span>
-              <span className="mt-1 flex items-center justify-between gap-2 text-[11px] text-slate-400">
-                <span>{formatPower(character.maxCharacterPower)}</span>
-                <span>{formatCreateDate(character.characterDateCreate)}</span>
+              <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] leading-tight text-slate-400">
+                <span className="whitespace-nowrap">{formatPower(character.maxCharacterPower)}</span>
+                <span className="whitespace-nowrap">{formatCreateDate(character.characterDateCreate)}</span>
               </span>
             </span>
             <Search className="h-4 w-4 shrink-0 text-slate-500 transition group-hover:text-cyan-300" aria-hidden="true" />

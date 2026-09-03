@@ -10,18 +10,40 @@ import { useMapleSearch } from './hooks/useMapleSearch';
 import { useAiAnalysis } from './hooks/useAiAnalysis';
 import { useCharacterStats } from './hooks/useCharacterStats';
 
-const MainDashboard = React.lazy(() => import('./components/MainDashboard'));
-const CharacterGrowthHistory = React.lazy(() => import('./components/CharacterGrowthHistory'));
-const AiAnalysisPanel = React.lazy(() => import('./components/AiAnalysisPanel'));
-const CharacterDetails = React.lazy(() => import('./components/CharacterDetails'));
+const loadMainDashboard = () => import('./components/MainDashboard');
+const loadCharacterGrowthHistory = () => import('./components/CharacterGrowthHistory');
+const loadAiAnalysisPanel = () => import('./components/AiAnalysisPanel');
+const loadCharacterDetails = () => import('./components/CharacterDetails');
+
+const MainDashboard = React.lazy(loadMainDashboard);
+const CharacterGrowthHistory = React.lazy(loadCharacterGrowthHistory);
+const AiAnalysisPanel = React.lazy(loadAiAnalysisPanel);
+const CharacterDetails = React.lazy(loadCharacterDetails);
 const ShareModal = React.lazy(() => import('./components/ShareModal'));
 
-const ResultSectionLoading = ({ label }: { label: string }) => (
-  <div className="my-6 flex min-h-40 items-center justify-center rounded-xl border border-slate-800 bg-[#161b22]/80 px-4 text-sm font-medium text-slate-400">
+const preloadResultSections = () => Promise.allSettled([
+  loadMainDashboard(),
+  loadCharacterGrowthHistory(),
+  loadAiAnalysisPanel(),
+  loadCharacterDetails(),
+]);
+
+const ResultLoading = () => {
+  const [visible, setVisible] = React.useState(false);
+
+  React.useEffect(() => {
+    const timer = window.setTimeout(() => setVisible(true), 350);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  if (!visible) return null;
+  return (
+  <div className="my-4 flex min-h-28 items-center justify-center rounded-xl border border-slate-800 bg-[#161b22]/80 px-4 text-sm font-medium text-slate-400">
     <span className="mr-3 h-5 w-5 animate-spin rounded-full border-2 border-cyan-400/25 border-t-cyan-400" aria-hidden="true" />
-    {label}
+    正在準備角色分析介面…
   </div>
-);
+  );
+};
 
 const App: React.FC = () => {
   const [apiKey, setApiKey] = useState<string | null>(() => {
@@ -71,6 +93,11 @@ const App: React.FC = () => {
   // while the much larger detail tree is prepared as interruptible background work.
   const deferredData = React.useDeferredValue(data);
   const deferredDetailsData = deferredData === data ? deferredData : null;
+
+  React.useEffect(() => {
+    if (!loading) return;
+    void preloadResultSections();
+  }, [loading]);
 
   return (
     <div className="min-h-screen bg-transparent text-slate-200 font-sans">
@@ -159,7 +186,7 @@ const App: React.FC = () => {
 
         {data && !loading && (
           <>
-            <React.Suspense fallback={<ResultSectionLoading label="正在準備角色主要資料…" />}>
+            <React.Suspense fallback={<ResultLoading />}>
             <MainDashboard
               data={data}
               apiKey={apiKey || ''}
@@ -187,11 +214,11 @@ const App: React.FC = () => {
             />
             </React.Suspense>
 
-            <React.Suspense fallback={<ResultSectionLoading label="正在準備角色成長資料…" />}>
+            <React.Suspense fallback={null}>
             <CharacterGrowthHistory data={data} apiKey={apiKey || ''} />
             </React.Suspense>
 
-            <React.Suspense fallback={<ResultSectionLoading label="正在準備 AI 健檢面板…" />}>
+            <React.Suspense fallback={null}>
             <AiAnalysisPanel
               analyzing={analyzing}
               aiAnalysis={aiAnalysis}
@@ -209,7 +236,7 @@ const App: React.FC = () => {
             </React.Suspense>
 
           {deferredDetailsData && (
-            <React.Suspense fallback={<ResultSectionLoading label="正在準備角色詳細資料…" />}>
+            <React.Suspense fallback={null}>
               <CharacterDetails
                 data={deferredDetailsData}
                 apiKey={apiKey || ''} // 傳入 apiKey

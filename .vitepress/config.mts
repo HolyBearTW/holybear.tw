@@ -455,20 +455,6 @@ const config = defineConfig({
         },
         server: {
             host: true,
-            proxy: {
-                // Cloudflare Pages Functions are unavailable under plain VitePress dev.
-                // Mirror the production endpoint locally so the MapleStory UI can be verified through HMR.
-                '/api/maplekit-character': {
-                    target: 'https://maple-kit.com',
-                    changeOrigin: true,
-                    rewrite: path => path.replace(/^\/api\/maplekit-character/, '/api/character'),
-                    headers: {
-                        Accept: 'application/json',
-                        Referer: 'https://maple-kit.com/',
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/140.0.0.0 Safari/537.36',
-                    },
-                },
-            },
             hmr: {
                 // 如果只針對 Vite 中的 React 禁用 HMR (這樣 @vitejs/plugin-react 就不會載入 refresh-runtime)
                 // 這不會影響 Vue 的 HMR
