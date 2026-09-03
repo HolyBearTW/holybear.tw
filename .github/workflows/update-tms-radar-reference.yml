@@ -37,7 +37,8 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .vitepress/theme/maplestory/data/tmsRadarReference.json .vitepress/theme/maplestory/data/tmsAliasIndex.json
+          git add .vitepress/theme/maplestory/data/tmsRadarReference.json
+          git add -A public/maplestory/aliases
           if git diff --cached --quiet; then
             echo "Character references are unchanged."
             echo "changed=false" >> "$GITHUB_OUTPUT"

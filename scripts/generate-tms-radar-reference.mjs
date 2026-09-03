@@ -11,7 +11,9 @@ const apiKey = process.env.VITE_NEXON_API_KEY
 if (!apiKey) throw new Error('VITE_NEXON_API_KEY is missing');
 
 const outputPath = path.join(root, '.vitepress/theme/maplestory/data/tmsRadarReference.json');
-const aliasOutputPath = path.join(root, '.vitepress/theme/maplestory/data/tmsAliasIndex.json');
+const aliasOutputDir = path.join(root, 'public/maplestory/aliases');
+const aliasGroupOutputDir = path.join(aliasOutputDir, 'groups');
+const aliasIndexOutputPath = path.join(aliasOutputDir, 'index.json');
 const apiBase = 'https://open.api.nexon.com/maplestorytw/v1';
 const headers = { 'x-nxopen-api-key': apiKey };
 
@@ -94,11 +96,12 @@ function familiarAttackPercent(familiar, magic) {
 async function readCharacter(entry) {
   const id = await getJson(`${apiBase}/id?character_name=${encodeURIComponent(entry.name)}`);
   const query = `ocid=${encodeURIComponent(id.ocid)}`;
+  const radarEligible = entry.fromTrackedSource !== false;
   const [basic, stat, equipment, familiar, unionRaider, unionChampion] = await Promise.all([
     getJson(`${apiBase}/character/basic?${query}`),
     getJson(`${apiBase}/character/stat?${query}`),
-    getJson(`${apiBase}/character/item-equipment?${query}`),
-    getJson(`${apiBase}/character/familiar?${query}`),
+    radarEligible ? getJson(`${apiBase}/character/item-equipment?${query}`) : Promise.resolve({}),
+    radarEligible ? getJson(`${apiBase}/character/familiar?${query}`) : Promise.resolve({}),
     getOptionalJson(`${apiBase}/user/union-raider?${query}`),
     getOptionalJson(`${apiBase}/user/union-champion?${query}`),
   ]);
@@ -112,11 +115,13 @@ async function readCharacter(entry) {
     : info.normalized === '惡魔復仇者'
       ? statNumber(stats, 'AP配點HP') / 3.5 + (main - statNumber(stats, 'AP配點HP')) / 3.5 * 0.8
       : (4 * main + sub + second) / 4;
+  const combatPower = Number(entry.combatPower || statNumber(stats, '戰鬥力') || statNumber(stats, 'Combat Power') || 0);
   return {
+    radarEligible,
     radar: {
       job: info.normalized,
       effectiveMain,
-      combatPower: Number(entry.combatPower || 0),
+      combatPower,
       main,
       attack: statNumber(stats, info.magic ? '魔法攻擊力' : '攻擊力'),
       attackPercent: equipmentAttackPercent(equipment, info.magic) + familiarAttackPercent(familiar, info.magic),
@@ -125,17 +130,20 @@ async function readCharacter(entry) {
       ignoreDefense: statNumber(stats, '無視防禦率'),
     },
     alias: {
-      characterName: String(basic.character_name || entry.name),
+      characterName: String(basic.character_name || entry.name).normalize('NFC'),
       worldName: String(basic.world_name || entry.world || ''),
       characterClass: String(basic.character_class || entry.job || ''),
       characterLevel: Number(basic.character_level || entry.level || 0),
       characterImage: String(basic.character_image || entry.avatar || ''),
-      characterPower: String(entry.combatPower || 0),
-      maxCharacterPower: String(entry.combatPower || 0),
+      characterPower: String(combatPower),
+      maxCharacterPower: String(combatPower),
       combatPowerRank: Number(entry.combatPowerRank || 0) || null,
       characterGuildName: basic.character_guild_name || null,
       characterDateCreate: basic.character_date_create || null,
       signatures: createAliasSignatureInputs(unionRaider, unionChampion).map(hashSignature),
+      championNames: (unionChampion?.union_champion || [])
+        .map((champion) => String(champion?.champion_name || '').normalize('NFC'))
+        .filter(Boolean),
     },
   };
 }
@@ -158,7 +166,7 @@ for (const entry of ranking) {
   if (!trackedByName.has(normalizedName)) trackedByName.set(normalizedName, entry);
 }
 const trackedCharacters = [...trackedByName.values()]
-  .map((entry, index) => ({ ...entry, combatPowerRank: index + 1 }));
+  .map((entry, index) => ({ ...entry, combatPowerRank: index + 1, fromTrackedSource: true }));
 
 const records = [];
 for (let start = 0; start < trackedCharacters.length; start += 8) {
@@ -169,8 +177,23 @@ for (let start = 0; start < trackedCharacters.length; start += 8) {
   }
 }
 
+const scannedNames = new Set(records.map((record) => record.alias.characterName.normalize('NFC')));
+const championCandidates = [...new Set(records.flatMap((record) => record.alias.championNames))]
+  .filter((name) => !scannedNames.has(name));
+const championRecords = [];
+for (let start = 0; start < championCandidates.length; start += 8) {
+  const entries = championCandidates.slice(start, start + 8)
+    .map((name) => ({ name, fromTrackedSource: false }));
+  const settled = await Promise.allSettled(entries.map(readCharacter));
+  championRecords.push(...settled.filter((item) => item.status === 'fulfilled').map((item) => item.value));
+  if ((start + 8) % 40 === 0 || start + 8 >= championCandidates.length) {
+    process.stdout.write(`Expanded champions ${Math.min(start + 8, championCandidates.length)}/${championCandidates.length}; usable ${championRecords.length}\n`);
+  }
+}
+records.push(...championRecords);
+
 const radarRecords = records
-  .filter((record) => record.alias.characterLevel >= 260)
+  .filter((record) => record.radarEligible && record.alias.characterLevel >= 260)
   .map((record) => record.radar);
 const radarSourceCount = trackedCharacters.filter((entry) => Number(entry.level || 0) >= 260).length;
 const axes = ['effectiveMain', 'combatPower', 'main', 'attack', 'attackPercent', 'bossTotal', 'criticalDamage', 'ignoreDefense'];
@@ -224,17 +247,32 @@ const aliasGroups = [...connected.values()]
     return {
       id: hashSignature(sortedMembers.map((member) => member.characterName).join('\n')).slice(0, 16),
       signatures: [...new Set(sortedMembers.flatMap((member) => member.signatures))].sort(),
-      members: sortedMembers.map(({ signatures, ...member }) => member),
+      members: sortedMembers.map(({ signatures, championNames, ...member }) => member),
     };
   })
   .sort((left, right) => left.id.localeCompare(right.id));
 
-fs.writeFileSync(aliasOutputPath, `${JSON.stringify({
+fs.rmSync(aliasOutputDir, { recursive: true, force: true });
+fs.mkdirSync(aliasGroupOutputDir, { recursive: true });
+const characterGroups = {};
+const signatureGroups = {};
+for (const group of aliasGroups) {
+  for (const member of group.members) characterGroups[member.characterName] = group.id;
+  for (const signature of group.signatures) signatureGroups[signature] = group.id;
+  fs.writeFileSync(
+    path.join(aliasGroupOutputDir, `${group.id}.json`),
+    `${JSON.stringify({ id: group.id, members: group.members }, null, 2)}\n`,
+  );
+}
+fs.writeFileSync(aliasIndexOutputPath, `${JSON.stringify({
   generatedAt,
   fingerprintVersion: 1,
   sourceCount: trackedCharacters.length,
   usableCount: aliasProfiles.length,
-  groups: aliasGroups,
+  championExpandedCount: championRecords.length,
+  groupCount: aliasGroups.length,
+  characterGroups,
+  signatureGroups,
 }, null, 2)}\n`);
 process.stdout.write(`Wrote ${outputPath} with ${radarRecords.length} radar records from ${trackedCharacters.length} tracked characters; max ${referenceMax}\n`);
-process.stdout.write(`Wrote ${aliasOutputPath} with ${aliasGroups.length} alias groups from ${aliasProfiles.length} usable characters\n`);
+process.stdout.write(`Wrote ${aliasIndexOutputPath} and ${aliasGroups.length} group files from ${aliasProfiles.length} usable characters\n`);
