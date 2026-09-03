@@ -4,6 +4,7 @@ import { SERVER_ICONS } from '../constants';
 import { fetchMaplerHouseCharacterRank, MaplerHouseCharacterRank } from '../services/maplerhouseService';
 import { fetchCharacterBasic } from '../services/nexonService';
 import { CharacterBasic } from '../types';
+import CharacterAvatar from './CharacterAvatar';
 
 interface SearchFormProps {
     apiKey?: string | null;
@@ -87,12 +88,13 @@ const SearchForm: React.FC<SearchFormProps> = ({
         const basic = characterBasics[name];
         const hasRankLookup = Object.prototype.hasOwnProperty.call(characterRanks, name);
         const characterImage = entry?.characterImage || basic?.character_image;
+        const characterClass = entry?.jobName || basic?.character_class || '';
         const worldName = entry?.worldName || basic?.world_name;
         return (
             <>
                 <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full bg-slate-800 ring-1 ring-slate-600/60">
                     {characterImage ? (
-                        <img src={characterImage} alt="" className="absolute left-1/2 top-1/2 h-[72px] w-[72px] -translate-x-1/2 -translate-y-1/2 object-cover" aria-hidden="true" />
+                        <CharacterAvatar characterName={name} characterClass={characterClass} characterImage={characterImage} alt="" className="absolute left-1/2 top-1/2 z-10 h-[72px] w-[72px] -translate-x-1/2 -translate-y-1/2 object-cover" aria-hidden="true" />
                     ) : <span className="flex h-full w-full items-center justify-center text-[10px] text-slate-500">?</span>}
                 </div>
                 <div className="min-w-0 flex-1">

@@ -679,6 +679,14 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
                   className="absolute max-w-6 max-h-6 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 scale-[2]"
                 />
               </div>
+              {hasSoulWeapon && (
+                <img
+                  src={windowAsset('soul-weapon.png')}
+                  alt="新版靈魂武器"
+                  title="新版靈魂武器"
+                  className="pointer-events-none absolute bottom-[5px] left-[5px] z-10 block h-[14px] w-[13px] max-w-none origin-bottom-left scale-[1.5]"
+                />
+              )}
             </div>
             <div className="flex flex-col items-end gap-y-[4px] text-[12px] leading-3">
               <div className="flex flex-wrap justify-end gap-1">

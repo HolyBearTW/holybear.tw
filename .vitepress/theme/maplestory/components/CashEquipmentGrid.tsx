@@ -290,7 +290,7 @@ const BeautySlot: React.FC<BeautySlotProps> = ({ label, name, baseColor, mixColo
            <img 
              src={iconSrc} 
              alt={label} 
-             className={`w-8 h-8 object-contain ${name ? 'opacity-100' : 'opacity-30 grayscale'}`} 
+             className={`h-8 w-auto max-w-full object-contain sm:h-9 ${name ? 'opacity-100' : 'opacity-30 grayscale'}`}
            />
         ) : (
            name ? (
@@ -567,23 +567,25 @@ const CashEquipmentGrid: React.FC<CashEquipmentGridProps> = ({ cashEquipment, be
          </div>
 
          {/* Center Character & Beauty */}
-         <div className="w-[9.25rem] sm:w-28 lg:w-32 flex flex-col items-center relative">
-            <div className="absolute inset-x-0 top-0 pointer-events-none transform scale-65 sm:scale-75 translate-y-3 sm:translate-y-4 h-24 sm:h-32">
-                <BorderBeam colorVariant="colorful">
-                  <div className="w-full h-full rounded-full" />
-                </BorderBeam>
-            </div>
-            {characterImage ? (
-                <img 
-                  src={`${characterImage}${characterImage.includes('?') ? '&' : '?'}action=A06`} 
-                  alt="Character" 
-                  className="relative z-10 max-w-full drop-shadow-2xl scale-95 sm:scale-110 lg:scale-125 transform translate-y-2 sm:translate-y-4" 
-                />
-            ) : (
-                <div className="w-24 h-24 rounded-full bg-slate-800/50 mb-4" />
-            )}
-            
-            <div className="relative mt-8 sm:mt-12 flex flex-col gap-2 items-center">
+         <div className="w-[9.25rem] sm:w-28 lg:w-32 flex flex-col items-center gap-2 relative">
+           <div className="relative flex min-h-0 w-full flex-1 items-center justify-center">
+            <div className="absolute inset-x-0 top-1/2 pointer-events-none h-24 -translate-y-1/2 scale-65 transform sm:h-32 sm:scale-75">
+                 <BorderBeam colorVariant="colorful">
+                   <div className="w-full h-full rounded-full" />
+                 </BorderBeam>
+             </div>
+             {characterImage ? (
+                 <img
+                   src={`${characterImage}${characterImage.includes('?') ? '&' : '?'}action=A06`}
+                   alt="Character"
+                   className="relative z-10 max-w-full scale-95 transform drop-shadow-2xl sm:scale-110 lg:scale-125"
+                 />
+             ) : (
+                <div className="h-24 w-24 rounded-full bg-slate-800/50" />
+             )}
+           </div>
+
+            <div className="relative flex flex-col gap-2 items-center">
                 <div className="flex gap-2">
                    <BeautySlot 
                       label={showAdditionalBeauty ? (beautyEquipment?.character_class?.includes('神之子') ? "髮型 (Alpha)" : "髮型 (一般)") : "髮型"} 

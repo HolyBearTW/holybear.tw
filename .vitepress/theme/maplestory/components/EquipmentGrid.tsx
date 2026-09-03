@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
-import { BorderBeam } from 'border-beam';
 import { EquipmentItem, CharacterEquipment, CharacterSetEffect } from '../types';
 import EquipmentTooltip from './EquipmentTooltip';
 import PresetSwitcher from './PresetSwitcher';
 import CharacterAppearancePreviewModal from './CharacterAppearancePreviewModal';
-import { Eye, Square, CheckSquare, X } from 'lucide-react';
+import { Eye, RotateCcw, Square, CheckSquare, X } from 'lucide-react';
 
 import { CharacterAndroidEquipment } from '../types';
-import { mapleAsset } from '../assets';
+import { mapleAsset, mapleAssetOrNull } from '../assets';
+import { CharacterAppearanceSettings } from '../characterAppearance';
+import { MAP_SCENE_ANCHORS, MAP_SCENE_OPTIONS, getMaplestoryIoMapVersion } from '../constants';
 
 const characterAsset = (name: string) => mapleAsset(`maplestory_character/${name}`);
 const windowAsset = (name: string) => mapleAsset(`window/${name}`);
@@ -17,6 +18,11 @@ interface EquipmentGridProps {
   setEffect?: CharacterSetEffect;
   characterImage?: string;
   androidEquipment?: CharacterAndroidEquipment;
+  appearanceSettings: CharacterAppearanceSettings;
+  onAppearanceSettingsChange: (settings: CharacterAppearanceSettings) => void;
+  selectedMapId: string;
+  onSelectedMapIdChange: (mapId: string) => void;
+  onResetMapScene: () => void;
 }
 
 // Visual Layout Definition
@@ -248,6 +254,12 @@ const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'lef
   const displayIcon = resolveItemIcon(item, slotKey);
   // Create a display item with the resolved icon to pass to Tooltip
   const displayItem = item ? { ...item, item_icon: displayIcon } : undefined;
+  const hasSoulWeapon = slotKey === 'Weapon' && Boolean(item && [
+    item.soul_weapon_grade,
+    item.soul_weapon_level,
+    item.soul_weapon_power_increase,
+    item.soul_weapon_option,
+  ].some((value) => String(value || '').trim()));
 
   // Click Outside Listener
   useEffect(() => {
@@ -358,6 +370,14 @@ const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'lef
           <span className="text-[10px] text-slate-700 select-none font-medium">{def?.label}</span>
         )}
       </div>
+      {hasSoulWeapon && (
+        <img
+          src={windowAsset('soul-weapon.png')}
+          alt="新版靈魂武器"
+          title="新版靈魂武器"
+          className="pointer-events-none absolute bottom-[4px] left-[4px] z-30 block h-[14px] w-[13px] max-w-none"
+        />
+      )}
       {skillRingToggle && (
         <button
           type="button"
@@ -425,7 +445,7 @@ const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'lef
   );
 };
 
-const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, setEffect, characterImage, androidEquipment }) => {
+const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, setEffect, characterImage, androidEquipment, appearanceSettings, onAppearanceSettingsChange, selectedMapId, onSelectedMapIdChange, onResetMapScene }) => {
   if (!equipment) return null; 
   const characterJob = equipment.character_class;
   const normalize = (s: string) => s.toLowerCase().replace(/\s+/g, '');
@@ -437,6 +457,48 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, setEffect, cha
   const [showAuxiliarySkillRing, setShowAuxiliarySkillRing] = useState(false);
   const [showZeroAlternateWeapon, setShowZeroAlternateWeapon] = useState(false);
   const [showAppearancePreview, setShowAppearancePreview] = useState(false);
+  const [showMapSelector, setShowMapSelector] = useState(false);
+  const [loadedCharacterImage, setLoadedCharacterImage] = useState<string | null>(null);
+  const characterImageRef = useRef<HTMLImageElement>(null);
+  const mapSelectorRef = useRef<HTMLDivElement>(null);
+  const mapImageRetryTimerRef = useRef<number | null>(null);
+  const [mapImageAttempt, setMapImageAttempt] = useState(0);
+  const selectedMapVersion = getMaplestoryIoMapVersion(selectedMapId);
+  const localMapScene = mapleAssetOrNull(`maps/${selectedMapId}.webp`);
+  const isCharacterImageLoaded = Boolean(characterImage && loadedCharacterImage === characterImage);
+  const selectedMapAnchor = MAP_SCENE_ANCHORS[selectedMapId] ?? MAP_SCENE_ANCHORS['100000000'];
+
+  useLayoutEffect(() => {
+    const image = characterImageRef.current;
+    if (characterImage && image?.complete && image.naturalWidth > 0) {
+      setLoadedCharacterImage(characterImage);
+    }
+  }, [characterImage]);
+
+  useEffect(() => {
+    setMapImageAttempt(0);
+    return () => {
+      if (mapImageRetryTimerRef.current !== null) window.clearTimeout(mapImageRetryTimerRef.current);
+    };
+  }, [selectedMapId]);
+
+  useEffect(() => {
+    if (!showMapSelector) return;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!mapSelectorRef.current?.contains(event.target as Node)) setShowMapSelector(false);
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setShowMapSelector(false);
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showMapSelector]);
 
   useEffect(() => {
     if (equipment.preset_no) {
@@ -678,6 +740,8 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, setEffect, cha
       {showAppearancePreview && characterImage && (
         <CharacterAppearancePreviewModal
           characterImage={characterImage}
+          settings={appearanceSettings}
+          onSettingsChange={onAppearanceSettingsChange}
           onClose={() => setShowAppearancePreview(false)}
         />
       )}
@@ -729,19 +793,105 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, setEffect, cha
       </div>
 
       {/* Center Character */}
-      <div className="w-[9.25rem] sm:w-28 lg:w-32 flex flex-col items-center justify-start relative gap-2">
-         {/* Using BorderBeam as requested for background effect */}
-         <div className="absolute inset-0 pointer-events-none scale-125 sm:scale-140 lg:scale-150 top-10 w-20 h-20 sm:w-24 sm:h-24">
-           <BorderBeam colorVariant="mono">
-             <div className="w-full h-full rounded-full" />
-           </BorderBeam>
-         </div>
-         <div className="h-[152px] sm:h-[184px] lg:h-[216px] flex items-center justify-center w-full relative z-20">
-            {characterImage ? (
-            <img src={characterImage} alt="Character" className="relative z-10 max-w-full drop-shadow-2xl scale-100 sm:scale-110 lg:scale-[1.35] transform translate-y-1 sm:translate-y-2 origin-bottom pointer-events-none" />
-            ) : (
-                <div className="w-24 h-24 rounded-full bg-slate-800/50 relative z-10" />
+       <div className="relative flex w-[9.25rem] flex-col items-center justify-start gap-2 sm:w-28 lg:w-32">
+         <div className="group relative z-20 h-[152px] w-[8.5rem] shrink-0 self-center overflow-visible rounded-xl border border-slate-700/50 bg-[#111820] shadow-inner sm:h-[184px] sm:w-40 lg:h-[216px]">
+           <div className="absolute inset-0 overflow-hidden rounded-xl">
+            {isCharacterImageLoaded && localMapScene && (
+              <img
+                src={localMapScene}
+                alt=""
+                loading="lazy"
+                decoding="async"
+                className="pointer-events-none absolute inset-0 z-0 h-full w-full select-none object-cover"
+                aria-hidden="true"
+              />
             )}
+            {isCharacterImageLoaded && !localMapScene && selectedMapAnchor && (
+              <img
+                src={`https://maplestory.io/api/GMS/${selectedMapVersion}/map/${selectedMapId}/render/back${mapImageAttempt > 0 ? `?attempt=${mapImageAttempt}` : ''}`}
+                alt=""
+                loading="lazy"
+                decoding="async"
+                fetchPriority="low"
+                className="pointer-events-none absolute left-1/2 top-[calc(100%-30px)] z-0 max-h-none max-w-none select-none opacity-80 sm:top-[calc(100%-36px)] lg:top-[calc(100%-44px)]"
+                style={{
+                  transform: `translate(-${selectedMapAnchor.x}px, -${selectedMapAnchor.y}px)`,
+                }}
+                onError={() => {
+                  if (mapImageAttempt >= 2 || mapImageRetryTimerRef.current !== null) return;
+                  mapImageRetryTimerRef.current = window.setTimeout(() => {
+                    mapImageRetryTimerRef.current = null;
+                    setMapImageAttempt((attempt) => attempt + 1);
+                  }, 1500);
+                }}
+                aria-hidden="true"
+              />
+            )}
+            <div className="pointer-events-none absolute inset-0 z-0 bg-[linear-gradient(180deg,rgba(8,12,18,0.12),transparent_48%,rgba(8,12,18,0.18))]" aria-hidden="true" />
+             {characterImage ? (
+             <img ref={characterImageRef} src={characterImage} alt="Character" onLoad={() => setLoadedCharacterImage(characterImage)} className="pointer-events-none absolute bottom-[20px] left-1/2 z-10 max-w-full -translate-x-1/2 origin-bottom scale-100 drop-shadow-2xl sm:bottom-[25px] sm:scale-110 lg:bottom-[33px] lg:scale-[1.35]" />
+             ) : (
+                <div className="absolute bottom-[30px] left-1/2 z-10 h-24 w-24 -translate-x-1/2 rounded-full bg-slate-800/50 sm:bottom-[36px] lg:bottom-[44px]" />
+             )}
+           </div>
+            <div ref={mapSelectorRef} className="absolute right-1 top-1 z-[80] flex flex-col items-center gap-0.5">
+             <button
+               type="button"
+               aria-label="選擇地圖"
+               aria-expanded={showMapSelector}
+               title="選擇地圖"
+               onClick={() => setShowMapSelector((current) => !current)}
+               className="pointer-events-none flex h-6 w-6 items-center justify-center rounded-md border-0 bg-transparent text-slate-200 opacity-0 shadow-none transition-opacity duration-150 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100 hover:text-cyan-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+             >
+               <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true">
+                 <mask id="map-scene-gear-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24">
+                   <rect width="24" height="24" fill="black" />
+                   <g fill="white">
+                     <circle cx="12" cy="12" r="7.2" />
+                     <rect x="10" y="1.5" width="4" height="5.5" rx="1" transform="rotate(0 12 12)" />
+                     <rect x="10" y="1.5" width="4" height="5.5" rx="1" transform="rotate(45 12 12)" />
+                     <rect x="10" y="1.5" width="4" height="5.5" rx="1" transform="rotate(90 12 12)" />
+                     <rect x="10" y="1.5" width="4" height="5.5" rx="1" transform="rotate(135 12 12)" />
+                     <rect x="10" y="1.5" width="4" height="5.5" rx="1" transform="rotate(180 12 12)" />
+                     <rect x="10" y="1.5" width="4" height="5.5" rx="1" transform="rotate(225 12 12)" />
+                     <rect x="10" y="1.5" width="4" height="5.5" rx="1" transform="rotate(270 12 12)" />
+                     <rect x="10" y="1.5" width="4" height="5.5" rx="1" transform="rotate(315 12 12)" />
+                   </g>
+                   <circle cx="12" cy="12" r="2.7" fill="black" />
+                 </mask>
+                 <rect width="24" height="24" fill="currentColor" mask="url(#map-scene-gear-mask)" />
+               </svg>
+              </button>
+              <button
+                type="button"
+                aria-label="恢復職業預設地圖"
+                title="恢復職業預設地圖"
+                onClick={() => {
+                  onResetMapScene();
+                  setShowMapSelector(false);
+                }}
+                className="pointer-events-none -mt-1 flex h-6 w-6 items-center justify-center rounded-md border-0 bg-transparent text-slate-200 opacity-0 shadow-none transition-colors duration-150 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100 hover:text-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+              >
+                <RotateCcw className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
+              </button>
+              {showMapSelector && (
+                <div className="absolute right-0 top-12 w-52 max-w-[calc(100vw-24px)] rounded-lg border border-slate-600 bg-slate-900/95 p-2.5 text-left shadow-2xl backdrop-blur-sm">
+                 <label className="block text-[10px] font-bold tracking-wide text-slate-400" htmlFor="map-scene-select">地圖預覽</label>
+                 <select
+                   id="map-scene-select"
+                    value={selectedMapId}
+                    onChange={(event) => {
+                      onSelectedMapIdChange(event.target.value);
+                      setShowMapSelector(false);
+                    }}
+                   className="mt-1.5 w-full rounded border border-slate-600 bg-slate-800 px-2 py-1.5 text-[11px] text-slate-100 outline-none focus:border-cyan-400"
+                 >
+                   {MAP_SCENE_OPTIONS.map(([mapId, label]) => <option key={mapId} value={mapId}>{label}</option>)}
+                 </select>
+                 <p className="mt-1.5 text-[9px] leading-3 text-slate-500">每張地圖使用固定出生立足點</p>
+               </div>
+             )}
+           </div>
          </div>
 
          {/* Weapon Row */}

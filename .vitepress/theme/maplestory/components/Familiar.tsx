@@ -127,7 +127,7 @@ const Familiar: React.FC<FamiliarProps> = ({ data }) => {
     if (!slotId) return '未連結';
     if (slotId === 'vip') return 'VIP';
     if (slotId === 'not link') return '未連結';
-    return `插槽 ${slotId}`;
+    return `羈絆 ${slotId}`;
   };
 
   const formatDate = (value?: string) => {
@@ -477,7 +477,7 @@ const Familiar: React.FC<FamiliarProps> = ({ data }) => {
       <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {linkSlots.length > 0 ? linkSlots.map(renderLinkSlot) : (
           <div className="rounded-lg border border-dashed border-slate-700 bg-slate-900/40 px-4 py-5 text-center text-sm text-slate-500 sm:col-span-2 xl:col-span-4">
-            無萌獸鏈路插槽資料
+            無萌獸羈絆資料
           </div>
         )}
       </div>

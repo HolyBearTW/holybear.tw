@@ -7,6 +7,7 @@ import {
   MaplerHouseCharacterRank,
   MaplerHousePowerRankingEntry,
 } from '../services/maplerhouseService';
+import CharacterAvatar from './CharacterAvatar';
 
 interface RecentPowerRankingProps {
   onSelectCharacter: (name: string) => void;
@@ -131,10 +132,12 @@ const RecentPowerRanking: React.FC<RecentPowerRankingProps> = ({ onSelectCharact
               className="flex w-full items-center gap-3 text-left transition hover:brightness-110"
             >
                 <span className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full bg-slate-200 ring-1 ring-cyan-600/50 dark:bg-slate-800 dark:ring-cyan-300/50">
-                <img
-                  src={queryRank.entry.characterImage}
+                <CharacterAvatar
+                  characterName={queryRank.entry.characterName}
+                  characterClass={queryRank.entry.jobName}
+                  characterImage={queryRank.entry.characterImage}
                   alt={queryRank.entry.characterName}
-                  className="absolute left-1/2 top-1/2 h-24 w-24 -translate-x-1/2 -translate-y-1/2 object-cover"
+                  className="absolute left-1/2 top-1/2 z-10 h-24 w-24 -translate-x-1/2 -translate-y-1/2 object-cover"
                   loading="eager"
                   decoding="async"
                 />
@@ -176,10 +179,12 @@ const RecentPowerRanking: React.FC<RecentPowerRankingProps> = ({ onSelectCharact
               >
                 <Crown className={`maple-ranking-crown ${crownTier} mb-1 h-4 w-4 fill-current ${rank === 1 ? 'h-5 w-5' : ''}`} aria-hidden="true" />
                 <div className={`relative overflow-hidden rounded-full bg-slate-800 ${rank === 1 ? 'h-20 w-20 sm:h-24 sm:w-24' : 'h-16 w-16 sm:h-20 sm:w-20'}`}>
-                  <img
+                  <CharacterAvatar
+                    characterName={item.characterName}
+                    characterClass={item.jobName}
+                    characterImage={item.characterImage}
                     alt={item.characterName}
-                    className={`absolute left-1/2 top-1/2 object-cover -translate-x-1/2 -translate-y-1/2 ${rank === 1 ? 'h-40 w-40 sm:h-48 sm:w-48' : 'h-32 w-32 sm:h-40 sm:w-40'}`}
-                    src={item.characterImage}
+                    className={`absolute left-1/2 top-1/2 z-10 object-cover -translate-x-1/2 -translate-y-1/2 ${rank === 1 ? 'h-40 w-40 sm:h-48 sm:w-48' : 'h-32 w-32 sm:h-40 sm:w-40'}`}
                     loading="eager"
                     decoding="async"
                     fetchPriority="high"
@@ -210,10 +215,12 @@ const RecentPowerRanking: React.FC<RecentPowerRankingProps> = ({ onSelectCharact
                   className={`group flex min-w-0 flex-col items-center gap-1 text-center transition hover:-translate-y-0.5 ${page === 1 ? 'w-auto min-w-10 sm:min-w-12' : 'w-full'}`}
                 >
                 <span className="relative block h-12 w-12 overflow-hidden rounded-full bg-slate-800 ring-1 ring-slate-500/40 transition group-hover:ring-cyan-300/70 sm:h-14 sm:w-14">
-                  <img
+                  <CharacterAvatar
+                    characterName={item.characterName}
+                    characterClass={item.jobName}
+                    characterImage={item.characterImage}
                     alt={item.characterName}
-                    className="absolute left-1/2 top-1/2 h-28 w-28 -translate-x-1/2 -translate-y-1/2 object-cover"
-                    src={item.characterImage}
+                    className="absolute left-1/2 top-1/2 z-10 h-28 w-28 -translate-x-1/2 -translate-y-1/2 object-cover"
                     loading="lazy"
                     decoding="async"
                   />

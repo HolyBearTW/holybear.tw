@@ -514,7 +514,7 @@ const CharacterCalculatorModal: React.FC<CharacterCalculatorModalProps> = ({ dat
             <span className="flex items-center gap-1.5 font-bold text-emerald-300"><Sparkles className="h-3.5 w-3.5" /> 已自動帶入</span>
             <span className="text-slate-400">職業、裝備、武器、新版靈魂與使用中萌獸等 API 可確認資料；來源顯示三欄保留手動輸入</span>
             <span className="text-slate-400">
-              召喚中／啟用插槽萌獸終傷：{profile.familiarFinalDamageSources.length > 0
+              召喚中／啟用羈絆萌獸終傷：{profile.familiarFinalDamageSources.length > 0
                 ? `${profile.familiarFinalDamageSources.map((value) => `${value}%`).join(' + ')}（加總 ${profile.familiarFinalDamageEquivalent.toFixed(2)}%）`
                 : '無終傷詞條'}
             </span>

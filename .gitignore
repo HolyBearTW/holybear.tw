@@ -145,3 +145,10 @@ three/.vitepress/cache/
 .pnp.*
 
 .idea
+
+# Local MapleStory WZ scene extraction cache / Python bytecode
+scripts/.map-wz-cache/
+scripts/map-scene-sources/
+scripts/__pycache__/
+scripts/maple-wz-extractor/bin/
+scripts/maple-wz-extractor/obj/
