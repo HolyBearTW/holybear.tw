@@ -4,7 +4,7 @@ import { findRelatedCharacters } from '../services/aliasService';
 import type { RelatedCharacter } from '../services/aliasService';
 import type { DashboardData } from '../types';
 import CharacterAvatar from './CharacterAvatar';
-import { fetchHolyBearAlts } from '../services/holyBearService';
+import { fetchHolyBearAlts, fetchHolyBearRankingSnapshot } from '../services/holyBearService';
 
 interface RelatedCharactersProps {
   data: DashboardData;
@@ -83,11 +83,19 @@ const RelatedCharacters: React.FC<RelatedCharactersProps> = ({
         // existing static alias data from visitors.
         return findRelatedCharacters(data, controller.signal);
       })
-      .then((result) => {
+      .then(async (result) => {
+        const rankingSnapshot = await fetchHolyBearRankingSnapshot();
         const resolvedMembers = result.filter((member) => (
           member.characterName
           && member.characterName !== currentCharacterName
-        ));
+        )).map((member) => ({
+          ...member,
+          // Never display a rank carried by the alias discovery dataset.
+          // Only the HolyBear D1-derived snapshot is authoritative here.
+          combatPowerRank: rankingSnapshot.get(
+            member.characterName.normalize('NFC').toLocaleLowerCase('zh-TW'),
+          ) ?? null,
+        }));
         setMembers(resolvedMembers);
         setStatus(resolvedMembers.length > 0 ? 'ready' : 'empty');
       })
