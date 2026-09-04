@@ -14,7 +14,7 @@ export const onRequestGet: AppPagesFunction<'name'> = async ({ env, params, wait
   } catch (error) {
     if (error instanceof HttpError) return errorResponse(error);
     console.error('D1 character rank unavailable; using cached snapshot', error);
-    const cached = await getCachedCharacterRank(name).catch(() => null);
+    const cached = await getCachedCharacterRank(env, name).catch(() => null);
     if (cached) return json(cached, { headers: { 'x-holybear-degraded': 'ranking-cache' } });
     return json({
       error: { code: 'character_rank_temporarily_unavailable', message: '快取排行榜中找不到此角色' },
