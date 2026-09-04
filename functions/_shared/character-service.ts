@@ -1,4 +1,4 @@
-import { findCharacterByName, isCharacterFresh, upsertCharacter } from './character-repository';
+import { findCharacterByName, isCharacterFresh, upsertCanonicalNexonCharacter } from './character-repository';
 import type { Env } from './env';
 import { HttpError } from './http';
 import { NexonRequestError, resolveNexonCharacter } from './nexon-client';
@@ -13,8 +13,13 @@ export const getOrDiscoverCharacter = async (env: Env, characterName: string) =>
 
   try {
     const resolved = await resolveNexonCharacter(env, characterName, existing?.ocid);
-    const stored = await upsertCharacter(env.DB, resolved, [
-      { source: 'nexon', sourceCharacterId: resolved.ocid },
+    const stored = await upsertCanonicalNexonCharacter(env.DB, resolved, [
+      {
+        source: 'nexon',
+        sourceCharacterId: resolved.ocid,
+        observedAt: resolved.observedAt,
+        sourceUpdatedAt: resolved.nexonUpdatedAt,
+      },
       { source: 'holybear_search', sourceCharacterId: resolved.characterName },
     ]);
     return {

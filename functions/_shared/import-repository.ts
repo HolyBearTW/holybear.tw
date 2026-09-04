@@ -1,4 +1,4 @@
-import { normalizeCharacterName, upsertCharacter } from './character-repository';
+import { normalizeCharacterName, upsertCanonicalNexonCharacter } from './character-repository';
 import type { Env } from './env';
 import type { CharacterSource } from './models';
 import { NexonRequestError, resolveNexonCharacter, runWithConcurrency } from './nexon-client';
@@ -30,6 +30,8 @@ export interface StagingRow {
   ocid: string | null;
   status: string;
   attempt_count: number;
+  source_updated_at: string | null;
+  observed_at: string | null;
 }
 
 const nowIso = () => new Date().toISOString();
@@ -81,13 +83,16 @@ const stagingStatement = (
       Math.max(0, Math.trunc(item.level)),
       Math.max(0, Math.trunc(item.combatPower)),
       item.characterImage,
+      item.sourceUpdatedAt ?? null,
+      item.observedAt ?? nowIso(),
     );
-    return `(${Array.from({ length: 10 }, (_, index) => `?${offset + index + 1}`).join(', ')})`;
+    return `(${Array.from({ length: 12 }, (_, index) => `?${offset + index + 1}`).join(', ')})`;
   });
   return db.prepare(`
     INSERT INTO character_import_staging (
       import_job_id, source, source_id, character_name, normalized_name,
       world_name, job_name, level, combat_power, character_image
+      , source_updated_at, observed_at
     ) VALUES ${values.join(', ')}
     ON CONFLICT(source, source_id) DO UPDATE SET
       import_job_id = excluded.import_job_id,
@@ -98,6 +103,8 @@ const stagingStatement = (
       level = excluded.level,
       combat_power = excluded.combat_power,
       character_image = excluded.character_image,
+      source_updated_at = COALESCE(excluded.source_updated_at, character_import_staging.source_updated_at),
+      observed_at = excluded.observed_at,
       updated_at = excluded.updated_at
   `).bind(...bindings);
 };
@@ -109,8 +116,8 @@ export const checkpointSeedPage = async (
 ) => {
   const timestamp = nowIso();
   const statements: D1PreparedStatement[] = [];
-  for (let index = 0; index < page.items.length; index += 10) {
-    statements.push(stagingStatement(db, job.id, job.source, page.items.slice(index, index + 10)));
+  for (let index = 0; index < page.items.length; index += 8) {
+    statements.push(stagingStatement(db, job.id, job.source, page.items.slice(index, index + 8)));
   }
   const checkpoint = JSON.stringify({
     stageComplete: page.complete,
@@ -183,14 +190,21 @@ const markResolutionFailure = async (
 export const resolveStagingBatch = async (env: Env, job: ImportJobRow) => {
   const config = getRuntimeConfig(env);
   const pending = await env.DB.prepare(`
-    SELECT id, import_job_id, source, source_id, character_name, ocid, status, attempt_count
-    FROM character_import_staging
+    SELECT s.id, s.import_job_id, s.source, s.source_id, s.character_name,
+      COALESCE(s.ocid, (
+        SELECT resolved.ocid FROM character_import_staging resolved
+        WHERE resolved.normalized_name = s.normalized_name
+          AND resolved.status = 'resolved' AND resolved.ocid IS NOT NULL
+        ORDER BY resolved.updated_at DESC LIMIT 1
+      )) AS ocid,
+      s.status, s.attempt_count, s.source_updated_at, s.observed_at
+    FROM character_import_staging s
     WHERE import_job_id = ?1
       AND (
-        status IN ('pending', 'resolving')
-        OR (status = 'retry' AND (next_retry_at IS NULL OR next_retry_at <= ?2))
+        s.status IN ('pending', 'resolving')
+        OR (s.status = 'retry' AND (s.next_retry_at IS NULL OR s.next_retry_at <= ?2))
       )
-    ORDER BY id ASC LIMIT ?3
+    ORDER BY s.id ASC LIMIT ?3
   `).bind(job.id, nowIso(), config.nexonResolutionBatchSize).all<StagingRow>();
   const rows = pending.results;
   if (rows.length === 0) return { job: await maybeCompleteImportJob(env.DB, job.id), processed: 0, created: 0, updated: 0, retry: 0, failed: 0 };
@@ -215,10 +229,17 @@ export const resolveStagingBatch = async (env: Env, job: ImportJobRow) => {
     const row = rows[index];
     const result = resolutions[index];
     if (result.status === 'fulfilled') {
-      const stored = await upsertCharacter(env.DB, result.value, [{
+      const stored = await upsertCanonicalNexonCharacter(env.DB, result.value, [{
         source: row.source,
         sourceCharacterId: row.source_id,
-      }, { source: 'nexon', sourceCharacterId: result.value.ocid }]);
+        observedAt: row.observed_at ?? undefined,
+        sourceUpdatedAt: row.source_updated_at,
+      }, {
+        source: 'nexon',
+        sourceCharacterId: result.value.ocid,
+        observedAt: result.value.observedAt,
+        sourceUpdatedAt: result.value.nexonUpdatedAt,
+      }]);
       if (stored.created) created += 1;
       else updated += 1;
       await env.DB.prepare(`
@@ -268,4 +289,30 @@ export const maybeCompleteImportJob = async (db: D1Database, jobId: number) => {
 export const listImportJobs = async (db: D1Database) => {
   const result = await db.prepare('SELECT * FROM import_jobs ORDER BY id DESC LIMIT 50').all<ImportJobRow>();
   return result.results;
+};
+
+export const getImportMetrics = async (db: D1Database) => {
+  const counts = await db.prepare(`
+    SELECT
+      (SELECT COUNT(*) FROM character_import_staging) AS staging_total,
+      (SELECT COUNT(*) FROM character_import_staging WHERE status IN ('pending', 'resolving')) AS pending_resolution,
+      (SELECT COUNT(DISTINCT ocid) FROM character_import_staging WHERE status = 'resolved' AND ocid IS NOT NULL) AS resolved_ocid,
+      (SELECT COUNT(*) FROM character_import_staging WHERE status = 'resolved') -
+        (SELECT COUNT(DISTINCT ocid) FROM character_import_staging WHERE status = 'resolved' AND ocid IS NOT NULL) AS duplicate_merged,
+      (SELECT COUNT(*) FROM character_import_staging WHERE status = 'failed') AS failed,
+      (SELECT COUNT(*) FROM character_import_staging WHERE status = 'retry') AS retry_pending,
+      (SELECT COUNT(*) FROM characters) AS characters_total,
+      (SELECT COUNT(*) FROM character_sources WHERE source = 'nexon') AS nexon_refreshed,
+      (SELECT COUNT(*) FROM characters) AS final_ranking_total
+  `).first<Record<string, number>>();
+  const bySource = await db.prepare(`
+    SELECT source,
+      COUNT(*) AS staging_total,
+      SUM(CASE WHEN status = 'resolved' THEN 1 ELSE 0 END) AS resolved,
+      SUM(CASE WHEN status IN ('pending', 'resolving') THEN 1 ELSE 0 END) AS pending,
+      SUM(CASE WHEN status = 'retry' THEN 1 ELSE 0 END) AS retry,
+      SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) AS failed
+    FROM character_import_staging GROUP BY source ORDER BY source
+  `).all();
+  return { counts, bySource: bySource.results };
 };

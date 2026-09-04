@@ -12,7 +12,7 @@
 
 ## Schema 與 migrations
 
-`migrations/0001_characters_and_sources.sql` 建立 `characters`、`character_sources`、`account_groups`；`0002_import_pipeline.sql` 建立 `import_jobs`、`character_import_staging`、`import_job_errors`；`0003_ranking_and_account_signals.sql` 建立 `ranking_snapshots`、`account_group_signals`。不可修改已套用的 migration；後續變更一律新增編號檔。
+`migrations/0001_characters_and_sources.sql` 建立 `characters`、`character_sources`、`account_groups`；`0002_import_pipeline.sql` 建立 `import_jobs`、`character_import_staging`、`import_job_errors`；`0003_ranking_and_account_signals.sql` 建立 `ranking_snapshots`、`account_group_signals`；`0004_source_metadata_and_full_seed.sql` 補上第三方來源更新與觀測時間。不可修改已套用的 migration；後續變更一律新增編號檔。
 
 本機空 DB：
 
@@ -56,6 +56,16 @@ yarn import:maple maplerhouse 100
 ```
 
 腳本到達 step 上限會正常停止；job checkpoint 已在 D1，重跑同來源會自動續傳。不要把 admin secret 寫進前端或 workflow log。
+
+完整 seed 依序完成兩個來源的 staging，再進行 NEXON resolution：
+
+```powershell
+yarn import:maple all --all
+```
+
+`--all` 沒有固定 100-step 上限。若需要依每日 quota 分段，可設定 `IMPORT_MAX_REQUESTS_PER_RUN`；到達上限會正常停止並保留 checkpoint，隔日執行同一命令續傳。429/5xx 會安全停止並保存 checkpoint。
+
+Canonical data 只能由成功的 NEXON latest response 寫入；repository 會拒絕沒有 `nexon` source 的正式角色 write。MaplerHouse 只提供 discovery/staging/source metadata。同名稱已解析 staging 會重用 OCID，仍再次取得 NEXON basic/stat，以最新官方資料更新 canonical 欄位。
 
 ## Freshness、retry 與流量控制
 

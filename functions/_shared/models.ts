@@ -38,6 +38,7 @@ export interface CharacterSourceWrite {
   source: CharacterSource;
   sourceCharacterId?: string | null;
   observedAt?: string;
+  sourceUpdatedAt?: string | null;
   rawJson?: string | null;
 }
 
