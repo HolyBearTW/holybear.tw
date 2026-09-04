@@ -43,10 +43,10 @@ const writeCache = (key: Request, value: unknown) => rankingCache().put(
   new Response(JSON.stringify(value), { headers: cacheHeaders }),
 );
 
-const readSnapshot = async (): Promise<RankingSnapshot | null> => {
+const readSnapshots = async (): Promise<RankingSnapshot[]> => {
   const cached = await readCache<RankingSnapshot>(snapshotKey());
-  if (cached) return cached;
-  return bundledRankingSnapshot as RankingSnapshot;
+  const bundled = bundledRankingSnapshot as RankingSnapshot;
+  return cached ? [cached, bundled] : [bundled];
 };
 
 export const cacheRankingPage = (filters: RankingFilters, page: RankingPage) => writeCache(pageKey(filters), page);
@@ -66,33 +66,37 @@ export const refreshRankingSnapshot = async (env: Env) => {
 export const getCachedRankingPage = async (filters: RankingFilters): Promise<RankingPage | null> => {
   const exact = await readCache<RankingPage>(pageKey(filters));
   if (exact) return { ...exact, degraded: true };
-  const snapshot = await readSnapshot();
-  if (!snapshot) return null;
-  const matching = snapshot.items.filter((entry) => (
-    (!filters.world || entry.worldName === filters.world)
-    && (!filters.job || entry.jobName === filters.job)
-    && (filters.minLevel == null || entry.level >= filters.minLevel)
-  ));
-  const offset = (filters.page - 1) * filters.pageSize;
-  const items = matching.slice(offset, offset + filters.pageSize);
-  if (!items.length && offset > 0) return null;
-  return {
-    items,
-    page: filters.page,
-    pageSize: filters.pageSize,
-    total: filters.world || filters.job || filters.minLevel != null ? matching.length : snapshot.total,
-    totalPages: Math.max(1, Math.ceil((filters.world || filters.job || filters.minLevel != null ? matching.length : snapshot.total) / filters.pageSize)),
-    degraded: true,
-    snapshotAt: snapshot.generatedAt,
-  };
+  for (const snapshot of await readSnapshots()) {
+    const matching = snapshot.items.filter((entry) => (
+      (!filters.world || entry.worldName === filters.world)
+      && (!filters.job || entry.jobName === filters.job)
+      && (filters.minLevel == null || entry.level >= filters.minLevel)
+    ));
+    const offset = (filters.page - 1) * filters.pageSize;
+    const items = matching.slice(offset, offset + filters.pageSize);
+    const snapshotIsComplete = snapshot.items.length >= snapshot.total;
+    if (!items.length && !snapshotIsComplete) continue;
+    const total = filters.world || filters.job || filters.minLevel != null ? matching.length : snapshot.total;
+    return {
+      items,
+      page: filters.page,
+      pageSize: filters.pageSize,
+      total,
+      totalPages: Math.max(1, Math.ceil(total / filters.pageSize)),
+      degraded: true,
+      snapshotAt: snapshot.generatedAt,
+    };
+  }
+  return null;
 };
 
 export const getCachedCharacterRank = async (name: string) => {
   const exact = await readCache<{ entry: RankingEntry; rank: number; total: number }>(characterKey(name));
   if (exact) return { ...exact, degraded: true };
-  const snapshot = await readSnapshot();
-  if (!snapshot) return null;
   const normalized = normalizeCharacterName(name);
-  const entry = snapshot.items.find((item) => normalizeCharacterName(item.characterName) === normalized);
-  return entry ? { entry, rank: entry.rank, total: snapshot.total, degraded: true, snapshotAt: snapshot.generatedAt } : null;
+  for (const snapshot of await readSnapshots()) {
+    const entry = snapshot.items.find((item) => normalizeCharacterName(item.characterName) === normalized);
+    if (entry) return { entry, rank: entry.rank, total: snapshot.total, degraded: true, snapshotAt: snapshot.generatedAt };
+  }
+  return null;
 };
