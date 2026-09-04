@@ -10,11 +10,10 @@ import StatTooltip from './StatTooltip';
 import EquipmentGrid from './EquipmentGrid';
 import CashEquipmentGrid from './CashEquipmentGrid';
 import {
-  fetchMaplerHouseCharacterRank,
-  fetchMaplerHouseHistoryStatus,
-  invalidateMaplerHouseRankingCache,
-  MaplerHouseCharacterRank,
-} from '../services/maplerhouseService';
+  fetchHolyBearCharacterRank,
+  invalidateHolyBearRankingCache,
+  HolyBearCharacterRank,
+} from '../services/holyBearService';
 import MaplerHouseGrowthTracker from './MaplerHouseGrowthTracker';
 import MapleFeatureTour, { GrowthTrackingState } from './MapleFeatureTour';
 import { fetchWeeklyHistory, findBestDateInPastWeek } from '../services/nexonService';
@@ -89,13 +88,13 @@ const RecentPowerRankStatus = React.forwardRef<RecentPowerRankHandle, RecentPowe
   characterLevel,
   ocid,
 }, ref) => {
-  const [recentPowerRank, setRecentPowerRank] = React.useState<MaplerHouseCharacterRank | null>(null);
+  const [recentPowerRank, setRecentPowerRank] = React.useState<HolyBearCharacterRank | null>(null);
   const [status, setStatus] = React.useState<'loading' | 'syncing' | 'found' | 'not-found' | 'error'>('loading');
   const [refreshKey, setRefreshKey] = React.useState(0);
 
   React.useImperativeHandle(ref, () => ({
     refresh: () => {
-      invalidateMaplerHouseRankingCache();
+      invalidateHolyBearRankingCache();
       setRefreshKey((current) => current + 1);
     },
   }), []);
@@ -105,32 +104,11 @@ const RecentPowerRankStatus = React.forwardRef<RecentPowerRankHandle, RecentPowe
     setRecentPowerRank(null);
     setStatus('loading');
 
-    const loadRank = async () => {
-      let result = await fetchMaplerHouseCharacterRank(characterName);
-      let syncing = false;
-
-      if (!result && ocid) {
-        try {
-          const trackingStatus = await fetchMaplerHouseHistoryStatus(ocid);
-          const rankingEligible = Number(characterLevel || 0) >= 260;
-          if (trackingStatus.tracked && trackingStatus.job?.status === 'completed' && rankingEligible) {
-            invalidateMaplerHouseRankingCache();
-            result = await fetchMaplerHouseCharacterRank(characterName);
-            syncing = !result;
-          }
-        } catch {
-          // 名次查詢仍可維持「未列入」，不讓追蹤狀態錯誤覆蓋主要結果。
-        }
-      }
-
-      return { result, syncing };
-    };
-
-    loadRank()
-      .then(({ result, syncing }) => {
+    fetchHolyBearCharacterRank(characterName)
+      .then((result) => {
         if (!active) return;
         setRecentPowerRank(result);
-        setStatus(result ? 'found' : syncing ? 'syncing' : 'not-found');
+        setStatus(result ? 'found' : 'not-found');
       })
       .catch(() => {
         if (!active) return;
@@ -141,7 +119,7 @@ const RecentPowerRankStatus = React.forwardRef<RecentPowerRankHandle, RecentPowe
     return () => {
       active = false;
     };
-  }, [characterName, characterLevel, ocid, refreshKey]);
+  }, [characterName, refreshKey]);
 
   if (status === 'loading') return <span className="text-slate-500">正在查詢近期排名...</span>;
   if (status === 'syncing') return <span className="text-emerald-400">正在同步近期戰力排名中...</span>;

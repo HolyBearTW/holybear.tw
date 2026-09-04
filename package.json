@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260904.1",
     "@lando/vitepress-theme-default-plus": "^1.2.0",
     "@tailwindcss/postcss": "^4.3.3",
     "@vitejs/plugin-react": "6.0.5",
@@ -10,8 +11,10 @@
     "markdown-it-task-lists": "^2.1.1",
     "sass-embedded": "^1.103.1",
     "tailwindcss": "^4.3.3",
+    "typescript": "^7.0.2",
     "vite": "^8.2.2",
     "vitepress": "^2.0.0-alpha.19",
+    "vitest": "^5.0.0",
     "vue": "^3.5.42"
   },
   "dependencies": {
@@ -63,6 +66,10 @@
     "generate:rss": "node scripts/generate-rss.mjs",
     "optimize:deploy-images": "node scripts/optimize-deploy-images.mjs",
     "check:maple-calculator": "node scripts/check-maple-calculator.mjs",
+    "typecheck:functions": "tsc -p tsconfig.functions.json",
+    "test:maple-db": "vitest run tests/maple-db",
+    "d1:migrate:local": "wrangler d1 migrations apply holybear-maple-db --local",
+    "import:maple": "node scripts/run-maple-import.mjs",
     "preview": "vitepress preview"
   }
 }

@@ -434,7 +434,7 @@ const ChampionCard: React.FC<{ champ: any; apiKey: string }> = ({ champ, apiKey 
 
       const fetchImgAndLevel = async () => {
         try {
-          const idRes = await fetch(`https://open.api.nexon.com/maplestorytw/v1/id?character_name=${encodeURIComponent(champ.champion_name)}`, { 
+          const idRes = await fetch(`/api/nexon/id?character_name=${encodeURIComponent(champ.champion_name)}`, {
             headers: { 'x-nxopen-api-key': apiKey } 
           });
           if (!idRes.ok) {
@@ -443,7 +443,7 @@ const ChampionCard: React.FC<{ champ: any; apiKey: string }> = ({ champ, apiKey 
           }
           const idData = await idRes.json();
           if (idData.ocid) {
-            const basicRes = await fetch(`https://open.api.nexon.com/maplestorytw/v1/character/basic?ocid=${idData.ocid}`, { 
+            const basicRes = await fetch(`/api/nexon/character/basic?ocid=${idData.ocid}`, {
               headers: { 'x-nxopen-api-key': apiKey } 
             });
             const basicData = await basicRes.json();
