@@ -1,0 +1,29 @@
+{
+  "id": "1a233998db6097b4",
+  "members": [
+    {
+      "characterName": "Zzs莉莉絲",
+      "worldName": "愛麗西亞",
+      "characterClass": "槍神",
+      "characterLevel": 278,
+      "characterImage": "https://open.api.nexon.com/static/maplestorytw/character/look/CGABMEHMIHAFJGCBNHILJFGNBDAJEMJMFKOLEFEKOFDDJHPKMOIPBPNCKPLHNCPLDOPGDFAKLMNEOMHMKOPOLCGCPJNHOCFBPJGLDKCIEFJCMKGPCBDKHNKCHMHCOHCALIGBKAGNCPHJFGHPOMPOAOOKEHPGCEPBLLECDCBPGKNGKCMGLNCGGMBILGGJBHNIPONFMKGOMGFOPIGIONMGCBICCGJGLCPAGEHDJMGEHHBAPOMPLLGLKFIBFOLBJAIJ",
+      "characterPower": "55991321",
+      "maxCharacterPower": "55991321",
+      "combatPowerRank": null,
+      "characterGuildName": "微醺雲閣",
+      "characterDateCreate": "2017-01-15T00:00+08:00"
+    },
+    {
+      "characterName": "採精魅魔",
+      "worldName": "愛麗西亞",
+      "characterClass": "亞克",
+      "characterLevel": 280,
+      "characterImage": "https://open.api.nexon.com/static/maplestorytw/character/look/DGAILAJNACCBMMJGGEHDBIOBHIMJJKALMBFIIHAFLKKKBDMNANHDOIBLKIPOLHLFCMOHBNDNPIFAJKBLBPCEKFCIFANHNFJKBMCEMGAOENGIGHEFBGENFLIFJDAAGICAJCJNMIDGFCJPHPNMOODJMPPOLGCJAKOAPNMMBFIEIMFMMKGMDDCHPDMPJMIJOKEGGPNCHKGCGPANMHCGONOODOGOFGBPIIJOOLHFOBCCLFKFJAKFKAHMKCBKODMNKDBE",
+      "characterPower": "36534505",
+      "maxCharacterPower": "36534505",
+      "combatPowerRank": 1247,
+      "characterGuildName": null,
+      "characterDateCreate": "2023-06-20T00:00+08:00"
+    }
+  ]
+}
