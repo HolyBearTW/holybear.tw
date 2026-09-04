@@ -15,6 +15,7 @@ const aliasOutputDir = path.join(root, 'public/maplestory/aliases');
 const aliasGroupOutputDir = path.join(aliasOutputDir, 'groups');
 const aliasIndexOutputPath = path.join(aliasOutputDir, 'index.json');
 const apiBase = 'https://open.api.nexon.com/maplestorytw/v1';
+const holyBearApiBase = String(process.env.HOLYBEAR_API_BASE_URL || 'https://holybear.tw').replace(/\/+$/, '');
 const headers = { 'x-nxopen-api-key': apiKey };
 
 const groups = [
@@ -151,9 +152,17 @@ async function readCharacter(entry) {
 const ranking = [];
 const rankingPageSize = 100;
 for (let page = 1; ; page += 1) {
-  const response = await getJson(`https://api.maplerhouse.cn/api/v1/tms/characters/history/tracked?page=${page}&page_size=${rankingPageSize}&sort=combat_power&sort_order=desc`);
-  const items = response.data?.items || [];
-  const total = Number(response.data?.total);
+  const response = await getJson(`${holyBearApiBase}/api/rankings/combat-power?page=${page}&pageSize=${rankingPageSize}`);
+  if (response.degraded) throw new Error('HolyBear ranking is degraded; preserving the previous radar reference');
+  const items = (response.items || []).map((item) => ({
+    name: item.characterName,
+    avatar: item.characterImage,
+    world: item.worldName,
+    job: item.jobName,
+    level: item.level,
+    combatPower: item.combatPower,
+  }));
+  const total = Number(response.total);
   ranking.push(...items);
   if (items.length === 0 || items.length < rankingPageSize || (Number.isFinite(total) && ranking.length >= total)) break;
 }
