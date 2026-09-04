@@ -197,6 +197,9 @@ const RecentPowerRanking: React.FC<RecentPowerRankingProps> = ({ onSelectCharact
                     decoding="async"
                     fetchPriority="high"
                   />
+                  <span className="absolute inset-x-0 bottom-0 z-20 bg-slate-950/75 text-[10px] font-bold leading-4 text-slate-100">
+                    #{rank}
+                  </span>
                 </div>
                 <div className="mt-1 flex w-full min-w-0 items-center justify-center gap-1">
                   {SERVER_ICONS[item.worldName] ? <img alt={item.worldName} width={12} height={12} className="shrink-0" src={SERVER_ICONS[item.worldName]} decoding="async" /> : null}
@@ -232,7 +235,7 @@ const RecentPowerRanking: React.FC<RecentPowerRankingProps> = ({ onSelectCharact
                     loading="lazy"
                     decoding="async"
                   />
-                  <span className="absolute inset-x-0 bottom-0 bg-slate-950/75 text-[9px] font-bold leading-3 text-slate-100">{rank}</span>
+                  <span className="absolute inset-x-0 bottom-0 z-20 bg-slate-950/75 text-[9px] font-bold leading-3 text-slate-100">#{rank}</span>
                 </span>
                 <span className={`flex items-center justify-center gap-0.5 whitespace-nowrap leading-3 text-slate-300 ${page === 1 ? 'text-[9px] sm:text-[10px]' : 'text-[11px]'}`}>
                   {SERVER_ICONS[item.worldName] ? <img alt="" width={10} height={10} className="shrink-0" src={SERVER_ICONS[item.worldName]} aria-hidden="true" /> : null}
