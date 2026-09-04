@@ -3,6 +3,7 @@ import type { RankingEntry, RankingFilters } from './models';
 import { normalizeCharacterName } from './character-repository';
 import { getCombatPowerRanking } from './ranking-repository';
 import { getRuntimeConfig } from './runtime-config';
+import bundledRankingSnapshot from '../../public/maplestory/rankings/current.json';
 
 interface RankingPage {
   items: RankingEntry[];
@@ -32,7 +33,6 @@ const pageKey = (filters: RankingFilters) => {
 };
 const characterKey = (name: string) => new Request(`${cacheOrigin}/characters/${encodeURIComponent(normalizeCharacterName(name))}`);
 const snapshotKey = () => new Request(`${cacheOrigin}/snapshot`);
-const staticSnapshotUrl = 'https://holybear.tw/maplestory/rankings/current.json';
 
 const readCache = async <T>(key: Request): Promise<T | null> => {
   const response = await rankingCache().match(key);
@@ -46,9 +46,7 @@ const writeCache = (key: Request, value: unknown) => rankingCache().put(
 const readSnapshot = async (): Promise<RankingSnapshot | null> => {
   const cached = await readCache<RankingSnapshot>(snapshotKey());
   if (cached) return cached;
-  const response = await fetch(staticSnapshotUrl, { cache: 'force-cache' }).catch(() => null);
-  if (!response?.ok) return null;
-  return response.json<RankingSnapshot>();
+  return bundledRankingSnapshot as RankingSnapshot;
 };
 
 export const cacheRankingPage = (filters: RankingFilters, page: RankingPage) => writeCache(pageKey(filters), page);
