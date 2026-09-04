@@ -1,4 +1,4 @@
-export const CHARACTER_SOURCES = ['maplerhouse', 'nexon', 'holybear_search'] as const;
+export const CHARACTER_SOURCES = ['maplerhouse', 'manual_seed', 'nexon', 'holybear_search'] as const;
 
 export type CharacterSource = (typeof CHARACTER_SOURCES)[number];
 export type AccountConfidence = 'high' | 'probable' | 'unknown';

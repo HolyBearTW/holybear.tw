@@ -125,6 +125,7 @@ three/.vitepress/cache/
 # Serverless directories
 .serverless/
 .wrangler/
+data/manual-character-seed/
 
 # FuseBox cache
 .fusebox/

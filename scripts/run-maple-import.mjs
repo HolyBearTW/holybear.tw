@@ -1,9 +1,14 @@
 const args = process.argv.slice(2);
 const source = String(args[0] || '').toLowerCase();
+if (source === 'manual') {
+  const { runManualSeedImport } = await import('./run-manual-seed-import.mjs');
+  await runManualSeedImport(args.slice(1));
+  process.exit(0);
+}
 const fullMode = args.includes('--all') || args.includes('--until-complete');
 const numericLimit = args.slice(1).find((argument) => /^\d+$/.test(argument));
 if (source !== 'maplerhouse') {
-  throw new Error('Usage: yarn import:maple maplerhouse [steps|--all]');
+  throw new Error('Usage: yarn import:maple <maplerhouse|manual> [steps|--all]');
 }
 
 const baseUrl = String(process.env.HOLYBEAR_API_BASE_URL || '').replace(/\/+$/, '');
