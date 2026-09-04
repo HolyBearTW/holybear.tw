@@ -11,7 +11,7 @@ export const onRequestGet: AppPagesFunction = async ({ env, request, waitUntil }
     return json(ranking);
   } catch (error) {
     console.error('D1 ranking unavailable; using cached snapshot', error);
-    const cached = await getCachedRankingPage(filters).catch(() => null);
+    const cached = await getCachedRankingPage(env, filters).catch(() => null);
     if (cached) return json(cached, { headers: { 'x-holybear-degraded': 'ranking-cache' } });
     return json({
       error: { code: 'ranking_temporarily_unavailable', message: '排行榜主資料源與快取目前皆無法使用' },
