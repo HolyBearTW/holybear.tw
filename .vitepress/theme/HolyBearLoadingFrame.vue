@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
+import { nextTick, onMounted, onUnmounted, ref } from 'vue'
 import loadingOrbUrl from './assets/animations/holy-bear-orb-navbar.webp?inline'
 
 const isVisible = ref(true)
@@ -17,7 +17,6 @@ let routeLoadingPending = false
 let initialMinimumTimer: number | undefined
 let initialSafetyTimer: number | undefined
 let initialLoadHandler: (() => void) | undefined
-let initialVisualReadyFrame: number | undefined
 let initialPopFrame: number | undefined
 let initialMinimumElapsed = false
 let initialFinishRequested = false
@@ -140,10 +139,6 @@ function finishRouteLoading() {
 
 onMounted(() => {
   lockPageScroll()
-  // 先移除原始 HTML 的靜態圖像，再隔一個繪製週期顯示 Vue 圖像。
-  // 避免低效能裝置在兩套 Loading 交接時留下縮小 Logo 的合成殘影。
-  document.getElementById('holy-bear-boot-frame')?.remove()
-  document.documentElement.classList.remove('holy-bear-booting')
   document.addEventListener('click', handleInternalNavigation, true)
   window.addEventListener('holybear-route-loading-start', startRouteLoading)
   window.addEventListener('holybear-route-loading-finish', finishRouteLoading)
@@ -151,14 +146,15 @@ onMounted(() => {
   // 首次進站不再使用固定時間關閉；內容完成後才退場，慢速裝置不會露出空白頁。
   routeLoadingPending = true
   loadingStartedAt = performance.now()
-  initialVisualReadyFrame = window.requestAnimationFrame(() => {
-    initialVisualReadyFrame = window.requestAnimationFrame(() => {
-      areInitialVisualsReady.value = true
-      initialVisualReadyFrame = undefined
-      initialPopFrame = window.requestAnimationFrame(() => {
-        initialPopFrame = undefined
-        if (routeLoadingPending) isPopping.value = true
-      })
+  // Keep the server-rendered frame visible until Vue has painted the same visuals.
+  // Removing it only after nextTick prevents a background-only handoff frame.
+  areInitialVisualsReady.value = true
+  void nextTick(() => {
+    document.getElementById('holy-bear-boot-frame')?.remove()
+    document.documentElement.classList.remove('holy-bear-booting')
+    initialPopFrame = window.requestAnimationFrame(() => {
+      initialPopFrame = undefined
+      if (routeLoadingPending) isPopping.value = true
     })
   })
 
@@ -189,7 +185,6 @@ onUnmounted(() => {
   if (initialMinimumTimer) window.clearTimeout(initialMinimumTimer)
   if (initialSafetyTimer) window.clearTimeout(initialSafetyTimer)
   if (initialLoadHandler) window.removeEventListener('load', initialLoadHandler)
-  if (initialVisualReadyFrame) window.cancelAnimationFrame(initialVisualReadyFrame)
   if (initialPopFrame) window.cancelAnimationFrame(initialPopFrame)
   if (pageEnterTimer) window.clearTimeout(pageEnterTimer)
   document.body.classList.remove('holy-bear-page-enter', 'holy-bear-route-enter')
@@ -202,7 +197,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div v-show="isVisible" class="brand-loading-frame" :class="{ 'is-popping': isPopping, 'is-leaving': isLeaving }" aria-hidden="true">
+  <div v-show="isVisible && areInitialVisualsReady" class="brand-loading-frame" :class="{ 'is-popping': isPopping, 'is-leaving': isLeaving }" aria-hidden="true">
     <div v-if="areInitialVisualsReady" class="brand-loading-ball">
       <img
         class="brand-loading-orb"
