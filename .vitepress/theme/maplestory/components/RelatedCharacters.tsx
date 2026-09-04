@@ -77,6 +77,12 @@ const RelatedCharacters: React.FC<RelatedCharactersProps> = ({
         // verified into D1. This never changes the server-side group decision.
         return findRelatedCharacters(data, controller.signal);
       })
+      .catch((error) => {
+        if (error instanceof DOMException && error.name === 'AbortError') throw error;
+        // D1 quota exhaustion and transient API failures must not hide the
+        // existing static alias data from visitors.
+        return findRelatedCharacters(data, controller.signal);
+      })
       .then((result) => {
         const resolvedMembers = result.filter((member) => (
           member.characterName

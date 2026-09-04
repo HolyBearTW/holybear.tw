@@ -22,6 +22,7 @@ const RecentPowerRanking: React.FC<RecentPowerRankingProps> = ({ onSelectCharact
   const [totalPages, setTotalPages] = React.useState(1);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const [degraded, setDegraded] = React.useState(false);
   const [queryRank, setQueryRank] = React.useState<HolyBearCharacterRank | null>(null);
   const [queryRankStatus, setQueryRankStatus] = React.useState<'idle' | 'loading' | 'found' | 'not-found' | 'error'>('idle');
 
@@ -65,6 +66,7 @@ const RecentPowerRanking: React.FC<RecentPowerRankingProps> = ({ onSelectCharact
       .then((rankingPage) => {
         if (!active) return;
         setItems(rankingPage.items);
+        setDegraded(Boolean(rankingPage.degraded));
         setTotal(rankingPage.total);
         setTotalPages(rankingPage.totalPages);
         setPageInput(String(rankingPage.page));
@@ -73,6 +75,7 @@ const RecentPowerRanking: React.FC<RecentPowerRankingProps> = ({ onSelectCharact
         if (!active) return;
         const message = err instanceof Error ? err.message : '讀取排行榜失敗';
         setError(message);
+        setDegraded(false);
         setItems([]);
       })
       .finally(() => {
@@ -122,6 +125,11 @@ const RecentPowerRanking: React.FC<RecentPowerRankingProps> = ({ onSelectCharact
         <Crown className="w-4 h-4 text-yellow-400" />
         近期戰力排名
       </h3>
+      {degraded && (
+        <div className="mb-4 rounded-lg border border-amber-400/35 bg-amber-400/10 px-3 py-2 text-sm text-amber-200" role="status">
+          目前顯示快取排行榜
+        </div>
+      )}
       {queryRankStatus !== 'idle' && (
         <div className="maple-ranking-query-card mb-4 rounded-lg border border-slate-500/60 bg-white/35 px-3 py-2 text-sm text-slate-700 dark:border-slate-700/70 dark:bg-slate-900/35 dark:text-slate-300">
           {queryRankStatus === 'loading' && '正在查詢目前輸入角色的排名...'}
@@ -162,7 +170,7 @@ const RecentPowerRanking: React.FC<RecentPowerRankingProps> = ({ onSelectCharact
         <div className="grid w-full grid-cols-3 items-end gap-3 sm:gap-6">
           {[items[1], items[0], items[2]].map((item) => {
             if (!item) return null;
-            const rank = items.indexOf(item) + 1;
+            const rank = item.rank;
             const crownTier = rank === 1 ? 'is-gold' : rank === 2 ? 'is-silver' : 'is-bronze';
             const podiumClass = rank === 1
               ? 'order-2 -translate-y-2 border-yellow-300/45 bg-yellow-400/[0.1]'
@@ -204,7 +212,7 @@ const RecentPowerRanking: React.FC<RecentPowerRankingProps> = ({ onSelectCharact
           ? 'flex w-full flex-wrap items-start justify-center gap-x-2 gap-y-3 overflow-visible sm:flex-nowrap sm:justify-between sm:gap-x-1 sm:gap-y-0'
           : 'grid w-full grid-cols-5 items-start gap-x-2 gap-y-4 sm:gap-x-4'}>
           {items.slice(page === 1 ? 3 : 0).map((item, idx) => {
-            const rank = (page - 1) * 10 + (page === 1 ? idx + 4 : idx + 1);
+            const rank = item.rank;
             return (
               <React.Fragment key={item.characterName}>
                 {page === 1 && idx === 4 && <span className="basis-full h-0 sm:hidden" aria-hidden="true" />}

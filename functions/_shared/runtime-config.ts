@@ -19,6 +19,9 @@ export const getRuntimeConfig = (env: Env) => ({
   nexonRequestDelayMs: integerSetting(env.NEXON_REQUEST_DELAY_MS, 200, 0, 10_000),
   nexonRetryLimit: integerSetting(env.NEXON_RETRY_LIMIT, 5, 1, 8),
   nexonRequestTimeoutMs: integerSetting(env.NEXON_REQUEST_TIMEOUT_MS, 10_000, 1_000, 30_000),
+  importD1ReadBudget: integerSetting(env.IMPORT_D1_READ_BUDGET, 4_000_000, 1_000, 4_500_000),
+  importD1WriteBudget: integerSetting(env.IMPORT_D1_WRITE_BUDGET, 80_000, 1_000, 90_000),
+  rankingSnapshotSize: integerSetting(env.RANKING_SNAPSHOT_SIZE, 1_000, 100, 5_000),
 });
 
 export const requireSecret = (value: string | undefined, name: string) => {

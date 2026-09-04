@@ -19,6 +19,16 @@ export interface ImportJobRow {
   started_at: string;
   updated_at: string;
   completed_at: string | null;
+  staging_inserted_count: number;
+  staging_updated_count: number;
+  resolved_count: number;
+  pending_count: number;
+  retry_count: number;
+  created_count: number;
+  nexon_request_count: number;
+  d1_budget_date: string | null;
+  d1_rows_read_estimate: number;
+  d1_rows_written_estimate: number;
 }
 
 export interface StagingRow {
@@ -35,6 +45,38 @@ export interface StagingRow {
 }
 
 const nowIso = () => new Date().toISOString();
+const utcDate = () => nowIso().slice(0, 10);
+
+export class ImportBudgetError extends Error {
+  readonly status = 429;
+  readonly code = 'import_budget_reached';
+
+  constructor(public readonly kind: 'read' | 'write') {
+    super(`Importer paused before reaching the D1 daily ${kind} budget`);
+  }
+}
+
+const budgetAfter = async (
+  db: D1Database,
+  job: ImportJobRow,
+  readDelta: number,
+  writeDelta: number,
+  limits: { importD1ReadBudget: number; importD1WriteBudget: number },
+) => {
+  const date = utcDate();
+  const currentRead = job.d1_budget_date === date ? Number(job.d1_rows_read_estimate) || 0 : 0;
+  const currentWrite = job.d1_budget_date === date ? Number(job.d1_rows_written_estimate) || 0 : 0;
+  const rowsRead = currentRead + Math.max(0, Math.trunc(readDelta));
+  const rowsWritten = currentWrite + Math.max(0, Math.trunc(writeDelta));
+  const others = await db.prepare(`
+    SELECT COALESCE(SUM(d1_rows_read_estimate), 0) AS rows_read,
+      COALESCE(SUM(d1_rows_written_estimate), 0) AS rows_written
+    FROM import_jobs WHERE d1_budget_date = ?1 AND id <> ?2
+  `).bind(date, job.id).first<{ rows_read: number; rows_written: number }>();
+  if (rowsRead + (Number(others?.rows_read) || 0) > limits.importD1ReadBudget) throw new ImportBudgetError('read');
+  if (rowsWritten + (Number(others?.rows_written) || 0) > limits.importD1WriteBudget) throw new ImportBudgetError('write');
+  return { date, rowsRead, rowsWritten };
+};
 
 export const getImportJob = async (db: D1Database, id: number) => db
   .prepare('SELECT * FROM import_jobs WHERE id = ?1 LIMIT 1')
@@ -110,11 +152,25 @@ const stagingStatement = (
 };
 
 export const checkpointSeedPage = async (
-  db: D1Database,
+  env: Env,
   job: ImportJobRow,
   page: SeedPage,
 ) => {
+  const db = env.DB;
   const timestamp = nowIso();
+  const config = getRuntimeConfig(env);
+  let existing = 0;
+  for (let index = 0; index < page.items.length; index += 90) {
+    const sourceIds = page.items.slice(index, index + 90).map((item) => item.sourceId);
+    if (!sourceIds.length) continue;
+    const row = await db.prepare(`
+      SELECT COUNT(*) AS total FROM character_import_staging
+      WHERE source = ?1 AND source_id IN (${sourceIds.map((_, offset) => `?${offset + 2}`).join(', ')})
+    `).bind(job.source, ...sourceIds).first<{ total: number }>();
+    existing += Number(row?.total) || 0;
+  }
+  const inserted = Math.max(0, page.items.length - existing);
+  const budget = await budgetAfter(db, job, page.items.length + 5, page.items.length * 5 + 2, config);
   const statements: D1PreparedStatement[] = [];
   for (let index = 0; index < page.items.length; index += 8) {
     statements.push(stagingStatement(db, job.id, job.source, page.items.slice(index, index + 8)));
@@ -127,9 +183,25 @@ export const checkpointSeedPage = async (
   statements.push(db.prepare(`
     UPDATE import_jobs SET
       status = 'running', last_page = ?2, checkpoint_json = ?3,
-      imported_count = imported_count + ?4, last_error = NULL, updated_at = ?5
+      imported_count = imported_count + ?4,
+      staging_inserted_count = staging_inserted_count + ?5,
+      staging_updated_count = staging_updated_count + ?6,
+      pending_count = pending_count + ?5,
+      d1_budget_date = ?7, d1_rows_read_estimate = ?8, d1_rows_written_estimate = ?9,
+      last_error = NULL, updated_at = ?10
     WHERE id = ?1
-  `).bind(job.id, page.page, checkpoint, page.items.length, timestamp));
+  `).bind(
+    job.id,
+    page.page,
+    checkpoint,
+    page.items.length,
+    inserted,
+    existing,
+    budget.date,
+    budget.rowsRead,
+    budget.rowsWritten,
+    timestamp,
+  ));
   await db.batch(statements);
   return getImportJob(db, job.id);
 };
@@ -189,6 +261,13 @@ const markResolutionFailure = async (
 
 export const resolveStagingBatch = async (env: Env, job: ImportJobRow) => {
   const config = getRuntimeConfig(env);
+  const budget = await budgetAfter(
+    env.DB,
+    job,
+    config.nexonResolutionBatchSize * 4 + 5,
+    config.nexonResolutionBatchSize * 30 + 3,
+    config,
+  );
   const pending = await env.DB.prepare(`
     SELECT s.id, s.import_job_id, s.source, s.source_id, s.character_name,
       COALESCE(s.ocid, (
@@ -215,16 +294,19 @@ export const resolveStagingBatch = async (env: Env, job: ImportJobRow) => {
       AND id IN (${rows.map((_, index) => `?${index + 3}`).join(', ')})
   `).bind(job.id, nowIso(), ...rows.map((row) => row.id)).run();
 
+  let nexonRequests = 0;
   const resolutions = await runWithConcurrency(
     rows,
     config.nexonConcurrency,
     config.nexonRequestDelayMs,
-    (row) => resolveNexonCharacter(env, row.character_name, row.ocid),
+    (row) => resolveNexonCharacter(env, row.character_name, row.ocid, () => { nexonRequests += 1; }),
   );
   let created = 0;
   let updated = 0;
   let retry = 0;
   let failed = 0;
+  let pendingDecrease = 0;
+  let retryDelta = 0;
   for (let index = 0; index < rows.length; index += 1) {
     const row = rows[index];
     const result = resolutions[index];
@@ -242,6 +324,8 @@ export const resolveStagingBatch = async (env: Env, job: ImportJobRow) => {
       }]);
       if (stored.created) created += 1;
       else updated += 1;
+      if (row.status === 'retry') retryDelta -= 1;
+      else pendingDecrease += 1;
       await env.DB.prepare(`
         UPDATE character_import_staging SET status = 'resolved', ocid = ?2,
           attempt_count = attempt_count + 1, next_retry_at = NULL,
@@ -249,15 +333,41 @@ export const resolveStagingBatch = async (env: Env, job: ImportJobRow) => {
       `).bind(row.id, result.value.ocid, nowIso()).run();
     } else if (await markResolutionFailure(env.DB, job.id, row, result.reason, config.nexonRetryLimit)) {
       retry += 1;
+      if (row.status !== 'retry') {
+        pendingDecrease += 1;
+        retryDelta += 1;
+      }
     } else {
       failed += 1;
+      if (row.status === 'retry') retryDelta -= 1;
+      else pendingDecrease += 1;
     }
   }
   await env.DB.prepare(`
-    UPDATE import_jobs SET status = 'running', updated_count = updated_count + ?2,
-      failed_count = failed_count + ?3,
-      last_error = NULL, updated_at = ?4 WHERE id = ?1
-  `).bind(job.id, updated, failed, nowIso()).run();
+    UPDATE import_jobs SET status = 'running',
+      resolved_count = resolved_count + ?2,
+      pending_count = MAX(0, pending_count - ?3),
+      retry_count = MAX(0, retry_count + ?4),
+      created_count = created_count + ?5,
+      updated_count = updated_count + ?6,
+      failed_count = failed_count + ?7,
+      nexon_request_count = nexon_request_count + ?8,
+      d1_budget_date = ?9, d1_rows_read_estimate = ?10, d1_rows_written_estimate = ?11,
+      last_error = NULL, updated_at = ?12 WHERE id = ?1
+  `).bind(
+    job.id,
+    created + updated,
+    pendingDecrease,
+    retryDelta,
+    created,
+    updated,
+    failed,
+    nexonRequests,
+    budget.date,
+    budget.rowsRead,
+    budget.rowsWritten,
+    nowIso(),
+  ).run();
   return {
     job: await maybeCompleteImportJob(env.DB, job.id),
     processed: rows.length,
@@ -273,11 +383,7 @@ export const maybeCompleteImportJob = async (db: D1Database, jobId: number) => {
   if (!job) return null;
   const checkpoint = job.checkpoint_json ? JSON.parse(job.checkpoint_json) as { stageComplete?: boolean } : {};
   if (!checkpoint.stageComplete) return job;
-  const pending = await db.prepare(`
-    SELECT COUNT(*) AS total FROM character_import_staging
-    WHERE import_job_id = ?1 AND status IN ('pending', 'resolving', 'retry')
-  `).bind(jobId).first<{ total: number }>();
-  if (Number(pending?.total) > 0) return job;
+  if (Number(job.pending_count) > 0 || Number(job.retry_count) > 0) return job;
   const timestamp = nowIso();
   await db.prepare(`
     UPDATE import_jobs SET status = 'completed', completed_at = ?2,
@@ -291,28 +397,69 @@ export const listImportJobs = async (db: D1Database) => {
   return result.results;
 };
 
-export const getImportMetrics = async (db: D1Database) => {
+export const getImportMetrics = (jobs: ImportJobRow[]) => {
+  const latestBySource = new Map<string, ImportJobRow>();
+  for (const job of jobs) if (!latestBySource.has(job.source)) latestBySource.set(job.source, job);
+  const bySource = [...latestBySource.values()].map((job) => ({
+    source: job.source,
+    staging_total: Number(job.staging_inserted_count),
+    staging_inserted: Number(job.staging_inserted_count),
+    staging_updated: Number(job.staging_updated_count),
+    resolved: Number(job.resolved_count),
+    pending: Number(job.pending_count),
+    retry: Number(job.retry_count),
+    failed: Number(job.failed_count),
+    created: Number(job.created_count),
+    canonical_updated: Number(job.updated_count),
+    nexon_requests: Number(job.nexon_request_count),
+  }));
+  const sum = (field: keyof (typeof bySource)[number]) => bySource.reduce((total, row) => total + Number(row[field] || 0), 0);
+  return {
+    counts: {
+      staging_total: sum('staging_total'),
+      staging_inserted: sum('staging_inserted'),
+      staging_updated: sum('staging_updated'),
+      pending_resolution: sum('pending'),
+      resolved_ocid: sum('resolved'),
+      failed: sum('failed'),
+      retry_pending: sum('retry'),
+      characters_created: sum('created'),
+      canonical_updated: sum('canonical_updated'),
+      nexon_requests: sum('nexon_requests'),
+      characters_total: null,
+      final_ranking_total: null,
+      source: 'import_jobs_counters',
+    },
+    bySource,
+  };
+};
+
+export const recountImportJobCounters = async (db: D1Database, jobId: number) => {
   const counts = await db.prepare(`
-    SELECT
-      (SELECT COUNT(*) FROM character_import_staging) AS staging_total,
-      (SELECT COUNT(*) FROM character_import_staging WHERE status IN ('pending', 'resolving')) AS pending_resolution,
-      (SELECT COUNT(DISTINCT ocid) FROM character_import_staging WHERE status = 'resolved' AND ocid IS NOT NULL) AS resolved_ocid,
-      (SELECT COUNT(*) FROM character_import_staging WHERE status = 'resolved') -
-        (SELECT COUNT(DISTINCT ocid) FROM character_import_staging WHERE status = 'resolved' AND ocid IS NOT NULL) AS duplicate_merged,
-      (SELECT COUNT(*) FROM character_import_staging WHERE status = 'failed') AS failed,
-      (SELECT COUNT(*) FROM character_import_staging WHERE status = 'retry') AS retry_pending,
-      (SELECT COUNT(*) FROM characters) AS characters_total,
-      (SELECT COUNT(*) FROM character_sources WHERE source = 'nexon') AS nexon_refreshed,
-      (SELECT COUNT(*) FROM characters) AS final_ranking_total
-  `).first<Record<string, number>>();
-  const bySource = await db.prepare(`
-    SELECT source,
-      COUNT(*) AS staging_total,
+    SELECT COUNT(*) AS staging_inserted,
       SUM(CASE WHEN status = 'resolved' THEN 1 ELSE 0 END) AS resolved,
       SUM(CASE WHEN status IN ('pending', 'resolving') THEN 1 ELSE 0 END) AS pending,
       SUM(CASE WHEN status = 'retry' THEN 1 ELSE 0 END) AS retry,
       SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) AS failed
-    FROM character_import_staging GROUP BY source ORDER BY source
-  `).all();
-  return { counts, bySource: bySource.results };
+    FROM character_import_staging INDEXED BY idx_staging_job
+    WHERE import_job_id = ?1
+  `).bind(jobId).first<Record<string, number>>();
+  const job = await getImportJob(db, jobId);
+  if (!job) return null;
+  const inserted = Number(counts?.staging_inserted) || 0;
+  await db.prepare(`
+    UPDATE import_jobs SET staging_inserted_count = ?2,
+      staging_updated_count = MAX(0, imported_count - ?2), resolved_count = ?3,
+      pending_count = ?4, retry_count = ?5, failed_count = MAX(failed_count, ?6),
+      updated_at = ?7 WHERE id = ?1
+  `).bind(
+    jobId,
+    inserted,
+    Number(counts?.resolved) || 0,
+    Number(counts?.pending) || 0,
+    Number(counts?.retry) || 0,
+    Number(counts?.failed) || 0,
+    nowIso(),
+  ).run();
+  return getImportJob(db, jobId);
 };
