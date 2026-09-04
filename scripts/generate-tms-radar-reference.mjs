@@ -151,17 +151,29 @@ async function readCharacter(entry) {
 
 const ranking = [];
 const rankingPageSize = 100;
+const normalizeRankingItems = (items = []) => items.map((item) => ({
+  name: item.characterName,
+  avatar: item.characterImage,
+  world: item.worldName,
+  job: item.jobName,
+  level: item.level,
+  combatPower: item.combatPower,
+}));
 for (let page = 1; ; page += 1) {
   const response = await getJson(`${holyBearApiBase}/api/rankings/combat-power?page=${page}&pageSize=${rankingPageSize}`);
-  if (response.degraded) throw new Error('HolyBear ranking is degraded; preserving the previous radar reference');
-  const items = (response.items || []).map((item) => ({
-    name: item.characterName,
-    avatar: item.characterImage,
-    world: item.worldName,
-    job: item.jobName,
-    level: item.level,
-    combatPower: item.combatPower,
-  }));
+  if (response.degraded) {
+    const snapshot = await getJson(`${holyBearApiBase}/maplestory/rankings/current.json`);
+    const snapshotItems = normalizeRankingItems(snapshot.items || []);
+    const snapshotTotal = Number(snapshot.total);
+    if (!snapshotItems.length || (Number.isFinite(snapshotTotal) && snapshotItems.length < snapshotTotal)) {
+      console.warn('HolyBear ranking is degraded and its static snapshot is incomplete; preserving the previous radar reference');
+      process.exit(0);
+    }
+    console.warn(`HolyBear ranking is degraded; using the complete ${snapshotItems.length}-character static snapshot`);
+    ranking.push(...snapshotItems);
+    break;
+  }
+  const items = normalizeRankingItems(response.items || []);
   const total = Number(response.total);
   ranking.push(...items);
   if (items.length === 0 || items.length < rankingPageSize || (Number.isFinite(total) && ranking.length >= total)) break;
