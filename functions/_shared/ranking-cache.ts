@@ -3,7 +3,6 @@ import type { RankingEntry, RankingFilters } from './models';
 import { normalizeCharacterName } from './character-repository';
 import { getCombatPowerRanking } from './ranking-repository';
 import { getRuntimeConfig } from './runtime-config';
-import bundledRankingSnapshot from '../../public/maplestory/rankings/current.json';
 
 interface RankingPage {
   items: RankingEntry[];
@@ -33,6 +32,7 @@ const pageKey = (filters: RankingFilters) => {
 };
 const characterKey = (name: string) => new Request(`${cacheOrigin}/characters/${encodeURIComponent(normalizeCharacterName(name))}`);
 const snapshotKey = () => new Request(`${cacheOrigin}/snapshot`);
+const staticSnapshotRequest = () => new Request('https://holybear.tw/maplestory/rankings/current.json');
 
 const readCache = async <T>(key: Request): Promise<T | null> => {
   const response = await rankingCache().match(key);
@@ -43,10 +43,19 @@ const writeCache = (key: Request, value: unknown) => rankingCache().put(
   new Response(JSON.stringify(value), { headers: cacheHeaders }),
 );
 
-const readSnapshots = async (): Promise<RankingSnapshot[]> => {
-  const cached = await readCache<RankingSnapshot>(snapshotKey());
-  const bundled = bundledRankingSnapshot as RankingSnapshot;
-  return cached ? [cached, bundled] : [bundled];
+const readStaticSnapshot = async (env: Env): Promise<RankingSnapshot | null> => {
+  if (!env.ASSETS) return null;
+  const response = await env.ASSETS.fetch(staticSnapshotRequest()).catch(() => null);
+  if (!response?.ok) return null;
+  return response.json<RankingSnapshot>().catch(() => null);
+};
+
+const readSnapshots = async (env: Env): Promise<RankingSnapshot[]> => {
+  const [cached, staticSnapshot] = await Promise.all([
+    readCache<RankingSnapshot>(snapshotKey()).catch(() => null),
+    readStaticSnapshot(env),
+  ]);
+  return [cached, staticSnapshot].filter((snapshot): snapshot is RankingSnapshot => Boolean(snapshot));
 };
 
 export const cacheRankingPage = (filters: RankingFilters, page: RankingPage) => writeCache(pageKey(filters), page);
@@ -63,10 +72,10 @@ export const refreshRankingSnapshot = async (env: Env) => {
   return snapshot;
 };
 
-export const getCachedRankingPage = async (filters: RankingFilters): Promise<RankingPage | null> => {
+export const getCachedRankingPage = async (env: Env, filters: RankingFilters): Promise<RankingPage | null> => {
   const exact = await readCache<RankingPage>(pageKey(filters));
   if (exact) return { ...exact, degraded: true };
-  for (const snapshot of await readSnapshots()) {
+  for (const snapshot of await readSnapshots(env)) {
     const matching = snapshot.items.filter((entry) => (
       (!filters.world || entry.worldName === filters.world)
       && (!filters.job || entry.jobName === filters.job)
@@ -90,11 +99,11 @@ export const getCachedRankingPage = async (filters: RankingFilters): Promise<Ran
   return null;
 };
 
-export const getCachedCharacterRank = async (name: string) => {
+export const getCachedCharacterRank = async (env: Env, name: string) => {
   const exact = await readCache<{ entry: RankingEntry; rank: number; total: number }>(characterKey(name));
   if (exact) return { ...exact, degraded: true };
   const normalized = normalizeCharacterName(name);
-  for (const snapshot of await readSnapshots()) {
+  for (const snapshot of await readSnapshots(env)) {
     const entry = snapshot.items.find((item) => normalizeCharacterName(item.characterName) === normalized);
     if (entry) return { entry, rank: entry.rank, total: snapshot.total, degraded: true, snapshotAt: snapshot.generatedAt };
   }

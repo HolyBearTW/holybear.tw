@@ -10,6 +10,12 @@ const entry = {
   ocid: 'ocid-1', characterName: '快取角色', worldName: '艾麗亞', jobName: '主教',
   level: 290, combatPower: 123456, characterImage: '', guildName: null, rank: 1,
 };
+const laterEntry = {
+  ...entry,
+  ocid: 'ocid-2',
+  characterName: '完整快照角色',
+  rank: 1001,
+};
 
 describe('ranking degraded mode', () => {
   it('paginates the compact CDN snapshot without reading D1 again', async () => {
@@ -18,7 +24,7 @@ describe('ranking degraded mode', () => {
         ? new Response(JSON.stringify({ generatedAt: '2026-09-04T00:00:00Z', total: 50, items: [entry] }))
         : undefined
     )) } });
-    const result = await getCachedRankingPage({ page: 1, pageSize: 10 });
+    const result = await getCachedRankingPage({} as never, { page: 1, pageSize: 10 });
     expect(result).toMatchObject({ degraded: true, snapshotAt: '2026-09-04T00:00:00Z', total: 50, items: [entry] });
   });
 
@@ -28,7 +34,27 @@ describe('ranking degraded mode', () => {
         ? new Response(JSON.stringify({ generatedAt: '2026-09-04T00:00:00Z', total: 50, items: [entry] }))
         : undefined
     )) } });
-    expect(await getCachedCharacterRank('快取角色')).toMatchObject({ degraded: true, rank: 1, total: 50 });
+    expect(await getCachedCharacterRank({} as never, '快取角色')).toMatchObject({ degraded: true, rank: 1, total: 50 });
+  });
+
+  it('falls through an incomplete cache snapshot to the Pages static asset', async () => {
+    vi.stubGlobal('caches', { default: { match: vi.fn(async (request: Request) => (
+      new URL(request.url).pathname.endsWith('/snapshot')
+        ? new Response(JSON.stringify({ generatedAt: '2026-09-04T00:00:00Z', total: 1294, items: [entry] }))
+        : undefined
+    )) } });
+    const env = {
+      ASSETS: {
+        fetch: vi.fn(async () => new Response(JSON.stringify({
+          generatedAt: '2026-09-04T01:00:00Z', total: 1294, items: [laterEntry],
+        }))),
+      },
+    };
+    expect(await getCachedCharacterRank(env as never, '完整快照角色')).toMatchObject({
+      degraded: true,
+      rank: 1001,
+      total: 1294,
+    });
   });
 
   it('returns HTTP 200 cached rankings when D1 throws', async () => {
