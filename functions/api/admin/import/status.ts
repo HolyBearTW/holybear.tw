@@ -1,12 +1,13 @@
 import { requireImportAdmin } from '../../../_shared/admin-auth';
 import type { AppPagesFunction } from '../../../_shared/env';
-import { listImportJobs } from '../../../_shared/import-repository';
+import { getImportMetrics, listImportJobs } from '../../../_shared/import-repository';
 import { errorResponse, json, methodNotAllowed } from '../../../_shared/http';
 
 export const onRequestGet: AppPagesFunction = async ({ env, request }) => {
   try {
     requireImportAdmin(request, env);
-    return json({ jobs: await listImportJobs(env.DB) });
+    const [jobs, metrics] = await Promise.all([listImportJobs(env.DB), getImportMetrics(env.DB)]);
+    return json({ jobs, metrics });
   } catch (error) {
     return errorResponse(error);
   }

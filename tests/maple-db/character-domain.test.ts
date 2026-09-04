@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isCharacterFresh, normalizeCharacterName } from '../../functions/_shared/character-repository';
+import { isCharacterFresh, normalizeCharacterName, validateCanonicalSources } from '../../functions/_shared/character-repository';
 import { parseRankingFilters } from '../../functions/_shared/ranking-repository';
 import type { PublicCharacter } from '../../functions/_shared/models';
 import { canonicalizeChampionRoster } from '../../functions/_shared/union-fingerprint';
@@ -36,6 +36,11 @@ describe('character domain helpers', () => {
     const now = Date.parse('2026-09-04T00:15:00.000Z');
     expect(isCharacterFresh(character('2026-09-04T00:05:00.000Z'), 900, now)).toBe(true);
     expect(isCharacterFresh(character('2026-09-03T23:59:59.000Z'), 900, now)).toBe(false);
+  });
+
+  it('rejects canonical writes that do not include a successful NEXON source', () => {
+    expect(() => validateCanonicalSources([{ source: 'maplerhouse' }])).toThrow(/NEXON/);
+    expect(() => validateCanonicalSources([{ source: 'maplerhouse' }, { source: 'nexon' }])).not.toThrow();
   });
 });
 

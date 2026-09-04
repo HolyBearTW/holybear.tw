@@ -9,6 +9,8 @@ export interface SeedCharacter {
   combatPower: number;
   characterImage: string;
   ocid?: string | null;
+  sourceUpdatedAt?: string | null;
+  observedAt?: string;
 }
 
 export interface SeedPage {

@@ -44,11 +44,18 @@ export const findCharacterByOcid = async (db: D1Database, ocid: string) => {
   return row ? toPublicCharacter(row) : null;
 };
 
-export const upsertCharacter = async (
+export const validateCanonicalSources = (sources: CharacterSourceWrite[]) => {
+  if (!sources.some((source) => source.source === 'nexon')) {
+    throw new Error('Canonical character writes require a successful NEXON response');
+  }
+};
+
+export const upsertCanonicalNexonCharacter = async (
   db: D1Database,
   character: CharacterWrite,
   sources: CharacterSourceWrite[],
 ) => {
+  validateCanonicalSources(sources);
   const observedAt = character.observedAt ?? new Date().toISOString();
   const normalizedName = normalizeCharacterName(character.characterName);
   if (!character.ocid || !normalizedName) throw new Error('Character OCID and name are required');
@@ -95,13 +102,18 @@ export const upsertCharacter = async (
     statements.push(db.prepare(`
       INSERT INTO character_sources (
         ocid, source, source_character_id, source_first_seen_at,
-        source_last_seen_at, raw_json, created_at, updated_at
-      ) VALUES (?1, ?2, ?3, ?4, ?4, ?5, ?4, ?4)
+        source_last_seen_at, raw_json, created_at, updated_at, source_updated_at
+      ) VALUES (?1, ?2, ?3, ?4, ?4, ?5, ?4, ?4, ?6)
       ON CONFLICT(ocid, source) DO UPDATE SET
         source_character_id = COALESCE(excluded.source_character_id, character_sources.source_character_id),
         source_first_seen_at = MIN(character_sources.source_first_seen_at, excluded.source_first_seen_at),
         source_last_seen_at = MAX(character_sources.source_last_seen_at, excluded.source_last_seen_at),
         raw_json = COALESCE(excluded.raw_json, character_sources.raw_json),
+        source_updated_at = CASE
+          WHEN excluded.source_updated_at IS NULL THEN character_sources.source_updated_at
+          WHEN character_sources.source_updated_at IS NULL THEN excluded.source_updated_at
+          ELSE MAX(character_sources.source_updated_at, excluded.source_updated_at)
+        END,
         updated_at = excluded.updated_at
     `).bind(
       character.ocid,
@@ -109,6 +121,7 @@ export const upsertCharacter = async (
       source.sourceCharacterId ?? null,
       sourceObservedAt,
       source.rawJson ?? null,
+      source.sourceUpdatedAt ?? null,
     ));
   }
 

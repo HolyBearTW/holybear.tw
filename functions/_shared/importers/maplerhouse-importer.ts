@@ -75,6 +75,8 @@ export class MaplerHouseImporter implements SeedImporter {
         combatPower: parsePower(item.combatPower),
         characterImage: String(item.avatar || ''),
         ocid: item.ocid || null,
+        sourceUpdatedAt: null,
+        observedAt: new Date().toISOString(),
       }];
     });
     const totalValue = Number(payload.data?.total);
