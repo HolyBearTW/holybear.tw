@@ -110,7 +110,7 @@ export const fetchHolyBearAlts = async (name: string, signal?: AbortSignal): Pro
 let rankingSnapshotPromise: Promise<Map<string, number>> | null = null;
 export const fetchHolyBearRankingSnapshot = () => {
   if (!rankingSnapshotPromise) {
-    rankingSnapshotPromise = fetch('/maplestory/rankings/current.json', { cache: 'force-cache' })
+    rankingSnapshotPromise = fetch('/maplestory/rankings/current.json', { cache: 'no-cache' })
       .then(async (response) => {
         if (!response.ok) throw new Error(`Ranking snapshot failed (${response.status})`);
         const snapshot = await response.json() as { items?: HolyBearPowerRankingEntry[] };
