@@ -2,7 +2,10 @@ import {
   CharacterBasic, CharacterEquipment, CharacterStat, DashboardData, OcidResponse
 } from '../types';
 
-const BASE_URL = 'https://open.api.nexon.com/maplestorytw/v1';
+// Official data is proxied through Pages Functions so the site-owned key never
+// enters the browser bundle. The apiKey parameter remains temporarily for call
+// compatibility while the existing UI migrates away from BYOK.
+const BASE_URL = '/api/nexon';
 
 // Helper to get date in Taiwan timezone (UTC+8)
 const getTaiwanDate = (offsetDays = 0) => {

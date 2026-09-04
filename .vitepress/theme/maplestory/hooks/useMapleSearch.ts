@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { fetchCharacterData, findBestDateInPastWeek } from '../services/nexonService';
 import { DashboardData } from '../types';
+import { fetchHolyBearCharacter } from '../services/holyBearService';
 
 export const useMapleSearch = (
   apiKey: string | null,
@@ -138,6 +139,9 @@ export const useMapleSearch = (
     setShowHistory(false);
 
     try {
+      void fetchHolyBearCharacter(targetName).catch((discoveryError) => {
+        console.warn('HolyBear character discovery is temporarily unavailable', discoveryError);
+      });
       const result = await fetchCharacterData(targetName, targetKey, selectedDate || undefined);
       setData(result);
       addToHistory(targetName);
@@ -166,6 +170,9 @@ export const useMapleSearch = (
     setShowHistory(false);
 
     try {
+      void fetchHolyBearCharacter(characterName).catch((discoveryError) => {
+        console.warn('HolyBear character discovery is temporarily unavailable', discoveryError);
+      });
       const bestRecord = await findBestDateInPastWeek(characterName, apiKey);
 
       if (!bestRecord) {

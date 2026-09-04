@@ -4,6 +4,7 @@ import { findRelatedCharacters } from '../services/aliasService';
 import type { RelatedCharacter } from '../services/aliasService';
 import type { DashboardData } from '../types';
 import CharacterAvatar from './CharacterAvatar';
+import { fetchHolyBearAlts } from '../services/holyBearService';
 
 interface RelatedCharactersProps {
   data: DashboardData;
@@ -56,7 +57,26 @@ const RelatedCharacters: React.FC<RelatedCharactersProps> = ({
     setStatus('loading');
     setPage(1);
 
-    findRelatedCharacters(data, controller.signal)
+    fetchHolyBearAlts(currentCharacterName, controller.signal)
+      .then(async (result) => {
+        if (result.alts.length > 0) {
+          return result.alts.map((character) => ({
+            characterName: character.characterName,
+            worldName: character.worldName,
+            characterClass: character.jobName,
+            characterLevel: character.level,
+            characterImage: character.characterImage,
+            characterPower: String(character.combatPower),
+            maxCharacterPower: String(character.combatPower),
+            combatPowerRank: null,
+            characterGuildName: character.guildName,
+            characterDateCreate: null,
+          }));
+        }
+        // Transitional rollback path while existing static groups are gradually
+        // verified into D1. This never changes the server-side group decision.
+        return findRelatedCharacters(data, controller.signal);
+      })
       .then((result) => {
         const resolvedMembers = result.filter((member) => (
           member.characterName
@@ -135,6 +155,8 @@ const RelatedCharacters: React.FC<RelatedCharactersProps> = ({
           </div>
         )}
       </div>
+
+      <p className="mb-3 text-[11px] text-slate-500">依公開聯盟資料推定，並非 NEXON 官方 Account ID。</p>
 
       {status === 'loading' && (
         <div className="py-6 text-center text-sm text-slate-500">正在查詢分身...</div>

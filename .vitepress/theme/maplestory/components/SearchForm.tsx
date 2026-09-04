@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Search, Loader2, TrendingUp, Star, History, X, AlertCircle } from 'lucide-react';
 import { SERVER_ICONS } from '../constants';
-import { fetchMaplerHouseCharacterRank, MaplerHouseCharacterRank } from '../services/maplerhouseService';
+import { fetchHolyBearCharacterRank, HolyBearCharacterRank } from '../services/holyBearService';
 import { fetchCharacterBasic } from '../services/nexonService';
 import { CharacterBasic } from '../types';
 import CharacterAvatar from './CharacterAvatar';
@@ -41,7 +41,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
 }) => {
     const [showHistory, setShowHistory] = useState(false);
     const searchInputRef = useRef<HTMLInputElement>(null);
-    const [characterRanks, setCharacterRanks] = useState<Record<string, MaplerHouseCharacterRank | null>>({});
+    const [characterRanks, setCharacterRanks] = useState<Record<string, HolyBearCharacterRank | null>>({});
     const [characterBasics, setCharacterBasics] = useState<Record<string, CharacterBasic | null>>({});
 
     useEffect(() => {
@@ -57,7 +57,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
         }
 
         let active = true;
-        Promise.all(names.map(async (name) => [name, await fetchMaplerHouseCharacterRank(name)] as const))
+        Promise.all(names.map(async (name) => [name, await fetchHolyBearCharacterRank(name)] as const))
             .then((results) => {
                 if (!active) return;
                 setCharacterRanks(Object.fromEntries(results));

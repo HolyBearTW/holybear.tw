@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import ApiKeyModal from './components/ApiKeyModal';
 import SearchForm, { SearchStatus, SearchEmptyState } from './components/SearchForm';
 import UpdateLogBoard from './components/UpdateLogBoard';
 import HeroHeader from './components/HeroHeader';
@@ -48,9 +47,7 @@ const ResultLoading = () => {
 };
 
 const App: React.FC = () => {
-  const [apiKey, setApiKey] = useState<string | null>(() => {
-    return typeof localStorage !== 'undefined' ? localStorage.getItem('nexon_api_key') || (import.meta as any).env?.VITE_NEXON_API_KEY || null : null;
-  });
+  const [apiKey, setApiKey] = useState<string | null>('server-side');
   
   const [error, setError] = useState<string | null>(null);
 
@@ -103,26 +100,6 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-transparent text-slate-200 font-sans">
-      {!apiKey && (
-        <ApiKeyModal 
-          defaultNexonKey={apiKey || ''}
-          defaultGeminiKey={geminiKey || ''}
-          defaultOpenAiKey={openAiKey || ''}
-          onSave={(nexonKey, geminiKey, openAiKey) => {
-            setApiKey(nexonKey);
-            localStorage.setItem('nexon_api_key', nexonKey);
-            if (geminiKey) {
-              setGeminiKey(geminiKey);
-              localStorage.setItem('gemini_api_key', geminiKey);
-            }
-            if (openAiKey) {
-              setOpenAiKey(openAiKey);
-              localStorage.setItem('openai_api_key', openAiKey);
-            }
-          }} 
-        />
-      )}
-
       {/* Key Settings Modal */}
       <KeySettingsModal 
         show={showKeySettings}
@@ -148,8 +125,7 @@ const App: React.FC = () => {
           apiKey={apiKey} 
           onShowKeySettings={() => setShowKeySettings(true)} 
           onClearApiKey={() => { 
-            setApiKey(null); 
-            localStorage.removeItem('nexon_api_key'); 
+            setApiKey('server-side');
             setData(null);
             setCharacterName('');
           }} 

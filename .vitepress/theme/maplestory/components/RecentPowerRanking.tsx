@@ -2,11 +2,11 @@ import React from 'react';
 import { Crown, Loader2 } from 'lucide-react';
 import { SERVER_ICONS } from '../constants';
 import {
-  fetchMaplerHouseCharacterRank,
-  fetchMaplerHousePowerRanking,
-  MaplerHouseCharacterRank,
-  MaplerHousePowerRankingEntry,
-} from '../services/maplerhouseService';
+  fetchHolyBearCharacterRank,
+  fetchHolyBearPowerRanking,
+  HolyBearCharacterRank,
+  HolyBearPowerRankingEntry,
+} from '../services/holyBearService';
 import CharacterAvatar from './CharacterAvatar';
 
 interface RecentPowerRankingProps {
@@ -15,14 +15,14 @@ interface RecentPowerRankingProps {
 }
 
 const RecentPowerRanking: React.FC<RecentPowerRankingProps> = ({ onSelectCharacter, queryName = '' }) => {
-  const [items, setItems] = React.useState<MaplerHousePowerRankingEntry[]>([]);
+  const [items, setItems] = React.useState<HolyBearPowerRankingEntry[]>([]);
   const [page, setPage] = React.useState(1);
   const [pageInput, setPageInput] = React.useState('1');
   const [total, setTotal] = React.useState(0);
   const [totalPages, setTotalPages] = React.useState(1);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
-  const [queryRank, setQueryRank] = React.useState<MaplerHouseCharacterRank | null>(null);
+  const [queryRank, setQueryRank] = React.useState<HolyBearCharacterRank | null>(null);
   const [queryRankStatus, setQueryRankStatus] = React.useState<'idle' | 'loading' | 'found' | 'not-found' | 'error'>('idle');
 
   React.useEffect(() => {
@@ -37,7 +37,7 @@ const RecentPowerRanking: React.FC<RecentPowerRankingProps> = ({ onSelectCharact
     setQueryRank(null);
     setQueryRankStatus('loading');
     const timer = window.setTimeout(() => {
-      fetchMaplerHouseCharacterRank(name)
+      fetchHolyBearCharacterRank(name)
         .then((result) => {
           if (!active) return;
           setQueryRank(result);
@@ -61,7 +61,7 @@ const RecentPowerRanking: React.FC<RecentPowerRankingProps> = ({ onSelectCharact
     setLoading(true);
     setError(null);
 
-    fetchMaplerHousePowerRanking(page)
+    fetchHolyBearPowerRanking(page)
       .then((rankingPage) => {
         if (!active) return;
         setItems(rankingPage.items);
