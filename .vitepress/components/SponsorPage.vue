@@ -5,6 +5,54 @@ import { useData } from 'vitepress'
 const { lang } = useData()
 const isEnglish = computed(() => lang.value.toLowerCase().startsWith('en'))
 
+const paymentMethods = computed(() => isEnglish.value ? [
+  {
+    id: 'paypal',
+    title: 'Support with PayPal',
+    action: 'Continue to PayPal',
+    external: 'Opens PayPal in a new tab',
+    href: 'https://paypal.me/holybear0610',
+    image: '/image/paypal-support-qr.png?v=20260901',
+    imageAlt: 'PayPal support QR code',
+    imageWidth: 2048,
+    imageHeight: 2048
+  },
+  {
+    id: 'coffee',
+    title: 'Buy me a coffee',
+    action: 'Continue to Buy Me a Coffee',
+    external: 'Opens Buy Me a Coffee in a new tab',
+    href: 'https://buymeacoffee.com/holybear',
+    image: '/image/buy-me-a-coffee-support-qr.png?v=20260904',
+    imageAlt: 'Buy Me a Coffee support QR code',
+    imageWidth: 700,
+    imageHeight: 700
+  }
+] : [
+  {
+    id: 'paypal',
+    title: '透過 PayPal 贊助',
+    action: '前往 PayPal 贊助',
+    external: '將在新分頁開啟 PayPal',
+    href: 'https://paypal.me/holybear0610',
+    image: '/image/paypal-support-qr.png?v=20260901',
+    imageAlt: 'PayPal 贊助 QR Code',
+    imageWidth: 2048,
+    imageHeight: 2048
+  },
+  {
+    id: 'coffee',
+    title: '請我喝杯咖啡',
+    action: '前往 Buy Me a Coffee',
+    external: '將在新分頁開啟 Buy Me a Coffee',
+    href: 'https://buymeacoffee.com/holybear',
+    image: '/image/buy-me-a-coffee-support-qr.png?v=20260904',
+    imageAlt: 'Buy Me a Coffee 贊助 QR Code',
+    imageWidth: 700,
+    imageHeight: 700
+  }
+])
+
 const copy = computed(() => isEnglish.value ? {
   eyebrow: 'SUPPORT HOLYBEAR',
   title: 'Help good ideas keep growing.',
@@ -12,10 +60,7 @@ const copy = computed(() => isEnglish.value ? {
   cardTitle: 'Your support helps with',
   items: ['Website and domain upkeep', 'Tool maintenance and data updates', 'More open and experimental projects'],
   qrLabel: 'SCAN TO SUPPORT',
-  qrTitle: 'Support with PayPal',
   qrHint: 'Scan the QR code, or use the button below on this device.',
-  action: 'Continue to PayPal',
-  external: 'Opens PayPal in a new tab',
   noteTitle: 'No pressure, truly.',
   note: 'Reading, sharing, or simply finding something useful here already means a lot. Supporting is an extra kindness—not a requirement.',
   thanks: 'Thank you for helping this little corner of the web keep moving forward.'
@@ -26,10 +71,7 @@ const copy = computed(() => isEnglish.value ? {
   cardTitle: '你的支持會用在',
   items: ['網站、伺服器與網域維護', '工具功能與資料持續更新', '更多開放且有趣的實驗作品'],
   qrLabel: '掃描 QR CODE',
-  qrTitle: '透過 PayPal 贊助',
   qrHint: '可以使用相機掃描，也可以在目前裝置直接點擊下方按鈕。',
-  action: '前往 PayPal 贊助',
-  external: '將在新分頁開啟 PayPal',
   noteTitle: '真的，不贊助也沒關係。',
   note: '願意閱讀、分享，或只是在這裡找到一點幫助，對我來說就已經很有意義。贊助是一份額外的心意，從來不是使用網站的條件。',
   thanks: '謝謝你，願意讓這個小小的網站繼續往前。'
@@ -62,41 +104,49 @@ const copy = computed(() => isEnglish.value ? {
         </div>
       </div>
 
-      <aside class="payment-card" :aria-label="copy.qrTitle">
-        <div class="qr-heading">
-          <span class="qr-kicker">{{ copy.qrLabel }}</span>
-          <h2>{{ copy.qrTitle }}</h2>
-          <p>{{ copy.qrHint }}</p>
-        </div>
-
-        <a
-          class="qr-frame"
-          href="https://paypal.me/holybear0610"
-          target="_blank"
-          rel="noopener noreferrer"
-          :aria-label="`${copy.action}（${copy.external}）`"
+      <div class="payment-options">
+        <aside
+          v-for="payment in paymentMethods"
+          :key="payment.id"
+          class="payment-card"
+          :class="`payment-card--${payment.id}`"
+          :aria-label="payment.title"
         >
-          <img
-            src="/image/paypal-support-qr.png?v=20260901"
-            :alt="isEnglish ? 'PayPal support QR code' : 'PayPal 贊助 QR Code'"
-            width="2048"
-            height="2048"
+          <div class="qr-heading">
+            <span class="qr-kicker">{{ copy.qrLabel }}</span>
+            <h2>{{ payment.title }}</h2>
+            <p>{{ copy.qrHint }}</p>
+          </div>
+
+          <a
+            class="qr-frame"
+            :href="payment.href"
+            target="_blank"
+            rel="noopener noreferrer"
+            :aria-label="`${payment.action}（${payment.external}）`"
           >
-        </a>
+            <img
+              :src="payment.image"
+              :alt="payment.imageAlt"
+              :width="payment.imageWidth"
+              :height="payment.imageHeight"
+            >
+          </a>
 
-        <a
-          class="primary-action"
-          href="https://paypal.me/holybear0610"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <span>{{ copy.action }}</span>
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M7 17 17 7M8 7h9v9" />
-          </svg>
-        </a>
-        <span class="external-note">{{ copy.external }}</span>
-      </aside>
+          <a
+            class="primary-action"
+            :href="payment.href"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <span>{{ payment.action }}</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M7 17 17 7M8 7h9v9" />
+            </svg>
+          </a>
+          <span class="external-note">{{ payment.external }}</span>
+        </aside>
+      </div>
     </section>
 
     <section class="gentle-note">
@@ -150,9 +200,15 @@ const copy = computed(() => isEnglish.value ? {
 
 .sponsor-hero {
   display: grid;
-  grid-template-columns: minmax(0, 1.08fr) minmax(330px, .72fr);
-  gap: clamp(48px, 8vw, 104px);
+  grid-template-columns: minmax(0, .88fr) minmax(0, 1.12fr);
+  gap: clamp(40px, 5vw, 72px);
   align-items: center;
+}
+
+.payment-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
 }
 
 .brand-mark {
@@ -241,10 +297,11 @@ h1 {
 }
 
 .payment-card {
+  --payment-accent: var(--sponsor-accent);
   position: relative;
   overflow: hidden;
-  padding: 30px;
-  border: 1px solid color-mix(in srgb, var(--sponsor-accent) 30%, var(--vp-c-divider));
+  padding: 22px;
+  border: 1px solid color-mix(in srgb, var(--payment-accent) 30%, var(--vp-c-divider));
   border-radius: 30px;
   background: color-mix(in srgb, var(--vp-c-bg-soft) 90%, transparent);
   box-shadow: 0 28px 80px rgba(12, 22, 52, .14);
@@ -259,7 +316,7 @@ h1 {
   width: 190px;
   height: 190px;
   border-radius: 50%;
-  background: var(--sponsor-accent);
+  background: var(--payment-accent);
   opacity: .09;
 }
 
@@ -269,7 +326,7 @@ h1 {
 }
 
 .qr-kicker {
-  color: var(--sponsor-accent);
+  color: var(--payment-accent);
   font-size: 11px;
   font-weight: 850;
   letter-spacing: .2em;
@@ -347,6 +404,20 @@ h1 {
   stroke-linejoin: round;
 }
 
+.payment-card--coffee {
+  --payment-accent: #ffdd00;
+}
+
+.payment-card--coffee .primary-action {
+  background: #ffdd00;
+  color: #16120a !important;
+  box-shadow: 0 12px 26px rgba(152, 126, 0, .2);
+}
+
+.payment-card--coffee .primary-action:hover {
+  box-shadow: 0 16px 32px rgba(152, 126, 0, .3);
+}
+
 .qr-frame:focus-visible,
 .primary-action:focus-visible {
   outline: 3px solid color-mix(in srgb, var(--sponsor-accent) 72%, white);
@@ -402,15 +473,22 @@ h1 {
   line-height: 1.8;
 }
 
+@media (max-width: 1050px) {
+  .sponsor-hero {
+    grid-template-columns: 1fr;
+    gap: 46px;
+  }
+
+  .payment-options {
+    width: min(100%, 820px);
+    justify-self: center;
+  }
+}
+
 @media (max-width: 800px) {
   .sponsor-page {
     width: min(100% - 32px, 620px);
     padding: 84px 0 52px;
-  }
-
-  .sponsor-hero {
-    grid-template-columns: 1fr;
-    gap: 46px;
   }
 
   h1 {
@@ -422,9 +500,9 @@ h1 {
     font-size: 16px;
   }
 
-  .payment-card {
+  .payment-options {
+    grid-template-columns: 1fr;
     width: min(100%, 480px);
-    justify-self: center;
   }
 
   .gentle-note {
