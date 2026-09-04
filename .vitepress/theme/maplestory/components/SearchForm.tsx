@@ -42,6 +42,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
     const [showHistory, setShowHistory] = useState(false);
     const searchInputRef = useRef<HTMLInputElement>(null);
     const [characterRanks, setCharacterRanks] = useState<Record<string, HolyBearCharacterRank | null>>({});
+    const [rankUnavailable, setRankUnavailable] = useState<Set<string>>(() => new Set());
     const [characterBasics, setCharacterBasics] = useState<Record<string, CharacterBasic | null>>({});
 
     useEffect(() => {
@@ -53,17 +54,22 @@ const SearchForm: React.FC<SearchFormProps> = ({
         const names = Array.from(new Set([...favorites, ...searchHistory]));
         if (names.length === 0) {
             setCharacterRanks({});
+            setRankUnavailable(new Set());
             return;
         }
 
         let active = true;
-        Promise.all(names.map(async (name) => [name, await fetchHolyBearCharacterRank(name)] as const))
+        Promise.all(names.map(async (name) => {
+            try {
+                return { name, rank: await fetchHolyBearCharacterRank(name), unavailable: false };
+            } catch {
+                return { name, rank: null, unavailable: true };
+            }
+        }))
             .then((results) => {
                 if (!active) return;
-                setCharacterRanks(Object.fromEntries(results));
-            })
-            .catch(() => {
-                if (active) setCharacterRanks({});
+                setCharacterRanks(Object.fromEntries(results.filter((result) => !result.unavailable).map((result) => [result.name, result.rank])));
+                setRankUnavailable(new Set(results.filter((result) => result.unavailable).map((result) => result.name)));
             });
 
         return () => {
@@ -87,6 +93,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
         const entry = rankInfo?.entry;
         const basic = characterBasics[name];
         const hasRankLookup = Object.prototype.hasOwnProperty.call(characterRanks, name);
+        const isRankUnavailable = rankUnavailable.has(name);
         const characterImage = entry?.characterImage || basic?.character_image;
         const characterClass = entry?.jobName || basic?.character_class || '';
         const worldName = entry?.worldName || basic?.world_name;
@@ -103,7 +110,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
                         <span className="truncate">{name}</span>
                     </div>
                     <div className="mt-0.5 flex items-center gap-1 text-[11px] text-slate-400">
-                        {!hasRankLookup ? <span>排名資料查詢中…</span> : rankInfo ? <><span>第 {rankInfo.rank.toLocaleString()} 名</span><span>・</span><span>{entry.combatPower.toLocaleString()}</span></> : <span>未列入近期戰力排名</span>}
+                        {isRankUnavailable ? <span>排名暫時無法取得</span> : !hasRankLookup ? <span>排名資料查詢中…</span> : rankInfo ? <><span>第 {rankInfo.rank.toLocaleString()} 名</span><span>・</span><span>{entry.combatPower.toLocaleString()}</span></> : <span>未列入近期戰力排名</span>}
                     </div>
                 </div>
             </>
