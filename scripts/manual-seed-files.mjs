@@ -140,8 +140,12 @@ export const scanManualSeedDirectory = async (directory = DEFAULT_MANUAL_SEED_DI
     const absolutePath = path.join(resolvedDirectory, filename);
     try {
       const parsed = await readManualSeedPage(absolutePath, page);
+      let pageDuplicateRecords = 0;
       for (const item of parsed.items) {
-        if (uniqueNames.has(item.normalizedName)) duplicateRecords += 1;
+        if (uniqueNames.has(item.normalizedName)) {
+          duplicateRecords += 1;
+          pageDuplicateRecords += 1;
+        }
         else uniqueNames.add(item.normalizedName);
       }
       rawRecords += parsed.rawRecords;
@@ -158,6 +162,8 @@ export const scanManualSeedDirectory = async (directory = DEFAULT_MANUAL_SEED_DI
         version: parsed.version,
         rawRecords: parsed.rawRecords,
         validRecords: parsed.validRecords,
+        newUniqueRecords: parsed.validRecords - pageDuplicateRecords,
+        duplicateRecords: pageDuplicateRecords,
         checksum: parsed.checksum,
       });
     } catch (error) {

@@ -1,10 +1,11 @@
 import { requireImportAdmin } from '../../../_shared/admin-auth';
 import type { AppPagesFunction } from '../../../_shared/env';
-import { checkpointSeedPage, failImportJob, getOrCreateImportJob, resolveStagingBatch } from '../../../_shared/import-repository';
+import { checkpointSeedPage, failImportJob, getOrCreateImportJob, ImportBudgetError, resolveStagingBatch } from '../../../_shared/import-repository';
 import { errorResponse, HttpError, json, methodNotAllowed, singleParam } from '../../../_shared/http';
 import { ImportSourceUnavailableError } from '../../../_shared/importers/importer';
 import { MaplerHouseImporter } from '../../../_shared/importers/maplerhouse-importer';
 import { getRuntimeConfig } from '../../../_shared/runtime-config';
+import { refreshRankingSnapshot } from '../../../_shared/ranking-cache';
 
 interface ImportRequest {
   action?: 'stage' | 'resolve';
@@ -12,7 +13,7 @@ interface ImportRequest {
   pageSize?: number;
 }
 
-export const onRequestPost: AppPagesFunction<'source'> = async ({ env, params, request }) => {
+export const onRequestPost: AppPagesFunction<'source'> = async ({ env, params, request, waitUntil }) => {
   let jobId: number | undefined;
   try {
     requireImportAdmin(request, env);
@@ -26,6 +27,9 @@ export const onRequestPost: AppPagesFunction<'source'> = async ({ env, params, r
 
     if (action === 'resolve') {
       const result = await resolveStagingBatch(env, job);
+      if (result.job?.status === 'completed') {
+        waitUntil(refreshRankingSnapshot(env).catch((error: unknown) => console.error('Unable to refresh ranking snapshot', error)));
+      }
       console.log(JSON.stringify({ source, jobId, action, ...result, durationMs: 0 }));
       return json({ source, action, ...result });
     }
@@ -39,7 +43,7 @@ export const onRequestPost: AppPagesFunction<'source'> = async ({ env, params, r
     const pageNumber = job.last_page + 1;
     const startedAt = Date.now();
     const page = await importer.fetchPage(pageNumber, pageSize);
-    const updatedJob = await checkpointSeedPage(env.DB, job, page);
+    const updatedJob = await checkpointSeedPage(env, job, page);
     const log = {
       source,
       jobId,
@@ -56,6 +60,9 @@ export const onRequestPost: AppPagesFunction<'source'> = async ({ env, params, r
     console.log(JSON.stringify(log));
     return json({ ...log, job: updatedJob });
   } catch (error) {
+    if (error instanceof ImportBudgetError) {
+      return json({ error: { code: error.code, message: error.message, budget: error.kind } }, { status: error.status });
+    }
     if (jobId && !(error instanceof ImportSourceUnavailableError)) {
       await failImportJob(env.DB, jobId, error).catch((failure) => console.error('Unable to record import failure', failure));
     }

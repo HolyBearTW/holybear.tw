@@ -17,6 +17,14 @@ export class D1QuotaReached extends Error {
   }
 }
 
+export class ImportD1BudgetReached extends Error {
+  constructor(kind) {
+    super(`Importer paused before reaching the D1 daily ${kind} budget`);
+    this.name = 'ImportD1BudgetReached';
+    this.kind = kind;
+  }
+}
+
 export const isD1QuotaError = (error) => {
   const message = String(error?.message ?? error);
   return message.includes('code: 7500') || /exceeded D1[^\n]*daily row read limit/i.test(message);
@@ -113,6 +121,20 @@ const executeSql = async (sql) => {
 const checkpointOf = (job) => {
   try { return job?.checkpoint_json ? JSON.parse(job.checkpoint_json) : {}; } catch { return {}; }
 };
+
+const utcDate = () => new Date().toISOString().slice(0, 10);
+const budgetAfter = async (job, readDelta, writeDelta, settings) => {
+  const date = utcDate();
+  const rowsRead = (job?.d1_budget_date === date ? Number(job.d1_rows_read_estimate) || 0 : 0) + readDelta;
+  const rowsWritten = (job?.d1_budget_date === date ? Number(job.d1_rows_written_estimate) || 0 : 0) + writeDelta;
+  const others = (await query(`SELECT
+    COALESCE(SUM(d1_rows_read_estimate),0) AS rows_read,
+    COALESCE(SUM(d1_rows_written_estimate),0) AS rows_written
+    FROM import_jobs WHERE d1_budget_date=${sqlLiteral(date)} AND id<>${Number(job.id)};`))[0] ?? {};
+  if (rowsRead + Number(others.rows_read || 0) > settings.readMaximum) throw new ImportD1BudgetReached('read');
+  if (rowsWritten + Number(others.rows_written || 0) > settings.writeMaximum) throw new ImportD1BudgetReached('write');
+  return { date, rowsRead, rowsWritten };
+};
 const latestJob = async () => (await query(`SELECT * FROM import_jobs WHERE source = '${SOURCE}' ORDER BY id DESC LIMIT 1;`))[0] ?? null;
 const createJob = async () => {
   const now = new Date().toISOString();
@@ -134,7 +156,15 @@ const stagingValues = (jobId, item) => `(
   ${sqlLiteral(item.sourceUpdatedAt)}, ${sqlLiteral(item.observedAt)}
 )`;
 
-export const pageStagingSql = (job, parsed, processedPages, filename, expectedTotalPages, partialTargetPage) => {
+export const pageStagingSql = (
+  job,
+  parsed,
+  processedPages,
+  filename,
+  expectedTotalPages,
+  partialTargetPage,
+  budget = null,
+) => {
   const statements = [];
   for (let offset = 0; offset < parsed.items.length; offset += 20) {
     const values = parsed.items.slice(offset, offset + 20).map((item) => stagingValues(job.id, item)).join(',\n');
@@ -160,24 +190,37 @@ export const pageStagingSql = (job, parsed, processedPages, filename, expectedTo
     overallComplete: checkpointPage >= expectedTotalPages,
     expectedTotalPages,
   });
+  const inserted = parsed.newUniqueRecords ?? parsed.validRecords;
+  const updated = parsed.duplicateRecords ?? 0;
+  const budgetSql = budget ? `,
+    d1_budget_date=${sqlLiteral(budget.date)},
+    d1_rows_read_estimate=${budget.rowsRead},
+    d1_rows_written_estimate=${budget.rowsWritten}` : '';
   statements.push(`UPDATE import_jobs SET status='running', last_page=${checkpointPage},
     checkpoint_json=${sqlLiteral(checkpoint)}, imported_count=imported_count+${parsed.validRecords},
+    staging_inserted_count=staging_inserted_count+${inserted},
+    staging_updated_count=staging_updated_count+${updated},
+    pending_count=pending_count+${inserted}${budgetSql},
     completed_at=NULL, last_error=NULL, updated_at=${sqlLiteral(now)} WHERE id=${job.id};`);
   return statements.join('\n');
 };
 
-const metrics = async () => (await query(`SELECT
-  (SELECT imported_count FROM import_jobs WHERE source='${SOURCE}' ORDER BY id DESC LIMIT 1) AS raw_records_scanned,
-  (SELECT COUNT(*) FROM character_import_staging WHERE source='${SOURCE}') AS staging_total,
-  (SELECT COUNT(*) FROM character_import_staging WHERE source='${SOURCE}' AND status='resolved') AS resolved,
-  (SELECT COUNT(*) FROM character_import_staging WHERE source='${SOURCE}' AND status IN ('pending','resolving')) AS pending,
-  (SELECT COUNT(*) FROM character_import_staging WHERE source='${SOURCE}' AND status='retry') AS retry_pending,
-  (SELECT COUNT(*) FROM character_import_staging WHERE source='${SOURCE}' AND status='failed') AS failed,
-  (SELECT COUNT(*) FROM characters) AS characters_total,
-  (SELECT COUNT(*) FROM character_sources) AS character_sources_total;`))[0] ?? {};
+const jobMetrics = (job) => ({
+  raw_records_scanned: Number(job?.imported_count ?? 0),
+  staging_total: Number(job?.staging_inserted_count ?? 0),
+  staging_inserted: Number(job?.staging_inserted_count ?? 0),
+  staging_updated: Number(job?.staging_updated_count ?? 0),
+  resolved: Number(job?.resolved_count ?? 0),
+  pending: Number(job?.pending_count ?? 0),
+  retry_pending: Number(job?.retry_count ?? 0),
+  failed: Number(job?.failed_count ?? 0),
+  characters_created: Number(job?.created_count ?? 0),
+  canonical_updated: Number(job?.updated_count ?? 0),
+  nexon_requests: Number(job?.nexon_request_count ?? 0),
+  metricsSource: 'import_jobs_counters',
+});
 
-const checkpointSummary = async () => {
-  const job = await latestJob();
+const checkpointSummary = (job) => {
   const checkpoint = checkpointOf(job);
   return {
     page: Number(job?.last_page ?? 0),
@@ -287,14 +330,17 @@ const failureSql = (job, row, error, retryLimit) => {
   const now = new Date().toISOString();
   const retryAt = retryable ? new Date(Date.now() + Math.min(3_600_000, 30_000 * (2 ** Math.max(0, attempts - 1)))).toISOString() : null;
   const message = String(error?.message ?? error).slice(0, 1000);
-  return `UPDATE character_import_staging SET status=${sqlLiteral(retryable ? 'retry' : 'failed')},
+  return {
+    status: retryable ? 'retry' : 'failed',
+    sql: `UPDATE character_import_staging SET status=${sqlLiteral(retryable ? 'retry' : 'failed')},
     attempt_count=${attempts}, next_retry_at=${sqlLiteral(retryAt)}, last_error=${sqlLiteral(message)}, updated_at=${sqlLiteral(now)} WHERE id=${row.id};
   INSERT INTO import_job_errors (import_job_id, source, source_id, character_name, error_code, error_message, created_at)
   VALUES (${job.id}, '${SOURCE}', ${sqlLiteral(row.source_id)}, ${sqlLiteral(row.character_name)},
-    ${sqlLiteral(error?.status ? `http_${error.status}` : 'resolution_failed')}, ${sqlLiteral(message)}, ${sqlLiteral(now)});`;
+    ${sqlLiteral(error?.status ? `http_${error.status}` : 'resolution_failed')}, ${sqlLiteral(message)}, ${sqlLiteral(now)});`,
+  };
 };
 
-const resolutionRows = (jobId, limit) => query(`SELECT s.id, s.source_id, s.character_name, s.ocid, s.attempt_count,
+const resolutionRows = (jobId, limit) => query(`SELECT s.id, s.source_id, s.character_name, s.ocid, s.status, s.attempt_count,
   s.source_updated_at, s.observed_at, s.world_name, s.job_name, s.level, s.combat_power
 FROM character_import_staging s WHERE s.import_job_id=${jobId}
   AND (s.status IN ('pending','resolving') OR (s.status='retry' AND (s.next_retry_at IS NULL OR s.next_retry_at<=${sqlLiteral(new Date().toISOString())})))
@@ -315,6 +361,18 @@ const printScan = (scan, selected) => ({
   schema: scan.schema,
 });
 
+const refreshRankingSnapshot = async (environment) => {
+  const baseUrl = String(environment.HOLYBEAR_API_BASE_URL || '').replace(/\/+$/, '');
+  const secret = environment.IMPORT_ADMIN_SECRET;
+  if (!baseUrl || !secret) return { refreshed: false, reason: 'snapshot_endpoint_not_configured' };
+  const response = await fetch(`${baseUrl}/api/admin/ranking-snapshot`, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${secret}` },
+  });
+  if (!response.ok) throw new Error(`Ranking snapshot refresh failed (${response.status})`);
+  return { refreshed: true, ...await response.json() };
+};
+
 const runManualSeedImportCore = async (args) => {
   const directory = optionValue(args, '--dir', DEFAULT_MANUAL_SEED_DIR);
   const throughPage = integer(optionValue(args, '--through-page', Number.MAX_SAFE_INTEGER), Number.MAX_SAFE_INTEGER, 1);
@@ -331,8 +389,8 @@ const runManualSeedImportCore = async (args) => {
       event: 'status',
       processedPages: processed.size,
       maxProcessedPage: contiguousCheckpoint([...processed]),
-      ...await metrics(),
-      checkpoint: await checkpointSummary(),
+      ...jobMetrics(job),
+      checkpoint: checkpointSummary(job),
     }));
     return;
   }
@@ -348,14 +406,29 @@ const runManualSeedImportCore = async (args) => {
     if (!available.has(page)) throw new Error(`Missing page ${page}; checkpoint was not advanced across the gap`);
   }
 
-  const before = await metrics();
   const newPages = selected.filter(({ page }) => !processed.has(page));
   const pagesPerWrite = integer(process.env.MANUAL_SEED_PAGES_PER_D1_BATCH, 5, 1, 10);
+  const localEnv = { ...await parseEnvFile(path.resolve('.env')), ...await parseEnvFile(path.resolve('.env.local')), ...process.env };
+  const d1Budget = {
+    readMaximum: integer(localEnv.IMPORT_D1_READ_BUDGET, 4_000_000, 1_000, 4_500_000),
+    writeMaximum: integer(localEnv.IMPORT_D1_WRITE_BUDGET, 80_000, 1_000, 90_000),
+  };
+  let runStagingInserted = 0;
+  let runStagingUpdated = 0;
   for (let offset = 0; offset < newPages.length; offset += pagesPerWrite) {
     const statements = [];
-    for (const summary of newPages.slice(offset, offset + pagesPerWrite)) {
+    const batchPages = newPages.slice(offset, offset + pagesPerWrite);
+    const parsedPages = [];
+    for (const summary of batchPages) {
       const parsed = await readManualSeedPage(summary.absolutePath, summary.page);
+      parsedPages.push({ summary, parsed });
+    }
+    const batchRecords = parsedPages.reduce((sum, { parsed }) => sum + parsed.validRecords, 0);
+    const budget = await budgetAfter(job, batchRecords + 5, batchRecords * 5 + 2, d1Budget);
+    for (const { summary, parsed } of parsedPages) {
       processed.add(summary.page);
+      runStagingInserted += parsed.newUniqueRecords ?? parsed.validRecords;
+      runStagingUpdated += parsed.duplicateRecords ?? 0;
       statements.push(pageStagingSql(
         job,
         parsed,
@@ -363,14 +436,14 @@ const runManualSeedImportCore = async (args) => {
         summary.filename,
         expectedTotalPages,
         lastSelected,
+        budget,
       ));
     }
     await executeSql(statements.join('\n'));
+    job = await latestJob();
     console.log(JSON.stringify({ event: 'stage', pagesProcessed: Math.min(offset + pagesPerWrite, newPages.length), totalNewPages: newPages.length, checkpoint: contiguousCheckpoint([...processed]) }));
   }
 
-  const afterStage = await metrics();
-  const localEnv = { ...await parseEnvFile(path.resolve('.env')), ...await parseEnvFile(path.resolve('.env.local')), ...process.env };
   const apiKey = localEnv.NEXON_API_KEY || localEnv.VITE_NEXON_API_KEY;
   if (!apiKey) throw new Error('NEXON_API_KEY is required after staging; staging checkpoint was preserved');
   const settings = {
@@ -382,25 +455,69 @@ const runManualSeedImportCore = async (args) => {
   };
   const budget = { used: 0, maximum: integer(localEnv.MANUAL_SEED_NEXON_REQUEST_BUDGET, 900, 1, 1_000_000) };
   let budgetReached = false;
+  let runResolved = 0;
   while (!budgetReached && budget.used < budget.maximum) {
+    job = await latestJob();
+    const projectedD1Budget = await budgetAfter(job, settings.concurrency * 4 + 6, settings.concurrency * 30 + 3, d1Budget);
     const rows = await resolutionRows(job.id, settings.concurrency);
     if (!rows.length) break;
+    const requestCountBeforeBatch = budget.used;
     const results = await Promise.allSettled(rows.map(async (row, index) => {
       if (index > 0 && settings.requestDelayMs) await wait(index * settings.requestDelayMs);
       return resolveCharacter(row, settings, budget);
     }));
     const statements = [];
+    let resolved = 0;
+    let pendingDecrease = 0;
+    let retryDelta = 0;
+    let failed = 0;
     for (let index = 0; index < rows.length; index += 1) {
       const result = results[index];
-      if (result.status === 'fulfilled') statements.push(canonicalSql(rows[index], result.value));
+      const row = rows[index];
+      if (result.status === 'fulfilled') {
+        statements.push(canonicalSql(row, result.value));
+        resolved += 1;
+        if (row.status === 'retry') retryDelta -= 1;
+        else pendingDecrease += 1;
+      }
       else if (result.reason instanceof RequestBudgetReached) budgetReached = true;
-      else statements.push(failureSql(job, rows[index], result.reason, settings.retryLimit));
+      else {
+        const failure = failureSql(job, row, result.reason, settings.retryLimit);
+        statements.push(failure.sql);
+        if (failure.status === 'retry') {
+          if (row.status !== 'retry') {
+            pendingDecrease += 1;
+            retryDelta += 1;
+          }
+        } else {
+          failed += 1;
+          if (row.status === 'retry') retryDelta -= 1;
+          else pendingDecrease += 1;
+        }
+      }
     }
+    statements.push(`UPDATE import_jobs SET
+      resolved_count=resolved_count+${resolved},
+      pending_count=MAX(0,pending_count-${pendingDecrease}),
+      retry_count=MAX(0,retry_count+${retryDelta}),
+      failed_count=failed_count+${failed},
+      nexon_request_count=nexon_request_count+${Math.max(0, budget.used - requestCountBeforeBatch)},
+      d1_budget_date=${sqlLiteral(projectedD1Budget.date)},
+      d1_rows_read_estimate=${projectedD1Budget.rowsRead},
+      d1_rows_written_estimate=${projectedD1Budget.rowsWritten},
+      updated_at=${sqlLiteral(new Date().toISOString())}
+      WHERE id=${job.id};`);
     if (statements.length) await executeSql(statements.join('\n'));
-    if (budget.used % 90 < settings.concurrency * 3) console.log(JSON.stringify({ event: 'resolve', nexonRequestsUsed: budget.used, ...await metrics() }));
+    runResolved += resolved;
+    if (budget.used % 90 < settings.concurrency * 3) {
+      job = await latestJob();
+      console.log(JSON.stringify({ event: 'resolve', nexonRequestsUsed: budget.used, ...jobMetrics(job) }));
+    }
   }
-  const finalMetrics = await metrics();
-  const inserted = Number(afterStage.staging_total) - Number(before.staging_total);
+  job = await latestJob();
+  const rankingSnapshot = runResolved > 0
+    ? await refreshRankingSnapshot(localEnv).catch((error) => ({ refreshed: false, reason: String(error?.message ?? error) }))
+    : { refreshed: false, reason: 'no_newly_resolved_characters' };
   console.log(JSON.stringify({
     event: 'final',
     manualPartialComplete: newPages.length === 0 || contiguousCheckpoint([...processed]) >= lastSelected,
@@ -408,12 +525,13 @@ const runManualSeedImportCore = async (args) => {
     processedFiles: processed.size,
     processedPages: processed.size,
     maxProcessedPage: contiguousCheckpoint([...processed]),
-    stagingInserted: inserted,
-    stagingUpdated: Math.max(0, Number(afterStage.raw_records_scanned) - Number(before.raw_records_scanned) - inserted),
+    stagingInserted: runStagingInserted,
+    stagingUpdated: runStagingUpdated,
     nexonRequestsUsed: budget.used,
     nexonRequestBudget: budget.maximum,
-    ...finalMetrics,
-    checkpoint: await checkpointSummary(),
+    rankingSnapshot,
+    ...jobMetrics(job),
+    checkpoint: checkpointSummary(job),
   }));
 };
 
@@ -421,13 +539,13 @@ export const runManualSeedImport = async (args = process.argv.slice(2)) => {
   try {
     return await runManualSeedImportCore(args);
   } catch (error) {
-    if (!(error instanceof D1QuotaReached) && !isD1QuotaError(error)) throw error;
+    if (!(error instanceof D1QuotaReached) && !(error instanceof ImportD1BudgetReached) && !isD1QuotaError(error)) throw error;
     console.log(JSON.stringify({
       event: 'paused',
-      reason: 'd1_daily_row_read_quota',
+      reason: error instanceof ImportD1BudgetReached ? `import_d1_${error.kind}_budget` : 'd1_daily_row_read_quota',
       checkpointPreserved: true,
       resumeCommand: 'yarn import:maple manual --dir data/manual-character-seed --all',
     }));
-    return { paused: true, reason: 'd1_daily_row_read_quota' };
+    return { paused: true, reason: error instanceof ImportD1BudgetReached ? `import_d1_${error.kind}_budget` : 'd1_daily_row_read_quota' };
   }
 };

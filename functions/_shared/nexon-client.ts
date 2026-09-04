@@ -42,7 +42,7 @@ const retryAfterMilliseconds = (response: Response, fallback: number) => {
   return Number.isFinite(seconds) ? Math.min(60_000, Math.max(0, seconds * 1000)) : fallback;
 };
 
-export const fetchNexonJson = async <T>(env: Env, path: string): Promise<T> => {
+export const fetchNexonJson = async <T>(env: Env, path: string, onRequest?: () => void): Promise<T> => {
   const apiKey = requireSecret(env.NEXON_API_KEY, 'NEXON_API_KEY');
   const config = getRuntimeConfig(env);
   let lastError: unknown = null;
@@ -51,6 +51,7 @@ export const fetchNexonJson = async <T>(env: Env, path: string): Promise<T> => {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), config.nexonRequestTimeoutMs);
     try {
+      onRequest?.();
       const response = await fetch(`${NEXON_BASE_URL}${path}`, {
         headers: { 'x-nxopen-api-key': apiKey, accept: 'application/json' },
         cache: 'no-store',
@@ -95,18 +96,20 @@ export const resolveNexonCharacter = async (
   env: Env,
   characterName: string,
   knownOcid?: string | null,
+  onRequest?: () => void,
 ): Promise<CharacterWrite> => {
   const requestedName = characterName.trim().normalize('NFC');
   if (!requestedName) throw new NexonRequestError('角色名稱不可為空', null, false, 'invalid_character_name');
   const ocid = knownOcid || (await fetchNexonJson<NexonOcidResponse>(
     env,
     `/id?character_name=${encodeURIComponent(requestedName)}`,
+    onRequest,
   )).ocid;
   if (!ocid) throw new NexonRequestError('NEXON API 未回傳 OCID', null, false, 'missing_ocid');
 
   const [basic, stat] = await Promise.all([
-    fetchNexonJson<NexonBasicResponse>(env, `/character/basic?ocid=${encodeURIComponent(ocid)}`),
-    fetchNexonJson<NexonStatResponse>(env, `/character/stat?ocid=${encodeURIComponent(ocid)}`),
+    fetchNexonJson<NexonBasicResponse>(env, `/character/basic?ocid=${encodeURIComponent(ocid)}`, onRequest),
+    fetchNexonJson<NexonStatResponse>(env, `/character/stat?ocid=${encodeURIComponent(ocid)}`, onRequest),
   ]);
   const observedAt = new Date().toISOString();
   return {
