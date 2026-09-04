@@ -47,10 +47,6 @@ pnpm run dev
 - 歡迎提出 Issue 和 Pull requests！
 - 如果您想將網站內容翻譯為其他語言，您需要在本專案根目錄中新增您語言的資料夾（如 [en](/en)），同時需要在 [.vitepress/locales](/.vitepress/locales) 中新增您語言的設定檔。
 
-## MapleStory 角色資料庫
-
-本站的角色池、即時戰力排行榜與角色搜尋收錄使用 Cloudflare Pages Functions + D1；冒險者小屋繼續獨立提供成長報告與歷史紀錄。完整的 migration、local development、import resume、secret、quota、rollback 與 production checklist 請見 [Maple 角色資料庫維運文件](docs/maple-character-database.md)。
-
 ## 感謝
 
 - 感謝 [VitePress](https://vitepress.dev) 以及 [VuePress](https://v2.vuepress.vuejs.org)（曾使用）架構。
