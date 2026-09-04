@@ -200,8 +200,8 @@ const copy = computed(() => isEnglish.value ? {
 
 .sponsor-hero {
   display: grid;
-  grid-template-columns: minmax(0, .88fr) minmax(0, 1.12fr);
-  gap: clamp(40px, 5vw, 72px);
+  grid-template-columns: minmax(0, 1.08fr) minmax(0, .92fr);
+  gap: clamp(32px, 4vw, 56px);
   align-items: center;
 }
 
@@ -241,7 +241,7 @@ h1 {
   font-weight: 760;
   line-height: 1.08;
   letter-spacing: -.045em;
-  text-wrap: balance;
+  text-wrap: pretty;
 }
 
 .intro {
