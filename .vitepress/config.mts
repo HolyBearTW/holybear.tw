@@ -273,6 +273,19 @@ const earlyLoadingStyle = `
 
 const earlyLoadingScript = `(() => {
     const root = document.documentElement;
+    let savedAppearance = null;
+    try {
+        savedAppearance = localStorage.getItem('vitepress-theme-appearance');
+    } catch {}
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const shouldUseDark = savedAppearance === 'light'
+        ? false
+        : savedAppearance === 'auto'
+            ? prefersDark
+            : true;
+    root.classList.toggle('dark', shouldUseDark);
+    root.classList.add('holy-bear-booting');
+
     const deviceMemory = Number(navigator.deviceMemory || 0);
     const logicalProcessors = Number(navigator.hardwareConcurrency || 0);
     const hasLimitedMemory = deviceMemory > 0 && deviceMemory <= 4;
@@ -286,23 +299,16 @@ const earlyLoadingScript = `(() => {
         }
         return checksum;
     };
-    runCpuProbe(50000);
-    const cpuProbeStartedAt = performance.now();
-    const cpuProbeChecksum = runCpuProbe(400000);
-    const cpuProbeDuration = performance.now() - cpuProbeStartedAt;
-    if (Number.isFinite(cpuProbeChecksum) && cpuProbeDuration >= 12) {
-        root.classList.add('holy-bear-constrained-device');
-    }
-
-    const savedAppearance = localStorage.getItem('vitepress-theme-appearance');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const shouldUseDark = savedAppearance === 'light'
-        ? false
-        : savedAppearance === 'auto'
-            ? prefersDark
-            : true;
-    root.classList.toggle('dark', shouldUseDark);
-    root.classList.add('holy-bear-booting');
+    // Let the browser paint the static Logo and Loading text before benchmarking.
+    window.requestAnimationFrame(() => window.setTimeout(() => {
+        runCpuProbe(50000);
+        const cpuProbeStartedAt = performance.now();
+        const cpuProbeChecksum = runCpuProbe(400000);
+        const cpuProbeDuration = performance.now() - cpuProbeStartedAt;
+        if (Number.isFinite(cpuProbeChecksum) && cpuProbeDuration >= 12) {
+            root.classList.add('holy-bear-constrained-device');
+        }
+    }, 0));
     window.setTimeout(() => {
         const frame = document.getElementById('holy-bear-boot-frame');
         if (!frame || !root.classList.contains('holy-bear-booting')) return;
