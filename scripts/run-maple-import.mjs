@@ -2,7 +2,12 @@ const args = process.argv.slice(2);
 const source = String(args[0] || '').toLowerCase();
 if (source === 'manual') {
   const { runManualSeedImport } = await import('./run-manual-seed-import.mjs');
-  await runManualSeedImport(args.slice(1));
+  const { clearRuntimeState } = await import('./manual-import-runtime.mjs');
+  try {
+    await runManualSeedImport(args.slice(1));
+  } finally {
+    if (process.env.HOLYBEAR_MANUAL_IMPORT_BACKGROUND === '1') clearRuntimeState(process.pid);
+  }
   process.exit(0);
 }
 const fullMode = args.includes('--all') || args.includes('--until-complete');

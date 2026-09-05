@@ -52,7 +52,7 @@ export class ImportBudgetError extends Error {
   readonly code = 'import_budget_reached';
 
   constructor(public readonly kind: 'read' | 'write') {
-    super(`Importer paused before reaching the D1 daily ${kind} budget`);
+    super(`Importer paused before reaching the configured D1 ${kind} safety budget`);
   }
 }
 

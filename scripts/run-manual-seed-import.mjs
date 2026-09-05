@@ -1,9 +1,15 @@
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { DEFAULT_MANUAL_SEED_DIR, readManualSeedPage, scanManualSeedDirectory } from './manual-seed-files.mjs';
+import {
+  loadManualImportEnvironment,
+  manualImportSettings,
+  publicManualImportSettings,
+} from './manual-import-config.mjs';
+import { readRuntimeState, stopRequested, updateRuntimeState } from './manual-import-runtime.mjs';
 
 const SOURCE = 'manual_seed';
 const DATABASE = 'holybear-maple-db';
@@ -19,7 +25,7 @@ export class D1QuotaReached extends Error {
 
 export class ImportD1BudgetReached extends Error {
   constructor(kind) {
-    super(`Importer paused before reaching the D1 daily ${kind} budget`);
+    super(`Importer paused before reaching the configured D1 ${kind} safety budget`);
     this.name = 'ImportD1BudgetReached';
     this.kind = kind;
   }
@@ -46,20 +52,6 @@ export const sqlLiteral = (value) => {
   if (value == null) return 'NULL';
   if (typeof value === 'number') return String(Math.trunc(value));
   return `'${String(value).replaceAll("'", "''")}'`;
-};
-
-const parseEnvFile = async (filename) => {
-  try {
-    const contents = await readFile(filename, 'utf8');
-    return Object.fromEntries(contents.split(/\r?\n/).flatMap((line) => {
-      const match = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$/);
-      if (!match || match[1].startsWith('#')) return [];
-      return [[match[1], match[2].replace(/^(['"])(.*)\1$/, '$2')]];
-    }));
-  } catch (error) {
-    if (error?.code === 'ENOENT') return {};
-    throw error;
-  }
 };
 
 const parseWranglerJson = (output) => {
@@ -214,8 +206,13 @@ const jobMetrics = (job) => ({
   pending: Number(job?.pending_count ?? 0),
   retry_pending: Number(job?.retry_count ?? 0),
   failed: Number(job?.failed_count ?? 0),
-  characters_created: Number(job?.created_count ?? 0),
-  canonical_updated: Number(job?.updated_count ?? 0),
+  canonical_upserts: Number(job?.resolved_count ?? 0),
+  characters_created_known: Number(job?.created_count ?? 0),
+  canonical_updated_known: Number(job?.updated_count ?? 0),
+  canonical_disposition_unknown: Math.max(
+    0,
+    Number(job?.resolved_count ?? 0) - Number(job?.created_count ?? 0) - Number(job?.updated_count ?? 0),
+  ),
   nexon_requests: Number(job?.nexon_request_count ?? 0),
   metricsSource: 'import_jobs_counters',
 });
@@ -249,6 +246,7 @@ const fetchNexon = async (pathname, settings, budget) => {
       const error = new Error(`NEXON request failed (${response.status})`);
       error.status = response.status;
       error.retryable = response.status === 429 || response.status >= 500;
+      if (response.status === 429 && settings.adaptiveState) settings.adaptiveState.rateLimited = true;
       if (!error.retryable) throw error;
       lastError = error;
     } catch (error) {
@@ -346,6 +344,36 @@ FROM character_import_staging s WHERE s.import_job_id=${jobId}
   AND (s.status IN ('pending','resolving') OR (s.status='retry' AND (s.next_retry_at IS NULL OR s.next_retry_at<=${sqlLiteral(new Date().toISOString())})))
 ORDER BY s.id LIMIT ${limit};`);
 
+const settleWithConcurrency = async (items, concurrency, delayMs, worker) => {
+  const results = new Array(items.length);
+  let cursor = 0;
+  let nextStartAt = Date.now();
+  const take = () => {
+    const index = cursor;
+    cursor += 1;
+    const scheduledAt = Math.max(Date.now(), nextStartAt);
+    nextStartAt = scheduledAt + delayMs;
+    return { index, waitMs: Math.max(0, scheduledAt - Date.now()) };
+  };
+  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, async () => {
+    while (cursor < items.length) {
+      const { index, waitMs } = take();
+      if (index >= items.length) return;
+      if (waitMs > 0) await wait(waitMs);
+      try {
+        results[index] = { status: 'fulfilled', value: await worker(items[index]) };
+      } catch (reason) {
+        results[index] = { status: 'rejected', reason };
+      }
+    }
+  }));
+  return results;
+};
+
+const productionCounts = async () => (await query(`SELECT
+  COALESCE((SELECT characters_total FROM database_stats WHERE id=1), 0) AS characters_total,
+  (SELECT COUNT(*) FROM character_sources) AS character_sources_total;`))[0] ?? {};
+
 const printScan = (scan, selected) => ({
   filesDiscovered: scan.filesFound,
   selectedFiles: selected.length,
@@ -382,14 +410,36 @@ const runManualSeedImportCore = async (args) => {
   if (args.includes('--dry-run')) return;
   if (!args.includes('--status') && !args.includes('--all')) throw new Error('Choose --status, --dry-run, or --all');
 
+  const localEnv = await loadManualImportEnvironment();
+  const configuredSettings = manualImportSettings(localEnv);
+  const backgroundMode = process.env.HOLYBEAR_MANUAL_IMPORT_BACKGROUND === '1';
+  const shouldStop = () => backgroundMode && stopRequested();
   let job = await latestJob();
   const processed = new Set((checkpointOf(job).processedPages ?? []).map(Number));
   if (args.includes('--status')) {
+    const runtime = readRuntimeState();
+    const counts = await productionCounts();
+    const alive = Boolean(runtime.alive);
+    const startedAt = alive ? runtime.startedAt ?? null : null;
+    const baseline = alive ? Number(runtime.resolvedAtStart) : Number.NaN;
+    const elapsedMinutes = startedAt ? Math.max(0, (Date.now() - Date.parse(startedAt)) / 60_000) : 0;
+    const resolvedNow = Number(job?.resolved_count ?? 0);
     console.log(JSON.stringify({
       event: 'status',
+      background_alive: alive,
+      pid: alive ? runtime.pid : null,
+      importer_started_at: startedAt,
+      characters_per_minute: elapsedMinutes > 0 && Number.isFinite(baseline)
+        ? Number(((resolvedNow - baseline) / elapsedMinutes).toFixed(2))
+        : null,
+      effective_settings: alive && runtime.settings
+        ? runtime.settings
+        : publicManualImportSettings(configuredSettings),
       processedPages: processed.size,
       maxProcessedPage: contiguousCheckpoint([...processed]),
       ...jobMetrics(job),
+      characters_total: Number(counts.characters_total ?? 0),
+      character_sources_total: Number(counts.character_sources_total ?? 0),
       checkpoint: checkpointSummary(job),
     }));
     return;
@@ -407,15 +457,15 @@ const runManualSeedImportCore = async (args) => {
   }
 
   const newPages = selected.filter(({ page }) => !processed.has(page));
-  const pagesPerWrite = integer(process.env.MANUAL_SEED_PAGES_PER_D1_BATCH, 5, 1, 10);
-  const localEnv = { ...await parseEnvFile(path.resolve('.env')), ...await parseEnvFile(path.resolve('.env.local')), ...process.env };
+  const pagesPerWrite = integer(localEnv.MANUAL_SEED_PAGES_PER_D1_BATCH, 5, 1, 10);
   const d1Budget = {
-    readMaximum: integer(localEnv.IMPORT_D1_READ_BUDGET, 4_000_000, 1_000, 4_500_000),
-    writeMaximum: integer(localEnv.IMPORT_D1_WRITE_BUDGET, 80_000, 1_000, 90_000),
+    readMaximum: configuredSettings.d1ReadBudget,
+    writeMaximum: configuredSettings.d1WriteBudget,
   };
   let runStagingInserted = 0;
   let runStagingUpdated = 0;
   for (let offset = 0; offset < newPages.length; offset += pagesPerWrite) {
+    if (shouldStop()) break;
     const statements = [];
     const batchPages = newPages.slice(offset, offset + pagesPerWrite);
     const parsedPages = [];
@@ -446,26 +496,41 @@ const runManualSeedImportCore = async (args) => {
 
   const apiKey = localEnv.NEXON_API_KEY || localEnv.VITE_NEXON_API_KEY;
   if (!apiKey) throw new Error('NEXON_API_KEY is required after staging; staging checkpoint was preserved');
+  const adaptiveState = { rateLimited: false };
   const settings = {
     apiKey,
-    concurrency: integer(localEnv.NEXON_CONCURRENCY, 2, 1, 4),
-    requestDelayMs: integer(localEnv.NEXON_REQUEST_DELAY_MS, 200, 0, 10_000),
-    retryLimit: integer(localEnv.NEXON_RETRY_LIMIT, 5, 1, 8),
-    timeoutMs: integer(localEnv.NEXON_REQUEST_TIMEOUT_MS, 10_000, 1000, 30_000),
+    ...configuredSettings,
+    adaptiveState,
   };
-  const budget = { used: 0, maximum: integer(localEnv.MANUAL_SEED_NEXON_REQUEST_BUDGET, 900, 1, 1_000_000) };
+  const budget = { used: 0, maximum: configuredSettings.nexonRequestBudget };
   let budgetReached = false;
   let runResolved = 0;
-  while (!budgetReached && budget.used < budget.maximum) {
+  let activeConcurrency = settings.concurrency;
+  let activeDelayMs = settings.requestDelayMs;
+  let stableBatches = 0;
+  if (backgroundMode) {
+    updateRuntimeState({
+      resolvedAtStart: Number(job?.resolved_count ?? 0),
+      settings: {
+        ...publicManualImportSettings(settings),
+        activeConcurrency,
+        activeDelayMs,
+      },
+    });
+  }
+  while (!budgetReached && budget.used < budget.maximum && !shouldStop()) {
     job = await latestJob();
-    const projectedD1Budget = await budgetAfter(job, settings.concurrency * 4 + 6, settings.concurrency * 30 + 3, d1Budget);
-    const rows = await resolutionRows(job.id, settings.concurrency);
+    const projectedD1Budget = await budgetAfter(job, settings.batchSize * 5 + 8, settings.batchSize * 10 + 5, d1Budget);
+    const rows = await resolutionRows(job.id, settings.batchSize);
     if (!rows.length) break;
     const requestCountBeforeBatch = budget.used;
-    const results = await Promise.allSettled(rows.map(async (row, index) => {
-      if (index > 0 && settings.requestDelayMs) await wait(index * settings.requestDelayMs);
-      return resolveCharacter(row, settings, budget);
-    }));
+    adaptiveState.rateLimited = false;
+    const results = await settleWithConcurrency(
+      rows,
+      activeConcurrency,
+      activeDelayMs,
+      (row) => resolveCharacter(row, settings, budget),
+    );
     const statements = [];
     let resolved = 0;
     let pendingDecrease = 0;
@@ -496,10 +561,19 @@ const runManualSeedImportCore = async (args) => {
         }
       }
     }
+    const resolvedCharacters = results.flatMap((result) => result.status === 'fulfilled' ? [result.value] : []);
+    const uniqueResolvedCharacters = [...new Map(resolvedCharacters.map((item) => [item.ocid, item])).values()];
+    const existingOcids = resolvedCharacters.length
+      ? new Set((await query(`SELECT ocid FROM characters WHERE ocid IN (${uniqueResolvedCharacters.map((item) => sqlLiteral(item.ocid)).join(',')});`)).map((item) => item.ocid))
+      : new Set();
+    const created = uniqueResolvedCharacters.filter((item) => !existingOcids.has(item.ocid)).length;
+    const updated = resolved - created;
     statements.push(`UPDATE import_jobs SET
       resolved_count=resolved_count+${resolved},
       pending_count=MAX(0,pending_count-${pendingDecrease}),
       retry_count=MAX(0,retry_count+${retryDelta}),
+      created_count=created_count+${created},
+      updated_count=updated_count+${updated},
       failed_count=failed_count+${failed},
       nexon_request_count=nexon_request_count+${Math.max(0, budget.used - requestCountBeforeBatch)},
       d1_budget_date=${sqlLiteral(projectedD1Budget.date)},
@@ -509,7 +583,27 @@ const runManualSeedImportCore = async (args) => {
       WHERE id=${job.id};`);
     if (statements.length) await executeSql(statements.join('\n'));
     runResolved += resolved;
-    if (budget.used % 90 < settings.concurrency * 3) {
+    if (adaptiveState.rateLimited) {
+      activeConcurrency = Math.max(1, Math.floor(activeConcurrency / 2));
+      activeDelayMs = Math.min(10_000, Math.max(1_000, activeDelayMs * 2));
+      stableBatches = 0;
+      await wait(30_000);
+    } else {
+      stableBatches += 1;
+      if (stableBatches >= 10) {
+        activeConcurrency = Math.min(settings.concurrency, activeConcurrency + 1);
+        activeDelayMs = Math.max(settings.requestDelayMs, Math.floor(activeDelayMs / 2));
+        stableBatches = 0;
+      }
+    }
+    if (backgroundMode) {
+      updateRuntimeState({ settings: {
+        ...publicManualImportSettings(settings),
+        activeConcurrency,
+        activeDelayMs,
+      } });
+    }
+    if (budget.used % 90 < settings.batchSize * 3) {
       job = await latestJob();
       console.log(JSON.stringify({ event: 'resolve', nexonRequestsUsed: budget.used, ...jobMetrics(job) }));
     }
@@ -529,6 +623,12 @@ const runManualSeedImportCore = async (args) => {
     stagingUpdated: runStagingUpdated,
     nexonRequestsUsed: budget.used,
     nexonRequestBudget: budget.maximum,
+    stopRequested: shouldStop(),
+    effectiveSettings: {
+      ...publicManualImportSettings(settings),
+      activeConcurrency,
+      activeDelayMs,
+    },
     rankingSnapshot,
     ...jobMetrics(job),
     checkpoint: checkpointSummary(job),

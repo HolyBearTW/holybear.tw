@@ -14,13 +14,13 @@ const integerSetting = (
 export const getRuntimeConfig = (env: Env) => ({
   characterFreshnessSeconds: integerSetting(env.CHARACTER_FRESHNESS_SECONDS, 900, 60, 86_400),
   importSourcePageSize: integerSetting(env.IMPORT_SOURCE_PAGE_SIZE, 100, 1, 100),
-  nexonResolutionBatchSize: integerSetting(env.NEXON_RESOLUTION_BATCH_SIZE, 8, 1, 12),
-  nexonConcurrency: integerSetting(env.NEXON_CONCURRENCY, 2, 1, 4),
-  nexonRequestDelayMs: integerSetting(env.NEXON_REQUEST_DELAY_MS, 200, 0, 10_000),
+  nexonResolutionBatchSize: integerSetting(env.NEXON_RESOLUTION_BATCH_SIZE, 16, 1, 100),
+  nexonConcurrency: integerSetting(env.NEXON_CONCURRENCY, 4, 1, 8),
+  nexonRequestDelayMs: integerSetting(env.NEXON_REQUEST_DELAY_MS, 100, 0, 10_000),
   nexonRetryLimit: integerSetting(env.NEXON_RETRY_LIMIT, 5, 1, 8),
   nexonRequestTimeoutMs: integerSetting(env.NEXON_REQUEST_TIMEOUT_MS, 10_000, 1_000, 30_000),
-  importD1ReadBudget: integerSetting(env.IMPORT_D1_READ_BUDGET, 4_000_000, 1_000, 4_500_000),
-  importD1WriteBudget: integerSetting(env.IMPORT_D1_WRITE_BUDGET, 80_000, 1_000, 90_000),
+  importD1ReadBudget: integerSetting(env.IMPORT_D1_READ_BUDGET, 25_000_000, 10_000, 100_000_000),
+  importD1WriteBudget: integerSetting(env.IMPORT_D1_WRITE_BUDGET, 5_000_000, 10_000, 10_000_000),
   rankingSnapshotSize: integerSetting(env.RANKING_SNAPSHOT_SIZE, 1_000, 100, 5_000),
 });
 
