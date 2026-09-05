@@ -22,6 +22,17 @@ interface MatchingSignal {
   account_group_id: number | null;
 }
 
+interface RelatedCharacterRecord {
+  ocid: string;
+  characterName: string;
+  worldName: string;
+  jobName: string;
+  level: number;
+  combatPower: number;
+  characterImage: string;
+  guildName: string | null;
+}
+
 const listGroupCharacters = async (db: D1Database, groupId: number) => {
   const result = await db.prepare(`
     SELECT ocid, character_name AS characterName, world_name AS worldName,
@@ -29,7 +40,7 @@ const listGroupCharacters = async (db: D1Database, groupId: number) => {
       character_image AS characterImage, guild_name AS guildName
     FROM characters WHERE account_group_id = ?1
     ORDER BY combat_power DESC, ocid ASC
-  `).bind(groupId).all();
+  `).bind(groupId).all<RelatedCharacterRecord>();
   return result.results;
 };
 
@@ -182,32 +193,65 @@ export const syncCharacterAccountSignals = async (
 };
 
 const mergeOfficialChampionMembers = (
-  character: PublicCharacter,
-  groupedCharacters: Record<string, unknown>[],
-  championMembers: ChampionMember[],
+  groupedCharacters: RelatedCharacterRecord[],
+  championMembers: RelatedCharacterRecord[],
 ) => {
-  const merged = new Map<string, Record<string, unknown>>();
+  const merged = new Map<string, RelatedCharacterRecord>();
   for (const grouped of groupedCharacters) {
-    const name = String(grouped.characterName || '').trim().normalize('NFC');
+    const name = grouped.characterName.trim().normalize('NFC');
     if (name) merged.set(name.toLocaleLowerCase('zh-TW'), grouped);
   }
   for (const champion of championMembers) {
-    const name = String(champion.champion_name || '').trim().normalize('NFC');
-    if (!name || name === character.characterName.normalize('NFC')) continue;
+    const name = champion.characterName.trim().normalize('NFC');
+    if (!name) continue;
     const key = name.toLocaleLowerCase('zh-TW');
-    if (merged.has(key)) continue;
-    merged.set(key, {
+    const grouped = merged.get(key);
+    merged.set(key, grouped?.characterImage ? grouped : { ...grouped, ...champion });
+  }
+  return [...merged.values()];
+};
+
+const resolveOfficialChampionMembers = async (
+  env: Env,
+  character: PublicCharacter,
+  championMembers: ChampionMember[],
+) => {
+  const currentName = character.characterName.normalize('NFC').toLocaleLowerCase('zh-TW');
+  const uniqueMembers = new Map<string, ChampionMember>();
+  for (const member of championMembers) {
+    const name = String(member.champion_name || '').trim().normalize('NFC');
+    const key = name.toLocaleLowerCase('zh-TW');
+    if (name && key !== currentName) uniqueMembers.set(key, member);
+  }
+  const settled = await Promise.allSettled([...uniqueMembers.values()].map(async (member) => {
+    const requestedName = String(member.champion_name || '').trim().normalize('NFC');
+    const discovered = await getOrDiscoverCharacter(env, requestedName);
+    const resolved = discovered.character;
+    return {
+      ocid: resolved.ocid,
+      characterName: resolved.characterName,
+      worldName: resolved.worldName,
+      jobName: resolved.jobName || String(member.champion_class || ''),
+      level: resolved.level,
+      combatPower: resolved.combatPower,
+      characterImage: resolved.characterImage,
+      guildName: resolved.guildName,
+    } satisfies RelatedCharacterRecord;
+  }));
+  return settled.map((result, index): RelatedCharacterRecord => {
+    if (result.status === 'fulfilled') return result.value;
+    const member = [...uniqueMembers.values()][index];
+    return {
       ocid: '',
-      characterName: name,
+      characterName: String(member.champion_name || '').trim().normalize('NFC'),
       worldName: character.worldName,
-      jobName: String(champion.champion_class || ''),
+      jobName: String(member.champion_class || ''),
       level: 0,
       combatPower: 0,
       characterImage: '',
       guildName: null,
-    });
-  }
-  return [...merged.values()];
+    };
+  });
 };
 
 export const getCharacterAlts = async (env: Env, characterName: string) => {
@@ -220,10 +264,14 @@ export const getCharacterAlts = async (env: Env, characterName: string) => {
       .bind(groupId).first<{ id: number; confidence: string; lastVerifiedAt: string | null }>()
     : null;
   const groupedCharacters = groupId ? await listGroupCharacters(env.DB, groupId) : [];
-  const alts = mergeOfficialChampionMembers(
+  const officialChampionMembers = await resolveOfficialChampionMembers(
+    env,
     character,
-    groupedCharacters.filter((alt) => (alt as { ocid: string }).ocid !== character.ocid),
     synced.championMembers,
+  );
+  const alts = mergeOfficialChampionMembers(
+    groupedCharacters.filter((alt) => alt.ocid !== character.ocid),
+    officialChampionMembers,
   );
   return {
     character,
