@@ -154,17 +154,18 @@ const RelatedCharacters: React.FC<RelatedCharactersProps> = ({
   const pageCharacters = members.slice((page - 1) * pageSize, page * pageSize);
 
   return (
-    <section className="maple-related-characters rounded-xl border border-slate-800 bg-[#161b22] p-4 shadow-xl sm:p-5">
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-2">
-          <Users className="h-5 w-5 shrink-0 text-cyan-400" aria-hidden="true" />
-          <h2 className="text-base font-bold text-slate-100">分身</h2>
-        </div>
-        {status === 'ready' && (
-          <div className="flex shrink-0 items-center gap-3">
-            <span className="text-xs text-cyan-300">共發現 {members.length} 個分身</span>
-            {pageCount > 1 && (
-              <nav className="flex items-center gap-1" aria-label="分身頁數">
+    <section className="maple-related-characters space-y-5 rounded-xl border border-slate-800 bg-[#161b22] p-4 shadow-xl sm:p-5">
+      <header>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2">
+            <Users className="h-5 w-5 shrink-0 text-cyan-400" aria-hidden="true" />
+            <h2 className="text-base font-bold text-slate-100">分身</h2>
+          </div>
+          {status === 'ready' && (
+            <div className="flex shrink-0 items-center gap-3">
+              <span className="text-xs text-cyan-300">共發現 {members.length} 個分身</span>
+              {pageCount > 1 && (
+                <nav className="flex items-center gap-1" aria-label="分身頁數">
                 <button
                   type="button"
                   onClick={() => setPage((current) => Math.max(1, current - 1))}
@@ -199,13 +200,13 @@ const RelatedCharacters: React.FC<RelatedCharactersProps> = ({
                 >
                   <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
                 </button>
-              </nav>
-            )}
-          </div>
-        )}
-      </div>
-
-      <p className="mb-3 text-[11px] text-slate-500">依公開聯盟資料推定，並非 NEXON 官方 Account ID。</p>
+                </nav>
+              )}
+            </div>
+          )}
+        </div>
+        <p className="mt-1 text-xs text-slate-500">依公開聯盟資料推定，並非 NEXON 官方 Account ID。</p>
+      </header>
 
       {status === 'loading' && (
         <div className="py-6 text-center text-sm text-slate-500">正在查詢分身...</div>
