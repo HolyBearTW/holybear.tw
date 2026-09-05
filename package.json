@@ -70,6 +70,8 @@
     "test:maple-db": "vitest run tests/maple-db",
     "d1:migrate:local": "wrangler d1 migrations apply holybear-maple-db --local",
     "import:maple": "node scripts/run-maple-import.mjs",
+    "import:maple:bg": "node scripts/start-manual-seed-background.mjs",
+    "import:maple:status": "node scripts/run-maple-import.mjs manual --dir data/manual-character-seed --status",
     "preview": "vitepress preview"
   }
 }
