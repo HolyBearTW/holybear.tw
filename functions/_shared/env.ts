@@ -3,6 +3,7 @@ export interface Env {
   ASSETS?: Fetcher;
   NEXON_API_KEY?: string;
   MAINTENANCE_BYPASS_KEY?: string;
+  RADAR_AUTOMATION_KEY?: string;
   IMPORT_ADMIN_SECRET?: string;
   CHARACTER_FRESHNESS_SECONDS?: string;
   IMPORT_SOURCE_PAGE_SIZE?: string;

@@ -26,26 +26,44 @@ jobs:
         with:
           node-version: 22
 
-      - name: Generate TMS radar curves and alias index
+      - name: Restore TMS radar cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .cache/tms-radar
+          key: tms-radar-v2-${{ github.run_id }}
+          restore-keys: |
+            tms-radar-v2-
+
+      - name: Generate TMS radar curves
         env:
           NEXON_API_KEY: ${{ secrets.NEXON_API_KEY || secrets.VITE_NEXON_API_KEY }}
+          RADAR_AUTOMATION_KEY: ${{ secrets.RADAR_AUTOMATION_KEY }}
           HOLYBEAR_API_BASE_URL: https://holybear.tw
+          RADAR_SAMPLES_PER_JOB: 100
+          RADAR_CACHE_TTL_DAYS: 21
+          RADAR_RUN_BUDGET_MINUTES: 20
         run: node scripts/generate-tms-radar-reference.mjs
 
-      - name: Commit refreshed character references
+      - name: Save TMS radar cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: .cache/tms-radar
+          key: tms-radar-v2-${{ github.run_id }}
+
+      - name: Commit refreshed radar reference
         id: commit
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add .vitepress/theme/maplestory/data/tmsRadarReference.json
-          git add -A public/maplestory/aliases
           if git diff --cached --quiet; then
-            echo "Character references are unchanged."
+            echo "Radar reference is unchanged."
             echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          git commit -m "chore: refresh TMS character references"
+          git commit -m "chore: refresh TMS radar reference"
           git pull --rebase origin main
           git push origin HEAD:main
           echo "changed=true" >> "$GITHUB_OUTPUT"

@@ -35,6 +35,19 @@ export const hasValidMaintenanceBypass = (request: Request, env: Env) => {
   );
 };
 
+export const hasValidRadarAutomationAccess = (request: Request, env: Env) => {
+  const { pathname } = new URL(request.url);
+  const configuredKey = env.RADAR_AUTOMATION_KEY;
+  const providedKey = request.headers.get('x-radar-automation-key');
+  return Boolean(
+    request.method === 'GET'
+    && (pathname === '/api/rankings' || pathname.startsWith('/api/rankings/'))
+    && configuredKey
+    && providedKey
+    && constantTimeEqual(providedKey, configuredKey)
+  );
+};
+
 export const maintenanceResponse = () => json(
   { maintenance: true, message: '系統維護中' },
   { status: 503 },
