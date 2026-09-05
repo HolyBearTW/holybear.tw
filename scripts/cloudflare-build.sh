@@ -79,14 +79,15 @@ const metadata = {
   builtAt: new Date().toISOString()
 }
 
-fs.writeFileSync(
-  '.vitepress/dist/__deploy.json',
-  `${JSON.stringify(metadata)}\n`
-)
+const serializedMetadata = `${JSON.stringify(metadata)}\n`
+
+fs.mkdirSync('.vitepress/dist/api', { recursive: true })
+fs.writeFileSync('.vitepress/dist/__deploy.json', serializedMetadata)
+fs.writeFileSync('.vitepress/dist/api/__deploy.json', serializedMetadata)
 
 fs.appendFileSync(
   '.vitepress/dist/_headers',
-  '\n/__deploy.json\n  Cache-Control: no-store\n'
+  '\n/__deploy.json\n  Cache-Control: no-store\n\n/api/__deploy.json\n  Cache-Control: no-store\n'
 )
 NODE
 

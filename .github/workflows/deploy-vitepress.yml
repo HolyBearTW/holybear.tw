@@ -263,7 +263,7 @@ jobs:
             live_sha="$(
               curl --fail --silent --show-error \
                 --header 'Cache-Control: no-cache' \
-                "${SITE_URL%/}/__deploy.json?expected=${EXPECTED_SHA}&t=$(date +%s)" \
+                "${SITE_URL%/}/api/__deploy.json?expected=${EXPECTED_SHA}&t=$(date +%s)" \
                 | jq -r '.commit // empty' 2>/dev/null \
                 || true
             )"
