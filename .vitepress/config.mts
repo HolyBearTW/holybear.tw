@@ -513,6 +513,19 @@ const config = defineConfig({
         },
         server: {
             host: true,
+            // VitePress dev does not execute Cloudflare Pages Functions. Proxy
+            // only local /api requests to production so maintenance auth and
+            // MapleStory queries use the same encrypted server-side secrets.
+            proxy: {
+                '/api': {
+                    target: 'https://holybear.tw',
+                    changeOrigin: true,
+                    secure: true,
+                    headers: {
+                        origin: 'https://holybear.tw',
+                    },
+                },
+            },
             hmr: {
                 // 如果只針對 Vite 中的 React 禁用 HMR (這樣 @vitejs/plugin-react 就不會載入 refresh-runtime)
                 // 這不會影響 Vue 的 HMR
