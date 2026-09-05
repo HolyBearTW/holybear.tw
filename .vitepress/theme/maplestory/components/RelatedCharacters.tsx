@@ -232,8 +232,13 @@ const RelatedCharacters: React.FC<RelatedCharactersProps> = ({
               )}
             </span>
             <span className="min-w-0 flex-1">
-              <span className="flex min-w-0 items-center gap-1.5">
-                <span className="min-w-0 truncate text-sm font-bold text-slate-100">{character.characterName}</span>
+              <span className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5">
+                <span
+                  className="min-w-0 break-all text-sm font-bold leading-tight text-slate-100"
+                  title={character.characterName}
+                >
+                  {character.characterName}
+                </span>
                 {character.combatPowerRank && (
                   <span
                     className="shrink-0 text-[10px] font-bold text-amber-300"
@@ -252,7 +257,9 @@ const RelatedCharacters: React.FC<RelatedCharactersProps> = ({
               </span>
               <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] leading-tight text-slate-400">
                 <span className="whitespace-nowrap">{formatPower(character.maxCharacterPower)}</span>
-                <span className="whitespace-nowrap">{formatCreateDate(character.characterDateCreate)}</span>
+                {character.characterDateCreate && (
+                  <span className="whitespace-nowrap">{formatCreateDate(character.characterDateCreate)}</span>
+                )}
               </span>
             </span>
             <Search className="h-4 w-4 shrink-0 text-slate-500 transition group-hover:text-cyan-300" aria-hidden="true" />
