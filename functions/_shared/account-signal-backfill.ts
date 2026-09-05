@@ -5,7 +5,7 @@ import type { CharacterRow } from './models';
 import { NexonRequestError, runWithConcurrency } from './nexon-client';
 import { getRuntimeConfig } from './runtime-config';
 
-const SIGNAL_TYPE = 'union_raider_preset';
+const SIGNAL_TYPE = 'union_raider_full';
 const nowIso = () => new Date().toISOString();
 
 export const backfillAccountSignalBatch = async (env: Env) => {

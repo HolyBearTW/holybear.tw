@@ -2,12 +2,14 @@ import { getOrDiscoverCharacter } from './character-service';
 import type { Env } from './env';
 import type { PublicCharacter } from './models';
 import { fetchNexonJson, NexonRequestError } from './nexon-client';
-import { hashChampionRoster, hashRaiderPresets } from './union-fingerprint';
-import type { UnionChampionResponse, UnionRaiderResponse } from './union-fingerprint';
+import { hashChampionRoster, hashCompleteUnionRaider, hashRaiderPresets } from './union-fingerprint';
+import type {
+  ChampionMember, UnionChampionResponse, UnionRaiderResponse, UnionSummaryResponse,
+} from './union-fingerprint';
 
 const nowIso = () => new Date().toISOString();
 
-export type AccountSignalType = 'union_champion_roster' | 'union_raider_preset';
+export type AccountSignalType = 'union_champion_roster' | 'union_raider_preset' | 'union_raider_full';
 
 interface AccountSignal {
   type: AccountSignalType;
@@ -32,29 +34,52 @@ const listGroupCharacters = async (db: D1Database, groupId: number) => {
 };
 
 const fetchSignals = async (env: Env, ocid: string, types: AccountSignalType[]) => {
-  const tasks = types.map(async (type): Promise<AccountSignal[]> => {
+  const tasks = types.map(async (type): Promise<{
+    signals: AccountSignal[];
+    championMembers: ChampionMember[];
+  }> => {
     if (type === 'union_champion_roster') {
       const payload = await fetchNexonJson<UnionChampionResponse>(
         env,
         `/user/union-champion?ocid=${encodeURIComponent(ocid)}`,
       );
       const signal = await hashChampionRoster(payload);
-      return signal ? [{ type, ...signal }] : [];
+      return {
+        signals: signal ? [{ type, ...signal }] : [],
+        championMembers: payload.union_champion || [],
+      };
+    }
+    if (type === 'union_raider_full') {
+      const [union, raider] = await Promise.all([
+        fetchNexonJson<UnionSummaryResponse>(env, `/user/union?ocid=${encodeURIComponent(ocid)}`),
+        fetchNexonJson<UnionRaiderResponse>(env, `/user/union-raider?ocid=${encodeURIComponent(ocid)}`),
+      ]);
+      const signal = await hashCompleteUnionRaider(union, raider);
+      return {
+        signals: signal ? [{ type, ...signal }] : [],
+        championMembers: [],
+      };
     }
     const payload = await fetchNexonJson<UnionRaiderResponse>(
       env,
       `/user/union-raider?ocid=${encodeURIComponent(ocid)}`,
     );
-    return (await hashRaiderPresets(payload)).map((signal) => ({ type, ...signal }));
+    return {
+      signals: (await hashRaiderPresets(payload)).map((signal) => ({ type, ...signal })),
+      championMembers: [],
+    };
   });
   const settled = await Promise.allSettled(tasks);
-  const signals = settled.flatMap((result) => result.status === 'fulfilled' ? result.value : []);
+  const signals = settled.flatMap((result) => result.status === 'fulfilled' ? result.value.signals : []);
+  const championMembers = settled.flatMap((result) => (
+    result.status === 'fulfilled' ? result.value.championMembers : []
+  ));
   const failures = settled.flatMap((result, index) => result.status === 'rejected'
     ? [{ type: types[index], error: result.reason }]
     : []);
   const unexpected = failures.find(({ error }) => !(error instanceof NexonRequestError));
   if (unexpected) throw unexpected.error;
-  return { signals, failures };
+  return { signals, championMembers, failures };
 };
 
 const storeAndMatchSignals = async (env: Env, character: PublicCharacter, signals: AccountSignal[]) => {
@@ -144,11 +169,45 @@ const storeAndMatchSignals = async (env: Env, character: PublicCharacter, signal
 export const syncCharacterAccountSignals = async (
   env: Env,
   character: PublicCharacter,
-  types: AccountSignalType[] = ['union_champion_roster', 'union_raider_preset'],
+  types: AccountSignalType[] = ['union_champion_roster', 'union_raider_full'],
 ) => {
   const discovered = await fetchSignals(env, character.ocid, types);
   const stored = await storeAndMatchSignals(env, character, discovered.signals);
-  return { ...stored, signalCount: discovered.signals.length, failures: discovered.failures };
+  return {
+    ...stored,
+    signalCount: discovered.signals.length,
+    championMembers: discovered.championMembers,
+    failures: discovered.failures,
+  };
+};
+
+const mergeOfficialChampionMembers = (
+  character: PublicCharacter,
+  groupedCharacters: Record<string, unknown>[],
+  championMembers: ChampionMember[],
+) => {
+  const merged = new Map<string, Record<string, unknown>>();
+  for (const grouped of groupedCharacters) {
+    const name = String(grouped.characterName || '').trim().normalize('NFC');
+    if (name) merged.set(name.toLocaleLowerCase('zh-TW'), grouped);
+  }
+  for (const champion of championMembers) {
+    const name = String(champion.champion_name || '').trim().normalize('NFC');
+    if (!name || name === character.characterName.normalize('NFC')) continue;
+    const key = name.toLocaleLowerCase('zh-TW');
+    if (merged.has(key)) continue;
+    merged.set(key, {
+      ocid: '',
+      characterName: name,
+      worldName: character.worldName,
+      jobName: String(champion.champion_class || ''),
+      level: 0,
+      combatPower: 0,
+      characterImage: '',
+      guildName: null,
+    });
+  }
+  return [...merged.values()];
 };
 
 export const getCharacterAlts = async (env: Env, characterName: string) => {
@@ -160,12 +219,17 @@ export const getCharacterAlts = async (env: Env, characterName: string) => {
     ? await env.DB.prepare('SELECT id, confidence, last_verified_at AS lastVerifiedAt FROM account_groups WHERE id = ?1')
       .bind(groupId).first<{ id: number; confidence: string; lastVerifiedAt: string | null }>()
     : null;
-  const alts = groupId ? await listGroupCharacters(env.DB, groupId) : [];
+  const groupedCharacters = groupId ? await listGroupCharacters(env.DB, groupId) : [];
+  const alts = mergeOfficialChampionMembers(
+    character,
+    groupedCharacters.filter((alt) => (alt as { ocid: string }).ocid !== character.ocid),
+    synced.championMembers,
+  );
   return {
     character,
     accountGroup,
     confidence: accountGroup?.confidence || 'unknown',
-    alts: alts.filter((alt) => (alt as { ocid: string }).ocid !== character.ocid),
+    alts,
     lastVerifiedAt: accountGroup?.lastVerifiedAt || synced.lastVerifiedAt,
     disclosure: '依公開聯盟資料推定，並非 NEXON 官方 Account ID',
   };

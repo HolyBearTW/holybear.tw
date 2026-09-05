@@ -1,4 +1,4 @@
-interface ChampionMember {
+export interface ChampionMember {
   champion_name?: string;
   champion_grade?: string;
   champion_class?: string;
@@ -30,11 +30,17 @@ interface UnionRaiderPreset {
 }
 
 export interface UnionRaiderResponse extends UnionRaiderPreset {
+  use_preset_no?: number | string;
   union_raider_preset_1?: UnionRaiderPreset;
   union_raider_preset_2?: UnionRaiderPreset;
   union_raider_preset_3?: UnionRaiderPreset;
   union_raider_preset_4?: UnionRaiderPreset;
   union_raider_preset_5?: UnionRaiderPreset;
+}
+
+export interface UnionSummaryResponse {
+  union_level?: number | string;
+  union_grade?: string;
 }
 
 export interface UnionChampionResponse {
@@ -103,6 +109,28 @@ export const canonicalizeRaiderPresets = (payload: UnionRaiderResponse) => {
   return [...new Set(presets.map(stableStringify))].sort();
 };
 
+export const canonicalizeCompleteUnionRaider = (
+  union: UnionSummaryResponse,
+  payload: UnionRaiderResponse,
+) => {
+  const presets = [1, 2, 3, 4, 5].map((number) => normalizeRaiderPreset(
+    payload[`union_raider_preset_${number}` as keyof UnionRaiderResponse] as UnionRaiderPreset | undefined,
+  ));
+  const current = normalizeRaiderPreset(payload);
+  if (!current && presets.every((preset) => !preset)) return null;
+  return stableStringify({
+    union: {
+      level: Number(union.union_level || 0),
+      grade: normalizeText(union.union_grade),
+    },
+    usePresetNo: normalizeText(payload.use_preset_no),
+    current,
+    // Preset slots are intentionally kept in their original order. Two
+    // accounts only match when every visible preset contains the same data.
+    presets,
+  });
+};
+
 export const canonicalizeChampionRoster = (payload: UnionChampionResponse) => {
   const members = (payload.union_champion || [])
     .map((member) => ({
@@ -126,6 +154,15 @@ const hashCanonical = async (canonical: string) => {
 export const hashRaiderPresets = async (payload: UnionRaiderResponse) => (
   Promise.all(canonicalizeRaiderPresets(payload).map(hashCanonical))
 );
+
+export const hashCompleteUnionRaider = async (
+  union: UnionSummaryResponse,
+  payload: UnionRaiderResponse,
+) => {
+  const canonical = canonicalizeCompleteUnionRaider(union, payload);
+  if (!canonical) return null;
+  return hashCanonical(canonical);
+};
 
 export const hashChampionRoster = async (payload: UnionChampionResponse) => {
   const canonical = canonicalizeChampionRoster(payload);

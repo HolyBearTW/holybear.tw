@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { isCharacterFresh, normalizeCharacterName, validateCanonicalSources } from '../../functions/_shared/character-repository';
 import { parseRankingFilters } from '../../functions/_shared/ranking-repository';
 import type { PublicCharacter } from '../../functions/_shared/models';
-import { canonicalizeChampionRoster, canonicalizeRaiderPresets } from '../../functions/_shared/union-fingerprint';
+import {
+  canonicalizeChampionRoster,
+  canonicalizeCompleteUnionRaider,
+  canonicalizeRaiderPresets,
+} from '../../functions/_shared/union-fingerprint';
 import { singleParam } from '../../functions/_shared/http';
 import { createAliasSignatureInputs } from '../../.vitepress/theme/maplestory/services/aliasFingerprint.js';
 
@@ -107,5 +111,43 @@ describe('union account signals', () => {
     expect(canonicalizeRaiderPresets({
       union_block: Array.from({ length: 7 }, () => ({ block_class: '主教' })),
     })).toEqual([]);
+  });
+
+  it('only matches complete union raider state when summary and every preset are identical', () => {
+    const blocks = Array.from({ length: 8 }, (_, index) => ({
+      block_type: `類型${index}`,
+      block_class: `職業${index}`,
+      block_level: 200 + index,
+      block_control_point: { x: index, y: index + 1 },
+      block_position: [{ x: index, y: index }],
+    }));
+    const raider = {
+      use_preset_no: 1,
+      union_raider_preset_1: { union_raider_stat: ['STR +5'], union_block: blocks },
+      union_raider_preset_2: { union_raider_stat: ['DEX +5'], union_block: blocks },
+    };
+    const canonical = canonicalizeCompleteUnionRaider(
+      { union_level: 9585, union_grade: '宗師戰地聯盟 4' },
+      raider,
+    );
+    expect(canonical).toBe(canonicalizeCompleteUnionRaider(
+      { union_level: 9585, union_grade: '宗師戰地聯盟 4' },
+      raider,
+    ));
+    expect(canonical).not.toBe(canonicalizeCompleteUnionRaider(
+      { union_level: 9584, union_grade: '宗師戰地聯盟 4' },
+      raider,
+    ));
+    expect(canonical).not.toBe(canonicalizeCompleteUnionRaider(
+      { union_level: 9585, union_grade: '宗師戰地聯盟 4' },
+      { ...raider, use_preset_no: 2 },
+    ));
+    expect(canonical).not.toBe(canonicalizeCompleteUnionRaider(
+      { union_level: 9585, union_grade: '宗師戰地聯盟 4' },
+      {
+        ...raider,
+        union_raider_preset_2: { union_raider_stat: ['LUK +5'], union_block: blocks },
+      },
+    ));
   });
 });
