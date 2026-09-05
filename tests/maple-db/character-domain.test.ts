@@ -127,23 +127,23 @@ describe('union account signals', () => {
       union_raider_preset_2: { union_raider_stat: ['DEX +5'], union_block: blocks },
     };
     const canonical = canonicalizeCompleteUnionRaider(
-      { union_level: 9585, union_grade: '宗師戰地聯盟 4' },
+      { union_level: 9000, union_grade: '測試聯盟階級' },
       raider,
     );
     expect(canonical).toBe(canonicalizeCompleteUnionRaider(
-      { union_level: 9585, union_grade: '宗師戰地聯盟 4' },
+      { union_level: 9000, union_grade: '測試聯盟階級' },
       raider,
     ));
     expect(canonical).not.toBe(canonicalizeCompleteUnionRaider(
-      { union_level: 9584, union_grade: '宗師戰地聯盟 4' },
+      { union_level: 8999, union_grade: '測試聯盟階級' },
       raider,
     ));
     expect(canonical).not.toBe(canonicalizeCompleteUnionRaider(
-      { union_level: 9585, union_grade: '宗師戰地聯盟 4' },
+      { union_level: 9000, union_grade: '測試聯盟階級' },
       { ...raider, use_preset_no: 2 },
     ));
     expect(canonical).not.toBe(canonicalizeCompleteUnionRaider(
-      { union_level: 9585, union_grade: '宗師戰地聯盟 4' },
+      { union_level: 9000, union_grade: '測試聯盟階級' },
       {
         ...raider,
         union_raider_preset_2: { union_raider_stat: ['LUK +5'], union_block: blocks },
