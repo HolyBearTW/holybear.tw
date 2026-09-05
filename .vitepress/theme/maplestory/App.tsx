@@ -13,10 +13,13 @@ import { preloadAliasIndex } from './services/aliasService';
 import { mapleAsset } from './assets';
 import {
   BYPASS_STORAGE_KEY,
+  BYPASS_EXPIRY_STORAGE_KEY,
   lockMaintenanceView,
   MAINTENANCE_LOCK_EVENT,
+  readBypassExpiresAt,
   readSavedBypassKey,
   saveBypassKey,
+  validateMaintenanceBypass,
 } from './services/maintenanceAccess';
 
 const loadMainDashboard = () => import('./components/MainDashboard');
@@ -327,7 +330,11 @@ const AuthorizedApp: React.FC<{ bypassKey: string }> = ({ bypassKey }) => {
   );
 };
 
-const MaintenanceView: React.FC<{ onUnlock: (key: string) => void }> = ({ onUnlock }) => {
+const MaintenanceView: React.FC<{
+  onUnlock: (key: string) => Promise<void>;
+  unlocking: boolean;
+  unlockError: string;
+}> = ({ onUnlock, unlocking, unlockError }) => {
   const clickCount = React.useRef(0);
   const resetTimer = React.useRef<number | null>(null);
 
@@ -345,7 +352,7 @@ const MaintenanceView: React.FC<{ onUnlock: (key: string) => void }> = ({ onUnlo
     if (clickCount.current < 5) return;
     clickCount.current = 0;
     const enteredKey = window.prompt('請輸入維護專用密碼')?.trim();
-    if (enteredKey) onUnlock(enteredKey);
+    if (enteredKey) void onUnlock(enteredKey);
   };
 
   return (
@@ -383,6 +390,8 @@ const MaintenanceView: React.FC<{ onUnlock: (key: string) => void }> = ({ onUnlo
         <p className="maple-maintenance-copy mx-auto mt-5 max-w-xl text-sm leading-7 text-slate-400 sm:text-base">
           戰力分析與相關角色工具目前暫停服務，進行後端架構升級與最佳化，敬請見諒。
         </p>
+        {unlocking && <p className="mt-4 text-sm font-medium text-cyan-400">正在驗證密碼…</p>}
+        {!unlocking && unlockError && <p className="mt-4 text-sm font-medium text-rose-400">{unlockError}</p>}
       </section>
     </main>
   );
@@ -390,29 +399,45 @@ const MaintenanceView: React.FC<{ onUnlock: (key: string) => void }> = ({ onUnlo
 
 const getInitialBypassKey = () => {
   if (typeof window === 'undefined') return '';
-  return new URL(window.location.href).searchParams.get('bypass_key')?.trim() || readSavedBypassKey();
+  return readSavedBypassKey();
 };
 
 const App: React.FC = () => {
   const [bypassKey, setBypassKey] = useState(getInitialBypassKey);
+  const [unlocking, setUnlocking] = useState(false);
+  const [unlockError, setUnlockError] = useState('');
 
-  const unlock = React.useCallback((key: string) => {
-    saveBypassKey(key);
-    setBypassKey(key);
+  const unlock = React.useCallback(async (key: string) => {
+    setUnlocking(true);
+    setUnlockError('');
+    try {
+      if (!await validateMaintenanceBypass(key)) {
+        setUnlockError('密碼錯誤或已失效，請重新輸入。');
+        return;
+      }
+      saveBypassKey(key);
+      setBypassKey(key);
+    } catch {
+      setUnlockError('無法連線至驗證服務，請稍後再試。');
+    } finally {
+      setUnlocking(false);
+    }
   }, []);
 
   React.useEffect(() => {
     const url = new URL(window.location.href);
     const queryKey = url.searchParams.get('bypass_key')?.trim();
     if (queryKey) {
-      unlock(queryKey);
       url.searchParams.delete('bypass_key');
       window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+      void unlock(queryKey);
     }
 
     const handleMaintenanceLock = () => setBypassKey('');
     const handleStorage = (event: StorageEvent) => {
-      if (event.key === BYPASS_STORAGE_KEY) setBypassKey(event.newValue || '');
+      if (event.key === BYPASS_STORAGE_KEY || event.key === BYPASS_EXPIRY_STORAGE_KEY) {
+        setBypassKey(readSavedBypassKey());
+      }
     };
     window.addEventListener(MAINTENANCE_LOCK_EVENT, handleMaintenanceLock);
     window.addEventListener('storage', handleStorage);
@@ -422,9 +447,20 @@ const App: React.FC = () => {
     };
   }, [unlock]);
 
+  React.useEffect(() => {
+    if (!bypassKey) return;
+    const remaining = readBypassExpiresAt() - Date.now();
+    if (remaining <= 0) {
+      lockMaintenanceView();
+      return;
+    }
+    const timer = window.setTimeout(lockMaintenanceView, remaining);
+    return () => window.clearTimeout(timer);
+  }, [bypassKey]);
+
   return bypassKey
     ? <AuthorizedApp bypassKey={bypassKey} />
-    : <MaintenanceView onUnlock={unlock} />;
+    : <MaintenanceView onUnlock={unlock} unlocking={unlocking} unlockError={unlockError} />;
 };
 
 export default App;

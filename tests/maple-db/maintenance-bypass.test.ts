@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { onRequest } from '../../functions/api/_middleware';
+import { onRequestPost as validateBypass } from '../../functions/api/maintenance/validate';
 import {
   hasValidMaintenanceBypass,
   isMaintenanceProtectedPath,
@@ -53,5 +54,23 @@ describe('maintenance bypass middleware', () => {
 
     expect(next).toHaveBeenCalledOnce();
     expect(await response.text()).toBe('downstream');
+  });
+
+  it('validates a key without entering any NEXON query route', async () => {
+    const valid = await validateBypass({
+      env,
+      request: new Request('https://holybear.tw/api/maintenance/validate', {
+        method: 'POST',
+        headers: { 'x-bypass-key': 'deployment-secret' },
+      }),
+    } as never);
+    const invalid = await validateBypass({
+      env,
+      request: new Request('https://holybear.tw/api/maintenance/validate', { method: 'POST' }),
+    } as never);
+
+    expect(valid.status).toBe(200);
+    expect(await valid.json()).toEqual({ ok: true, expiresInSeconds: 1800 });
+    expect(invalid.status).toBe(503);
   });
 });
