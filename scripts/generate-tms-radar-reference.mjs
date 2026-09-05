@@ -54,7 +54,14 @@ const jobInfo = (job) => {
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 async function getJson(url, attempt = 0) {
-  const response = await fetch(url, { headers: url.startsWith(apiBase) ? nexonHeaders : holyBearHeaders });
+  let response;
+  try {
+    response = await fetch(url, { headers: url.startsWith(apiBase) ? nexonHeaders : holyBearHeaders });
+  } catch (error) {
+    if (attempt >= 6) throw error;
+    await sleep(500 * 2 ** attempt);
+    return getJson(url, attempt + 1);
+  }
   const body = await response.text();
   let data;
   try {
