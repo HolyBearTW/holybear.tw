@@ -35,6 +35,36 @@ const formatCreateDate = (value: string | null) => {
   return year && month && day ? `${year}/${Number(month)}/${Number(day)}` : '-';
 };
 
+const fromD1Alt = (character: Awaited<ReturnType<typeof fetchHolyBearAlts>>['alts'][number]): RelatedCharacter => ({
+  characterName: character.characterName,
+  worldName: character.worldName,
+  characterClass: character.jobName,
+  characterLevel: character.level,
+  characterImage: character.characterImage,
+  characterPower: String(character.combatPower),
+  maxCharacterPower: String(character.combatPower),
+  combatPowerRank: null,
+  characterGuildName: character.guildName,
+  characterDateCreate: null,
+});
+
+const mergeRelatedCharacters = (d1Members: RelatedCharacter[], staticMembers: RelatedCharacter[]) => {
+  const merged = new Map<string, RelatedCharacter>();
+  for (const member of staticMembers) {
+    merged.set(member.characterName.normalize('NFC').toLocaleLowerCase('zh-TW'), member);
+  }
+  for (const member of d1Members) {
+    const key = member.characterName.normalize('NFC').toLocaleLowerCase('zh-TW');
+    const fallback = merged.get(key);
+    merged.set(key, {
+      ...fallback,
+      ...member,
+      characterDateCreate: fallback?.characterDateCreate ?? member.characterDateCreate,
+    });
+  }
+  return [...merged.values()];
+};
+
 const RelatedCharacters: React.FC<RelatedCharactersProps> = ({
   data,
   onSelectCharacter,
@@ -57,31 +87,22 @@ const RelatedCharacters: React.FC<RelatedCharactersProps> = ({
     setStatus('loading');
     setPage(1);
 
-    fetchHolyBearAlts(currentCharacterName, controller.signal)
-      .then(async (result) => {
-        if (result.alts.length > 0) {
-          return result.alts.map((character) => ({
-            characterName: character.characterName,
-            worldName: character.worldName,
-            characterClass: character.jobName,
-            characterLevel: character.level,
-            characterImage: character.characterImage,
-            characterPower: String(character.combatPower),
-            maxCharacterPower: String(character.combatPower),
-            combatPowerRank: null,
-            characterGuildName: character.guildName,
-            characterDateCreate: null,
-          }));
+    Promise.allSettled([
+      fetchHolyBearAlts(currentCharacterName, controller.signal),
+      findRelatedCharacters(data, controller.signal),
+    ])
+      .then((results) => {
+        if (controller.signal.aborted) throw new DOMException('Aborted', 'AbortError');
+        const d1Members = results[0].status === 'fulfilled'
+          ? results[0].value.alts.map(fromD1Alt)
+          : [];
+        const staticMembers = results[1].status === 'fulfilled' ? results[1].value : [];
+        if (d1Members.length === 0 && staticMembers.length === 0
+          && results.every((result) => result.status === 'rejected')) {
+          const failure = results.find((result) => result.status === 'rejected');
+          throw failure?.reason ?? new Error('分身資料目前無法取得');
         }
-        // Transitional rollback path while existing static groups are gradually
-        // verified into D1. This never changes the server-side group decision.
-        return findRelatedCharacters(data, controller.signal);
-      })
-      .catch((error) => {
-        if (error instanceof DOMException && error.name === 'AbortError') throw error;
-        // D1 quota exhaustion and transient API failures must not hide the
-        // existing static alias data from visitors.
-        return findRelatedCharacters(data, controller.signal);
+        return mergeRelatedCharacters(d1Members, staticMembers);
       })
       .then(async (result) => {
         const rankingSnapshot = await fetchHolyBearRankingSnapshot();

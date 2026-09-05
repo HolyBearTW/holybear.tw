@@ -382,6 +382,21 @@ html:not(.dark) #maplestory-root .maple-maintenance-copy {
   color: var(--maple-light-text-muted) !important;
 }
 
+html:not(.dark) #maplestory-root .maple-service-notice {
+  color: var(--maple-light-text);
+  background: rgba(244, 251, 253, 0.92) !important;
+  border-color: rgba(28, 124, 147, 0.25) !important;
+  box-shadow: 0 12px 32px rgba(35, 76, 94, 0.12) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-service-notice h2 {
+  color: #0e7490 !important;
+}
+
+html:not(.dark) #maplestory-root .maple-service-notice p {
+  color: var(--maple-light-text-muted) !important;
+}
+
 html:not(.dark) #maplestory-root [class~="text-slate-300"] {
   color: var(--maple-light-text) !important;
 }

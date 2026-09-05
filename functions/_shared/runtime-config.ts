@@ -22,6 +22,9 @@ export const getRuntimeConfig = (env: Env) => ({
   importD1ReadBudget: integerSetting(env.IMPORT_D1_READ_BUDGET, 25_000_000, 10_000, 100_000_000),
   importD1WriteBudget: integerSetting(env.IMPORT_D1_WRITE_BUDGET, 5_000_000, 10_000, 10_000_000),
   rankingSnapshotSize: integerSetting(env.RANKING_SNAPSHOT_SIZE, 1_000, 100, 5_000),
+  accountSignalBackfillBatchSize: integerSetting(env.ACCOUNT_SIGNAL_BACKFILL_BATCH_SIZE, 8, 1, 25),
+  accountSignalBackfillConcurrency: integerSetting(env.ACCOUNT_SIGNAL_BACKFILL_CONCURRENCY, 1, 1, 4),
+  accountSignalBackfillDelayMs: integerSetting(env.ACCOUNT_SIGNAL_BACKFILL_DELAY_MS, 500, 100, 10_000),
 });
 
 export const requireSecret = (value: string | undefined, name: string) => {

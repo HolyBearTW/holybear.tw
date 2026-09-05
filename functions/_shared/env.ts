@@ -14,6 +14,9 @@ export interface Env {
   IMPORT_D1_READ_BUDGET?: string;
   IMPORT_D1_WRITE_BUDGET?: string;
   RANKING_SNAPSHOT_SIZE?: string;
+  ACCOUNT_SIGNAL_BACKFILL_BATCH_SIZE?: string;
+  ACCOUNT_SIGNAL_BACKFILL_CONCURRENCY?: string;
+  ACCOUNT_SIGNAL_BACKFILL_DELAY_MS?: string;
 }
 
 export type AppPagesFunction<Params extends string = string> = PagesFunction<Env, Params>;

@@ -73,6 +73,8 @@
     "import:maple:bg": "node scripts/start-manual-seed-background.mjs",
     "import:maple:status": "node scripts/run-maple-import.mjs manual --dir data/manual-character-seed --status",
     "import:maple:stop": "node scripts/stop-manual-seed-background.mjs",
+    "backfill:account-signals": "node scripts/start-account-signal-backfill.mjs",
+    "backfill:account-signals:status": "node scripts/account-signal-backfill-status.mjs",
     "preview": "vitepress preview"
   }
 }

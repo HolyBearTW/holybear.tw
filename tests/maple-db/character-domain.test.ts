@@ -2,8 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { isCharacterFresh, normalizeCharacterName, validateCanonicalSources } from '../../functions/_shared/character-repository';
 import { parseRankingFilters } from '../../functions/_shared/ranking-repository';
 import type { PublicCharacter } from '../../functions/_shared/models';
-import { canonicalizeChampionRoster } from '../../functions/_shared/union-fingerprint';
+import { canonicalizeChampionRoster, canonicalizeRaiderPresets } from '../../functions/_shared/union-fingerprint';
 import { singleParam } from '../../functions/_shared/http';
+import { createAliasSignatureInputs } from '../../.vitepress/theme/maplestory/services/aliasFingerprint.js';
 
 const character = (updatedAt: string): PublicCharacter => ({
   ocid: 'ocid-1',
@@ -79,5 +80,32 @@ describe('union account signals', () => {
       { champion_name: '角色A', champion_grade: 'A', champion_class: '英雄' },
     ] })).toBeNull();
     expect(canonicalizeChampionRoster({ union_level: 9000 } as never)).toBeNull();
+  });
+
+  it('canonicalizes union raider layouts independently of block order', () => {
+    const blocks = Array.from({ length: 8 }, (_, index) => ({
+      block_type: `類型${index}`,
+      block_class: `職業${index}`,
+      block_level: 200 + index,
+      block_control_point: { x: index, y: index + 1 },
+      block_position: [{ x: index + 1, y: index }, { x: index, y: index }],
+    }));
+    const first = canonicalizeRaiderPresets({
+      union_raider_preset_1: { union_raider_stat: ['STR +5', 'DEX +5'], union_block: blocks },
+    });
+    const second = canonicalizeRaiderPresets({
+      union_raider_preset_1: { union_raider_stat: ['DEX +5', 'STR +5'], union_block: [...blocks].reverse() },
+    });
+    expect(first).toEqual(second);
+    expect(first).toHaveLength(1);
+    expect(createAliasSignatureInputs({
+      union_raider_preset_1: { union_raider_stat: ['STR +5', 'DEX +5'], union_block: blocks },
+    }, undefined)).toContain(`raider-v1:${first[0]}`);
+  });
+
+  it('rejects small union raider layouts that are unsafe account signals', () => {
+    expect(canonicalizeRaiderPresets({
+      union_block: Array.from({ length: 7 }, () => ({ block_class: '主教' })),
+    })).toEqual([]);
   });
 });

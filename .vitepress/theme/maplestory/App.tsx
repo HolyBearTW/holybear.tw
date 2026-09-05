@@ -393,6 +393,12 @@ const MaintenanceView: React.FC<{
         {unlocking && <p className="mt-4 text-sm font-medium text-cyan-400">正在驗證密碼…</p>}
         {!unlocking && unlockError && <p className="mt-4 text-sm font-medium text-rose-400">{unlockError}</p>}
       </section>
+      <aside className="maple-service-notice mt-4 w-full max-w-2xl rounded-xl border border-cyan-400/20 bg-[#111923]/90 px-5 py-4 text-left shadow-lg shadow-black/10 backdrop-blur-sm sm:px-6">
+        <h2 className="m-0 text-sm font-bold text-cyan-300 sm:text-base">ℹ️ 服務調整說明</h2>
+        <p className="m-0 mt-2 text-sm leading-6 text-slate-400">
+          本站已停止並移除與 MapleKit 相關之服務整合及程式，亦不再向 MapleKit 服務發送任何請求。針對近期相關討論，本站不再公開回應；亦請各方理性討論，避免散布個人資訊、人身攻擊、騷擾或其他侵害權益之行為。
+        </p>
+      </aside>
     </main>
   );
 };
