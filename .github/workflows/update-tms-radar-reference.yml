@@ -28,7 +28,7 @@ jobs:
 
       - name: Generate TMS radar curves and alias index
         env:
-          VITE_NEXON_API_KEY: ${{ secrets.VITE_NEXON_API_KEY }}
+          NEXON_API_KEY: ${{ secrets.NEXON_API_KEY || secrets.VITE_NEXON_API_KEY }}
           HOLYBEAR_API_BASE_URL: https://holybear.tw
         run: node scripts/generate-tms-radar-reference.mjs
 

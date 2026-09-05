@@ -6,9 +6,10 @@ import { createAliasSignatureInputs } from '../.vitepress/theme/maplestory/servi
 const root = path.resolve(import.meta.dirname, '..');
 const envPath = path.join(root, '.env');
 const env = fs.existsSync(envPath) ? fs.readFileSync(envPath, 'utf8') : '';
-const apiKey = process.env.VITE_NEXON_API_KEY
+const apiKey = process.env.NEXON_API_KEY || process.env.VITE_NEXON_API_KEY
+  || env.match(/^NEXON_API_KEY=(.*)$/m)?.[1]?.trim().replace(/^['"]|['"]$/g, '')
   || env.match(/^VITE_NEXON_API_KEY=(.*)$/m)?.[1]?.trim().replace(/^['"]|['"]$/g, '');
-if (!apiKey) throw new Error('VITE_NEXON_API_KEY is missing');
+if (!apiKey) throw new Error('NEXON_API_KEY is missing');
 
 const outputPath = path.join(root, '.vitepress/theme/maplestory/data/tmsRadarReference.json');
 const aliasOutputDir = path.join(root, 'public/maplestory/aliases');

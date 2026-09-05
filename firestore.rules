@@ -1,0 +1,45 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function hasOnlyCounterFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function isNonNegativeInteger(value) {
+      return value is int && value >= 0;
+    }
+
+    match /views/{slug} {
+      allow read: if true;
+      allow create: if hasOnlyCounterFields(['count'])
+        && request.resource.data.count == 1;
+      allow update: if hasOnlyCounterFields(['count'])
+        && isNonNegativeInteger(resource.data.count)
+        && request.resource.data.count == resource.data.count + 1;
+      allow delete: if false;
+    }
+
+    match /votes/{articleId} {
+      allow read: if true;
+      allow create: if hasOnlyCounterFields(['up', 'down'])
+        && request.resource.data.up == 0
+        && request.resource.data.down == 0;
+      allow update: if hasOnlyCounterFields(['up', 'down'])
+        && isNonNegativeInteger(request.resource.data.up)
+        && isNonNegativeInteger(request.resource.data.down)
+        && request.resource.data.diff(resource.data).affectedKeys().size() == 1
+        && (
+          request.resource.data.up == resource.data.up + 1
+          || request.resource.data.up == resource.data.up - 1
+          || request.resource.data.down == resource.data.down + 1
+          || request.resource.data.down == resource.data.down - 1
+        );
+      allow delete: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
