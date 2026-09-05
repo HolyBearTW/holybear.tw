@@ -8,6 +8,7 @@ import Familiar from './Familiar';
 import UnionRaiderSection from './UnionRaiderSection';
 import CharacterAvatar from './CharacterAvatar';
 import { mapleAsset } from '../assets';
+import { maintenanceFetch } from '../services/maintenanceAccess';
 
 interface CharacterDetailsProps {
   data: DashboardData;
@@ -434,8 +435,8 @@ const ChampionCard: React.FC<{ champ: any; apiKey: string }> = ({ champ, apiKey 
 
       const fetchImgAndLevel = async () => {
         try {
-          const idRes = await fetch(`/api/nexon/id?character_name=${encodeURIComponent(champ.champion_name)}`, {
-            headers: { 'x-nxopen-api-key': apiKey } 
+          const idRes = await maintenanceFetch(`/api/nexon/id?character_name=${encodeURIComponent(champ.champion_name)}`, {
+            headers: { 'x-bypass-key': apiKey }
           });
           if (!idRes.ok) {
             console.warn(`Fetch ID failed for ${champ.champion_name}: ${idRes.status}`);
@@ -443,8 +444,8 @@ const ChampionCard: React.FC<{ champ: any; apiKey: string }> = ({ champ, apiKey 
           }
           const idData = await idRes.json();
           if (idData.ocid) {
-            const basicRes = await fetch(`/api/nexon/character/basic?ocid=${idData.ocid}`, {
-              headers: { 'x-nxopen-api-key': apiKey } 
+            const basicRes = await maintenanceFetch(`/api/nexon/character/basic?ocid=${idData.ocid}`, {
+              headers: { 'x-bypass-key': apiKey }
             });
             const basicData = await basicRes.json();
             if (basicData.character_image) setImage(basicData.character_image);

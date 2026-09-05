@@ -352,6 +352,36 @@ html:not(.dark) #maplestory-root [class~="text-slate-200"] {
   color: var(--maple-light-text-strong) !important;
 }
 
+#maplestory-root .maple-maintenance-heading {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  color: #f1f5f9 !important;
+  line-height: 1.25;
+}
+
+html:not(.dark) #maplestory-root .maple-maintenance-heading {
+  color: var(--maple-light-text-strong) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-maintenance-card {
+  color: var(--maple-light-text);
+  background: rgba(249, 253, 255, 0.9) !important;
+  border-color: rgba(36, 94, 112, 0.28) !important;
+  box-shadow: 0 20px 50px rgba(35, 76, 94, 0.18) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-maintenance-icon {
+  color: #9a6400 !important;
+  background: rgba(245, 158, 11, 0.13) !important;
+  border-color: rgba(180, 111, 0, 0.32) !important;
+  box-shadow: 0 8px 20px rgba(180, 111, 0, 0.12) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-maintenance-copy {
+  color: var(--maple-light-text-muted) !important;
+}
+
 html:not(.dark) #maplestory-root [class~="text-slate-300"] {
   color: var(--maple-light-text) !important;
 }

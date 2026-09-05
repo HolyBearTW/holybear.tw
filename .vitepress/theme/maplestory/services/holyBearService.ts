@@ -1,3 +1,5 @@
+import { maintenanceFetch } from './maintenanceAccess';
+
 export interface HolyBearPowerRankingEntry {
   ocid: string;
   characterName: string;
@@ -80,26 +82,26 @@ export const fetchHolyBearPowerRanking = async (
   if (filters.world) params.set('world', filters.world);
   if (filters.job) params.set('job', filters.job);
   if (filters.minLevel != null) params.set('minLevel', String(filters.minLevel));
-  const response = await fetch(`/api/rankings/combat-power?${params}`, { cache: 'no-store' });
+  const response = await maintenanceFetch(`/api/rankings/combat-power?${params}`, { cache: 'no-store' });
   if (!response.ok) throw new Error(await parseError(response, `HolyBear 排行榜讀取失敗 (${response.status})`));
   return response.json();
 };
 
 export const fetchHolyBearCharacterRank = async (name: string): Promise<HolyBearCharacterRank | null> => {
-  const response = await fetch(`/api/rankings/character/${encodeURIComponent(name.trim())}`, { cache: 'no-store' });
+  const response = await maintenanceFetch(`/api/rankings/character/${encodeURIComponent(name.trim())}`, { cache: 'no-store' });
   if (response.status === 404) return null;
   if (!response.ok) throw new Error(await parseError(response, `HolyBear 名次查詢失敗 (${response.status})`));
   return response.json();
 };
 
 export const fetchHolyBearCharacter = async (name: string): Promise<HolyBearCharacterResponse> => {
-  const response = await fetch(`/api/characters/${encodeURIComponent(name.trim())}`, { cache: 'no-store' });
+  const response = await maintenanceFetch(`/api/characters/${encodeURIComponent(name.trim())}`, { cache: 'no-store' });
   if (!response.ok) throw new Error(await parseError(response, `HolyBear 角色查詢失敗 (${response.status})`));
   return response.json();
 };
 
 export const fetchHolyBearAlts = async (name: string, signal?: AbortSignal): Promise<HolyBearAltsResponse> => {
-  const response = await fetch(`/api/characters/${encodeURIComponent(name.trim())}/alts`, {
+  const response = await maintenanceFetch(`/api/characters/${encodeURIComponent(name.trim())}/alts`, {
     cache: 'no-store',
     signal,
   });

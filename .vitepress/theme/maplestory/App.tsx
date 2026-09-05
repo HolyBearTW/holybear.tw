@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Construction } from 'lucide-react';
 import SearchForm, { SearchStatus, SearchEmptyState } from './components/SearchForm';
 import UpdateLogBoard from './components/UpdateLogBoard';
 import HeroHeader from './components/HeroHeader';
@@ -9,6 +10,14 @@ import { useMapleSearch } from './hooks/useMapleSearch';
 import { useAiAnalysis } from './hooks/useAiAnalysis';
 import { useCharacterStats } from './hooks/useCharacterStats';
 import { preloadAliasIndex } from './services/aliasService';
+import { mapleAsset } from './assets';
+import {
+  BYPASS_STORAGE_KEY,
+  lockMaintenanceView,
+  MAINTENANCE_LOCK_EVENT,
+  readSavedBypassKey,
+  saveBypassKey,
+} from './services/maintenanceAccess';
 
 const loadMainDashboard = () => import('./components/MainDashboard');
 const loadCharacterGrowthHistory = () => import('./components/CharacterGrowthHistory');
@@ -46,8 +55,8 @@ const ResultLoading = () => {
   );
 };
 
-const App: React.FC = () => {
-  const [apiKey, setApiKey] = useState<string | null>('server-side');
+const AuthorizedApp: React.FC<{ bypassKey: string }> = ({ bypassKey }) => {
+  const apiKey = bypassKey;
   
   const [error, setError] = useState<string | null>(null);
 
@@ -125,7 +134,7 @@ const App: React.FC = () => {
           apiKey={apiKey} 
           onShowKeySettings={() => setShowKeySettings(true)} 
           onClearApiKey={() => { 
-            setApiKey('server-side');
+            lockMaintenanceView();
             setData(null);
             setCharacterName('');
           }} 
@@ -316,6 +325,106 @@ const App: React.FC = () => {
           `}</style>
     </div>
   );
+};
+
+const MaintenanceView: React.FC<{ onUnlock: (key: string) => void }> = ({ onUnlock }) => {
+  const clickCount = React.useRef(0);
+  const resetTimer = React.useRef<number | null>(null);
+
+  React.useEffect(() => () => {
+    if (resetTimer.current !== null) window.clearTimeout(resetTimer.current);
+  }, []);
+
+  const handleTitleClick = () => {
+    clickCount.current += 1;
+    if (resetTimer.current !== null) window.clearTimeout(resetTimer.current);
+    resetTimer.current = window.setTimeout(() => {
+      clickCount.current = 0;
+    }, 3000);
+
+    if (clickCount.current < 5) return;
+    clickCount.current = 0;
+    const enteredKey = window.prompt('請輸入維護專用密碼')?.trim();
+    if (enteredKey) onUnlock(enteredKey);
+  };
+
+  return (
+    <main className="mx-auto flex min-h-[70vh] max-w-[1600px] flex-col items-center justify-center px-6 py-16 text-slate-200">
+      <div
+        className="mb-8 flex select-none items-center gap-3 rounded-lg"
+        onClick={handleTitleClick}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            handleTitleClick();
+          }
+        }}
+        role="button"
+        tabIndex={0}
+        aria-label="新楓之谷戰力分析"
+      >
+        <span className="flex h-12 w-12 items-center justify-center">
+          <img
+            src={mapleAsset('Maple_Icon.webp')}
+            alt=""
+            className="h-12 w-12 object-contain"
+            decoding="async"
+          />
+        </span>
+        <h1 className="maple-hero-title m-0 text-2xl font-bold text-white">新楓之谷戰力分析</h1>
+      </div>
+      <section className="maple-maintenance-card w-full max-w-2xl rounded-2xl border border-slate-700/80 bg-[#161b22]/95 px-6 py-10 text-center shadow-2xl shadow-black/20 backdrop-blur-sm sm:px-10 sm:py-12">
+        <div className="maple-maintenance-icon mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-xl border border-amber-400/35 bg-amber-400/10 text-amber-300 shadow-lg shadow-amber-950/20" aria-hidden="true">
+          <Construction className="h-7 w-7" strokeWidth={1.8} />
+        </div>
+        <h2 className="maple-maintenance-heading m-0 text-2xl font-bold tracking-tight text-slate-100 sm:text-3xl">
+          系統維護與架構重構中
+        </h2>
+        <p className="maple-maintenance-copy mx-auto mt-5 max-w-xl text-sm leading-7 text-slate-400 sm:text-base">
+          戰力分析與相關角色工具目前暫停服務，進行後端架構升級與最佳化，敬請見諒。
+        </p>
+      </section>
+    </main>
+  );
+};
+
+const getInitialBypassKey = () => {
+  if (typeof window === 'undefined') return '';
+  return new URL(window.location.href).searchParams.get('bypass_key')?.trim() || readSavedBypassKey();
+};
+
+const App: React.FC = () => {
+  const [bypassKey, setBypassKey] = useState(getInitialBypassKey);
+
+  const unlock = React.useCallback((key: string) => {
+    saveBypassKey(key);
+    setBypassKey(key);
+  }, []);
+
+  React.useEffect(() => {
+    const url = new URL(window.location.href);
+    const queryKey = url.searchParams.get('bypass_key')?.trim();
+    if (queryKey) {
+      unlock(queryKey);
+      url.searchParams.delete('bypass_key');
+      window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+    }
+
+    const handleMaintenanceLock = () => setBypassKey('');
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === BYPASS_STORAGE_KEY) setBypassKey(event.newValue || '');
+    };
+    window.addEventListener(MAINTENANCE_LOCK_EVENT, handleMaintenanceLock);
+    window.addEventListener('storage', handleStorage);
+    return () => {
+      window.removeEventListener(MAINTENANCE_LOCK_EVENT, handleMaintenanceLock);
+      window.removeEventListener('storage', handleStorage);
+    };
+  }, [unlock]);
+
+  return bypassKey
+    ? <AuthorizedApp bypassKey={bypassKey} />
+    : <MaintenanceView onUnlock={unlock} />;
 };
 
 export default App;

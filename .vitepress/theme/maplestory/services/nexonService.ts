@@ -1,10 +1,11 @@
 import { 
   CharacterBasic, CharacterEquipment, CharacterStat, DashboardData, OcidResponse
 } from '../types';
+import { maintenanceFetch } from './maintenanceAccess';
 
-// Official data is proxied through Pages Functions so the site-owned key never
-// enters the browser bundle. The apiKey parameter remains temporarily for call
-// compatibility while the existing UI migrates away from BYOK.
+// Official data is proxied through Pages Functions so NEXON_API_KEY never enters
+// the browser bundle. Existing apiKey parameters now carry only the maintenance
+// bypass credential to avoid a broad component-prop migration.
 const BASE_URL = '/api/nexon';
 
 // Helper to get date in Taiwan timezone (UTC+8)
@@ -49,7 +50,7 @@ export const fetchCharacterBasic = async (characterName: string, apiKey: string)
     let ocid = ocidCache[characterName];
     if (!ocid) {
       const ocidRes = await fetchWithRetry(`${BASE_URL}/id?character_name=${encodeURIComponent(characterName)}`, {
-        headers: { 'x-nxopen-api-key': apiKey, accept: 'application/json' },
+        headers: { 'x-bypass-key': apiKey, accept: 'application/json' },
       });
       if (!ocidRes.ok) throw new Error('OCID lookup failed');
       const ocidData: OcidResponse = await ocidRes.json();
@@ -58,7 +59,7 @@ export const fetchCharacterBasic = async (characterName: string, apiKey: string)
     }
 
     const basicRes = await fetchWithRetry(`${BASE_URL}/character/basic?ocid=${encodeURIComponent(ocid)}`, {
-      headers: { 'x-nxopen-api-key': apiKey, accept: 'application/json' },
+      headers: { 'x-bypass-key': apiKey, accept: 'application/json' },
     });
     if (!basicRes.ok) throw new Error('Basic profile lookup failed');
     const basic = await basicRes.json() as CharacterBasic;
@@ -102,10 +103,15 @@ const fetchWithRetry = async (url: string, options: RequestInit, retries = 3, ba
 
   for (let i = 0; i < retries; i++) {
     try {
-      const res = await fetch(url, newOptions);
+      const res = await maintenanceFetch(url, newOptions);
       lastStatus = res.status;
       
       if (res.ok) return res;
+
+      // Maintenance authentication failures are terminal. The shared request
+      // wrapper has already removed the saved key and returned the UI to the
+      // maintenance card, so never retry them.
+      if (res.status === 401 || res.status === 503) return res;
       
       // If 429 (Too Many Requests), wait and retry
       if (res.status === 429) {
@@ -155,7 +161,7 @@ export const fetchBossTeammateProfile = async (characterName: string, apiKey: st
   if (!normalizedName) throw new Error('請先輸入隊友暱稱');
   if (!apiKey) throw new Error('尚未設定 Nexon API Key');
 
-  const headers = { 'x-nxopen-api-key': apiKey, accept: 'application/json' };
+  const headers = { 'x-bypass-key': apiKey, accept: 'application/json' };
   let ocid = ocidCache[normalizedName];
   if (!ocid) {
     const response = await fetchWithRetry(`${BASE_URL}/id?character_name=${encodeURIComponent(normalizedName)}`, { headers });
@@ -202,7 +208,7 @@ export const fetchBossTeammateProfile = async (characterName: string, apiKey: st
 
 export const fetchCharacterData = async (characterName: string, apiKey: string, specificDate?: string): Promise<DashboardData> => {
   const headers = {
-    'x-nxopen-api-key': apiKey,
+    'x-bypass-key': apiKey,
     'accept': 'application/json'
   };
 
@@ -371,13 +377,13 @@ export const fetchCharacterData = async (characterName: string, apiKey: string, 
 };
 
 export const findBestDateInPastWeek = async (characterName: string, apiKey: string): Promise<{ date: string, combatPower: number } | null> => {
-  const headers = { 'x-nxopen-api-key': apiKey, 'accept': 'application/json' };
+  const headers = { 'x-bypass-key': apiKey, 'accept': 'application/json' };
 
   let ocid = ocidCache[characterName];
   if (!ocid) {
     const ocidUrl = `${BASE_URL}/id?character_name=${encodeURIComponent(characterName)}`;
     try {
-      const res = await fetch(ocidUrl, { headers });
+      const res = await maintenanceFetch(ocidUrl, { headers });
       if (!res.ok) throw new Error('無法取得 OCID');
       const data = await res.json();
       ocid = data.ocid;
@@ -397,7 +403,7 @@ export const findBestDateInPastWeek = async (characterName: string, apiKey: stri
       const url = date === currentDate
         ? `${BASE_URL}/character/stat?ocid=${ocid}`
         : `${BASE_URL}/character/stat?ocid=${ocid}&date=${date}`;
-      const res = await fetch(url, { headers, cache: 'no-store' });
+      const res = await maintenanceFetch(url, { headers, cache: 'no-store' });
       if (!res.ok) return null; 
       const data = await res.json();
       const cpStat = data.final_stat.find((s: any) => s.stat_name === '戰鬥力' || s.stat_name === 'Combat Power');
@@ -423,13 +429,13 @@ export const findBestDateInPastWeek = async (characterName: string, apiKey: stri
  * 修正版：包含「今天」的最新資料
  */
 const fetchWeeklyHistoryUncached = async (characterName: string, apiKey: string) => {
-  const headers = { 'x-nxopen-api-key': apiKey, 'accept': 'application/json' };
+  const headers = { 'x-bypass-key': apiKey, 'accept': 'application/json' };
 
   let ocid = ocidCache[characterName];
   if (!ocid) {
     const ocidUrl = `${BASE_URL}/id?character_name=${encodeURIComponent(characterName)}`;
     try {
-      const res = await fetch(ocidUrl, { headers });
+      const res = await maintenanceFetch(ocidUrl, { headers });
       if (!res.ok) throw new Error('無法取得 OCID');
       const data = await res.json();
       ocid = data.ocid;
@@ -448,7 +454,7 @@ const fetchWeeklyHistoryUncached = async (characterName: string, apiKey: string)
           ? `${BASE_URL}/character/basic?ocid=${ocid}`
           : `${BASE_URL}/character/basic?ocid=${ocid}&date=${queryDate}`;
 
-        const res = await fetch(url, { headers, cache: 'no-store' });
+        const res = await maintenanceFetch(url, { headers, cache: 'no-store' });
         const dateObj = new Date(queryDate);
         const displayDate = `${dateObj.getMonth() + 1}/${dateObj.getDate()}`;
 

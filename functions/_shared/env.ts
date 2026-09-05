@@ -2,6 +2,7 @@ export interface Env {
   DB: D1Database;
   ASSETS?: Fetcher;
   NEXON_API_KEY?: string;
+  MAINTENANCE_BYPASS_KEY?: string;
   IMPORT_ADMIN_SECRET?: string;
   CHARACTER_FRESHNESS_SECONDS?: string;
   IMPORT_SOURCE_PAGE_SIZE?: string;
