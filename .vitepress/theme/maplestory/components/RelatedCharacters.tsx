@@ -4,7 +4,11 @@ import { findRelatedCharacters } from '../services/aliasService';
 import type { RelatedCharacter } from '../services/aliasService';
 import type { DashboardData } from '../types';
 import CharacterAvatar from './CharacterAvatar';
-import { fetchHolyBearAlts, fetchHolyBearRankingSnapshot } from '../services/holyBearService';
+import {
+  fetchHolyBearAlts,
+  fetchHolyBearCharacterRank,
+  fetchHolyBearRankingSnapshot,
+} from '../services/holyBearService';
 
 interface RelatedCharactersProps {
   data: DashboardData;
@@ -106,17 +110,27 @@ const RelatedCharacters: React.FC<RelatedCharactersProps> = ({
       })
       .then(async (result) => {
         const rankingSnapshot = await fetchHolyBearRankingSnapshot();
-        const resolvedMembers = result.filter((member) => (
+        const filteredMembers = result.filter((member) => (
           member.characterName
           && member.characterName !== currentCharacterName
-        )).map((member) => ({
-          ...member,
-          // Never display a rank carried by the alias discovery dataset.
-          // Only the HolyBear D1-derived snapshot is authoritative here.
-          combatPowerRank: rankingSnapshot.get(
-            member.characterName.normalize('NFC').toLocaleLowerCase('zh-TW'),
-          ) ?? null,
-        }));
+        ));
+        const liveRanks = await Promise.allSettled(filteredMembers.map((member) => (
+          fetchHolyBearCharacterRank(member.characterName)
+        )));
+        if (controller.signal.aborted) throw new DOMException('Aborted', 'AbortError');
+        const resolvedMembers = filteredMembers.map((member, index) => {
+          const liveRank = liveRanks[index].status === 'fulfilled'
+            ? liveRanks[index].value?.rank ?? null
+            : null;
+          return {
+            ...member,
+            // Prefer the live D1 rank because newly imported characters may not
+            // exist in the periodically generated static snapshot yet.
+            combatPowerRank: liveRank ?? rankingSnapshot.get(
+              member.characterName.normalize('NFC').toLocaleLowerCase('zh-TW'),
+            ) ?? null,
+          };
+        });
         setMembers(resolvedMembers);
         setStatus(resolvedMembers.length > 0 ? 'ready' : 'empty');
       })
