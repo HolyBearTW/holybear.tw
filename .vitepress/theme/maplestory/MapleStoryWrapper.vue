@@ -2101,6 +2101,7 @@ html:not(.dark) .maple-calculator-scroll::-webkit-scrollbar-thumb:hover {
 
 #maplestory-root .maple-survey-card {
   width: min(100%, 672px);
+  box-sizing: border-box;
   margin: 20px auto 0;
   border: 1px solid rgba(129, 140, 248, 0.32);
   border-radius: 18px;
@@ -2127,6 +2128,10 @@ html:not(.dark) .maple-calculator-scroll::-webkit-scrollbar-thumb:hover {
   justify-content: space-between;
   gap: 20px;
   padding: 22px 24px;
+}
+
+#maplestory-root .maple-survey-card-header > div {
+  min-width: 0;
 }
 
 #maplestory-root .maple-survey-eyebrow {
@@ -2164,6 +2169,13 @@ html:not(.dark) .maple-calculator-scroll::-webkit-scrollbar-thumb:hover {
   font-weight: 700;
   padding: 9px 16px;
   transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+#maplestory-root .maple-survey-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
 }
 
 #maplestory-root .maple-survey-toggle:hover,
@@ -2332,13 +2344,17 @@ html:not(.dark) #maplestory-root .maple-survey-textarea-label textarea {
 }
 
 @media (max-width: 640px) {
+  #maplestory-root .maple-survey-card {
+    width: calc(100% - 24px);
+  }
+
   #maplestory-root .maple-survey-card-header {
     display: block;
     padding: 18px 16px;
   }
 
   #maplestory-root .maple-survey-card h2 { font-size: 1rem; }
-  #maplestory-root .maple-survey-toggle { margin-top: 14px; }
+  #maplestory-root .maple-survey-toggle { margin-top: 16px; }
   #maplestory-root .maple-survey-form { padding: 18px 16px 20px; }
   #maplestory-root .maple-survey-score-options span { width: 40px; }
 }

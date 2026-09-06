@@ -1,11 +1,18 @@
 <template>
   <div class="maple-survey-page-shell">
-    <a class="maple-survey-page-brand" href="/maplestory/" aria-label="返回新楓之谷戰力分析首頁">
-      <span class="maple-survey-page-brand-icon">
+    <div
+      class="maple-survey-page-brand"
+      role="button"
+      tabindex="0"
+      aria-label="新楓之谷戰力分析，連續點擊五次進入問卷管理"
+      @click="handleAdminTitleClick"
+      @keydown="handleAdminTitleKeydown"
+    >
+      <span class="maple-survey-page-brand-icon" aria-hidden="true">
         <img :src="mapleAsset('Maple_Icon.webp')" alt="" decoding="async" />
       </span>
       <h2>新楓之谷戰力分析</h2>
-    </a>
+    </div>
     <div class="maple-survey-page-heading">
       <p class="maple-survey-eyebrow">HOLYBEARTW FEEDBACK</p>
       <h1>戰力分析滿意度與未來開發意願調查</h1>
@@ -18,13 +25,39 @@
 
 <script setup>
 import { onMounted, onBeforeUnmount, ref } from 'vue'
+import { useRouter } from 'vitepress'
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import SurveyForm from './maplestory/components/SurveyForm'
 import { mapleAsset } from './maplestory/assets'
 
 const mount = ref(null)
+const router = useRouter()
 let root = null
+let adminTitleClickCount = 0
+let adminTitleClickTimer = null
+
+const handleAdminTitleClick = () => {
+  adminTitleClickCount += 1
+  if (adminTitleClickTimer) window.clearTimeout(adminTitleClickTimer)
+
+  if (adminTitleClickCount >= 5) {
+    adminTitleClickCount = 0
+    void router.go('/admin/survey/')
+    return
+  }
+
+  adminTitleClickTimer = window.setTimeout(() => {
+    adminTitleClickCount = 0
+    adminTitleClickTimer = null
+  }, 1200)
+}
+
+const handleAdminTitleKeydown = (event) => {
+  if (event.key !== 'Enter' && event.key !== ' ') return
+  event.preventDefault()
+  handleAdminTitleClick()
+}
 
 onMounted(() => {
   if (!mount.value) return
@@ -33,6 +66,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  if (adminTitleClickTimer) window.clearTimeout(adminTitleClickTimer)
   root?.unmount()
   root = null
 })
@@ -42,6 +76,7 @@ onBeforeUnmount(() => {
 .maple-survey-page-shell {
   width: min(100%, 900px);
   margin: 0 auto;
+  box-sizing: border-box;
   padding: 12px 0 48px;
 }
 
@@ -53,11 +88,18 @@ onBeforeUnmount(() => {
   width: fit-content;
   margin: 0 auto 28px;
   color: #f8fafc;
+  cursor: pointer;
+  user-select: none;
   text-decoration: none;
   transition: opacity 160ms ease;
 }
 
 .maple-survey-page-brand:hover { opacity: 0.86; }
+.maple-survey-page-brand:focus-visible {
+  outline: 2px solid #a5b4fc;
+  outline-offset: 6px;
+  border-radius: 10px;
+}
 
 .maple-survey-page-brand-icon {
   display: flex;
@@ -310,7 +352,7 @@ html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) .maple-survey-bac
 }
 
 @media (max-width: 640px) {
-  .maple-survey-page-shell { padding: 4px 0 32px; }
+  .maple-survey-page-shell { padding: 4px 12px 32px; }
   .maple-survey-page-brand { margin-bottom: 22px; }
   .maple-survey-page-brand-icon,
   .maple-survey-page-brand-icon img { width: 44px; height: 44px; }
