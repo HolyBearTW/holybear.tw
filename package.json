@@ -77,6 +77,8 @@
     "import:maple:stop": "node scripts/stop-manual-seed-background.mjs",
     "backfill:account-signals": "node scripts/start-account-signal-backfill.mjs",
     "backfill:account-signals:status": "node scripts/account-signal-backfill-status.mjs",
+    "backfill:account-signals:stop": "node scripts/stop-account-signal-backfill.mjs",
+    "watch:maple-background": "node scripts/watch-maple-background-jobs.mjs",
     "preview": "vitepress preview"
   }
 }

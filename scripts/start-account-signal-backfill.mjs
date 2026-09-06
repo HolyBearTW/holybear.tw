@@ -1,9 +1,11 @@
 import { closeSync, mkdirSync, openSync, rmSync } from 'node:fs';
 import { spawn } from 'node:child_process';
 import path from 'node:path';
+import { BACKGROUND_JOB_IDS, enableBackgroundJob } from './background-watchdog-state.mjs';
 import { readRuntimeState, runtimePaths, updateRuntimeState } from './manual-import-runtime.mjs';
 
 const projectRoot = process.cwd();
+enableBackgroundJob(BACKGROUND_JOB_IDS.accountSignals, projectRoot);
 const runtimeDirectory = path.join(projectRoot, '.wrangler', 'account-signal-backfill');
 process.env.HOLYBEAR_IMPORT_RUNTIME_DIR = runtimeDirectory;
 const { stopFile } = runtimePaths(projectRoot);
