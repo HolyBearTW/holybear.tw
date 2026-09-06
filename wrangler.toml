@@ -23,6 +23,13 @@ database_name = "holybear-maple-db"
 database_id = "3c43260e-d144-45d3-94e7-3aedaf57db84"
 migrations_dir = "migrations"
 
+# Survey data is isolated from the MapleStory database.
+[[d1_databases]]
+binding = "SURVEY_DB"
+database_name = "holybear-survey-db"
+database_id = "edea16a9-d316-4c96-bbf5-87c3fb696975"
+migrations_dir = "migrations-survey"
+
 [env.production.vars]
 NODE_VERSION = "24"
 SKIP_DEPENDENCY_INSTALL = "1"
@@ -47,3 +54,9 @@ binding = "DB"
 database_name = "holybear-maple-db"
 database_id = "3c43260e-d144-45d3-94e7-3aedaf57db84"
 migrations_dir = "migrations"
+
+[[env.production.d1_databases]]
+binding = "SURVEY_DB"
+database_name = "holybear-survey-db"
+database_id = "edea16a9-d316-4c96-bbf5-87c3fb696975"
+migrations_dir = "migrations-survey"

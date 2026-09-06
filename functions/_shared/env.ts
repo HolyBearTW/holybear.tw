@@ -1,10 +1,15 @@
 export interface Env {
   DB: D1Database;
+  SURVEY_DB: D1Database;
   ASSETS?: Fetcher;
   NEXON_API_KEY?: string;
   MAINTENANCE_BYPASS_KEY?: string;
   RADAR_AUTOMATION_KEY?: string;
   IMPORT_ADMIN_SECRET?: string;
+  SURVEY_ADMIN_SECRET?: string;
+  SURVEY_FINGERPRINT_SECRET?: string;
+  TURNSTILE_SECRET_KEY?: string;
+  TURNSTILE_SITE_KEY?: string;
   CHARACTER_FRESHNESS_SECONDS?: string;
   IMPORT_SOURCE_PAGE_SIZE?: string;
   NEXON_RESOLUTION_BATCH_SIZE?: string;

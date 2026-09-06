@@ -159,8 +159,9 @@ export const useMapleSearch = (
     }
   };
 
-  const handleBestSearch = async () => {
-    if (!characterName.trim() || !apiKey) return;
+  const handleBestSearch = async (overrideName?: string) => {
+    const targetName = overrideName !== undefined ? overrideName : characterName;
+    if (!targetName.trim() || !apiKey) return;
     
     onSearchStart();
     setIsScanningBest(true);
@@ -170,10 +171,10 @@ export const useMapleSearch = (
     setShowHistory(false);
 
     try {
-      void fetchHolyBearCharacter(characterName).catch((discoveryError) => {
+      void fetchHolyBearCharacter(targetName).catch((discoveryError) => {
         console.warn('HolyBear character discovery is temporarily unavailable', discoveryError);
       });
-      const bestRecord = await findBestDateInPastWeek(characterName, apiKey);
+      const bestRecord = await findBestDateInPastWeek(targetName, apiKey);
 
       if (!bestRecord) {
         throw new Error('過去七天內找不到該角色的有效資料 (可能未登入或資料庫維護中)');
@@ -181,14 +182,14 @@ export const useMapleSearch = (
 
       setSelectedDate(bestRecord.date);
 
-      const result = await fetchCharacterData(characterName, apiKey, bestRecord.date);
+      const result = await fetchCharacterData(targetName, apiKey, bestRecord.date);
       
       setData(result);
-      addToHistory(characterName);
+      addToHistory(targetName);
       
       const currentHash = decodeURIComponent(window.location.hash.substring(1));
-      if (currentHash !== characterName) {
-           window.history.pushState({ character: characterName }, '', `#${characterName}`);
+      if (currentHash !== targetName) {
+           window.history.pushState({ character: targetName }, '', `#${targetName}`);
       }
 
     } catch (err: any) {

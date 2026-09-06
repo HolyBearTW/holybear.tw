@@ -21,7 +21,7 @@ export default function HeroHeader({ apiKey, onShowKeySettings, onClearApiKey }:
         </button>
       </div>
 
-      <a href="/maplestory" className="flex items-center gap-3 rounded-lg transition-opacity hover:opacity-85" aria-label="返回新楓之谷戰力分析首頁" title="返回分析首頁">
+      <a href="/maplestory" className="maple-hero-brand flex items-center gap-3 rounded-lg transition-opacity hover:opacity-85" aria-label="返回新楓之谷戰力分析首頁" title="返回分析首頁">
         <div className="w-12 h-12 flex items-center justify-center">
           <img
             src={mapleAsset('Maple_Icon.webp')}

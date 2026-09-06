@@ -819,6 +819,61 @@ html body.theme-halloween #maplestory-root .maple-settings-button {
   text-shadow: 0 1px 5px rgba(0, 0, 0, 0.68);
 }
 
+/* The maintenance header sits above the light-mode maintenance card. Keep its
+   title readable even though the React markup still carries the shared
+   text-white utility used by the normal analysis hero. */
+html:not(.dark) #maplestory-root .maple-maintenance-brand .maple-hero-title {
+  color: #173746 !important;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.62) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-hero-brand .maple-hero-title {
+  color: #173746 !important;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.62) !important;
+}
+
+/* Core Tower and Gravity Field deliberately retain their dark presentation in
+   light appearance, including the maintenance view shown before bypass. */
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #maplestory-root .maple-maintenance-brand .maple-hero-title {
+  color: #ffffff !important;
+  text-shadow: 0 2px 9px rgba(0, 0, 0, 0.5) !important;
+}
+
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #maplestory-root .maple-hero-brand .maple-hero-title {
+  color: #ffffff !important;
+  text-shadow: 0 2px 9px rgba(0, 0, 0, 0.5) !important;
+}
+
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #maplestory-root .maple-maintenance-card {
+  color: #e6f1ff !important;
+  background: rgba(22, 27, 34, 0.95) !important;
+  border-color: rgba(148, 163, 184, 0.3) !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.28) !important;
+}
+
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #maplestory-root .maple-maintenance-card .maple-maintenance-heading {
+  color: #f1f5f9 !important;
+}
+
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #maplestory-root .maple-maintenance-card .maple-maintenance-copy {
+  color: #b8c8d8 !important;
+}
+
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #maplestory-root .maple-service-notice {
+  color: #e6f1ff !important;
+  background: rgba(17, 25, 35, 0.9) !important;
+  border-color: rgba(34, 211, 238, 0.24) !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2) !important;
+}
+
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #maplestory-root .maple-service-notice h2 {
+  color: #67e8f9 !important;
+}
+
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #maplestory-root .maple-service-notice p {
+  color: #b8c8d8 !important;
+}
+
 html:not(.dark) #maplestory-root .maple-ranking-go-button {
   color: #ffffff !important;
   background: #087f94 !important;
@@ -2042,5 +2097,249 @@ html:not(.dark) .maple-calculator-scroll::-webkit-scrollbar-thumb {
 
 html:not(.dark) .maple-calculator-scroll::-webkit-scrollbar-thumb:hover {
   background: #527986;
+}
+
+#maplestory-root .maple-survey-card {
+  width: min(100%, 672px);
+  margin: 20px auto 0;
+  border: 1px solid rgba(129, 140, 248, 0.32);
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(20, 27, 53, 0.96), rgba(18, 25, 43, 0.94));
+  box-shadow: 0 16px 44px rgba(3, 7, 18, 0.22);
+  color: #dbeafe;
+  overflow: hidden;
+}
+
+#maplestory-root .maple-survey-card-link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+#maplestory-root .maple-survey-card-link:focus-visible {
+  outline: 2px solid #a5b4fc;
+  outline-offset: -3px;
+}
+
+#maplestory-root .maple-survey-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 22px 24px;
+}
+
+#maplestory-root .maple-survey-eyebrow {
+  margin: 0 0 6px;
+  color: #a5b4fc;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+}
+
+#maplestory-root .maple-survey-card h2 {
+  margin: 0;
+  color: #f8fafc;
+  font-size: 1.15rem;
+  line-height: 1.55;
+}
+
+#maplestory-root .maple-survey-description {
+  max-width: 680px;
+  margin: 8px 0 0;
+  color: #a5b4cc;
+  font-size: 0.84rem;
+  line-height: 1.7;
+}
+
+#maplestory-root .maple-survey-toggle,
+#maplestory-root .maple-survey-submit {
+  flex: none;
+  border: 1px solid rgba(129, 140, 248, 0.65);
+  border-radius: 999px;
+  background: rgba(99, 102, 241, 0.2);
+  color: #e0e7ff;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 9px 16px;
+  transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+#maplestory-root .maple-survey-toggle:hover,
+#maplestory-root .maple-survey-submit:hover:not(:disabled) {
+  border-color: #a5b4fc;
+  background: rgba(99, 102, 241, 0.38);
+  transform: translateY(-1px);
+}
+
+#maplestory-root .maple-survey-card-link:hover .maple-survey-toggle {
+  border-color: #a5b4fc;
+  background: rgba(99, 102, 241, 0.38);
+  transform: translateY(-1px);
+}
+
+#maplestory-root .maple-survey-submit:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+#maplestory-root .maple-survey-form {
+  display: grid;
+  gap: 18px;
+  border-top: 1px solid rgba(129, 140, 248, 0.2);
+  padding: 20px 24px 24px;
+}
+
+#maplestory-root .maple-survey-form fieldset {
+  display: grid;
+  gap: 9px;
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+#maplestory-root .maple-survey-form legend,
+#maplestory-root .maple-survey-textarea-label {
+  color: #e2e8f0;
+  font-size: 0.86rem;
+  font-weight: 700;
+  line-height: 1.55;
+}
+
+#maplestory-root .maple-survey-form legend span {
+  color: #fda4af;
+}
+
+#maplestory-root .maple-survey-form fieldset label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #b8c7dc;
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+#maplestory-root .maple-survey-form input[type='radio'] {
+  accent-color: #818cf8;
+}
+
+#maplestory-root .maple-survey-score-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+#maplestory-root .maple-survey-score-options label {
+  position: relative;
+  display: block;
+}
+
+#maplestory-root .maple-survey-score-options input {
+  position: absolute;
+  opacity: 0;
+}
+
+#maplestory-root .maple-survey-score-options span {
+  display: grid;
+  width: 42px;
+  height: 36px;
+  place-items: center;
+  border: 1px solid rgba(148, 163, 184, 0.34);
+  border-radius: 9px;
+  color: #cbd5e1;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+#maplestory-root .maple-survey-score-options input:checked + span {
+  border-color: #a5b4fc;
+  background: rgba(99, 102, 241, 0.35);
+  color: #fff;
+}
+
+#maplestory-root .maple-survey-score-hint {
+  display: flex;
+  justify-content: space-between;
+  max-width: 250px;
+  color: #8292aa;
+  font-size: 0.72rem;
+}
+
+#maplestory-root .maple-survey-textarea-label {
+  display: grid;
+  gap: 7px;
+}
+
+#maplestory-root .maple-survey-textarea-label textarea {
+  width: 100%;
+  resize: vertical;
+  border: 1px solid rgba(129, 140, 248, 0.28);
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.72);
+  color: #e2e8f0;
+  font: inherit;
+  font-size: 0.84rem;
+  line-height: 1.6;
+  padding: 10px 12px;
+}
+
+#maplestory-root .maple-survey-textarea-label textarea:focus {
+  outline: 2px solid rgba(129, 140, 248, 0.55);
+  outline-offset: 1px;
+}
+
+#maplestory-root .maple-survey-captcha {
+  min-height: 65px;
+}
+
+#maplestory-root .maple-survey-help,
+#maplestory-root .maple-survey-privacy {
+  margin: -8px 0 0;
+  color: #8292aa;
+  font-size: 0.72rem;
+  line-height: 1.55;
+}
+
+#maplestory-root .maple-survey-error,
+#maplestory-root .maple-survey-success {
+  margin: -6px 0 0;
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
+#maplestory-root .maple-survey-error { color: #fda4af; }
+#maplestory-root .maple-survey-success { color: #86efac; }
+
+html:not(.dark) #maplestory-root .maple-survey-card {
+  border-color: rgba(67, 56, 202, 0.24);
+  background: linear-gradient(135deg, rgba(248, 250, 255, 0.98), rgba(239, 246, 255, 0.97));
+  box-shadow: 0 16px 36px rgba(45, 55, 90, 0.12);
+  color: #25385a;
+}
+
+html:not(.dark) #maplestory-root .maple-survey-card h2,
+html:not(.dark) #maplestory-root .maple-survey-form legend,
+html:not(.dark) #maplestory-root .maple-survey-textarea-label { color: #1e2b4a; }
+
+html:not(.dark) #maplestory-root .maple-survey-description,
+html:not(.dark) #maplestory-root .maple-survey-form fieldset label { color: #526784; }
+
+html:not(.dark) #maplestory-root .maple-survey-textarea-label textarea {
+  border-color: rgba(67, 56, 202, 0.22);
+  background: rgba(255, 255, 255, 0.85);
+  color: #243654;
+}
+
+@media (max-width: 640px) {
+  #maplestory-root .maple-survey-card-header {
+    display: block;
+    padding: 18px 16px;
+  }
+
+  #maplestory-root .maple-survey-card h2 { font-size: 1rem; }
+  #maplestory-root .maple-survey-toggle { margin-top: 14px; }
+  #maplestory-root .maple-survey-form { padding: 18px 16px 20px; }
+  #maplestory-root .maple-survey-score-options span { width: 40px; }
 }
 </style>

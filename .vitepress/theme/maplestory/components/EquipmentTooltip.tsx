@@ -417,7 +417,11 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
   // Logic: 
   // If Genesis/Eternal/Zero weapon -> Old simple style (no max limit check, just render filled)
   // Else -> New grid style (Top 15, Bottom 15, empty slots shown)
-  const isSpecialWeapon = (item.item_name.includes('創世') || item.item_name.includes('命運')); // Includes some Zero weapons for safety
+  const isSpecialWeapon = (
+    slotType === 'Weapon' ||
+    item.item_equipment_slot === '武器' ||
+    item.item_equipment_part === '武器'
+  ) && (item.item_name.includes('創世') || item.item_name.includes('命運')); // Includes some Zero weapons for safety
   
   // Calculate max stars
   let maxStars = 30; // Default max to 30 as per user request
@@ -496,6 +500,10 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
       const setName = s.set_name;
       const itemName = item.item_name;
 
+      // 「創世的胸章」是漆黑 BOSS 裝備，不是可套用幸運道具規則的創世武器。
+      // 先限定它只能匹配漆黑 BOSS，避免被下方的「創世」武器關鍵字提早分到其他套組。
+      if (itemName.includes('創世的胸章')) return setName.includes('漆黑BOSS');
+
       // 拼圖片名稱與套裝名稱的詞序不同，例如「真殺人鯨拼圖(攻擊力)1」
       // 對應「真殺人鯨攻擊力拼圖」，因此直接使用 API 中目前生效的拼圖套裝。
       if (isPuzzlePiece && setName.includes('拼圖')) return true;
@@ -532,7 +540,7 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
 
       //永恆, etc.
       if (setName.includes('永恆')) {
-          if (itemName.includes('永恆火焰戒指') || itemName.includes('永恆勇士') || itemName.includes('創世的胸章')) return false;
+          if (itemName.includes('永恆火焰戒指') || itemName.includes('永恆勇士')) return false;
           if (['永恆', '創世', '命運'].some(k => itemName.includes(k))) return true;
       }
 

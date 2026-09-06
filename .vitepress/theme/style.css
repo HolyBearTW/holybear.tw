@@ -5833,3 +5833,122 @@ html body:not(.theme-halloween):not(.theme-christmas):not(.is-days500-page) #app
     background-color: transparent !important;
   }
 }
+
+/* ==========================================================================
+   Dark-only presentation themes
+   Core Tower and Gravity Field use dark artwork as their visual foundation.
+   Keep that presentation when the site appearance toggle is set to light,
+   without changing the light/dark behavior of any other background theme.
+   ========================================================================== */
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) {
+  color-scheme: dark;
+  --vp-c-bg: #040812 !important;
+  --vp-c-bg-soft: #091321 !important;
+  --vp-c-bg-alt: #07101b !important;
+  --vp-c-text-1: #e6f1ff !important;
+  --vp-c-text-2: #b8c8d8 !important;
+  --vp-c-text-3: #8fa6b8 !important;
+  --vp-c-divider: rgba(148, 163, 184, 0.18) !important;
+  --my-glass-bg: rgba(0, 0, 0, 0.3) !important;
+  --panel-glass-bg: rgba(0, 0, 0, 0.4) !important;
+  --panel-text-color: #e6f1ff !important;
+  --vp-nav-bg-color: rgba(7, 17, 25, 0.74) !important;
+  --vp-sidebar-bg-color: rgba(7, 17, 25, 0.74) !important;
+  --vp-local-nav-bg-color: rgba(7, 17, 25, 0.74) !important;
+  background-color: #02040a !important;
+  color: #e6f1ff !important;
+}
+
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav:has(.VPNavBar:not(.top)) {
+  background: rgba(7, 17, 25, 0.74) !important;
+  background-image: none !important;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18) !important;
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.28) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(140%) !important;
+  backdrop-filter: blur(22px) saturate(140%) !important;
+}
+
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav .VPNavBar:not(.top),
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav .VPNavBar:not(.top) .wrapper,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav .VPNavBar:not(.top) .container,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav .VPNavBar:not(.top) .content,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav .VPNavBar:not(.top) .content-body {
+  background: transparent !important;
+  background-image: none !important;
+  border-bottom-color: transparent !important;
+  box-shadow: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav .VPNavBar:not(.top) .VPNavBarTitle .title,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav .VPNavBar:not(.top) .VPNavBarTitle .title *,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav .VPNavBar:not(.top) .VPNavBarMenuLink,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav .VPNavBar:not(.top) .VPNavBarMenuLink *,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav .VPNavBar:not(.top) .VPNavBarMenuGroup > .button,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav .VPNavBar:not(.top) .VPNavBarMenuGroup > .button *,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav .VPNavBar:not(.top) .VPNavBarTranslations > .button,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav .VPNavBar:not(.top) .VPNavBarTranslations > .button *,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav .VPNavBar:not(.top) .VPSocialLink,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav .VPNavBar:not(.top) .VPNavBarSearchButton {
+  color: rgba(239, 249, 252, 0.94) !important;
+  text-shadow: 0 2px 10px rgba(2, 18, 31, 0.68) !important;
+}
+
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPSidebar,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPSidebar.open {
+  color: #e6f1ff !important;
+  background: rgba(7, 17, 25, 0.88) !important;
+  background-color: rgba(7, 17, 25, 0.88) !important;
+  border-right-color: rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 18px 0 44px rgba(0, 0, 0, 0.28) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(140%) !important;
+  backdrop-filter: blur(22px) saturate(140%) !important;
+}
+
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPSidebar .VPSidebarItem .text,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPSidebar .VPSidebarItem .link,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPSidebar .VPLink.link {
+  color: rgba(211, 231, 239, 0.88) !important;
+}
+
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPLocalNav {
+  color: rgba(239, 249, 252, 0.94) !important;
+  background: rgba(7, 17, 25, 0.82) !important;
+  border-bottom-color: rgba(148, 163, 184, 0.18) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(140%) !important;
+  backdrop-filter: blur(18px) saturate(140%) !important;
+}
+
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPDocAsideOutline {
+  color: rgba(239, 249, 252, 0.94) !important;
+  background: rgba(12, 18, 26, 0.2) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  box-shadow: none !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .vp-doc,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .vp-doc h1,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .vp-doc h2,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .vp-doc h3,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .vp-doc h4,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .vp-doc h5,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .vp-doc h6 {
+  color: #e6f1ff !important;
+}
+
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .vp-doc p,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .vp-doc li,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .vp-doc td,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .vp-doc th {
+  color: rgba(211, 231, 239, 0.88) !important;
+}
+
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNavScreen {
+  color: #e6f1ff !important;
+  background: rgba(7, 17, 25, 0.96) !important;
+  background-color: rgba(7, 17, 25, 0.96) !important;
+  border-left-color: rgba(255, 255, 255, 0.08) !important;
+}

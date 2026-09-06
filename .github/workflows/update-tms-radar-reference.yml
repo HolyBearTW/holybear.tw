@@ -39,7 +39,8 @@ jobs:
           NEXON_API_KEY: ${{ secrets.NEXON_API_KEY || secrets.VITE_NEXON_API_KEY }}
           RADAR_AUTOMATION_KEY: ${{ secrets.RADAR_AUTOMATION_KEY }}
           HOLYBEAR_API_BASE_URL: https://holybear.tw
-          RADAR_SAMPLES_PER_JOB: 100
+          RADAR_SAMPLES_PER_JOB: 500
+          RADAR_CONCURRENCY: 12
           RADAR_CACHE_TTL_DAYS: 21
           RADAR_RUN_BUDGET_MINUTES: 20
         run: node scripts/generate-tms-radar-reference.mjs

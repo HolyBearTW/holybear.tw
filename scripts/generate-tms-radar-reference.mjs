@@ -29,7 +29,7 @@ const holyBearHeaders = radarAutomationKey
   : bypassKey ? { 'x-bypass-key': bypassKey } : undefined;
 const rankingPageSize = 100;
 const minimumLevel = 260;
-const samplesPerJob = boundedInteger(process.env.RADAR_SAMPLES_PER_JOB, 100, 10, 500);
+const samplesPerJob = boundedInteger(process.env.RADAR_SAMPLES_PER_JOB, 500, 10, 1_000);
 const concurrency = boundedInteger(process.env.RADAR_CONCURRENCY, 8, 1, 20);
 const cacheTtlMs = boundedInteger(process.env.RADAR_CACHE_TTL_DAYS, 21, 1, 90) * 24 * 60 * 60 * 1000;
 const runBudgetMs = boundedInteger(process.env.RADAR_RUN_BUDGET_MINUTES, 20, 5, 25) * 60 * 1000;
@@ -189,26 +189,43 @@ const normalizeRankingItems = (items = []) => items.map((item) => ({
   level: Number(item.level || 0),
   combatPower: Number(item.combatPower || 0),
 }));
-for (let page = 1; ; page += 1) {
-  const params = new URLSearchParams({ page: String(page), pageSize: String(rankingPageSize), minLevel: String(minimumLevel) });
-  const response = await getJson(`${holyBearApiBase}/api/rankings/combat-power?${params}`);
-  if (response.degraded) {
-    const snapshot = await getJson(`${holyBearApiBase}/maplestory/rankings/current.json`);
-    const rawSnapshotItems = snapshot.items || [];
-    const snapshotItems = normalizeRankingItems(rawSnapshotItems).filter((entry) => entry.level >= minimumLevel);
-    const snapshotTotal = Number(snapshot.total);
-    if (!snapshotItems.length || (Number.isFinite(snapshotTotal) && rawSnapshotItems.length < snapshotTotal)) {
-      console.warn('HolyBear ranking is degraded and its static snapshot is incomplete; preserving the previous radar reference');
-      process.exit(0);
-    }
-    console.warn(`HolyBear ranking is degraded; using the complete ${snapshotItems.length}-character static snapshot`);
-    ranking.push(...snapshotItems);
-    break;
+const useCompleteRankingSnapshot = async () => {
+  const snapshot = await getJson(`${holyBearApiBase}/maplestory/rankings/current.json`);
+  const rawSnapshotItems = snapshot.items || [];
+  const snapshotItems = normalizeRankingItems(rawSnapshotItems).filter((entry) => entry.level >= minimumLevel);
+  const snapshotTotal = Number(snapshot.total);
+  if (!snapshotItems.length || (Number.isFinite(snapshotTotal) && rawSnapshotItems.length < snapshotTotal)) {
+    console.warn('HolyBear ranking is degraded and its static snapshot is incomplete; preserving the previous radar reference');
+    process.exit(0);
   }
-  const items = normalizeRankingItems(response.items || []);
-  const total = Number(response.total);
-  ranking.push(...items);
-  if (items.length === 0 || items.length < rankingPageSize || (Number.isFinite(total) && ranking.length >= total)) break;
+  console.warn(`HolyBear ranking is degraded; using the complete ${snapshotItems.length}-character static snapshot`);
+  ranking.splice(0, ranking.length, ...snapshotItems);
+};
+const fetchRankingPage = (page) => {
+  const params = new URLSearchParams({ page: String(page), pageSize: String(rankingPageSize), minLevel: String(minimumLevel) });
+  return getJson(`${holyBearApiBase}/api/rankings/combat-power?${params}`);
+};
+
+const firstRankingPage = await fetchRankingPage(1);
+if (firstRankingPage.degraded) {
+  await useCompleteRankingSnapshot();
+} else {
+  ranking.push(...normalizeRankingItems(firstRankingPage.items || []));
+  const totalPages = Math.max(1, Number(firstRankingPage.totalPages) || Math.ceil(Number(firstRankingPage.total || 0) / rankingPageSize));
+  let degraded = false;
+  for (let startPage = 2; startPage <= totalPages; startPage += concurrency) {
+    const pages = Array.from(
+      { length: Math.min(concurrency, totalPages - startPage + 1) },
+      (_, index) => startPage + index,
+    );
+    const responses = await Promise.all(pages.map(fetchRankingPage));
+    if (responses.some((response) => response.degraded)) {
+      degraded = true;
+      break;
+    }
+    for (const response of responses) ranking.push(...normalizeRankingItems(response.items || []));
+  }
+  if (degraded) await useCompleteRankingSnapshot();
 }
 
 const trackedByName = new Map();

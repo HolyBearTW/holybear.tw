@@ -5,6 +5,7 @@ import UpdateLogBoard from './components/UpdateLogBoard';
 import HeroHeader from './components/HeroHeader';
 import KeySettingsModal from './components/KeySettingsModal';
 import RecentPowerRanking from './components/RecentPowerRanking';
+import SurveyCard from './components/SurveyCard';
 
 import { useMapleSearch } from './hooks/useMapleSearch';
 import { useAiAnalysis } from './hooks/useAiAnalysis';
@@ -70,11 +71,9 @@ const AuthorizedApp: React.FC<{ bypassKey: string }> = ({ bypassKey }) => {
     loading,
     isScanningBest,
     searchHistory, setSearchHistory,
-    showHistory, setShowHistory,
     favorites,
-    searchInputRef,
     handleSearch, handleBestSearch,
-    removeFromHistory, toggleFavorite
+    toggleFavorite
   } = useMapleSearch(apiKey, () => {}, setError);
 
   const {
@@ -158,11 +157,8 @@ const AuthorizedApp: React.FC<{ bypassKey: string }> = ({ bypassKey }) => {
           toggleFavorite={toggleFavorite}
           searchHistory={searchHistory}
           setSearchHistory={setSearchHistory}
-          removeFromHistory={removeFromHistory}
-          setShowHistory={setShowHistory}
-          showHistory={showHistory}
-          searchInputRef={searchInputRef}
         />
+        <SurveyCard />
       </div>
 
       <main className={`max-w-[1600px] mx-auto px-6 pb-6 ${!data && !loading && !error ? 'pt-0 mt-0' : 'pt-6 mt-4'}`}>
@@ -358,7 +354,7 @@ const MaintenanceView: React.FC<{
   return (
     <main className="mx-auto flex min-h-[70vh] max-w-[1600px] flex-col items-center justify-center px-6 py-16 text-slate-200">
       <div
-        className="mb-8 flex select-none items-center gap-3 rounded-lg"
+        className="maple-maintenance-brand mb-8 flex select-none items-center gap-3 rounded-lg"
         onClick={handleTitleClick}
         onKeyDown={(event) => {
           if (event.key === 'Enter' || event.key === ' ') {
@@ -396,9 +392,12 @@ const MaintenanceView: React.FC<{
       <aside className="maple-service-notice mt-4 w-full max-w-2xl rounded-xl border border-cyan-400/20 bg-[#111923]/90 px-5 py-4 text-left shadow-lg shadow-black/10 backdrop-blur-sm sm:px-6">
         <h2 className="m-0 text-sm font-bold text-cyan-300 sm:text-base">ℹ️ 服務調整說明</h2>
         <p className="m-0 mt-2 text-sm leading-6 text-slate-400">
-          本站已停止並移除與 MapleKit 相關之服務整合及程式，亦不再向 MapleKit 服務發送任何請求。針對近期相關討論，本站不再公開回應；亦請各方理性討論，避免散布個人資訊、人身攻擊、騷擾或其他侵害權益之行為。
+          本站已停止並移除與 MapleKit 相關之服務整合及程式，亦不再向 MapleKit 服務發送任何請求。<br />
+          <strong>對於先前未妥善確認服務使用界線即進行相關整合，以及因此造成的困擾，本站在此致歉。</strong>目前相關功能均已停止並完成調整。<br />
+          針對近期相關討論，本站不再公開回應；亦請各方理性討論，避免散布個人資訊、人身攻擊、騷擾或其他侵害權益之行為。
         </p>
       </aside>
+      <SurveyCard />
     </main>
   );
 };

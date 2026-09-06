@@ -69,6 +69,8 @@
     "typecheck:functions": "tsc -p tsconfig.functions.json",
     "test:maple-db": "vitest run tests/maple-db",
     "d1:migrate:local": "wrangler d1 migrations apply holybear-maple-db --local",
+    "d1:survey:migrate:local": "wrangler d1 migrations apply holybear-survey-db --local",
+    "d1:survey:migrate:production": "wrangler d1 migrations apply holybear-survey-db --remote --env production",
     "import:maple": "node scripts/run-maple-import.mjs",
     "import:maple:bg": "node scripts/start-manual-seed-background.mjs",
     "import:maple:status": "node scripts/run-maple-import.mjs manual --dir data/manual-character-seed --status",

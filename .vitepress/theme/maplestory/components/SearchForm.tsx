@@ -13,7 +13,7 @@ interface SearchFormProps {
     characterName: string;
     setCharacterName: (name: string) => void;
     handleSearch: (e?: React.FormEvent, nameOverride?: string) => void;
-    handleBestSearch: () => void;
+    handleBestSearch: (nameOverride?: string) => void;
     loading: boolean;
     isScanningBest: boolean;
     data: any;
@@ -41,14 +41,23 @@ const SearchForm: React.FC<SearchFormProps> = ({
 }) => {
     const [showHistory, setShowHistory] = useState(false);
     const searchInputRef = useRef<HTMLInputElement>(null);
+    const [draftName, setDraftName] = useState(characterName);
+    const lastLocallyEditedName = useRef(characterName);
+    const deferredNameTimer = useRef<number | null>(null);
     const [characterRanks, setCharacterRanks] = useState<Record<string, HolyBearCharacterRank | null>>({});
     const [rankUnavailable, setRankUnavailable] = useState<Set<string>>(() => new Set());
     const [characterBasics, setCharacterBasics] = useState<Record<string, CharacterBasic | null>>({});
 
     useEffect(() => {
-        const name = characterName.trim();
-        if (name) localStorage.setItem('maple_last_search_name', name);
+        if (characterName !== lastLocallyEditedName.current) {
+            lastLocallyEditedName.current = characterName;
+            setDraftName(characterName);
+        }
     }, [characterName]);
+
+    useEffect(() => () => {
+        if (deferredNameTimer.current !== null) window.clearTimeout(deferredNameTimer.current);
+    }, []);
 
     useEffect(() => {
         const names = Array.from(new Set([...favorites, ...searchHistory]));
@@ -125,15 +134,42 @@ const SearchForm: React.FC<SearchFormProps> = ({
     };
 
     const submitSearch = (e: React.FormEvent) => {
+        const name = draftName.trim();
+        if (deferredNameTimer.current !== null) window.clearTimeout(deferredNameTimer.current);
         setShowHistory(false);
         searchInputRef.current?.blur();
-        handleSearch(e);
+        if (name) localStorage.setItem('maple_last_search_name', name);
+        setCharacterName(draftName);
+        handleSearch(e, draftName);
     };
 
     const startBestSearch = () => {
+        const name = draftName.trim();
+        if (deferredNameTimer.current !== null) window.clearTimeout(deferredNameTimer.current);
         setShowHistory(false);
         searchInputRef.current?.blur();
-        handleBestSearch();
+        if (name) localStorage.setItem('maple_last_search_name', name);
+        setCharacterName(draftName);
+        handleBestSearch(draftName);
+    };
+
+    const updateDraftName = (name: string) => {
+        lastLocallyEditedName.current = name;
+        setDraftName(name);
+        if (deferredNameTimer.current !== null) window.clearTimeout(deferredNameTimer.current);
+        deferredNameTimer.current = window.setTimeout(() => {
+            deferredNameTimer.current = null;
+            React.startTransition(() => setCharacterName(name));
+        }, 250);
+    };
+
+    const selectHistoryName = (name: string) => {
+        if (deferredNameTimer.current !== null) window.clearTimeout(deferredNameTimer.current);
+        lastLocallyEditedName.current = name;
+        setDraftName(name);
+        setCharacterName(name);
+        setShowHistory(false);
+        handleSearch(undefined, name);
     };
 
     return (
@@ -152,10 +188,14 @@ const SearchForm: React.FC<SearchFormProps> = ({
                 <Search className="maple-search-leading-icon absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors" />
                 <input 
                     ref={searchInputRef}
-                    value={characterName}
-                    onChange={(e) => setCharacterName(e.target.value)}
+                    value={draftName}
+                    onChange={(e) => updateDraftName(e.target.value)}
                     onFocus={() => setShowHistory(true)}
-                    onBlur={() => setTimeout(() => setShowHistory(false), 200)}
+                    onBlur={() => {
+                        const name = draftName.trim();
+                        if (name) localStorage.setItem('maple_last_search_name', name);
+                        setTimeout(() => setShowHistory(false), 200);
+                    }}
                     placeholder="輸入角色名稱"
                     className="maple-character-search-input w-full bg-[#1a1d24] border border-slate-700 rounded-xl py-3 pl-12 pr-20 sm:pr-32 text-sm sm:text-base focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition-all text-white placeholder:text-slate-600 shadow-lg"
                 />
@@ -191,7 +231,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
                                     <span className="text-xs font-bold text-yellow-400 flex items-center gap-1"><Star className="w-3 h-3 fill-yellow-400" /> 收藏角色</span>
                                 </div>
                                 {favorites.map((name, idx) => (
-                                    <div key={`fav-${idx}`} onClick={() => { setCharacterName(name); setShowHistory(false); handleSearch(undefined, name); }} className="px-4 py-2.5 text-sm text-slate-300 hover:bg-indigo-600/20 hover:text-indigo-300 cursor-pointer flex items-center gap-3 group/item transition-colors">
+                                    <div key={`fav-${idx}`} onClick={() => selectHistoryName(name)} className="px-4 py-2.5 text-sm text-slate-300 hover:bg-indigo-600/20 hover:text-indigo-300 cursor-pointer flex items-center gap-3 group/item transition-colors">
                                         {renderCharacterMeta(name)}
                                         <button type="button" onClick={(e) => toggleFavorite(e, name)} className="opacity-0 group-hover/item:opacity-100 p-1 hover:bg-slate-700 rounded text-yellow-500 hover:text-yellow-400 transition-all">
                                             <Star className="w-3 h-3 fill-yellow-500" />
@@ -208,7 +248,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
                                     <button type="button" onClick={() => { setSearchHistory([]); localStorage.removeItem('maple_search_history'); }} className="text-[10px] text-slate-500 hover:text-red-400 transition-colors">清除全部</button>
                                 </div>
                                 {searchHistory.map((name, idx) => (
-                                    <div key={idx} onClick={() => { setCharacterName(name); setShowHistory(false); handleSearch(undefined, name); }} className="px-4 py-2.5 text-sm text-slate-300 hover:bg-indigo-600/20 hover:text-indigo-300 cursor-pointer flex items-center gap-3 group/item transition-colors">
+                                    <div key={idx} onClick={() => selectHistoryName(name)} className="px-4 py-2.5 text-sm text-slate-300 hover:bg-indigo-600/20 hover:text-indigo-300 cursor-pointer flex items-center gap-3 group/item transition-colors">
                                         {renderCharacterMeta(name)}
                                         <button type="button" onClick={(e) => removeFromHistory(e, name)} className="opacity-0 group-hover/item:opacity-100 p-1 hover:bg-slate-700 rounded text-slate-500 hover:text-red-400 transition-all"><X className="w-3 h-3" /></button>
                                     </div>
