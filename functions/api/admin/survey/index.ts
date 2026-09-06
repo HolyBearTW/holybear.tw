@@ -190,6 +190,10 @@ export const onRequestGet: AppPagesFunction = async ({ env, request }) => {
       feedback: feedback.results.map((row) => ({
         id: row.id,
         submittedAt: row.created_at,
+        usageFrequency: row.usage_frequency,
+        satisfactionScore: row.satisfaction_score,
+        supportContinue: row.support_continue,
+        futureUseIntent: row.future_use_intent,
         improvementFeedback: row.improvement_feedback,
         otherFeedback: row.other_feedback,
         isSuspicious: Boolean(row.is_suspicious),

@@ -104,6 +104,12 @@
           <article v-for="item in stats.feedback" :key="item.id" class="survey-admin-feedback-item">
             <div class="survey-admin-feedback-meta"><span class="survey-admin-feedback-id">#{{ item.id }}</span><span :class="['survey-admin-risk-badge', item.isSuspicious ? 'suspicious' : 'normal']">{{ item.isSuspicious ? '可疑' : '正常' }}</span><time :datetime="item.submittedAt">{{ formatDate(item.submittedAt) }}</time><span v-if="item.fingerprintPreview" class="survey-admin-fingerprint" title="匿名網路指紋">指紋 {{ item.fingerprintPreview }}</span><button type="button" class="danger" @click="deleteResponse(item.id)">刪除回覆</button></div>
             <p v-if="item.riskFlags.length" class="survey-admin-risk-flags">技術標記：{{ riskText(item.riskFlags) }}</p>
+            <dl class="survey-admin-vote-summary" aria-label="此筆問卷的選項回答">
+              <div><dt>使用頻率</dt><dd>{{ answerLabel(item.usageFrequency) }}</dd></div>
+              <div><dt>滿意度</dt><dd>{{ answerLabel(item.satisfactionScore) }}</dd></div>
+              <div><dt>支持開發</dt><dd>{{ answerLabel(item.supportContinue) }}</dd></div>
+              <div><dt>未來使用</dt><dd>{{ answerLabel(item.futureUseIntent) }}</dd></div>
+            </dl>
             <div class="survey-admin-feedback-copy"><p><strong>改善或新增</strong><span>{{ item.improvementFeedback || '（未填寫）' }}</span></p><p><strong>其他留言</strong><span>{{ item.otherFeedback || '（未填寫）' }}</span></p></div>
           </article>
           <div v-if="stats.feedbackHasMore || stats.feedbackOffset > 0" class="survey-admin-pagination">
@@ -125,6 +131,10 @@ type FeedbackFilter = 'all' | 'normal' | 'suspicious';
 type Feedback = {
   id: number;
   submittedAt: string;
+  usageFrequency: string;
+  satisfactionScore: number;
+  supportContinue: string;
+  futureUseIntent: string;
   improvementFeedback: string;
   otherFeedback: string;
   isSuspicious: boolean;
@@ -210,6 +220,7 @@ const riskLabels: Record<string, string> = {
   rapid_abuse_pattern: '快速重試模式',
 };
 const riskText = (flags: string[]) => flags.map((flag) => riskLabels[flag] || flag).join('、');
+const answerLabel = (value: string | number) => labels[String(value)] || String(value);
 
 const api = async (path: string, init: RequestInit = {}) => {
   const response = await fetch(path, {
@@ -407,6 +418,10 @@ const downloadCsv = async () => {
 .survey-admin-risk-badge.suspicious { border: 1px solid rgba(251, 113, 133, .32); background: rgba(159, 18, 57, .16); color: #fda4af; }
 .survey-admin-fingerprint { color: #7184a8; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .65rem; }
 .survey-admin-risk-flags { margin: 8px 0 0; color: #f0b5c2; font-size: .68rem; }
+.survey-admin-vote-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px; margin: 14px 0 0; }
+.survey-admin-vote-summary > div { min-width: 0; padding: 10px 11px; border: 1px solid rgba(129, 140, 248, .16); border-radius: 9px; background: rgba(30, 41, 82, .3); }
+.survey-admin-vote-summary dt { color: #8193b2; font-size: .65rem; font-weight: 700; }
+.survey-admin-vote-summary dd { margin: 5px 0 0; color: #e1e9ff; font-size: .78rem; font-weight: 750; overflow-wrap: anywhere; }
 .survey-admin-feedback-copy { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }
 .survey-admin-feedback-copy p { display: grid; gap: 5px; min-width: 0; margin: 0; color: #c9d5e9; font-size: .8rem; line-height: 1.65; white-space: pre-wrap; overflow-wrap: anywhere; }
 .survey-admin-feedback-copy strong { color: #93a4c4; font-size: .69rem; font-weight: 750; letter-spacing: .03em; }
@@ -435,6 +450,7 @@ const downloadCsv = async () => {
   .survey-admin-scope-summary { margin-left: 0; }
   .survey-admin-feedback-meta { flex-wrap: wrap; }
   .survey-admin-feedback-meta .danger { margin-left: auto; }
+  .survey-admin-vote-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .survey-admin-feedback-copy { grid-template-columns: 1fr; gap: 10px; }
 }
 
