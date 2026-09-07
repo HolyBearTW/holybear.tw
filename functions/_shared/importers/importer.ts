@@ -11,6 +11,7 @@ export interface SeedCharacter {
   ocid?: string | null;
   sourceUpdatedAt?: string | null;
   observedAt?: string;
+  sourceMetadataJson?: string | null;
 }
 
 export interface SeedPage {

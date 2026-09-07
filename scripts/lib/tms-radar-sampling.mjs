@@ -30,3 +30,16 @@ export function selectStratifiedRadarSamples(entries, perJobLimit, normalizeJob 
   }
   return selected;
 }
+
+export const radarCharacterKey = (entry) => entry.ocid ? `ocid:${entry.ocid}`
+  : `name:${JSON.stringify([String(entry.world || '').normalize('NFC'), String(entry.name).normalize('NFC')])}`;
+
+export function deduplicateRadarCharacters(entries) {
+  const unique = new Map();
+  for (const entry of entries) {
+    if (!entry?.name) continue;
+    const key = radarCharacterKey(entry);
+    if (!unique.has(key)) unique.set(key, entry);
+  }
+  return [...unique.values()];
+}

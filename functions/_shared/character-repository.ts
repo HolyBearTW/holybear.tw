@@ -4,6 +4,7 @@ import type {
   CharacterWrite,
   PublicCharacter,
 } from './models';
+import { canonicalUpdateGuard, validateCharacterWrite } from './character-policy.mjs';
 
 export const normalizeCharacterName = (name: string) => name.trim().normalize('NFC').toLocaleLowerCase('zh-TW');
 
@@ -21,6 +22,7 @@ export const toPublicCharacter = (row: CharacterRow): PublicCharacter => ({
   firstSeenAt: row.first_seen_at,
   lastSeenAt: row.last_seen_at,
   nexonUpdatedAt: row.nexon_updated_at,
+  requestedAt: row.nexon_requested_at,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
 });
@@ -56,7 +58,9 @@ export const upsertCanonicalNexonCharacter = async (
   sources: CharacterSourceWrite[],
 ) => {
   validateCanonicalSources(sources);
+  validateCharacterWrite(character);
   const observedAt = character.observedAt ?? new Date().toISOString();
+  const requestedAt = character.requestedAt ?? observedAt;
   const normalizedName = normalizeCharacterName(character.characterName);
   if (!character.ocid || !normalizedName) throw new Error('Character OCID and name are required');
 
@@ -68,8 +72,8 @@ export const upsertCanonicalNexonCharacter = async (
     INSERT INTO characters (
       ocid, character_name, normalized_name, world_name, job_name, level,
       combat_power, character_image, guild_name, first_seen_at, last_seen_at,
-      nexon_updated_at, created_at, updated_at
-    ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?10, ?11, ?10, ?10)
+      nexon_updated_at, created_at, updated_at, nexon_requested_at
+    ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?10, ?11, ?10, ?10, ?12)
     ON CONFLICT(ocid) DO UPDATE SET
       character_name = excluded.character_name,
       normalized_name = excluded.normalized_name,
@@ -81,8 +85,10 @@ export const upsertCanonicalNexonCharacter = async (
       guild_name = excluded.guild_name,
       first_seen_at = MIN(characters.first_seen_at, excluded.first_seen_at),
       last_seen_at = MAX(characters.last_seen_at, excluded.last_seen_at),
-      nexon_updated_at = COALESCE(excluded.nexon_updated_at, characters.nexon_updated_at),
+      nexon_updated_at = excluded.nexon_updated_at,
+      nexon_requested_at = excluded.nexon_requested_at,
       updated_at = excluded.updated_at
+    ${canonicalUpdateGuard}
   `).bind(
     character.ocid,
     character.characterName.normalize('NFC'),
@@ -95,35 +101,10 @@ export const upsertCanonicalNexonCharacter = async (
     character.guildName,
     observedAt,
     character.nexonUpdatedAt ?? null,
+    requestedAt,
   )];
 
-  for (const source of sources) {
-    const sourceObservedAt = source.observedAt ?? observedAt;
-    statements.push(db.prepare(`
-      INSERT INTO character_sources (
-        ocid, source, source_character_id, source_first_seen_at,
-        source_last_seen_at, raw_json, created_at, updated_at, source_updated_at
-      ) VALUES (?1, ?2, ?3, ?4, ?4, ?5, ?4, ?4, ?6)
-      ON CONFLICT(ocid, source) DO UPDATE SET
-        source_character_id = COALESCE(excluded.source_character_id, character_sources.source_character_id),
-        source_first_seen_at = MIN(character_sources.source_first_seen_at, excluded.source_first_seen_at),
-        source_last_seen_at = MAX(character_sources.source_last_seen_at, excluded.source_last_seen_at),
-        raw_json = COALESCE(excluded.raw_json, character_sources.raw_json),
-        source_updated_at = CASE
-          WHEN excluded.source_updated_at IS NULL THEN character_sources.source_updated_at
-          WHEN character_sources.source_updated_at IS NULL THEN excluded.source_updated_at
-          ELSE MAX(character_sources.source_updated_at, excluded.source_updated_at)
-        END,
-        updated_at = excluded.updated_at
-    `).bind(
-      character.ocid,
-      source.source,
-      source.sourceCharacterId ?? null,
-      sourceObservedAt,
-      source.rawJson ?? null,
-      source.sourceUpdatedAt ?? null,
-    ));
-  }
+  for (const source of sources) statements.push(characterSourceStatement(db, character.ocid, source, observedAt));
 
   await db.batch(statements);
   const stored = await findCharacterByOcid(db, character.ocid);
@@ -136,6 +117,38 @@ export const isCharacterFresh = (
   freshnessSeconds: number,
   now = Date.now(),
 ) => {
-  const timestamp = Date.parse(character.nexonUpdatedAt ?? character.updatedAt);
-  return Number.isFinite(timestamp) && now - timestamp <= freshnessSeconds * 1000;
+  const timestamp = Date.parse(character.requestedAt ?? character.nexonUpdatedAt ?? character.updatedAt);
+  return Number.isFinite(timestamp) && now >= timestamp && now - timestamp <= freshnessSeconds * 1000;
+};
+
+export const characterSourceStatement = (
+  db: D1Database, ocid: string, source: CharacterSourceWrite, observedAt = new Date().toISOString(),
+) => {
+  const sourceObservedAt = source.observedAt ?? observedAt;
+  return db.prepare(`
+      INSERT INTO character_sources (
+        ocid, source, source_character_id, source_first_seen_at,
+        source_last_seen_at, raw_json, created_at, updated_at, source_updated_at
+      ) VALUES (?1, ?2, ?3, ?4, ?4, ?5, ?4, ?4, ?6)
+      ON CONFLICT(ocid, source) DO UPDATE SET
+        source_character_id = CASE WHEN excluded.source_last_seen_at >= character_sources.source_last_seen_at
+          THEN COALESCE(excluded.source_character_id, character_sources.source_character_id) ELSE character_sources.source_character_id END,
+        source_first_seen_at = MIN(character_sources.source_first_seen_at, excluded.source_first_seen_at),
+        source_last_seen_at = MAX(character_sources.source_last_seen_at, excluded.source_last_seen_at),
+        raw_json = CASE WHEN excluded.source_last_seen_at >= character_sources.source_last_seen_at
+          THEN COALESCE(excluded.raw_json, character_sources.raw_json) ELSE character_sources.raw_json END,
+        source_updated_at = CASE
+          WHEN excluded.source_updated_at IS NULL THEN character_sources.source_updated_at
+          WHEN character_sources.source_updated_at IS NULL THEN excluded.source_updated_at
+          ELSE MAX(character_sources.source_updated_at, excluded.source_updated_at)
+        END,
+        updated_at = MAX(character_sources.updated_at, excluded.updated_at)
+    `).bind(
+      ocid,
+      source.source,
+      source.sourceCharacterId ?? null,
+      sourceObservedAt,
+      source.rawJson ?? null,
+      source.sourceUpdatedAt ?? null,
+    );
 };

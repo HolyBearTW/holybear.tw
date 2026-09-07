@@ -10,6 +10,7 @@ import {
   publicManualImportSettings,
 } from './manual-import-config.mjs';
 import { readRuntimeState, stopRequested, updateRuntimeState } from './manual-import-runtime.mjs';
+import { canonicalUpdateGuard, parseNexonCharacter, stagingRequeueAssignments, validateCharacterWrite } from '../functions/_shared/character-policy.mjs';
 
 const SOURCE = 'manual_seed';
 const DATABASE = 'holybear-maple-db';
@@ -158,13 +159,20 @@ export const pageStagingSql = (
   budget = null,
 ) => {
   const statements = [];
-  for (let offset = 0; offset < parsed.items.length; offset += 20) {
-    const values = parsed.items.slice(offset, offset + 20).map((item) => stagingValues(job.id, item)).join(',\n');
+  const items = [...new Map(parsed.items.map((item) => [item.sourceId, item])).values()];
+  for (let offset = 0; offset < items.length; offset += 20) {
+    const chunk = items.slice(offset, offset + 20);
+    const values = chunk.map((item) => stagingValues(job.id, item)).join(',\n');
+    statements.push(`UPDATE import_jobs SET pending_count=pending_count+${chunk.length}-(
+      SELECT COUNT(*) FROM character_import_staging WHERE source='manual_seed' AND import_job_id=${job.id}
+      AND source_id IN (${chunk.map((item) => sqlLiteral(item.sourceId)).join(',')})
+    ) WHERE id=${job.id};`);
     statements.push(`INSERT INTO character_import_staging (
       import_job_id, source, source_id, character_name, normalized_name, world_name,
       job_name, level, combat_power, character_image, source_updated_at, observed_at
     ) VALUES ${values}
     ON CONFLICT(source, source_id) DO UPDATE SET
+      ${stagingRequeueAssignments},
       import_job_id=excluded.import_job_id, character_name=excluded.character_name,
       normalized_name=excluded.normalized_name, world_name=excluded.world_name,
       job_name=excluded.job_name, level=excluded.level, combat_power=excluded.combat_power,
@@ -191,8 +199,7 @@ export const pageStagingSql = (
   statements.push(`UPDATE import_jobs SET status='running', last_page=${checkpointPage},
     checkpoint_json=${sqlLiteral(checkpoint)}, imported_count=imported_count+${parsed.validRecords},
     staging_inserted_count=staging_inserted_count+${inserted},
-    staging_updated_count=staging_updated_count+${updated},
-    pending_count=pending_count+${inserted}${budgetSql},
+    staging_updated_count=staging_updated_count+${updated}${budgetSql},
     completed_at=NULL, last_error=NULL, updated_at=${sqlLiteral(now)} WHERE id=${job.id};`);
   return statements.join('\n');
 };
@@ -261,25 +268,17 @@ const fetchNexon = async (pathname, settings, budget) => {
 };
 
 const normalizeName = (value) => String(value ?? '').trim().normalize('NFC').toLocaleLowerCase('zh-TW');
-const resolveCharacter = async (row, settings, budget) => {
+export const resolveCharacter = async (row, settings, budget) => {
+  const requestedAt = new Date().toISOString();
   const requestedName = String(row.character_name).trim().normalize('NFC');
   const id = row.ocid ? { ocid: row.ocid } : await fetchNexon(`/id?character_name=${encodeURIComponent(requestedName)}`, settings, budget);
   const basic = await fetchNexon(`/character/basic?ocid=${encodeURIComponent(id.ocid)}`, settings, budget);
   const stat = await fetchNexon(`/character/stat?ocid=${encodeURIComponent(id.ocid)}`, settings, budget);
-  const combatPowerValue = stat.final_stat?.find((item) => item.stat_name === '戰鬥力' || item.stat_name === 'Combat Power')?.stat_value;
-  const combatPower = Number(String(combatPowerValue ?? '').replaceAll(',', ''));
   const observedAt = new Date().toISOString();
+  const character = parseNexonCharacter(id.ocid, basic, stat, requestedAt, observedAt);
   return {
-    ocid: id.ocid,
-    characterName: String(basic.character_name || requestedName).normalize('NFC'),
-    normalizedName: normalizeName(basic.character_name || requestedName),
-    worldName: String(basic.world_name ?? ''),
-    jobName: String(basic.character_class ?? ''),
-    level: Math.max(0, Math.trunc(Number(basic.character_level) || 0)),
-    combatPower: Number.isFinite(combatPower) ? Math.max(0, Math.trunc(combatPower)) : 0,
-    characterImage: String(basic.character_image ?? ''),
-    guildName: basic.character_guild_name ?? null,
-    observedAt,
+    ...character,
+    normalizedName: normalizeName(character.characterName),
   };
 };
 
@@ -289,13 +288,19 @@ const sourceSql = (character, source, sourceId, observedAt, sourceUpdatedAt, raw
 ) VALUES (${sqlLiteral(character.ocid)}, ${sqlLiteral(source)}, ${sqlLiteral(sourceId)}, ${sqlLiteral(observedAt)},
   ${sqlLiteral(observedAt)}, ${sqlLiteral(rawJson)}, ${sqlLiteral(observedAt)}, ${sqlLiteral(observedAt)}, ${sqlLiteral(sourceUpdatedAt)})
 ON CONFLICT(ocid, source) DO UPDATE SET
-  source_character_id=COALESCE(excluded.source_character_id, character_sources.source_character_id),
+  source_character_id=CASE WHEN excluded.source_last_seen_at >= character_sources.source_last_seen_at
+    THEN COALESCE(excluded.source_character_id, character_sources.source_character_id) ELSE character_sources.source_character_id END,
   source_first_seen_at=MIN(character_sources.source_first_seen_at, excluded.source_first_seen_at),
   source_last_seen_at=MAX(character_sources.source_last_seen_at, excluded.source_last_seen_at),
-  source_updated_at=COALESCE(excluded.source_updated_at, character_sources.source_updated_at),
-  raw_json=COALESCE(excluded.raw_json, character_sources.raw_json), updated_at=excluded.updated_at;`;
+  source_updated_at=CASE WHEN excluded.source_updated_at IS NULL THEN character_sources.source_updated_at
+    WHEN character_sources.source_updated_at IS NULL THEN excluded.source_updated_at
+    ELSE MAX(excluded.source_updated_at, character_sources.source_updated_at) END,
+  raw_json=CASE WHEN excluded.source_last_seen_at >= character_sources.source_last_seen_at
+    THEN COALESCE(excluded.raw_json, character_sources.raw_json) ELSE character_sources.raw_json END,
+  updated_at=MAX(character_sources.updated_at, excluded.updated_at);`;
 
 export const canonicalSql = (row, character) => {
+  validateCharacterWrite(character);
   const sourceMetadata = JSON.stringify({
     worldName: row.world_name,
     jobName: row.job_name,
@@ -304,19 +309,21 @@ export const canonicalSql = (row, character) => {
   });
   return `INSERT INTO characters (
     ocid, character_name, normalized_name, world_name, job_name, level, combat_power,
-    character_image, guild_name, first_seen_at, last_seen_at, nexon_updated_at, created_at, updated_at
-  ) VALUES (${sqlLiteral(character.ocid)}, ${sqlLiteral(character.characterName)}, ${sqlLiteral(character.normalizedName)},
+    character_image, guild_name, first_seen_at, last_seen_at, nexon_updated_at, created_at, updated_at, nexon_requested_at
+  ) VALUES (${sqlLiteral(character.ocid)}, ${sqlLiteral(character.characterName)}, ${sqlLiteral(normalizeName(character.characterName))},
     ${sqlLiteral(character.worldName)}, ${sqlLiteral(character.jobName)}, ${character.level}, ${character.combatPower},
     ${sqlLiteral(character.characterImage)}, ${sqlLiteral(character.guildName)}, ${sqlLiteral(character.observedAt)},
-    ${sqlLiteral(character.observedAt)}, ${sqlLiteral(character.observedAt)}, ${sqlLiteral(character.observedAt)}, ${sqlLiteral(character.observedAt)})
+    ${sqlLiteral(character.observedAt)}, ${sqlLiteral(character.nexonUpdatedAt ?? null)}, ${sqlLiteral(character.observedAt)}, ${sqlLiteral(character.observedAt)},
+    ${sqlLiteral(character.requestedAt ?? character.observedAt)})
   ON CONFLICT(ocid) DO UPDATE SET character_name=excluded.character_name, normalized_name=excluded.normalized_name,
     world_name=excluded.world_name, job_name=excluded.job_name, level=excluded.level,
     combat_power=excluded.combat_power, character_image=excluded.character_image, guild_name=excluded.guild_name,
     first_seen_at=MIN(characters.first_seen_at, excluded.first_seen_at),
     last_seen_at=MAX(characters.last_seen_at, excluded.last_seen_at),
-    nexon_updated_at=excluded.nexon_updated_at, updated_at=excluded.updated_at;
+    nexon_updated_at=excluded.nexon_updated_at, nexon_requested_at=excluded.nexon_requested_at, updated_at=excluded.updated_at
+    ${canonicalUpdateGuard};
   ${sourceSql(character, SOURCE, row.source_id, row.observed_at || character.observedAt, row.source_updated_at, sourceMetadata)}
-  ${sourceSql(character, 'nexon', character.ocid, character.observedAt, character.observedAt)}
+  ${sourceSql(character, 'nexon', character.ocid, character.observedAt, character.nexonUpdatedAt ?? null)}
   UPDATE character_import_staging SET status='resolved', ocid=${sqlLiteral(character.ocid)},
     attempt_count=attempt_count+1, next_retry_at=NULL, last_error=NULL,
     updated_at=${sqlLiteral(character.observedAt)} WHERE id=${row.id};`;
@@ -415,7 +422,7 @@ const runManualSeedImportCore = async (args) => {
   const backgroundMode = process.env.HOLYBEAR_MANUAL_IMPORT_BACKGROUND === '1';
   const shouldStop = () => backgroundMode && stopRequested();
   let job = await latestJob();
-  const processed = new Set((checkpointOf(job).processedPages ?? []).map(Number));
+  let processed = new Set((checkpointOf(job).processedPages ?? []).map(Number));
   if (args.includes('--status')) {
     const runtime = readRuntimeState();
     const counts = await productionCounts();
@@ -446,6 +453,13 @@ const runManualSeedImportCore = async (args) => {
   }
   if (scan.invalidFiles.length || scan.duplicatePages.length || scan.invalidRecords > 0) {
     throw new Error('Manual seed validation failed; D1 was not modified');
+  }
+  if (args.includes('--refresh')) {
+    if (readRuntimeState().alive || Number(job?.pending_count) > 0 || Number(job?.retry_count) > 0) {
+      throw new Error('Finish/stop the existing manual import before starting a refresh round');
+    }
+    job = await createJob();
+    processed = new Set();
   }
   if (!job) job = await createJob();
   const expectedTotalPages = Math.max(...scan.schema.totalPages);

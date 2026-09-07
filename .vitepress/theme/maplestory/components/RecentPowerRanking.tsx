@@ -1,4 +1,5 @@
 import React from 'react';
+import { CHARACTER_SAMPLE_NOTICE } from '../data/sampleNotice';
 import { Crown, Loader2 } from 'lucide-react';
 import { SERVER_ICONS } from '../constants';
 import {
@@ -125,6 +126,10 @@ const RecentPowerRanking: React.FC<RecentPowerRankingProps> = ({ onSelectCharact
         <Crown className="w-4 h-4 text-yellow-400" />
         近期戰力排名
       </h3>
+      <details className="mb-4 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+        <summary className="cursor-pointer">樣本來源與限制</summary>
+        <p className="mt-2">{CHARACTER_SAMPLE_NOTICE}</p>
+      </details>
       {degraded && (
         <div className="mb-4 rounded-lg border border-amber-400/35 bg-amber-400/10 px-3 py-2 text-sm text-amber-200" role="status">
           目前顯示快取排行榜

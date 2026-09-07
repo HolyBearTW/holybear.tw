@@ -1,4 +1,4 @@
-export const CHARACTER_SOURCES = ['maplerhouse', 'manual_seed', 'nexon', 'holybear_search'] as const;
+export const CHARACTER_SOURCES = ['maplerhouse', 'manual_seed', 'nexon_guild', 'nexon', 'holybear_search'] as const;
 
 export type CharacterSource = (typeof CHARACTER_SOURCES)[number];
 export type AccountConfidence = 'high' | 'probable' | 'unknown';
@@ -17,6 +17,7 @@ export interface CharacterRow {
   first_seen_at: string;
   last_seen_at: string;
   nexon_updated_at: string | null;
+  nexon_requested_at?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -32,6 +33,7 @@ export interface CharacterWrite {
   guildName: string | null;
   observedAt?: string;
   nexonUpdatedAt?: string | null;
+  requestedAt?: string | null;
 }
 
 export interface CharacterSourceWrite {
@@ -56,6 +58,7 @@ export interface PublicCharacter {
   firstSeenAt: string;
   lastSeenAt: string;
   nexonUpdatedAt: string | null;
+  requestedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }

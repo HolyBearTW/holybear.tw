@@ -6,11 +6,14 @@ import { ImportSourceUnavailableError } from '../../../_shared/importers/importe
 import { MaplerHouseImporter } from '../../../_shared/importers/maplerhouse-importer';
 import { getRuntimeConfig } from '../../../_shared/runtime-config';
 import { refreshRankingSnapshot } from '../../../_shared/ranking-cache';
+import { getImportJob } from '../../../_shared/import-repository';
+import { estimateGuildSampling, guildProgress, initializeGuildCandidates, resolveGuildMembers, stageNextGuild, withGuildImportLock } from '../../../_shared/guild-import';
 
 interface ImportRequest {
-  action?: 'stage' | 'resolve';
+  action?: 'start' | 'stage' | 'resolve' | 'status' | 'estimate';
   jobId?: number;
   pageSize?: number;
+  maxGuilds?: number;
 }
 
 export const onRequestPost: AppPagesFunction<'source'> = async ({ env, params, request, waitUntil }) => {
@@ -18,10 +21,43 @@ export const onRequestPost: AppPagesFunction<'source'> = async ({ env, params, r
   try {
     requireImportAdmin(request, env);
     const source = singleParam(params.source);
+    if (source === 'nexon_guild') {
+      const body = await request.json<ImportRequest>();
+      if (!['start', 'stage', 'resolve', 'status', 'estimate'].includes(body.action ?? '')) {
+        throw new HttpError(400, 'invalid_action', 'Choose start, stage, resolve, status, or estimate');
+      }
+      if (body.action === 'estimate') {
+        if (!Number.isSafeInteger(body.maxGuilds) || Number(body.maxGuilds) < 1 || Number(body.maxGuilds) > 10_000) {
+          throw new HttpError(400, 'invalid_guild_limit', 'Estimate requires maxGuilds between 1 and 10000');
+        }
+        return json({ source, action: body.action, estimate: await estimateGuildSampling(env, body.maxGuilds!) });
+      }
+      if (body.action === 'start' && (!Number.isSafeInteger(body.maxGuilds) || Number(body.maxGuilds) < 1 || Number(body.maxGuilds) > 10_000)) {
+        throw new HttpError(400, 'invalid_guild_limit', 'Starting a round requires maxGuilds between 1 and 10000');
+      }
+      const guildJob = body.action === 'start'
+        ? await getOrCreateImportJob(env.DB, source)
+        : body.jobId ? await getImportJob(env.DB, body.jobId) : null;
+      if (!guildJob || guildJob.source !== source) throw new HttpError(400, 'invalid_guild_job', 'A valid guild jobId is required');
+      if (body.action === 'status') return json({ job: guildJob, guilds: await guildProgress(env, guildJob.id) });
+      const result = await withGuildImportLock(env, guildJob.id, async () => {
+        const current = (await getImportJob(env.DB, guildJob.id))!;
+        if (body.action === 'start') return { job: await initializeGuildCandidates(env, current, body.maxGuilds!), processed: 0 };
+        if (body.action === 'stage') return stageNextGuild(env, current);
+        return resolveGuildMembers(env, current);
+      });
+      if (body.action === 'resolve' && result.job?.status === 'completed') {
+        waitUntil(refreshRankingSnapshot(env).catch((error: unknown) => console.error('Unable to refresh ranking snapshot', error)));
+      }
+      return json({ source, action: body.action, ...result });
+    }
     const importer = source === 'maplerhouse' ? new MaplerHouseImporter() : null;
     if (!importer) throw new HttpError(404, 'unknown_import_source', 'Unknown import source');
     const body: ImportRequest = await request.json<ImportRequest>().catch(() => ({}));
     const action = body.action ?? 'stage';
+    if (action !== 'stage' && action !== 'resolve') {
+      throw new HttpError(400, 'invalid_action', 'This source supports only stage or resolve');
+    }
     const job = await getOrCreateImportJob(env.DB, importer.source, body.jobId);
     jobId = job.id;
 

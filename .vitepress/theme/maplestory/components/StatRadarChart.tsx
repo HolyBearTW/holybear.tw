@@ -1,4 +1,5 @@
 import React from 'react';
+import { CHARACTER_SAMPLE_NOTICE } from '../data/sampleNotice';
 import { DashboardData } from '../types';
 import { createRadarEquivalentProfile } from '../calculator/mapleCombatCalculator';
 
@@ -64,6 +65,10 @@ const StatRadarChart: React.FC<StatRadarChartProps> = ({ data }) => {
       <div className="mb-2 text-center text-[11px] font-semibold text-slate-500">
         台版樣本曲線・同職業 {radar.referenceSampleSize} 名／全體 {radar.referenceTotalSize} 名・更新 {referenceDate}
       </div>
+      <details className="mb-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+        <summary className="cursor-pointer text-center">樣本來源與限制</summary>
+        <p className="mt-2">{CHARACTER_SAMPLE_NOTICE}</p>
+      </details>
       <div className="relative mx-auto h-[240px] w-[240px]">
         <svg width={size} height={size} className="overflow-visible" aria-label="台版等價能力雷達圖">
           {[0.2, 0.4, 0.6, 0.8, 1].map((level) => (

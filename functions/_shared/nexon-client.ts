@@ -1,6 +1,7 @@
 import type { Env } from './env';
 import type { CharacterWrite } from './models';
 import { getRuntimeConfig, requireSecret } from './runtime-config';
+import { parseNexonCharacter } from './character-policy.mjs';
 
 const NEXON_BASE_URL = 'https://open.api.nexon.com/maplestorytw/v1';
 
@@ -84,20 +85,14 @@ export const fetchNexonJson = async <T>(env: Env, path: string, onRequest?: () =
   throw new NexonRequestError('NEXON API 連線逾時或網路錯誤', null, true);
 };
 
-const combatPowerFromStat = (stat: NexonStatResponse) => {
-  const value = stat.final_stat?.find((item) => (
-    item.stat_name === '戰鬥力' || item.stat_name === 'Combat Power'
-  ))?.stat_value;
-  const parsed = Number(String(value ?? '').replace(/,/g, ''));
-  return Number.isFinite(parsed) ? Math.max(0, Math.trunc(parsed)) : 0;
-};
-
 export const resolveNexonCharacter = async (
   env: Env,
   characterName: string,
   knownOcid?: string | null,
   onRequest?: () => void,
+  expectedWorld?: string,
 ): Promise<CharacterWrite> => {
+  const requestedAt = new Date().toISOString();
   const requestedName = characterName.trim().normalize('NFC');
   if (!requestedName) throw new NexonRequestError('角色名稱不可為空', null, false, 'invalid_character_name');
   const ocid = knownOcid || (await fetchNexonJson<NexonOcidResponse>(
@@ -112,18 +107,13 @@ export const resolveNexonCharacter = async (
     fetchNexonJson<NexonStatResponse>(env, `/character/stat?ocid=${encodeURIComponent(ocid)}`, onRequest),
   ]);
   const observedAt = new Date().toISOString();
-  return {
-    ocid,
-    characterName: String(basic.character_name || requestedName).normalize('NFC'),
-    worldName: String(basic.world_name || ''),
-    jobName: String(basic.character_class || ''),
-    level: Number(basic.character_level) || 0,
-    combatPower: combatPowerFromStat(stat),
-    characterImage: String(basic.character_image || ''),
-    guildName: basic.character_guild_name || null,
-    observedAt,
-    nexonUpdatedAt: observedAt,
-  };
+  const character = parseNexonCharacter(ocid, basic, stat, requestedAt, observedAt);
+  if (expectedWorld && (character.worldName !== expectedWorld
+    || character.characterName !== requestedName)) {
+    if (knownOcid) return resolveNexonCharacter(env, requestedName, null, onRequest, expectedWorld);
+    throw new NexonRequestError('Official character identity does not match the guild roster', null, false, 'guild_member_identity_mismatch');
+  }
+  return character;
 };
 
 export const runWithConcurrency = async <Input, Output>(

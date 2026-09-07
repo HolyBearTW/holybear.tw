@@ -1,6 +1,7 @@
-import { normalizeCharacterName, upsertCanonicalNexonCharacter } from './character-repository';
+import { characterSourceStatement, isCharacterFresh, normalizeCharacterName, toPublicCharacter, upsertCanonicalNexonCharacter } from './character-repository';
+import { stagingRequeueAssignments, validateCharacterWrite } from './character-policy.mjs';
 import type { Env } from './env';
-import type { CharacterSource } from './models';
+import type { CharacterRow, CharacterSource, CharacterWrite } from './models';
 import { NexonRequestError, resolveNexonCharacter, runWithConcurrency } from './nexon-client';
 import { getRuntimeConfig } from './runtime-config';
 import type { SeedCharacter, SeedPage } from './importers/importer';
@@ -42,6 +43,8 @@ export interface StagingRow {
   attempt_count: number;
   source_updated_at: string | null;
   observed_at: string | null;
+  world_name: string;
+  source_metadata_json: string | null;
 }
 
 const nowIso = () => new Date().toISOString();
@@ -56,7 +59,7 @@ export class ImportBudgetError extends Error {
   }
 }
 
-const budgetAfter = async (
+export const budgetAfter = async (
   db: D1Database,
   job: ImportJobRow,
   readDelta: number,
@@ -127,16 +130,18 @@ const stagingStatement = (
       item.characterImage,
       item.sourceUpdatedAt ?? null,
       item.observedAt ?? nowIso(),
+      item.sourceMetadataJson ?? null,
     );
-    return `(${Array.from({ length: 12 }, (_, index) => `?${offset + index + 1}`).join(', ')})`;
+    return `(${Array.from({ length: 13 }, (_, index) => `?${offset + index + 1}`).join(', ')})`;
   });
   return db.prepare(`
     INSERT INTO character_import_staging (
       import_job_id, source, source_id, character_name, normalized_name,
       world_name, job_name, level, combat_power, character_image
-      , source_updated_at, observed_at
+      , source_updated_at, observed_at, source_metadata_json
     ) VALUES ${values.join(', ')}
     ON CONFLICT(source, source_id) DO UPDATE SET
+      ${stagingRequeueAssignments},
       import_job_id = excluded.import_job_id,
       character_name = excluded.character_name,
       normalized_name = excluded.normalized_name,
@@ -147,6 +152,7 @@ const stagingStatement = (
       character_image = excluded.character_image,
       source_updated_at = COALESCE(excluded.source_updated_at, character_import_staging.source_updated_at),
       observed_at = excluded.observed_at,
+      source_metadata_json = excluded.source_metadata_json,
       updated_at = excluded.updated_at
   `).bind(...bindings);
 };
@@ -155,27 +161,33 @@ export const checkpointSeedPage = async (
   env: Env,
   job: ImportJobRow,
   page: SeedPage,
+  transactionTail: D1PreparedStatement[] = [],
 ) => {
   const db = env.DB;
   const timestamp = nowIso();
   const config = getRuntimeConfig(env);
   let existing = 0;
+  let transferred = 0;
+  // A source page may repeat a member. Queue and count it only once.
+  page = { ...page, items: [...new Map(page.items.map((item) => [item.sourceId, item])).values()] };
   for (let index = 0; index < page.items.length; index += 90) {
     const sourceIds = page.items.slice(index, index + 90).map((item) => item.sourceId);
     if (!sourceIds.length) continue;
     const row = await db.prepare(`
-      SELECT COUNT(*) AS total FROM character_import_staging
-      WHERE source = ?1 AND source_id IN (${sourceIds.map((_, offset) => `?${offset + 2}`).join(', ')})
-    `).bind(job.source, ...sourceIds).first<{ total: number }>();
+      SELECT COUNT(*) AS total, SUM(import_job_id IS NOT ?2) AS transferred FROM character_import_staging
+      WHERE source = ?1 AND source_id IN (${sourceIds.map((_, offset) => `?${offset + 3}`).join(', ')})
+    `).bind(job.source, job.id, ...sourceIds).first<{ total: number; transferred: number }>();
     existing += Number(row?.total) || 0;
+    transferred += Number(row?.transferred) || 0;
   }
   const inserted = Math.max(0, page.items.length - existing);
   const budget = await budgetAfter(db, job, page.items.length + 5, page.items.length * 5 + 2, config);
   const statements: D1PreparedStatement[] = [];
-  for (let index = 0; index < page.items.length; index += 8) {
-    statements.push(stagingStatement(db, job.id, job.source, page.items.slice(index, index + 8)));
+  for (let index = 0; index < page.items.length; index += 7) {
+    statements.push(stagingStatement(db, job.id, job.source, page.items.slice(index, index + 7)));
   }
   const checkpoint = JSON.stringify({
+    ...(job.checkpoint_json ? JSON.parse(job.checkpoint_json) : {}),
     stageComplete: page.complete,
     total: page.total,
     pageSize: page.pageSize,
@@ -186,7 +198,7 @@ export const checkpointSeedPage = async (
       imported_count = imported_count + ?4,
       staging_inserted_count = staging_inserted_count + ?5,
       staging_updated_count = staging_updated_count + ?6,
-      pending_count = pending_count + ?5,
+      pending_count = pending_count + ?11,
       d1_budget_date = ?7, d1_rows_read_estimate = ?8, d1_rows_written_estimate = ?9,
       last_error = NULL, updated_at = ?10
     WHERE id = ?1
@@ -201,8 +213,9 @@ export const checkpointSeedPage = async (
     budget.rowsRead,
     budget.rowsWritten,
     timestamp,
+    inserted + transferred,
   ));
-  await db.batch(statements);
+  await db.batch([...statements, ...transactionTail]);
   return getImportJob(db, job.id);
 };
 
@@ -270,12 +283,7 @@ export const resolveStagingBatch = async (env: Env, job: ImportJobRow) => {
   );
   const pending = await env.DB.prepare(`
     SELECT s.id, s.import_job_id, s.source, s.source_id, s.character_name,
-      COALESCE(s.ocid, (
-        SELECT resolved.ocid FROM character_import_staging resolved
-        WHERE resolved.normalized_name = s.normalized_name
-          AND resolved.status = 'resolved' AND resolved.ocid IS NOT NULL
-        ORDER BY resolved.updated_at DESC LIMIT 1
-      )) AS ocid,
+      s.ocid, s.world_name, s.source_metadata_json,
       s.status, s.attempt_count, s.source_updated_at, s.observed_at
     FROM character_import_staging s
     WHERE import_job_id = ?1
@@ -288,49 +296,81 @@ export const resolveStagingBatch = async (env: Env, job: ImportJobRow) => {
   const rows = pending.results;
   if (rows.length === 0) return { job: await maybeCompleteImportJob(env.DB, job.id), processed: 0, created: 0, updated: 0, retry: 0, failed: 0 };
 
-  await env.DB.prepare(`
-    UPDATE character_import_staging SET status = 'resolving', updated_at = ?2
-    WHERE import_job_id = ?1
-      AND id IN (${rows.map((_, index) => `?${index + 3}`).join(', ')})
-  `).bind(job.id, nowIso(), ...rows.map((row) => row.id)).run();
+  for (let offset = 0; offset < rows.length; offset += 90) {
+    const chunk = rows.slice(offset, offset + 90);
+    await env.DB.prepare(`
+      UPDATE character_import_staging SET status = 'resolving', updated_at = ?2
+      WHERE import_job_id = ?1
+        AND id IN (${chunk.map((_, index) => `?${index + 3}`).join(', ')})
+    `).bind(job.id, nowIso(), ...chunk.map((row) => row.id)).run();
+  }
 
   let nexonRequests = 0;
   const resolutions = await runWithConcurrency(
     rows,
     config.nexonConcurrency,
     config.nexonRequestDelayMs,
-    (row) => resolveNexonCharacter(env, row.character_name, row.ocid, () => { nexonRequests += 1; }),
+    async (row): Promise<{ character: CharacterWrite; reused: boolean }> => {
+      // Reuse only an unambiguous, recently validated official identity in the same world.
+      const matches = await env.DB.prepare(`SELECT * FROM characters
+        WHERE normalized_name = ?1 AND world_name = ?2 ORDER BY updated_at DESC, ocid ASC LIMIT 2`)
+        .bind(normalizeCharacterName(row.character_name), row.world_name).all<CharacterRow>();
+      const cached = matches.results.length === 1 ? toPublicCharacter(matches.results[0]) : null;
+      if (row.source === 'nexon_guild' && matches.results.length > 0) {
+        // A guild roster is an additional source. Existing canonical rows are
+        // source-only updates; they never trigger character detail requests.
+        return { character: toPublicCharacter(matches.results[0]), reused: true };
+      }
+      if (cached?.requestedAt && isCharacterFresh(cached, config.characterFreshnessSeconds)
+        && cached.characterName === row.character_name.trim().normalize('NFC')) {
+        try {
+          validateCharacterWrite(cached);
+          return { character: { ...cached, requestedAt: cached.requestedAt }, reused: true };
+        } catch { /* Revalidate legacy/incomplete data through the official API. */ }
+      }
+      return { character: await resolveNexonCharacter(env, row.character_name, row.ocid || cached?.ocid,
+        () => { nexonRequests += 1; }, row.source === 'nexon_guild' ? row.world_name : undefined), reused: false };
+    },
   );
   let created = 0;
   let updated = 0;
   let retry = 0;
   let failed = 0;
+  let reused = 0;
   let pendingDecrease = 0;
   let retryDelta = 0;
   for (let index = 0; index < rows.length; index += 1) {
     const row = rows[index];
     const result = resolutions[index];
     if (result.status === 'fulfilled') {
-      const stored = await upsertCanonicalNexonCharacter(env.DB, result.value, [{
+      const { character, reused: reuse } = result.value;
+      const source = {
         source: row.source,
         sourceCharacterId: row.source_id,
         observedAt: row.observed_at ?? undefined,
         sourceUpdatedAt: row.source_updated_at,
-      }, {
-        source: 'nexon',
-        sourceCharacterId: result.value.ocid,
-        observedAt: result.value.observedAt,
-        sourceUpdatedAt: result.value.nexonUpdatedAt,
-      }]);
-      if (stored.created) created += 1;
-      else updated += 1;
+        rawJson: row.source_metadata_json,
+      };
+      if (reuse) {
+        await characterSourceStatement(env.DB, character.ocid, source).run();
+        reused += 1;
+      } else {
+        const stored = await upsertCanonicalNexonCharacter(env.DB, character, [source, {
+          source: 'nexon',
+          sourceCharacterId: character.ocid,
+          observedAt: character.observedAt,
+          sourceUpdatedAt: character.nexonUpdatedAt,
+        }]);
+        if (stored.created) created += 1;
+        else updated += 1;
+      }
       if (row.status === 'retry') retryDelta -= 1;
       else pendingDecrease += 1;
       await env.DB.prepare(`
         UPDATE character_import_staging SET status = 'resolved', ocid = ?2,
           attempt_count = attempt_count + 1, next_retry_at = NULL,
           last_error = NULL, updated_at = ?3 WHERE id = ?1
-      `).bind(row.id, result.value.ocid, nowIso()).run();
+      `).bind(row.id, character.ocid, nowIso()).run();
     } else if (await markResolutionFailure(env.DB, job.id, row, result.reason, config.nexonRetryLimit)) {
       retry += 1;
       if (row.status !== 'retry') {
@@ -351,12 +391,13 @@ export const resolveStagingBatch = async (env: Env, job: ImportJobRow) => {
       created_count = created_count + ?5,
       updated_count = updated_count + ?6,
       failed_count = failed_count + ?7,
+      skipped_count = skipped_count + ?13,
       nexon_request_count = nexon_request_count + ?8,
       d1_budget_date = ?9, d1_rows_read_estimate = ?10, d1_rows_written_estimate = ?11,
       last_error = NULL, updated_at = ?12 WHERE id = ?1
   `).bind(
     job.id,
-    created + updated,
+    created + updated + reused,
     pendingDecrease,
     retryDelta,
     created,
@@ -367,6 +408,7 @@ export const resolveStagingBatch = async (env: Env, job: ImportJobRow) => {
     budget.rowsRead,
     budget.rowsWritten,
     nowIso(),
+    reused,
   ).run();
   return {
     job: await maybeCompleteImportJob(env.DB, job.id),
@@ -375,6 +417,7 @@ export const resolveStagingBatch = async (env: Env, job: ImportJobRow) => {
     updated,
     retry,
     failed,
+    reused,
   };
 };
 
@@ -383,10 +426,13 @@ export const maybeCompleteImportJob = async (db: D1Database, jobId: number) => {
   if (!job) return null;
   const checkpoint = job.checkpoint_json ? JSON.parse(job.checkpoint_json) as { stageComplete?: boolean } : {};
   if (!checkpoint.stageComplete) return job;
-  if (Number(job.pending_count) > 0 || Number(job.retry_count) > 0) return job;
+  // Queue state survives interruption between a row checkpoint and the job counter update.
+  const remaining = await db.prepare(`SELECT 1 AS found FROM character_import_staging
+    WHERE import_job_id = ?1 AND status IN ('pending', 'resolving', 'retry') LIMIT 1`).bind(jobId).first();
+  if (remaining) return job;
   const timestamp = nowIso();
   await db.prepare(`
-    UPDATE import_jobs SET status = 'completed', completed_at = ?2,
+    UPDATE import_jobs SET status = 'completed', completed_at = ?2, pending_count = 0, retry_count = 0,
       updated_at = ?2, last_error = NULL WHERE id = ?1
   `).bind(jobId, timestamp).run();
   return getImportJob(db, jobId);
@@ -406,6 +452,7 @@ export const getImportMetrics = (jobs: ImportJobRow[]) => {
     staging_inserted: Number(job.staging_inserted_count),
     staging_updated: Number(job.staging_updated_count),
     resolved: Number(job.resolved_count),
+    reused_fresh: Number(job.skipped_count),
     pending: Number(job.pending_count),
     retry: Number(job.retry_count),
     failed: Number(job.failed_count),

@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { selectStratifiedRadarSamples } from './lib/tms-radar-sampling.mjs';
+import { deduplicateRadarCharacters, radarCharacterKey, selectStratifiedRadarSamples } from './lib/tms-radar-sampling.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
 const envPath = path.join(root, '.env');
@@ -117,7 +117,7 @@ function familiarAttackPercent(familiar, magic) {
   }, 0);
 }
 
-const cacheKeyFor = (entry) => entry.ocid ? `ocid:${entry.ocid}` : `name:${String(entry.name).normalize('NFC')}`;
+const cacheKeyFor = radarCharacterKey;
 const withCurrentRankingValues = (radar, entry) => ({
   ...radar,
   job: jobInfo(entry.job).normalized,
@@ -228,13 +228,7 @@ if (firstRankingPage.degraded) {
   if (degraded) await useCompleteRankingSnapshot();
 }
 
-const trackedByName = new Map();
-for (const entry of ranking) {
-  if (!entry?.name || entry.level < minimumLevel) continue;
-  const normalizedName = String(entry.name).normalize('NFC');
-  if (!trackedByName.has(normalizedName)) trackedByName.set(normalizedName, entry);
-}
-const trackedCharacters = [...trackedByName.values()];
+const trackedCharacters = deduplicateRadarCharacters(ranking.filter((entry) => entry.level >= minimumLevel));
 const sampledCharacters = selectStratifiedRadarSamples(trackedCharacters, samplesPerJob, normalizeJob);
 const cache = loadCache();
 const recordsByKey = new Map();
