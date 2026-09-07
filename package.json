@@ -9,7 +9,7 @@
     "@vitejs/plugin-react": "6.0.5",
     "concurrently": "^10.0.5",
     "markdown-it-task-lists": "^2.1.1",
-    "sass-embedded": "^1.103.1",
+    "sass-embedded": "^1.104.0",
     "tailwindcss": "^4.3.3",
     "typescript": "^7.0.2",
     "vite": "^8.2.2",
