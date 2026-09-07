@@ -43,7 +43,7 @@ const mockApi = (members = ['舊角色', '新角色']) => vi.stubGlobal('fetch',
 
 beforeEach(() => {
   local = createTestD1();
-  env = { DB: local.db, NEXON_API_KEY: 'test-only', NEXON_RETRY_LIMIT: '2', NEXON_REQUEST_DELAY_MS: '0' };
+  env = { DB: local.db, SURVEY_DB: local.db, NEXON_API_KEY: 'test-only', NEXON_RETRY_LIMIT: '2', NEXON_REQUEST_DELAY_MS: '0' };
   vi.useFakeTimers({ toFake: ['Date'] });
   vi.setSystemTime(baseTime);
   vi.stubGlobal('fetch', vi.fn(() => { throw new Error('Unexpected network access'); }));
