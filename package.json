@@ -2,6 +2,7 @@
   "name": "holybear.tw",
   "version": "1.0.0",
   "type": "module",
+  "packageManager": "yarn@1.22.22",
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20260904.1",
     "@lando/vitepress-theme-default-plus": "^1.2.0",
