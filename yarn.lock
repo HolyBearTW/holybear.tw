@@ -199,10 +199,10 @@
   resolved "https://registry.npmjs.org/@bufbuild/protobuf/-/protobuf-2.10.1.tgz"
   integrity sha512-ckS3+vyJb5qGpEYv/s1OebUHDi/xSNtfgw1wqKZo7MR9F2z+qXr0q5XagafAG/9O0QPVIUfST0smluYSTpYFkg==
 
-"@cloudflare/workers-types@^5.20260904.1":
-  version "5.20260904.1"
-  resolved "https://registry.npmjs.org/@cloudflare/workers-types/-/workers-types-5.20260904.1.tgz"
-  integrity sha512-SbulPvrdb4j5iISDr81Iw+YpNCG4Bb6xRqV3arkgn/Ib6STMaoG63lhPnuWqmZdakOn0qS1OUudBMdxtBFx0Jg==
+"@cloudflare/workers-types@^5.20260905.1":
+  version "5.20260905.1"
+  resolved "https://registry.yarnpkg.com/@cloudflare/workers-types/-/workers-types-5.20260905.1.tgz#c42af98493181dd9bbbc32b2fd54d943a9c7e44d"
+  integrity sha512-ebDpVTgrnee245IRBTazyfjfmZas+HJehZyVQkKmUozsBN8RzvXXMI0XjjcT2rQjw+0USewfEGGLYiHO+TL0Sg==
 
 "@docsearch/css@3.9.0":
   version "3.9.0"
