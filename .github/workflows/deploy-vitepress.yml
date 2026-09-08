@@ -258,27 +258,105 @@ jobs:
           timeout=1500
           interval=10
           elapsed=0
+          response_file="$(mktemp)"
+          last_reported_state=""
+          last_http_code=""
+          last_live_sha=""
+          trap 'rm -f "$response_file"' EXIT
+
+          report_waiting() {
+            state="$1"
+            message="$2"
+
+            if [ "$state" != "$last_reported_state" ] || [ $((elapsed % 60)) -eq 0 ]; then
+              echo "$message"
+              last_reported_state="$state"
+            fi
+          }
 
           while [ "$elapsed" -lt "$timeout" ]; do
-            live_sha="$(
-              curl --fail --silent --show-error \
+            curl_status=0
+            http_code="$(
+              curl --silent \
+                --output "$response_file" \
+                --write-out '%{http_code}' \
+                --connect-timeout 10 \
+                --max-time 20 \
                 --header 'Cache-Control: no-cache' \
-                "${SITE_URL%/}/api/__deploy.json?expected=${EXPECTED_SHA}&t=$(date +%s)" \
-                | jq -r '.commit // empty' 2>/dev/null \
-                || true
-            )"
+                "${SITE_URL%/}/api/__deploy.json?expected=${EXPECTED_SHA}&t=$(date +%s)"
+            )" || curl_status=$?
 
-            if [ "$live_sha" = "$EXPECTED_SHA" ]; then
-              echo "Cloudflare 已上線指定版本：${EXPECTED_SHA}"
-              exit 0
+            if [ "$curl_status" -ne 0 ]; then
+              last_http_code="transport-error"
+              report_waiting \
+                "transport-error" \
+                "Cloudflare 版本資訊暫時無法連線（curl exit ${curl_status}），繼續等待..."
+            else
+              last_http_code="$http_code"
+
+              case "$http_code" in
+                200)
+                  live_sha="$(jq -r '.commit // empty' "$response_file" 2>/dev/null || true)"
+                  deployment_state="$(jq -r '.status // .deployment.status // empty' "$response_file" 2>/dev/null || true)"
+                  deployment_state="$(printf '%s' "$deployment_state" | tr '[:upper:]' '[:lower:]')"
+
+                  case "$deployment_state" in
+                    failed|failure|cancelled|canceled)
+                      echo "::error::Cloudflare 明確回報部署失敗（status=${deployment_state}）。"
+                      exit 1
+                      ;;
+                  esac
+
+                  if [ "$live_sha" = "$EXPECTED_SHA" ]; then
+                    echo "Cloudflare 已上線指定版本：${EXPECTED_SHA}"
+                    exit 0
+                  fi
+
+                  last_live_sha="$live_sha"
+                  if [ -n "$live_sha" ]; then
+                    report_waiting \
+                      "sha:${live_sha}" \
+                      "等待 Cloudflare 部署，目前版本：${live_sha}"
+                  else
+                    report_waiting \
+                      "metadata-without-sha" \
+                      "等待 Cloudflare 部署，版本資訊已回應但尚未包含 commit..."
+                  fi
+                  ;;
+                404)
+                  report_waiting \
+                    "http-404" \
+                    "等待 Cloudflare 部署，目前版本資訊尚未可用..."
+                  ;;
+                401|403)
+                  echo "::error::Cloudflare 版本資訊端點回傳 HTTP ${http_code}；請檢查端點存取權限或設定。"
+                  exit 1
+                  ;;
+                5??)
+                  report_waiting \
+                    "http-${http_code}" \
+                    "Cloudflare 版本資訊端點暫時回傳 HTTP ${http_code}，繼續等待..."
+                  ;;
+                *)
+                  report_waiting \
+                    "http-${http_code}" \
+                    "Cloudflare 版本資訊端點回傳 HTTP ${http_code}，繼續等待..."
+                  ;;
+              esac
             fi
 
-            echo "等待 Cloudflare 部署，目前版本：${live_sha:-無法取得}"
             sleep "$interval"
             elapsed=$((elapsed + interval))
           done
 
-          echo "::error::等待 Cloudflare 部署逾時；不發送 Telegram 通知。"
+          if [ -n "$last_live_sha" ]; then
+            echo "::error::等待 Cloudflare 部署逾時；目前版本 ${last_live_sha} 一直不是目標 ${EXPECTED_SHA}。"
+          elif [ "$last_http_code" = "404" ]; then
+            echo "::error::等待 Cloudflare 部署逾時；版本資訊在 timeout 內始終尚未可用。"
+          else
+            echo "::error::等待 Cloudflare 部署逾時；最後 HTTP 狀態：${last_http_code:-無法取得}。"
+          fi
+          echo "不發送 Telegram 通知。"
           exit 1
 
       # Telegram 只在 GitHub workflow 發送，Cloudflare 不保存 Bot Token。
