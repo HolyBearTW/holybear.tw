@@ -1,4 +1,5 @@
 import { HttpError } from './http';
+import { acquireNexonRateSlot } from './nexon-rate-limit';
 
 const NEXON_BASE_URL = 'https://open.api.nexon.com/maplestorytw/v1';
 

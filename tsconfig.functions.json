@@ -12,5 +12,5 @@
     "checkJs": false,
     "resolveJsonModule": true
   },
-  "include": ["functions/**/*.ts", "tests/**/*.ts"]
+  "include": ["functions/**/*.ts", "workers/**/*.ts", "tests/**/*.ts"]
 }

@@ -2,7 +2,7 @@ import type { Env } from './env';
 import { HttpError } from './http';
 import { budgetAfter, checkpointSeedPage, getImportJob, maybeCompleteImportJob, resolveStagingBatch, type ImportJobRow } from './import-repository';
 import type { SeedCharacter } from './importers/importer';
-import { fetchNexonJson, NexonRequestError } from './nexon-client';
+import { fetchNexonJson, NexonRequestError, type NexonRequestMetric } from './nexon-client';
 import { getRuntimeConfig } from './runtime-config';
 import { normalizeCharacterName } from './character-repository';
 
@@ -28,6 +28,8 @@ const nowIso = () => new Date().toISOString();
 const checkpointOf = (job: ImportJobRow) => job.checkpoint_json ? JSON.parse(job.checkpoint_json) : {};
 
 export interface GuildEstimate {
+  attemptedGuilds: number;
+  successfulGuilds: number;
   guildCandidates: number;
   guildApiRequests: number;
   guildApiRequestsExpected: number;
@@ -41,6 +43,7 @@ export interface GuildEstimate {
   estimatedCharacterApiRequests: number;
   failedGuilds: number;
   errors: Array<{ worldName: string; guildName: string; message: string }>;
+  errorStats: { 429: number; 403: number; timeout: number; '5xx': number; retry: number };
 }
 
 export const withGuildImportLock = async <T>(env: Env, jobId: number, task: () => Promise<T>) => {
@@ -99,13 +102,16 @@ export const guildMembersToSeeds = (candidate: GuildCandidate, basic: GuildBasic
   }));
 };
 
-const readKnownGuildCandidates = async (env: Env, maxGuilds: number) => {
-  if (!Number.isSafeInteger(maxGuilds) || maxGuilds < 1 || maxGuilds > 10_000) {
+const readKnownGuildCandidates = async (env: Env, maxGuilds?: number) => {
+  if (maxGuilds !== undefined && (!Number.isSafeInteger(maxGuilds) || maxGuilds < 1 || maxGuilds > 10_000)) {
     throw new HttpError(400, 'invalid_guild_limit', 'maxGuilds must be between 1 and 10000');
   }
-  const result = await env.DB.prepare(`SELECT world_name, guild_name FROM characters
+  const query = `SELECT world_name, guild_name FROM characters
     WHERE guild_name IS NOT NULL AND TRIM(guild_name) <> '' AND TRIM(world_name) <> ''
-    GROUP BY world_name, guild_name ORDER BY world_name, guild_name LIMIT ?1`).bind(maxGuilds).all<GuildCandidateRow>();
+    GROUP BY world_name, guild_name ORDER BY world_name, guild_name${maxGuilds === undefined ? '' : ' LIMIT ?1'}`;
+  const result = maxGuilds === undefined
+    ? await env.DB.prepare(query).all<GuildCandidateRow>()
+    : await env.DB.prepare(query).bind(maxGuilds).all<GuildCandidateRow>();
   return result.results.map((row, index) => ({ id: index + 1, world_name: row.world_name, guild_name: row.guild_name,
     oguild_id: null, attempt_count: 0 }));
 };
@@ -134,21 +140,41 @@ const findExistingGuildMembers = async (env: Env, keys: Array<{ worldName: strin
  * Read-only estimate: expands only official guild endpoints, then compares the
  * roster names with characters. It does not create an import job or write D1.
  */
-export const estimateGuildSampling = async (env: Env, maxGuilds: number): Promise<GuildEstimate> => {
+export const estimateGuildSampling = async (env: Env, maxGuilds?: number): Promise<GuildEstimate> => {
   const candidates = await readKnownGuildCandidates(env, maxGuilds);
   const unique = new Map<string, { worldName: string; normalizedName: string }>();
   let rosterMemberOccurrences = 0;
   let guildApiRequests = 0;
   let failedGuilds = 0;
+  let attemptedGuilds = 0;
   const errors: GuildEstimate['errors'] = [];
+  const errorStats: GuildEstimate['errorStats'] = { 429: 0, 403: 0, timeout: 0, '5xx': 0, retry: 0 };
+  const recordRequestMetric = (metric: NexonRequestMetric) => {
+    if (metric.attempt > 0) errorStats.retry += 1;
+    if (metric.status === 429) errorStats[429] += 1;
+    else if (metric.status === 403) errorStats[403] += 1;
+    else if (metric.status != null && metric.status >= 500) errorStats['5xx'] += 1;
+    else if (metric.errorKind === 'timeout') errorStats.timeout += 1;
+  };
   for (const candidate of candidates) {
+    attemptedGuilds += 1;
     try {
       const params = new URLSearchParams({ guild_name: candidate.guild_name, world_name: candidate.world_name });
-      const guildId = await fetchNexonJson<{ oguild_id?: string }>(env, `/guild/id?${params}`, () => { guildApiRequests += 1; });
+      const guildId = await fetchNexonJson<{ oguild_id?: string }>(
+        env,
+        `/guild/id?${params}`,
+        () => { guildApiRequests += 1; },
+        recordRequestMetric,
+      );
       if (typeof guildId.oguild_id !== 'string' || !guildId.oguild_id.trim()) {
         throw new NexonRequestError('NEXON did not return a guild ID', null, false, 'missing_guild_id');
       }
-      const basic = await fetchNexonJson<GuildBasic>(env, `/guild/basic?oguild_id=${encodeURIComponent(guildId.oguild_id)}`, () => { guildApiRequests += 1; });
+      const basic = await fetchNexonJson<GuildBasic>(
+        env,
+        `/guild/basic?oguild_id=${encodeURIComponent(guildId.oguild_id)}`,
+        () => { guildApiRequests += 1; },
+        recordRequestMetric,
+      );
       const members = guildMembersToSeeds(candidate, basic, nowIso());
       rosterMemberOccurrences += Array.isArray(basic.guild_member) ? basic.guild_member.length : 0;
       for (const member of members) unique.set(`${member.worldName}\u0000${normalizeCharacterName(member.characterName)}`, {
@@ -158,13 +184,18 @@ export const estimateGuildSampling = async (env: Env, maxGuilds: number): Promis
       failedGuilds += 1;
       errors.push({ worldName: candidate.world_name, guildName: candidate.guild_name,
         message: error instanceof Error ? error.message : String(error) });
-      if (error instanceof NexonRequestError && (error.status === 401 || error.status === 403)) throw error;
+      const status = error instanceof NexonRequestError ? error.status : null;
+      // A 403 is an account/key-level failure. Stop safely instead of
+      // hammering every remaining guild with a known-invalid credential.
+      if (status === 401 || status === 403) break;
     }
   }
   const existing = await findExistingGuildMembers(env, [...unique.values()]);
   const existingCharacters = [...unique.keys()].filter((key) => existing.has(key)).length;
   const newCharacters = unique.size - existingCharacters;
   return {
+    attemptedGuilds,
+    successfulGuilds: attemptedGuilds - failedGuilds,
     guildCandidates: candidates.length,
     guildApiRequests,
     guildApiRequestsExpected: candidates.length * 2,
@@ -179,6 +210,7 @@ export const estimateGuildSampling = async (env: Env, maxGuilds: number): Promis
     estimatedCharacterApiRequests: newCharacters * 3,
     failedGuilds,
     errors,
+    errorStats,
   };
 };
 

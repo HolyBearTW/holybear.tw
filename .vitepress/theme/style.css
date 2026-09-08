@@ -926,6 +926,30 @@ html.dark body:not(:has(.VPHome)):not(.is-home-page) .VPSidebar.open {
 
 @media (min-width: 768px) {
   .VPNavBarSearch { margin-right: 4px; }
+
+  /* VitePress 2 alpha.20 lets both the injected search and menu consume the
+     remaining row. Keep their measured widths natural so search stays beside
+     the menu and the new overflow engine receives stable dimensions. */
+  .VPNavBar .content-body > .fuwari-nav-search-wrap {
+    flex-grow: 0 !important;
+    margin-left: auto;
+  }
+
+  .VPNavBar .content-body > .VPNavBarSearch.search {
+    margin-right: 0 !important;
+  }
+
+  .VPNavBar .content-body > .VPNavBarMenu {
+    flex-grow: 0 !important;
+  }
+}
+
+@media (min-width: 960px) {
+  /* Alpha.20 reserves a sidebar-width title column on every non-home page.
+     Pages without a sidebar keep the title's natural width, as before. */
+  .VPNavBar:not(.has-sidebar):not(.home) > .wrapper > .container > .title {
+    min-width: 0 !important;
+  }
 }
 
 @media (max-width: 768px) {
@@ -995,7 +1019,8 @@ html.dark body:not(:has(.VPHome)):not(.is-home-page) .VPSidebar.open {
 .VPNavScreenTranslations.translations .VPLink.link,
 .VPNavScreenAppearance.appearance,
 .VPNavScreenMenuGroup > .button,
-.VPNavScreenMenuGroup .VPNavScreenMenuGroupLink {
+.VPNavScreenMenuGroup .VPNavScreenMenuGroupLink,
+.VPNavScreenMenuGroup .VPMenuLink > .VPLink.link {
   backdrop-filter: blur(16px) saturate(140%) !important;
   -webkit-backdrop-filter: blur(16px) saturate(140%) !important;
 }
@@ -1384,7 +1409,8 @@ html.dark body:not(:has(.VPHome)):not(.is-home-page) .VPSidebar.open {
 .VPNavScreenMenuGroup .group {
   padding: 0 !important;
 }
-.VPNavScreenMenuGroup .VPNavScreenMenuGroupLink {
+.VPNavScreenMenuGroup .VPNavScreenMenuGroupLink,
+.VPNavScreenMenuGroup .VPMenuLink > .VPLink.link {
   display: flex;
   align-items: center;
   justify-content: flex-start;
@@ -1402,7 +1428,9 @@ html.dark body:not(:has(.VPHome)):not(.is-home-page) .VPSidebar.open {
   font-weight: 600;
 }
 .VPNavScreenMenuGroup .VPNavScreenMenuGroupLink:hover,
-.VPNavScreenMenuGroup .VPNavScreenMenuGroupLink.active {
+.VPNavScreenMenuGroup .VPNavScreenMenuGroupLink.active,
+.VPNavScreenMenuGroup .VPMenuLink > .VPLink.link:hover,
+.VPNavScreenMenuGroup .VPMenuLink > .VPLink.link.active {
   background: rgba(0,255,238,0.1);
   border-color: rgba(0,255,238,0.18);
   color: #00b8b8;
@@ -1420,6 +1448,7 @@ html.dark .VPNavScreen {
 
 .VPNavScreenMenuGroup > .button,
 .VPNavScreenMenuGroup .VPNavScreenMenuGroupLink,
+.VPNavScreenMenuGroup .VPMenuLink > .VPLink.link,
 .VPNavScreenAppearance.appearance,
 .VPNavScreenTranslations.translations .title,
 .VPNavScreenTranslations.translations .VPLink.link,
@@ -2058,7 +2087,7 @@ select {
 
 .VPNavBarMenuLink {
   height: 34px !important;
-  min-height: 34px;
+  min-height: 34px !important;
   line-height: 34px !important;
 }
 
@@ -3121,6 +3150,7 @@ body.is-home-page .VPNavBar .divider-line {
   }
 
   html body .VPNavScreen .menu {
+    order: 1;
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -3130,6 +3160,22 @@ body.is-home-page .VPNavBar .divider-line {
     border-radius: 0 !important;
     background: transparent !important;
     box-shadow: none !important;
+  }
+
+  html body .VPNavScreen .container > .VPNavScreenTranslations.translations:not(.hb-mobile-language-picker) {
+    display: none !important;
+  }
+
+  html body .VPNavScreen .hb-mobile-language-picker {
+    order: 2;
+  }
+
+  html body .VPNavScreen .appearance {
+    order: 3;
+  }
+
+  html body .VPNavScreen .social-links {
+    order: 4;
   }
 
   html body .VPNavScreen .menu > ul {
@@ -3190,7 +3236,8 @@ body.is-home-page .VPNavBar .divider-line {
   html body .VPNavScreenTranslations.translations .title,
   html body .VPNavScreenAppearance.appearance,
   html body .VPNavScreenTranslations.translations .VPLink.link,
-  html body .VPNavScreenMenuGroup .VPNavScreenMenuGroupLink {
+  html body .VPNavScreenMenuGroup .VPNavScreenMenuGroupLink,
+  html body .VPNavScreenMenuGroup .VPMenuLink > .VPLink.link {
     --tw-backdrop-blur: blur(16px) !important;
     --tw-backdrop-saturate: saturate(140%) !important;
     -webkit-backdrop-filter: var(--tw-backdrop-blur,) var(--tw-backdrop-brightness,) var(--tw-backdrop-contrast,) var(--tw-backdrop-grayscale,) var(--tw-backdrop-hue-rotate,) var(--tw-backdrop-invert,) var(--tw-backdrop-opacity,) var(--tw-backdrop-saturate,) var(--tw-backdrop-sepia,) !important;
@@ -3236,7 +3283,8 @@ body.is-home-page .VPNavBar .divider-line {
     box-shadow: 0 10px 28px rgba(0, 0, 0, 0.24) !important;
   }
 
-  html.dark body .VPNavScreenMenuGroup .VPNavScreenMenuGroupLink {
+  html.dark body .VPNavScreenMenuGroup .VPNavScreenMenuGroupLink,
+  html.dark body .VPNavScreenMenuGroup .VPMenuLink > .VPLink.link {
     background: rgba(18, 20, 26, 0.78) !important;
     border-color: rgba(255, 255, 255, 0.05) !important;
     box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2) !important;
@@ -3499,6 +3547,7 @@ body.is-home-page .VPNavBar .divider-line {
   }
 
   .hb-nav-menu-portal.hb-nav-menu-portal-translations .VPMenu {
+    min-width: 168px !important;
     padding: 0 !important;
   }
 
@@ -3529,12 +3578,22 @@ body.is-home-page .VPNavBar .divider-line {
     min-height: 32px !important;
     padding: 6px 10px !important;
     border-radius: 10px;
+    white-space: nowrap;
   }
 
   .hb-nav-menu-portal.hb-nav-menu-portal-translations .VPLink.link.hb-current-locale {
     cursor: default;
     pointer-events: none;
-    font-weight: 700;
+  }
+
+  .hb-nav-menu-portal.hb-nav-menu-portal-translations .VPLink.link.hb-current-locale::after {
+    content: '✓';
+    margin-left: auto;
+    padding-left: 0.75rem;
+    color: var(--hb-nav-hover-color, #22a9bd);
+    font-size: 0.78rem;
+    font-weight: 800;
+    line-height: 1;
   }
 
   .hb-nav-menu-portal.hb-nav-menu-portal-translations .VPMenu .title::before,
@@ -3544,7 +3603,8 @@ body.is-home-page .VPNavBar .divider-line {
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-    flex: 0 0 auto;
+    flex: 0 0 1.25rem;
+    width: 1.25rem;
     font-size: 1rem;
     line-height: 1;
   }
@@ -5532,20 +5592,6 @@ html.dark body .BlogVPFooter .footer-commit {
     color: #087f94 !important;
   }
 
-  html:not(.dark) body .hb-nav-menu-portal .VPMenu .VPLink.link.hb-current-locale,
-  html:not(.dark) body .VPNavBarTranslations .VPMenu .VPLink.link.hb-current-locale {
-    color: #087f94 !important;
-    background: rgba(36, 94, 112, 0.08) !important;
-    border-color: rgba(36, 94, 112, 0.12) !important;
-  }
-
-  html.dark body .hb-nav-menu-portal .VPMenu .VPLink.link.hb-current-locale,
-  html.dark body .VPNavBarTranslations .VPMenu .VPLink.link.hb-current-locale {
-    color: var(--hb-nav-hover-color, #67e8f9) !important;
-    background: rgba(0, 255, 238, 0.1) !important;
-    border-color: rgba(0, 255, 238, 0.16) !important;
-  }
-
   body .VPMenu .VPLink.link.hb-current-theme,
   body .hb-nav-menu-portal .VPMenu .VPLink.link.hb-current-theme {
     font-weight: 750 !important;
@@ -5834,30 +5880,8 @@ html body:not(.theme-halloween):not(.theme-christmas):not(.is-days500-page) #app
   }
 }
 
-/* ==========================================================================
-   Dark-only presentation themes
-   Core Tower and Gravity Field use dark artwork as their visual foundation.
-   Keep that presentation when the site appearance toggle is set to light,
-   without changing the light/dark behavior of any other background theme.
-   ========================================================================== */
-html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) {
-  color-scheme: dark;
-  --vp-c-bg: #040812 !important;
-  --vp-c-bg-soft: #091321 !important;
-  --vp-c-bg-alt: #07101b !important;
-  --vp-c-text-1: #e6f1ff !important;
-  --vp-c-text-2: #b8c8d8 !important;
-  --vp-c-text-3: #8fa6b8 !important;
-  --vp-c-divider: rgba(148, 163, 184, 0.18) !important;
-  --my-glass-bg: rgba(0, 0, 0, 0.3) !important;
-  --panel-glass-bg: rgba(0, 0, 0, 0.4) !important;
-  --panel-text-color: #e6f1ff !important;
-  --vp-nav-bg-color: rgba(7, 17, 25, 0.74) !important;
-  --vp-sidebar-bg-color: rgba(7, 17, 25, 0.74) !important;
-  --vp-local-nav-bg-color: rgba(7, 17, 25, 0.74) !important;
-  background-color: #02040a !important;
-  color: #e6f1ff !important;
-}
+/* Core Tower and Gravity Field use dark artwork, so navigation surfaces stay
+   dark without changing the active light appearance of document content. */
 
 html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav:has(.VPNavBar:not(.top)) {
   background: rgba(7, 17, 25, 0.74) !important;
@@ -5927,23 +5951,6 @@ html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPDocAsideO
   box-shadow: none !important;
   -webkit-backdrop-filter: blur(10px) !important;
   backdrop-filter: blur(10px) !important;
-}
-
-html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .vp-doc,
-html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .vp-doc h1,
-html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .vp-doc h2,
-html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .vp-doc h3,
-html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .vp-doc h4,
-html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .vp-doc h5,
-html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .vp-doc h6 {
-  color: #e6f1ff !important;
-}
-
-html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .vp-doc p,
-html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .vp-doc li,
-html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .vp-doc td,
-html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .vp-doc th {
-  color: rgba(211, 231, 239, 0.88) !important;
 }
 
 html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNavScreen {

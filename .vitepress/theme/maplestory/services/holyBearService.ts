@@ -51,14 +51,15 @@ export interface HolyBearAltsResponse {
   accountGroup: { id: number; confidence: 'high' | 'probable' | 'unknown'; lastVerifiedAt: string | null } | null;
   confidence: 'high' | 'probable' | 'unknown';
   alts: Array<{
-    ocid: string;
+    ocid: string | null;
     characterName: string;
     worldName: string;
     jobName: string;
-    level: number;
-    combatPower: number;
-    characterImage: string;
+    level: number | null;
+    combatPower: number | null;
+    characterImage: string | null;
     guildName: string | null;
+    metadataAvailable: boolean;
   }>;
   lastVerifiedAt: string | null;
   disclosure: string;

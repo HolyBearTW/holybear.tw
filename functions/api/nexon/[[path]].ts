@@ -1,6 +1,7 @@
 import type { AppPagesFunction } from '../../_shared/env';
 import { errorResponse, HttpError, methodNotAllowed } from '../../_shared/http';
 import { assertAllowedBrowserOrigin, buildNexonProxyTarget } from '../../_shared/nexon-proxy';
+import { acquireNexonRateSlot } from '../../_shared/nexon-rate-limit';
 import { requireSecret } from '../../_shared/runtime-config';
 
 const ALLOWED_PATHS = new Set([
@@ -31,6 +32,7 @@ export const onRequestGet: AppPagesFunction<'path'> = async ({ env, params, requ
     const cached = edgeCache ? await edgeCache.match(cacheKey) : undefined;
     if (cached) return cached;
 
+    await acquireNexonRateSlot(env);
     const response = await fetch(target, {
       headers: {
         accept: 'application/json',

@@ -3,7 +3,14 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { parseManualSeedPage, scanManualSeedDirectory } from '../../scripts/manual-seed-files.mjs';
-import { canonicalSql, isD1QuotaError, pageStagingSql } from '../../scripts/run-manual-seed-import.mjs';
+import {
+  canonicalSql,
+  finalizeManualImportSql,
+  isD1QuotaError,
+  manualImportTerminalStatus,
+  markManualImportRunningSql,
+  pageStagingSql,
+} from '../../scripts/run-manual-seed-import.mjs';
 
 const directories: string[] = [];
 afterEach(async () => Promise.all(directories.splice(0).map((directory) => rm(directory, { recursive: true, force: true }))));
@@ -77,11 +84,35 @@ describe('manual seed files', () => {
     expect(sql).toContain('9999999');
     expect(sql).toContain("'manual_seed'");
     expect(sql).toContain("'nexon'");
+    expect(sql).toContain("'union_raider_full'");
+    expect(sql).toContain('INSERT INTO account_signal_sync');
     expect(sql).not.toContain('rank');
   });
 
   it('recognizes the D1 daily row-read quota as a resumable pause', () => {
     expect(isD1QuotaError(new Error('exceeded D1 free tier daily row read limit [code: 7500]'))).toBe(true);
     expect(isD1QuotaError(new Error('unrelated network error'))).toBe(false);
+  });
+
+  it('pauses a normal partial run and only completes a fully drained import', () => {
+    expect(manualImportTerminalStatus(false, 0)).toBe('paused');
+    expect(manualImportTerminalStatus(true, 1)).toBe('paused');
+    expect(manualImportTerminalStatus(true, 0)).toBe('completed');
+
+    const runningSql = markManualImportRunningSql(3, '2026-09-08T00:00:00.000Z');
+    expect(runningSql).toContain("status='running'");
+    expect(runningSql).toContain("status IN ('pending','paused','running')");
+
+    const pausedSql = finalizeManualImportSql(3, 'paused', '2026-09-08T01:00:00.000Z');
+    expect(pausedSql).toContain("status='paused'");
+    expect(pausedSql).toContain('completed_at=NULL');
+    expect(pausedSql).not.toContain('NOT EXISTS');
+
+    const completedSql = finalizeManualImportSql(3, 'completed', '2026-09-08T02:00:00.000Z');
+    expect(completedSql).toContain("status='completed'");
+    expect(completedSql).toContain("status IN ('pending','resolving','retry')");
+    expect(completedSql).toContain('NOT EXISTS');
+    expect(completedSql).toContain('pending_count=0');
+    expect(completedSql).toContain('retry_count=0');
   });
 });

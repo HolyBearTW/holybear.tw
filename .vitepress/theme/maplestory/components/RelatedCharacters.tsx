@@ -2,6 +2,7 @@ import React from 'react';
 import { ChevronLeft, ChevronRight, Search, User, Users } from 'lucide-react';
 import { findRelatedCharacters } from '../services/aliasService';
 import type { RelatedCharacter } from '../services/aliasService';
+import { fromD1Alt, mergeRelatedCharacters } from '../services/relatedCharacterMerge';
 import type { DashboardData } from '../types';
 import CharacterAvatar from './CharacterAvatar';
 import {
@@ -21,7 +22,7 @@ const getResponsivePageSize = () => {
   if (window.innerWidth >= 640) return 4;
   return 3;
 };
-const formatPower = (value: string) => {
+const formatPower = (value: string | null) => {
   const power = Number(value || 0);
   if (!Number.isFinite(power) || power <= 0) return '0';
   if (power >= 100_000_000) {
@@ -37,36 +38,6 @@ const formatCreateDate = (value: string | null) => {
   if (!value) return '-';
   const [year, month, day] = value.slice(0, 10).split('-');
   return year && month && day ? `${year}/${Number(month)}/${Number(day)}` : '-';
-};
-
-const fromD1Alt = (character: Awaited<ReturnType<typeof fetchHolyBearAlts>>['alts'][number]): RelatedCharacter => ({
-  characterName: character.characterName,
-  worldName: character.worldName,
-  characterClass: character.jobName,
-  characterLevel: character.level,
-  characterImage: character.characterImage,
-  characterPower: String(character.combatPower),
-  maxCharacterPower: String(character.combatPower),
-  combatPowerRank: null,
-  characterGuildName: character.guildName,
-  characterDateCreate: null,
-});
-
-const mergeRelatedCharacters = (d1Members: RelatedCharacter[], staticMembers: RelatedCharacter[]) => {
-  const merged = new Map<string, RelatedCharacter>();
-  for (const member of staticMembers) {
-    merged.set(member.characterName.normalize('NFC').toLocaleLowerCase('zh-TW'), member);
-  }
-  for (const member of d1Members) {
-    const key = member.characterName.normalize('NFC').toLocaleLowerCase('zh-TW');
-    const fallback = merged.get(key);
-    merged.set(key, {
-      ...fallback,
-      ...member,
-      characterDateCreate: fallback?.characterDateCreate ?? member.characterDateCreate,
-    });
-  }
-  return [...merged.values()];
 };
 
 const RelatedCharacters: React.FC<RelatedCharactersProps> = ({
@@ -251,13 +222,21 @@ const RelatedCharacters: React.FC<RelatedCharactersProps> = ({
                 )}
               </span>
               <span className="mt-0.5 block truncate text-xs text-slate-300">
-                Lv.{character.characterLevel} · {character.characterClass}
+                {character.metadataAvailable === false && character.characterLevel == null
+                  ? `資料待補 · ${character.characterClass}`
+                  : `Lv.${character.characterLevel} · ${character.characterClass}`}
               </span>
               <span className="mt-0.5 block truncate text-[11px] text-cyan-300/80">
-                {character.characterGuildName || '無公會'}
+                {character.metadataAvailable === false && character.characterGuildName == null
+                  ? '角色資料待補'
+                  : character.characterGuildName || '無公會'}
               </span>
               <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] leading-tight text-slate-400">
-                <span className="whitespace-nowrap">{formatPower(character.maxCharacterPower)}</span>
+                <span className="whitespace-nowrap">
+                  {character.metadataAvailable === false && character.maxCharacterPower == null
+                    ? '資料待補'
+                    : formatPower(character.maxCharacterPower)}
+                </span>
                 {character.characterDateCreate && (
                   <span className="whitespace-nowrap">{formatCreateDate(character.characterDateCreate)}</span>
                 )}

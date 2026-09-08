@@ -1,32 +1,93 @@
 import { syncCharacterAccountSignals } from './account-group-repository';
+import {
+  ACCOUNT_SIGNAL_TYPE,
+  type AccountSignalClaim,
+  claimAccountSignalForBackground,
+  completeAccountSignalClaim,
+  failAccountSignalClaim,
+} from './account-signal-queue';
 import { toPublicCharacter } from './character-repository';
 import type { Env } from './env';
 import type { CharacterRow } from './models';
 import { NexonRequestError, runWithConcurrency } from './nexon-client';
 import { getRuntimeConfig } from './runtime-config';
+import {
+  addInstrumentation,
+  createAccountSignalInstrumentation,
+  metricTimer,
+  summarizeAccountSignalInstrumentation,
+  type AccountSignalInstrumentation,
+} from './account-signal-metrics';
 
-const SIGNAL_TYPE = 'union_raider_full';
 const nowIso = () => new Date().toISOString();
 
 export const backfillAccountSignalBatch = async (env: Env) => {
+  const batchStartedAt = Date.now();
+  const instrumentation = createAccountSignalInstrumentation();
   const config = getRuntimeConfig(env);
-  const result = await env.DB.prepare(`
+  const now = nowIso();
+  const staleBefore = new Date(Date.now() - config.accountSignalBackgroundRefreshSeconds * 1000).toISOString();
+  const immediateResult = await env.DB.prepare(`
     SELECT c.* FROM characters c
     LEFT JOIN account_signal_sync s ON s.ocid = c.ocid AND s.signal_type = ?1
     WHERE s.ocid IS NULL OR s.status = 'pending'
       OR (s.status = 'retry' AND (s.next_retry_at IS NULL OR s.next_retry_at <= ?2))
-    ORDER BY c.combat_power DESC, c.ocid ASC LIMIT ?3
-  `).bind(SIGNAL_TYPE, nowIso(), config.accountSignalBackfillBatchSize).all<CharacterRow>();
-  const rows = result.results;
+    ORDER BY CASE
+      WHEN s.ocid IS NULL OR s.status = 'pending' THEN 0
+      WHEN s.status = 'retry' THEN 1
+      ELSE 2
+    END,
+    CASE WHEN s.status = 'retry' THEN COALESCE(s.next_retry_at, '') ELSE '' END,
+    c.combat_power DESC, c.ocid ASC LIMIT ?3
+  `).bind(ACCOUNT_SIGNAL_TYPE, now, config.accountSignalBackfillBatchSize).all<CharacterRow>();
+  let rows = [...immediateResult.results];
+  const reserveStale = Math.floor(Date.now() / 60_000) % config.accountSignalBackgroundStaleReserveEvery === 0;
+  const staleLimit = rows.length >= config.accountSignalBackfillBatchSize && reserveStale
+    ? 1
+    : Math.max(0, config.accountSignalBackfillBatchSize - rows.length);
+  if (staleLimit > 0) {
+    const staleResult = await env.DB.prepare(`
+      SELECT c.* FROM characters c
+      JOIN account_signal_sync s ON s.ocid = c.ocid AND s.signal_type = ?1
+      WHERE s.status = 'completed' AND (s.completed_at IS NULL OR s.completed_at <= ?2)
+      ORDER BY COALESCE(s.completed_at, ''), c.ocid ASC LIMIT ?3
+    `).bind(ACCOUNT_SIGNAL_TYPE, staleBefore, staleLimit).all<CharacterRow>();
+    rows = reserveStale && immediateResult.results.length >= config.accountSignalBackfillBatchSize
+      ? [...rows.slice(0, Math.max(0, config.accountSignalBackfillBatchSize - 1)), ...staleResult.results]
+      : [...rows, ...staleResult.results];
+  }
+  const claimedRows: Array<{ row: CharacterRow; claim: AccountSignalClaim }> = [];
+  for (const row of rows) {
+    const claimStartedAt = Date.now();
+    const claim = await claimAccountSignalForBackground(
+      env.DB,
+      row.ocid,
+      config.accountSignalBackgroundRefreshSeconds,
+    );
+    instrumentation.queueClaimMs += metricTimer(claimStartedAt);
+    if (claim) claimedRows.push({ row, claim });
+  }
   const settled = await runWithConcurrency(
-    rows,
+    claimedRows,
     config.accountSignalBackfillConcurrency,
     config.accountSignalBackfillDelayMs,
-    async (row) => {
-      const synced = await syncCharacterAccountSignals(env, toPublicCharacter(row), [SIGNAL_TYPE]);
-      const failure = synced.failures[0]?.error;
-      if (failure) throw failure;
-      return synced;
+    async ({ row, claim }) => {
+      const metrics = createAccountSignalInstrumentation();
+      const startedAt = Date.now();
+      try {
+        const synced = await syncCharacterAccountSignals(
+          env,
+          toPublicCharacter(row),
+          [ACCOUNT_SIGNAL_TYPE],
+          metrics,
+        );
+        const failure = synced.failures[0]?.error;
+        if (failure) throw failure;
+        return { claim, synced, metrics };
+      } catch (error) {
+        if (metrics.characterWallMs.length === 0) metrics.characterWallMs.push(metricTimer(startedAt));
+        throw { accountSignalError: error, metrics };
+      }
     },
   );
 
@@ -34,52 +95,28 @@ export const backfillAccountSignalBatch = async (env: Env) => {
   let retry = 0;
   let failed = 0;
   let signals = 0;
-  for (let index = 0; index < rows.length; index += 1) {
-    const row = rows[index];
+  for (let index = 0; index < claimedRows.length; index += 1) {
+    const { claim } = claimedRows[index];
     const outcome = settled[index];
-    const timestamp = nowIso();
     if (outcome.status === 'fulfilled') {
       completed += 1;
-      signals += outcome.value.signalCount;
-      await env.DB.prepare(`
-        INSERT INTO account_signal_sync (
-          ocid, signal_type, status, signal_count, attempt_count,
-          last_attempted_at, completed_at, created_at, updated_at
-        ) VALUES (?1, ?2, 'completed', ?3, 1, ?4, ?4, ?4, ?4)
-        ON CONFLICT(ocid, signal_type) DO UPDATE SET
-          status = 'completed', signal_count = excluded.signal_count,
-          attempt_count = account_signal_sync.attempt_count + 1,
-          next_retry_at = NULL, last_error = NULL,
-          last_attempted_at = excluded.last_attempted_at,
-          completed_at = excluded.completed_at, updated_at = excluded.updated_at
-      `).bind(row.ocid, SIGNAL_TYPE, outcome.value.signalCount, timestamp).run();
+      signals += outcome.value.synced.signalCount;
+      addInstrumentation(instrumentation, outcome.value.metrics);
+      const finalizeStartedAt = Date.now();
+      await completeAccountSignalClaim(env.DB, claim, outcome.value.synced.signalCount);
+      instrumentation.queueFinalizeMs += metricTimer(finalizeStartedAt);
       continue;
     }
 
-    const error = outcome.reason;
-    const existing = await env.DB.prepare(`
-      SELECT attempt_count FROM account_signal_sync WHERE ocid = ?1 AND signal_type = ?2
-    `).bind(row.ocid, SIGNAL_TYPE).first<{ attempt_count: number }>();
-    const attempts = (Number(existing?.attempt_count) || 0) + 1;
+    const taskFailure = outcome.reason as { accountSignalError?: unknown; metrics?: AccountSignalInstrumentation };
+    if (taskFailure?.metrics) addInstrumentation(instrumentation, taskFailure.metrics);
+    const error = taskFailure?.accountSignalError ?? outcome.reason;
     const retryable = !(error instanceof NexonRequestError) || error.retryable;
-    const shouldRetry = retryable && attempts < config.nexonRetryLimit;
-    if (shouldRetry) retry += 1;
+    const finalizeStartedAt = Date.now();
+    const failure = await failAccountSignalClaim(env.DB, claim, error, retryable, config.nexonRetryLimit);
+    instrumentation.queueFinalizeMs += metricTimer(finalizeStartedAt);
+    if (failure.shouldRetry) retry += 1;
     else failed += 1;
-    const retryAt = shouldRetry
-      ? new Date(Date.now() + Math.min(3_600_000, 30_000 * (2 ** Math.max(0, attempts - 1)))).toISOString()
-      : null;
-    const message = error instanceof Error ? error.message : String(error);
-    await env.DB.prepare(`
-      INSERT INTO account_signal_sync (
-        ocid, signal_type, status, attempt_count, next_retry_at,
-        last_error, last_attempted_at, created_at, updated_at
-      ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7, ?7)
-      ON CONFLICT(ocid, signal_type) DO UPDATE SET
-        status = excluded.status, attempt_count = excluded.attempt_count,
-        next_retry_at = excluded.next_retry_at, last_error = excluded.last_error,
-        last_attempted_at = excluded.last_attempted_at, updated_at = excluded.updated_at
-    `).bind(row.ocid, SIGNAL_TYPE, shouldRetry ? 'retry' : 'failed', attempts,
-      retryAt, message.slice(0, 1000), timestamp).run();
   }
 
   const sourceJob = await env.DB.prepare(`
@@ -87,7 +124,7 @@ export const backfillAccountSignalBatch = async (env: Env) => {
     WHERE source = 'manual_seed' ORDER BY id DESC LIMIT 1
   `).first<{ status: string; pending_count: number; retry_count: number }>();
   return {
-    processed: rows.length,
+    processed: claimedRows.length,
     completed,
     retry,
     failed,
@@ -95,5 +132,9 @@ export const backfillAccountSignalBatch = async (env: Env) => {
     sourceImportRunning: sourceJob?.status === 'running',
     sourcePending: Number(sourceJob?.pending_count) || 0,
     hasImmediateWork: rows.length === config.accountSignalBackfillBatchSize,
+    instrumentation: summarizeAccountSignalInstrumentation(
+      instrumentation,
+      Date.now() - batchStartedAt,
+    ),
   };
 };

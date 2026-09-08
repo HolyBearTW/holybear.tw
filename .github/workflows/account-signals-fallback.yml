@@ -1,0 +1,115 @@
+name: Account signals consumer fallback
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+# The endpoint secret authenticates the consumer call. GITHUB_TOKEN is not
+# used by the fallback consumer path.
+permissions: {}
+
+concurrency:
+  group: account-signals-consumer-fallback
+  cancel-in-progress: false
+
+jobs:
+  fallback:
+    permissions: {}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      CONSUMER_BASE_URL: ${{ vars.CONSUMER_FALLBACK_BASE_URL || 'https://holybear.tw' }}
+      CONSUMER_FALLBACK_SECRET: ${{ secrets.CONSUMER_FALLBACK_SECRET }}
+    steps:
+      - name: Validate fallback configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "$CONSUMER_FALLBACK_SECRET" ]; then
+            echo "::error::CONSUMER_FALLBACK_SECRET is not configured."
+            exit 1
+          fi
+          case "$CONSUMER_BASE_URL" in
+            https://*) ;;
+            *)
+              echo "::error::CONSUMER_FALLBACK_BASE_URL must use https."
+              exit 1
+              ;;
+          esac
+
+      - name: Check primary heartbeat and queues
+        id: status
+        shell: bash
+        run: |
+          set -euo pipefail
+          status_file="$RUNNER_TEMP/consumer-status.json"
+          curl --fail --silent --show-error \
+            --header "Authorization: Bearer $CONSUMER_FALLBACK_SECRET" \
+            --header 'Accept: application/json' \
+            "${CONSUMER_BASE_URL%/}/api/internal/consumer/status" \
+            --output "$status_file"
+          primary_fresh="$(jq -r '.primarySchedulerHeartbeat.fresh == true' "$status_file")"
+          has_work="$(jq -r '.queues.hasImmediateWork == true' "$status_file")"
+          if [ "$primary_fresh" = "false" ] && [ "$has_work" = "true" ]; then
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+          fi
+          jq '{checkedAt, primarySchedulerHeartbeat, currentActiveSource, lastSuccessfulConsumerRun, queues}' "$status_file"
+
+      - name: Run one bounded fallback batch
+        if: steps.status.outputs.should_run == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          result_file="$RUNNER_TEMP/consumer-result.json"
+          curl --fail --silent --show-error \
+            --request POST \
+            --header "Authorization: Bearer $CONSUMER_FALLBACK_SECRET" \
+            --header 'Accept: application/json' \
+            "${CONSUMER_BASE_URL%/}/api/internal/consumer/fallback" \
+            --output "$result_file"
+          jq '{executed, reason, batch, status}' "$result_file"
+
+  cleanup:
+    if: always()
+    needs: fallback
+    permissions:
+      actions: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Delete old completed runs of this fallback workflow
+        continue-on-error: true
+        uses: actions/github-script@v9
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const workflowId = 'account-signals-fallback.yml';
+            const currentRunId = Number(context.runId);
+            const completedRuns = await github.paginate(
+              github.rest.actions.listWorkflowRuns,
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                workflow_id: workflowId,
+                status: 'completed',
+                per_page: 100,
+              },
+            );
+            const orderedRuns = completedRuns
+              .filter((run) => Number(run.id) !== currentRunId && run.status === 'completed')
+              .sort((left, right) => (
+                Number(right.run_number) - Number(left.run_number)
+                || Number(right.id) - Number(left.id)
+              ));
+            const runsToDelete = orderedRuns.slice(10);
+            console.log(`Keeping 10 completed ${workflowId} runs; deleting ${runsToDelete.length} older runs.`);
+            for (const run of runsToDelete) {
+              await github.rest.actions.deleteWorkflowRun({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                run_id: run.id,
+              });
+            }

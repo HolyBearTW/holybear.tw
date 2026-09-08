@@ -5,6 +5,7 @@ import type {
   PublicCharacter,
 } from './models';
 import { canonicalUpdateGuard, validateCharacterWrite } from './character-policy.mjs';
+import { enqueueAccountSignalStatement } from './account-signal-queue';
 
 export const normalizeCharacterName = (name: string) => name.trim().normalize('NFC').toLocaleLowerCase('zh-TW');
 
@@ -45,6 +46,28 @@ export const findCharacterByOcid = async (db: D1Database, ocid: string) => {
     .first<CharacterRow>();
   return row ? toPublicCharacter(row) : null;
 };
+
+export const findCharacterByWorldAndName = async (db: D1Database, name: string, worldName: string) => {
+  const normalizedName = normalizeCharacterName(name);
+  const normalizedWorld = worldName.trim().normalize('NFC');
+  if (!normalizedName || !normalizedWorld) return null;
+  const row = await db.prepare(`
+    SELECT * FROM characters
+    WHERE normalized_name = ?1 AND world_name = ?2
+    ORDER BY updated_at DESC, ocid ASC
+    LIMIT 1
+  `).bind(normalizedName, normalizedWorld).first<CharacterRow>();
+  return row ? toPublicCharacter(row) : null;
+};
+
+export const isCanonicalCharacterMetadataComplete = (character: Pick<PublicCharacter,
+  'worldName' | 'jobName' | 'level' | 'characterImage'>) => (
+  Boolean(character.worldName.trim())
+  && Boolean(character.jobName.trim())
+  && Number.isSafeInteger(character.level)
+  && character.level > 0
+  && Boolean(character.characterImage.trim())
+);
 
 export const validateCanonicalSources = (sources: CharacterSourceWrite[]) => {
   if (!sources.some((source) => source.source === 'nexon')) {
@@ -105,6 +128,16 @@ export const upsertCanonicalNexonCharacter = async (
   )];
 
   for (const source of sources) statements.push(characterSourceStatement(db, character.ocid, source, observedAt));
+  // Only enqueue when this canonical upsert was accepted. The EXISTS guard
+  // matches the timestamps written by the guarded characters upsert, so a
+  // source-only write or an older response does not reset account-signals.
+  statements.push(enqueueAccountSignalStatement(
+    db,
+    character.ocid,
+    observedAt,
+    requestedAt,
+    character.nexonUpdatedAt ?? null,
+  ));
 
   await db.batch(statements);
   const stored = await findCharacterByOcid(db, character.ocid);

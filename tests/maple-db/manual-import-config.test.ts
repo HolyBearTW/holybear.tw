@@ -43,6 +43,7 @@ describe('manual importer configuration', () => {
     const settings = manualImportSettings(environment);
     expect(settings.concurrency).toBe(6);
     expect(settings.requestDelayMs).toBe(300);
+    expect(settings.globalRateLimit).toBe(50);
     expect(settings.batchSize).toBe(MANUAL_IMPORT_DEFAULTS.batchSize);
   });
 
@@ -50,7 +51,8 @@ describe('manual importer configuration', () => {
     expect(manualImportSettings({})).toMatchObject({
       batchSize: 16,
       concurrency: 4,
-      requestDelayMs: 100,
+      requestDelayMs: 0,
+      globalRateLimit: 50,
       d1ReadBudget: 25_000_000,
       d1WriteBudget: 5_000_000,
     });
@@ -58,6 +60,9 @@ describe('manual importer configuration', () => {
       IMPORT_D1_READ_BUDGET: '999999999',
       IMPORT_D1_WRITE_BUDGET: '999999999',
     })).toMatchObject({ d1ReadBudget: 100_000_000, d1WriteBudget: 10_000_000 });
+    expect(manualImportSettings({ NEXON_CONCURRENCY: '32', NEXON_GLOBAL_RPS_LIMIT: '450' }))
+      .toMatchObject({ concurrency: 32, globalRateLimit: 450 });
+    expect(manualImportSettings({ NEXON_CONCURRENCY: '64' }).concurrency).toBe(32);
   });
 });
 

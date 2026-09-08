@@ -315,7 +315,7 @@ export default {
                         currentLocaleRow.className = 'VPMenuLink';
 
                         const currentLocaleLabel = document.createElement('span');
-                        currentLocaleLabel.className = 'VPLink link lando active hb-current-locale';
+                        currentLocaleLabel.className = 'VPLink link lando hb-current-locale';
                         currentLocaleLabel.textContent = title.textContent || '';
                         const currentLocaleLang = title.getAttribute('lang') || document.documentElement.lang || '';
                         const currentLocaleHrefLang = title.getAttribute('hreflang') || currentLocaleLang;
@@ -329,7 +329,13 @@ export default {
                         }
 
                         currentLocaleRow.appendChild(currentLocaleLabel);
-                        title.replaceWith(currentLocaleRow);
+                        const localeItems = nextPanel.querySelector<HTMLElement>('.items');
+                        title.remove();
+                        if (localeItems) {
+                            localeItems.prepend(currentLocaleRow);
+                        } else {
+                            nextPanel.prepend(currentLocaleRow);
+                        }
                     }
                 }
                 syncCurrentThemeSelection(nextPanel);

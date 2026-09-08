@@ -9,22 +9,25 @@ export const runGuildImport = async (args) => {
   };
   const start = args.includes('--start');
   const estimate = args.includes('--estimate');
+  const allKnown = args.includes('--all-known');
   if (start && args.includes('--status')) throw new Error('--status requires --job and cannot start a round');
   if (estimate && (start || args.some((arg) => arg === '--job' || arg.startsWith('--job=')))) {
     throw new Error('--estimate cannot be combined with --start or --job');
   }
   if (estimate && args.includes('--status')) throw new Error('--estimate cannot be combined with --status');
+  if (allKnown && !estimate) throw new Error('--all-known requires --estimate');
   const hasJob = args.some((arg) => arg === '--job' || arg.startsWith('--job='));
   if (!estimate && start === hasJob) throw new Error('Choose --start --max-guilds N, or --job ID to resume');
-  const maxGuilds = (start || estimate) ? positiveInteger(value('--max-guilds'), '--max-guilds') : undefined;
-  if (maxGuilds > 10_000) throw new Error('--max-guilds cannot exceed 10000');
+  if (allKnown && value('--max-guilds') !== undefined) throw new Error('--all-known cannot be combined with --max-guilds');
+  const maxGuilds = (start || (estimate && !allKnown)) ? positiveInteger(value('--max-guilds'), '--max-guilds') : undefined;
+  if (maxGuilds !== undefined && maxGuilds > 10_000) throw new Error('--max-guilds cannot exceed 10000');
   const base = String(process.env.HOLYBEAR_API_BASE_URL || '').replace(/\/+$/, '');
   const secret = process.env.IMPORT_ADMIN_SECRET;
   if (!base || !secret) throw new Error('HOLYBEAR_API_BASE_URL and IMPORT_ADMIN_SECRET are required');
   if (estimate) {
     const response = await fetch(`${base}/api/admin/import/nexon_guild`, {
       method: 'POST', headers: { authorization: `Bearer ${secret}`, 'content-type': 'application/json' },
-      body: JSON.stringify({ action: 'estimate', maxGuilds }),
+      body: JSON.stringify({ action: 'estimate', ...(allKnown ? { allKnown: true } : { maxGuilds }) }),
     });
     const payload = await response.json();
     if (!response.ok) throw new Error(payload?.error?.message || `Guild estimate failed (${response.status})`);

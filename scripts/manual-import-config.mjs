@@ -4,7 +4,8 @@ import path from 'node:path';
 export const MANUAL_IMPORT_DEFAULTS = Object.freeze({
   batchSize: 16,
   concurrency: 4,
-  requestDelayMs: 100,
+  requestDelayMs: 0,
+  globalRateLimit: 50,
   retryLimit: 5,
   timeoutMs: 10_000,
   d1ReadBudget: 25_000_000,
@@ -42,8 +43,9 @@ export const loadManualImportEnvironment = async ({
 
 export const manualImportSettings = (environment) => ({
   batchSize: integer(environment.NEXON_RESOLUTION_BATCH_SIZE, MANUAL_IMPORT_DEFAULTS.batchSize, 1, 100),
-  concurrency: integer(environment.NEXON_CONCURRENCY, MANUAL_IMPORT_DEFAULTS.concurrency, 1, 8),
+  concurrency: integer(environment.NEXON_CONCURRENCY, MANUAL_IMPORT_DEFAULTS.concurrency, 1, 32),
   requestDelayMs: integer(environment.NEXON_REQUEST_DELAY_MS, MANUAL_IMPORT_DEFAULTS.requestDelayMs, 0, 10_000),
+  globalRateLimit: integer(environment.NEXON_GLOBAL_RPS_LIMIT, MANUAL_IMPORT_DEFAULTS.globalRateLimit, 1, 450),
   retryLimit: integer(environment.NEXON_RETRY_LIMIT, MANUAL_IMPORT_DEFAULTS.retryLimit, 1, 8),
   timeoutMs: integer(environment.NEXON_REQUEST_TIMEOUT_MS, MANUAL_IMPORT_DEFAULTS.timeoutMs, 1_000, 30_000),
   d1ReadBudget: integer(environment.IMPORT_D1_READ_BUDGET, MANUAL_IMPORT_DEFAULTS.d1ReadBudget, 10_000, 100_000_000),
@@ -60,6 +62,7 @@ export const publicManualImportSettings = (settings) => ({
   batchSize: settings.batchSize,
   concurrency: settings.concurrency,
   requestDelayMs: settings.requestDelayMs,
+  globalRateLimit: settings.globalRateLimit,
   retryLimit: settings.retryLimit,
   timeoutMs: settings.timeoutMs,
   d1ReadBudget: settings.d1ReadBudget,

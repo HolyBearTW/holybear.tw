@@ -78,6 +78,10 @@
     "backfill:account-signals": "node scripts/start-account-signal-backfill.mjs",
     "backfill:account-signals:status": "node scripts/account-signal-backfill-status.mjs",
     "backfill:account-signals:stop": "node scripts/stop-account-signal-backfill.mjs",
+    "benchmark:nexon-resolver": "node scripts/benchmark-nexon-resolver.mjs",
+    "estimate:guilds:full": "node scripts/run-full-guild-estimate.mjs",
+    "estimate:guilds:full:status": "node scripts/full-guild-estimate-status.mjs",
+    "consumer:failover:status": "node scripts/consumer-failover-status.mjs",
     "watch:maple-background": "node scripts/watch-maple-background-jobs.mjs",
     "preview": "vitepress preview"
   }

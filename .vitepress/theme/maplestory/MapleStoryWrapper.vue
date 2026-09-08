@@ -832,8 +832,7 @@ html:not(.dark) #maplestory-root .maple-hero-brand .maple-hero-title {
   text-shadow: 0 1px 2px rgba(255, 255, 255, 0.62) !important;
 }
 
-/* Core Tower and Gravity Field deliberately retain their dark presentation in
-   light appearance, including the maintenance view shown before bypass. */
+/* These headers sit directly on the dark Core Tower and Gravity Field artwork. */
 html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #maplestory-root .maple-maintenance-brand .maple-hero-title {
   color: #ffffff !important;
   text-shadow: 0 2px 9px rgba(0, 0, 0, 0.5) !important;
@@ -842,36 +841,6 @@ html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #maplestory-root 
 html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #maplestory-root .maple-hero-brand .maple-hero-title {
   color: #ffffff !important;
   text-shadow: 0 2px 9px rgba(0, 0, 0, 0.5) !important;
-}
-
-html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #maplestory-root .maple-maintenance-card {
-  color: #e6f1ff !important;
-  background: rgba(22, 27, 34, 0.95) !important;
-  border-color: rgba(148, 163, 184, 0.3) !important;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.28) !important;
-}
-
-html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #maplestory-root .maple-maintenance-card .maple-maintenance-heading {
-  color: #f1f5f9 !important;
-}
-
-html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #maplestory-root .maple-maintenance-card .maple-maintenance-copy {
-  color: #b8c8d8 !important;
-}
-
-html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #maplestory-root .maple-service-notice {
-  color: #e6f1ff !important;
-  background: rgba(17, 25, 35, 0.9) !important;
-  border-color: rgba(34, 211, 238, 0.24) !important;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2) !important;
-}
-
-html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #maplestory-root .maple-service-notice h2 {
-  color: #67e8f9 !important;
-}
-
-html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #maplestory-root .maple-service-notice p {
-  color: #b8c8d8 !important;
 }
 
 html:not(.dark) #maplestory-root .maple-ranking-go-button {
@@ -2336,6 +2305,14 @@ html:not(.dark) #maplestory-root .maple-survey-textarea-label { color: #1e2b4a; 
 
 html:not(.dark) #maplestory-root .maple-survey-description,
 html:not(.dark) #maplestory-root .maple-survey-form fieldset label { color: #526784; }
+
+html:not(.dark) #maplestory-root .maple-survey-eyebrow { color: #4f46e5; }
+
+html:not(.dark) #maplestory-root .maple-survey-toggle {
+  color: #3730a3;
+  background: rgba(99, 102, 241, 0.1);
+  border-color: rgba(67, 56, 202, 0.36);
+}
 
 html:not(.dark) #maplestory-root .maple-survey-textarea-label textarea {
   border-color: rgba(67, 56, 202, 0.22);

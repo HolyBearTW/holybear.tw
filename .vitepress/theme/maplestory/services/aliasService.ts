@@ -5,13 +5,14 @@ export interface RelatedCharacter {
   characterName: string;
   worldName: string;
   characterClass: string;
-  characterLevel: number;
-  characterImage: string;
-  characterPower: string;
-  maxCharacterPower: string;
+  characterLevel: number | null;
+  characterImage: string | null;
+  characterPower: string | null;
+  maxCharacterPower: string | null;
   combatPowerRank: number | null;
   characterGuildName: string | null;
   characterDateCreate: string | null;
+  metadataAvailable?: boolean;
 }
 
 interface AliasGroup {

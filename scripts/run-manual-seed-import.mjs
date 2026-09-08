@@ -10,6 +10,8 @@ import {
   publicManualImportSettings,
 } from './manual-import-config.mjs';
 import { readRuntimeState, stopRequested, updateRuntimeState } from './manual-import-runtime.mjs';
+import { createLocalNexonRateLimiter } from './nexon-request-limiter.mjs';
+import { addResolverMetrics, createResolverMetrics, recordResolverRequest, summarizeResolverMetrics } from './resolver-metrics.mjs';
 import { canonicalUpdateGuard, parseNexonCharacter, stagingRequeueAssignments, validateCharacterWrite } from '../functions/_shared/character-policy.mjs';
 
 const SOURCE = 'manual_seed';
@@ -135,6 +137,61 @@ const createJob = async () => {
   return latestJob();
 };
 
+export const manualImportTerminalStatus = (overallComplete, activeStagingCount) => (
+  overallComplete && Number(activeStagingCount) === 0 ? 'completed' : 'paused'
+);
+
+export const markManualImportRunningSql = (jobId, timestamp = new Date().toISOString()) => `
+  UPDATE import_jobs SET status='running', completed_at=NULL,
+    updated_at=${sqlLiteral(timestamp)}
+  WHERE id=${Number(jobId)} AND source='${SOURCE}'
+    AND status IN ('pending','paused','running');`;
+
+export const finalizeManualImportSql = (
+  jobId,
+  status,
+  timestamp = new Date().toISOString(),
+) => {
+  if (status !== 'paused' && status !== 'completed') throw new Error(`Invalid manual import terminal status: ${status}`);
+  const completed = status === 'completed';
+  const activeGuard = completed
+    ? `AND NOT EXISTS (
+      SELECT 1 FROM character_import_staging
+      WHERE import_job_id=${Number(jobId)} AND status IN ('pending','resolving','retry')
+    )`
+    : '';
+  return `
+    UPDATE import_jobs SET status=${sqlLiteral(status)},
+      completed_at=${completed ? sqlLiteral(timestamp) : 'NULL'},
+      pending_count=${completed ? '0' : 'pending_count'},
+      retry_count=${completed ? '0' : 'retry_count'},
+      last_error=${completed ? 'NULL' : 'last_error'},
+      updated_at=${sqlLiteral(timestamp)}
+    WHERE id=${Number(jobId)} AND source='${SOURCE}' AND status='running'
+      ${activeGuard};`;
+};
+
+const markManualImportRunning = async (jobId) => {
+  await executeSql(markManualImportRunningSql(jobId));
+  const job = await latestJob();
+  if (!job || Number(job.id) !== Number(jobId) || job.status !== 'running') {
+    throw new Error(`Could not mark manual import job ${jobId} as running`);
+  }
+  return job;
+};
+
+const finalizeManualImportJob = async (jobId, overallComplete) => {
+  const active = (await query(`SELECT COUNT(*) AS total FROM character_import_staging
+    WHERE import_job_id=${Number(jobId)} AND status IN ('pending','resolving','retry');`))[0] ?? {};
+  const status = manualImportTerminalStatus(overallComplete, Number(active.total) || 0);
+  await executeSql(finalizeManualImportSql(jobId, status));
+  const job = await latestJob();
+  if (!job || Number(job.id) !== Number(jobId) || job.status !== status) {
+    throw new Error(`Could not finalize manual import job ${jobId} as ${status}`);
+  }
+  return job;
+};
+
 const contiguousCheckpoint = (pages) => {
   const found = new Set(pages);
   let page = 0;
@@ -236,20 +293,30 @@ const checkpointSummary = (job) => {
 };
 
 class RequestBudgetReached extends Error {}
-const fetchNexon = async (pathname, settings, budget) => {
+const fetchNexon = async (pathname, settings, budget, onMetric) => {
   let lastError;
   for (let attempt = 0; attempt < settings.retryLimit; attempt += 1) {
     if (budget.used >= budget.maximum) throw new RequestBudgetReached('NEXON request budget reached');
     budget.used += 1;
+    const startedAt = Date.now();
+    let status = null;
+    let ok = false;
+    let errorKind;
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), settings.timeoutMs);
     try {
+      await (settings.rateLimiter?.acquire?.() ?? Promise.resolve());
       const response = await fetch(`${NEXON_URL}${pathname}`, {
         headers: { accept: 'application/json', 'x-nxopen-api-key': settings.apiKey },
         cache: 'no-store',
         signal: controller.signal,
       });
-      if (response.ok) return await response.json();
+      status = response.status;
+      if (response.ok) {
+        const payload = await response.json();
+        ok = true;
+        return payload;
+      }
       const error = new Error(`NEXON request failed (${response.status})`);
       error.status = response.status;
       error.retryable = response.status === 429 || response.status >= 500;
@@ -258,9 +325,11 @@ const fetchNexon = async (pathname, settings, budget) => {
       lastError = error;
     } catch (error) {
       if (error instanceof RequestBudgetReached || error?.retryable === false) throw error;
+      errorKind = error?.name === 'AbortError' ? 'timeout' : 'network';
       lastError = error;
     } finally {
       clearTimeout(timeout);
+      onMetric?.({ pathname, path: pathname, attempt, latencyMs: Math.max(0, Date.now() - startedAt), status, ok, errorKind });
     }
     if (attempt + 1 < settings.retryLimit) await wait(Math.min(30_000, 750 * (2 ** attempt)));
   }
@@ -268,12 +337,15 @@ const fetchNexon = async (pathname, settings, budget) => {
 };
 
 const normalizeName = (value) => String(value ?? '').trim().normalize('NFC').toLocaleLowerCase('zh-TW');
-export const resolveCharacter = async (row, settings, budget) => {
+export const resolveCharacter = async (row, settings, budget, metrics = null) => {
   const requestedAt = new Date().toISOString();
   const requestedName = String(row.character_name).trim().normalize('NFC');
-  const id = row.ocid ? { ocid: row.ocid } : await fetchNexon(`/id?character_name=${encodeURIComponent(requestedName)}`, settings, budget);
-  const basic = await fetchNexon(`/character/basic?ocid=${encodeURIComponent(id.ocid)}`, settings, budget);
-  const stat = await fetchNexon(`/character/stat?ocid=${encodeURIComponent(id.ocid)}`, settings, budget);
+  const onMetric = metrics ? (metric) => recordResolverRequest(metrics, metric) : undefined;
+  const id = row.ocid ? { ocid: row.ocid } : await fetchNexon(`/id?character_name=${encodeURIComponent(requestedName)}`, settings, budget, onMetric);
+  const [basic, stat] = await Promise.all([
+    fetchNexon(`/character/basic?ocid=${encodeURIComponent(id.ocid)}`, settings, budget, onMetric),
+    fetchNexon(`/character/stat?ocid=${encodeURIComponent(id.ocid)}`, settings, budget, onMetric),
+  ]);
   const observedAt = new Date().toISOString();
   const character = parseNexonCharacter(id.ocid, basic, stat, requestedAt, observedAt);
   return {
@@ -324,6 +396,31 @@ export const canonicalSql = (row, character) => {
     ${canonicalUpdateGuard};
   ${sourceSql(character, SOURCE, row.source_id, row.observed_at || character.observedAt, row.source_updated_at, sourceMetadata)}
   ${sourceSql(character, 'nexon', character.ocid, character.observedAt, character.nexonUpdatedAt ?? null)}
+  INSERT INTO account_signal_sync (
+    ocid, signal_type, status, signal_count, attempt_count,
+    next_retry_at, last_error, last_attempted_at, completed_at,
+    created_at, updated_at, queue_version
+  )
+  SELECT ${sqlLiteral(character.ocid)}, 'union_raider_full', 'pending', 0, 0,
+    NULL, NULL, NULL, NULL, ${sqlLiteral(character.observedAt)}, ${sqlLiteral(character.observedAt)}, 0
+  WHERE EXISTS (
+    SELECT 1 FROM characters
+    WHERE ocid=${sqlLiteral(character.ocid)}
+      AND updated_at=${sqlLiteral(character.observedAt)}
+      AND nexon_requested_at=${sqlLiteral(character.requestedAt ?? character.observedAt)}
+      AND ((nexon_updated_at=${sqlLiteral(character.nexonUpdatedAt ?? null)})
+        OR (nexon_updated_at IS NULL AND ${sqlLiteral(character.nexonUpdatedAt ?? null)} IS NULL))
+  )
+  ON CONFLICT(ocid, signal_type) DO UPDATE SET
+    status='pending', signal_count=0, next_retry_at=NULL, last_error=NULL, completed_at=NULL,
+    queue_version=account_signal_sync.queue_version+1,
+    updated_at=${sqlLiteral(character.observedAt)},
+    claim_token=CASE WHEN account_signal_sync.claim_until IS NOT NULL
+      AND account_signal_sync.claim_until > ${sqlLiteral(character.observedAt)}
+      THEN account_signal_sync.claim_token ELSE NULL END,
+    claim_until=CASE WHEN account_signal_sync.claim_until IS NOT NULL
+      AND account_signal_sync.claim_until > ${sqlLiteral(character.observedAt)}
+      THEN account_signal_sync.claim_until ELSE NULL END;
   UPDATE character_import_staging SET status='resolved', ocid=${sqlLiteral(character.ocid)},
     attempt_count=attempt_count+1, next_retry_at=NULL, last_error=NULL,
     updated_at=${sqlLiteral(character.observedAt)} WHERE id=${row.id};`;
@@ -462,6 +559,8 @@ const runManualSeedImportCore = async (args) => {
     processed = new Set();
   }
   if (!job) job = await createJob();
+  const jobAlreadyCompleted = job.status === 'completed';
+  if (!jobAlreadyCompleted) job = await markManualImportRunning(job.id);
   const expectedTotalPages = Math.max(...scan.schema.totalPages);
   const available = new Map(selected.map((summary) => [summary.page, summary]));
   const firstPending = contiguousCheckpoint([...processed]) + 1;
@@ -515,6 +614,7 @@ const runManualSeedImportCore = async (args) => {
     apiKey,
     ...configuredSettings,
     adaptiveState,
+    rateLimiter: createLocalNexonRateLimiter(configuredSettings.globalRateLimit),
   };
   const budget = { used: 0, maximum: configuredSettings.nexonRequestBudget };
   let budgetReached = false;
@@ -535,7 +635,11 @@ const runManualSeedImportCore = async (args) => {
   while (!budgetReached && budget.used < budget.maximum && !shouldStop()) {
     job = await latestJob();
     const projectedD1Budget = await budgetAfter(job, settings.batchSize * 5 + 8, settings.batchSize * 10 + 5, d1Budget);
+    const batchMetrics = createResolverMetrics();
+    const batchStartedAt = Date.now();
+    const rowsReadStartedAt = Date.now();
     const rows = await resolutionRows(job.id, settings.batchSize);
+    batchMetrics.d1ReadLatencyMs.push(Date.now() - rowsReadStartedAt);
     if (!rows.length) break;
     const requestCountBeforeBatch = budget.used;
     adaptiveState.rateLimited = false;
@@ -543,7 +647,19 @@ const runManualSeedImportCore = async (args) => {
       rows,
       activeConcurrency,
       activeDelayMs,
-      (row) => resolveCharacter(row, settings, budget),
+      async (row) => {
+        const metrics = createResolverMetrics();
+        const characterStartedAt = Date.now();
+        try {
+          const character = await resolveCharacter(row, settings, budget, metrics);
+          metrics.characterWallMs.push(Date.now() - characterStartedAt);
+          return { character, metrics };
+        } catch (error) {
+          metrics.characterWallMs.push(Date.now() - characterStartedAt);
+          if (error instanceof RequestBudgetReached) throw error;
+          throw { resolutionError: error, metrics };
+        }
+      },
     );
     const statements = [];
     let resolved = 0;
@@ -554,14 +670,16 @@ const runManualSeedImportCore = async (args) => {
       const result = results[index];
       const row = rows[index];
       if (result.status === 'fulfilled') {
-        statements.push(canonicalSql(row, result.value));
+        addResolverMetrics(batchMetrics, result.value.metrics);
+        statements.push(canonicalSql(row, result.value.character));
         resolved += 1;
         if (row.status === 'retry') retryDelta -= 1;
         else pendingDecrease += 1;
       }
       else if (result.reason instanceof RequestBudgetReached) budgetReached = true;
       else {
-        const failure = failureSql(job, row, result.reason, settings.retryLimit);
+        if (result.reason?.metrics) addResolverMetrics(batchMetrics, result.reason.metrics);
+        const failure = failureSql(job, row, result.reason?.resolutionError ?? result.reason, settings.retryLimit);
         statements.push(failure.sql);
         if (failure.status === 'retry') {
           if (row.status !== 'retry') {
@@ -575,11 +693,13 @@ const runManualSeedImportCore = async (args) => {
         }
       }
     }
-    const resolvedCharacters = results.flatMap((result) => result.status === 'fulfilled' ? [result.value] : []);
+    const resolvedCharacters = results.flatMap((result) => result.status === 'fulfilled' ? [result.value.character] : []);
     const uniqueResolvedCharacters = [...new Map(resolvedCharacters.map((item) => [item.ocid, item])).values()];
+    const existingReadStartedAt = Date.now();
     const existingOcids = resolvedCharacters.length
       ? new Set((await query(`SELECT ocid FROM characters WHERE ocid IN (${uniqueResolvedCharacters.map((item) => sqlLiteral(item.ocid)).join(',')});`)).map((item) => item.ocid))
       : new Set();
+    batchMetrics.d1ReadLatencyMs.push(Date.now() - existingReadStartedAt);
     const created = uniqueResolvedCharacters.filter((item) => !existingOcids.has(item.ocid)).length;
     const updated = resolved - created;
     statements.push(`UPDATE import_jobs SET
@@ -595,7 +715,18 @@ const runManualSeedImportCore = async (args) => {
       d1_rows_written_estimate=${projectedD1Budget.rowsWritten},
       updated_at=${sqlLiteral(new Date().toISOString())}
       WHERE id=${job.id};`);
-    if (statements.length) await executeSql(statements.join('\n'));
+    if (statements.length) {
+      const writeStartedAt = Date.now();
+      await executeSql(statements.join('\n'));
+      batchMetrics.d1WriteLatencyMs.push(Date.now() - writeStartedAt);
+    }
+    console.log(JSON.stringify({
+      event: 'resolve-benchmark',
+      concurrency: activeConcurrency,
+      requestDelayMs: activeDelayMs,
+      globalRateLimit: settings.globalRateLimit,
+      ...summarizeResolverMetrics(batchMetrics, Date.now() - batchStartedAt),
+    }));
     runResolved += resolved;
     if (adaptiveState.rateLimited) {
       activeConcurrency = Math.max(1, Math.floor(activeConcurrency / 2));
@@ -626,10 +757,12 @@ const runManualSeedImportCore = async (args) => {
   const rankingSnapshot = runResolved > 0
     ? await refreshRankingSnapshot(localEnv).catch((error) => ({ refreshed: false, reason: String(error?.message ?? error) }))
     : { refreshed: false, reason: 'no_newly_resolved_characters' };
+  const overallComplete = contiguousCheckpoint([...processed]) >= expectedTotalPages;
+  if (!jobAlreadyCompleted) job = await finalizeManualImportJob(job.id, overallComplete);
   console.log(JSON.stringify({
     event: 'final',
     manualPartialComplete: newPages.length === 0 || contiguousCheckpoint([...processed]) >= lastSelected,
-    overallComplete: contiguousCheckpoint([...processed]) >= expectedTotalPages,
+    overallComplete,
     processedFiles: processed.size,
     processedPages: processed.size,
     maxProcessedPage: contiguousCheckpoint([...processed]),

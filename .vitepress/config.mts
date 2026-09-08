@@ -391,6 +391,9 @@ const config = defineConfig({
         '.vitepress/**/*.md',
         'zh_TW/**/*.md'
     ],
+    rewrites: {
+        'maplestory-service-notice.md': 'maplestory/service-notice.md'
+    },
     sitemap: {
         hostname: 'https://holybear.tw'
     },
@@ -548,6 +551,18 @@ const config = defineConfig({
         customLogger: viteLogger,
         resolve: {
             alias: [
+                {
+                    // VitePress 2.0.0-alpha.20 removed the legacy heart icon path,
+                    // which theme-default-plus 1.2.0 still imports at build time.
+                    find: /^.*\/VPIconHeart\.vue$/,
+                    replacement: fileURLToPath(new URL('./theme/compat/VPIconHeart.vue', import.meta.url))
+                },
+                {
+                    // The same VitePress release also removed the edit icon used by
+                    // the theme's document footer.
+                    find: /^.*\/VPIconEdit\.vue$/,
+                    replacement: fileURLToPath(new URL('./theme/compat/VPIconEdit.vue', import.meta.url))
+                },
                 {
                     // VitePress/theme-default-plus still resolves this internal module at compile time.
                     // Keeping the path alias does not enable the removed Algolia search provider.

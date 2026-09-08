@@ -1,0 +1,7 @@
+name = "holybear-nexon-rate-limiter"
+main = "workers/nexon-rate-limiter.ts"
+compatibility_date = "2026-09-04"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["NexonRateLimiter"]

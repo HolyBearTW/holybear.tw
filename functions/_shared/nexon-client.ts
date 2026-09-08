@@ -2,6 +2,7 @@ import type { Env } from './env';
 import type { CharacterWrite } from './models';
 import { getRuntimeConfig, requireSecret } from './runtime-config';
 import { parseNexonCharacter } from './character-policy.mjs';
+import { acquireNexonRateSlot, NexonRateLimitError } from './nexon-rate-limit';
 
 const NEXON_BASE_URL = 'https://open.api.nexon.com/maplestorytw/v1';
 
@@ -35,6 +36,15 @@ export class NexonRequestError extends Error {
   }
 }
 
+export interface NexonRequestMetric {
+  path: string;
+  attempt: number;
+  latencyMs: number;
+  status: number | null;
+  ok: boolean;
+  errorKind?: 'timeout' | 'network' | 'rate_limit';
+}
+
 const wait = (milliseconds: number) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
 const retryAfterMilliseconds = (response: Response, fallback: number) => {
@@ -43,22 +53,37 @@ const retryAfterMilliseconds = (response: Response, fallback: number) => {
   return Number.isFinite(seconds) ? Math.min(60_000, Math.max(0, seconds * 1000)) : fallback;
 };
 
-export const fetchNexonJson = async <T>(env: Env, path: string, onRequest?: () => void): Promise<T> => {
+export const fetchNexonJson = async <T>(
+  env: Env,
+  path: string,
+  onRequest?: () => void,
+  onMetric?: (metric: NexonRequestMetric) => void,
+): Promise<T> => {
   const apiKey = requireSecret(env.NEXON_API_KEY, 'NEXON_API_KEY');
   const config = getRuntimeConfig(env);
   let lastError: unknown = null;
 
   for (let attempt = 0; attempt < config.nexonRetryLimit; attempt += 1) {
+    const startedAt = Date.now();
+    let status: number | null = null;
+    let ok = false;
+    let errorKind: NexonRequestMetric['errorKind'];
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), config.nexonRequestTimeoutMs);
     try {
+      await acquireNexonRateSlot(env);
       onRequest?.();
       const response = await fetch(`${NEXON_BASE_URL}${path}`, {
         headers: { 'x-nxopen-api-key': apiKey, accept: 'application/json' },
         cache: 'no-store',
         signal: controller.signal,
       });
-      if (response.ok) return await response.json<T>();
+      status = response.status;
+      if (response.ok) {
+        const payload = await response.json<T>();
+        ok = true;
+        return payload;
+      }
 
       const retryable = response.status === 429 || response.status >= 500;
       if (!retryable) {
@@ -72,12 +97,15 @@ export const fetchNexonJson = async <T>(env: Env, path: string, onRequest?: () =
       await wait(retryAfterMilliseconds(response, fallback));
     } catch (error) {
       if (error instanceof NexonRequestError && !error.retryable) throw error;
+      if (error instanceof NexonRateLimitError) throw error;
+      errorKind = error instanceof Error && error.name === 'AbortError' ? 'timeout' : 'network';
       lastError = error;
       if (attempt + 1 < config.nexonRetryLimit) {
         await wait(Math.min(30_000, 500 * (2 ** attempt)));
       }
     } finally {
       clearTimeout(timeout);
+      onMetric?.({ path, attempt, latencyMs: Math.max(0, Date.now() - startedAt), status, ok, errorKind });
     }
   }
 
@@ -91,6 +119,7 @@ export const resolveNexonCharacter = async (
   knownOcid?: string | null,
   onRequest?: () => void,
   expectedWorld?: string,
+  onMetric?: (metric: NexonRequestMetric) => void,
 ): Promise<CharacterWrite> => {
   const requestedAt = new Date().toISOString();
   const requestedName = characterName.trim().normalize('NFC');
@@ -99,18 +128,19 @@ export const resolveNexonCharacter = async (
     env,
     `/id?character_name=${encodeURIComponent(requestedName)}`,
     onRequest,
+    onMetric,
   )).ocid;
   if (!ocid) throw new NexonRequestError('NEXON API 未回傳 OCID', null, false, 'missing_ocid');
 
   const [basic, stat] = await Promise.all([
-    fetchNexonJson<NexonBasicResponse>(env, `/character/basic?ocid=${encodeURIComponent(ocid)}`, onRequest),
-    fetchNexonJson<NexonStatResponse>(env, `/character/stat?ocid=${encodeURIComponent(ocid)}`, onRequest),
+    fetchNexonJson<NexonBasicResponse>(env, `/character/basic?ocid=${encodeURIComponent(ocid)}`, onRequest, onMetric),
+    fetchNexonJson<NexonStatResponse>(env, `/character/stat?ocid=${encodeURIComponent(ocid)}`, onRequest, onMetric),
   ]);
   const observedAt = new Date().toISOString();
   const character = parseNexonCharacter(ocid, basic, stat, requestedAt, observedAt);
   if (expectedWorld && (character.worldName !== expectedWorld
     || character.characterName !== requestedName)) {
-    if (knownOcid) return resolveNexonCharacter(env, requestedName, null, onRequest, expectedWorld);
+    if (knownOcid) return resolveNexonCharacter(env, requestedName, null, onRequest, expectedWorld, onMetric);
     throw new NexonRequestError('Official character identity does not match the guild roster', null, false, 'guild_member_identity_mismatch');
   }
   return character;

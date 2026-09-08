@@ -226,13 +226,17 @@ onBeforeUnmount(() => {
 
 :global(html body.has-days500-campaign #app .VPNav .VPNavBarMenu a.VPNavBarMenuLink[href^="/500days"]) {
   align-self: center;
-  height: 34px;
+  box-sizing: border-box;
+  height: 34px !important;
+  min-height: 34px !important;
   margin-inline: 5px;
+  padding-block: 0 !important;
   padding-inline: 11px;
   border: 1px solid rgba(242,201,109,.3);
   border-radius: 999px;
   background: rgba(242,201,109,.1);
   box-shadow: inset 0 0 0 1px rgba(255,255,255,.025);
+  line-height: 32px !important;
 }
 
 :global(html body.has-days500-campaign #app .VPNav a[href^="/500days"]:hover) {

@@ -6,7 +6,7 @@ import { useLangs } from 'vitepress/dist/client/theme-default/composables/langs.
 import { navInjectionKey } from 'vitepress/dist/client/theme-default/composables/nav.js'
 
 const { site, localeIndex } = useData()
-const { currentLang, localeLinks } = useLangs({ correspondingLink: true })
+const { currentLang, localeLinks } = useLangs({ linkToCorrespondingPage: true })
 const isOpen = ref(false)
 const nav = inject(navInjectionKey, null)
 
@@ -51,7 +51,7 @@ function handleClick() {
 </script>
 
 <template>
-  <div class="VPNavScreenTranslations translations" :class="{ open: isOpen }">
+  <div class="VPNavScreenTranslations translations hb-mobile-language-picker" :class="{ open: isOpen }">
     <button class="title" type="button" :aria-label="groupLabel" @click="toggle">
       <span class="label">{{ groupLabel }}</span>
       <span class="icon chevron" aria-hidden="true"></span>

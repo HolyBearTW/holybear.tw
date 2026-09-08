@@ -15,6 +15,7 @@ import { data as allPosts } from './posts.data.ts'
 import NavThemeHandler from './NavThemeHandler.vue'
 import HolyBearLoadingFrame from './HolyBearLoadingFrame.vue'
 import FuwariSearch from './fuwari/components/FuwariSearch.vue'
+import MobileNavScreenTranslations from './MobileNavScreenTranslations.vue'
 import { 
   defaultTheme, 
   THEME_CHANGE_EVENT,
@@ -737,6 +738,9 @@ onUnmounted(() => {
         <template #nav-bar-content-before>
             <FuwariSearch />
         </template>
+        <template #nav-screen-content-before>
+            <MobileNavScreenTranslations />
+        </template>
         <!-- Home Page: Carousel between Hero and Features -->
         <template #home-features-before>
             <div v-if="isHomePage" class="VPFeatures VPHomeFeatures" style="padding-top: 0 !important; padding-bottom: 2rem !important; display: flex; justify-content: center;">
@@ -1157,6 +1161,13 @@ body:is(.about-page, .portfolio-page) .VPContent .container {
     box-sizing: border-box !important;
 }
 
+/* Keep the wide About layout while preserving a visible page gutter. */
+body.about-page .VPDoc .container,
+body.about-page .VPContent .container {
+    width: min(1120px, calc(100vw - 96px)) !important;
+    max-width: min(1120px, calc(100vw - 96px)) !important;
+}
+
 @media (max-width: 767px) {
     body:is(.about-page, .portfolio-page) .VPDoc .container,
     body:is(.about-page, .portfolio-page) .VPContent .container {
@@ -1164,6 +1175,14 @@ body:is(.about-page, .portfolio-page) .VPContent .container {
         max-width: 100% !important;
         padding-left: 0 !important;
         padding-right: 0 !important;
+    }
+
+    body.about-page .VPDoc .container,
+    body.about-page .VPContent .container {
+        width: calc(100% - 32px) !important;
+        max-width: calc(100% - 32px) !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
     }
 
     body:is(.about-page, .portfolio-page) .VPDoc .content:not(.VPDocAsideOutline):not(.VPDocAsideOutline *) {

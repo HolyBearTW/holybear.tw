@@ -24,6 +24,15 @@ export const requireImportAdmin = (request: Request, env: Env) => {
   requireBearerSecret(request, env.IMPORT_ADMIN_SECRET, 'IMPORT_ADMIN_SECRET', 'Importer authorization failed');
 };
 
+export const requireConsumerFallback = (request: Request, env: Env) => {
+  requireBearerSecret(
+    request,
+    env.CONSUMER_FALLBACK_SECRET,
+    'CONSUMER_FALLBACK_SECRET',
+    'Consumer fallback authorization failed',
+  );
+};
+
 export const requireSurveyAdmin = (request: Request, env: Env) => {
   requireBearerSecret(request, env.SURVEY_ADMIN_SECRET, 'SURVEY_ADMIN_SECRET', 'Survey administrator authorization failed');
 };

@@ -250,6 +250,32 @@ describe('official guild sampling with real local SQL', () => {
 });
 
 describe('canonical freshness and validity', () => {
+  it('manual resolver requests basic and stat concurrently after OCID resolution', async () => {
+    let activeCharacterRequests = 0;
+    let maxActiveCharacterRequests = 0;
+    vi.stubGlobal('fetch', vi.fn(async (input: string) => {
+      const url = new URL(input);
+      if (url.pathname.endsWith('/id')) return Response.json({ ocid: 'ocid-新角色' });
+      if (url.pathname.endsWith('/character/basic') || url.pathname.endsWith('/character/stat')) {
+        activeCharacterRequests += 1;
+        maxActiveCharacterRequests = Math.max(maxActiveCharacterRequests, activeCharacterRequests);
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        activeCharacterRequests -= 1;
+        return url.pathname.endsWith('/character/basic')
+          ? Response.json(basic('新角色'))
+          : Response.json({ date: null, final_stat: [{ stat_name: '戰鬥力', stat_value: '2,000' }] });
+      }
+      throw new Error(`Unexpected endpoint ${url.pathname}`);
+    }));
+    const result = await resolveCharacter(
+      { character_name: '新角色' },
+      { apiKey: 'test', retryLimit: 1, timeoutMs: 1000 },
+      { used: 0, maximum: 3 },
+    );
+    expect(result.ocid).toBe('ocid-新角色');
+    expect(maxActiveCharacterRequests).toBe(2);
+  });
+
   it('rejects older data dates and late responses while preserving additional source provenance', async () => {
     await insert('角色', { nexonUpdatedAt: '2026-09-06T00:00:00.000Z' });
     await upsertCanonicalNexonCharacter(env.DB, official('角色', { combatPower: 9,
@@ -337,6 +363,20 @@ describe('canonical freshness and validity', () => {
     expect(await resolveStagingBatch(env, await current(run.id))).toMatchObject({ updated: 0, reused: 1 });
     expect((await current(run.id)).nexon_request_count).toBe(2);
     expect(fetch).toHaveBeenCalledTimes(2); // guild/id + guild/basic only.
+  });
+
+  it('source-only guild matching queues incomplete legacy metadata without character API calls', async () => {
+    await insert('舊角色');
+    local.sqlite.exec("UPDATE characters SET level=0, character_image='' WHERE ocid='ocid-舊角色'");
+    mockApi(['舊角色']);
+    const run = await job(); await initializeGuildCandidates(env, run, 1);
+    await stageNextGuild(env, await current(run.id));
+    expect(await resolveStagingBatch(env, await current(run.id))).toMatchObject({ updated: 0, reused: 1 });
+    expect(fetch).toHaveBeenCalledTimes(2); // guild/id + guild/basic only.
+    expect(local.sqlite.prepare(`SELECT status, reason, ocid FROM character_metadata_refresh
+      WHERE normalized_name='舊角色' AND expected_world_name='艾麗亞'`).get()).toMatchObject({
+      status: 'pending', reason: 'incomplete_metadata', ocid: 'ocid-舊角色',
+    });
   });
 });
 

@@ -14,6 +14,7 @@ interface ImportRequest {
   jobId?: number;
   pageSize?: number;
   maxGuilds?: number;
+  allKnown?: boolean;
 }
 
 export const onRequestPost: AppPagesFunction<'source'> = async ({ env, params, request, waitUntil }) => {
@@ -27,10 +28,11 @@ export const onRequestPost: AppPagesFunction<'source'> = async ({ env, params, r
         throw new HttpError(400, 'invalid_action', 'Choose start, stage, resolve, status, or estimate');
       }
       if (body.action === 'estimate') {
-        if (!Number.isSafeInteger(body.maxGuilds) || Number(body.maxGuilds) < 1 || Number(body.maxGuilds) > 10_000) {
+        const bounded = body.allKnown !== true;
+        if (bounded && (!Number.isSafeInteger(body.maxGuilds) || Number(body.maxGuilds) < 1 || Number(body.maxGuilds) > 10_000)) {
           throw new HttpError(400, 'invalid_guild_limit', 'Estimate requires maxGuilds between 1 and 10000');
         }
-        return json({ source, action: body.action, estimate: await estimateGuildSampling(env, body.maxGuilds!) });
+        return json({ source, action: body.action, estimate: await estimateGuildSampling(env, body.allKnown ? undefined : body.maxGuilds) });
       }
       if (body.action === 'start' && (!Number.isSafeInteger(body.maxGuilds) || Number(body.maxGuilds) < 1 || Number(body.maxGuilds) > 10_000)) {
         throw new HttpError(400, 'invalid_guild_limit', 'Starting a round requires maxGuilds between 1 and 10000');

@@ -390,12 +390,15 @@ const MaintenanceView: React.FC<{
         {!unlocking && unlockError && <p className="mt-4 text-sm font-medium text-rose-400">{unlockError}</p>}
       </section>
       <aside className="maple-service-notice mt-4 w-full max-w-2xl rounded-xl border border-cyan-400/20 bg-[#111923]/90 px-5 py-4 text-left shadow-lg shadow-black/10 backdrop-blur-sm sm:px-6">
-        <h2 className="m-0 text-sm font-bold text-cyan-300 sm:text-base">ℹ️ 服務調整說明</h2>
-        <p className="m-0 mt-2 text-sm leading-6 text-slate-400">
-          本站已停止並移除與 MapleKit 相關之服務整合及程式，亦不再向 MapleKit 服務發送任何請求。<br />
-          <strong>對於先前未妥善確認服務使用界線即進行相關整合，以及因此造成的困擾，本站在此致歉。</strong>目前相關功能均已停止並完成調整。<br />
-          針對近期相關討論，本站不再公開回應；亦請各方理性討論，避免散布個人資訊、人身攻擊、騷擾或其他侵害權益之行為。
-        </p>
+        <a className="block text-inherit no-underline" href="/maplestory/service-notice">
+          <h2 className="m-0 text-sm font-bold text-cyan-300 sm:text-base">📘 服務調整與說明</h2>
+          <p className="m-0 mt-2 text-sm leading-6 text-slate-400">
+            關於先前 MapleKit API 的使用與後續爭議，我重新檢視了當時的做法與處理態度。對於先前沒有確認清楚服務使用界線就進行整合，以及後續處理事情時不好的態度，我在這裡正式向 MapleKit 作者道歉。
+          </p>
+          <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-cyan-300">
+            閱讀完整說明 <span aria-hidden="true">→</span>
+          </span>
+        </a>
       </aside>
       <SurveyCard />
     </main>

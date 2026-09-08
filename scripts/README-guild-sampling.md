@@ -30,14 +30,28 @@
 - `guild_import_candidates`：固定的本輪候選、官方公會 ID、完成／重試／失敗狀態及觀測資訊。
 - 公會候選索引與單一未完成公會工作的唯一索引。
 
+`migrations/0011_character_metadata_refresh.sql` 新增名稱／世界去重的角色 metadata queue。queue 允許 OCID 為 NULL，因為 Champion roster 可能先知道名稱、尚未解析官方角色；pending／retry 由 claim token、lease 與 queue version 防止兩個 consumer 重複處理。
+
 沿用 `characters` 的 OCID 主鍵、`character_sources` 的 `(ocid, source)` 主鍵及 staging 的 `(source, source_id)` 唯一鍵；不重建、不清空主資料，不修改現有線上資料。新版程式需要此 migration 才能寫入，未套用前請勿啟動新版 importer。migration 本身不會重新驗證或刪除舊資料。
 
 ## 完整流程與更新規則
 
+### Full estimate status
+
+完整公會 estimate 現在由可斷點的 batch/resume runner 管理。查詢最新本機 checkpoint／成功結果只使用：
+
+```powershell
+npm run estimate:guilds:full:status
+```
+
+這個 status command 只讀 `.wrangler/full-guild-estimate/latest.json`，不呼叫 API、不寫入 D1，也不建立 guild job。`status=completed` 時，`summary` 是最新完整 estimate 的累積結果；`status=running` 或 `status=failed` 時，`nextOffset`、`currentBatch` 與 `lastError` 可用來判斷是否能以同一組參數 resume。
+
+舊的 `backfill:account-signals:wait-guild-estimate` watcher 已 deprecated。它曾使用單一 HTTP request 等待 backfill 後呼叫舊 endpoint，歷史上的 `estimate_failed (524)` 不代表新版 runner 的結果；不再使用舊的 `account-signal-guild-estimate-wait/latest.json` 判斷 estimate 狀態。
+
 1. `start`：驗證管理員憑證、明確的公會上限（1–10000），建立／接續未完成的公會工作，固定候選清單；不呼叫 NEXON。
 2. `stage`：每次處理一個待處理或已到期重試的公會，取得官方公會 ID 與名冊。驗證伺服器、公會名稱、成員數與名冊欄位，缺漏名冊不能當成空公會。
 3. 名冊以 `[伺服器, 角色名稱]` 作候選鍵去重；這只是查詢線索。名冊內不含戰力，staging 的空欄位／零值不得直接進主資料。名冊寫入與公會完成標記在同一 D1 transaction 提交；失敗可續跑。
-4. 所有候選公會處理完畢後 `resolve`：每批預設 16 名角色。公會名冊角色只要以「世界＋正規化角色名稱」在 `characters` 找到既有列，就直接補 `nexon_guild` 來源，不呼叫角色詳細 API；只有完全找不到的角色才查 OCID、basic、stat。這個來源比對不會因舊資料或新鮮度而重新查角色 API。
+4. 所有候選公會處理完畢後 `resolve`：每批預設 16 名角色。公會名冊角色只要以「世界＋正規化角色名稱」在 `characters` 找到既有列，就直接補 `nexon_guild` 來源，不在 guild import 內呼叫角色詳細 API；若既有列缺少 world、job、正整數 level 或 image，另排入背景 metadata refresh。只有完全找不到的角色才在 guild import 查 OCID、basic、stat。
 5. 其他候選經官方角色 API 取得 OCID、基本資料與戰力；已知官方 OCID 可省去 `/id`。公會名冊角色須核對名稱與伺服器；舊 OCID 對不上時重新查 `/id`，仍不一致則記錄失敗，不按名稱強行合併。
 6. 必填名稱、伺服器、職業、正整數等級、角色圖片、公會欄位及非負整數戰力必須有效。明確回傳的戰力 `0` 有效；缺少戰力、空字串、NaN、負值、缺少基本欄位無效。資料日期若存在必須可解析，basic/stat 同時有日期時必須一致。缺漏資料重試，耗盡次數後標示失敗，保留既有有效主資料。
 7. 最終以 OCID upsert，保留 `maplerhouse`／`manual_seed`／`nexon_guild`／`nexon` 等多個來源。兩筆都有官方資料日期時先比日期，同日期再比查詢開始時間；其中任一筆沒有日期時比較查詢開始時間。舊版列以既有 `updated_at` 作過渡比較基準。較早請求晚回來不能覆蓋較新資料；較新的有效戰力即使下降也應更新。
@@ -45,7 +59,34 @@
 9. staging 在新一輪接手舊候選時重設成 pending、清除先前重試狀態；同一輪的重複名冊不反覆重排已解析角色。來源觀測時間與公會線索保存在 `character_sources`；來源標記表示曾收錄，不保證現在仍屬於該公會。退會不刪除角色。
 10. 完成後沿用排行榜快照刷新。部分公會／角色可失敗，`completed` 表示本輪佇列處理完畢，不表示所有查詢都成功；檢查 `checkpoint_json.guilds.failed`、`failed_count` 及 `import_job_errors`。403／401 會停止當次工作，不把全部公會標為失敗。
 
-預算沿用 `IMPORT_D1_READ_BUDGET`、`IMPORT_D1_WRITE_BUDGET`；官方呼叫沿用 `NEXON_CONCURRENCY`、`NEXON_REQUEST_DELAY_MS`、`NEXON_RETRY_LIMIT`、`NEXON_REQUEST_TIMEOUT_MS`。租約防止正常操作重疊，不是永久鎖；不要在長時間請求仍執行時另開同一工作。
+預算沿用 `IMPORT_D1_READ_BUDGET`、`IMPORT_D1_WRITE_BUDGET`；角色解析可由 `NEXON_RESOLUTION_BATCH_SIZE`、`NEXON_CONCURRENCY`、`NEXON_REQUEST_DELAY_MS`、`NEXON_GLOBAL_RPS_LIMIT`、`NEXON_RETRY_LIMIT`、`NEXON_REQUEST_TIMEOUT_MS` 設定。已驗證設定為 batch 16、concurrency 4、delay 0ms、global cap 50 req/s；暫不提高 concurrency。全域 cap 由共用 NEXON rate limiter 控制，不能以 concurrency 取代。租約防止正常操作重疊，不是永久鎖；不要在長時間請求仍執行時另開同一工作。
+
+完整 estimate 的 Wrangler stdout 使用串流 UTF-8 decoder，避免中文字跨 Buffer chunk 時產生 replacement character。若舊 checkpoint 已含 `�`，runner 會拒絕 resume 並要求 `--reset` 重建，不會繼續使用損壞的候選或 existing-key 快照。
+
+只讀 benchmark 工具預設只列出 4、8、16、32 階梯，不會呼叫 API；必須明確加入 `--execute --names-file <file>` 才會執行官方查詢。直接 API benchmark 不寫 D1，角色解析 endpoint 與 D1 latency 則由 `resolveStagingBatch` 回傳的 `benchmark` 欄位記錄。
+
+```bash
+npm run benchmark:nexon-resolver -- --dry-run
+npm run benchmark:nexon-resolver -- --execute --names-file benchmark-names.txt --global-rate-limit 50
+```
+
+正式 Production 啟用前，需先部署 `wrangler.nexon-rate-limiter.toml` 的 Durable Object，再部署 Pages／account-signals Worker；Production 的 `NEXON_RATE_LIMITER_REQUIRED=true` 會在 limiter 不存在時 fail closed，不會退回無上限請求。
+
+## Consumer scheduler failover
+
+Cloudflare Cron 仍是 primary scheduler。`consumer_heartbeat` 會分別記錄 `cloudflare_cron` 與 `github_actions_fallback` 的 invocation、成功、錯誤及最近 batch 結果。GitHub Actions 每五分鐘讀取受保護 status；primary 最近五分鐘內有 invocation 時直接跳過，primary stale 且 metadata 或 account-signal 有 pending／到期 retry 時，才呼叫一次固定大小的 fallback batch。fallback endpoint 不接受 OCID、SQL、source 或 batch 參數，並在執行前再次檢查 heartbeat 與 queue。
+
+兩個 scheduler 共用 queue 既有的 `claim_token`、`claim_until`、`queue_version` 與 lease。即使檢查後 Cloudflare 恢復而短暫重疊，同一筆也只有一方能 claim；兩邊的 NEXON 請求也共用 Production Durable Object rate limiter。
+
+需將同一個獨立值分別設為 Pages secret 與 GitHub Actions repository secret `CONSUMER_FALLBACK_SECRET`。它不能重用 maintenance bypass 或 importer admin secret，也不得寫入 repository。可用下列命令查看受保護的 failover status：
+
+```powershell
+npm run consumer:failover:status
+```
+
+status 包含 primary heartbeat、目前來源、最近成功 consumer、可立即 claim 的 metadata 與 account-signal 數量。`migrations/0012_consumer_heartbeat.sql` 必須先於包含新 endpoint／scheduled handler 的程式部署。
+
+fallback workflow 的 consumer job 使用 `permissions: {}`。獨立 cleanup job 僅有 `actions: write`，固定查詢 `account-signals-fallback.yml` 自己的 completed runs，明確排除目前 `github.run_id`，依 `run_number`、run ID 由新到舊保留 10 次後刪除其餘紀錄。排序不看 conclusion，因此最近 10 次內的 success、failure、cancelled 都會保留。cleanup 使用內建 `GITHUB_TOKEN` 且 `continue-on-error`，不使用 PAT，清理失敗不會改變 consumer job 結果。
 
 ## API request 估算
 

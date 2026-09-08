@@ -17,7 +17,10 @@ export const processIsRunning = (pid) => {
   try {
     process.kill(pid, 0);
     return true;
-  } catch {
+  } catch (error) {
+    // Windows may return EPERM for a live process when the caller lacks the
+    // requested inspection privilege. It still proves that the PID exists.
+    if (error?.code === 'EPERM') return true;
     return false;
   }
 };
