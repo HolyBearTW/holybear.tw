@@ -1,6 +1,8 @@
-export const CHARACTER_SOURCES = ['maplerhouse', 'manual_seed', 'nexon_guild', 'nexon', 'holybear_search'] as const;
+export const CHARACTER_SOURCES = ['manual_seed', 'nexon_guild', 'nexon', 'holybear_search'] as const;
 
-export type CharacterSource = (typeof CHARACTER_SOURCES)[number];
+export type ActiveCharacterSource = (typeof CHARACTER_SOURCES)[number];
+export type LegacyCharacterSource = 'maplerhouse';
+export type CharacterSource = ActiveCharacterSource | LegacyCharacterSource;
 export type AccountConfidence = 'high' | 'probable' | 'unknown';
 
 export interface CharacterRow {
@@ -37,7 +39,7 @@ export interface CharacterWrite {
 }
 
 export interface CharacterSourceWrite {
-  source: CharacterSource;
+  source: ActiveCharacterSource;
   sourceCharacterId?: string | null;
   observedAt?: string;
   sourceUpdatedAt?: string | null;

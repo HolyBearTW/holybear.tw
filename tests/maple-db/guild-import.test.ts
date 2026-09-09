@@ -22,7 +22,7 @@ const official = (name: string, overrides: Partial<CharacterWrite> = {}): Charac
   observedAt: baseTime, requestedAt: baseTime, nexonUpdatedAt: null, ...overrides,
 });
 const insert = (name: string, overrides: Partial<CharacterWrite> = {}) =>
-  upsertCanonicalNexonCharacter(env.DB, official(name, overrides), [{ source: 'maplerhouse' }, { source: 'nexon' }]);
+  upsertCanonicalNexonCharacter(env.DB, official(name, overrides), [{ source: 'nexon' }]);
 const job = async () => getOrCreateImportJob(env.DB, 'nexon_guild');
 const current = async (id: number) => (await getImportJob(env.DB, id))!;
 const roster = (members: string[], guild = '公會A') => ({
@@ -76,7 +76,7 @@ describe('official guild sampling with real local SQL', () => {
     expect(resolved.job).toMatchObject({ status: 'completed', pending_count: 0, nexon_request_count: 5 });
     expect(fetch).toHaveBeenCalledTimes(5); // 2 guild + 3 for the new member.
     const sources = local.sqlite.prepare('SELECT source FROM character_sources WHERE ocid = ? ORDER BY source').all('ocid-舊角色');
-    expect(sources.map((row) => row.source)).toEqual(['maplerhouse', 'nexon', 'nexon_guild']);
+    expect(sources.map((row) => row.source)).toEqual(['nexon', 'nexon_guild']);
     const ranking = await getCombatPowerRanking(env.DB, { page: 1, pageSize: 100 });
     expect(ranking.total).toBe(2);
     expect(ranking.items[0].ocid).toBe('ocid-新角色');
@@ -180,6 +180,23 @@ describe('official guild sampling with real local SQL', () => {
     expect((await request({ action: 'start', maxGuilds: 1 })).status).toBe(200);
     expect((await request({ action: 'start', maxGuilds: 1 })).status).toBe(200);
     expect(local.sqlite.prepare('SELECT COUNT(*) AS n FROM import_jobs').get()?.n).toBe(1);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('does not expose the retired ranking importer through the admin registry', async () => {
+    env.IMPORT_ADMIN_SECRET = 'test-admin';
+    const response = await onRequestPost({
+      env,
+      params: { source: 'maplerhouse' },
+      request: new Request('https://example.test/api/admin/import/maplerhouse', {
+        method: 'POST',
+        headers: { authorization: 'Bearer test-admin', 'content-type': 'application/json' },
+        body: JSON.stringify({ action: 'start' }),
+      }),
+      waitUntil: vi.fn(),
+    } as never);
+    expect(response.status).toBe(404);
+    expect(await response.json()).toMatchObject({ error: { code: 'unknown_import_source' } });
     expect(fetch).not.toHaveBeenCalled();
   });
 
@@ -332,14 +349,16 @@ describe('canonical freshness and validity', () => {
     expect((await current(next.id)).pending_count).toBe(1);
   });
 
-  it('the existing ranking stage still resolves via official APIs', async () => {
-    mockApi();
-    const run = await getOrCreateImportJob(env.DB, 'maplerhouse');
-    await checkpointSeedPage(env, run, { page: 1, pageSize: 100, total: 1, complete: true, items: [
-      { sourceId: 'source-id', characterName: '新角色', worldName: '艾麗亞', jobName: '', level: 0, combatPower: 999999, characterImage: '' },
-    ] });
-    expect(await resolveStagingBatch(env, await current(run.id))).toMatchObject({ created: 1, failed: 0 });
-    expect((await findCharacterByOcid(env.DB, 'ocid-新角色'))?.combatPower).toBe(2000);
+  it('keeps historical provenance rows readable without affecting canonical rankings', async () => {
+    await insert('舊資料角色');
+    local.sqlite.prepare(`INSERT INTO character_sources
+      (ocid, source, source_character_id, source_first_seen_at, source_last_seen_at, created_at, updated_at)
+      VALUES (?, 'maplerhouse', ?, ?, ?, ?, ?)`).run(
+      'ocid-舊資料角色', 'legacy-id', baseTime, baseTime, baseTime, baseTime,
+    );
+    expect(await findCharacterByOcid(env.DB, 'ocid-舊資料角色')).toMatchObject({ characterName: '舊資料角色' });
+    expect(local.sqlite.prepare('SELECT source FROM character_sources WHERE source = ?').get('maplerhouse')).toMatchObject({ source: 'maplerhouse' });
+    expect((await getCombatPowerRanking(env.DB, { page: 1, pageSize: 100 })).total).toBe(1);
   });
 
   it('keeps a valid old character without requesting detail data, even when a fresh response would be missing fields', async () => {

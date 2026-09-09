@@ -1,6 +1,6 @@
 # 已知公會成員取樣
 
-本功能新增獨立的 `nexon_guild` 來源，保留 MaplerHouse 排行榜與本機 JSON 匯入流程。程式不排程、不自動開啟下一輪，不使用 MapleKit、其他新資料站或爬蟲。
+本功能以 `nexon_guild` 官方來源擴充本站排行榜候選，並保留本機 JSON 匯入流程。程式不排程、不自動開啟下一輪，不使用 MapleKit、其他新資料站或爬蟲。
 
 ## 來源與涵蓋範圍
 
@@ -54,7 +54,7 @@ npm run estimate:guilds:full:status
 4. 所有候選公會處理完畢後 `resolve`：每批預設 16 名角色。公會名冊角色只要以「世界＋正規化角色名稱」在 `characters` 找到既有列，就直接補 `nexon_guild` 來源，不在 guild import 內呼叫角色詳細 API；若既有列缺少 world、job、正整數 level 或 image，另排入背景 metadata refresh。只有完全找不到的角色才在 guild import 查 OCID、basic、stat。
 5. 其他候選經官方角色 API 取得 OCID、基本資料與戰力；已知官方 OCID 可省去 `/id`。公會名冊角色須核對名稱與伺服器；舊 OCID 對不上時重新查 `/id`，仍不一致則記錄失敗，不按名稱強行合併。
 6. 必填名稱、伺服器、職業、正整數等級、角色圖片、公會欄位及非負整數戰力必須有效。明確回傳的戰力 `0` 有效；缺少戰力、空字串、NaN、負值、缺少基本欄位無效。資料日期若存在必須可解析，basic/stat 同時有日期時必須一致。缺漏資料重試，耗盡次數後標示失敗，保留既有有效主資料。
-7. 最終以 OCID upsert，保留 `maplerhouse`／`manual_seed`／`nexon_guild`／`nexon` 等多個來源。兩筆都有官方資料日期時先比日期，同日期再比查詢開始時間；其中任一筆沒有日期時比較查詢開始時間。舊版列以既有 `updated_at` 作過渡比較基準。較早請求晚回來不能覆蓋較新資料；較新的有效戰力即使下降也應更新。
+7. 最終以 OCID upsert，保留 `manual_seed`／`nexon_guild`／`nexon` 等有效來源。資料庫中既有的歷史來源值僅供 provenance 查閱，不會再建立。兩筆都有官方資料日期時先比日期，同日期再比查詢開始時間；其中任一筆沒有日期時比較查詢開始時間。舊版列以既有 `updated_at` 作過渡比較基準。較早請求晚回來不能覆蓋較新資料；較新的有效戰力即使下降也應更新。
 8. 舊有效資料若因刷新失敗而保留，仍有原本時間戳記，不偽裝成本輪新資料。主表一個 OCID 一筆；角色改名但 OCID 不變不會增加筆數。不同 OCID 不按同名或同帳號合併；官方 OCID 若真的改變，需要另外取得身份證據，不能推測合併。
 9. staging 在新一輪接手舊候選時重設成 pending、清除先前重試狀態；同一輪的重複名冊不反覆重排已解析角色。來源觀測時間與公會線索保存在 `character_sources`；來源標記表示曾收錄，不保證現在仍屬於該公會。退會不刪除角色。
 10. 完成後沿用排行榜快照刷新。部分公會／角色可失敗，`completed` 表示本輪佇列處理完畢，不表示所有查詢都成功；檢查 `checkpoint_json.guilds.failed`、`failed_count` 及 `import_job_errors`。403／401 會停止當次工作，不把全部公會標為失敗。
@@ -138,7 +138,7 @@ estimate 只呼叫官方 `guild/id` 與 `guild/basic`，然後用本站 D1 的�
 npm run import:maple -- nexon_guild --job 123 --all
 ```
 
-若重試時間未到，指令會保留斷點並結束，稍後用同一 job ID 續跑。`--start` 在有未完成工作時接續原工作，不會擴張已固定的候選清單。全部處理完後才可再次 `--start --max-guilds N` 開新一輪。現有排行榜可明確使用 `maplerhouse --all --refresh` 開新一輪；本機 JSON 可用 `manual --all --refresh`（必須先完成待處理／重試佇列並停止既有背景匯入），原本不帶 `--refresh` 的續跑方式不變。
+若重試時間未到，指令會保留斷點並結束，稍後用同一 job ID 續跑。`--start` 在有未完成工作時接續原工作，不會擴張已固定的候選清單。全部處理完後才可再次 `--start --max-guilds N` 開新一輪。本機 JSON 可用 `manual --all --refresh`（必須先完成待處理／重試佇列並停止既有背景匯入），原本不帶 `--refresh` 的續跑方式不變。
 
 本次實作驗證只在記憶體 SQLite 套用所有 migration，官方回應全部為測試 fixture；尚未套用正式 D1 migration、部署或執行真實公會匯入。
 

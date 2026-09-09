@@ -6,7 +6,7 @@ import {
   GrowthHistoryStatus,
 } from '../services/growthService';
 
-interface MaplerHouseGrowthTrackerProps {
+interface GrowthTrackerProps {
   ocid: string;
   characterName: string;
   onTrackingComplete?: () => void;
@@ -43,7 +43,7 @@ const formatGrowthTrackerError = (error: unknown, fallback: string) => {
   return message || fallback;
 };
 
-const MaplerHouseGrowthTracker: React.FC<MaplerHouseGrowthTrackerProps> = ({
+const GrowthTracker: React.FC<GrowthTrackerProps> = ({
   ocid,
   characterName,
   onTrackingComplete,
@@ -248,4 +248,4 @@ const MaplerHouseGrowthTracker: React.FC<MaplerHouseGrowthTrackerProps> = ({
   );
 };
 
-export default MaplerHouseGrowthTracker;
+export default GrowthTracker;

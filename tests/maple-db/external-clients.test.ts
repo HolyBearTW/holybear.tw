@@ -1,5 +1,4 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { MaplerHouseImporter } from '../../functions/_shared/importers/maplerhouse-importer';
 import { resolveNexonCharacter } from '../../functions/_shared/nexon-client';
 import type { Env } from '../../functions/_shared/env';
 
@@ -7,32 +6,6 @@ const originalFetch = globalThis.fetch;
 afterEach(() => {
   globalThis.fetch = originalFetch;
   vi.restoreAllMocks();
-});
-
-describe('seed importer retries', () => {
-  it('retries a transient MaplerHouse network failure and skips invalid entries', async () => {
-    let calls = 0;
-    globalThis.fetch = vi.fn(async () => {
-      calls += 1;
-      if (calls === 1) throw new Error('temporary timeout');
-      return Response.json({
-        status: 'success',
-        data: {
-          page: 1,
-          pageSize: 2,
-          total: 1,
-          items: [
-            { name: '有效角色', level: 280, combatPower: '1,000' },
-            { name: '   ', level: 1 },
-          ],
-        },
-      });
-    }) as typeof fetch;
-    const page = await new MaplerHouseImporter().fetchPage(1, 2);
-    expect(calls).toBe(2);
-    expect(page.items).toHaveLength(1);
-    expect(page.complete).toBe(true);
-  });
 });
 
 describe('NEXON resolution', () => {

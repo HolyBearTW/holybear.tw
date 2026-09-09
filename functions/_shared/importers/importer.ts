@@ -1,5 +1,3 @@
-import type { CharacterSource } from '../models';
-
 export interface SeedCharacter {
   sourceId: string;
   characterName: string;
@@ -20,18 +18,4 @@ export interface SeedPage {
   total: number | null;
   items: SeedCharacter[];
   complete: boolean;
-}
-
-export interface SeedImporter {
-  readonly source: Extract<CharacterSource, 'maplerhouse'>;
-  fetchPage(page: number, pageSize: number): Promise<SeedPage>;
-}
-
-export class ImportSourceUnavailableError extends Error {
-  constructor(
-    public readonly source: string,
-    message: string,
-  ) {
-    super(message);
-  }
 }

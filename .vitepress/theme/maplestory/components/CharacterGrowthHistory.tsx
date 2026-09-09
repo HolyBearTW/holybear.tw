@@ -14,7 +14,7 @@ import {
   fetchGrowthHistoryStatus,
   GrowthCharacterHistory,
 } from '../services/growthService';
-import type { MaplerHouseHistoryDay, MaplerHouseHistoryEvent } from '../services/maplerhouseService';
+import type { GrowthHistoryDay, GrowthHistoryEvent } from '../services/growthTypes';
 import { fetchWeeklyHistory } from '../services/nexonService';
 
 interface CharacterGrowthHistoryProps {
@@ -65,7 +65,7 @@ const eventLabels: Record<string, string> = {
   dojang: '武陵紀錄變更',
 };
 
-const formatEventValue = (event: MaplerHouseHistoryEvent, value: string) => {
+const formatEventValue = (event: GrowthHistoryEvent, value: string) => {
   if (!value) return '無';
   if (event.type !== 'liberation') return value;
   return ({ '0': '未解放', '1': '解放進行中', '2': '已解放' } as Record<string, string>)[value] || value;
@@ -87,7 +87,7 @@ const GrowthTooltip = ({ active, payload }: any) => {
 
 interface GrowthInsightPanelsProps {
   data: DashboardData;
-  days: MaplerHouseHistoryDay[];
+  days: GrowthHistoryDay[];
   trendRange: TrendRange;
   setTrendRange: (range: TrendRange) => void;
   allowRangeSelection: boolean;
@@ -331,7 +331,7 @@ const CharacterGrowthHistory: React.FC<CharacterGrowthHistoryProps> = ({ data, a
   // history request completes at nearly the same time.
   const deferredHistory = React.useDeferredValue(history);
   const historyRenderPending = history !== deferredHistory;
-  const weeklyDays = useMemo<MaplerHouseHistoryDay[]>(() => weeklyHistory.map((day, index) => {
+  const weeklyDays = useMemo<GrowthHistoryDay[]>(() => weeklyHistory.map((day, index) => {
     const previous = weeklyHistory[index - 1];
     const currentExp = Number(day.exp);
     const currentExpAvailable = day.exp !== null && day.exp !== undefined && day.exp !== '' && Number.isFinite(currentExp);
@@ -363,7 +363,7 @@ const CharacterGrowthHistory: React.FC<CharacterGrowthHistoryProps> = ({ data, a
       active: !expPending && expGain > 0,
     };
   }), [weeklyHistory]);
-  const historyDays = useMemo<MaplerHouseHistoryDay[] | null>(() => {
+  const historyDays = useMemo<GrowthHistoryDay[] | null>(() => {
     if (!deferredHistory) return null;
     const today = getTaiwanDateKey();
     return deferredHistory.days.map((day) => day.date.slice(0, 10) === today
@@ -384,7 +384,7 @@ const CharacterGrowthHistory: React.FC<CharacterGrowthHistoryProps> = ({ data, a
     const start = addDays(end, -364);
     const dayMap = new Map(historyDays.map((day) => [day.date, day]));
     const leading = start.getUTCDay();
-    const cells: Array<{ key: string; day: MaplerHouseHistoryDay | null; empty?: boolean }> = [];
+    const cells: Array<{ key: string; day: GrowthHistoryDay | null; empty?: boolean }> = [];
     for (let index = 0; index < leading; index += 1) {
       cells.push({ key: `empty-${index}`, day: null, empty: true });
     }

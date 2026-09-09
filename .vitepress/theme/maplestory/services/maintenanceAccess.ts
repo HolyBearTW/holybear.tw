@@ -1,7 +1,7 @@
 export const BYPASS_STORAGE_KEY = 'holybear_bypass_key';
 export const BYPASS_EXPIRY_STORAGE_KEY = 'holybear_bypass_expires_at';
 export const MAINTENANCE_LOCK_EVENT = 'holybear:maintenance-lock';
-export const BYPASS_TTL_MS = 30 * 60 * 1000;
+export const BYPASS_TTL_MS = 24 * 60 * 60 * 1000;
 
 const removeSavedBypass = () => {
   if (typeof window === 'undefined') return;

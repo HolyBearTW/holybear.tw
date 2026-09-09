@@ -116,7 +116,7 @@ describe('maintenance bypass middleware', () => {
     } as never);
 
     expect(valid.status).toBe(200);
-    expect(await valid.json()).toEqual({ ok: true, expiresInSeconds: 1800 });
+    expect(await valid.json()).toEqual({ ok: true, expiresInSeconds: 86_400 });
     expect(invalid.status).toBe(503);
   });
 });

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { isCharacterFresh, normalizeCharacterName, validateCanonicalSources } from '../../functions/_shared/character-repository';
 import { parseRankingFilters } from '../../functions/_shared/ranking-repository';
-import type { PublicCharacter } from '../../functions/_shared/models';
+import { CHARACTER_SOURCES, type PublicCharacter } from '../../functions/_shared/models';
 import {
   canonicalizeChampionRoster,
   canonicalizeCompleteUnionRaider,
@@ -44,8 +44,12 @@ describe('character domain helpers', () => {
   });
 
   it('rejects canonical writes that do not include a successful NEXON source', () => {
-    expect(() => validateCanonicalSources([{ source: 'maplerhouse' }])).toThrow(/NEXON/);
-    expect(() => validateCanonicalSources([{ source: 'maplerhouse' }, { source: 'nexon' }])).not.toThrow();
+    expect(() => validateCanonicalSources([{ source: 'manual_seed' }])).toThrow(/NEXON/);
+    expect(() => validateCanonicalSources([{ source: 'manual_seed' }, { source: 'nexon' }])).not.toThrow();
+  });
+
+  it('keeps historical provenance readable without exposing it as an active source', () => {
+    expect(CHARACTER_SOURCES).not.toContain('maplerhouse');
   });
 });
 

@@ -1,22 +1,6 @@
-import type {
-  MaplerHouseCharacterHistory,
-  MaplerHouseHistoryStatus,
-} from './maplerhouseService';
+import type { GrowthCharacterHistory, GrowthHistoryStatus } from './growthTypes';
 
-type GrowthJobStatus = NonNullable<MaplerHouseHistoryStatus['job']> & {
-  phase?: 'basic' | 'dojang';
-  currentProcessingDate?: string | null;
-  nextRetryAt?: string | null;
-};
-
-export type GrowthHistoryStatus = Omit<MaplerHouseHistoryStatus, 'job'> & {
-  progress?: number;
-  currentProcessingDate?: string | null;
-  job?: GrowthJobStatus | null;
-};
-export type GrowthCharacterHistory = MaplerHouseCharacterHistory;
-
-export const GROWTH_PROVIDER = 'nexon_primary' as const;
+export type { GrowthCharacterHistory, GrowthHistoryStatus } from './growthTypes';
 
 const parseError = async (response: Response, fallback: string) => {
   try {

@@ -9,7 +9,7 @@ import {
 import { enqueueCharacterMetadataRefreshes } from './character-metadata-refresh';
 import { stagingRequeueAssignments, validateCharacterWrite } from './character-policy.mjs';
 import type { Env } from './env';
-import type { CharacterRow, CharacterSource, CharacterWrite } from './models';
+import type { ActiveCharacterSource, CharacterRow, CharacterWrite } from './models';
 import { NexonRequestError, resolveNexonCharacter, runWithConcurrency } from './nexon-client';
 import { getRuntimeConfig } from './runtime-config';
 import {
@@ -50,7 +50,7 @@ export interface ImportJobRow {
 export interface StagingRow {
   id: number;
   import_job_id: number | null;
-  source: CharacterSource;
+  source: ActiveCharacterSource;
   source_id: string;
   character_name: string;
   ocid: string | null;

@@ -9,8 +9,6 @@ import {
 import { getRuntimeConfig } from './runtime-config';
 
 export const GROWTH_HISTORY_START_DATE = '2025-10-15';
-export const GROWTH_PROVIDER = 'nexon_primary' as const;
-
 const DAY_MS = 86_400_000;
 const nowIso = () => new Date().toISOString();
 const dateOnly = (value: string | null | undefined) => value?.slice(0, 10) || null;

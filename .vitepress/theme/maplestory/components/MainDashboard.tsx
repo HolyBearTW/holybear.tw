@@ -14,7 +14,7 @@ import {
   invalidateHolyBearRankingCache,
   HolyBearCharacterRank,
 } from '../services/holyBearService';
-import MaplerHouseGrowthTracker from './MaplerHouseGrowthTracker';
+import GrowthTracker from './GrowthTracker';
 import MapleFeatureTour, { GrowthTrackingState } from './MapleFeatureTour';
 import { fetchWeeklyHistory, findBestDateInPastWeek } from '../services/nexonService';
 import { getStatBreakdown } from '../services/statCalculator';
@@ -444,7 +444,7 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
 
                       <div className="mb-6"><StatRadarChart data={data} /></div>
 
-                      <MaplerHouseGrowthTracker
+                      <GrowthTracker
                         ocid={data.ocid}
                         characterName={data.basic.character_name}
                         onTrackingComplete={handleTrackingComplete}

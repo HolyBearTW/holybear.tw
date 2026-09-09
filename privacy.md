@@ -11,7 +11,7 @@ pageClass: custom-footer-layout
   <p class="privacy-eyebrow">PRIVACY AT A GLANCE</p>
   <h1>隱私政策</h1>
   <p>這裡說明「聖小熊的秘密基地」在你瀏覽文章、留言或使用工具時，哪些資料會留在裝置上，哪些會交給外部服務處理。</p>
-  <span class="privacy-updated">最後更新：2026 年 9 月 2 日</span>
+  <span class="privacy-updated">最後更新：2026 年 9 月 10 日</span>
 </div>
 
 <div class="privacy-summary">
@@ -56,7 +56,7 @@ pageClass: custom-footer-layout
 
 ### 楓之谷角色與成長資料
 
-當你搜尋角色或使用成長功能時，角色名稱、OCID 或日期範圍等必要查詢條件會由本站或你的瀏覽器送往 NEXON Open API；成長報告由本站保存的 NEXON 歷史資料產生，不會將這些 Growth 查詢條件送往冒險者小屋。現階段本站後端仍可能從冒險者小屋取得公開角色名單，作為本站排行榜候選資料來源，再以 NEXON 官方資料驗證與更新。本站與 NEXON Korea Corporation 沒有隸屬、代理或合作關係。
+當你搜尋角色或使用成長與排行榜功能時，角色名稱、OCID 或日期範圍等必要查詢條件會由本站或你的瀏覽器送往 NEXON Open API。成長報告由本站後端取得並保存於 D1 的 NEXON 歷史資料產生；排行榜則由本站保存的官方角色資料建立。本站與 NEXON Korea Corporation 沒有隸屬、代理或合作關係。
 
 ### AI 分析與自訂相容服務
 
@@ -89,7 +89,6 @@ pageClass: custom-footer-layout
 - [GitHub 隱私聲明](https://docs.github.com/zh/site-policy/privacy-policies/github-general-privacy-statement)
 - [NEXON 隱私政策](https://www.nexon.com/main/en/legal/privacy/)
 - [OpenAI API 資料控制說明](https://platform.openai.com/docs/models/default-usage-policies-by-endpoint)
-- [冒險者小屋隱私政策](https://www.maplerhouse.com/zh-tw/policy)
 
 ## 兒童隱私
 
