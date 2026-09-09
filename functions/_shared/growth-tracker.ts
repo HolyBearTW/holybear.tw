@@ -458,22 +458,29 @@ export const getGrowthStatus = async (db: D1Database, ocid: string) => {
   const row = await getProfile(db, ocid);
   const availableEndDate = latestAvailableGrowthDate();
   if (!row) return { tracked: false, availableEndDate, job: null };
-  const total = Math.max(1, Math.floor((Date.parse(`${row.sync_target_date}T00:00:00Z`)
+  const basicTotal = Math.max(1, Math.floor((Date.parse(`${row.sync_target_date}T00:00:00Z`)
     - Date.parse(`${row.scan_start_date}T00:00:00Z`)) / DAY_MS) + 1);
-  const processedThrough = row.phase === 'basic'
-    ? row.basic_last_synced_date
-    : row.current_processing_date;
-  const processed = processedThrough
-    ? Math.max(0, Math.floor((Date.parse(`${processedThrough}T00:00:00Z`)
+  const basicProcessed = row.basic_last_synced_date
+    ? Math.max(0, Math.floor((Date.parse(`${row.basic_last_synced_date}T00:00:00Z`)
       - Date.parse(`${row.scan_start_date}T00:00:00Z`)) / DAY_MS) + 1)
     : 0;
+  const dojangStart = row.history_start_date || row.scan_start_date;
+  const dojangTotal = Math.max(1, Math.floor((Date.parse(`${row.sync_target_date}T00:00:00Z`)
+    - Date.parse(`${dojangStart}T00:00:00Z`)) / DAY_MS) + 1);
+  const dojangProcessed = row.dojang_last_synced_date
+    ? Math.max(0, Math.floor((Date.parse(`${row.dojang_last_synced_date}T00:00:00Z`)
+      - Date.parse(`${dojangStart}T00:00:00Z`)) / DAY_MS) + 1)
+    : 0;
+  const progress = row.phase === 'basic'
+    ? (basicProcessed / basicTotal) * 50
+    : 50 + (dojangProcessed / dojangTotal) * 50;
   return {
     tracked: true,
     historyStartDate: row.history_start_date,
     lastSyncedDate: row.last_synced_date,
     availableEndDate,
     status: row.status,
-    progress: Math.max(0, Math.min(100, (processed / total) * 100)),
+    progress: Math.max(0, Math.min(100, progress)),
     currentProcessingDate: row.current_processing_date,
     job: {
       status: publicJobStatus(row),

@@ -6,7 +6,7 @@ import {
   type MaplerHouseHistoryStatus,
 } from './maplerhouseService';
 
-export type GrowthHistoryStatus = MaplerHouseHistoryStatus;
+export type GrowthHistoryStatus = MaplerHouseHistoryStatus & { progress?: number };
 export type GrowthCharacterHistory = MaplerHouseCharacterHistory;
 
 export const NEXON_GROWTH_SHADOW_OCID = 'a3e399217d603631033dd65ebaa08275';

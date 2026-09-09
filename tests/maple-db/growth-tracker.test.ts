@@ -87,7 +87,7 @@ describe('persistent growth tracking', () => {
     const basicRun = await backfillGrowthBatch(env);
     expect(basicRun).toMatchObject({ processed: 1, requests: 3, retry: 0, failed: 0 });
     const generating = await getGrowthStatus(env.DB, OCID);
-    expect(generating).toMatchObject({ tracked: true, lastSyncedDate: null });
+    expect(generating).toMatchObject({ tracked: true, lastSyncedDate: null, progress: 50 });
 
     const dojangRun = await backfillGrowthBatch(env);
     expect(dojangRun).toMatchObject({ processed: 1, completed: 1, requests: 1 });
@@ -97,6 +97,7 @@ describe('persistent growth tracking', () => {
       historyStartDate: '2025-10-17',
       lastSyncedDate: '2025-10-17',
       status: 'completed',
+      progress: 100,
     });
     expect(local.sqlite.prepare(`SELECT COUNT(*) AS count FROM growth_snapshots WHERE ocid=?`).get(OCID)?.count)
       .toBe(1);

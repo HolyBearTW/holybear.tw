@@ -26,6 +26,9 @@ const parseStatusDate = (value?: string | null) => {
 };
 
 const calculateCreationProgress = (status: GrowthHistoryStatus | null) => {
+  if (typeof status?.progress === 'number' && Number.isFinite(status.progress)) {
+    return Math.max(0, Math.min(100, status.progress));
+  }
   const start = parseStatusDate(status?.historyStartDate);
   const end = parseStatusDate(status?.availableEndDate);
   const processed = parseStatusDate(status?.job?.lastProcessedDate);
