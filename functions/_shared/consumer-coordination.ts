@@ -96,8 +96,7 @@ export const getImmediateConsumerQueueCounts = async (
     `).bind(timestamp).first<{ count: number }>(),
     db.prepare(`
       SELECT COUNT(*) AS count FROM growth_profiles
-      WHERE ocid = 'a3e399217d603631033dd65ebaa08275'
-        AND (
+      WHERE (
           status = 'pending'
           OR (status = 'retry' AND (next_retry_at IS NULL OR next_retry_at <= ?1))
           OR (status IN ('completed', 'failed') AND (last_synced_date IS NULL OR last_synced_date < ?2))

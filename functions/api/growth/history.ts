@@ -1,5 +1,5 @@
 import type { AppPagesFunction } from '../../_shared/env';
-import { getGrowthHistory, GROWTH_SHADOW_OCIDS } from '../../_shared/growth-tracker';
+import { getGrowthHistory, normalizeGrowthOcid } from '../../_shared/growth-tracker';
 import { errorResponse, HttpError, json, methodNotAllowed } from '../../_shared/http';
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -7,12 +7,10 @@ const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 export const onRequestGet: AppPagesFunction = async ({ env, request }) => {
   try {
     const params = new URL(request.url).searchParams;
-    const ocid = params.get('ocid')?.trim() || '';
+    const ocid = normalizeGrowthOcid(params.get('ocid'));
     const start = params.get('start') || '';
     const end = params.get('end') || '';
-    if (!GROWTH_SHADOW_OCIDS.has(ocid)) {
-      throw new HttpError(403, 'growth_shadow_not_allowed', '此角色尚未開放本站成長追蹤');
-    }
+    if (!ocid) throw new HttpError(400, 'invalid_growth_ocid', '角色識別碼格式不正確');
     if (!DATE_PATTERN.test(start) || !DATE_PATTERN.test(end) || start > end) {
       throw new HttpError(400, 'invalid_growth_range', '成長紀錄日期範圍不正確');
     }

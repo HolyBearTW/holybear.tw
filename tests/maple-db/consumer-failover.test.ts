@@ -5,6 +5,7 @@ import {
   runFallbackConsumer,
 } from '../../functions/_shared/consumer-coordination';
 import { enqueueCharacterMetadataRefreshes } from '../../functions/_shared/character-metadata-refresh';
+import { createGrowthProfile } from '../../functions/_shared/growth-tracker';
 import { onRequestPost as postFallback } from '../../functions/api/internal/consumer/fallback';
 import type { Env } from '../../functions/_shared/env';
 import { createTestD1 } from './sqlite-d1';
@@ -124,6 +125,12 @@ describe('consumer scheduler failover', () => {
       lastSuccessfulConsumerRun: { consumerSource: 'cloudflare_cron', at: baseTime },
       queues: { pendingMetadata: 1, pendingAccountSignals: 0, hasImmediateWork: true },
     });
+  });
+
+  it('counts every eligible Growth profile for fallback, not a shadow allowlist', async () => {
+    await createGrowthProfile(env.DB, 'b3e399217d603631033dd65ebaa08275', '2026-09-07');
+    const status = await getConsumerFailoverStatus(env);
+    expect(status.queues).toMatchObject({ pendingGrowthProfiles: 1, hasImmediateWork: true });
   });
 
   it('does not treat a recent failed primary invocation as a healthy heartbeat', async () => {

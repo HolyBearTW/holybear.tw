@@ -4,7 +4,6 @@ import {
   createGrowthProfile,
   fetchGrowthHistoryStatus,
   GrowthHistoryStatus,
-  usesNexonGrowthShadow,
 } from '../services/growthService';
 
 interface MaplerHouseGrowthTrackerProps {
@@ -148,7 +147,6 @@ const MaplerHouseGrowthTracker: React.FC<MaplerHouseGrowthTrackerProps> = ({
 
   const creating = submitting || isCreating(status);
   const isInitialBackfill = !status?.lastSyncedDate;
-  const usesNexon = usesNexonGrowthShadow(ocid);
   const creationProgress = creating ? calculateCreationProgress(status) : null;
   const dailyProgress = status?.dailyLimit
     ? `今日已送出 ${status.dailySubmitted ?? 0} / ${status.dailyLimit}`
@@ -177,9 +175,10 @@ const MaplerHouseGrowthTracker: React.FC<MaplerHouseGrowthTrackerProps> = ({
           role="note"
           className="maple-growth-create-tooltip absolute bottom-full right-0 z-50 mb-2 w-[min(18rem,calc(100vw-3rem))] rounded-lg border border-slate-200 bg-white/95 px-3 py-2 text-left text-xs leading-5 text-slate-700 shadow-xl shadow-slate-900/15 backdrop-blur-sm dark:border-slate-700 dark:bg-black/95 dark:text-slate-300 dark:shadow-black/50"
         >
-          <p>{usesNexon
-            ? `由本站使用 NEXON 官方歷史資料為 ${characterName} 建立永久追蹤；建立後會由伺服器每日自動更新。`
-            : `將 ${characterName} 的角色識別碼送至排行榜服務建立追蹤紀錄；之後才會逐步累積成長資料並納入近期排行榜。`}</p>
+          <p>{`由本站使用 NEXON 官方歷史資料為 ${characterName} 建立永久追蹤；建立後會由伺服器每日自動更新。`}</p>
+          {creating && isInitialBackfill && (
+            <p className="mt-1 text-slate-500">生成會在背景自動進行，可以關閉此頁面，稍後再回來查看。</p>
+          )}
           {dailyProgress && <p className="maple-growth-create-tooltip-meta mt-1 text-slate-500">{dailyProgress}</p>}
         </div>
       )}
@@ -209,6 +208,16 @@ const MaplerHouseGrowthTracker: React.FC<MaplerHouseGrowthTrackerProps> = ({
               {status?.job?.lastProcessedDate && (
                 <span className="maple-growth-progress-date text-[10px] text-emerald-600/80 dark:text-emerald-400/70">
                   {isInitialBackfill ? '已處理至' : '目前已同步至'} {status.job.lastProcessedDate.replace(/-/g, '/')}
+                </span>
+              )}
+              {status?.job?.phase && status?.currentProcessingDate && (
+                <span className="text-[10px] text-emerald-600/80 dark:text-emerald-400/70">
+                  {status.job.phase === 'basic' ? '基本資料' : '武陵資料'} · 正在處理 {status.currentProcessingDate.replace(/-/g, '/')}
+                </span>
+              )}
+              {isInitialBackfill && (
+                <span className="text-center text-[10px] leading-4 text-emerald-700/80 dark:text-emerald-300/70">
+                  可以關閉此頁面，背景仍會繼續生成，稍後再回來查看。
                 </span>
               )}
             </div>

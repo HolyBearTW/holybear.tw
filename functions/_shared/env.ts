@@ -37,6 +37,8 @@ export interface Env {
   GROWTH_BACKFILL_BATCH_SIZE?: string;
   GROWTH_PROFILE_CONCURRENCY?: string;
   GROWTH_CLAIM_LEASE_SECONDS?: string;
+  GROWTH_NEW_PROFILE_24H_LIMIT?: string;
+  GROWTH_PENDING_PROFILE_LIMIT?: string;
 }
 
 export type AppPagesFunction<Params extends string = string> = PagesFunction<Env, Params>;

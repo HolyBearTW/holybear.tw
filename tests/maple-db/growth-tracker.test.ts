@@ -10,6 +10,7 @@ import type { Env } from '../../functions/_shared/env';
 import { createTestD1 } from './sqlite-d1';
 
 const OCID = 'a3e399217d603631033dd65ebaa08275';
+const SECOND_OCID = 'b3e399217d603631033dd65ebaa08275';
 let local: ReturnType<typeof createTestD1>;
 let env: Env;
 
@@ -131,6 +132,44 @@ describe('persistent growth tracking', () => {
     const noWork = await backfillGrowthBatch(env);
     expect(noWork).toMatchObject({ processed: 0, requests: 0 });
     expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('rotates pending profiles after each bounded batch', async () => {
+    env.GROWTH_BACKFILL_BATCH_SIZE = '1';
+    await createGrowthProfile(env.DB, OCID, '2025-10-15');
+    await createGrowthProfile(env.DB, SECOND_OCID, '2025-10-15');
+    vi.setSystemTime('2025-10-17T19:00:01.000Z');
+    vi.stubGlobal('fetch', vi.fn(async (input: string) => {
+      const url = new URL(input);
+      return Response.json(basic(url.searchParams.get('date') || '2025-10-15'));
+    }));
+
+    expect(await backfillGrowthBatch(env)).toMatchObject({ processed: 1, requests: 1 });
+    expect(local.sqlite.prepare(`SELECT basic_last_synced_date FROM growth_profiles WHERE ocid=?`).get(OCID))
+      .toMatchObject({ basic_last_synced_date: '2025-10-15' });
+    expect(local.sqlite.prepare(`SELECT basic_last_synced_date FROM growth_profiles WHERE ocid=?`).get(SECOND_OCID))
+      .toMatchObject({ basic_last_synced_date: null });
+
+    vi.setSystemTime('2025-10-17T19:00:02.000Z');
+    expect(await backfillGrowthBatch(env)).toMatchObject({ processed: 1, requests: 1 });
+    expect(local.sqlite.prepare(`SELECT basic_last_synced_date FROM growth_profiles WHERE ocid=?`).get(SECOND_OCID))
+      .toMatchObject({ basic_last_synced_date: '2025-10-15' });
+  });
+
+  it('allows only one Growth lease owner when consumers overlap', async () => {
+    env.GROWTH_BACKFILL_BATCH_SIZE = '1';
+    await createGrowthProfile(env.DB, OCID, '2025-10-15');
+    let releaseFetch: ((response: Response) => void) | undefined;
+    const fetchMock = vi.fn(() => new Promise<Response>((resolve) => { releaseFetch = resolve; }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const first = backfillGrowthBatch(env);
+    while (fetchMock.mock.calls.length === 0) await Promise.resolve();
+    const second = await backfillGrowthBatch(env);
+    expect(second).toMatchObject({ processed: 0, requests: 0 });
+    releaseFetch?.(Response.json(basic('2025-10-15')));
+    expect(await first).toMatchObject({ processed: 1, requests: 1 });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it('derives stats and events while marking cross-level EXP gain as pending', async () => {

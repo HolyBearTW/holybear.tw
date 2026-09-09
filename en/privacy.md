@@ -56,7 +56,7 @@ You can remove these records using a feature's clear option or your browser's si
 
 ### MapleStory character and growth data
 
-When you search for a character or use growth and ranking features, query details such as a character name, OCID, or date range may be sent to the NEXON Open API or Mapler House API. The returned content is game-character data supplied by those services. This site is not affiliated with, endorsed by, or acting on behalf of NEXON Korea Corporation.
+When you search for a character or use growth features, required query details such as a character name, OCID, or date range are sent by this site or your browser to the NEXON Open API. Growth reports are generated from NEXON history stored by this site, and these Growth query details are not sent to Mapler House. At this stage, the site's backend may still obtain public character lists from Mapler House as candidate data for the site's ranking system, then verify and update those characters with official NEXON data. This site is not affiliated with, endorsed by, or acting on behalf of NEXON Korea Corporation.
 
 ### AI analysis and compatible services
 

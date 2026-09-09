@@ -56,7 +56,7 @@ pageClass: custom-footer-layout
 
 ### 楓之谷角色與成長資料
 
-當你搜尋角色或使用成長、排名相關功能時，角色名稱、OCID 或日期範圍等查詢條件可能會送往 NEXON Open API 或冒險者小屋 API。回傳內容是這些服務提供的遊戲角色資料。本站與 NEXON Korea Corporation 沒有隸屬、代理或合作關係。
+當你搜尋角色或使用成長功能時，角色名稱、OCID 或日期範圍等必要查詢條件會由本站或你的瀏覽器送往 NEXON Open API；成長報告由本站保存的 NEXON 歷史資料產生，不會將這些 Growth 查詢條件送往冒險者小屋。現階段本站後端仍可能從冒險者小屋取得公開角色名單，作為本站排行榜候選資料來源，再以 NEXON 官方資料驗證與更新。本站與 NEXON Korea Corporation 沒有隸屬、代理或合作關係。
 
 ### AI 分析與自訂相容服務
 

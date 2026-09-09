@@ -1,16 +1,22 @@
-import {
-  createMaplerHouseGrowthProfile,
-  fetchMaplerHouseCharacterHistory,
-  fetchMaplerHouseHistoryStatus,
-  type MaplerHouseCharacterHistory,
-  type MaplerHouseHistoryStatus,
+import type {
+  MaplerHouseCharacterHistory,
+  MaplerHouseHistoryStatus,
 } from './maplerhouseService';
 
-export type GrowthHistoryStatus = MaplerHouseHistoryStatus & { progress?: number };
+type GrowthJobStatus = NonNullable<MaplerHouseHistoryStatus['job']> & {
+  phase?: 'basic' | 'dojang';
+  currentProcessingDate?: string | null;
+  nextRetryAt?: string | null;
+};
+
+export type GrowthHistoryStatus = Omit<MaplerHouseHistoryStatus, 'job'> & {
+  progress?: number;
+  currentProcessingDate?: string | null;
+  job?: GrowthJobStatus | null;
+};
 export type GrowthCharacterHistory = MaplerHouseCharacterHistory;
 
-export const NEXON_GROWTH_SHADOW_OCID = 'a3e399217d603631033dd65ebaa08275';
-export const usesNexonGrowthShadow = (ocid: string) => ocid === NEXON_GROWTH_SHADOW_OCID;
+export const GROWTH_PROVIDER = 'nexon_primary' as const;
 
 const parseError = async (response: Response, fallback: string) => {
   try {
@@ -22,14 +28,12 @@ const parseError = async (response: Response, fallback: string) => {
 };
 
 export const fetchGrowthHistoryStatus = async (ocid: string): Promise<GrowthHistoryStatus> => {
-  if (!usesNexonGrowthShadow(ocid)) return fetchMaplerHouseHistoryStatus(ocid);
   const response = await fetch(`/api/growth/status?ocid=${encodeURIComponent(ocid)}`, { cache: 'no-store' });
   if (!response.ok) throw new Error(await parseError(response, `成長檔案狀態讀取失敗 (${response.status})`));
   return response.json();
 };
 
 export const createGrowthProfile = async (ocid: string) => {
-  if (!usesNexonGrowthShadow(ocid)) return createMaplerHouseGrowthProfile(ocid);
   const response = await fetch('/api/growth/generate', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
@@ -45,7 +49,6 @@ export const fetchGrowthCharacterHistory = async (
   start: string,
   end: string,
 ): Promise<GrowthCharacterHistory> => {
-  if (!usesNexonGrowthShadow(ocid)) return fetchMaplerHouseCharacterHistory(ocid, start, end);
   const params = new URLSearchParams({ ocid, start, end });
   const response = await fetch(`/api/growth/history?${params.toString()}`, { cache: 'no-store' });
   if (!response.ok) throw new Error(await parseError(response, `成長紀錄讀取失敗 (${response.status})`));

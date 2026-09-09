@@ -1,9 +1,10 @@
 import type { Env } from './env';
+import { findCharacterByOcid } from './character-repository';
 import { fetchNexonJson, NexonRequestError, runWithConcurrency } from './nexon-client';
 import { getRuntimeConfig } from './runtime-config';
 
 export const GROWTH_HISTORY_START_DATE = '2025-10-15';
-export const GROWTH_SHADOW_OCIDS = new Set(['a3e399217d603631033dd65ebaa08275']);
+export const GROWTH_PROVIDER = 'nexon_primary' as const;
 
 const DAY_MS = 86_400_000;
 const nowIso = () => new Date().toISOString();
@@ -81,6 +82,25 @@ interface NexonBasicHistory {
   liberation_quest_clear?: string | null;
 }
 
+export class GrowthAdmissionError extends Error {
+  constructor(
+    public readonly status: number,
+    public readonly code: string,
+    message: string,
+    public readonly retryAfterSeconds?: number,
+  ) {
+    super(message);
+  }
+}
+
+const OCID_PATTERN = /^[0-9a-f]{32}$/i;
+
+export const normalizeGrowthOcid = (value: unknown) => {
+  if (typeof value !== 'string') return null;
+  const normalized = value.trim().toLowerCase();
+  return OCID_PATTERN.test(normalized) ? normalized : null;
+};
+
 interface NexonDojangHistory {
   date?: string;
   dojang_best_floor?: number | null;
@@ -108,6 +128,93 @@ export const createGrowthProfile = async (db: D1Database, ocid: string, targetDa
     ON CONFLICT(ocid) DO NOTHING
   `).bind(ocid, GROWTH_HISTORY_START_DATE, targetDate, timestamp).run();
   return getProfile(db, ocid);
+};
+
+const assertValidGrowthIdentity = async (env: Env, ocid: string) => {
+  if (await findCharacterByOcid(env.DB, ocid)) return;
+  let basic: NexonBasicHistory;
+  try {
+    basic = await fetchNexonJson<NexonBasicHistory>(
+      env,
+      `/character/basic?ocid=${encodeURIComponent(ocid)}`,
+    );
+  } catch (error) {
+    if (error instanceof NexonRequestError && !error.retryable) {
+      throw new GrowthAdmissionError(400, 'invalid_growth_ocid', '這個角色識別碼無法由 NEXON 驗證');
+    }
+    throw new GrowthAdmissionError(503, 'growth_identity_unavailable', 'NEXON 角色驗證暫時無法使用，請稍後再試', 60);
+  }
+  if (!basic.character_name || !basic.world_name || !basic.character_class
+    || !Number.isSafeInteger(Number(basic.character_level)) || Number(basic.character_level) <= 0) {
+    throw new GrowthAdmissionError(400, 'invalid_growth_ocid', '這個角色識別碼無法由 NEXON 驗證');
+  }
+};
+
+const admissionCounts = async (db: D1Database, since: string) => {
+  const [recent, pending] = await Promise.all([
+    db.prepare(`SELECT COUNT(*) AS count FROM growth_profiles WHERE created_at >= ?1`)
+      .bind(since).first<{ count: number }>(),
+    db.prepare(`SELECT COUNT(*) AS count FROM growth_profiles WHERE status IN ('pending', 'retry')`)
+      .first<{ count: number }>(),
+  ]);
+  return {
+    recent: Number(recent?.count) || 0,
+    pending: Number(pending?.count) || 0,
+  };
+};
+
+export const admitGrowthProfile = async (
+  env: Env,
+  ocid: string,
+  targetDate = latestAvailableGrowthDate(),
+) => {
+  const existing = await getProfile(env.DB, ocid);
+  if (existing) return { profile: existing, created: false };
+
+  const config = getRuntimeConfig(env);
+  const timestamp = nowIso();
+  const since = new Date(Date.now() - DAY_MS).toISOString();
+  const before = await admissionCounts(env.DB, since);
+  if (before.pending >= config.growthPendingProfileLimit) {
+    throw new GrowthAdmissionError(503, 'growth_backlog_full', '目前成長檔案佇列已滿，請稍後再試', 300);
+  }
+  if (before.recent >= config.growthNewProfile24hLimit) {
+    throw new GrowthAdmissionError(429, 'growth_generation_limit', '今日可建立的成長檔案已達上限，請稍後再試', 3600);
+  }
+
+  await assertValidGrowthIdentity(env, ocid);
+
+  // The capacity predicates and insert share one D1 statement. Concurrent
+  // requests for the same OCID therefore create one row, while requests for
+  // different OCIDs cannot all pass a stale application-side count.
+  const inserted = await env.DB.prepare(`
+    INSERT INTO growth_profiles (
+      ocid, scan_start_date, sync_target_date, status, phase,
+      current_processing_date, created_at, updated_at
+    )
+    SELECT ?1, ?2, ?3, 'pending', 'basic', ?2, ?4, ?4
+    WHERE (SELECT COUNT(*) FROM growth_profiles WHERE created_at >= ?5) < ?6
+      AND (SELECT COUNT(*) FROM growth_profiles WHERE status IN ('pending', 'retry')) < ?7
+    ON CONFLICT(ocid) DO NOTHING
+    RETURNING *
+  `).bind(
+    ocid,
+    GROWTH_HISTORY_START_DATE,
+    targetDate,
+    timestamp,
+    since,
+    config.growthNewProfile24hLimit,
+    config.growthPendingProfileLimit,
+  ).first<GrowthProfileRow>();
+  if (inserted) return { profile: inserted, created: true };
+
+  const racedExisting = await getProfile(env.DB, ocid);
+  if (racedExisting) return { profile: racedExisting, created: false };
+  const after = await admissionCounts(env.DB, since);
+  if (after.pending >= config.growthPendingProfileLimit) {
+    throw new GrowthAdmissionError(503, 'growth_backlog_full', '目前成長檔案佇列已滿，請稍後再試', 300);
+  }
+  throw new GrowthAdmissionError(429, 'growth_generation_limit', '今日可建立的成長檔案已達上限，請稍後再試', 3600);
 };
 
 export const scheduleGrowthProfiles = async (db: D1Database, targetDate = latestAvailableGrowthDate()) => {
@@ -403,14 +510,11 @@ export const backfillGrowthBatch = async (env: Env) => {
   const timestamp = nowIso();
   const eligible = await env.DB.prepare(`
     SELECT * FROM growth_profiles
-    WHERE ocid = ?1
-      AND (status = 'pending' OR (status = 'retry' AND (next_retry_at IS NULL OR next_retry_at <= ?2)))
-      AND (claim_until IS NULL OR claim_until <= ?2)
+    WHERE (status = 'pending' OR (status = 'retry' AND (next_retry_at IS NULL OR next_retry_at <= ?1)))
+      AND (claim_until IS NULL OR claim_until <= ?1)
     ORDER BY CASE WHEN status = 'pending' THEN 0 ELSE 1 END, updated_at, ocid
-    LIMIT ?3
-  `).bind(
-    [...GROWTH_SHADOW_OCIDS][0], timestamp, config.growthProfileConcurrency,
-  ).all<GrowthProfileRow>();
+    LIMIT ?2
+  `).bind(timestamp, config.growthProfileConcurrency).all<GrowthProfileRow>();
   const claims: GrowthClaim[] = [];
   for (const row of eligible.results) {
     const claim = await claimProfile(env.DB, row, config.growthClaimLeaseSeconds);
