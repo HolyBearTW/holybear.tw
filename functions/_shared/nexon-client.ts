@@ -31,6 +31,7 @@ export class NexonRequestError extends Error {
     public readonly status: number | null,
     public readonly retryable: boolean,
     public readonly code = 'nexon_request_failed',
+    public readonly nexonCode: string | null = null,
   ) {
     super(message);
   }
@@ -85,14 +86,38 @@ export const fetchNexonJson = async <T>(
         return payload;
       }
 
-      const retryable = response.status === 429 || response.status >= 500;
+      const errorPayload = await response.clone().json().catch(() => null) as {
+        error?: { name?: unknown; message?: unknown };
+      } | null;
+      const nexonCode = typeof errorPayload?.error?.name === 'string'
+        ? errorPayload.error.name
+        : null;
+      const nexonMessage = typeof errorPayload?.error?.message === 'string'
+        ? errorPayload.error.message
+        : null;
+      const retryable = response.status === 429 || response.status >= 500
+        || nexonCode === 'OPENAPI00009'
+        || nexonCode === 'OPENAPI00010'
+        || nexonCode === 'OPENAPI00011';
       if (!retryable) {
         const code = response.status === 400 || response.status === 404
           ? 'character_not_found'
           : 'nexon_request_rejected';
-        throw new NexonRequestError(`NEXON API 回應失敗 (${response.status})`, response.status, false, code);
+        throw new NexonRequestError(
+          nexonMessage || `NEXON API 回應失敗 (${response.status})`,
+          response.status,
+          false,
+          code,
+          nexonCode,
+        );
       }
-      lastError = new NexonRequestError(`NEXON API 暫時無法使用 (${response.status})`, response.status, true);
+      lastError = new NexonRequestError(
+        nexonMessage || `NEXON API 暫時無法使用 (${response.status})`,
+        response.status,
+        true,
+        'nexon_request_failed',
+        nexonCode,
+      );
       const fallback = Math.min(30_000, 500 * (2 ** attempt));
       await wait(retryAfterMilliseconds(response, fallback));
     } catch (error) {

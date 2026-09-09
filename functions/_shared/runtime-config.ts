@@ -64,6 +64,9 @@ export const getRuntimeConfig = (env: Env) => ({
     0,
     10_000,
   ),
+  growthBackfillBatchSize: integerSetting(env.GROWTH_BACKFILL_BATCH_SIZE, 20, 1, 50),
+  growthProfileConcurrency: integerSetting(env.GROWTH_PROFILE_CONCURRENCY, 1, 1, 2),
+  growthClaimLeaseSeconds: integerSetting(env.GROWTH_CLAIM_LEASE_SECONDS, 600, 60, 900),
   consumerPrimaryHeartbeatFreshnessSeconds: integerSetting(
     env.CONSUMER_PRIMARY_HEARTBEAT_FRESHNESS_SECONDS,
     300,

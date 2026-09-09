@@ -10,12 +10,11 @@ import {
 } from 'recharts';
 import { DashboardData } from '../types';
 import {
-  fetchMaplerHouseCharacterHistory,
-  fetchMaplerHouseHistoryStatus,
-  MaplerHouseCharacterHistory,
-  MaplerHouseHistoryDay,
-  MaplerHouseHistoryEvent,
-} from '../services/maplerhouseService';
+  fetchGrowthCharacterHistory,
+  fetchGrowthHistoryStatus,
+  GrowthCharacterHistory,
+} from '../services/growthService';
+import type { MaplerHouseHistoryDay, MaplerHouseHistoryEvent } from '../services/maplerhouseService';
 import { fetchWeeklyHistory } from '../services/nexonService';
 
 interface CharacterGrowthHistoryProps {
@@ -233,7 +232,7 @@ const GrowthInsightPanels: React.FC<GrowthInsightPanelsProps> = ({
 };
 
 const CharacterGrowthHistory: React.FC<CharacterGrowthHistoryProps> = ({ data, apiKey }) => {
-  const [history, setHistory] = useState<MaplerHouseCharacterHistory | null>(null);
+  const [history, setHistory] = useState<GrowthCharacterHistory | null>(null);
   const [weeklyHistory, setWeeklyHistory] = useState<any[]>([]);
   const [weeklyLoading, setWeeklyLoading] = useState(true);
   const [loading, setLoading] = useState(true);
@@ -266,20 +265,26 @@ const CharacterGrowthHistory: React.FC<CharacterGrowthHistoryProps> = ({ data, a
     const load = async () => {
       try {
         setError(null);
-        const status = await fetchMaplerHouseHistoryStatus(data.ocid);
+        const status = await fetchGrowthHistoryStatus(data.ocid);
         if (cancelled) return;
 
         const jobStatus = status.job?.status;
-        if (!status.tracked || jobStatus === 'pending' || jobStatus === 'running') {
+        const updating = jobStatus === 'pending' || jobStatus === 'running';
+        if (!status.tracked || (updating && !status.lastSyncedDate)) {
           setHistory(null);
           setLoading(false);
-          if (status.tracked || jobStatus === 'pending' || jobStatus === 'running') {
+          if (status.tracked) {
             pollTimer = setTimeout(load, 5000);
           }
           return;
         }
 
-        const endDate = status.availableEndDate || status.lastSyncedDate;
+        // During a later incremental sync, keep showing the already persisted
+        // report and poll server-side progress.  Only the first backfill has no
+        // usable history yet.
+        const endDate = updating
+          ? status.lastSyncedDate
+          : (status.availableEndDate || status.lastSyncedDate);
         if (!endDate) {
           setLoading(false);
           return;
@@ -289,10 +294,11 @@ const CharacterGrowthHistory: React.FC<CharacterGrowthHistoryProps> = ({ data, a
         const requestStart = status.historyStartDate && status.historyStartDate > calendarStart
           ? status.historyStartDate
           : calendarStart;
-        const result = await fetchMaplerHouseCharacterHistory(data.ocid, requestStart, endDate);
+        const result = await fetchGrowthCharacterHistory(data.ocid, requestStart, endDate);
         if (!cancelled) {
           setHistory(result);
           setLoading(false);
+          if (updating) pollTimer = setTimeout(load, 5000);
         }
       } catch (caught) {
         if (!cancelled) {

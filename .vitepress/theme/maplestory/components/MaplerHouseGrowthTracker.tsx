@@ -1,10 +1,11 @@
 import React from 'react';
 import { Database, Info, Loader2 } from 'lucide-react';
 import {
-  createMaplerHouseGrowthProfile,
-  fetchMaplerHouseHistoryStatus,
-  MaplerHouseHistoryStatus,
-} from '../services/maplerhouseService';
+  createGrowthProfile,
+  fetchGrowthHistoryStatus,
+  GrowthHistoryStatus,
+  usesNexonGrowthShadow,
+} from '../services/growthService';
 
 interface MaplerHouseGrowthTrackerProps {
   ocid: string;
@@ -14,7 +15,7 @@ interface MaplerHouseGrowthTrackerProps {
   onTrackingStatusChange?: (status: 'loading' | 'tracked' | 'untracked' | 'unavailable') => void;
 }
 
-const isCreating = (status: MaplerHouseHistoryStatus | null) => {
+const isCreating = (status: GrowthHistoryStatus | null) => {
   return status?.job?.status === 'pending' || status?.job?.status === 'running';
 };
 
@@ -24,7 +25,7 @@ const parseStatusDate = (value?: string | null) => {
   return Number.isFinite(timestamp) ? timestamp : null;
 };
 
-const calculateCreationProgress = (status: MaplerHouseHistoryStatus | null) => {
+const calculateCreationProgress = (status: GrowthHistoryStatus | null) => {
   const start = parseStatusDate(status?.historyStartDate);
   const end = parseStatusDate(status?.availableEndDate);
   const processed = parseStatusDate(status?.job?.lastProcessedDate);
@@ -47,7 +48,7 @@ const MaplerHouseGrowthTracker: React.FC<MaplerHouseGrowthTrackerProps> = ({
   createButtonRef,
   onTrackingStatusChange,
 }) => {
-  const [status, setStatus] = React.useState<MaplerHouseHistoryStatus | null>(null);
+  const [status, setStatus] = React.useState<GrowthHistoryStatus | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [submitting, setSubmitting] = React.useState(false);
   const [submitted, setSubmitted] = React.useState(false);
@@ -63,7 +64,7 @@ const MaplerHouseGrowthTracker: React.FC<MaplerHouseGrowthTrackerProps> = ({
   }, [ocid, onTrackingComplete]);
 
   const loadStatus = React.useCallback(async () => {
-    const result = await fetchMaplerHouseHistoryStatus(ocid);
+    const result = await fetchGrowthHistoryStatus(ocid);
     setStatus(result);
     return result;
   }, [ocid]);
@@ -77,7 +78,7 @@ const MaplerHouseGrowthTracker: React.FC<MaplerHouseGrowthTrackerProps> = ({
     setError(null);
     setShowNote(false);
 
-    fetchMaplerHouseHistoryStatus(ocid)
+    fetchGrowthHistoryStatus(ocid)
       .then((result) => {
         if (active) setStatus(result);
       })
@@ -126,7 +127,7 @@ const MaplerHouseGrowthTracker: React.FC<MaplerHouseGrowthTrackerProps> = ({
     setSubmitting(true);
     setError(null);
     try {
-      await createMaplerHouseGrowthProfile(ocid);
+      await createGrowthProfile(ocid);
       setSubmitted(true);
       window.dispatchEvent(new CustomEvent('maple-growth-profile-updated', { detail: { ocid } }));
       const result = await loadStatus();
@@ -143,6 +144,8 @@ const MaplerHouseGrowthTracker: React.FC<MaplerHouseGrowthTrackerProps> = ({
   if (loading || (status?.tracked && !submitted && !isCreating(status))) return null;
 
   const creating = submitting || isCreating(status);
+  const isInitialBackfill = !status?.lastSyncedDate;
+  const usesNexon = usesNexonGrowthShadow(ocid);
   const creationProgress = creating ? calculateCreationProgress(status) : null;
   const dailyProgress = status?.dailyLimit
     ? `今日已送出 ${status.dailySubmitted ?? 0} / ${status.dailyLimit}`
@@ -171,7 +174,9 @@ const MaplerHouseGrowthTracker: React.FC<MaplerHouseGrowthTrackerProps> = ({
           role="note"
           className="maple-growth-create-tooltip absolute bottom-full right-0 z-50 mb-2 w-[min(18rem,calc(100vw-3rem))] rounded-lg border border-slate-200 bg-white/95 px-3 py-2 text-left text-xs leading-5 text-slate-700 shadow-xl shadow-slate-900/15 backdrop-blur-sm dark:border-slate-700 dark:bg-black/95 dark:text-slate-300 dark:shadow-black/50"
         >
-          <p>將 {characterName} 的角色識別碼送至排行榜服務建立追蹤紀錄；之後才會逐步累積成長資料並納入近期排行榜。</p>
+          <p>{usesNexon
+            ? `由本站使用 NEXON 官方歷史資料為 ${characterName} 建立永久追蹤；建立後會由伺服器每日自動更新。`
+            : `將 ${characterName} 的角色識別碼送至排行榜服務建立追蹤紀錄；之後才會逐步累積成長資料並納入近期排行榜。`}</p>
           {dailyProgress && <p className="maple-growth-create-tooltip-meta mt-1 text-slate-500">{dailyProgress}</p>}
         </div>
       )}
@@ -185,7 +190,7 @@ const MaplerHouseGrowthTracker: React.FC<MaplerHouseGrowthTrackerProps> = ({
           {creating ? (
             <div className="flex w-full max-w-44 flex-col items-center gap-1.5">
               <div className="maple-growth-progress-header flex w-full items-center justify-between gap-2 text-[11px]">
-                <span>正在生成成長檔案</span>
+                <span>{isInitialBackfill ? '正在生成成長檔案' : '資料更新中'}</span>
                 {creationProgress !== null && <span className="maple-growth-progress-percent">{Math.round(creationProgress)}%</span>}
               </div>
               <div className="maple-growth-progress-track h-1.5 w-full overflow-hidden rounded-full bg-emerald-100 dark:bg-emerald-950">
@@ -200,7 +205,7 @@ const MaplerHouseGrowthTracker: React.FC<MaplerHouseGrowthTrackerProps> = ({
               </div>
               {status?.job?.lastProcessedDate && (
                 <span className="maple-growth-progress-date text-[10px] text-emerald-600/80 dark:text-emerald-400/70">
-                  已處理至 {status.job.lastProcessedDate.replace(/-/g, '/')}
+                  {isInitialBackfill ? '已處理至' : '目前已同步至'} {status.job.lastProcessedDate.replace(/-/g, '/')}
                 </span>
               )}
             </div>

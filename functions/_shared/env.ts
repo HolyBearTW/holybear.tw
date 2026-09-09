@@ -34,6 +34,9 @@ export interface Env {
   CHARACTER_METADATA_REFRESH_BATCH_SIZE?: string;
   CHARACTER_METADATA_REFRESH_CONCURRENCY?: string;
   CHARACTER_METADATA_REFRESH_DELAY_MS?: string;
+  GROWTH_BACKFILL_BATCH_SIZE?: string;
+  GROWTH_PROFILE_CONCURRENCY?: string;
+  GROWTH_CLAIM_LEASE_SECONDS?: string;
 }
 
 export type AppPagesFunction<Params extends string = string> = PagesFunction<Env, Params>;

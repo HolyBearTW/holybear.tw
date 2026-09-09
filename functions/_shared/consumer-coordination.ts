@@ -2,6 +2,7 @@ import { backfillAccountSignalBatch } from './account-signal-backfill';
 import { refreshCharacterMetadataBatch } from './character-metadata-refresh';
 import type { Env } from './env';
 import { getRuntimeConfig } from './runtime-config';
+import { backfillGrowthBatch, latestAvailableGrowthDate } from './growth-tracker';
 
 export type ConsumerSource = 'cloudflare_cron' | 'github_actions_fallback';
 
@@ -18,12 +19,14 @@ interface ConsumerHeartbeatRow {
 export interface ConsumerQueueCounts {
   pendingMetadata: number;
   pendingAccountSignals: number;
+  pendingGrowthProfiles: number;
   hasImmediateWork: boolean;
 }
 
 interface ConsumerSelection {
   metadata: boolean;
   accountSignals: boolean;
+  growth?: boolean;
 }
 
 const nowIso = () => new Date().toISOString();
@@ -78,7 +81,8 @@ export const getImmediateConsumerQueueCounts = async (
   db: D1Database,
   timestamp = nowIso(),
 ): Promise<ConsumerQueueCounts> => {
-  const [metadata, accountSignals] = await Promise.all([
+  const targetDate = latestAvailableGrowthDate(new Date(timestamp));
+  const [metadata, accountSignals, growthProfiles] = await Promise.all([
     db.prepare(`
       SELECT COUNT(*) AS count FROM character_metadata_refresh
       WHERE (status = 'pending' OR (status = 'retry' AND (next_retry_at IS NULL OR next_retry_at <= ?1)))
@@ -90,13 +94,25 @@ export const getImmediateConsumerQueueCounts = async (
         AND (status = 'pending' OR (status = 'retry' AND (next_retry_at IS NULL OR next_retry_at <= ?1)))
         AND (claim_until IS NULL OR claim_until <= ?1)
     `).bind(timestamp).first<{ count: number }>(),
+    db.prepare(`
+      SELECT COUNT(*) AS count FROM growth_profiles
+      WHERE ocid = 'a3e399217d603631033dd65ebaa08275'
+        AND (
+          status = 'pending'
+          OR (status = 'retry' AND (next_retry_at IS NULL OR next_retry_at <= ?1))
+          OR (status IN ('completed', 'failed') AND (last_synced_date IS NULL OR last_synced_date < ?2))
+        )
+        AND (claim_until IS NULL OR claim_until <= ?1)
+    `).bind(timestamp, targetDate).first<{ count: number }>(),
   ]);
   const pendingMetadata = Number(metadata?.count) || 0;
   const pendingAccountSignals = Number(accountSignals?.count) || 0;
+  const pendingGrowthProfiles = Number(growthProfiles?.count) || 0;
   return {
     pendingMetadata,
     pendingAccountSignals,
-    hasImmediateWork: pendingMetadata > 0 || pendingAccountSignals > 0,
+    pendingGrowthProfiles,
+    hasImmediateWork: pendingMetadata > 0 || pendingAccountSignals > 0 || pendingGrowthProfiles > 0,
   };
 };
 
@@ -165,7 +181,7 @@ export const getConsumerFailoverStatus = async (env: Env, timestamp = nowIso()) 
 export const consumeQueueBatch = async (
   env: Env,
   source: ConsumerSource,
-  selection: ConsumerSelection = { metadata: true, accountSignals: true },
+  selection: ConsumerSelection = { metadata: true, accountSignals: true, growth: true },
 ) => {
   const invokedAt = nowIso();
   await recordInvocation(env.DB, source, invokedAt);
@@ -178,6 +194,10 @@ export const consumeQueueBatch = async (
   if (selection.accountSignals) {
     labels.push('accountSignals');
     tasks.push(backfillAccountSignalBatch(env));
+  }
+  if (selection.growth) {
+    labels.push('growth');
+    tasks.push(backfillGrowthBatch(env));
   }
   const settled = await Promise.allSettled(tasks);
   const result = Object.fromEntries(settled.map((outcome, index) => [
@@ -206,6 +226,7 @@ export const runFallbackConsumer = async (env: Env) => {
   const batch = await consumeQueueBatch(env, 'github_actions_fallback', {
     metadata: before.queues.pendingMetadata > 0,
     accountSignals: before.queues.pendingAccountSignals > 0,
+    growth: before.queues.pendingGrowthProfiles > 0,
   });
   return { executed: true, batch, status: await getConsumerFailoverStatus(env) };
 };
