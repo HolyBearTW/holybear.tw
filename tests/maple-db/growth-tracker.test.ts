@@ -36,6 +36,9 @@ beforeEach(() => {
     NEXON_RETRY_LIMIT: '1',
     NEXON_REQUEST_TIMEOUT_MS: '1000',
     GROWTH_BACKFILL_BATCH_SIZE: '50',
+    GROWTH_DATE_CONCURRENCY: '4',
+    GROWTH_MAX_BATCHES_PER_INVOCATION: '1',
+    GROWTH_INVOCATION_BUDGET_MS: '45000',
     GROWTH_PROFILE_CONCURRENCY: '1',
   };
   vi.useFakeTimers({ toFake: ['Date'] });
@@ -170,6 +173,132 @@ describe('persistent growth tracking', () => {
     releaseFetch?.(Response.json(basic('2025-10-15')));
     expect(await first).toMatchObject({ processed: 1, requests: 1 });
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('finishes multiple bounded checkpoints for one profile in one invocation', async () => {
+    env.GROWTH_BACKFILL_BATCH_SIZE = '2';
+    env.GROWTH_MAX_BATCHES_PER_INVOCATION = '12';
+    await createGrowthProfile(env.DB, OCID, '2025-10-20');
+    vi.stubGlobal('fetch', vi.fn(async (input: string) => {
+      const url = new URL(input);
+      const date = url.searchParams.get('date')!;
+      if (url.pathname.endsWith('/character/basic')) return Response.json(basic(date));
+      return Response.json({ date, dojang_best_floor: 0, dojang_best_time: 0, date_dojang_record: null });
+    }));
+
+    const run = await backfillGrowthBatch(env);
+    expect(run).toMatchObject({ processed: 6, completed: 1, requests: 12 });
+    expect(run.instrumentation).toMatchObject({ stoppedBy: 'queue_empty' });
+    expect(run.instrumentation.basic.batches).toBe(3);
+    expect(run.instrumentation.dojang.batches).toBe(3);
+    expect(await getGrowthStatus(env.DB, OCID)).toMatchObject({ status: 'completed', progress: 100 });
+  });
+
+  it('round-robins two pending profiles across repeated checkpoints', async () => {
+    env.GROWTH_BACKFILL_BATCH_SIZE = '1';
+    env.GROWTH_MAX_BATCHES_PER_INVOCATION = '4';
+    await createGrowthProfile(env.DB, OCID, '2025-10-17');
+    await createGrowthProfile(env.DB, SECOND_OCID, '2025-10-17');
+    vi.stubGlobal('fetch', vi.fn(async (input: string) => {
+      const date = new URL(input).searchParams.get('date')!;
+      return Response.json(basic(date));
+    }));
+
+    const run = await backfillGrowthBatch(env);
+    expect(run).toMatchObject({ processed: 4, requests: 4 });
+    for (const ocid of [OCID, SECOND_OCID]) {
+      expect(local.sqlite.prepare(`SELECT basic_last_synced_date FROM growth_profiles WHERE ocid=?`).get(ocid))
+        .toMatchObject({ basic_last_synced_date: '2025-10-16' });
+    }
+  });
+
+  it('gives five pending profiles one checkpoint before repeating any profile', async () => {
+    env.GROWTH_BACKFILL_BATCH_SIZE = '1';
+    env.GROWTH_MAX_BATCHES_PER_INVOCATION = '5';
+    const ocids = Array.from({ length: 5 }, (_, index) => `${index + 1}`.repeat(32));
+    for (const ocid of ocids) await createGrowthProfile(env.DB, ocid, '2025-10-15');
+    vi.stubGlobal('fetch', vi.fn(async (input: string) => {
+      const date = new URL(input).searchParams.get('date')!;
+      return Response.json(basic(date));
+    }));
+
+    const run = await backfillGrowthBatch(env);
+    expect(run).toMatchObject({ processed: 5, requests: 5 });
+    for (const ocid of ocids) {
+      expect(local.sqlite.prepare(`SELECT basic_last_synced_date FROM growth_profiles WHERE ocid=?`).get(ocid))
+        .toMatchObject({ basic_last_synced_date: '2025-10-15' });
+    }
+    expect(new Set(run.results.map((result) => (result as { ocid: string }).ocid)).size).toBe(5);
+  });
+
+  it('stops after a completed checkpoint when the invocation wall budget is exhausted', async () => {
+    env.GROWTH_BACKFILL_BATCH_SIZE = '1';
+    env.GROWTH_MAX_BATCHES_PER_INVOCATION = '12';
+    env.GROWTH_INVOCATION_BUDGET_MS = '5000';
+    await createGrowthProfile(env.DB, OCID, '2025-10-17');
+    vi.stubGlobal('fetch', vi.fn(async (input: string) => {
+      vi.setSystemTime('2025-10-17T19:00:06.000Z');
+      const date = new URL(input).searchParams.get('date')!;
+      return Response.json(basic(date));
+    }));
+
+    const run = await backfillGrowthBatch(env);
+    expect(run).toMatchObject({ processed: 1, requests: 1 });
+    expect(run.instrumentation.stoppedBy).toBe('wall_budget');
+    expect(local.sqlite.prepare(`SELECT basic_last_synced_date FROM growth_profiles WHERE ocid=?`).get(OCID))
+      .toMatchObject({ basic_last_synced_date: '2025-10-15' });
+  });
+
+  it('keeps multi-batch invocations exclusive across overlapping consumers', async () => {
+    env.GROWTH_BACKFILL_BATCH_SIZE = '1';
+    env.GROWTH_MAX_BATCHES_PER_INVOCATION = '12';
+    vi.setSystemTime('2025-10-15T19:00:00.000Z');
+    await createGrowthProfile(env.DB, OCID, '2025-10-15');
+    let releaseFirstFetch: ((response: Response) => void) | undefined;
+    const fetchMock = vi.fn((input: string) => {
+      const url = new URL(input);
+      const date = url.searchParams.get('date')!;
+      if (fetchMock.mock.calls.length === 1) {
+        return new Promise<Response>((resolve) => { releaseFirstFetch = resolve; });
+      }
+      return Promise.resolve(Response.json({
+        date, dojang_best_floor: 0, dojang_best_time: 0, date_dojang_record: null,
+      }));
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const primary = backfillGrowthBatch(env);
+    while (fetchMock.mock.calls.length === 0) await Promise.resolve();
+    const overlap = await backfillGrowthBatch(env);
+    expect(overlap).toMatchObject({ processed: 0, requests: 0 });
+    releaseFirstFetch?.(Response.json(basic('2025-10-15')));
+    expect(await primary).toMatchObject({ processed: 2, completed: 1, requests: 2 });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('bounds per-date concurrency while keeping the checkpoint ordered', async () => {
+    env.GROWTH_BACKFILL_BATCH_SIZE = '8';
+    env.GROWTH_DATE_CONCURRENCY = '4';
+    await createGrowthProfile(env.DB, OCID, '2025-10-22');
+    let active = 0;
+    let maximumActive = 0;
+    vi.stubGlobal('fetch', vi.fn(async (input: string) => {
+      active += 1;
+      maximumActive = Math.max(maximumActive, active);
+      await Promise.resolve();
+      active -= 1;
+      const date = new URL(input).searchParams.get('date')!;
+      return Response.json(basic(date));
+    }));
+
+    const run = await backfillGrowthBatch(env);
+    expect(run).toMatchObject({ processed: 1, requests: 8 });
+    expect(maximumActive).toBe(4);
+    expect(await getGrowthStatus(env.DB, OCID)).toMatchObject({
+      status: 'pending', currentProcessingDate: '2025-10-22', job: { phase: 'dojang' },
+    });
+    expect(local.sqlite.prepare(`SELECT basic_last_synced_date FROM growth_profiles WHERE ocid=?`).get(OCID))
+      .toMatchObject({ basic_last_synced_date: '2025-10-22' });
   });
 
   it('derives stats and events while marking cross-level EXP gain as pending', async () => {

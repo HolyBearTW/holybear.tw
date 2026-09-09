@@ -1,6 +1,11 @@
 import type { Env } from './env';
 import { findCharacterByOcid } from './character-repository';
-import { fetchNexonJson, NexonRequestError, runWithConcurrency } from './nexon-client';
+import {
+  fetchNexonJson,
+  NexonRequestError,
+  runWithConcurrency,
+  type NexonRequestMetric,
+} from './nexon-client';
 import { getRuntimeConfig } from './runtime-config';
 
 export const GROWTH_HISTORY_START_DATE = '2025-10-15';
@@ -113,6 +118,49 @@ interface GrowthClaim {
   token: string;
   queueVersion: number;
 }
+
+interface GrowthRequestInstrumentation {
+  latencyMs: number[];
+  limiterWaitMs: number;
+  transportAttempts: number;
+  retries: number;
+  errors: { 403: number; 429: number; timeout: number; '5xx': number; rateLimit: number };
+}
+
+const createGrowthRequestInstrumentation = (): GrowthRequestInstrumentation => ({
+  latencyMs: [],
+  limiterWaitMs: 0,
+  transportAttempts: 0,
+  retries: 0,
+  errors: { 403: 0, 429: 0, timeout: 0, '5xx': 0, rateLimit: 0 },
+});
+
+const recordGrowthRequestMetric = (metrics: GrowthRequestInstrumentation, metric: NexonRequestMetric) => {
+  metrics.latencyMs.push(metric.latencyMs);
+  metrics.limiterWaitMs += metric.limiterWaitMs;
+  metrics.transportAttempts += 1;
+  if (metric.attempt > 0) metrics.retries += 1;
+  if (metric.status === 403) metrics.errors[403] += 1;
+  if (metric.status === 429) metrics.errors[429] += 1;
+  if (metric.status != null && metric.status >= 500) metrics.errors['5xx'] += 1;
+  if (metric.errorKind === 'timeout') metrics.errors.timeout += 1;
+  if (metric.errorKind === 'rate_limit') metrics.errors.rateLimit += 1;
+};
+
+const percentile = (values: number[], rank: number) => {
+  if (values.length === 0) return 0;
+  const sorted = [...values].sort((left, right) => left - right);
+  return Math.round(sorted[Math.min(sorted.length - 1, Math.ceil(sorted.length * rank) - 1)] * 100) / 100;
+};
+
+const summarizeGrowthRequestInstrumentation = (metrics: GrowthRequestInstrumentation) => ({
+  transportAttempts: metrics.transportAttempts,
+  retries: metrics.retries,
+  requestP50Ms: percentile(metrics.latencyMs, 0.5),
+  requestP95Ms: percentile(metrics.latencyMs, 0.95),
+  limiterWaitMs: Math.round(metrics.limiterWaitMs * 100) / 100,
+  errors: { ...metrics.errors },
+});
 
 const getProfile = async (db: D1Database, ocid: string) => db.prepare(`
   SELECT * FROM growth_profiles WHERE ocid = ?1 LIMIT 1
@@ -308,7 +356,13 @@ const basicStatement = (
   timestamp,
 );
 
-const fetchBasicBatch = async (env: Env, claim: GrowthClaim, batchSize: number) => {
+const fetchBasicBatch = async (
+  env: Env,
+  claim: GrowthClaim,
+  batchSize: number,
+  dateConcurrency: number,
+) => {
+  const batchStartedAt = Date.now();
   const { row } = claim;
   const firstDate = row.basic_last_synced_date
     ? addDays(row.basic_last_synced_date, 1)
@@ -321,34 +375,44 @@ const fetchBasicBatch = async (env: Env, claim: GrowthClaim, batchSize: number) 
   const statements: D1PreparedStatement[] = [];
   let firstValidDate: string | null = null;
   let latestName = row.character_name;
-  let requests = 0;
-  for (const date of dates) {
+  const requestMetrics = createGrowthRequestInstrumentation();
+  const settled = await runWithConcurrency(dates, dateConcurrency, 0, async (date) => {
     try {
-      requests += 1;
       const basic = await fetchNexonJson<NexonBasicHistory>(
         env,
         `/character/basic?ocid=${encodeURIComponent(row.ocid)}&date=${date}`,
+        undefined,
+        (metric) => recordGrowthRequestMetric(requestMetrics, metric),
       );
       // TMS currently represents a valid historical date before character
       // creation as HTTP 200 with the requested date and every character
       // field null.  Match that complete sentinel shape; a partial/malformed
       // 200 response must still stop and retry instead of silently skipping.
-      if (isEmptyBasicSnapshot(basic, date)) continue;
+      if (isEmptyBasicSnapshot(basic, date)) return { date, basic: null };
       if (!basic.character_name) throw new NexonRequestError(
         `NEXON basic snapshot ${date} has no character identity`,
         200,
         true,
         'invalid_basic_snapshot',
       );
-      firstValidDate ||= date;
-      latestName = basic.character_name;
-      statements.push(basicStatement(env.DB, row.ocid, date, basic, timestamp));
+      return { date, basic };
     } catch (error) {
-      // For the allowlisted, known-valid OCID, OPENAPI00003 on an in-range
-      // historical date means the character had no snapshot on that date.
+      // Admission already proved the OCID valid. OPENAPI00003 on an in-range
+      // historical date therefore means the character had no snapshot then.
       if (!isMissingHistoricalSnapshot(error)) throw error;
+      return { date, basic: null };
     }
+  });
+  const rejected = settled.find((outcome) => outcome.status === 'rejected');
+  if (rejected?.status === 'rejected') throw rejected.reason;
+  for (const outcome of settled) {
+    if (outcome.status !== 'fulfilled' || !outcome.value.basic) continue;
+    firstValidDate ||= outcome.value.date;
+    latestName = outcome.value.basic.character_name || latestName;
+    statements.push(basicStatement(env.DB, row.ocid, outcome.value.date, outcome.value.basic, timestamp));
   }
+  const requests = dates.length;
+  const snapshotMutations = statements.length;
   const processedDate = dates.at(-1) || row.basic_last_synced_date || row.scan_start_date;
   const basicComplete = processedDate >= row.sync_target_date;
   statements.push(env.DB.prepare(`
@@ -369,8 +433,23 @@ const fetchBasicBatch = async (env: Env, claim: GrowthClaim, batchSize: number) 
     row.ocid, claim.token, latestName, firstValidDate, processedDate,
     basicComplete ? 1 : 0, row.sync_target_date, requests, timestamp, claim.queueVersion,
   ));
+  const d1WriteStartedAt = Date.now();
   await env.DB.batch(statements);
-  return { phase: 'basic' as const, processedDates: dates.length, requests, basicComplete };
+  const d1WriteMs = Math.max(0, Date.now() - d1WriteStartedAt);
+  return {
+    ocid: row.ocid,
+    phase: 'basic' as const,
+    processedDates: dates.length,
+    processedDate,
+    requests,
+    basicComplete,
+    instrumentation: {
+      wallMs: Math.max(0, Date.now() - batchStartedAt),
+      d1WriteMs,
+      d1LogicalMutations: snapshotMutations + 1,
+      ...summarizeGrowthRequestInstrumentation(requestMetrics),
+    },
+  };
 };
 
 const dojangValues = (payload: NexonDojangHistory) => {
@@ -434,7 +513,13 @@ const finalizeDojang = async (
   await env.DB.batch(statements);
 };
 
-const fetchDojangBatch = async (env: Env, claim: GrowthClaim, batchSize: number) => {
+const fetchDojangBatch = async (
+  env: Env,
+  claim: GrowthClaim,
+  batchSize: number,
+  dateConcurrency: number,
+) => {
+  const batchStartedAt = Date.now();
   const { row } = claim;
   const timestamp = nowIso();
   // The shadow OCID has only zero/no-record samples, so it cannot prove how a
@@ -449,19 +534,45 @@ const fetchDojangBatch = async (env: Env, claim: GrowthClaim, batchSize: number)
   const count = Math.max(0, Math.min(batchSize, remaining));
   const dates = Array.from({ length: count }, (_, index) => addDays(firstDate, index));
   const statements: D1PreparedStatement[] = [];
-  let requests = 0;
-  for (const date of dates) {
-    requests += 1;
+  const requestMetrics = createGrowthRequestInstrumentation();
+  const settled = await runWithConcurrency(dates, dateConcurrency, 0, async (date) => {
     const payload = await fetchNexonJson<NexonDojangHistory>(
       env,
       `/character/dojang?ocid=${encodeURIComponent(row.ocid)}&date=${date}`,
+      undefined,
+      (metric) => recordGrowthRequestMetric(requestMetrics, metric),
     );
-    statements.push(dojangUpdateStatement(env.DB, row.ocid, date, payload, timestamp));
+    return { date, payload };
+  });
+  const rejected = settled.find((outcome) => outcome.status === 'rejected');
+  if (rejected?.status === 'rejected') throw rejected.reason;
+  for (const outcome of settled) {
+    if (outcome.status !== 'fulfilled') continue;
+    statements.push(dojangUpdateStatement(
+      env.DB, row.ocid, outcome.value.date, outcome.value.payload, timestamp,
+    ));
   }
+  const requests = dates.length;
+  const snapshotMutations = statements.length;
   const processedDate = dates.at(-1) || row.sync_target_date;
   if (processedDate >= row.sync_target_date) {
+    const d1WriteStartedAt = Date.now();
     await finalizeDojang(env, claim, statements, requests, row.sync_target_date, 'daily');
-    return { phase: 'dojang' as const, processedDates: dates.length, requests, complete: true, mode: 'daily' };
+    return {
+      ocid: row.ocid,
+      phase: 'dojang' as const,
+      processedDates: dates.length,
+      processedDate,
+      requests,
+      complete: true,
+      mode: 'daily',
+      instrumentation: {
+        wallMs: Math.max(0, Date.now() - batchStartedAt),
+        d1WriteMs: Math.max(0, Date.now() - d1WriteStartedAt),
+        d1LogicalMutations: snapshotMutations + 1,
+        ...summarizeGrowthRequestInstrumentation(requestMetrics),
+      },
+    };
   }
   statements.push(env.DB.prepare(`
     UPDATE growth_profiles SET
@@ -473,8 +584,23 @@ const fetchDojangBatch = async (env: Env, claim: GrowthClaim, batchSize: number)
       nexon_request_count = nexon_request_count + ?4, updated_at = ?5
     WHERE ocid = ?1 AND claim_token = ?2 AND queue_version = ?6
   `).bind(row.ocid, claim.token, processedDate, requests, timestamp, claim.queueVersion));
+  const d1WriteStartedAt = Date.now();
   await env.DB.batch(statements);
-  return { phase: 'dojang' as const, processedDates: dates.length, requests, complete: false, mode: 'daily' };
+  return {
+    ocid: row.ocid,
+    phase: 'dojang' as const,
+    processedDates: dates.length,
+    processedDate,
+    requests,
+    complete: false,
+    mode: 'daily',
+    instrumentation: {
+      wallMs: Math.max(0, Date.now() - batchStartedAt),
+      d1WriteMs: Math.max(0, Date.now() - d1WriteStartedAt),
+      d1LogicalMutations: snapshotMutations + 1,
+      ...summarizeGrowthRequestInstrumentation(requestMetrics),
+    },
+  };
 };
 
 const failGrowthClaim = async (env: Env, claim: GrowthClaim, error: unknown) => {
@@ -505,48 +631,141 @@ const failGrowthClaim = async (env: Env, claim: GrowthClaim, error: unknown) => 
 };
 
 export const backfillGrowthBatch = async (env: Env) => {
+  const invocationStartedAt = Date.now();
   const config = getRuntimeConfig(env);
+  const schedulerStartedAt = Date.now();
   const scheduled = await scheduleGrowthProfiles(env.DB);
-  const timestamp = nowIso();
-  const eligible = await env.DB.prepare(`
-    SELECT * FROM growth_profiles
-    WHERE (status = 'pending' OR (status = 'retry' AND (next_retry_at IS NULL OR next_retry_at <= ?1)))
-      AND (claim_until IS NULL OR claim_until <= ?1)
-    ORDER BY CASE WHEN status = 'pending' THEN 0 ELSE 1 END, updated_at, ocid
-    LIMIT ?2
-  `).bind(timestamp, config.growthProfileConcurrency).all<GrowthProfileRow>();
-  const claims: GrowthClaim[] = [];
-  for (const row of eligible.results) {
-    const claim = await claimProfile(env.DB, row, config.growthClaimLeaseSeconds);
-    if (claim) claims.push(claim);
-  }
-  const settled = await runWithConcurrency(
-    claims,
-    config.growthProfileConcurrency,
-    0,
-    async (claim) => claim.row.phase === 'basic'
-      ? fetchBasicBatch(env, claim, config.growthBackfillBatchSize)
-      : fetchDojangBatch(env, claim, config.growthBackfillBatchSize),
-  );
+  const schedulerD1Ms = Math.max(0, Date.now() - schedulerStartedAt);
   let completed = 0;
   let retry = 0;
   let failed = 0;
   let requests = 0;
+  let processed = 0;
+  let eligibleD1Ms = 0;
+  let claimD1Ms = 0;
   const results: unknown[] = [];
-  for (let index = 0; index < claims.length; index += 1) {
-    const outcome = settled[index];
-    if (outcome.status === 'fulfilled') {
-      results.push(outcome.value);
-      requests += outcome.value.requests;
-      if ('complete' in outcome.value && outcome.value.complete) completed += 1;
-      continue;
+
+  // Each cycle reads the oldest eligible profiles once. Completed batches
+  // update updated_at and fall behind their peers, producing round-robin
+  // progress without holding one profile's lease for the whole invocation.
+  while (processed < config.growthMaxBatchesPerInvocation
+    && (processed === 0 || Date.now() - invocationStartedAt < config.growthInvocationBudgetMs)) {
+    const timestamp = nowIso();
+    const remainingBatchBudget = config.growthMaxBatchesPerInvocation - processed;
+    const eligibleStartedAt = Date.now();
+    const eligible = await env.DB.prepare(`
+      SELECT * FROM growth_profiles
+      WHERE (status = 'pending' OR (status = 'retry' AND (next_retry_at IS NULL OR next_retry_at <= ?1)))
+        AND (claim_until IS NULL OR claim_until <= ?1)
+      ORDER BY CASE WHEN status = 'pending' THEN 0 ELSE 1 END, updated_at, ocid
+      LIMIT ?2
+    `).bind(timestamp, remainingBatchBudget).all<GrowthProfileRow>();
+    eligibleD1Ms += Math.max(0, Date.now() - eligibleStartedAt);
+    if (eligible.results.length === 0) break;
+
+    for (let offset = 0; offset < eligible.results.length; offset += config.growthProfileConcurrency) {
+      if (processed >= config.growthMaxBatchesPerInvocation
+        || (processed > 0 && Date.now() - invocationStartedAt >= config.growthInvocationBudgetMs)) break;
+      const rows = eligible.results.slice(offset, offset + config.growthProfileConcurrency);
+      const claims: GrowthClaim[] = [];
+      for (const row of rows) {
+        const claimStartedAt = Date.now();
+        const claim = await claimProfile(env.DB, row, config.growthClaimLeaseSeconds);
+        claimD1Ms += Math.max(0, Date.now() - claimStartedAt);
+        if (claim) claims.push(claim);
+      }
+      if (claims.length === 0) continue;
+      const settled = await runWithConcurrency(
+        claims,
+        config.growthProfileConcurrency,
+        0,
+        async (claim) => claim.row.phase === 'basic'
+          ? fetchBasicBatch(
+            env, claim, config.growthBackfillBatchSize, config.growthDateConcurrency,
+          )
+          : fetchDojangBatch(
+            env, claim, config.growthBackfillBatchSize, config.growthDateConcurrency,
+          ),
+      );
+      processed += claims.length;
+      for (let index = 0; index < claims.length; index += 1) {
+        const outcome = settled[index];
+        if (outcome.status === 'fulfilled') {
+          results.push(outcome.value);
+          requests += outcome.value.requests;
+          if ('complete' in outcome.value && outcome.value.complete) completed += 1;
+          continue;
+        }
+        const failure = await failGrowthClaim(env, claims[index], outcome.reason);
+        if (failure.retryable) retry += 1;
+        else failed += 1;
+        results.push({
+          ocid: claims[index].row.ocid,
+          phase: claims[index].row.phase,
+          error: outcome.reason instanceof Error ? outcome.reason.message : String(outcome.reason),
+        });
+      }
     }
-    const failure = await failGrowthClaim(env, claims[index], outcome.reason);
-    if (failure.retryable) retry += 1;
-    else failed += 1;
-    results.push({ error: outcome.reason instanceof Error ? outcome.reason.message : String(outcome.reason) });
   }
-  return { scheduled, processed: claims.length, completed, retry, failed, requests, results };
+
+  const successful = results.filter((result): result is {
+    phase: 'basic' | 'dojang';
+    instrumentation: {
+      wallMs: number;
+      d1WriteMs: number;
+      d1LogicalMutations: number;
+      transportAttempts: number;
+      retries: number;
+      requestP50Ms: number;
+      requestP95Ms: number;
+      limiterWaitMs: number;
+      errors: { 403: number; 429: number; timeout: number; '5xx': number; rateLimit: number };
+    };
+  } => typeof result === 'object' && result !== null && 'instrumentation' in result);
+  const phaseSummary = (phase: 'basic' | 'dojang') => {
+    const batches = successful.filter((result) => result.phase === phase);
+    const errors = batches.reduce((total, batch) => ({
+      403: total[403] + batch.instrumentation.errors[403],
+      429: total[429] + batch.instrumentation.errors[429],
+      timeout: total.timeout + batch.instrumentation.errors.timeout,
+      '5xx': total['5xx'] + batch.instrumentation.errors['5xx'],
+      rateLimit: total.rateLimit + batch.instrumentation.errors.rateLimit,
+    }), { 403: 0, 429: 0, timeout: 0, '5xx': 0, rateLimit: 0 });
+    return {
+      batches: batches.length,
+      wallMs: batches.reduce((sum, batch) => sum + batch.instrumentation.wallMs, 0),
+      d1WriteMs: batches.reduce((sum, batch) => sum + batch.instrumentation.d1WriteMs, 0),
+      d1LogicalMutations: batches.reduce(
+        (sum, batch) => sum + batch.instrumentation.d1LogicalMutations, 0,
+      ),
+      transportAttempts: batches.reduce(
+        (sum, batch) => sum + batch.instrumentation.transportAttempts, 0,
+      ),
+      retries: batches.reduce((sum, batch) => sum + batch.instrumentation.retries, 0),
+      limiterWaitMs: batches.reduce((sum, batch) => sum + batch.instrumentation.limiterWaitMs, 0),
+      errors,
+    };
+  };
+  return {
+    scheduled,
+    processed,
+    completed,
+    retry,
+    failed,
+    requests,
+    results,
+    instrumentation: {
+      wallMs: Math.max(0, Date.now() - invocationStartedAt),
+      schedulerD1Ms,
+      eligibleD1Ms,
+      claimD1Ms,
+      stoppedBy: processed >= config.growthMaxBatchesPerInvocation ? 'batch_budget'
+        : Date.now() - invocationStartedAt >= config.growthInvocationBudgetMs ? 'wall_budget'
+          : 'queue_empty',
+      basic: phaseSummary('basic'),
+      dojang: phaseSummary('dojang'),
+    },
+  };
 };
 
 const publicJobStatus = (row: GrowthProfileRow, now = nowIso()) => {

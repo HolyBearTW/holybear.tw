@@ -43,6 +43,7 @@ export interface NexonRequestMetric {
   latencyMs: number;
   status: number | null;
   ok: boolean;
+  limiterWaitMs: number;
   errorKind?: 'timeout' | 'network' | 'rate_limit';
 }
 
@@ -69,10 +70,11 @@ export const fetchNexonJson = async <T>(
     let status: number | null = null;
     let ok = false;
     let errorKind: NexonRequestMetric['errorKind'];
+    let limiterWaitMs = 0;
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), config.nexonRequestTimeoutMs);
     try {
-      await acquireNexonRateSlot(env);
+      limiterWaitMs = await acquireNexonRateSlot(env);
       onRequest?.();
       const response = await fetch(`${NEXON_BASE_URL}${path}`, {
         headers: { 'x-nxopen-api-key': apiKey, accept: 'application/json' },
@@ -122,7 +124,10 @@ export const fetchNexonJson = async <T>(
       await wait(retryAfterMilliseconds(response, fallback));
     } catch (error) {
       if (error instanceof NexonRequestError && !error.retryable) throw error;
-      if (error instanceof NexonRateLimitError) throw error;
+      if (error instanceof NexonRateLimitError) {
+        errorKind = 'rate_limit';
+        throw error;
+      }
       errorKind = error instanceof Error && error.name === 'AbortError' ? 'timeout' : 'network';
       lastError = error;
       if (attempt + 1 < config.nexonRetryLimit) {
@@ -130,7 +135,9 @@ export const fetchNexonJson = async <T>(
       }
     } finally {
       clearTimeout(timeout);
-      onMetric?.({ path, attempt, latencyMs: Math.max(0, Date.now() - startedAt), status, ok, errorKind });
+      onMetric?.({
+        path, attempt, latencyMs: Math.max(0, Date.now() - startedAt), status, ok, limiterWaitMs, errorKind,
+      });
     }
   }
 

@@ -25,7 +25,7 @@ export const acquireNexonRateSlot = async (env: Env) => {
   const required = env.NEXON_RATE_LIMITER_REQUIRED === 'true';
   if (!namespace) {
     if (required) throw new NexonRateLimitError('NEXON global rate limiter is not configured');
-    return;
+    return 0;
   }
 
   const config = getRuntimeConfig(env);
@@ -41,4 +41,6 @@ export const acquireNexonRateSlot = async (env: Env) => {
     throw new NexonRateLimitError('NEXON global rate limiter is unavailable');
   }
   if (!response.ok) throw new NexonRateLimitError('NEXON global rate limiter rejected the request');
+  const payload = await response.json<{ waitMs?: unknown }>().catch(() => ({} as { waitMs?: unknown }));
+  return Math.max(0, Number(payload.waitMs) || 0);
 };
