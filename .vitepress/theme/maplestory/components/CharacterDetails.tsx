@@ -68,6 +68,11 @@ const HEXA_SETTINGS = {
     key: 'COMMON', quantity: 1, keywords: ['common', '共用'],
     costs: [125, 38, 44, 50, 57, 63, 69, 75, 82, 300, 110, 124, 138, 152, 165, 179, 193, 207, 220, 525, 234, 248, 262, 275, 289, 303, 317, 330, 344, 750],
     erdaCosts: [7, 2, 2, 2, 3, 3, 3, 5, 5, 14, 5, 5, 6, 6, 6, 6, 6, 6, 7, 17, 7, 7, 7, 7, 7, 9, 9, 9, 10, 20]
+  },
+  COMMON_3: {
+    key: 'COMMON_3', quantity: 1, keywords: [],
+    costs: [90, 25, 30, 35, 40, 45, 50, 55, 60, 180, 73, 81, 90, 98, 107, 115, 124, 132, 141, 315, 151, 160, 170, 179, 189, 198, 208, 217, 227, 450],
+    erdaCosts: [4, 1, 1, 1, 2, 2, 2, 3, 3, 9, 3, 3, 3, 3, 4, 4, 4, 4, 4, 14, 4, 5, 5, 5, 5, 5, 5, 5, 6, 18]
   }
 };
 
@@ -152,12 +157,14 @@ const calculateHexaProgress = (hexaMatrix: any, commonSkillFlags: Record<string,
     if (HEXA_SETTINGS.SKILL.keywords.some(k => type.includes(k))) targetSetting = HEXA_SETTINGS.SKILL;
     else if (HEXA_SETTINGS.MASTERY.keywords.some(k => type.includes(k))) targetSetting = HEXA_SETTINGS.MASTERY;
     else if (HEXA_SETTINGS.ENHANCEMENT.keywords.some(k => type.includes(k))) targetSetting = HEXA_SETTINGS.ENHANCEMENT;
-    else if (HEXA_SETTINGS.COMMON.keywords.some(k => type.includes(k))) targetSetting = HEXA_SETTINGS.COMMON;
+    else if (HEXA_SETTINGS.COMMON.keywords.some(k => type.includes(k))) {
+      // 雅努斯與赫卡忒是共用核心 I、II；其餘職業專屬名稱的共用核心為 III。
+      targetSetting = commonSkillKey ? HEXA_SETTINGS.COMMON : HEXA_SETTINGS.COMMON_3;
+    }
 
     if (targetSetting) {
       const shouldIncludeCommon = targetSetting.key !== 'COMMON'
-        || (commonSkillKey && commonSkillFlags[commonSkillKey])
-        || (!commonSkillKey && enabledCommonCount > 0);
+        || (commonSkillKey && commonSkillFlags[commonSkillKey]);
 
       if (shouldIncludeCommon) {
         for (let i = 0; i < level; i++) {
