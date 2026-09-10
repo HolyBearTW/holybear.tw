@@ -30,6 +30,9 @@ export interface GrowthHistoryDay {
   class?: string;
   guild?: string;
   liberationStatus?: string;
+  dojangBestFloor?: number | null;
+  dojangBestTime?: number | null;
+  dojangRecordDate?: string | null;
 }
 
 export interface GrowthHistoryEvent {
@@ -38,6 +41,12 @@ export interface GrowthHistoryEvent {
   title?: string;
   from: string;
   to: string;
+  dojang?: {
+    beforeFloor: number;
+    beforeTime: number;
+    afterFloor: number;
+    afterTime: number;
+  };
 }
 
 export interface GrowthCharacterHistory {

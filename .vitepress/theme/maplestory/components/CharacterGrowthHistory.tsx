@@ -15,6 +15,7 @@ import {
   GrowthCharacterHistory,
 } from '../services/growthService';
 import type { GrowthHistoryDay, GrowthHistoryEvent } from '../services/growthTypes';
+import { formatGrowthEventValue } from '../services/growthEventFormat';
 import { fetchWeeklyHistory } from '../services/nexonService';
 
 interface CharacterGrowthHistoryProps {
@@ -61,14 +62,8 @@ const eventLabels: Record<string, string> = {
   class: '職業變更',
   world: '世界變更',
   guild: '公會變更',
-  liberation: '解放狀態變更',
+  liberation: '解放任務完成狀態',
   dojang: '武陵紀錄變更',
-};
-
-const formatEventValue = (event: GrowthHistoryEvent, value: string) => {
-  if (!value) return '無';
-  if (event.type !== 'liberation') return value;
-  return ({ '0': '未解放', '1': '解放進行中', '2': '已解放' } as Record<string, string>)[value] || value;
 };
 
 const GrowthTooltip = ({ active, payload }: any) => {
@@ -560,8 +555,8 @@ const CharacterGrowthHistory: React.FC<CharacterGrowthHistoryProps> = ({ data, a
             <div className="relative mt-5">
               <span className="maple-growth-timeline-line absolute bottom-5 left-[11px] top-3 w-px bg-gradient-to-b from-emerald-400 via-emerald-700 to-slate-800" aria-hidden="true" />
               {sortedEvents.map((event, index) => {
-                const from = formatEventValue(event, event.from);
-                const to = formatEventValue(event, event.to);
+                const from = formatGrowthEventValue(event, 'before');
+                const to = formatGrowthEventValue(event, 'after');
                 return (
                   <div key={`${event.date}-${event.type}-${index}`} className={`relative flex gap-4 ${index < sortedEvents.length - 1 ? 'pb-5' : ''}`}>
                     <div className="relative z-10 flex w-6 shrink-0 justify-center pt-4">

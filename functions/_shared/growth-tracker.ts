@@ -813,9 +813,35 @@ export const getGrowthStatus = async (db: D1Database, ocid: string) => {
   };
 };
 
-const event = (date: string, type: string, from: unknown, to: unknown, title?: string) => ({
-  date, type, title, from: String(from ?? ''), to: String(to ?? ''),
+interface DojangEventDetails {
+  beforeFloor: number;
+  beforeTime: number;
+  afterFloor: number;
+  afterTime: number;
+}
+
+const event = (
+  date: string,
+  type: string,
+  from: unknown,
+  to: unknown,
+  title?: string,
+  dojang?: DojangEventDetails,
+) => ({
+  date,
+  type,
+  title,
+  from: String(from ?? ''),
+  to: String(to ?? ''),
+  ...(dojang ? { dojang } : {}),
 });
+
+const dojangRecord = (floorValue: unknown, timeValue: unknown) => {
+  const floor = Number(floorValue);
+  const time = Number(timeValue);
+  if (!Number.isSafeInteger(floor) || floor <= 0 || !Number.isSafeInteger(time) || time <= 0) return null;
+  return { floor, time };
+};
 
 export const getGrowthHistory = async (db: D1Database, ocid: string, start: string, end: string) => {
   const profile = await getProfile(db, ocid);
@@ -884,17 +910,43 @@ export const getGrowthHistory = async (db: D1Database, ocid: string, start: stri
     if ((current.guild_name || '') !== (previous.guild_name || '')) {
       events.push(event(current.snapshot_date, 'guild', previous.guild_name, current.guild_name));
     }
-    if ((current.liberation_status || '') !== (previous.liberation_status || '')) {
-      events.push(event(current.snapshot_date, 'liberation', previous.liberation_status, current.liberation_status));
+    const previousLiberation = previous.liberation_status?.trim() || null;
+    const currentLiberation = current.liberation_status?.trim() || null;
+    if (previousLiberation && currentLiberation && currentLiberation !== previousLiberation) {
+      events.push(event(current.snapshot_date, 'liberation', previousLiberation, currentLiberation));
     }
-    const previousFloor = Number(previous.dojang_best_floor) || 0;
-    const currentFloor = Number(current.dojang_best_floor) || 0;
-    const previousTime = Number(previous.dojang_best_time) || 0;
-    const currentTime = Number(current.dojang_best_time) || 0;
-    if (currentFloor !== previousFloor) {
-      events.push(event(current.snapshot_date, 'dojang', `${previousFloor}F`, `${currentFloor}F`, '武陵最高樓層變化'));
-    } else if (currentFloor > 0 && currentTime > 0 && previousTime > 0 && currentTime < previousTime) {
-      events.push(event(current.snapshot_date, 'dojang', `${previousTime}秒`, `${currentTime}秒`, '武陵最佳時間刷新'));
+    const previousDojang = dojangRecord(previous.dojang_best_floor, previous.dojang_best_time);
+    const currentDojang = dojangRecord(current.dojang_best_floor, current.dojang_best_time);
+    if (previousDojang && currentDojang && previousDojang.floor !== currentDojang.floor) {
+      events.push(event(
+        current.snapshot_date,
+        'dojang',
+        `${previousDojang.floor}F`,
+        `${currentDojang.floor}F`,
+        '武陵最高樓層變化',
+        {
+          beforeFloor: previousDojang.floor,
+          beforeTime: previousDojang.time,
+          afterFloor: currentDojang.floor,
+          afterTime: currentDojang.time,
+        },
+      ));
+    } else if (previousDojang && currentDojang
+      && currentDojang.floor === previousDojang.floor
+      && currentDojang.time < previousDojang.time) {
+      events.push(event(
+        current.snapshot_date,
+        'dojang',
+        `${previousDojang.time}秒`,
+        `${currentDojang.time}秒`,
+        '武陵最佳時間刷新',
+        {
+          beforeFloor: previousDojang.floor,
+          beforeTime: previousDojang.time,
+          afterFloor: currentDojang.floor,
+          afterTime: currentDojang.time,
+        },
+      ));
     }
   }
   const activeDays = days.filter((day) => day.active).length;

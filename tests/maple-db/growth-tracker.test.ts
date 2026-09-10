@@ -328,6 +328,61 @@ describe('persistent growth tracking', () => {
     expect(history?.events.map((item) => item.type)).toEqual([
       'name', 'guild', 'liberation', 'dojang', 'level', 'class', 'world', 'dojang',
     ]);
+    expect(history?.events.filter((item) => item.type === 'dojang')).toEqual([
+      expect.objectContaining({
+        date: '2025-10-17',
+        from: '100秒',
+        to: '90秒',
+        dojang: { beforeFloor: 50, beforeTime: 100, afterFloor: 50, afterTime: 90 },
+      }),
+      expect.objectContaining({
+        date: '2025-10-18',
+        from: '50F',
+        to: '51F',
+        dojang: { beforeFloor: 50, beforeTime: 90, afterFloor: 51, afterTime: 200 },
+      }),
+    ]);
     expect(history?.exactCrossLevelExpGain).toBe(false);
+  });
+
+  it('does not derive fake dojang events from null, zero, or invalid records', async () => {
+    await createGrowthProfile(env.DB, OCID, '2025-10-18');
+    const insert = local.sqlite.prepare(`
+      INSERT INTO growth_snapshots (
+        ocid, snapshot_date, character_name, world_name, job_name,
+        character_level, character_exp, character_exp_rate, guild_name,
+        liberation_status, dojang_best_floor, dojang_best_time,
+        dojang_record_date, dojang_state, fetched_at, updated_at
+      ) VALUES (?, ?, '測試角色', '艾麗亞', '卡蒂娜', 271, 1000, 10, '', '0', ?, ?, NULL, ?, 'now', 'now')
+    `);
+    insert.run(OCID, '2025-10-15', null, null, 'not_collected');
+    insert.run(OCID, '2025-10-16', 0, 0, 'no_record');
+    insert.run(OCID, '2025-10-17', 100, 701, 'available');
+    insert.run(OCID, '2025-10-18', 100, 0, 'available');
+
+    const history = await getGrowthHistory(env.DB, OCID, '2025-10-15', '2025-10-18');
+    expect(history?.events.filter((item) => item.type === 'dojang')).toEqual([]);
+  });
+
+  it('preserves liberation stages, ignores equal stages, and skips missing-stage transitions', async () => {
+    await createGrowthProfile(env.DB, OCID, '2025-10-19');
+    const insert = local.sqlite.prepare(`
+      INSERT INTO growth_snapshots (
+        ocid, snapshot_date, character_name, world_name, job_name,
+        character_level, character_exp, character_exp_rate, guild_name,
+        liberation_status, dojang_state, fetched_at, updated_at
+      ) VALUES (?, ?, '測試角色', '艾麗亞', '卡蒂娜', 271, 1000, 10, '', ?, 'not_collected', 'now', 'now')
+    `);
+    insert.run(OCID, '2025-10-15', null);
+    insert.run(OCID, '2025-10-16', '1');
+    insert.run(OCID, '2025-10-17', '1');
+    insert.run(OCID, '2025-10-18', '2');
+    insert.run(OCID, '2025-10-19', 'future-stage');
+
+    const history = await getGrowthHistory(env.DB, OCID, '2025-10-15', '2025-10-19');
+    expect(history?.events.filter((item) => item.type === 'liberation')).toEqual([
+      expect.objectContaining({ date: '2025-10-18', from: '1', to: '2' }),
+      expect.objectContaining({ date: '2025-10-19', from: '2', to: 'future-stage' }),
+    ]);
   });
 });
