@@ -49,7 +49,7 @@ export interface GuildEstimate {
 export const withGuildImportLock = async <T>(env: Env, jobId: number, task: () => Promise<T>) => {
   const token = crypto.randomUUID();
   const lock = await env.DB.prepare(`UPDATE import_jobs SET lease_token = ?2, lease_until = ?3
-    WHERE id = ?1 AND source = 'nexon_guild' AND (lease_until IS NULL OR lease_until < ?4) RETURNING id`)
+    WHERE id = ?1 AND source = 'nexon_guild' AND (lease_until IS NULL OR lease_until <= ?4) RETURNING id`)
     .bind(jobId, token, new Date(Date.now() + 600_000).toISOString(), nowIso()).first();
   if (!lock) throw new HttpError(409, 'guild_import_busy', 'This guild sampling job is already running');
   try { return await task(); }
@@ -295,4 +295,42 @@ export const resolveGuildMembers = async (env: Env, job: ImportJobRow) => {
   if (!checkpointOf(job).stageComplete) throw new HttpError(409, 'guild_stage_incomplete', 'Finish the guild roster stage before resolving characters');
   if (job.status === 'completed') return { job, processed: 0 };
   return resolveStagingBatch(env, job);
+};
+
+export const recoverGuildImportBatch = async (env: Env) => {
+  const timestamp = nowIso();
+  const job = await env.DB.prepare(`
+    SELECT j.* FROM import_jobs j
+    WHERE j.source = 'nexon_guild'
+      AND j.status = 'running'
+      AND json_extract(j.checkpoint_json, '$.stageComplete') = 1
+      AND (j.lease_until IS NULL OR j.lease_until <= ?1)
+      AND EXISTS (
+        SELECT 1 FROM character_import_staging s
+        WHERE s.import_job_id = j.id
+          AND (
+            s.status IN ('pending', 'resolving')
+            OR (s.status = 'retry' AND (s.next_retry_at IS NULL OR s.next_retry_at <= ?1))
+          )
+      )
+    ORDER BY j.updated_at, j.id
+    LIMIT 1
+  `).bind(timestamp).first<ImportJobRow>();
+  if (!job) return { processed: 0, claimed: false, reason: 'no_eligible_guild_job' };
+
+  try {
+    return await withGuildImportLock(env, job.id, async () => {
+      const current = await getImportJob(env.DB, job.id);
+      if (!current || current.status !== 'running' || !checkpointOf(current).stageComplete) {
+        return { processed: 0, claimed: true, jobId: job.id, reason: 'job_no_longer_eligible' };
+      }
+      const result = await resolveGuildMembers(env, current);
+      return { ...result, claimed: true, jobId: job.id };
+    });
+  } catch (error) {
+    if (error instanceof HttpError && error.code === 'guild_import_busy') {
+      return { processed: 0, claimed: false, jobId: job.id, reason: 'guild_import_busy' };
+    }
+    throw error;
+  }
 };

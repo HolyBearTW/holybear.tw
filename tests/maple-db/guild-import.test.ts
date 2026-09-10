@@ -11,7 +11,7 @@ import { resolveNexonCharacter } from '../../functions/_shared/nexon-client';
 import { deduplicateRadarCharacters } from '../../scripts/lib/tms-radar-sampling.mjs';
 import { getCombatPowerRanking } from '../../functions/_shared/ranking-repository';
 import { onRequestPost } from '../../functions/api/admin/import/[source]';
-import { runGuildImport } from '../../scripts/run-guild-import.mjs';
+import { requestGuildImporter, runGuildImport } from '../../scripts/run-guild-import.mjs';
 
 let local: ReturnType<typeof createTestD1>;
 let env: Env;
@@ -403,6 +403,80 @@ it('CLI status cannot accidentally initialize a job', async () => {
   await expect(runGuildImport(['--start', '--max-guilds', '1', '--status'])).rejects.toThrow(/cannot start/);
   await expect(runGuildImport(['--start'])).rejects.toThrow(/positive integer/);
   expect(fetch).not.toHaveBeenCalled();
+});
+
+describe('guild CLI request recovery', () => {
+  const response = (status: number, body: object) => new Response(JSON.stringify(body), {
+    status,
+    headers: { 'content-type': 'application/json' },
+  });
+
+  beforeEach(() => {
+    process.env.HOLYBEAR_API_BASE_URL = 'https://holybear.tw';
+    process.env.IMPORT_ADMIN_SECRET = 'test-admin';
+  });
+
+  afterEach(() => {
+    delete process.env.HOLYBEAR_API_BASE_URL;
+    delete process.env.IMPORT_ADMIN_SECRET;
+  });
+
+  it('retries a transient 503 and continues the same resolve loop', async () => {
+    const actions: string[] = [];
+    const sleeps: number[] = [];
+    const warn = vi.fn();
+    let calls = 0;
+    const fetchImpl = vi.fn(async (_input: string, init: RequestInit) => {
+      calls += 1;
+      const body = JSON.parse(String(init.body)) as { action: string };
+      actions.push(body.action);
+      if (calls === 1) return response(200, { job: { id: 5, status: 'running', checkpoint_json: '{"stageComplete":true}' } });
+      if (calls === 2) return response(503, { error: { code: 'internal_error', message: '服務暫時無法使用' } });
+      return response(200, { job: { id: 5, status: 'completed', checkpoint_json: '{"stageComplete":true}' }, processed: 1 });
+    });
+    await runGuildImport(['--job', '5', '--all'], {
+      fetchImpl,
+      sleep: async (milliseconds: number) => { sleeps.push(milliseconds); },
+      warn,
+    });
+    expect(actions).toEqual(['status', 'resolve', 'resolve']);
+    expect(sleeps).toEqual([2_000]);
+    expect(JSON.parse(warn.mock.calls[0][0])).toMatchObject({
+      status: 503, code: 'internal_error', errorType: 'http_503', jobId: 5,
+      attempt: 1, maxAttempts: 5, nextRetryDelayMs: 2_000,
+    });
+  });
+
+  it('reports a resumable job after bounded transient retries are exhausted', async () => {
+    const sleeps: number[] = [];
+    const fetchImpl = vi.fn(async () => response(503, { error: { code: 'internal_error', message: '服務暫時無法使用' } }));
+    await expect(requestGuildImporter({
+      base: 'https://holybear.tw', secret: 'secret', body: { action: 'resolve', jobId: 5 }, jobId: 5,
+      fetchImpl, sleep: async (milliseconds: number) => { sleeps.push(milliseconds); }, warn: vi.fn(), maxAttempts: 3,
+    })).rejects.toThrow(/job 5.*503.*3 attempts exhausted.*--job 5 --all/i);
+    expect(fetchImpl).toHaveBeenCalledTimes(3);
+    expect(sleeps).toEqual([2_000, 5_000]);
+  });
+
+  it.each([400, 401, 403, 404])('does not retry permanent HTTP %i', async (status) => {
+    const fetchImpl = vi.fn(async () => response(status, { error: { code: 'permanent_error', message: 'invalid request' } }));
+    await expect(requestGuildImporter({
+      base: 'https://holybear.tw', secret: 'secret', body: { action: 'resolve', jobId: 5 }, jobId: 5,
+      fetchImpl, sleep: vi.fn(), warn: vi.fn(),
+    })).rejects.toMatchObject({ status, code: 'permanent_error' });
+    expect(fetchImpl).toHaveBeenCalledOnce();
+  });
+
+  it('retries a network failure and then succeeds', async () => {
+    const fetchImpl = vi.fn()
+      .mockRejectedValueOnce(new TypeError('fetch failed'))
+      .mockResolvedValueOnce(response(200, { job: { id: 5, status: 'running' } }));
+    await expect(requestGuildImporter({
+      base: 'https://holybear.tw', secret: 'secret', body: { action: 'status', jobId: 5 }, jobId: 5,
+      fetchImpl, sleep: async () => undefined, warn: vi.fn(),
+    })).resolves.toMatchObject({ job: { id: 5 } });
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
 });
 
 it('radar deduplicates renamed OCIDs and keeps distinct OCIDs even when names match', () => {

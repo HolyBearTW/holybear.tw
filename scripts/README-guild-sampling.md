@@ -101,6 +101,8 @@ fallback workflow 的 consumer job 使用 `permissions: {}`。獨立 cleanup job
 
 每個 endpoint 最多嘗試 `NEXON_RETRY_LIMIT` 次；佇列另有同上限的延後重試，故極端情況不只乘一次 retryLimit。以預設 5 次計，持續暫時失敗的 endpoint 在多次續跑後可能嘗試到 25 次。`--steps` 限制管理端變更步驟數，不是官方 request 數；`--all` 也只處理指定工作，不會自動開下一輪。官方實際次數記錄在 `import_jobs.nexon_request_count`，包含 HTTP 重試；程序突然中斷前尚未落盤的計數可能遺失。
 
+CLI 呼叫本站管理 API 時另有 bounded outer retry：只對網路錯誤、timeout、HTTP 429 與 5xx 重試，最多 5 次，間隔依序為 2、5、10、20 秒；400、401、403、404 等 permanent error 立即停止。單次管理 API request timeout 預設為 120 秒，可用 `GUILD_CLI_REQUEST_TIMEOUT_MS` 調整。retry 耗盡時會保留 job/cursor/staging，並輸出可安全續跑的 `--job ID --all` 指令。
+
 ## 手動第一輪（尚未執行）
 
 先在經批准的目標套用 migration 並部署相容版本，設定伺服器 `NEXON_API_KEY` / `IMPORT_ADMIN_SECRET`。本機 shell 設定 `HOLYBEAR_API_BASE_URL` 和 `IMPORT_ADMIN_SECRET`；不要把憑證寫入指令或提交到 Git。
@@ -139,6 +141,8 @@ npm run import:maple -- nexon_guild --job 123 --all
 ```
 
 若重試時間未到，指令會保留斷點並結束，稍後用同一 job ID 續跑。`--start` 在有未完成工作時接續原工作，不會擴張已固定的候選清單。全部處理完後才可再次 `--start --max-guilds N` 開新一輪。本機 JSON 可用 `manual --all --refresh`（必須先完成待處理／重試佇列並停止既有背景匯入），原本不帶 `--refresh` 的續跑方式不變。
+
+完成 guild stage 後，Cloudflare Cron 會每輪替一個 eligible `nexon_guild` 工作處理一個 bounded resolve batch；GitHub fallback 只在 primary heartbeat 不新鮮時接手。CLI、Cron 與 fallback 共用 `import_jobs.lease_token/lease_until` 的原子 claim：有效 lease 不會被搶走，null 或過期 lease 才能恢復。CLI 可用於加速，但不是工作持續前進的必要條件。
 
 本次實作驗證只在記憶體 SQLite 套用所有 migration，官方回應全部為測試 fixture；尚未套用正式 D1 migration、部署或執行真實公會匯入。
 

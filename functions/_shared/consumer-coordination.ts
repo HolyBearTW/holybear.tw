@@ -3,6 +3,7 @@ import { refreshCharacterMetadataBatch } from './character-metadata-refresh';
 import type { Env } from './env';
 import { getRuntimeConfig } from './runtime-config';
 import { backfillGrowthBatch, latestAvailableGrowthDate } from './growth-tracker';
+import { recoverGuildImportBatch } from './guild-import';
 
 export type ConsumerSource = 'cloudflare_cron' | 'github_actions_fallback';
 
@@ -20,6 +21,7 @@ export interface ConsumerQueueCounts {
   pendingMetadata: number;
   pendingAccountSignals: number;
   pendingGrowthProfiles: number;
+  pendingGuildJobs: number;
   hasImmediateWork: boolean;
 }
 
@@ -27,6 +29,7 @@ interface ConsumerSelection {
   metadata: boolean;
   accountSignals: boolean;
   growth?: boolean;
+  guild?: boolean;
 }
 
 const nowIso = () => new Date().toISOString();
@@ -82,7 +85,7 @@ export const getImmediateConsumerQueueCounts = async (
   timestamp = nowIso(),
 ): Promise<ConsumerQueueCounts> => {
   const targetDate = latestAvailableGrowthDate(new Date(timestamp));
-  const [metadata, accountSignals, growthProfiles] = await Promise.all([
+  const [metadata, accountSignals, growthProfiles, guildJobs] = await Promise.all([
     db.prepare(`
       SELECT COUNT(*) AS count FROM character_metadata_refresh
       WHERE (status = 'pending' OR (status = 'retry' AND (next_retry_at IS NULL OR next_retry_at <= ?1)))
@@ -103,15 +106,33 @@ export const getImmediateConsumerQueueCounts = async (
         )
         AND (claim_until IS NULL OR claim_until <= ?1)
     `).bind(timestamp, targetDate).first<{ count: number }>(),
+    db.prepare(`
+      SELECT COUNT(*) AS count FROM import_jobs j
+      WHERE j.source = 'nexon_guild'
+        AND j.status = 'running'
+        AND json_extract(j.checkpoint_json, '$.stageComplete') = 1
+        AND (j.lease_until IS NULL OR j.lease_until <= ?1)
+        AND EXISTS (
+          SELECT 1 FROM character_import_staging s
+          WHERE s.import_job_id = j.id
+            AND (
+              s.status IN ('pending', 'resolving')
+              OR (s.status = 'retry' AND (s.next_retry_at IS NULL OR s.next_retry_at <= ?1))
+            )
+        )
+    `).bind(timestamp).first<{ count: number }>(),
   ]);
   const pendingMetadata = Number(metadata?.count) || 0;
   const pendingAccountSignals = Number(accountSignals?.count) || 0;
   const pendingGrowthProfiles = Number(growthProfiles?.count) || 0;
+  const pendingGuildJobs = Number(guildJobs?.count) || 0;
   return {
     pendingMetadata,
     pendingAccountSignals,
     pendingGrowthProfiles,
-    hasImmediateWork: pendingMetadata > 0 || pendingAccountSignals > 0 || pendingGrowthProfiles > 0,
+    pendingGuildJobs,
+    hasImmediateWork: pendingMetadata > 0 || pendingAccountSignals > 0
+      || pendingGrowthProfiles > 0 || pendingGuildJobs > 0,
   };
 };
 
@@ -180,7 +201,7 @@ export const getConsumerFailoverStatus = async (env: Env, timestamp = nowIso()) 
 export const consumeQueueBatch = async (
   env: Env,
   source: ConsumerSource,
-  selection: ConsumerSelection = { metadata: true, accountSignals: true, growth: true },
+  selection: ConsumerSelection = { metadata: true, accountSignals: true, growth: true, guild: true },
 ) => {
   const invokedAt = nowIso();
   await recordInvocation(env.DB, source, invokedAt);
@@ -197,6 +218,10 @@ export const consumeQueueBatch = async (
   if (selection.growth) {
     labels.push('growth');
     tasks.push(backfillGrowthBatch(env));
+  }
+  if (selection.guild) {
+    labels.push('guild');
+    tasks.push(recoverGuildImportBatch(env));
   }
   const settled = await Promise.allSettled(tasks);
   const result = Object.fromEntries(settled.map((outcome, index) => [
@@ -226,6 +251,7 @@ export const runFallbackConsumer = async (env: Env) => {
     metadata: before.queues.pendingMetadata > 0,
     accountSignals: before.queues.pendingAccountSignals > 0,
     growth: before.queues.pendingGrowthProfiles > 0,
+    guild: before.queues.pendingGuildJobs > 0,
   });
   return { executed: true, batch, status: await getConsumerFailoverStatus(env) };
 };
