@@ -514,6 +514,71 @@ describe('guild CLI request recovery', () => {
     });
   });
 
+  it('waits for a Cron-owned lease in --all mode and then continues the next batch', async () => {
+    const actions: string[] = [];
+    const sleeps: number[] = [];
+    const warn = vi.fn();
+    let calls = 0;
+    const runningJob = { id: 5, status: 'running', checkpoint_json: '{"stageComplete":true}',
+      resolved_count: 10, pending_count: 100 };
+    const fetchImpl = vi.fn(async (_input: string, init: RequestInit) => {
+      calls += 1;
+      const body = JSON.parse(String(init.body)) as { action: string };
+      actions.push(body.action);
+      if (calls === 1 || calls === 3) return response(200, { job: runningJob });
+      if (calls === 2) return response(409, {
+        error: { code: 'guild_import_busy', message: 'This guild sampling job is already running' },
+      });
+      if (calls === 4) return response(200, {
+        job: { ...runningJob, resolved_count: 74, pending_count: 36 }, processed: 64,
+      });
+      return response(200, {
+        job: { ...runningJob, status: 'completed', resolved_count: 75, pending_count: 0 }, processed: 1,
+      });
+    });
+    await runGuildImport(['--job', '5', '--all'], {
+      fetchImpl,
+      sleep: async (milliseconds: number) => { sleeps.push(milliseconds); },
+      warn,
+    });
+    expect(actions).toEqual(['status', 'resolve', 'status', 'resolve', 'resolve']);
+    expect(sleeps).toEqual([1_500, 1_000]);
+    expect(JSON.parse(warn.mock.calls[0][0])).toMatchObject({
+      event: 'guild_cli_contention', jobId: 5, contentionAttempt: 1, nextPollDelayMs: 1_500,
+    });
+    expect(warn).toHaveBeenCalledOnce();
+  });
+
+  it('keeps guild_import_busy fatal for a bounded CLI step', async () => {
+    const sleep = vi.fn();
+    let calls = 0;
+    const fetchImpl = vi.fn(async () => {
+      calls += 1;
+      if (calls === 1) return response(200, {
+        job: { id: 5, status: 'running', checkpoint_json: '{"stageComplete":true}' },
+      });
+      return response(409, { error: { code: 'guild_import_busy', message: 'busy' } });
+    });
+    await expect(runGuildImport(['--job', '5', '--steps', '1'], { fetchImpl, sleep, warn: vi.fn() }))
+      .rejects.toMatchObject({ status: 409, code: 'guild_import_busy' });
+    expect(sleep).not.toHaveBeenCalled();
+  });
+
+  it('does not retry a different 409 in --all mode', async () => {
+    const sleep = vi.fn();
+    let calls = 0;
+    const fetchImpl = vi.fn(async () => {
+      calls += 1;
+      if (calls === 1) return response(200, {
+        job: { id: 5, status: 'running', checkpoint_json: '{"stageComplete":true}' },
+      });
+      return response(409, { error: { code: 'guild_stage_incomplete', message: 'not ready' } });
+    });
+    await expect(runGuildImport(['--job', '5', '--all'], { fetchImpl, sleep, warn: vi.fn() }))
+      .rejects.toMatchObject({ status: 409, code: 'guild_stage_incomplete' });
+    expect(sleep).not.toHaveBeenCalled();
+  });
+
   it('reports a resumable job after bounded transient retries are exhausted', async () => {
     const sleeps: number[] = [];
     const fetchImpl = vi.fn(async () => response(503, { error: { code: 'internal_error', message: '服務暫時無法使用' } }));

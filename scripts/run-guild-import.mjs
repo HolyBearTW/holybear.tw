@@ -1,4 +1,5 @@
 const RETRY_DELAYS_MS = [2_000, 5_000, 10_000, 20_000];
+const CONTENTION_DELAYS_MS = [1_500, 2_000, 3_000];
 export const GUILD_CLI_RESOLVER_DEFAULTS = Object.freeze({ batchSize: 64, concurrency: 12 });
 const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
@@ -105,12 +106,14 @@ export const runGuildImport = async (args, dependencies = {}) => {
     return;
   }
   const hasSteps = args.some((arg) => arg === '--steps' || arg.startsWith('--steps='));
-  const limit = hasSteps ? positiveInteger(value('--steps'), '--steps') : args.includes('--all') ? Infinity : 1;
+  const continuous = args.includes('--all') && !hasSteps;
+  const limit = hasSteps ? positiveInteger(value('--steps'), '--steps') : continuous ? Infinity : 1;
+  const sleep = dependencies.sleep ?? wait;
   let jobId = hasJob ? positiveInteger(value('--job'), '--job') : undefined;
   const call = async (body) => {
     const payload = await requestGuildImporter({
       base, secret, body, jobId,
-      fetchImpl: dependencies.fetchImpl, sleep: dependencies.sleep, warn: dependencies.warn,
+      fetchImpl: dependencies.fetchImpl, sleep, warn: dependencies.warn,
     });
     jobId = payload.job.id;
     console.log(JSON.stringify({ action: body.action, ...payload }));
@@ -118,13 +121,31 @@ export const runGuildImport = async (args, dependencies = {}) => {
   };
   let current = await call(start ? { action: 'start', maxGuilds } : { action: 'status', jobId });
   if (args.includes('--status')) return;
-  // Steps count mutations, including start. Status reads do not consume a step.
-  for (let steps = start ? 1 : 0; steps < limit && current.job.status !== 'completed'; steps += 1) {
+  // Steps count successful mutations, including start. Status reads and lease
+  // contention do not consume a step.
+  let steps = start ? 1 : 0;
+  let contentionAttempt = 0;
+  while (steps < limit && current.job.status !== 'completed') {
     const checkpoint = current.job.checkpoint_json ? JSON.parse(current.job.checkpoint_json) : {};
     const action = checkpoint.stageComplete ? 'resolve' : 'stage';
-    current = await call({ action, jobId, ...(action === 'resolve' ? { batchSize, concurrency } : {}) });
+    try {
+      current = await call({ action, jobId, ...(action === 'resolve' ? { batchSize, concurrency } : {}) });
+    } catch (error) {
+      const busy = error?.status === 409 && error?.code === 'guild_import_busy';
+      if (!continuous || !busy) throw error;
+      const delayMs = CONTENTION_DELAYS_MS[Math.min(contentionAttempt, CONTENTION_DELAYS_MS.length - 1)];
+      contentionAttempt += 1;
+      (dependencies.warn ?? console.warn)(JSON.stringify({
+        event: 'guild_cli_contention', jobId, contentionAttempt, nextPollDelayMs: delayMs,
+      }));
+      await sleep(delayMs);
+      current = await call({ action: 'status', jobId });
+      continue;
+    }
+    contentionAttempt = 0;
+    steps += 1;
     if (current.waitingForRetry || (action === 'resolve' && current.processed === 0)) break;
-    if (steps + 1 < limit && current.job.status !== 'completed') await new Promise((resolve) => setTimeout(resolve, 1000));
+    if (steps < limit && current.job.status !== 'completed') await sleep(1000);
   }
   console.log(`Guild sampling checkpoint preserved. Resume with: npm run import:maple -- nexon_guild --job ${jobId} --steps 1 --batch-size ${batchSize} --concurrency ${concurrency}`);
 };

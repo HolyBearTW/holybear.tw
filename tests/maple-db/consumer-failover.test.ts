@@ -216,6 +216,52 @@ describe('consumer scheduler failover', () => {
     expect(vi.mocked(fetch)).toHaveBeenCalledTimes(3);
   });
 
+  it('preserves a Cron lease and counters until CLI can claim the following batch', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: string) => {
+      const url = new URL(input);
+      const name = url.searchParams.get('character_name') ?? url.searchParams.get('ocid')?.slice(5) ?? '';
+      if (url.pathname.endsWith('/id')) return Response.json({ ocid: `ocid-${name}` });
+      if (url.pathname.endsWith('/character/basic')) return Response.json({
+        date: baseTime, character_name: name, world_name: '艾麗亞', character_class: '主教',
+        character_level: 285, character_image: 'image', character_guild_name: null,
+      });
+      if (url.pathname.endsWith('/character/stat')) return Response.json({
+        date: baseTime, final_stat: [{ stat_name: '戰鬥力', stat_value: '12345678' }],
+      });
+      throw new Error(`Unexpected endpoint ${url.pathname}`);
+    }));
+    const job = await seedGuildJob('角色A');
+    await checkpointSeedPage(env, (await getImportJob(env.DB, job.id))!, {
+      page: 2, pageSize: 1, total: 2, complete: true,
+      items: [{ sourceId: JSON.stringify(['艾麗亞', '角色B']), characterName: '角色B', worldName: '艾麗亞',
+        jobName: '', level: 0, combatPower: 0, characterImage: '' }],
+    });
+    let release!: () => void;
+    let entered!: () => void;
+    const gate = new Promise<void>((resolve) => { release = resolve; });
+    const started = new Promise<void>((resolve) => { entered = resolve; });
+    const cron = withGuildImportLock(env, job.id, async () => {
+      entered();
+      await gate;
+      return resolveGuildMembers(env, (await getImportJob(env.DB, job.id))!, { batchSize: 1, concurrency: 1 });
+    });
+    await started;
+    const before = local.sqlite.prepare(`SELECT lease_token, lease_until, resolved_count, pending_count
+      FROM import_jobs WHERE id=?`).get(job.id)!;
+    await expect(withGuildImportLock(env, job.id, async () => null)).rejects.toThrow(/already running/);
+    expect(local.sqlite.prepare(`SELECT lease_token, lease_until, resolved_count, pending_count
+      FROM import_jobs WHERE id=?`).get(job.id)).toEqual(before);
+    release();
+    await expect(cron).resolves.toMatchObject({ processed: 1 });
+    const cli = await withGuildImportLock(env, job.id, async () => (
+      resolveGuildMembers(env, (await getImportJob(env.DB, job.id))!, { batchSize: 1, concurrency: 1 })
+    ));
+    expect(cli).toMatchObject({ processed: 1 });
+    expect(local.sqlite.prepare(`SELECT attempt_count FROM character_import_staging
+      WHERE import_job_id=? ORDER BY id`).all(job.id)).toEqual([{ attempt_count: 1 }, { attempt_count: 1 }]);
+    expect(vi.mocked(fetch)).toHaveBeenCalledTimes(6);
+  });
+
   it('skips GitHub fallback while a Cron-owned guild batch is active', async () => {
     installCharacterApi();
     const job = await seedGuildJob();
