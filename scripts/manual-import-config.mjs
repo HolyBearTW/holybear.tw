@@ -9,7 +9,7 @@ export const MANUAL_IMPORT_DEFAULTS = Object.freeze({
   retryLimit: 5,
   timeoutMs: 10_000,
   d1ReadBudget: 25_000_000,
-  d1WriteBudget: 5_000_000,
+  d1WriteBudget: 20_000_000,
   nexonRequestBudget: 400_000,
 });
 
@@ -49,7 +49,7 @@ export const manualImportSettings = (environment) => ({
   retryLimit: integer(environment.NEXON_RETRY_LIMIT, MANUAL_IMPORT_DEFAULTS.retryLimit, 1, 8),
   timeoutMs: integer(environment.NEXON_REQUEST_TIMEOUT_MS, MANUAL_IMPORT_DEFAULTS.timeoutMs, 1_000, 30_000),
   d1ReadBudget: integer(environment.IMPORT_D1_READ_BUDGET, MANUAL_IMPORT_DEFAULTS.d1ReadBudget, 10_000, 100_000_000),
-  d1WriteBudget: integer(environment.IMPORT_D1_WRITE_BUDGET, MANUAL_IMPORT_DEFAULTS.d1WriteBudget, 10_000, 10_000_000),
+  d1WriteBudget: integer(environment.IMPORT_D1_WRITE_BUDGET, MANUAL_IMPORT_DEFAULTS.d1WriteBudget, 10_000, 20_000_000),
   nexonRequestBudget: integer(
     environment.MANUAL_SEED_NEXON_REQUEST_BUDGET,
     MANUAL_IMPORT_DEFAULTS.nexonRequestBudget,
