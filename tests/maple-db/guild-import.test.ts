@@ -484,13 +484,15 @@ describe('guild CLI request recovery', () => {
 
   it('retries a transient 503 and continues the same resolve loop', async () => {
     const actions: string[] = [];
+    const resolverConfigs: Array<{ batchSize?: number; concurrency?: number }> = [];
     const sleeps: number[] = [];
     const warn = vi.fn();
     let calls = 0;
     const fetchImpl = vi.fn(async (_input: string, init: RequestInit) => {
       calls += 1;
-      const body = JSON.parse(String(init.body)) as { action: string };
+      const body = JSON.parse(String(init.body)) as { action: string; batchSize?: number; concurrency?: number };
       actions.push(body.action);
+      if (body.action === 'resolve') resolverConfigs.push(body);
       if (calls === 1) return response(200, { job: { id: 5, status: 'running', checkpoint_json: '{"stageComplete":true}' } });
       if (calls === 2) return response(503, { error: { code: 'internal_error', message: '服務暫時無法使用' } });
       return response(200, { job: { id: 5, status: 'completed', checkpoint_json: '{"stageComplete":true}' }, processed: 1 });
@@ -501,6 +503,10 @@ describe('guild CLI request recovery', () => {
       warn,
     });
     expect(actions).toEqual(['status', 'resolve', 'resolve']);
+    expect(resolverConfigs).toEqual([
+      expect.objectContaining({ batchSize: 64, concurrency: 12 }),
+      expect.objectContaining({ batchSize: 64, concurrency: 12 }),
+    ]);
     expect(sleeps).toEqual([2_000]);
     expect(JSON.parse(warn.mock.calls[0][0])).toMatchObject({
       status: 503, code: 'internal_error', errorType: 'http_503', jobId: 5,

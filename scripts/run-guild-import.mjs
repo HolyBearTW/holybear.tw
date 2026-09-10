@@ -1,4 +1,5 @@
 const RETRY_DELAYS_MS = [2_000, 5_000, 10_000, 20_000];
+export const GUILD_CLI_RESOLVER_DEFAULTS = Object.freeze({ batchSize: 64, concurrency: 12 });
 const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
 const requestFailure = (message, details = {}) => Object.assign(new Error(message), details);
@@ -75,8 +76,10 @@ export const runGuildImport = async (args, dependencies = {}) => {
   const start = args.includes('--start');
   const estimate = args.includes('--estimate');
   const allKnown = args.includes('--all-known');
-  const batchSize = value('--batch-size') === undefined ? undefined : positiveInteger(value('--batch-size'), '--batch-size');
-  const concurrency = value('--concurrency') === undefined ? undefined : positiveInteger(value('--concurrency'), '--concurrency');
+  const batchSize = value('--batch-size') === undefined
+    ? GUILD_CLI_RESOLVER_DEFAULTS.batchSize : positiveInteger(value('--batch-size'), '--batch-size');
+  const concurrency = value('--concurrency') === undefined
+    ? GUILD_CLI_RESOLVER_DEFAULTS.concurrency : positiveInteger(value('--concurrency'), '--concurrency');
   if (batchSize !== undefined && ![32, 64].includes(batchSize)) throw new Error('--batch-size must be 32 or 64');
   if (concurrency !== undefined && ![8, 12, 16].includes(concurrency)) throw new Error('--concurrency must be 8, 12, or 16');
   if (start && args.includes('--status')) throw new Error('--status requires --job and cannot start a round');
@@ -123,5 +126,5 @@ export const runGuildImport = async (args, dependencies = {}) => {
     if (current.waitingForRetry || (action === 'resolve' && current.processed === 0)) break;
     if (steps + 1 < limit && current.job.status !== 'completed') await new Promise((resolve) => setTimeout(resolve, 1000));
   }
-  console.log(`Guild sampling checkpoint preserved. Resume with: npm run import:maple -- nexon_guild --job ${jobId} --steps 1`);
+  console.log(`Guild sampling checkpoint preserved. Resume with: npm run import:maple -- nexon_guild --job ${jobId} --steps 1 --batch-size ${batchSize} --concurrency ${concurrency}`);
 };

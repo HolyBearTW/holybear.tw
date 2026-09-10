@@ -59,7 +59,7 @@ npm run estimate:guilds:full:status
 9. staging 在新一輪接手舊候選時重設成 pending、清除先前重試狀態；同一輪的重複名冊不反覆重排已解析角色。來源觀測時間與公會線索保存在 `character_sources`；來源標記表示曾收錄，不保證現在仍屬於該公會。退會不刪除角色。
 10. 完成後沿用排行榜快照刷新。部分公會／角色可失敗，`completed` 表示本輪佇列處理完畢，不表示所有查詢都成功；檢查 `checkpoint_json.guilds.failed`、`failed_count` 及 `import_job_errors`。403／401 會停止當次工作，不把全部公會標為失敗。
 
-預算沿用 `IMPORT_D1_READ_BUDGET`、`IMPORT_D1_WRITE_BUDGET`；角色解析可由 `NEXON_RESOLUTION_BATCH_SIZE`、`NEXON_CONCURRENCY`、`NEXON_REQUEST_DELAY_MS`、`NEXON_GLOBAL_RPS_LIMIT`、`NEXON_RETRY_LIMIT`、`NEXON_REQUEST_TIMEOUT_MS` 設定。已驗證設定為 batch 16、concurrency 4、delay 0ms、global cap 50 req/s；暫不提高 concurrency。全域 cap 由共用 NEXON rate limiter 控制，不能以 concurrency 取代。租約防止正常操作重疊，不是永久鎖；不要在長時間請求仍執行時另開同一工作。
+預算沿用 `IMPORT_D1_READ_BUDGET`、`IMPORT_D1_WRITE_BUDGET`；角色解析可由 `NEXON_RESOLUTION_BATCH_SIZE`、`NEXON_CONCURRENCY`、`NEXON_REQUEST_DELAY_MS`、`NEXON_GLOBAL_RPS_LIMIT`、`NEXON_RETRY_LIMIT`、`NEXON_REQUEST_TIMEOUT_MS` 設定。CLI bulk resolver 的 Production benchmark 設定為 batch 64、concurrency 12；scheduled Worker recovery 仍維持 batch 16、concurrency 4。兩者都使用 delay 0ms 與 global cap 50 req/s。全域 cap 由共用 NEXON rate limiter 控制，不能以 concurrency 取代。租約防止正常操作重疊，不是永久鎖；不要在長時間請求仍執行時另開同一工作。
 
 完整 estimate 的 Wrangler stdout 使用串流 UTF-8 decoder，避免中文字跨 Buffer chunk 時產生 replacement character。若舊 checkpoint 已含 `�`，runner 會拒絕 resume 並要求 `--reset` 重建，不會繼續使用損壞的候選或 existing-key 快照。
 
