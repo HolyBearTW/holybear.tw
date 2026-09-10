@@ -1,12 +1,12 @@
 import {
+  canonicalNexonCharacterStatements,
   characterSourceStatement,
   isCanonicalCharacterMetadataComplete,
   isCharacterFresh,
   normalizeCharacterName,
   toPublicCharacter,
-  upsertCanonicalNexonCharacter,
 } from './character-repository';
-import { enqueueCharacterMetadataRefreshes } from './character-metadata-refresh';
+import { enqueueCharacterMetadataRefreshStatement } from './character-metadata-refresh';
 import { stagingRequeueAssignments, validateCharacterWrite } from './character-policy.mjs';
 import type { Env } from './env';
 import type { ActiveCharacterSource, CharacterRow, CharacterWrite } from './models';
@@ -250,7 +250,7 @@ export const failImportJob = async (db: D1Database, jobId: number, error: unknow
   ]);
 };
 
-const markResolutionFailure = async (
+const resolutionFailureStatements = (
   db: D1Database,
   jobId: number,
   row: StagingRow,
@@ -265,7 +265,9 @@ const markResolutionFailure = async (
     ? new Date(Date.now() + Math.min(3_600_000, 30_000 * (2 ** Math.max(0, attemptCount - 1)))).toISOString()
     : null;
   const timestamp = nowIso();
-  await db.batch([
+  return {
+    shouldRetry,
+    statements: [
     db.prepare(`
       UPDATE character_import_staging SET status = ?2, attempt_count = ?3,
         next_retry_at = ?4, last_error = ?5, updated_at = ?6 WHERE id = ?1
@@ -283,19 +285,71 @@ const markResolutionFailure = async (
       message.slice(0, 1000),
       timestamp,
     ),
-  ]);
-  return shouldRetry;
+    ],
+  };
 };
 
-export const resolveStagingBatch = async (env: Env, job: ImportJobRow) => {
+export interface ResolutionBatchOptions {
+  batchSize?: number;
+  concurrency?: number;
+}
+
+const resolverSettings = (
+  config: ReturnType<typeof getRuntimeConfig>,
+  options: ResolutionBatchOptions,
+) => ({
+  batchSize: Math.min(64, Math.max(1, Math.trunc(options.batchSize ?? config.nexonResolutionBatchSize))),
+  concurrency: Math.min(16, Math.max(1, Math.trunc(options.concurrency ?? config.nexonConcurrency))),
+});
+
+const characterMatchKey = (name: string, worldName: string) => (
+  `${worldName.trim().normalize('NFC')}\u0000${normalizeCharacterName(name)}`
+);
+
+const preloadCharacterMatches = async (
+  db: D1Database,
+  rows: StagingRow[],
+  metrics: ResolutionInstrumentation,
+) => {
+  const pairs = [...new Map(rows.map((row) => [characterMatchKey(row.character_name, row.world_name), {
+    normalizedName: normalizeCharacterName(row.character_name),
+    worldName: row.world_name.trim().normalize('NFC'),
+  }])).values()].filter((pair) => pair.normalizedName && pair.worldName);
+  const matches = new Map<string, CharacterRow[]>();
+  let rowsRead = 0;
+  for (let offset = 0; offset < pairs.length; offset += 45) {
+    const chunk = pairs.slice(offset, offset + 45);
+    const bindings = chunk.flatMap((pair) => [pair.normalizedName, pair.worldName]);
+    const clauses = chunk.map((_, index) => `(normalized_name = ?${index * 2 + 1} AND world_name = ?${index * 2 + 2})`);
+    const startedAt = Date.now();
+    const result = await db.prepare(`SELECT * FROM characters WHERE ${clauses.join(' OR ')}
+      ORDER BY updated_at DESC, ocid ASC`).bind(...bindings).all<CharacterRow>();
+    metrics.d1ReadLatencyMs.push(Date.now() - startedAt);
+    rowsRead += result.results.length;
+    for (const character of result.results) {
+      const key = characterMatchKey(character.character_name, character.world_name);
+      const group = matches.get(key) ?? [];
+      if (group.length < 2) group.push(character);
+      matches.set(key, group);
+    }
+  }
+  return { matches, rowsRead };
+};
+
+export const resolveStagingBatch = async (
+  env: Env,
+  job: ImportJobRow,
+  options: ResolutionBatchOptions = {},
+) => {
   const batchStartedAt = Date.now();
   const batchMetrics = createResolutionInstrumentation();
   const config = getRuntimeConfig(env);
+  const settings = resolverSettings(config, options);
   const budget = await budgetAfter(
     env.DB,
     job,
-    config.nexonResolutionBatchSize * 4 + 5,
-    config.nexonResolutionBatchSize * 30 + 3,
+    settings.batchSize * 4 + 5,
+    settings.batchSize * 30 + 3,
     config,
   );
   const pendingReadStartedAt = Date.now();
@@ -310,16 +364,17 @@ export const resolveStagingBatch = async (env: Env, job: ImportJobRow) => {
         OR (s.status = 'retry' AND (s.next_retry_at IS NULL OR s.next_retry_at <= ?2))
       )
     ORDER BY s.id ASC LIMIT ?3
-  `).bind(job.id, nowIso(), config.nexonResolutionBatchSize).all<StagingRow>();
+  `).bind(job.id, nowIso(), settings.batchSize).all<StagingRow>();
   batchMetrics.d1ReadLatencyMs.push(Date.now() - pendingReadStartedAt);
   const rows = pending.results;
   if (rows.length === 0) return {
     job: await maybeCompleteImportJob(env.DB, job.id),
     processed: 0, created: 0, updated: 0, retry: 0, failed: 0,
+    d1Estimate: { rowsRead: 1, rowsWritten: 0 },
     benchmark: {
       config: {
-        batchSize: config.nexonResolutionBatchSize,
-        concurrency: config.nexonConcurrency,
+        batchSize: settings.batchSize,
+        concurrency: settings.concurrency,
         requestDelayMs: config.nexonRequestDelayMs,
         globalRateLimit: config.nexonGlobalRpsLimit,
       },
@@ -336,10 +391,13 @@ export const resolveStagingBatch = async (env: Env, job: ImportJobRow) => {
     `).bind(job.id, nowIso(), ...chunk.map((row) => row.id)).run();
   }
 
+  const preloaded = await preloadCharacterMatches(env.DB, rows, batchMetrics);
+  const matchesByIdentity = preloaded.matches;
+
   let nexonRequests = 0;
   const resolutions = await runWithConcurrency(
     rows,
-    config.nexonConcurrency,
+    settings.concurrency,
     config.nexonRequestDelayMs,
     async (row): Promise<{ character: CharacterWrite; reused: boolean; metrics: ResolutionInstrumentation }> => {
       const metrics = createResolutionInstrumentation();
@@ -349,26 +407,12 @@ export const resolveStagingBatch = async (env: Env, job: ImportJobRow) => {
         return { ...value, metrics };
       };
       // Reuse only an unambiguous, recently validated official identity in the same world.
-      const readStartedAt = Date.now();
-      const matches = await env.DB.prepare(`SELECT * FROM characters
-        WHERE normalized_name = ?1 AND world_name = ?2 ORDER BY updated_at DESC, ocid ASC LIMIT 2`)
-        .bind(normalizeCharacterName(row.character_name), row.world_name).all<CharacterRow>();
-      metrics.d1ReadLatencyMs.push(Date.now() - readStartedAt);
-      const cached = matches.results.length === 1 ? toPublicCharacter(matches.results[0]) : null;
-      if (row.source === 'nexon_guild' && matches.results.length > 0) {
+      const matches = matchesByIdentity.get(characterMatchKey(row.character_name, row.world_name)) ?? [];
+      const cached = matches.length === 1 ? toPublicCharacter(matches[0]) : null;
+      if (row.source === 'nexon_guild' && matches.length > 0) {
         // A guild roster is an additional source. Existing canonical rows are
         // source-only updates; they never trigger character detail requests.
-        const existing = toPublicCharacter(matches.results[0]);
-        if (!isCanonicalCharacterMetadataComplete(existing)) {
-          const writeStartedAt = Date.now();
-          await enqueueCharacterMetadataRefreshes(env.DB, [{
-            characterName: existing.characterName,
-            expectedWorldName: existing.worldName || row.world_name,
-            ocid: existing.ocid,
-            reason: 'incomplete_metadata',
-          }]);
-          metrics.d1WriteLatencyMs.push(Date.now() - writeStartedAt);
-        }
+        const existing = toPublicCharacter(matches[0]);
         return finish({ character: existing, reused: true });
       }
       if (cached?.requestedAt && isCharacterFresh(cached, config.characterFreshnessSeconds)
@@ -405,6 +449,23 @@ export const resolveStagingBatch = async (env: Env, job: ImportJobRow) => {
   let reused = 0;
   let pendingDecrease = 0;
   let retryDelta = 0;
+  const fulfilledCharacters = resolutions.flatMap((result) => (
+    result.status === 'fulfilled' && !result.value.reused ? [result.value.character.ocid] : []
+  ));
+  const existingOcids = new Set<string>();
+  let existingOcidRowsRead = 0;
+  for (let offset = 0; offset < fulfilledCharacters.length; offset += 90) {
+    const chunk = [...new Set(fulfilledCharacters.slice(offset, offset + 90))];
+    if (!chunk.length) continue;
+    const readStartedAt = Date.now();
+    const existing = await env.DB.prepare(`SELECT ocid FROM characters
+      WHERE ocid IN (${chunk.map((_, index) => `?${index + 1}`).join(', ')})`)
+      .bind(...chunk).all<{ ocid: string }>();
+    batchMetrics.d1ReadLatencyMs.push(Date.now() - readStartedAt);
+    existingOcidRowsRead += existing.results.length;
+    for (const row of existing.results) existingOcids.add(row.ocid);
+  }
+  const writeStatements: D1PreparedStatement[] = [];
   for (let index = 0; index < rows.length; index += 1) {
     const row = rows[index];
     const result = resolutions[index];
@@ -419,36 +480,43 @@ export const resolveStagingBatch = async (env: Env, job: ImportJobRow) => {
         rawJson: row.source_metadata_json,
       };
       if (reuse) {
-        const writeStartedAt = Date.now();
-        await characterSourceStatement(env.DB, character.ocid, source).run();
-        batchMetrics.d1WriteLatencyMs.push(Date.now() - writeStartedAt);
+        writeStatements.push(characterSourceStatement(env.DB, character.ocid, source));
+        if (!isCanonicalCharacterMetadataComplete(character)) {
+          writeStatements.push(enqueueCharacterMetadataRefreshStatement(env.DB, {
+            characterName: character.characterName,
+            expectedWorldName: character.worldName || row.world_name,
+            ocid: character.ocid,
+            reason: 'incomplete_metadata',
+          }));
+        }
         reused += 1;
       } else {
-        const writeStartedAt = Date.now();
-        const stored = await upsertCanonicalNexonCharacter(env.DB, character, [source, {
+        writeStatements.push(...canonicalNexonCharacterStatements(env.DB, character, [source, {
           source: 'nexon',
           sourceCharacterId: character.ocid,
           observedAt: character.observedAt,
           sourceUpdatedAt: character.nexonUpdatedAt,
-        }]);
-        batchMetrics.d1WriteLatencyMs.push(Date.now() - writeStartedAt);
-        if (stored.created) created += 1;
-        else updated += 1;
+        }]));
+        if (existingOcids.has(character.ocid)) updated += 1;
+        else {
+          created += 1;
+          existingOcids.add(character.ocid);
+        }
       }
       if (row.status === 'retry') retryDelta -= 1;
       else pendingDecrease += 1;
-      const stagingWriteStartedAt = Date.now();
-      await env.DB.prepare(`
+      writeStatements.push(env.DB.prepare(`
         UPDATE character_import_staging SET status = 'resolved', ocid = ?2,
           attempt_count = attempt_count + 1, next_retry_at = NULL,
           last_error = NULL, updated_at = ?3 WHERE id = ?1
-      `).bind(row.id, character.ocid, nowIso()).run();
-      batchMetrics.d1WriteLatencyMs.push(Date.now() - stagingWriteStartedAt);
+      `).bind(row.id, character.ocid, nowIso()));
     } else {
       const failure = result.reason as { resolutionError?: unknown; metrics?: ResolutionInstrumentation };
       if (failure?.metrics) addResolutionInstrumentation(batchMetrics, failure.metrics);
       const resolutionError = failure?.resolutionError ?? result.reason;
-      if (await markResolutionFailure(env.DB, job.id, row, resolutionError, config.nexonRetryLimit)) {
+      const failureUpdate = resolutionFailureStatements(env.DB, job.id, row, resolutionError, config.nexonRetryLimit);
+      writeStatements.push(...failureUpdate.statements);
+      if (failureUpdate.shouldRetry) {
       retry += 1;
       if (row.status !== 'retry') {
         pendingDecrease += 1;
@@ -462,7 +530,7 @@ export const resolveStagingBatch = async (env: Env, job: ImportJobRow) => {
     }
   }
   const jobWriteStartedAt = Date.now();
-  await env.DB.prepare(`
+  writeStatements.push(env.DB.prepare(`
     UPDATE import_jobs SET status = 'running',
       resolved_count = resolved_count + ?2,
       pending_count = MAX(0, pending_count - ?3),
@@ -488,8 +556,15 @@ export const resolveStagingBatch = async (env: Env, job: ImportJobRow) => {
     budget.rowsWritten,
     nowIso(),
     reused,
-  ).run();
+  ));
+  // D1 batch is transactional: canonical/source/staging writes and counters
+  // either commit together or leave resolving rows available for recovery.
+  await env.DB.batch(writeStatements);
   batchMetrics.d1WriteLatencyMs.push(Date.now() - jobWriteStartedAt);
+  const d1Estimate = {
+    rowsRead: 1 + rows.length + preloaded.rowsRead + existingOcidRowsRead,
+    rowsWritten: rows.length + writeStatements.length,
+  };
   return {
     job: await maybeCompleteImportJob(env.DB, job.id),
     processed: rows.length,
@@ -498,10 +573,11 @@ export const resolveStagingBatch = async (env: Env, job: ImportJobRow) => {
     retry,
     failed,
     reused,
+    d1Estimate,
     benchmark: {
       config: {
-        batchSize: config.nexonResolutionBatchSize,
-        concurrency: config.nexonConcurrency,
+        batchSize: settings.batchSize,
+        concurrency: settings.concurrency,
         requestDelayMs: config.nexonRequestDelayMs,
         globalRateLimit: config.nexonGlobalRpsLimit,
       },

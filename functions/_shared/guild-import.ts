@@ -1,6 +1,14 @@
 import type { Env } from './env';
 import { HttpError } from './http';
-import { budgetAfter, checkpointSeedPage, getImportJob, maybeCompleteImportJob, resolveStagingBatch, type ImportJobRow } from './import-repository';
+import {
+  budgetAfter,
+  checkpointSeedPage,
+  getImportJob,
+  maybeCompleteImportJob,
+  resolveStagingBatch,
+  type ImportJobRow,
+  type ResolutionBatchOptions,
+} from './import-repository';
 import type { SeedCharacter } from './importers/importer';
 import { fetchNexonJson, NexonRequestError, type NexonRequestMetric } from './nexon-client';
 import { getRuntimeConfig } from './runtime-config';
@@ -291,10 +299,10 @@ const finishGuildStage = async (env: Env, job: ImportJobRow, processed: number) 
     waitingForRetry: !complete && processed === 0 };
 };
 
-export const resolveGuildMembers = async (env: Env, job: ImportJobRow) => {
+export const resolveGuildMembers = async (env: Env, job: ImportJobRow, options: ResolutionBatchOptions = {}) => {
   if (!checkpointOf(job).stageComplete) throw new HttpError(409, 'guild_stage_incomplete', 'Finish the guild roster stage before resolving characters');
   if (job.status === 'completed') return { job, processed: 0 };
-  return resolveStagingBatch(env, job);
+  return resolveStagingBatch(env, job, options);
 };
 
 export const recoverGuildImportBatch = async (env: Env) => {

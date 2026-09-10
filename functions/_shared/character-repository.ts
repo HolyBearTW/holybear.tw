@@ -75,7 +75,7 @@ export const validateCanonicalSources = (sources: CharacterSourceWrite[]) => {
   }
 };
 
-export const upsertCanonicalNexonCharacter = async (
+export const canonicalNexonCharacterStatements = (
   db: D1Database,
   character: CharacterWrite,
   sources: CharacterSourceWrite[],
@@ -86,10 +86,6 @@ export const upsertCanonicalNexonCharacter = async (
   const requestedAt = character.requestedAt ?? observedAt;
   const normalizedName = normalizeCharacterName(character.characterName);
   if (!character.ocid || !normalizedName) throw new Error('Character OCID and name are required');
-
-  const existed = Boolean(await db.prepare('SELECT 1 AS found FROM characters WHERE ocid = ?1 LIMIT 1')
-    .bind(character.ocid)
-    .first<{ found: number }>());
 
   const statements: D1PreparedStatement[] = [db.prepare(`
     INSERT INTO characters (
@@ -128,9 +124,8 @@ export const upsertCanonicalNexonCharacter = async (
   )];
 
   for (const source of sources) statements.push(characterSourceStatement(db, character.ocid, source, observedAt));
-  // Only enqueue when this canonical upsert was accepted. The EXISTS guard
-  // matches the timestamps written by the guarded characters upsert, so a
-  // source-only write or an older response does not reset account-signals.
+  // Only enqueue when the guarded canonical upsert is accepted. The statement
+  // uses the same timestamps, so an older/source-only write cannot reset it.
   statements.push(enqueueAccountSignalStatement(
     db,
     character.ocid,
@@ -138,7 +133,18 @@ export const upsertCanonicalNexonCharacter = async (
     requestedAt,
     character.nexonUpdatedAt ?? null,
   ));
+  return statements;
+};
 
+export const upsertCanonicalNexonCharacter = async (
+  db: D1Database,
+  character: CharacterWrite,
+  sources: CharacterSourceWrite[],
+) => {
+  const statements = canonicalNexonCharacterStatements(db, character, sources);
+  const existed = Boolean(await db.prepare('SELECT 1 AS found FROM characters WHERE ocid = ?1 LIMIT 1')
+    .bind(character.ocid)
+    .first<{ found: number }>());
   await db.batch(statements);
   const stored = await findCharacterByOcid(db, character.ocid);
   if (!stored) throw new Error('Character upsert did not return a row');

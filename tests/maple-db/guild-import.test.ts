@@ -180,6 +180,9 @@ describe('official guild sampling with real local SQL', () => {
     expect((await request({ action: 'start', maxGuilds: 1 })).status).toBe(200);
     expect((await request({ action: 'start', maxGuilds: 1 })).status).toBe(200);
     expect(local.sqlite.prepare('SELECT COUNT(*) AS n FROM import_jobs').get()?.n).toBe(1);
+    expect((await request({ action: 'status', jobId: 1, batchSize: 64 })).status).toBe(400);
+    expect((await request({ action: 'resolve', jobId: 1, batchSize: 48 })).status).toBe(400);
+    expect((await request({ action: 'resolve', jobId: 1, concurrency: 32 })).status).toBe(400);
     expect(fetch).not.toHaveBeenCalled();
   });
 
@@ -220,6 +223,62 @@ describe('official guild sampling with real local SQL', () => {
     local.sqlite.exec('DROP TRIGGER fail_guild_checkpoint');
     await stageNextGuild(env, await current(run.id));
     expect((await current(run.id)).pending_count).toBe(1);
+  });
+
+  it('commits canonical rows, staging checkpoints, and job counters atomically', async () => {
+    await insert('角色'); mockApi(['新角色']);
+    const run = await job(); await initializeGuildCandidates(env, run, 1);
+    await stageNextGuild(env, await current(run.id));
+    local.sqlite.exec(`CREATE TRIGGER fail_resolver_checkpoint BEFORE UPDATE OF status ON character_import_staging
+      WHEN NEW.status='resolved' BEGIN SELECT RAISE(ABORT, 'simulated resolver interruption'); END;`);
+    await expect(resolveStagingBatch(env, await current(run.id))).rejects.toThrow(/simulated resolver/);
+    expect(await findCharacterByOcid(env.DB, 'ocid-新角色')).toBeNull();
+    expect(local.sqlite.prepare('SELECT status FROM character_import_staging').get()).toMatchObject({ status: 'resolving' });
+    expect(await current(run.id)).toMatchObject({ resolved_count: 0, pending_count: 1, created_count: 0 });
+    local.sqlite.exec('DROP TRIGGER fail_resolver_checkpoint');
+    await expect(resolveStagingBatch(env, await current(run.id))).resolves.toMatchObject({ created: 1, failed: 0 });
+    expect(await current(run.id)).toMatchObject({ status: 'completed', resolved_count: 1, pending_count: 0 });
+  });
+
+  it('honors the bounded resolver concurrency override', async () => {
+    const run = await job();
+    const members = Array.from({ length: 20 }, (_, index) => `併發角色${index}`);
+    await checkpointSeedPage(env, run, {
+      page: 1, pageSize: members.length, total: members.length, complete: true,
+      items: members.map((characterName) => ({
+        sourceId: JSON.stringify(['艾麗亞', characterName]), characterName, worldName: '艾麗亞',
+        jobName: '', level: 0, combatPower: 0, characterImage: '',
+      })),
+    });
+    let active = 0;
+    let maximum = 0;
+    let idCalls = 0;
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => { release = resolve; });
+    vi.stubGlobal('fetch', vi.fn(async (input: string) => {
+      const url = new URL(input);
+      const name = url.searchParams.get('character_name') ?? url.searchParams.get('ocid')?.slice(5) ?? '';
+      if (url.pathname.endsWith('/id')) {
+        idCalls += 1;
+        if (idCalls <= 12) {
+          active += 1; maximum = Math.max(maximum, active);
+          await gate;
+          active -= 1;
+        }
+        return Response.json({ ocid: `ocid-${name}` });
+      }
+      if (url.pathname.endsWith('/character/basic')) return Response.json(basic(name));
+      if (url.pathname.endsWith('/character/stat')) return Response.json({ final_stat: [{ stat_name: '戰鬥力', stat_value: '2000' }] });
+      throw new Error(`Unexpected endpoint ${url.pathname}`);
+    }));
+    const resolving = resolveStagingBatch(env, await current(run.id), { batchSize: 32, concurrency: 12 });
+    for (let attempt = 0; attempt < 30 && active < 12; attempt += 1) await Promise.resolve();
+    expect(active).toBe(12);
+    release();
+    const result = await resolving;
+    expect(result).toMatchObject({ processed: 20, created: 20, failed: 0,
+      benchmark: { config: { batchSize: 32, concurrency: 12 } } });
+    expect(maximum).toBe(12);
   });
 
   it('stops before network requests when the shared D1 budget is exhausted', async () => {
@@ -402,6 +461,8 @@ describe('canonical freshness and validity', () => {
 it('CLI status cannot accidentally initialize a job', async () => {
   await expect(runGuildImport(['--start', '--max-guilds', '1', '--status'])).rejects.toThrow(/cannot start/);
   await expect(runGuildImport(['--start'])).rejects.toThrow(/positive integer/);
+  await expect(runGuildImport(['--job', '5', '--batch-size', '48'])).rejects.toThrow(/32 or 64/);
+  await expect(runGuildImport(['--job', '5', '--concurrency', '32'])).rejects.toThrow(/8, 12, or 16/);
   expect(fetch).not.toHaveBeenCalled();
 });
 

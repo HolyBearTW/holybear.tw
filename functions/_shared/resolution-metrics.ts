@@ -7,6 +7,7 @@ export interface ResolutionInstrumentation {
   d1ReadLatencyMs: number[];
   d1WriteLatencyMs: number[];
   characterWallMs: number[];
+  limiterWaitMs: number[];
   requests: number;
   errors: { 429: number; 403: number; timeout: number; '5xx': number; retry: number };
 }
@@ -18,12 +19,14 @@ export const createResolutionInstrumentation = (): ResolutionInstrumentation => 
   d1ReadLatencyMs: [],
   d1WriteLatencyMs: [],
   characterWallMs: [],
+  limiterWaitMs: [],
   requests: 0,
   errors: { 429: 0, 403: 0, timeout: 0, '5xx': 0, retry: 0 },
 });
 
 export const recordResolutionRequest = (metrics: ResolutionInstrumentation, metric: NexonRequestMetric) => {
   metrics.requests += 1;
+  metrics.limiterWaitMs.push(metric.limiterWaitMs);
   const endpoint = metric.path.split('?')[0];
   if (endpoint === '/id') metrics.idLatencyMs.push(metric.latencyMs);
   else if (endpoint === '/character/basic') metrics.basicLatencyMs.push(metric.latencyMs);
@@ -56,6 +59,8 @@ export const summarizeResolutionInstrumentation = (
   stat: latencySummary(metrics.statLatencyMs),
   d1Read: latencySummary(metrics.d1ReadLatencyMs),
   d1Write: latencySummary(metrics.d1WriteLatencyMs),
+  limiterWait: latencySummary(metrics.limiterWaitMs),
+  limiterWaitTotalMs: Math.round(metrics.limiterWaitMs.reduce((sum, value) => sum + value, 0) * 100) / 100,
   characters: metrics.characterWallMs.length,
   p50WallMs: percentile(metrics.characterWallMs, 0.5),
   p95WallMs: percentile(metrics.characterWallMs, 0.95),
@@ -75,6 +80,7 @@ export const addResolutionInstrumentation = (
   target.d1ReadLatencyMs.push(...source.d1ReadLatencyMs);
   target.d1WriteLatencyMs.push(...source.d1WriteLatencyMs);
   target.characterWallMs.push(...source.characterWallMs);
+  target.limiterWaitMs.push(...source.limiterWaitMs);
   target.requests += source.requests;
   target.errors[429] += source.errors[429];
   target.errors[403] += source.errors[403];

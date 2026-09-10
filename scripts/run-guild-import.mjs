@@ -75,6 +75,10 @@ export const runGuildImport = async (args, dependencies = {}) => {
   const start = args.includes('--start');
   const estimate = args.includes('--estimate');
   const allKnown = args.includes('--all-known');
+  const batchSize = value('--batch-size') === undefined ? undefined : positiveInteger(value('--batch-size'), '--batch-size');
+  const concurrency = value('--concurrency') === undefined ? undefined : positiveInteger(value('--concurrency'), '--concurrency');
+  if (batchSize !== undefined && ![32, 64].includes(batchSize)) throw new Error('--batch-size must be 32 or 64');
+  if (concurrency !== undefined && ![8, 12, 16].includes(concurrency)) throw new Error('--concurrency must be 8, 12, or 16');
   if (start && args.includes('--status')) throw new Error('--status requires --job and cannot start a round');
   if (estimate && (start || args.some((arg) => arg === '--job' || arg.startsWith('--job=')))) {
     throw new Error('--estimate cannot be combined with --start or --job');
@@ -115,7 +119,7 @@ export const runGuildImport = async (args, dependencies = {}) => {
   for (let steps = start ? 1 : 0; steps < limit && current.job.status !== 'completed'; steps += 1) {
     const checkpoint = current.job.checkpoint_json ? JSON.parse(current.job.checkpoint_json) : {};
     const action = checkpoint.stageComplete ? 'resolve' : 'stage';
-    current = await call({ action, jobId });
+    current = await call({ action, jobId, ...(action === 'resolve' ? { batchSize, concurrency } : {}) });
     if (current.waitingForRetry || (action === 'resolve' && current.processed === 0)) break;
     if (steps + 1 < limit && current.job.status !== 'completed') await new Promise((resolve) => setTimeout(resolve, 1000));
   }

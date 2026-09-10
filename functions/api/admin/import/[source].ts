@@ -11,7 +11,12 @@ interface ImportRequest {
   pageSize?: number;
   maxGuilds?: number;
   allKnown?: boolean;
+  batchSize?: number;
+  concurrency?: number;
 }
+
+const allowedBatchSizes = new Set([32, 64]);
+const allowedConcurrency = new Set([8, 12, 16]);
 
 export const onRequestPost: AppPagesFunction<'source'> = async ({ env, params, request, waitUntil }) => {
   try {
@@ -32,6 +37,15 @@ export const onRequestPost: AppPagesFunction<'source'> = async ({ env, params, r
       if (body.action === 'start' && (!Number.isSafeInteger(body.maxGuilds) || Number(body.maxGuilds) < 1 || Number(body.maxGuilds) > 10_000)) {
         throw new HttpError(400, 'invalid_guild_limit', 'Starting a round requires maxGuilds between 1 and 10000');
       }
+      if (body.action !== 'resolve' && (body.batchSize !== undefined || body.concurrency !== undefined)) {
+        throw new HttpError(400, 'invalid_resolver_config', 'Resolver configuration is only valid for resolve');
+      }
+      if (body.batchSize !== undefined && !allowedBatchSizes.has(body.batchSize)) {
+        throw new HttpError(400, 'invalid_resolver_batch_size', 'Resolver batchSize must be 32 or 64');
+      }
+      if (body.concurrency !== undefined && !allowedConcurrency.has(body.concurrency)) {
+        throw new HttpError(400, 'invalid_resolver_concurrency', 'Resolver concurrency must be 8, 12, or 16');
+      }
       const guildJob = body.action === 'start'
         ? await getOrCreateImportJob(env.DB, source)
         : body.jobId ? await getImportJob(env.DB, body.jobId) : null;
@@ -41,7 +55,10 @@ export const onRequestPost: AppPagesFunction<'source'> = async ({ env, params, r
         const current = (await getImportJob(env.DB, guildJob.id))!;
         if (body.action === 'start') return { job: await initializeGuildCandidates(env, current, body.maxGuilds!), processed: 0 };
         if (body.action === 'stage') return stageNextGuild(env, current);
-        return resolveGuildMembers(env, current);
+        return resolveGuildMembers(env, current, {
+          batchSize: body.batchSize,
+          concurrency: body.concurrency,
+        });
       });
       if (body.action === 'resolve' && result.job?.status === 'completed') {
         waitUntil(refreshRankingSnapshot(env).catch((error: unknown) => console.error('Unable to refresh ranking snapshot', error)));
