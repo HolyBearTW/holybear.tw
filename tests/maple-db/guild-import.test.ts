@@ -536,7 +536,7 @@ describe('guild CLI request recovery', () => {
         job: { ...runningJob, status: 'completed', resolved_count: 75, pending_count: 0 }, processed: 1,
       });
     });
-    await runGuildImport(['--job', '5', '--all'], {
+    await runGuildImport(['--job', '5', '--all', '--steps', '2'], {
       fetchImpl,
       sleep: async (milliseconds: number) => { sleeps.push(milliseconds); },
       warn,

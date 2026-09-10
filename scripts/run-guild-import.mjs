@@ -106,7 +106,8 @@ export const runGuildImport = async (args, dependencies = {}) => {
     return;
   }
   const hasSteps = args.some((arg) => arg === '--steps' || arg.startsWith('--steps='));
-  const continuous = args.includes('--all') && !hasSteps;
+  const allMode = args.includes('--all');
+  const continuous = allMode && !hasSteps;
   const limit = hasSteps ? positiveInteger(value('--steps'), '--steps') : continuous ? Infinity : 1;
   const sleep = dependencies.sleep ?? wait;
   let jobId = hasJob ? positiveInteger(value('--job'), '--job') : undefined;
@@ -132,7 +133,7 @@ export const runGuildImport = async (args, dependencies = {}) => {
       current = await call({ action, jobId, ...(action === 'resolve' ? { batchSize, concurrency } : {}) });
     } catch (error) {
       const busy = error?.status === 409 && error?.code === 'guild_import_busy';
-      if (!continuous || !busy) throw error;
+      if (!allMode || !busy) throw error;
       const delayMs = CONTENTION_DELAYS_MS[Math.min(contentionAttempt, CONTENTION_DELAYS_MS.length - 1)];
       contentionAttempt += 1;
       (dependencies.warn ?? console.warn)(JSON.stringify({
