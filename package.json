@@ -42,7 +42,7 @@
     "react-is": "^19.2.8",
     "recharts": "^3.10.1",
     "swiper": "^14.2.0",
-    "three": "^0.185.1",
+    "three": "^0.186.0",
     "turndown": "^7.2.4",
     "vue-chartjs": "^5.3.4"
   },
