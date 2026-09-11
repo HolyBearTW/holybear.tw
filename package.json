@@ -4,7 +4,7 @@
   "type": "module",
   "packageManager": "yarn@1.22.22",
   "devDependencies": {
-    "@cloudflare/workers-types": "^5.20260907.1",
+    "@cloudflare/workers-types": "^5.20260908.1",
     "@lando/vitepress-theme-default-plus": "^1.2.0",
     "@tailwindcss/postcss": "^4.3.3",
     "@vitejs/plugin-react": "6.0.5",
