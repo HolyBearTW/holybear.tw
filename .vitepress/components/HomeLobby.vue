@@ -121,6 +121,20 @@ const isAutoRotationPaused = ref(false)
 const viewportWidth = ref(1440)
 let rotateTimer: number | undefined
 
+// Pointer parallax is decorative; coalesce its reactive updates so a high-
+// refresh-rate pointer stream does not make Vue patch the entire lobby on
+// every input event. Four animation frames keeps the effect responsive while
+// reducing the number of layout/style updates substantially.
+const POINTER_BATCH_FRAMES = 4
+const STATIC_TOUCH_QUERY = '(hover: none), (pointer: coarse), (max-width: 720px)'
+let staticTouchMediaQuery: MediaQueryList | null = null
+let staticTouchLayout = false
+let staticTouchChangeHandler: (() => void) | undefined
+let pointerBounds: DOMRect | null = null
+let pendingPointer: { clientX: number; clientY: number } | null = null
+let pointerFrameHandle: number | undefined
+let pointerFrameCount = 0
+
 const activeUnit = computed(() => units[activeIndex.value])
 
 const heroStyle = computed(() => ({
@@ -162,7 +176,9 @@ const activePanelStyle = computed(() => {
 })
 
 const syncViewportWidth = () => {
-  viewportWidth.value = window.innerWidth
+  const nextWidth = window.innerWidth
+  if (viewportWidth.value !== nextWidth) viewportWidth.value = nextWidth
+  pointerBounds = null
 }
 
 const prefersReducedMotion = () => {
@@ -170,33 +186,80 @@ const prefersReducedMotion = () => {
     window.matchMedia('(prefers-reduced-motion: reduce)').matches
 }
 
-const prefersStaticTouchLayout = () => {
-  return typeof window !== 'undefined' &&
-    window.matchMedia('(hover: none), (pointer: coarse), (max-width: 720px)').matches
+const cancelPointerFrame = () => {
+  if (pointerFrameHandle !== undefined) {
+    window.cancelAnimationFrame(pointerFrameHandle)
+    pointerFrameHandle = undefined
+  }
+  pointerFrameCount = 0
+  pendingPointer = null
 }
 
 const resetPointer = () => {
+  cancelPointerFrame()
+  const current = pointer.value
+  if (current.x === 0 && current.y === 0 && current.sx === 50 && current.sy === 50) return
   pointer.value = { x: 0, y: 0, sx: 50, sy: 50 }
 }
 
-const handlePointerMove = (event: PointerEvent) => {
-  const target = heroRef.value
-  if (!target) return
+const syncStaticTouchLayout = () => {
+  const next = staticTouchMediaQuery?.matches ?? false
+  if (staticTouchLayout === next) return
+  staticTouchLayout = next
+  if (staticTouchLayout) resetPointer()
+}
 
-  if (prefersStaticTouchLayout()) {
-    resetPointer()
+const flushPointerMove = () => {
+  pointerFrameHandle = undefined
+  if (staticTouchLayout || !pendingPointer) {
+    pointerFrameCount = 0
     return
   }
 
-  const rect = target.getBoundingClientRect()
-  const px = Math.min(Math.max((event.clientX - rect.left) / rect.width, 0), 1)
-  const py = Math.min(Math.max((event.clientY - rect.top) / rect.height, 0), 1)
+  pointerFrameCount += 1
+  if (pointerFrameCount < POINTER_BATCH_FRAMES) {
+    pointerFrameHandle = window.requestAnimationFrame(flushPointerMove)
+    return
+  }
+  pointerFrameCount = 0
 
-  pointer.value = {
+  const position = pendingPointer
+  pendingPointer = null
+  const target = heroRef.value
+  if (!target) return
+
+  // The bounds are read at most once per pointer session (and once after a
+  // resize), rather than once per pointermove event.
+  const rect = pointerBounds ?? target.getBoundingClientRect()
+  pointerBounds = rect
+  if (!rect.width || !rect.height) return
+
+  const px = Math.min(Math.max((position.clientX - rect.left) / rect.width, 0), 1)
+  const py = Math.min(Math.max((position.clientY - rect.top) / rect.height, 0), 1)
+  const next = {
     x: (px - 0.5) * 2,
     y: (py - 0.5) * 2,
     sx: px * 100,
     sy: py * 100
+  }
+
+  const current = pointer.value
+  if (current.x === next.x && current.y === next.y && current.sx === next.sx && current.sy === next.sy) return
+  pointer.value = next
+}
+
+const handlePointerMove = (event: PointerEvent) => {
+  if (staticTouchLayout || !heroRef.value) {
+    resetPointer()
+    return
+  }
+
+  // Keep only the newest position; the next batched frame renders the latest
+  // state instead of replaying every intermediate pointer event.
+  pendingPointer = { clientX: event.clientX, clientY: event.clientY }
+  if (pointerFrameHandle === undefined) {
+    pointerFrameCount = 0
+    pointerFrameHandle = window.requestAnimationFrame(flushPointerMove)
   }
 }
 
@@ -205,7 +268,7 @@ const handlePointerLeave = () => {
 }
 
 const setActiveUnit = (index: number) => {
-  activeIndex.value = index
+  if (activeIndex.value !== index) activeIndex.value = index
 }
 
 const pauseAutoRotation = () => {
@@ -233,6 +296,15 @@ onMounted(() => {
   syncViewportWidth()
   window.addEventListener('resize', syncViewportWidth, { passive: true })
 
+  staticTouchMediaQuery = window.matchMedia(STATIC_TOUCH_QUERY)
+  staticTouchChangeHandler = () => syncStaticTouchLayout()
+  syncStaticTouchLayout()
+  if (staticTouchMediaQuery.addEventListener) {
+    staticTouchMediaQuery.addEventListener('change', staticTouchChangeHandler)
+  } else {
+    staticTouchMediaQuery.addListener?.(staticTouchChangeHandler)
+  }
+
   if (prefersReducedMotion()) return
 
   rotateTimer = window.setInterval(() => {
@@ -243,6 +315,17 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   if (rotateTimer) window.clearInterval(rotateTimer)
+  cancelPointerFrame()
+  if (staticTouchMediaQuery && staticTouchChangeHandler) {
+    if (staticTouchMediaQuery.removeEventListener) {
+      staticTouchMediaQuery.removeEventListener('change', staticTouchChangeHandler)
+    } else {
+      staticTouchMediaQuery.removeListener?.(staticTouchChangeHandler)
+    }
+  }
+  staticTouchMediaQuery = null
+  staticTouchChangeHandler = undefined
+  pointerBounds = null
   window.removeEventListener('resize', syncViewportWidth)
 })
 </script>
@@ -853,6 +936,7 @@ onBeforeUnmount(() => {
     0 18px 42px var(--lobby-shadow),
     inset 0 0 0 1px var(--lobby-inset);
   cursor: pointer;
+  translate: 0 0;
   transform:
     translate(-50%, -50%)
     translate3d(calc(var(--mx) * var(--depth) * 1px), calc(var(--my) * var(--depth) * 1px), 0);
@@ -1168,11 +1252,11 @@ onBeforeUnmount(() => {
 @keyframes nodeFloat {
   0%,
   100% {
-    margin-top: 0;
+    translate: 0 0;
   }
 
   50% {
-    margin-top: -10px;
+    translate: 0 -10px;
   }
 }
 

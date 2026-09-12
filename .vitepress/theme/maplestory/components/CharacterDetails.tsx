@@ -8,7 +8,7 @@ import Familiar from './Familiar';
 import UnionRaiderSection from './UnionRaiderSection';
 import CharacterAvatar from './CharacterAvatar';
 import { mapleAsset } from '../assets';
-import { maintenanceFetch } from '../services/maintenanceAccess';
+import { fetchCharacterBasic } from '../services/nexonService';
 
 interface CharacterDetailsProps {
   data: DashboardData;
@@ -438,26 +438,15 @@ const ChampionCard: React.FC<{ champ: any; apiKey: string }> = ({ champ, apiKey 
     const bgImage = getChampionBgImage(champ.champion_class);
 
     useEffect(() => {
-      if ((image && championLevel) || !champ.champion_name || !apiKey) return;
+      if ((image && championLevel !== undefined) || !champ.champion_name) return;
 
       const fetchImgAndLevel = async () => {
         try {
-          const idRes = await maintenanceFetch(`/api/nexon/id?character_name=${encodeURIComponent(champ.champion_name)}`, {
-            headers: { 'x-bypass-key': apiKey }
-          });
-          if (!idRes.ok) {
-            console.warn(`Fetch ID failed for ${champ.champion_name}: ${idRes.status}`);
-            return;
-          }
-          const idData = await idRes.json();
-          if (idData.ocid) {
-            const basicRes = await maintenanceFetch(`/api/nexon/character/basic?ocid=${idData.ocid}`, {
-              headers: { 'x-bypass-key': apiKey }
-            });
-            const basicData = await basicRes.json();
-            if (basicData.character_image) setImage(basicData.character_image);
-            if (basicData.character_level) setChampionLevel(Number(basicData.character_level));
-          }
+          const basicData = await fetchCharacterBasic(champ.champion_name, apiKey);
+          if (!basicData) return;
+          if (basicData.character_image) setImage(basicData.character_image);
+          const level = Number(basicData.character_level);
+          if (Number.isFinite(level)) setChampionLevel(level);
         } catch (e) { console.error("API Error:", e); }
       };
       fetchImgAndLevel();

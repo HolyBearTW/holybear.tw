@@ -448,6 +448,30 @@ const MaintenanceView: React.FC<{
   );
 };
 
+const MaintenanceStatusLoading = () => {
+  const [visible, setVisible] = React.useState(false);
+
+  React.useEffect(() => {
+    const timer = window.setTimeout(() => setVisible(true), 350);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  return (
+    <main
+      className="mx-auto flex min-h-[70vh] max-w-[1600px] items-center justify-center px-6 py-16"
+      aria-busy="true"
+      aria-label="正在確認戰力分析服務狀態"
+    >
+      {visible && (
+        <div className="flex items-center text-sm font-medium text-slate-400">
+          <span className="mr-3 h-5 w-5 animate-spin rounded-full border-2 border-cyan-400/25 border-t-cyan-400" aria-hidden="true" />
+          正在確認服務狀態…
+        </div>
+      )}
+    </main>
+  );
+};
+
 const getInitialBypassKey = () => {
   if (typeof window === 'undefined') return '';
   return readSavedBypassKey();
@@ -536,6 +560,7 @@ const App: React.FC = () => {
 
   if (maintenanceEnabled === false) return <AuthorizedApp bypassKey="" />;
   if (bypassKey) return <AuthorizedApp bypassKey={bypassKey} />;
+  if (maintenanceEnabled === null) return <MaintenanceStatusLoading />;
   return <MaintenanceView onUnlock={unlock} unlocking={unlocking} unlockError={unlockError} />;
 };
 

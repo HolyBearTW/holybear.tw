@@ -87,10 +87,10 @@ const SearchForm: React.FC<SearchFormProps> = ({
     }, [favorites, searchHistory]);
 
     useEffect(() => {
-        if (!showHistory || !apiKey) return;
+        if (!showHistory) return;
         const names = Array.from(new Set([...favorites, ...searchHistory]));
         let active = true;
-        Promise.all(names.map(async (name) => [name, await fetchCharacterBasic(name, apiKey)] as const))
+        Promise.all(names.map(async (name) => [name, await fetchCharacterBasic(name, apiKey || '')] as const))
             .then((results) => {
                 if (active) setCharacterBasics((current) => ({ ...current, ...Object.fromEntries(results) }));
             });

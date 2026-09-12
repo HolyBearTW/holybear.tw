@@ -36,12 +36,12 @@ const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Simple in-memory cache for OCID to save API calls
 const ocidCache: Record<string, string> = {};
-const basicCharacterCache: Record<string, CharacterBasic | null> = {};
+const basicCharacterCache: Record<string, CharacterBasic> = {};
 
 /** Fetch only the lightweight basic profile used by search history/favorites. */
 export const fetchCharacterBasic = async (characterName: string, apiKey: string): Promise<CharacterBasic | null> => {
   const normalizedName = characterName.trim().normalize('NFC').toLocaleLowerCase();
-  if (!normalizedName || !apiKey) return null;
+  if (!normalizedName) return null;
   if (Object.prototype.hasOwnProperty.call(basicCharacterCache, normalizedName)) {
     return basicCharacterCache[normalizedName];
   }
@@ -66,7 +66,8 @@ export const fetchCharacterBasic = async (characterName: string, apiKey: string)
     basicCharacterCache[normalizedName] = basic;
     return basic;
   } catch {
-    basicCharacterCache[normalizedName] = null;
+    // Do not permanently cache a maintenance or transient API failure. Once
+    // public access is restored, the next request must be allowed to retry.
     return null;
   }
 };
@@ -159,7 +160,6 @@ const fetchWithRetry = async (url: string, options: RequestInit, retries = 3, ba
 export const fetchBossTeammateProfile = async (characterName: string, apiKey: string): Promise<BossTeammateApiProfile> => {
   const normalizedName = characterName.trim();
   if (!normalizedName) throw new Error('請先輸入隊友暱稱');
-  if (!apiKey) throw new Error('尚未設定 Nexon API Key');
 
   const headers = { 'x-bypass-key': apiKey, accept: 'application/json' };
   let ocid = ocidCache[normalizedName];
