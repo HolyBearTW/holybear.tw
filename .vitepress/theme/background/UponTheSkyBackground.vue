@@ -334,10 +334,33 @@ let motionMediaQuery: MediaQueryList | null = null
 let handleMotionPreference: ((event: MediaQueryListEvent) => void) | null = null
 let hasLoggedNightCoverage = false
 const images = new Map<string, HTMLImageElement>()
+const imagePromises = new Map<string, Promise<HTMLImageElement>>()
 const nightPatterns = new Map<string, CanvasPattern>()
+const staticSceneAssets = new Set<string>(NIGHT_SKY_BACK_LAYERS.map((layer) => layer.asset))
+const nightStaticSceneAssets = new Set<string>(NIGHT_SKY_BACK_LAYERS.map((layer) => layer.asset))
+const nightDynamicAssets = new Set<string>([
+  NIGHT_SKY_MOON.asset,
+  ...NIGHT_STAR_FRAMES.map((frame) => frame.asset),
+])
 const modeAssetPromises = new Map<SkyMode, Promise<void>>()
+let staticSceneCanvas: HTMLCanvasElement | null = null
+let staticSceneContext: CanvasRenderingContext2D | null = null
+let staticSceneMode: SkyMode | null = null
+let staticSceneWidth = 0
+let staticSceneHeight = 0
+let staticScenePixelRatio = 0
+let staticSceneDirty = true
+let nightDynamicCanvas: HTMLCanvasElement | null = null
+let nightDynamicContext: CanvasRenderingContext2D | null = null
+let nightDynamicMode: SkyMode | null = null
+let nightDynamicFrameIndex = -1
+let nightDynamicWidth = 0
+let nightDynamicHeight = 0
+let nightDynamicPixelRatio = 0
+let nightDynamicDirty = true
 let backgroundPreloadHandle: number | undefined
 let lastRenderedAt = 0
+let renderStarted = false
 let orderedBackLayers: { back: BackLayer[]; front: BackLayer[] } = { back: [], front: [] }
 let orderedObjects: MapObject[] = []
 
@@ -361,30 +384,58 @@ const getWebsiteSunAnchor = (): Point => {
   }
 }
 
-const loadImage = async (url: string) => {
-  if (images.has(url)) return images.get(url)
+const loadImage = (url: string): Promise<HTMLImageElement> => {
+  const cached = images.get(url)
+  if (cached) return Promise.resolve(cached)
 
-  const image = new Image()
-  image.decoding = 'async'
-  image.src = url
+  const pending = imagePromises.get(url)
+  if (pending) return pending
 
-  try {
-    if (typeof image.decode === 'function') {
-      await image.decode()
-    } else {
-      await new Promise<void>((resolve, reject) => {
-        image.onload = () => resolve()
-        image.onerror = () => reject(new Error(`Unable to load ${url}`))
-      })
+  const promise = (async () => {
+    const image = new Image()
+    image.decoding = 'async'
+    image.src = url
+
+    try {
+      if (typeof image.decode === 'function') {
+        await image.decode()
+      } else {
+        await new Promise<void>((resolve, reject) => {
+          image.onload = () => resolve()
+          image.onerror = () => reject(new Error(`Unable to load ${url}`))
+        })
+      }
+    } catch (error) {
+      // Some browsers reject decode() after a successful load; the image is
+      // still usable in that case, so only fail when it has no dimensions.
+      if (!image.complete || image.naturalWidth === 0) throw error
     }
-  } catch (error) {
-    // Some browsers reject decode() after a successful load; the image is
-    // still usable in that case, so only fail when it has no dimensions.
-    if (!image.complete || image.naturalWidth === 0) throw error
-  }
 
-  images.set(url, image)
-  return image
+    images.set(url, image)
+    // Only invalidate the cache that is currently visible. Deferred assets
+    // from the opposite mode may finish decoding during a toggle; allowing
+    // those completions to dirty the active scene would force needless full
+    // viewport rebuilds and recreate the dark -> light hitch.
+    if (staticSceneAssets.has(url)
+      && ((renderDarkMode && nightStaticSceneAssets.has(url))
+        || (!renderDarkMode && !nightStaticSceneAssets.has(url)))) {
+      staticSceneDirty = true
+    }
+    if (renderDarkMode && nightDynamicAssets.has(url)) nightDynamicDirty = true
+    if (renderStarted) requestRender()
+    return image
+  })()
+
+  imagePromises.set(url, promise)
+  void promise.then(
+    () => {
+      if (imagePromises.get(url) === promise) imagePromises.delete(url)
+    },
+    () => {
+      if (imagePromises.get(url) === promise) imagePromises.delete(url)
+    },
+  )
+  return promise
 }
 
 const getModeAssetUrls = (mode: SkyMode) => {
@@ -418,12 +469,83 @@ const collectCriticalAssetUrls = (data: MapManifest, mode: SkyMode) => {
   return [...urls]
 }
 
-const preloadImageSet = async (urls: string[], label: string) => {
-  const results = await Promise.allSettled([...new Set(urls)].map(loadImage))
-  const failed = results.filter((result): result is PromiseRejectedResult => result.status === 'rejected')
-  if (failed.length) {
-    console.warn(`[Upon the Sky] ${label} assets unavailable: ${failed.length}`)
+/**
+ * First-paint asset tier. It contains only the layer(s) needed to establish a
+ * recognizable scene; the remaining objects, flare frames and alternate
+ * star frames are scheduled after the first Canvas frame is visible.
+ */
+const collectInitialAssetUrls = (data: MapManifest, mode: SkyMode) => {
+  const urls = new Set<string>()
+  if (mode === 'dark') {
+    for (const layer of NIGHT_SKY_BACK_LAYERS) urls.add(layer.asset)
+    const firstStarFrame = NIGHT_STAR_FRAMES[0]
+    if (firstStarFrame) urls.add(firstStarFrame.asset)
+    // The moon is part of the minimum dark-mode identity; loading it with the
+    // first star frame avoids a visibly incomplete night scene on cold load.
+    urls.add(NIGHT_SKY_MOON.asset)
+    urls.add(GRASSY_SOIL_NIGHT_ASSET)
+  } else {
+    for (const layer of data.back) {
+      if (layer.index === 0 || layer.index === 1) urls.add(layer.asset)
+    }
+    const firstSunLayer = SUN_FRONT_LAYERS[0]
+    if (firstSunLayer) urls.add(firstSunLayer.asset)
   }
+  return [...urls]
+}
+
+const preloadImageSet = async (urls: string[], label: string, concurrency = 2) => {
+  const uniqueUrls = [...new Set(urls)]
+  if (!uniqueUrls.length) return
+
+  let nextIndex = 0
+  let failed = 0
+  const worker = async () => {
+    while (nextIndex < uniqueUrls.length) {
+      const currentIndex = nextIndex
+      nextIndex += 1
+      const url = uniqueUrls[currentIndex]
+      try {
+        await loadImage(url)
+      } catch {
+        failed += 1
+      }
+    }
+  }
+
+  const workerCount = Math.min(Math.max(1, concurrency), uniqueUrls.length)
+  await Promise.all(Array.from({ length: workerCount }, () => worker()))
+  if (failed) {
+    console.warn(`[Upon the Sky] ${label} assets unavailable: ${failed}`)
+  }
+}
+
+const scheduleProgressivePreload = (urls: string[], label: string) => {
+  const uniqueUrls = [...new Set(urls)]
+  if (!uniqueUrls.length) return
+
+  // Keep each idle turn small. A single long Promise chain would still decode
+  // every deferred bitmap back-to-back and can recreate the same thermal spike
+  // that the first-paint split is intended to avoid on phones.
+  let nextIndex = 0
+  const scheduleNextBatch = () => {
+    if (disposed || nextIndex >= uniqueUrls.length) return
+
+    const run = () => {
+      if (disposed) return
+      const batch = uniqueUrls.slice(nextIndex, nextIndex + 2)
+      nextIndex += batch.length
+      void preloadImageSet(batch, label, 2).then(scheduleNextBatch)
+    }
+
+    if (typeof window.requestIdleCallback === 'function') {
+      window.requestIdleCallback(run, { timeout: 1200 })
+    } else {
+      window.setTimeout(run, 120)
+    }
+  }
+
+  scheduleNextBatch()
 }
 
 const requestRender = () => {
@@ -432,22 +554,53 @@ const requestRender = () => {
   }
 }
 
-const preloadModeAssets = (mode: SkyMode) => {
-  const existing = modeAssetPromises.get(mode)
-  if (existing) return existing
+const releaseNightRenderCaches = () => {
+  // The night bitmap is a viewport-sized surface. Drop it when leaving dark
+  // mode so a dark -> light toggle does not keep an extra GPU texture alive
+  // while the daytime scene is being composited. It is recreated lazily if
+  // the visitor returns to dark mode; no source image or WZ data is changed.
+  nightDynamicCanvas = null
+  nightDynamicContext = null
+  nightDynamicMode = null
+  nightDynamicFrameIndex = -1
+  nightDynamicWidth = 0
+  nightDynamicHeight = 0
+  nightDynamicPixelRatio = 0
+  nightDynamicDirty = true
+  nightPatterns.clear()
+}
 
-  const promise = preloadImageSet(getModeAssetUrls(mode), `${mode} mode`).then(() => {
-    if (requestedSkyMode === mode) {
-      // Keep the previous complete scene visible until every asset required by
-      // the requested mode has settled. Missing images are skipped by the
-      // existing draw helpers, so a late mode switch cannot flash a broken
-      // bitmap or clear the canvas.
-      renderDarkMode = mode === 'dark'
-      requestRender()
-    }
-  })
-  modeAssetPromises.set(mode, promise)
-  return promise
+const applyRequestedSkyMode = (mode: SkyMode) => {
+  if (disposed || requestedSkyMode !== mode) return
+  if (renderDarkMode && mode === 'light') releaseNightRenderCaches()
+  renderDarkMode = mode === 'dark'
+  requestRender()
+}
+
+const preloadModeAssets = (mode: SkyMode) => {
+  let promise = modeAssetPromises.get(mode)
+  if (!promise) {
+    const initialUrls = manifest
+      ? collectInitialAssetUrls(manifest, mode)
+      : getModeAssetUrls(mode)
+    const deferredUrls = getModeAssetUrls(mode)
+      .filter((url) => !initialUrls.includes(url))
+    promise = preloadImageSet(initialUrls, `${mode} transition`, 2)
+      .then(() => {
+        // Switch as soon as the mode's visual foundation is ready. Remaining
+        // flare/star frames are deliberately scheduled in small idle batches,
+        // so a theme toggle never waits for every bitmap or starts a decode
+        // burst on the same turn as the mode change.
+        applyRequestedSkyMode(mode)
+        scheduleProgressivePreload(deferredUrls, `${mode} deferred mode`)
+      })
+    modeAssetPromises.set(mode, promise)
+  }
+
+  // Loading and activating are separate operations. A mode can already be in
+  // the asset cache after the initial render or background preload, but every
+  // appearance change still needs to update the Canvas renderer.
+  return promise.then(() => applyRequestedSkyMode(mode))
 }
 
 const scheduleBackgroundPreload = (mode: SkyMode) => {
@@ -476,6 +629,9 @@ const resizeCanvas = () => {
   if (!canvas || !host) return
 
   const rect = host.getBoundingClientRect()
+  const previousViewportWidth = viewportWidth
+  const previousViewportHeight = viewportHeight
+  const previousPixelRatio = pixelRatio
   viewportWidth = Math.max(1, rect.width)
   viewportHeight = Math.max(1, rect.height)
   const maxDpr = isMobileOrTabletViewport() ? MOBILE_MAX_DPR : DESKTOP_MAX_DPR
@@ -485,6 +641,16 @@ const resizeCanvas = () => {
   const height = Math.max(1, Math.round(viewportHeight * pixelRatio))
   if (canvas.width !== width) canvas.width = width
   if (canvas.height !== height) canvas.height = height
+  if (previousViewportWidth !== viewportWidth
+    || previousViewportHeight !== viewportHeight
+    || previousPixelRatio !== pixelRatio
+    || staticSceneWidth !== viewportWidth
+    || staticSceneHeight !== viewportHeight
+    || staticScenePixelRatio !== pixelRatio) {
+    staticSceneDirty = true
+    nightDynamicDirty = true
+    nightPatterns.clear()
+  }
 }
 
 const drawImageAtWorld = (
@@ -796,12 +962,14 @@ const drawNightLayer = (
   }
 }
 
-const drawNightSkyLayers = (elapsedMs: number) => {
+/**
+ * Static dark-mode boundary. Night Back 0..3 are opaque, non-animated WZ
+ * patterns; they only change when the viewport/camera changes, so they can be
+ * rendered once into the static scene cache.
+ */
+const drawNightStaticSkyLayers = () => {
   if (!context) return
-  const camera = getNightSkyCamera()
   const backCamera = getNightSkyBackCamera()
-  const starGroupTranslation = getNightSkyGroupTranslation(camera)
-  const moonTranslation = getNightMoonTranslation(camera)
 
   // Back 0..3 use their WZ camera positions directly. Applying the moon's
   // responsive translation here shifts the finite tile range and leaves an
@@ -813,35 +981,78 @@ const drawNightSkyLayers = (elapsedMs: number) => {
     if (image) drawNightPatternLayer(layer, image, backCamera)
   }
   logNightCoverageDiagnostics(backCamera)
+}
+
+/**
+ * Dynamic dark-mode boundary. The star frame changes every 200ms, not every
+ * Canvas frame, so keep the star/moon ordering in a second bitmap and rebuild
+ * it only when the frame or a required asset changes. The live renderer then
+ * performs one device-pixel blit per frame instead of three repeated star
+ * bands plus a moon draw on every refresh.
+ */
+const drawNightSkyLayers = (elapsedMs: number) => {
+  if (!context) return
+  const cache = ensureNightDynamicCanvas()
+  if (!cache) return
 
   const frameIndex = NIGHT_STAR_FRAMES.length
     ? Math.floor(elapsedMs / NIGHT_STAR_FRAMES[0].delay) % NIGHT_STAR_FRAMES.length
     : 0
-  const starFrame = NIGHT_STAR_FRAMES[frameIndex]
-  const starImage = starFrame ? getImage(starFrame.asset) : null
-  if (starFrame && starImage) {
-    // Back 4's zero cx/cy resolves to the animation bound (~384x312), not
-    // the current frame's natural width. The website repeats the same WZ
-    // animation in three deterministic, horizontally phase-shifted bands so
-    // the visible night sky has vertical coverage without stretching pixels.
-    for (const band of NIGHT_STAR_BANDS) {
-      drawNightLayer(
-        NIGHT_SKY_STARS,
-        starImage,
-        camera,
-        {
-          x: starGroupTranslation.x + band.x,
-          y: starGroupTranslation.y + band.y,
-        },
-        starFrame.origin,
-        384,
-        312,
-      )
+  if (nightDynamicDirty || nightDynamicMode !== 'dark' || nightDynamicFrameIndex !== frameIndex) {
+    const mainContext = context
+    const cachedContext = cache.context
+    const camera = getNightSkyCamera()
+    const starGroupTranslation = getNightSkyGroupTranslation(camera)
+    const moonTranslation = getNightMoonTranslation(camera)
+    const starFrame = NIGHT_STAR_FRAMES[frameIndex]
+    const starImage = starFrame ? getImage(starFrame.asset) : null
+
+    cachedContext.setTransform(1, 0, 0, 1, 0, 0)
+    cachedContext.clearRect(0, 0, cache.canvas.width, cache.canvas.height)
+    cachedContext.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0)
+    cachedContext.imageSmoothingEnabled = true
+    cachedContext.imageSmoothingQuality = isMobileOrTabletViewport() ? 'low' : 'high'
+
+    context = cachedContext
+    try {
+      if (starFrame && starImage) {
+        // Back 4's zero cx/cy resolves to the animation bound (~384x312), not
+        // the current frame's natural width. The website repeats the same WZ
+        // animation in three deterministic, horizontally phase-shifted bands
+        // so the visible night sky keeps its established coverage.
+        for (const band of NIGHT_STAR_BANDS) {
+          drawNightLayer(
+            NIGHT_SKY_STARS,
+            starImage,
+            camera,
+            {
+              x: starGroupTranslation.x + band.x,
+              y: starGroupTranslation.y + band.y,
+            },
+            starFrame.origin,
+            384,
+            312,
+          )
+        }
+      }
+
+      const moonImage = getImage(NIGHT_SKY_MOON.asset)
+      if (moonImage) drawNightLayer(NIGHT_SKY_MOON, moonImage, camera, moonTranslation)
+    } finally {
+      context = mainContext
     }
+
+    nightDynamicMode = 'dark'
+    nightDynamicFrameIndex = frameIndex
+    nightDynamicDirty = false
   }
 
-  const moonImage = getImage(NIGHT_SKY_MOON.asset)
-  if (moonImage) drawNightLayer(NIGHT_SKY_MOON, moonImage, camera, moonTranslation)
+  // Both canvases use the same capped-DPR backing dimensions. Copy in device
+  // pixels so the cached artwork is not resampled a second time on every RAF.
+  context.save()
+  context.setTransform(1, 0, 0, 1, 0, 0)
+  context.drawImage(cache.canvas, 0, 0)
+  context.restore()
 }
 
 /**
@@ -1053,6 +1264,7 @@ const drawFaithfulBackLayers = (
   cloudSeaTranslationY = 0,
   globalThemeTranslationY = 0,
   excludedIndices?: Set<number>,
+  includedIndices?: Set<number>,
 ) => {
   if (!manifest) return
 
@@ -1060,6 +1272,7 @@ const drawFaithfulBackLayers = (
 
   for (const layer of orderedLayers) {
     if (excludedIndices?.has(layer.index)) continue
+    if (includedIndices && !includedIndices.has(layer.index)) continue
     const sourceImage = getImage(layer.asset)
     if (!sourceImage || sourceImage.naturalWidth <= 0 || sourceImage.naturalHeight <= 0) continue
     // The offline-balanced derivative has the exact same dimensions and alpha
@@ -1160,6 +1373,122 @@ const drawFaithfulBackLayers = (
   }
 }
 
+const ensureStaticSceneCanvas = () => {
+  const mainCanvas = canvasRef.value
+  if (!mainCanvas) return null
+
+  if (!staticSceneCanvas) {
+    staticSceneCanvas = document.createElement('canvas')
+    staticSceneContext = staticSceneCanvas.getContext('2d', { alpha: true })
+  }
+  if (!staticSceneCanvas || !staticSceneContext) return null
+
+  const dimensionsChanged = staticSceneCanvas.width !== mainCanvas.width
+    || staticSceneCanvas.height !== mainCanvas.height
+    || staticSceneWidth !== viewportWidth
+    || staticSceneHeight !== viewportHeight
+    || staticScenePixelRatio !== pixelRatio
+  if (dimensionsChanged) {
+    staticSceneCanvas.width = mainCanvas.width
+    staticSceneCanvas.height = mainCanvas.height
+    staticSceneWidth = viewportWidth
+    staticSceneHeight = viewportHeight
+    staticScenePixelRatio = pixelRatio
+    staticSceneDirty = true
+    nightDynamicDirty = true
+    nightPatterns.clear()
+  }
+
+  return { canvas: staticSceneCanvas, context: staticSceneContext }
+}
+
+const ensureNightDynamicCanvas = () => {
+  const mainCanvas = canvasRef.value
+  if (!mainCanvas) return null
+
+  if (!nightDynamicCanvas) {
+    nightDynamicCanvas = document.createElement('canvas')
+    nightDynamicContext = nightDynamicCanvas.getContext('2d', { alpha: true })
+  }
+  if (!nightDynamicCanvas || !nightDynamicContext) return null
+
+  const dimensionsChanged = nightDynamicCanvas.width !== mainCanvas.width
+    || nightDynamicCanvas.height !== mainCanvas.height
+    || nightDynamicWidth !== viewportWidth
+    || nightDynamicHeight !== viewportHeight
+    || nightDynamicPixelRatio !== pixelRatio
+  if (dimensionsChanged) {
+    nightDynamicCanvas.width = mainCanvas.width
+    nightDynamicCanvas.height = mainCanvas.height
+    nightDynamicWidth = viewportWidth
+    nightDynamicHeight = viewportHeight
+    nightDynamicPixelRatio = pixelRatio
+    nightDynamicFrameIndex = -1
+    nightDynamicMode = null
+    nightDynamicDirty = true
+  }
+
+  return { canvas: nightDynamicCanvas, context: nightDynamicContext }
+}
+
+/**
+ * Draw only the immutable portion of the current scene into an offscreen
+ * canvas, then composite that bitmap in one operation per frame.
+ *
+ * Cache boundary:
+ * - light mode: map Back 0 (opaque grassy base)
+ * - dark mode: night Back 0..3 patterns
+ *
+ * Cloud scrolling, star frames, moon ordering, ship frames, flare geometry
+ * and front layers stay on the live renderer because they depend on elapsed
+ * time or must retain their existing draw order.
+ */
+const drawStaticScene = () => {
+  if (!context || !manifest) return
+  const cache = ensureStaticSceneCanvas()
+  if (!cache) return
+
+  const mode: SkyMode = renderDarkMode ? 'dark' : 'light'
+  if (staticSceneDirty || staticSceneMode !== mode) {
+    const mainContext = context
+    const cachedContext = cache.context
+    cachedContext.setTransform(1, 0, 0, 1, 0, 0)
+    cachedContext.clearRect(0, 0, cache.canvas.width, cache.canvas.height)
+    cachedContext.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0)
+    cachedContext.imageSmoothingEnabled = true
+    cachedContext.imageSmoothingQuality = isMobileOrTabletViewport() ? 'low' : 'high'
+
+    context = cachedContext
+    try {
+      if (mode === 'dark') {
+        drawNightStaticSkyLayers()
+      } else {
+        drawFaithfulBackLayers(
+          false,
+          getFaithfulBackCamera(),
+          0,
+          getCloudSeaTranslationY(),
+          getGlobalThemeTranslationY(),
+          undefined,
+          DAY_SKY_BASE_LAYER_INDICES,
+        )
+      }
+    } finally {
+      context = mainContext
+    }
+
+    staticSceneMode = mode
+    staticSceneDirty = false
+  }
+
+  // The static surface has the same backing dimensions as the main Canvas; a
+  // device-pixel copy avoids an extra full-screen interpolation pass.
+  context.save()
+  context.setTransform(1, 0, 0, 1, 0, 0)
+  context.drawImage(cache.canvas, 0, 0)
+  context.restore()
+}
+
 const getFrame = (object: MapObject, elapsedMs: number) => {
   const frames = object.frames
   if (!frames?.length) {
@@ -1178,6 +1507,11 @@ const getFrame = (object: MapObject, elapsedMs: number) => {
 }
 
 const prepareManifestDrawOrder = (data: MapManifest) => {
+  staticSceneAssets.clear()
+  for (const layer of NIGHT_SKY_BACK_LAYERS) staticSceneAssets.add(layer.asset)
+  const staticDayLayer = data.back.find((layer) => DAY_SKY_BASE_LAYER_INDICES.has(layer.index))
+  if (staticDayLayer) staticSceneAssets.add(staticDayLayer.asset)
+
   orderedBackLayers = {
     back: data.back
       .filter((layer) => !layer.front)
@@ -1333,9 +1667,13 @@ const drawScene = (time: number) => {
   context.imageSmoothingEnabled = true
   context.imageSmoothingQuality = isMobileOrTabletViewport() ? 'low' : 'high'
 
-  // Dark mode adds only the audited nightDesert Back 0/4/5 group. The
-  // daytime sky base is skipped beneath it, while the existing daytime cloud
-  // and ship renderer continues unchanged for this PoC.
+  // Reuse the immutable scene base. The live renderer below retains every
+  // elapsed-time, scroll, frame-animation and front-layer operation.
+  drawStaticScene()
+
+  // Dark mode adds only the audited nightDesert animated star/moon group. The
+  // static night Back 0..3 patterns were composited above, while the existing
+  // daytime cloud and ship renderer continues unchanged for this PoC.
   if (darkMode) drawNightSkyLayers(elapsedMs)
 
   // Match MapRender's scene order: Back 0-6, then the Ossyria Obj group.
@@ -1345,7 +1683,7 @@ const drawScene = (time: number) => {
     elapsedMs,
     cloudSeaTranslationY,
     globalThemeTranslationY,
-    darkMode ? DAY_SKY_BASE_LAYER_INDICES : undefined,
+    DAY_SKY_BASE_LAYER_INDICES,
   )
 
   // Draw the original Ossyria object parts as one composition group. The
@@ -1414,20 +1752,25 @@ const start = async () => {
     if (!response.ok) throw new Error(`Manifest request failed: ${response.status}`)
     manifest = await response.json() as MapManifest
     prepareManifestDrawOrder(manifest)
-    // The active appearance is the critical path. The opposite appearance is
-    // scheduled only after the first complete scene is on screen.
+    // Only the first-paint tier blocks the first frame. The rest of the active
+    // scene is scheduled in idle batches after the Canvas is visible.
     let activeMode = requestedSkyMode
-    await preloadImageSet(collectCriticalAssetUrls(manifest, activeMode), `${activeMode} scene`)
-    await preloadModeAssets(activeMode)
+    let initialAssets = collectInitialAssetUrls(manifest, activeMode)
+    await preloadImageSet(initialAssets, `${activeMode} initial scene`, 2)
     if (activeMode !== requestedSkyMode) {
       activeMode = requestedSkyMode
-      await preloadModeAssets(activeMode)
+      initialAssets = collectInitialAssetUrls(manifest, activeMode)
+      await preloadImageSet(initialAssets, `${activeMode} initial scene`, 2)
     }
     if (disposed) return
     renderDarkMode = activeMode === 'dark'
     resizeCanvas()
     startedAt = performance.now()
+    renderStarted = true
     requestRender()
+    const deferredAssets = collectCriticalAssetUrls(manifest, activeMode)
+      .filter((url) => !initialAssets.includes(url))
+    scheduleProgressivePreload(deferredAssets, `${activeMode} deferred scene`)
     scheduleBackgroundPreload(activeMode === 'dark' ? 'light' : 'dark')
   } catch (error) {
     console.warn('[Upon the Sky] Unable to load WZ scene:', error)
@@ -1486,9 +1829,26 @@ onBeforeUnmount(() => {
   }
   motionMediaQuery = null
   handleMotionPreference = null
+  renderStarted = false
   context = null
   images.clear()
+  imagePromises.clear()
   nightPatterns.clear()
+  staticSceneCanvas = null
+  staticSceneContext = null
+  staticSceneMode = null
+  staticSceneWidth = 0
+  staticSceneHeight = 0
+  staticScenePixelRatio = 0
+  staticSceneDirty = true
+  nightDynamicCanvas = null
+  nightDynamicContext = null
+  nightDynamicMode = null
+  nightDynamicFrameIndex = -1
+  nightDynamicWidth = 0
+  nightDynamicHeight = 0
+  nightDynamicPixelRatio = 0
+  nightDynamicDirty = true
 })
 </script>
 
