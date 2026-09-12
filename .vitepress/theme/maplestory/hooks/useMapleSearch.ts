@@ -78,7 +78,7 @@ export const useMapleSearch = (
       }
     };
 
-    if (typeof window !== 'undefined' && window.location.hash && apiKey && !initialSearchDone.current) {
+    if (typeof window !== 'undefined' && window.location.hash && !initialSearchDone.current) {
       const hashName = decodeURIComponent(window.location.hash.substring(1));
       if (hashName) {
         lastHandledLocation = window.location.href;
@@ -127,9 +127,12 @@ export const useMapleSearch = (
     if (e) e.preventDefault();
     
     const targetName = overrideName !== undefined ? overrideName : characterName;
-    const targetKey = overrideKey !== undefined ? overrideKey : apiKey;
+    // The API key argument is now only the optional maintenance bypass key.
+    // Public mode intentionally passes an empty string because the Functions
+    // proxy supplies the server-side NEXON credential.
+    const targetKey = overrideKey !== undefined ? overrideKey : (apiKey || '');
 
-    if (!targetName.trim() || !targetKey || loading) return;
+    if (!targetName.trim() || loading) return;
 
     onSearchStart();
     setLoading(true);
@@ -161,7 +164,8 @@ export const useMapleSearch = (
 
   const handleBestSearch = async (overrideName?: string) => {
     const targetName = overrideName !== undefined ? overrideName : characterName;
-    if (!targetName.trim() || !apiKey) return;
+    const targetKey = apiKey || '';
+    if (!targetName.trim()) return;
     
     onSearchStart();
     setIsScanningBest(true);
@@ -174,7 +178,7 @@ export const useMapleSearch = (
       void fetchHolyBearCharacter(targetName).catch((discoveryError) => {
         console.warn('HolyBear character discovery is temporarily unavailable', discoveryError);
       });
-      const bestRecord = await findBestDateInPastWeek(targetName, apiKey);
+      const bestRecord = await findBestDateInPastWeek(targetName, targetKey);
 
       if (!bestRecord) {
         throw new Error('過去七天內找不到該角色的有效資料 (可能未登入或資料庫維護中)');
@@ -182,7 +186,7 @@ export const useMapleSearch = (
 
       setSelectedDate(bestRecord.date);
 
-      const result = await fetchCharacterData(targetName, apiKey, bestRecord.date);
+      const result = await fetchCharacterData(targetName, targetKey, bestRecord.date);
       
       setData(result);
       addToHistory(targetName);
