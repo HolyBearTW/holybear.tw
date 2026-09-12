@@ -6621,9 +6621,9 @@ html:not(.dark) body.theme-coretower.is-blog-page #app .fuwari-article-outline.f
     backdrop-filter: none !important;
   }
 
-  body:not(:has(.VPHome)):not(.is-home-page):has(.VPNavBarHamburger[aria-expanded="true"]) #app .Layout > .VPContent,
-  body:not(:has(.VPHome)):not(.is-home-page):has(.VPNavScreen) #app .Layout > .VPContent,
-  body:not(:has(.VPHome)):not(.is-home-page)[style*="overflow: hidden"] #app .Layout > .VPContent {
+  body:not(:has(.VPHome)):not(.is-home-page):not(:has(.hb-home-lobby)):not(:has(.VPHero)):has(.VPNavBarHamburger[aria-expanded="true"]) #app .Layout > .VPContent,
+  body:not(:has(.VPHome)):not(.is-home-page):not(:has(.hb-home-lobby)):not(:has(.VPHero)):has(.VPNavScreen) #app .Layout > .VPContent,
+  body:not(:has(.VPHome)):not(.is-home-page):not(:has(.hb-home-lobby)):not(:has(.VPHero))[style*="overflow: hidden"] #app .Layout > .VPContent {
     margin-top: calc(var(--vp-nav-height, 64px) + 1px) !important;
   }
 
