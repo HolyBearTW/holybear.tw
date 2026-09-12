@@ -6467,6 +6467,13 @@ html:not(.dark) body.theme-coretower.is-blog-page #app .fuwari-article-outline.f
    appearance-aware glass bar after the first 24px of scrolling.
    ========================================================================== */
 @media (max-width: 959px) {
+  /* Custom landing/list pages do not render VPHome, so route-state classes
+     are not reliable during scroll. VPLocalNav belongs to document pages;
+     suppress VitePress's transient "return to top" row everywhere else. */
+  html body:not(:has(.VPDoc)) #app .VPLocalNav {
+    display: none !important;
+  }
+
   html body.hb-local-nav-at-top #app .VPLocalNav,
   html body.hb-local-nav-at-top #app .VPLocalNav > .container,
   html body.hb-local-nav-at-top #app .VPLocalNav::before,
@@ -6591,6 +6598,49 @@ html:not(.dark) body.theme-coretower.is-blog-page #app .fuwari-article-outline.f
 /* Mobile navbar controls use icon-only hover feedback. The search button and
    VitePress hamburger are separate components, so keep their colors in sync. */
 @media (max-width: 767px) {
+  /* Keep the global mobile navigation reachable after the page scrolls. */
+  .VPNav {
+    position: sticky !important;
+    top: 0 !important;
+  }
+
+  /* Body scroll locking changes the sticky containing block. Pin the open
+     navbar to the viewport; non-home content receives an equal flow spacer
+     below so the page behind the drawer does not jump. */
+  .VPNav:has(.VPNavBar.screen-open) {
+    position: fixed !important;
+    inset: 0 0 auto !important;
+    background: transparent !important;
+    background-image: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+
+  body:not(:has(.VPHome)):not(.is-home-page):has(.VPNavBarHamburger[aria-expanded="true"]) #app .Layout > .VPContent {
+    margin-top: calc(var(--vp-nav-height, 64px) + 1px) !important;
+  }
+
+  /* The light mobile scrolled bar uses one opaque surface in both states, so
+     opening the screen drawer cannot recolor the navbar. */
+  html:not(.dark) body:not(.theme-halloween):not(.theme-christmas):not(.theme-coretower):not(.theme-gravityfield):not(.is-days500-page) #app .VPNav:has(.VPNavBar:not(.top)) {
+    --hb-mobile-nav-surface: rgb(207, 220, 229);
+    background: var(--hb-mobile-nav-surface) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+
+  .VPNav:has(.VPNavBar.screen-open) .VPNavScreen {
+    height: calc(100dvh - var(--vp-nav-height, 64px)) !important;
+    max-height: none !important;
+  }
+
+  /* The mobile local-nav row ("回到頂部" on pages without an outline) sits
+     below the main navbar. The full-screen hamburger drawer replaces it while
+     open, so do not leave a second navigation row visible underneath. */
+  body:has(.VPNavBarHamburger[aria-expanded="true"]) .VPLocalNav {
+    display: none !important;
+  }
+
   html body {
     --hb-mobile-nav-control-hover: var(--vp-c-brand-1, #087f94);
   }
@@ -6899,6 +6949,90 @@ html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav:has(.
 
 html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav:has(.VPNavBar:not(.top)) .VPNavBar:not(.top) .VPSocialLink:is(:hover, :focus-visible) > span {
   background-color: var(--hb-nav-hover-color) !important;
+}
+
+/* Mobile dark-art navigation contract. Keep the desktop navbar glass on
+   mobile, while search remains an icon-only control. */
+@media (max-width: 767px) {
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield):not(.is-days500-page) #app .VPNav.VPNav:has(.VPNavBar:not(.top)) {
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    border-bottom-color: transparent !important;
+    box-shadow: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield):not(.is-days500-page) #app .VPNav.VPNav:has(.VPNavBar:not(.top)) .VPNavBar:not(.top) {
+    background: rgba(7, 17, 25, 0.74) !important;
+    background-image: none !important;
+    border-bottom-color: rgba(148, 163, 184, 0.18) !important;
+    box-shadow: 0 8px 26px rgba(0, 0, 0, 0.28) !important;
+    -webkit-backdrop-filter: blur(22px) saturate(140%) !important;
+    backdrop-filter: blur(22px) saturate(140%) !important;
+  }
+
+  html body:is(.theme-coretower, .theme-gravityfield) #app .VPNav .VPNavBar .VPNavBarSearchButton.fuwari-nav-search {
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    border-color: transparent !important;
+    outline: none !important;
+    box-shadow: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav:has(.VPNavBar:not(.top)) .VPNavBar:not(.top) .VPNavBarSearchButton.fuwari-nav-search {
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    border-color: transparent !important;
+    outline: none !important;
+    box-shadow: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav .VPNavBar {
+    --hb-dark-art-mobile-icon: rgba(244, 251, 255, 0.96);
+  }
+
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav .VPNavBar:not(.top) {
+    --hb-dark-art-mobile-icon: rgba(239, 249, 252, 0.94);
+  }
+
+  html.dark body:is(.theme-coretower, .theme-gravityfield) #app .VPNav .VPNavBar {
+    --hb-dark-art-mobile-icon: rgb(152, 152, 159);
+  }
+
+  html body:is(.theme-coretower, .theme-gravityfield) #app .VPNav .VPNavBar .VPNavBarSearchButton.fuwari-nav-search,
+  html body:is(.theme-coretower, .theme-gravityfield) #app .VPNav .VPNavBar .VPNavBarSearchButton.fuwari-nav-search .vpi-search,
+  html body:is(.theme-coretower, .theme-gravityfield) #app .VPNav .VPNavBar .VPNavBarSearchButton.fuwari-nav-search .vpi-search::before,
+  html body:is(.theme-coretower, .theme-gravityfield) #app .VPNav .VPNavBar .VPNavBarHamburger {
+    color: var(--hb-dark-art-mobile-icon) !important;
+    text-shadow: none !important;
+  }
+
+  html body:is(.theme-coretower, .theme-gravityfield) #app .VPNav .VPNavBar .VPNavBarHamburger .top,
+  html body:is(.theme-coretower, .theme-gravityfield) #app .VPNav .VPNavBar .VPNavBarHamburger .middle,
+  html body:is(.theme-coretower, .theme-gravityfield) #app .VPNav .VPNavBar .VPNavBarHamburger .bottom {
+    background-color: var(--hb-dark-art-mobile-icon) !important;
+  }
+
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav.VPNav .VPNavBar.VPNavBar .VPNavBarHamburger.VPNavBarHamburger:is(:hover, :focus-visible) .top,
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav.VPNav .VPNavBar.VPNavBar .VPNavBarHamburger.VPNavBarHamburger:is(:hover, :focus-visible) .middle,
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav.VPNav .VPNavBar.VPNavBar .VPNavBarHamburger.VPNavBarHamburger:is(:hover, :focus-visible) .bottom {
+    background-color: var(--hb-mobile-nav-control-hover) !important;
+  }
+
+  html body:is(.theme-coretower, .theme-gravityfield) #app .VPNav.VPNav .VPNavBar.VPNavBar .VPNavBarSearchButton.fuwari-nav-search:is(:hover, :focus-visible),
+  html body:is(.theme-coretower, .theme-gravityfield) #app .VPNav.VPNav .VPNavBar.VPNavBar .VPNavBarSearchButton.fuwari-nav-search:is(:hover, :focus-visible) .vpi-search,
+  html body:is(.theme-coretower, .theme-gravityfield) #app .VPNav.VPNav .VPNavBar.VPNavBar .VPNavBarSearchButton.fuwari-nav-search:is(:hover, :focus-visible) .vpi-search::before {
+    color: var(--hb-mobile-nav-control-hover) !important;
+    text-shadow: none !important;
+  }
 }
 
 /* Upon the Sky light-mode component contract.

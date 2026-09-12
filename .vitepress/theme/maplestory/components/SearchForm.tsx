@@ -41,7 +41,6 @@ const SearchForm: React.FC<SearchFormProps> = ({
 }) => {
     const [showHistory, setShowHistory] = useState(false);
     const searchInputRef = useRef<HTMLInputElement>(null);
-    const [draftName, setDraftName] = useState(characterName);
     const lastLocallyEditedName = useRef(characterName);
     const deferredNameTimer = useRef<number | null>(null);
     const [characterRanks, setCharacterRanks] = useState<Record<string, HolyBearCharacterRank | null>>({});
@@ -51,7 +50,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
     useEffect(() => {
         if (characterName !== lastLocallyEditedName.current) {
             lastLocallyEditedName.current = characterName;
-            setDraftName(characterName);
+            if (searchInputRef.current) searchInputRef.current.value = characterName;
         }
     }, [characterName]);
 
@@ -77,8 +76,10 @@ const SearchForm: React.FC<SearchFormProps> = ({
         }))
             .then((results) => {
                 if (!active) return;
-                setCharacterRanks(Object.fromEntries(results.filter((result) => !result.unavailable).map((result) => [result.name, result.rank])));
-                setRankUnavailable(new Set(results.filter((result) => result.unavailable).map((result) => result.name)));
+                React.startTransition(() => {
+                    setCharacterRanks(Object.fromEntries(results.filter((result) => !result.unavailable).map((result) => [result.name, result.rank])));
+                    setRankUnavailable(new Set(results.filter((result) => result.unavailable).map((result) => result.name)));
+                });
             });
 
         return () => {
@@ -89,13 +90,27 @@ const SearchForm: React.FC<SearchFormProps> = ({
     useEffect(() => {
         if (!showHistory) return;
         const names = Array.from(new Set([...favorites, ...searchHistory]));
+        const rankingLookupPending = names.some((name) => (
+            !Object.prototype.hasOwnProperty.call(characterRanks, name) && !rankUnavailable.has(name)
+        ));
+        if (rankingLookupPending) return;
+
+        const namesMissingBasic = names.filter((name) => (
+            !characterRanks[name]?.entry
+            && !Object.prototype.hasOwnProperty.call(characterBasics, name)
+        ));
+        if (namesMissingBasic.length === 0) return;
+
         let active = true;
-        Promise.all(names.map(async (name) => [name, await fetchCharacterBasic(name, apiKey || '')] as const))
+        Promise.all(namesMissingBasic.map(async (name) => [name, await fetchCharacterBasic(name, apiKey || '')] as const))
             .then((results) => {
-                if (active) setCharacterBasics((current) => ({ ...current, ...Object.fromEntries(results) }));
+                if (!active) return;
+                React.startTransition(() => {
+                    setCharacterBasics((current) => ({ ...current, ...Object.fromEntries(results) }));
+                });
             });
         return () => { active = false; };
-    }, [apiKey, favorites, searchHistory, showHistory]);
+    }, [apiKey, characterBasics, characterRanks, favorites, rankUnavailable, searchHistory, showHistory]);
 
     const renderCharacterMeta = (name: string) => {
         const rankInfo = characterRanks[name];
@@ -134,6 +149,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
     };
 
     const submitSearch = (e: React.FormEvent) => {
+        const draftName = searchInputRef.current?.value ?? characterName;
         const name = draftName.trim();
         if (deferredNameTimer.current !== null) window.clearTimeout(deferredNameTimer.current);
         setShowHistory(false);
@@ -144,6 +160,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
     };
 
     const startBestSearch = () => {
+        const draftName = searchInputRef.current?.value ?? characterName;
         const name = draftName.trim();
         if (deferredNameTimer.current !== null) window.clearTimeout(deferredNameTimer.current);
         setShowHistory(false);
@@ -155,7 +172,6 @@ const SearchForm: React.FC<SearchFormProps> = ({
 
     const updateDraftName = (name: string) => {
         lastLocallyEditedName.current = name;
-        setDraftName(name);
         if (deferredNameTimer.current !== null) window.clearTimeout(deferredNameTimer.current);
         deferredNameTimer.current = window.setTimeout(() => {
             deferredNameTimer.current = null;
@@ -166,7 +182,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
     const selectHistoryName = (name: string) => {
         if (deferredNameTimer.current !== null) window.clearTimeout(deferredNameTimer.current);
         lastLocallyEditedName.current = name;
-        setDraftName(name);
+        if (searchInputRef.current) searchInputRef.current.value = name;
         setCharacterName(name);
         setShowHistory(false);
         handleSearch(undefined, name);
@@ -188,10 +204,11 @@ const SearchForm: React.FC<SearchFormProps> = ({
                 <Search className="maple-search-leading-icon absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors" />
                 <input 
                     ref={searchInputRef}
-                    value={draftName}
+                    defaultValue={characterName}
                     onChange={(e) => updateDraftName(e.target.value)}
                     onFocus={() => setShowHistory(true)}
                     onBlur={() => {
+                        const draftName = searchInputRef.current?.value ?? characterName;
                         const name = draftName.trim();
                         if (name) localStorage.setItem('maple_last_search_name', name);
                         setTimeout(() => setShowHistory(false), 200);
