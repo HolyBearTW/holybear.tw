@@ -6604,19 +6604,26 @@ html:not(.dark) body.theme-coretower.is-blog-page #app .fuwari-article-outline.f
     top: 0 !important;
   }
 
-  /* Body scroll locking changes the sticky containing block. Pin the open
-     navbar to the viewport; non-home content receives an equal flow spacer
-     below so the page behind the drawer does not jump. */
-  .VPNav:has(.VPNavBar.screen-open) {
+  /* Body scroll locking changes the sticky containing block. Keep the navbar
+     pinned until both the drawer's leave transition and its scroll lock have
+     finished; otherwise closing it briefly sends the bar back to page top. */
+  .VPNav:has(.VPNavBar.screen-open),
+  .VPNav:has(> .VPNavScreen),
+  body[style*="overflow: hidden"] #app .VPNav {
     position: fixed !important;
     inset: 0 0 auto !important;
+  }
+
+  .VPNav:has(.VPNavBar.screen-open) {
     background: transparent !important;
     background-image: none !important;
     -webkit-backdrop-filter: none !important;
     backdrop-filter: none !important;
   }
 
-  body:not(:has(.VPHome)):not(.is-home-page):has(.VPNavBarHamburger[aria-expanded="true"]) #app .Layout > .VPContent {
+  body:not(:has(.VPHome)):not(.is-home-page):has(.VPNavBarHamburger[aria-expanded="true"]) #app .Layout > .VPContent,
+  body:not(:has(.VPHome)):not(.is-home-page):has(.VPNavScreen) #app .Layout > .VPContent,
+  body:not(:has(.VPHome)):not(.is-home-page)[style*="overflow: hidden"] #app .Layout > .VPContent {
     margin-top: calc(var(--vp-nav-height, 64px) + 1px) !important;
   }
 

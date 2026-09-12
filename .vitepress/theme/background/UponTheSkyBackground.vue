@@ -336,6 +336,7 @@ let hasLoggedNightCoverage = false
 const images = new Map<string, HTMLImageElement>()
 const imagePromises = new Map<string, Promise<HTMLImageElement>>()
 const nightPatterns = new Map<string, CanvasPattern>()
+const mobileCloudPatterns = new Map<string, CanvasPattern>()
 const staticSceneAssets = new Set<string>(NIGHT_SKY_BACK_LAYERS.map((layer) => layer.asset))
 const nightStaticSceneAssets = new Set<string>(NIGHT_SKY_BACK_LAYERS.map((layer) => layer.asset))
 const nightDynamicAssets = new Set<string>([
@@ -963,6 +964,56 @@ const drawNightLayer = (
 }
 
 /**
+ * Mobile browsers can expose a one-pixel gap between two separately drawn
+ * copies of the 1024px scrolling cloud when the capped 1.25 DPR places the
+ * shared edge on a fractional backing pixel. A repeat-x pattern samples the
+ * same PNG as one continuous surface, preserving its phase and speed without
+ * letting the blue fallback show through at the tile boundary.
+ */
+const drawMobileScrollingCloud = (
+  layer: BackLayer,
+  image: HTMLImageElement,
+  camera: FaithfulBackCamera,
+  worldX: number,
+  worldY: number,
+  screenOffsetY: number,
+  alpha: number,
+  tileHeight: number,
+) => {
+  const drawingContext = context
+  if (!drawingContext) return
+
+  let pattern = mobileCloudPatterns.get(image.src)
+  if (!pattern) {
+    pattern = drawingContext.createPattern(image, 'repeat-x') ?? undefined
+    if (!pattern) return
+    mobileCloudPatterns.set(image.src, pattern)
+  }
+  const cloudPattern = pattern
+
+  const devicePixel = 1 / Math.max(pixelRatio, 1)
+  const drawX = Math.round(((worldX - camera.left) - layer.origin.x) / devicePixel) * devicePixel
+  const firstDrawY = (worldY - camera.top) + screenOffsetY - layer.origin.y
+
+  const drawBand = (bandY: number) => {
+    const drawY = Math.round(bandY / devicePixel) * devicePixel
+    cloudPattern.setTransform(new DOMMatrix().translate(drawX, drawY))
+    drawingContext.save()
+    drawingContext.globalAlpha = alpha
+    drawingContext.fillStyle = cloudPattern
+    drawingContext.fillRect(0, drawY, viewportWidth, image.naturalHeight)
+    drawingContext.restore()
+  }
+
+  drawBand(firstDrawY)
+  for (let continuationY = firstDrawY + tileHeight;
+    continuationY < viewportHeight;
+    continuationY += tileHeight) {
+    drawBand(continuationY)
+  }
+}
+
+/**
  * Static dark-mode boundary. Night Back 0..3 are opaque, non-animated WZ
  * patterns; they only change when the viewport/camera changes, so they can be
  * rendered once into the static scene cache.
@@ -1254,8 +1305,9 @@ const drawFaithfulSunFront = (
  * Reproduce MapRender's BackItem renderer at world scale 1:1.
  *
  * The loop intentionally draws each original frame independently. This keeps
- * cx/cy as the tile interval and never creates a CanvasPattern, mirrored tile,
- * source crop, or website-specific placement track.
+ * cx/cy as the tile interval and never creates a mirrored tile, source crop,
+ * or website-specific placement track. The mobile Back 1 exception uses the
+ * same frame as one continuous repeat-x surface to avoid fractional-DPR seams.
  */
 const drawFaithfulBackLayers = (
   front: boolean,
@@ -1322,6 +1374,26 @@ const drawFaithfulBackLayers = (
         ? cloudSeaTranslationY
         : 0
     )
+
+    const useMobileCloudPattern = viewportWidth <= 767
+      && !front
+      && layer.index === 1
+      && isHorizontalTile(layer.type)
+      && tileWidth === image.naturalWidth
+      && !Boolean(layer.flip || layer.f)
+    if (useMobileCloudPattern) {
+      drawMobileScrollingCloud(
+        layer,
+        image,
+        camera,
+        worldX,
+        worldY,
+        layerScreenOffsetY,
+        alpha,
+        tileHeight,
+      )
+      continue
+    }
 
     for (let tileY = tileStartY; tileY < tileEndY; tileY += 1) {
       for (let tileX = tileStartX; tileX < tileEndX; tileX += 1) {
@@ -1834,6 +1906,7 @@ onBeforeUnmount(() => {
   images.clear()
   imagePromises.clear()
   nightPatterns.clear()
+  mobileCloudPatterns.clear()
   staticSceneCanvas = null
   staticSceneContext = null
   staticSceneMode = null
