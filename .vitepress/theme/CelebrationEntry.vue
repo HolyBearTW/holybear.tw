@@ -27,14 +27,15 @@ const getFixedObstacles = () => {
   const entry = entryRef.value
   const candidates = new Set<Element>()
 
-  document.querySelectorAll('.music-container, .sidebar-toggle').forEach((element) => candidates.add(element))
+  document.querySelectorAll('.music-container, .sidebar-toggle, .hb-home-lobby .hero-actions').forEach((element) => candidates.add(element))
   document.querySelectorAll('button, a, [role="button"]').forEach((element) => candidates.add(element))
 
   return Array.from(candidates).filter((element) => {
     if (element === entry || entry?.contains(element)) return false
 
     const style = window.getComputedStyle(element)
-    if (style.position !== 'fixed' || style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) {
+    const isHomeActions = element.matches('.hb-home-lobby .hero-actions')
+    if ((!isHomeActions && style.position !== 'fixed') || style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) {
       return false
     }
 
@@ -93,8 +94,10 @@ onMounted(async () => {
   if (entryRef.value) resizeObserver.observe(entryRef.value)
   const player = document.querySelector('.music-container')
   const sidebarToggle = document.querySelector('.sidebar-toggle')
+  const homeActions = document.querySelector('.hb-home-lobby .hero-actions')
   if (player) resizeObserver.observe(player)
   if (sidebarToggle) resizeObserver.observe(sidebarToggle)
+  if (homeActions) resizeObserver.observe(homeActions)
 
   if (player) {
     playerObserver = new MutationObserver(schedulePositionUpdate)

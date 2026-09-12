@@ -35,6 +35,7 @@ let mediaElement = null
 const handleMediaPlay = () => { isPlaying = true }
 const handleMediaPause = () => { isPlaying = false }
 let resumeAudioContext = null
+const AUDIO_GRAPH_KEY = Symbol.for('holybear.gravity-field-audio-graph')
 
 let musicUniforms = {
   bass: { value: 0.0 },
@@ -179,19 +180,36 @@ const initAudio = () => {
 }
 
 const setupAudioContext = (mediaElement) => {
+  let newAudioContext = null
   try {
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    audioContext = new AudioContext();
-    audioAnalyser = audioContext.createAnalyser();
-    audioAnalyser.fftSize = 512;
+    let audioGraph = mediaElement[AUDIO_GRAPH_KEY]
+    if (!audioGraph) {
+      const AudioContext = window.AudioContext || window.webkitAudioContext
+      newAudioContext = new AudioContext()
+      const analyser = newAudioContext.createAnalyser()
+      analyser.fftSize = 512
+      const source = newAudioContext.createMediaElementSource(mediaElement)
+      source.connect(analyser)
+      analyser.connect(newAudioContext.destination)
+      audioGraph = { context: newAudioContext, analyser, source }
+      mediaElement[AUDIO_GRAPH_KEY] = audioGraph
+    }
+
+    audioContext = audioGraph.context
+    audioAnalyser = audioGraph.analyser
+    audioSource = audioGraph.source
     frequencyData = new Uint8Array(audioAnalyser.frequencyBinCount);
-    audioSource = audioContext.createMediaElementSource(mediaElement);
-    audioSource.connect(audioAnalyser);
-    audioAnalyser.connect(audioContext.destination);
     resumeAudioContext = () => { if (audioContext.state === 'suspended') audioContext.resume(); }
     document.addEventListener('click', resumeAudioContext, { once: true });
     mediaElement.addEventListener('play', resumeAudioContext);
-  } catch (e) { console.error(e); }
+  } catch (e) {
+    if (newAudioContext && !mediaElement[AUDIO_GRAPH_KEY]) newAudioContext.close().catch(() => {})
+    audioContext = null
+    audioAnalyser = null
+    audioSource = null
+    frequencyData = null
+    console.error(e)
+  }
 }
 
 const updateAudioData = () => {

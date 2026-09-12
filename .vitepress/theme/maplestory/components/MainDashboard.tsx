@@ -27,6 +27,8 @@ import {
   readCharacterAppearance,
   storeCharacterAppearance,
 } from '../characterAppearance';
+import { getJobArtwork } from '../jobArtwork';
+import JobArtworkDecoration from './JobArtworkDecoration';
 
 // Keep the calculator and its formula code out of the character result's first paint.
 const CharacterCalculatorModal = React.lazy(() => import('./CharacterCalculatorModal'));
@@ -253,6 +255,7 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
       () => buildCharacterAppearanceUrl(data.basic.character_image, appearanceSettings),
       [appearanceSettings, data.basic.character_image],
     );
+    const hasJobArtwork = Boolean(getJobArtwork(data.basic.character_class));
     const profileMapId = getJobBackgroundMap(data.basic.character_class);
     const fallbackVillageMapId = getJobFallbackVillageMap(data.basic.character_class);
     const [profileCharacterLoaded, setProfileCharacterLoaded] = React.useState(false);
@@ -312,31 +315,38 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <div className="h-full space-y-4 lg:col-span-3">
                <div className="relative h-full overflow-hidden rounded-xl border border-slate-800 bg-[#161b22] shadow-xl group">
-                  <div className="maple-profile-banner h-32 bg-slate-800 relative overflow-hidden">
-                      {profileCharacterLoaded && !bannerRemoteFailed && (
-                        <img
-                          key={bannerRemoteMapId}
-                          src={`https://maplestory.io/api/GMS/${getMaplestoryIoMapVersion(bannerRemoteMapId)}/map/${bannerRemoteMapId}/render/back`}
-                          alt=""
-                          aria-hidden="true"
-                          loading="lazy"
-                          decoding="async"
-                          fetchPriority="low"
-                          className="maple-profile-city absolute inset-0 h-full w-full object-cover object-center opacity-[0.68] transition-all duration-700 group-hover:scale-110 group-hover:opacity-[0.82]"
-                          onLoad={() => setBannerRemoteLoaded(true)}
-                          onError={() => {
-                            if (bannerRemoteMapId !== fallbackVillageMapId) {
-                              setBannerRemoteMapId(fallbackVillageMapId);
-                              setBannerRemoteLoaded(false);
-                            } else {
-                              setBannerRemoteFailed(true);
-                            }
-                          }}
-                        />
-                      )}
-                      <div className="maple-profile-shade absolute inset-0 bg-gradient-to-b from-transparent to-[#161b22]"></div>
+                  <div className={`maple-profile-banner h-32 bg-slate-800 relative overflow-hidden ${hasJobArtwork ? 'maple-profile-banner--artwork' : ''}`}>
+                      <div className="maple-profile-scene absolute inset-0 overflow-hidden">
+                        {profileCharacterLoaded && !bannerRemoteFailed && (
+                          <img
+                            key={bannerRemoteMapId}
+                            src={`https://maplestory.io/api/GMS/${getMaplestoryIoMapVersion(bannerRemoteMapId)}/map/${bannerRemoteMapId}/render/back`}
+                            alt=""
+                            aria-hidden="true"
+                            loading="lazy"
+                            decoding="async"
+                            fetchPriority="low"
+                            className="maple-profile-city absolute inset-0 h-full w-full object-cover object-center opacity-[0.68] transition-all duration-700 group-hover:scale-110 group-hover:opacity-[0.82]"
+                            onLoad={() => setBannerRemoteLoaded(true)}
+                            onError={() => {
+                              if (bannerRemoteMapId !== fallbackVillageMapId) {
+                                setBannerRemoteMapId(fallbackVillageMapId);
+                                setBannerRemoteLoaded(false);
+                              } else {
+                                setBannerRemoteFailed(true);
+                              }
+                            }}
+                          />
+                        )}
+                        <div className="maple-profile-shade absolute inset-0 bg-gradient-to-b from-transparent to-[#161b22]"></div>
+                      </div>
+                      <JobArtworkDecoration
+                        jobName={data.basic.character_class}
+                        characterGender={data.basic.character_gender}
+                        characterKey={appearanceCharacterKey}
+                      />
                   </div>
-                  <div className="px-5 relative -mt-16 flex flex-col items-center pb-5">
+                  <div className="px-5 relative z-10 -mt-16 flex flex-col items-center pb-5">
                       <button
                         type="button"
                         className="relative z-10 mb-3 group-hover:scale-105 transition-transform duration-500"

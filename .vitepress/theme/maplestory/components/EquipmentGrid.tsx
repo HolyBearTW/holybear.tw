@@ -10,6 +10,7 @@ import { mapleAsset, mapleAssetOrNull } from '../assets';
 import { CharacterAppearanceSettings } from '../characterAppearance';
 import { MAP_SCENE_ANCHORS, MAP_SCENE_OPTIONS, getMaplestoryIoMapVersion } from '../constants';
 import { useEquipmentLayoutScale } from './useEquipmentLayoutScale';
+import './equipmentMapScene.css';
 
 const characterAsset = (name: string) => mapleAsset(`maplestory_character/${name}`);
 const windowAsset = (name: string) => mapleAsset(`window/${name}`);
@@ -840,14 +841,14 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, setEffect, cha
                 <div className="absolute bottom-[44px] left-1/2 z-10 h-24 w-24 -translate-x-1/2 rounded-full bg-slate-800/50" />
              )}
            </div>
-            <div ref={mapSelectorRef} className="absolute right-1 top-1 z-[80] flex flex-col items-center gap-0.5">
+            <div ref={mapSelectorRef} className="maple-map-scene-controls absolute right-1 top-1 z-[80] flex flex-col items-center gap-0.5">
              <button
                type="button"
                aria-label="選擇地圖"
                aria-expanded={showMapSelector}
                title="選擇地圖"
                onClick={() => setShowMapSelector((current) => !current)}
-               className="pointer-events-none flex h-6 w-6 items-center justify-center rounded-md border-0 bg-transparent text-slate-200 opacity-0 shadow-none transition-opacity duration-150 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100 hover:text-cyan-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+               className="maple-map-scene-control maple-map-scene-gear pointer-events-none flex h-6 w-6 items-center justify-center rounded-md border-0 bg-transparent text-slate-200 opacity-0 shadow-none transition-opacity duration-150 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100 hover:text-cyan-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
              >
                <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true">
                  <mask id="map-scene-gear-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24">
@@ -876,13 +877,13 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, setEffect, cha
                   onResetMapScene();
                   setShowMapSelector(false);
                 }}
-                className="pointer-events-none -mt-1 flex h-6 w-6 items-center justify-center rounded-md border-0 bg-transparent text-slate-200 opacity-0 shadow-none transition-colors duration-150 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100 hover:text-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+                className="maple-map-scene-control maple-map-scene-reset pointer-events-none -mt-1 flex h-6 w-6 items-center justify-center rounded-md border-0 bg-transparent text-slate-200 opacity-0 shadow-none transition-colors duration-150 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100 hover:text-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
               >
                 <RotateCcw className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
               </button>
               {showMapSelector && (
-                <div className="absolute right-0 top-12 w-52 max-w-[calc(100vw-24px)] rounded-lg border border-slate-600 bg-slate-900/95 p-2.5 text-left shadow-2xl backdrop-blur-sm">
-                 <label className="block text-[10px] font-bold tracking-wide text-slate-400" htmlFor="map-scene-select">地圖預覽</label>
+                <div className="maple-map-scene-menu absolute right-0 top-12 w-52 max-w-[calc(100vw-24px)] rounded-lg border border-slate-600 bg-slate-900/95 p-2.5 text-left shadow-2xl backdrop-blur-sm">
+                 <label className="maple-map-scene-label block text-[10px] font-bold tracking-wide text-slate-400" htmlFor="map-scene-select">地圖預覽</label>
                  <select
                    id="map-scene-select"
                     value={selectedMapId}
@@ -890,11 +891,11 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, setEffect, cha
                       onSelectedMapIdChange(event.target.value);
                       setShowMapSelector(false);
                     }}
-                   className="mt-1.5 w-full rounded border border-slate-600 bg-slate-800 px-2 py-1.5 text-[11px] text-slate-100 outline-none focus:border-cyan-400"
+                   className="maple-map-scene-select mt-1.5 w-full rounded border border-slate-600 bg-slate-800 px-2 py-1.5 text-[11px] text-slate-100 outline-none focus:border-cyan-400"
                  >
                    {MAP_SCENE_OPTIONS.map(([mapId, label]) => <option key={mapId} value={mapId}>{label}</option>)}
                  </select>
-                 <p className="mt-1.5 text-[9px] leading-3 text-slate-500">每張地圖使用固定出生立足點</p>
+                 <p className="maple-map-scene-hint mt-1.5 text-[9px] leading-3 text-slate-500">每張地圖使用固定出生立足點</p>
                </div>
              )}
            </div>

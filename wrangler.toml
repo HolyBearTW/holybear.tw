@@ -3,6 +3,7 @@ pages_build_output_dir = ".vitepress/dist"
 compatibility_date = "2026-09-04"
 
 [vars]
+MAINTENANCE_MODE = "disabled"
 CHARACTER_FRESHNESS_SECONDS = "900"
 IMPORT_SOURCE_PAGE_SIZE = "100"
 NEXON_RESOLUTION_BATCH_SIZE = "32"
@@ -53,6 +54,7 @@ database_id = "edea16a9-d316-4c96-bbf5-87c3fb696975"
 migrations_dir = "migrations-survey"
 
 [env.production.vars]
+MAINTENANCE_MODE = "disabled"
 NODE_VERSION = "24"
 SKIP_DEPENDENCY_INSTALL = "1"
 YARN_ENABLE_IMMUTABLE_INSTALLS = "false"

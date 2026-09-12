@@ -599,92 +599,107 @@ body.holy-bear-page-enter.holy-bear-route-enter .sponsor-page .gentle-note {
 }
 
 /* Dynamic themes whose canvas stays dark even when VitePress is in light mode. */
-html:not(.dark) body:is(.theme-coretower, .theme-gaming, .theme-gravityfield, .theme-slow3dfly, .theme-halloween, .theme-christmas) .sponsor-page {
+html:not(.dark) body:is(.theme-coretower, .theme-gaming, .theme-uponthesky, .theme-gravityfield, .theme-slow3dfly, .theme-halloween, .theme-christmas) .sponsor-page {
   color: #effcff;
 }
 
-html:not(.dark) body:is(.theme-coretower, .theme-gaming, .theme-gravityfield, .theme-slow3dfly, .theme-halloween, .theme-christmas) .sponsor-page h1,
-html:not(.dark) body:is(.theme-coretower, .theme-gaming, .theme-gravityfield, .theme-slow3dfly, .theme-halloween, .theme-christmas) .sponsor-page .gentle-note h2 {
+html:not(.dark) body:is(.theme-coretower, .theme-gaming, .theme-uponthesky, .theme-gravityfield, .theme-slow3dfly, .theme-halloween, .theme-christmas) .sponsor-page h1,
+html:not(.dark) body:is(.theme-coretower, .theme-gaming, .theme-uponthesky, .theme-gravityfield, .theme-slow3dfly, .theme-halloween, .theme-christmas) .sponsor-page .gentle-note h2 {
   color: #f5fdff !important;
   text-shadow: 0 2px 12px rgba(2, 18, 31, .94);
 }
 
-html:not(.dark) body:is(.theme-coretower, .theme-gaming, .theme-gravityfield, .theme-slow3dfly, .theme-halloween, .theme-christmas) .sponsor-page .brand-mark,
-html:not(.dark) body:is(.theme-coretower, .theme-gaming, .theme-gravityfield, .theme-slow3dfly, .theme-halloween, .theme-christmas) .sponsor-page .intro,
-html:not(.dark) body:is(.theme-coretower, .theme-gaming, .theme-gravityfield, .theme-slow3dfly, .theme-halloween, .theme-christmas) .sponsor-page .gentle-note div p {
+html:not(.dark) body:is(.theme-coretower, .theme-gaming, .theme-uponthesky, .theme-gravityfield, .theme-slow3dfly, .theme-halloween, .theme-christmas) .sponsor-page .brand-mark,
+html:not(.dark) body:is(.theme-coretower, .theme-gaming, .theme-uponthesky, .theme-gravityfield, .theme-slow3dfly, .theme-halloween, .theme-christmas) .sponsor-page .intro,
+html:not(.dark) body:is(.theme-coretower, .theme-gaming, .theme-uponthesky, .theme-gravityfield, .theme-slow3dfly, .theme-halloween, .theme-christmas) .sponsor-page .gentle-note div p {
   color: #dcecf1;
   text-shadow: 0 2px 9px rgba(2, 18, 31, .94);
 }
 
-html:not(.dark) body:is(.theme-coretower, .theme-gaming, .theme-gravityfield, .theme-slow3dfly, .theme-halloween, .theme-christmas) .sponsor-page .uses-title,
-html:not(.dark) body:is(.theme-coretower, .theme-gaming, .theme-gravityfield, .theme-slow3dfly, .theme-halloween, .theme-christmas) .sponsor-page .thanks {
+html:not(.dark) body:is(.theme-coretower, .theme-gaming, .theme-uponthesky, .theme-gravityfield, .theme-slow3dfly, .theme-halloween, .theme-christmas) .sponsor-page .uses-title,
+html:not(.dark) body:is(.theme-coretower, .theme-gaming, .theme-uponthesky, .theme-gravityfield, .theme-slow3dfly, .theme-halloween, .theme-christmas) .sponsor-page .thanks {
   color: #c2d9e1;
   text-shadow: 0 2px 8px rgba(2, 18, 31, .92);
 }
 
-html:not(.dark) body:is(.theme-coretower, .theme-gaming, .theme-gravityfield, .theme-slow3dfly, .theme-halloween, .theme-christmas) .sponsor-page .support-uses li {
+html:not(.dark) body:is(.theme-coretower, .theme-gaming, .theme-uponthesky, .theme-gravityfield, .theme-slow3dfly, .theme-halloween, .theme-christmas) .sponsor-page .support-uses li {
   color: #effcff;
   text-shadow: 0 2px 8px rgba(2, 18, 31, .9);
 }
 
-html:not(.dark) body:is(.theme-coretower, .theme-gaming, .theme-gravityfield, .theme-slow3dfly, .theme-halloween, .theme-christmas) .sponsor-page .support-uses,
-html:not(.dark) body:is(.theme-coretower, .theme-gaming, .theme-gravityfield, .theme-slow3dfly, .theme-halloween, .theme-christmas) .sponsor-page .gentle-note {
+html:not(.dark) body:is(.theme-coretower, .theme-gaming, .theme-uponthesky, .theme-gravityfield, .theme-slow3dfly, .theme-halloween, .theme-christmas) .sponsor-page .support-uses,
+html:not(.dark) body:is(.theme-coretower, .theme-gaming, .theme-uponthesky, .theme-gravityfield, .theme-slow3dfly, .theme-halloween, .theme-christmas) .sponsor-page .gentle-note {
   border-color: rgba(202, 235, 243, .32);
 }
 
-html:not(.dark) body:is(.theme-coretower, .theme-gaming, .theme-gravityfield, .theme-slow3dfly, .theme-halloween, .theme-christmas) .sponsor-page .payment-card {
+html:not(.dark) body:is(.theme-coretower, .theme-gaming, .theme-uponthesky, .theme-gravityfield, .theme-slow3dfly, .theme-halloween, .theme-christmas) .sponsor-page .payment-card {
   color: #173746;
   background: rgba(249, 253, 255, .88);
   border-color: rgba(143, 194, 207, .72);
   box-shadow: 0 28px 80px rgba(2, 18, 31, .34);
 }
 
-html:not(.dark) body:is(.theme-coretower, .theme-gaming, .theme-gravityfield, .theme-slow3dfly, .theme-halloween, .theme-christmas) .sponsor-page .qr-heading h2 {
+html:not(.dark) body:is(.theme-coretower, .theme-gaming, .theme-uponthesky, .theme-gravityfield, .theme-slow3dfly, .theme-halloween, .theme-christmas) .sponsor-page .qr-heading h2 {
   color: #173746 !important;
   text-shadow: none;
 }
 
-html:not(.dark) body:is(.theme-coretower, .theme-gaming, .theme-gravityfield, .theme-slow3dfly, .theme-halloween, .theme-christmas) .sponsor-page .qr-heading p,
-html:not(.dark) body:is(.theme-coretower, .theme-gaming, .theme-gravityfield, .theme-slow3dfly, .theme-halloween, .theme-christmas) .sponsor-page .external-note {
+html:not(.dark) body:is(.theme-coretower, .theme-gaming, .theme-uponthesky, .theme-gravityfield, .theme-slow3dfly, .theme-halloween, .theme-christmas) .sponsor-page .qr-heading p,
+html:not(.dark) body:is(.theme-coretower, .theme-gaming, .theme-uponthesky, .theme-gravityfield, .theme-slow3dfly, .theme-halloween, .theme-christmas) .sponsor-page .external-note {
   color: #526b78;
   text-shadow: none;
 }
 
 /* Every animated theme gets explicit dark-mode contrast instead of inheriting canvas colors. */
-html.dark body:is(.theme-coretower, .theme-tech, .theme-gravityfield, .theme-animated, .theme-gaming, .theme-slow3dfly, .theme-halo, .theme-hyperos, .theme-hyperos2, .theme-halloween, .theme-christmas) .sponsor-page {
+html.dark body:is(.theme-coretower, .theme-tech, .theme-uponthesky, .theme-gravityfield, .theme-animated, .theme-gaming, .theme-slow3dfly, .theme-halo, .theme-hyperos, .theme-hyperos2, .theme-halloween, .theme-christmas) .sponsor-page {
   color: #f2fbff;
 }
 
-html.dark body:is(.theme-coretower, .theme-tech, .theme-gravityfield, .theme-animated, .theme-gaming, .theme-slow3dfly, .theme-halo, .theme-hyperos, .theme-hyperos2, .theme-halloween, .theme-christmas) .sponsor-page h1,
-html.dark body:is(.theme-coretower, .theme-tech, .theme-gravityfield, .theme-animated, .theme-gaming, .theme-slow3dfly, .theme-halo, .theme-hyperos, .theme-hyperos2, .theme-halloween, .theme-christmas) .sponsor-page .gentle-note h2 {
+html.dark body:is(.theme-coretower, .theme-tech, .theme-uponthesky, .theme-gravityfield, .theme-animated, .theme-gaming, .theme-slow3dfly, .theme-halo, .theme-hyperos, .theme-hyperos2, .theme-halloween, .theme-christmas) .sponsor-page h1,
+html.dark body:is(.theme-coretower, .theme-tech, .theme-uponthesky, .theme-gravityfield, .theme-animated, .theme-gaming, .theme-slow3dfly, .theme-halo, .theme-hyperos, .theme-hyperos2, .theme-halloween, .theme-christmas) .sponsor-page .gentle-note h2 {
   color: #f5fdff !important;
   text-shadow: 0 2px 12px rgba(0, 0, 0, .82);
 }
 
-html.dark body:is(.theme-coretower, .theme-tech, .theme-gravityfield, .theme-animated, .theme-gaming, .theme-slow3dfly, .theme-halo, .theme-hyperos, .theme-hyperos2, .theme-halloween, .theme-christmas) .sponsor-page .intro,
-html.dark body:is(.theme-coretower, .theme-tech, .theme-gravityfield, .theme-animated, .theme-gaming, .theme-slow3dfly, .theme-halo, .theme-hyperos, .theme-hyperos2, .theme-halloween, .theme-christmas) .sponsor-page .gentle-note div p {
+html.dark body:is(.theme-coretower, .theme-tech, .theme-uponthesky, .theme-gravityfield, .theme-animated, .theme-gaming, .theme-slow3dfly, .theme-halo, .theme-hyperos, .theme-hyperos2, .theme-halloween, .theme-christmas) .sponsor-page .intro,
+html.dark body:is(.theme-coretower, .theme-tech, .theme-uponthesky, .theme-gravityfield, .theme-animated, .theme-gaming, .theme-slow3dfly, .theme-halo, .theme-hyperos, .theme-hyperos2, .theme-halloween, .theme-christmas) .sponsor-page .gentle-note div p {
   color: #d7e3e8;
 }
 
-html.dark body:is(.theme-coretower, .theme-tech, .theme-gravityfield, .theme-animated, .theme-gaming, .theme-slow3dfly, .theme-halo, .theme-hyperos, .theme-hyperos2, .theme-halloween, .theme-christmas) .sponsor-page .brand-mark,
-html.dark body:is(.theme-coretower, .theme-tech, .theme-gravityfield, .theme-animated, .theme-gaming, .theme-slow3dfly, .theme-halo, .theme-hyperos, .theme-hyperos2, .theme-halloween, .theme-christmas) .sponsor-page .uses-title,
-html.dark body:is(.theme-coretower, .theme-tech, .theme-gravityfield, .theme-animated, .theme-gaming, .theme-slow3dfly, .theme-halo, .theme-hyperos, .theme-hyperos2, .theme-halloween, .theme-christmas) .sponsor-page .thanks,
-html.dark body:is(.theme-coretower, .theme-tech, .theme-gravityfield, .theme-animated, .theme-gaming, .theme-slow3dfly, .theme-halo, .theme-hyperos, .theme-hyperos2, .theme-halloween, .theme-christmas) .sponsor-page .external-note {
+html.dark body:is(.theme-coretower, .theme-tech, .theme-uponthesky, .theme-gravityfield, .theme-animated, .theme-gaming, .theme-slow3dfly, .theme-halo, .theme-hyperos, .theme-hyperos2, .theme-halloween, .theme-christmas) .sponsor-page .brand-mark,
+html.dark body:is(.theme-coretower, .theme-tech, .theme-uponthesky, .theme-gravityfield, .theme-animated, .theme-gaming, .theme-slow3dfly, .theme-halo, .theme-hyperos, .theme-hyperos2, .theme-halloween, .theme-christmas) .sponsor-page .uses-title,
+html.dark body:is(.theme-coretower, .theme-tech, .theme-uponthesky, .theme-gravityfield, .theme-animated, .theme-gaming, .theme-slow3dfly, .theme-halo, .theme-hyperos, .theme-hyperos2, .theme-halloween, .theme-christmas) .sponsor-page .thanks,
+html.dark body:is(.theme-coretower, .theme-tech, .theme-uponthesky, .theme-gravityfield, .theme-animated, .theme-gaming, .theme-slow3dfly, .theme-halo, .theme-hyperos, .theme-hyperos2, .theme-halloween, .theme-christmas) .sponsor-page .external-note {
   color: #b8ced7;
 }
 
-html.dark body:is(.theme-coretower, .theme-tech, .theme-gravityfield, .theme-animated, .theme-gaming, .theme-slow3dfly, .theme-halo, .theme-hyperos, .theme-hyperos2, .theme-halloween, .theme-christmas) .sponsor-page .support-uses li {
+html.dark body:is(.theme-coretower, .theme-tech, .theme-uponthesky, .theme-gravityfield, .theme-animated, .theme-gaming, .theme-slow3dfly, .theme-halo, .theme-hyperos, .theme-hyperos2, .theme-halloween, .theme-christmas) .sponsor-page .support-uses li {
   color: #edf9fc;
 }
 
-html.dark body:is(.theme-coretower, .theme-tech, .theme-gravityfield, .theme-animated, .theme-gaming, .theme-slow3dfly, .theme-halo, .theme-hyperos, .theme-hyperos2, .theme-halloween, .theme-christmas) .sponsor-page .payment-card {
+html.dark body:is(.theme-coretower, .theme-tech, .theme-uponthesky, .theme-gravityfield, .theme-animated, .theme-gaming, .theme-slow3dfly, .theme-halo, .theme-hyperos, .theme-hyperos2, .theme-halloween, .theme-christmas) .sponsor-page .payment-card {
   background: rgba(6, 20, 31, .86);
   border-color: rgba(82, 211, 222, .34);
   box-shadow: 0 28px 80px rgba(0, 0, 0, .34);
 }
 
-html.dark body:is(.theme-coretower, .theme-tech, .theme-gravityfield, .theme-animated, .theme-gaming, .theme-slow3dfly, .theme-halo, .theme-hyperos, .theme-hyperos2, .theme-halloween, .theme-christmas) .sponsor-page .qr-heading h2 {
+html.dark body:is(.theme-coretower, .theme-tech, .theme-uponthesky, .theme-gravityfield, .theme-animated, .theme-gaming, .theme-slow3dfly, .theme-halo, .theme-hyperos, .theme-hyperos2, .theme-halloween, .theme-christmas) .sponsor-page .qr-heading h2 {
   color: #f2fbff !important;
+}
+
+/* Upon the Sky keeps the payment cards self-contained, but the copy on the
+   artwork needs the same layered night-sky shadow as the homepage. */
+html.dark body.theme-uponthesky .sponsor-page .brand-mark,
+html.dark body.theme-uponthesky .sponsor-page .intro,
+html.dark body.theme-uponthesky .sponsor-page .uses-title,
+html.dark body.theme-uponthesky .sponsor-page .support-uses li,
+html.dark body.theme-uponthesky .sponsor-page .gentle-note h2,
+html.dark body.theme-uponthesky .sponsor-page .gentle-note div p,
+html.dark body.theme-uponthesky .sponsor-page .thanks {
+  text-shadow:
+    0 2px 3px rgba(0, 10, 35, .98),
+    0 4px 14px rgba(0, 10, 35, .86),
+    0 0 2px rgba(0, 0, 0, .9) !important;
 }
 
 /* Animated themes that become light keep dark copy, with a stable translucent surface. */

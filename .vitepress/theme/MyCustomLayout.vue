@@ -32,6 +32,7 @@ const Halo = defineAsyncComponent(() => import('./background/CircularHaloBackgro
 const HyperOS = defineAsyncComponent(() => import('./background/HyperOSTheme.vue'))
 const HyperOS2 = defineAsyncComponent(() => import('./background/HyperOS2Theme.vue'))
 const CoreTower = defineAsyncComponent(() => import('./background/CoreTowerBackground.vue'))
+const UponTheSky = defineAsyncComponent(() => import('./background/UponTheSkyBackground.vue'))
 const Christmas = defineAsyncComponent(() => import('./background/ChristmasBackground.vue'))
 const Halloween = defineAsyncComponent(() => import('./background/HalloweenBackground.vue'))
 const GravityFieldSimulation = defineAsyncComponent(() => import('./background/GravityFieldSimulation.vue'))
@@ -56,7 +57,7 @@ const isConstrainedDevice = ref(
 
 const mobileFallbackBackground = computed(() => {
     const theme = currentBackgroundTheme.value
-    const darkFallbackThemes = new Set(['tech', 'gaming', 'gravityfield', 'slow3dfly', 'coretower', 'halloween', 'christmas'])
+    const darkFallbackThemes = new Set(['tech', 'gaming', 'gravityfield', 'slow3dfly', 'coretower', 'uponthesky', 'halloween', 'christmas'])
     const adaptiveThemes = new Set(['animated', 'hyperos', 'hyperos2', 'halo', 'none'])
 
     if (darkFallbackThemes.has(theme)) {
@@ -199,6 +200,7 @@ const updateBodyClass = (theme: string) => {
 const updateScrollTopClass = () => {
   if (typeof window === 'undefined' || typeof document === 'undefined') return
   document.body.classList.toggle('hb-at-scroll-top', window.scrollY <= 1)
+  document.body.classList.toggle('hb-local-nav-at-top', window.scrollY <= 24)
 }
 
 let blogHashAlignmentTimers: number[] = []
@@ -310,6 +312,7 @@ onUnmounted(() => {
     blogHashAlignmentTimers.forEach(timer => window.clearTimeout(timer))
     blogHashAlignmentTimers = []
     document.body.classList.remove('hb-at-scroll-top')
+    document.body.classList.remove('hb-local-nav-at-top')
   }
 })
 
@@ -726,6 +729,7 @@ onUnmounted(() => {
         <HyperOS v-if="!isConstrainedDevice && currentBackgroundTheme === 'hyperos'" />
         <HyperOS2 v-if="!isConstrainedDevice && currentBackgroundTheme === 'hyperos2'" />
         <CoreTower v-if="!isConstrainedDevice && currentBackgroundTheme === 'coretower'" />
+        <UponTheSky v-if="currentBackgroundTheme === 'uponthesky'" />
         <Halloween v-if="!isConstrainedDevice && currentBackgroundTheme === 'halloween'" />
         <GravityFieldSimulation v-if="!isConstrainedDevice && currentBackgroundTheme === 'gravityfield'" />
         <Christmas v-if="!isConstrainedDevice && currentBackgroundTheme === 'christmas'" />
@@ -1105,8 +1109,8 @@ onUnmounted(() => {
     }
 
     .VPDoc .content:not(.VPDocAsideOutline):not(.VPDocAsideOutline *) {
-        padding: 16px !important;
-        border-radius: 16px !important;
+        padding: var(--hb-mobile-doc-card-padding) !important;
+        border-radius: var(--hb-mobile-doc-radius) !important;
     }
 }
 
@@ -1161,13 +1165,6 @@ body:is(.about-page, .portfolio-page) .VPContent .container {
     box-sizing: border-box !important;
 }
 
-/* Keep the wide About layout while preserving a visible page gutter. */
-body.about-page .VPDoc .container,
-body.about-page .VPContent .container {
-    width: min(1120px, calc(100vw - 96px)) !important;
-    max-width: min(1120px, calc(100vw - 96px)) !important;
-}
-
 @media (max-width: 767px) {
     body:is(.about-page, .portfolio-page) .VPDoc .container,
     body:is(.about-page, .portfolio-page) .VPContent .container {
@@ -1177,17 +1174,9 @@ body.about-page .VPContent .container {
         padding-right: 0 !important;
     }
 
-    body.about-page .VPDoc .container,
-    body.about-page .VPContent .container {
-        width: calc(100% - 32px) !important;
-        max-width: calc(100% - 32px) !important;
-        margin-left: auto !important;
-        margin-right: auto !important;
-    }
-
     body:is(.about-page, .portfolio-page) .VPDoc .content:not(.VPDocAsideOutline):not(.VPDocAsideOutline *) {
-        padding: 16px !important;
-        border-radius: 16px !important;
+        padding: var(--hb-mobile-doc-card-padding) !important;
+        border-radius: var(--hb-mobile-doc-radius) !important;
     }
 }
 

@@ -2023,6 +2023,10 @@ canvas,
   --hb-border-dark: rgba(255, 255, 255, 0.1);
   --hb-shadow-soft: 0 18px 50px rgba(11, 19, 34, 0.12);
   --hb-shadow-brand: 0 16px 42px rgba(0, 255, 238, 0.18);
+  --hb-mobile-doc-gutter: 8px;
+  --hb-mobile-doc-top-gap: 12px;
+  --hb-mobile-doc-card-padding: 20px;
+  --hb-mobile-doc-radius: 16px;
   --vp-font-family-base: "LINE Seed Sans TW", "LINESeedTW", "Inter", "Segoe UI", system-ui, sans-serif;
 }
 
@@ -2548,6 +2552,25 @@ body.holy-bear-loading-active .title-toast {
 
 /* Mobile refinements */
 @media (max-width: 768px) {
+  /* Single source of truth for every VitePress document on phones. Page-level
+     layouts may change their desktop max-width, but should not add mobile
+     gutters or top spacing on top of these values. */
+  .VPDoc:not(.fuwari-article-column) {
+    padding-top: var(--hb-mobile-doc-top-gap) !important;
+    padding-right: var(--hb-mobile-doc-gutter) !important;
+    padding-left: var(--hb-mobile-doc-gutter) !important;
+  }
+
+  .VPDoc:not(.fuwari-article-column) > .container {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-right: auto !important;
+    margin-left: auto !important;
+    padding-right: 0 !important;
+    padding-left: 0 !important;
+    box-sizing: border-box !important;
+  }
+
   body.is-home-page .VPHomeHero {
     padding-top: 56px !important;
     padding-bottom: 28px !important;
@@ -2579,10 +2602,12 @@ body.holy-bear-loading-active .title-toast {
     padding: 22px !important;
   }
 
-  .VPDoc .content:not(.VPDocAsideOutline):not(.VPDocAsideOutline *) {
+  .VPDoc:not(.fuwari-article-column) .content:not(.VPDocAsideOutline):not(.VPDocAsideOutline *) {
+    padding: var(--hb-mobile-doc-card-padding) !important;
     border-left: 0 !important;
     border-right: 0 !important;
-    border-radius: 0 !important;
+    border-radius: var(--hb-mobile-doc-radius) !important;
+    overflow: hidden !important;
     box-shadow: none !important;
   }
 
@@ -4906,7 +4931,7 @@ html body.theme-halloween #app .VPNav .VPSocialLink {
   text-shadow: 0 1px 2px #000, 0 0 5px #000, 0 0 10px rgba(255, 152, 0, 0.58) !important;
 }
 
-html body.theme-halloween #app .VPNav .VPNavBarHamburger span {
+html body.theme-halloween #app .VPNav .VPNavBarHamburger .top, html body.theme-halloween #app .VPNav .VPNavBarHamburger .middle, html body.theme-halloween #app .VPNav .VPNavBarHamburger .bottom {
   background-color: #ff9800 !important;
 }
 
@@ -5636,6 +5661,26 @@ html.dark body .BlogVPFooter .footer-commit {
   html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) .hb-nav-menu-portal .VPMenu .VPLink.link:focus-visible span {
     color: var(--vp-c-brand, #00ffee) !important;
   }
+
+  /* These dark-art themes use text color alone for menu feedback. The shared
+     soft hover fill reads as a stray gradient against their dark glass. */
+  body:is(.theme-coretower, .theme-gravityfield) .VPMenu .VPLink.link:not(.hb-current-theme):is(:hover, :focus-visible),
+  body:is(.theme-coretower, .theme-gravityfield) .hb-nav-menu-portal .VPMenu .VPLink.link:not(.hb-current-theme):is(:hover, :focus-visible) {
+    color: var(--vp-c-brand, #00ffee) !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+  }
+
+  body:is(.theme-coretower, .theme-gravityfield) .VPMenu .VPLink.link:not(.hb-current-theme):is(:hover, :focus-visible) *,
+  body:is(.theme-coretower, .theme-gravityfield) .hb-nav-menu-portal .VPMenu .VPLink.link:not(.hb-current-theme):is(:hover, :focus-visible) * {
+    color: var(--vp-c-brand, #00ffee) !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+  }
 }
 
 /* Core Tower and Gravity Field always sit on dark artwork, including when the
@@ -5883,6 +5928,30 @@ html body:not(.theme-halloween):not(.theme-christmas):not(.is-days500-page) #app
 /* Core Tower and Gravity Field use dark artwork, so navigation surfaces stay
    dark without changing the active light appearance of document content. */
 
+/* ==========================================================================
+   Dark-only presentation themes
+   Core Tower and Gravity Field use dark artwork as their visual foundation.
+   Keep that presentation when the site appearance toggle is set to light,
+   without changing the light/dark behavior of any other background theme.
+   ========================================================================== */
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) {
+  color-scheme: dark;
+  --vp-c-bg: #040812 !important;
+  --vp-c-bg-soft: #091321 !important;
+  --vp-c-bg-alt: #07101b !important;
+  --vp-c-text-1: #e6f1ff !important;
+  --vp-c-text-2: #b8c8d8 !important;
+  --vp-c-text-3: #8fa6b8 !important;
+  --vp-c-divider: rgba(148, 163, 184, 0.18) !important;
+  --my-glass-bg: rgba(0, 0, 0, 0.3) !important;
+  --panel-glass-bg: rgba(0, 0, 0, 0.4) !important;
+  --panel-text-color: #e6f1ff !important;
+  --vp-nav-bg-color: rgba(7, 17, 25, 0.74) !important;
+  --vp-sidebar-bg-color: rgba(7, 17, 25, 0.74) !important;
+  --vp-local-nav-bg-color: rgba(7, 17, 25, 0.74) !important;
+  background-color: #02040a !important;
+  color: #e6f1ff !important;
+}
 html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav:has(.VPNavBar:not(.top)) {
   background: rgba(7, 17, 25, 0.74) !important;
   background-image: none !important;
@@ -5955,7 +6024,1285 @@ html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPDocAsideO
 
 html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNavScreen {
   color: #e6f1ff !important;
-  background: rgba(7, 17, 25, 0.96) !important;
-  background-color: rgba(7, 17, 25, 0.96) !important;
-  border-left-color: rgba(255, 255, 255, 0.08) !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  border-left-color: transparent !important;
+}
+
+/* Core Tower and Gravity Field need dark navigation chrome, not dark text
+   variables inside light article cards. Keep every VPDoc reading surface on
+   the normal light palette while the artwork and navigation remain dark. */
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPDoc .vp-doc {
+  --vp-c-text-1: #173747 !important;
+  --vp-c-text-2: #425e6b !important;
+  --vp-c-text-3: #6b818c !important;
+  color: #294b59 !important;
+}
+
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPDoc .vp-doc h1,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPDoc .vp-doc h2,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPDoc .vp-doc h3,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPDoc .vp-doc h4,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPDoc .vp-doc strong {
+  color: #173747 !important;
+  text-shadow: none !important;
+}
+
+/* Upon the Sky document pages: keep the light reading palette and card shape
+   independent from the shared 8px utility-card radius. */
+html body.theme-uponthesky:is(.about-page, .portfolio-page) .VPDoc .content:not(.VPDocAsideOutline):not(.VPDocAsideOutline *),
+html body.theme-uponthesky:has(.privacy-hero, .service-notice-hero) .VPDoc .content:not(.VPDocAsideOutline):not(.VPDocAsideOutline *) {
+  border-radius: 18px !important;
+  overflow: hidden !important;
+}
+
+html:not(.dark) body.theme-uponthesky:is(.about-page, .portfolio-page) .VPDoc .vp-doc,
+html:not(.dark) body.theme-uponthesky:has(.privacy-hero, .service-notice-hero) .VPDoc .vp-doc {
+  --vp-c-text-1: #173747 !important;
+  --vp-c-text-2: #425e6b !important;
+  --vp-c-text-3: #6b818c !important;
+}
+
+html:not(.dark) body.theme-uponthesky:is(.about-page, .portfolio-page) .VPDoc .vp-doc h1,
+html:not(.dark) body.theme-uponthesky:is(.about-page, .portfolio-page) .VPDoc .vp-doc h2,
+html:not(.dark) body.theme-uponthesky:is(.about-page, .portfolio-page) .VPDoc .vp-doc h3,
+html:not(.dark) body.theme-uponthesky:has(.privacy-hero, .service-notice-hero) .VPDoc .vp-doc h1,
+html:not(.dark) body.theme-uponthesky:has(.privacy-hero, .service-notice-hero) .VPDoc .vp-doc h2,
+html:not(.dark) body.theme-uponthesky:has(.privacy-hero, .service-notice-hero) .VPDoc .vp-doc h3 {
+  color: #173747 !important;
+}
+
+/* The About hero is an image surface, so its title must remain light even
+   though the rest of the article uses the light document palette. */
+html:not(.dark) body.theme-uponthesky.about-page .VPDoc .vp-doc .about-hero h1 {
+  color: #f8fcff !important;
+  text-shadow: 0 2px 3px rgba(0, 24, 58, 0.88), 0 4px 12px rgba(0, 31, 70, 0.54) !important;
+}
+
+html body.theme-uponthesky.about-page .VPDoc .vp-doc .about-hero__content p {
+  text-shadow: 0 2px 3px rgba(0, 10, 35, 0.92), 0 4px 12px rgba(0, 18, 48, 0.72) !important;
+}
+
+html.dark body.theme-uponthesky.about-page .VPDoc .vp-doc .about-hero h1 {
+  text-shadow: 0 2px 3px rgba(0, 10, 35, 0.98), 0 4px 14px rgba(0, 10, 35, 0.86) !important;
+}
+
+/* VitePress places rendered Markdown inside one extra wrapper. Apply the
+   same readable light text to the actual body nodes, not just the wrapper. */
+html:not(.dark) body.theme-uponthesky:is(.about-page, .portfolio-page) .VPDoc .vp-doc > div > p,
+html:not(.dark) body.theme-uponthesky:is(.about-page, .portfolio-page) .VPDoc .vp-doc > div > ul li,
+html:not(.dark) body.theme-uponthesky:is(.about-page, .portfolio-page) .VPDoc .vp-doc > div > ol li,
+html:not(.dark) body.theme-uponthesky:has(.privacy-hero) .VPDoc .vp-doc > div > p,
+html:not(.dark) body.theme-uponthesky:has(.privacy-hero) .VPDoc .vp-doc > div > ul li,
+html:not(.dark) body.theme-uponthesky:has(.privacy-hero) .VPDoc .vp-doc > div > ol li,
+html:not(.dark) body.theme-uponthesky:has(.service-notice-hero) .VPDoc .vp-doc > div > p {
+  color: #294b59 !important;
+}
+
+/* Light mode still sits on the blue Upon the Sky artwork. Keep the top nav
+   light-on-blue; the 500-day campaign link keeps its own amber treatment. */
+html:not(.dark) body.theme-uponthesky #app .VPNav .VPNavBar.top .VPNavBarTitle .title,
+html:not(.dark) body.theme-uponthesky #app .VPNav .VPNavBar.top .VPNavBarTitle .title *,
+html:not(.dark) body.theme-uponthesky #app .VPNav .VPNavBar.top .VPNavBarMenuLink:not([href^="/500days"]),
+html:not(.dark) body.theme-uponthesky #app .VPNav .VPNavBar.top .VPNavBarMenuLink:not([href^="/500days"]) *,
+html:not(.dark) body.theme-uponthesky #app .VPNav .VPNavBar.top .VPNavBarMenuGroup > .button,
+html:not(.dark) body.theme-uponthesky #app .VPNav .VPNavBar.top .VPNavBarMenuGroup > .button *,
+html:not(.dark) body.theme-uponthesky #app .VPNav .VPNavBar.top .VPNavBarTranslations > .button,
+html:not(.dark) body.theme-uponthesky #app .VPNav .VPNavBar.top .VPNavBarTranslations > .button *,
+html:not(.dark) body.theme-uponthesky #app .VPNav .VPNavBar.top .VPSocialLink,
+html:not(.dark) body.theme-uponthesky #app .VPNav .VPNavBar.top .VPSocialLink *,
+html:not(.dark) body.theme-uponthesky #app .VPNav .VPNavBar.top .VPNavBarSearchButton,
+html:not(.dark) body.theme-uponthesky #app .VPNav .VPNavBar.top .VPNavBarSearchButton * {
+  color: rgba(248, 252, 255, 0.98) !important;
+  text-shadow: 0 2px 7px rgba(1, 12, 28, 0.76) !important;
+}
+
+html:not(.dark) body.theme-uponthesky #app .VPNav .VPNavBar.top .VPNavBarHamburger .top,
+html:not(.dark) body.theme-uponthesky #app .VPNav .VPNavBar.top .VPNavBarHamburger .middle,
+html:not(.dark) body.theme-uponthesky #app .VPNav .VPNavBar.top .VPNavBarHamburger .bottom {
+  background-color: rgba(248, 252, 255, 0.98) !important;
+}
+
+/* Theme components may choose light navigation colors for dark artwork. When
+   the light-mode navbar is the shared pale glass surface, normalize every
+   desktop control instead of fixing only the regular menu-link component. */
+html:not(.dark) body:not(.theme-halloween):not(.theme-christmas):not(.is-days500-page) #app .VPNav:has(.VPNavBar:not(.top)) {
+  --hb-nav-hover-color: #087f94;
+}
+
+html:not(.dark) body:not(.theme-halloween):not(.theme-christmas):not(.is-days500-page) #app .VPNav .VPNavBar:not(.top) .VPNavBarTitle .title,
+html:not(.dark) body:not(.theme-halloween):not(.theme-christmas):not(.is-days500-page) #app .VPNav .VPNavBar:not(.top) .VPNavBarTitle .title *,
+html:not(.dark) body:not(.theme-halloween):not(.theme-christmas):not(.is-days500-page) #app .VPNav .VPNavBar:not(.top) .VPNavBarMenuLink:not([href^="/500days"]),
+html:not(.dark) body:not(.theme-halloween):not(.theme-christmas):not(.is-days500-page) #app .VPNav .VPNavBar:not(.top) .VPNavBarMenuLink:not([href^="/500days"]) *,
+html:not(.dark) body:not(.theme-halloween):not(.theme-christmas):not(.is-days500-page) #app .VPNav .VPNavBar:not(.top) .VPNavBarMenuGroup > .button,
+html:not(.dark) body:not(.theme-halloween):not(.theme-christmas):not(.is-days500-page) #app .VPNav .VPNavBar:not(.top) .VPNavBarMenuGroup > .button *,
+html:not(.dark) body:not(.theme-halloween):not(.theme-christmas):not(.is-days500-page) #app .VPNav .VPNavBar:not(.top) .VPNavBarTranslations > .button,
+html:not(.dark) body:not(.theme-halloween):not(.theme-christmas):not(.is-days500-page) #app .VPNav .VPNavBar:not(.top) .VPNavBarTranslations > .button *,
+html:not(.dark) body:not(.theme-halloween):not(.theme-christmas):not(.is-days500-page) #app .VPNav .VPNavBar:not(.top) .VPNavBarSearchButton,
+html:not(.dark) body:not(.theme-halloween):not(.theme-christmas):not(.is-days500-page) #app .VPNav .VPNavBar:not(.top) .VPNavBarSearchButton *,
+html:not(.dark) body:not(.theme-halloween):not(.theme-christmas):not(.is-days500-page) #app .VPNav .VPNavBar:not(.top) .VPSocialLink,
+html:not(.dark) body:not(.theme-halloween):not(.theme-christmas):not(.is-days500-page) #app .VPNav .VPNavBar:not(.top) .VPSocialLink * {
+  color: #294b59 !important;
+  text-shadow: none !important;
+}
+
+html:not(.dark) body:not(.theme-halloween):not(.theme-christmas):not(.is-days500-page) #app .VPNav .VPNavBar:not(.top) .VPNavBarMenuLink:not([href^="/500days"]):is(:hover, :focus-visible),
+html:not(.dark) body:not(.theme-halloween):not(.theme-christmas):not(.is-days500-page) #app .VPNav .VPNavBar:not(.top) .VPNavBarMenuLink:not([href^="/500days"]):is(:hover, :focus-visible) *,
+html:not(.dark) body:not(.theme-halloween):not(.theme-christmas):not(.is-days500-page) #app .VPNav .VPNavBar:not(.top) .VPNavBarTitle .title:is(:hover, :focus-visible),
+html:not(.dark) body:not(.theme-halloween):not(.theme-christmas):not(.is-days500-page) #app .VPNav .VPNavBar:not(.top) .VPNavBarTitle .title:is(:hover, :focus-visible) *,
+html:not(.dark) body:not(.theme-halloween):not(.theme-christmas):not(.is-days500-page) #app .VPNav .VPNavBar:not(.top) .VPNavBarMenuGroup:is(:hover, :focus-within) > .button,
+html:not(.dark) body:not(.theme-halloween):not(.theme-christmas):not(.is-days500-page) #app .VPNav .VPNavBar:not(.top) .VPNavBarMenuGroup:is(:hover, :focus-within) > .button *,
+html:not(.dark) body:not(.theme-halloween):not(.theme-christmas):not(.is-days500-page) #app .VPNav .VPNavBar:not(.top) .VPNavBarMenuGroup > .button[aria-expanded="true"],
+html:not(.dark) body:not(.theme-halloween):not(.theme-christmas):not(.is-days500-page) #app .VPNav .VPNavBar:not(.top) .VPNavBarMenuGroup > .button[aria-expanded="true"] *,
+html:not(.dark) body:not(.theme-halloween):not(.theme-christmas):not(.is-days500-page) #app .VPNav .VPNavBar:not(.top) .VPNavBarTranslations > .button:is(:hover, :focus-visible),
+html:not(.dark) body:not(.theme-halloween):not(.theme-christmas):not(.is-days500-page) #app .VPNav .VPNavBar:not(.top) .VPNavBarTranslations > .button:is(:hover, :focus-visible) *,
+html:not(.dark) body:not(.theme-halloween):not(.theme-christmas):not(.is-days500-page) #app .VPNav .VPNavBar:not(.top) .VPNavBarTranslations > .button[aria-expanded="true"],
+html:not(.dark) body:not(.theme-halloween):not(.theme-christmas):not(.is-days500-page) #app .VPNav .VPNavBar:not(.top) .VPNavBarTranslations > .button[aria-expanded="true"] *,
+html:not(.dark) body:not(.theme-halloween):not(.theme-christmas):not(.is-days500-page) #app .VPNav .VPNavBar:not(.top) .VPNavBarSearchButton:is(:hover, :focus-visible),
+html:not(.dark) body:not(.theme-halloween):not(.theme-christmas):not(.is-days500-page) #app .VPNav .VPNavBar:not(.top) .VPNavBarSearchButton:is(:hover, :focus-visible) *,
+html:not(.dark) body:not(.theme-halloween):not(.theme-christmas):not(.is-days500-page) #app .VPNav .VPNavBar:not(.top) .VPSocialLink:is(:hover, :focus-visible),
+html:not(.dark) body:not(.theme-halloween):not(.theme-christmas):not(.is-days500-page) #app .VPNav .VPNavBar:not(.top) .VPSocialLink:is(:hover, :focus-visible) * {
+  color: var(--hb-nav-hover-color) !important;
+  text-shadow: none !important;
+}
+
+/* Keep the campaign entry recognizable on the pale navbar without allowing a
+   dark-art theme to turn its label white. */
+html:not(.dark) body.has-days500-campaign:not(.theme-halloween):not(.theme-christmas):not(.is-days500-page) #app .VPNav .VPNavBar:not(.top) a[href^="/500days"],
+html:not(.dark) body.has-days500-campaign:not(.theme-halloween):not(.theme-christmas):not(.is-days500-page) #app .VPNav .VPNavBar:not(.top) a[href^="/500days"] * {
+  color: #76510b !important;
+  text-shadow: none !important;
+}
+
+html:not(.dark) body.has-days500-campaign:not(.theme-halloween):not(.theme-christmas):not(.is-days500-page) #app .VPNav .VPNavBar:not(.top) a[href^="/500days"]:is(:hover, :focus-visible),
+html:not(.dark) body.has-days500-campaign:not(.theme-halloween):not(.theme-christmas):not(.is-days500-page) #app .VPNav .VPNavBar:not(.top) a[href^="/500days"]:is(:hover, :focus-visible) * {
+  color: #a6402f !important;
+}
+
+/* Dark-art themes use the same dark search glass at the transparent top state.
+   Keep the complete control interactive: the icon is drawn by a pseudo-element
+   and does not reliably inherit the button's hover color by itself. */
+@media (min-width: 768px) {
+  html:not(.dark) body:is(.theme-uponthesky, .theme-coretower, .theme-gravityfield) #app .VPNav .VPNavBar.top .VPNavBarSearchButton {
+    color: rgba(244, 251, 255, 0.96) !important;
+    background: rgba(7, 25, 38, 0.72) !important;
+    border-color: rgba(103, 232, 249, 0.4) !important;
+    box-shadow: 0 8px 24px rgba(0, 7, 16, 0.24) !important;
+  }
+
+  html:not(.dark) body:is(.theme-uponthesky, .theme-coretower, .theme-gravityfield) #app .VPNav .VPNavBar.top .VPNavBarSearchButton .vpi-search,
+  html:not(.dark) body:is(.theme-uponthesky, .theme-coretower, .theme-gravityfield) #app .VPNav .VPNavBar.top .VPNavBarSearchButton .text,
+  html:not(.dark) body:is(.theme-uponthesky, .theme-coretower, .theme-gravityfield) #app .VPNav .VPNavBar.top .VPNavBarSearchButton .keys,
+  html:not(.dark) body:is(.theme-uponthesky, .theme-coretower, .theme-gravityfield) #app .VPNav .VPNavBar.top .VPNavBarSearchButton .keys kbd {
+    color: rgba(244, 251, 255, 0.94) !important;
+  }
+
+  html:not(.dark) body:is(.theme-uponthesky, .theme-coretower, .theme-gravityfield) #app .VPNav .VPNavBar.top .VPNavBarSearchButton .keys {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-color: rgba(255, 255, 255, 0.18) !important;
+  }
+
+  html:not(.dark) body:is(.theme-uponthesky, .theme-coretower, .theme-gravityfield) #app .VPNav .VPNavBar.top .VPNavBarSearchButton:is(:hover, :focus-visible),
+  html:not(.dark) body:is(.theme-uponthesky, .theme-coretower, .theme-gravityfield) #app .VPNav .VPNavBar.top .VPNavBarSearchButton:is(:hover, :focus-visible) .vpi-search,
+  html:not(.dark) body:is(.theme-uponthesky, .theme-coretower, .theme-gravityfield) #app .VPNav .VPNavBar.top .VPNavBarSearchButton:is(:hover, :focus-visible) .vpi-search::before,
+  html:not(.dark) body:is(.theme-uponthesky, .theme-coretower, .theme-gravityfield) #app .VPNav .VPNavBar.top .VPNavBarSearchButton:is(:hover, :focus-visible) .text,
+  html:not(.dark) body:is(.theme-uponthesky, .theme-coretower, .theme-gravityfield) #app .VPNav .VPNavBar.top .VPNavBarSearchButton:is(:hover, :focus-visible) .keys,
+  html:not(.dark) body:is(.theme-uponthesky, .theme-coretower, .theme-gravityfield) #app .VPNav .VPNavBar.top .VPNavBarSearchButton:is(:hover, :focus-visible) .keys kbd {
+    color: #42dff2 !important;
+    text-shadow: none !important;
+  }
+
+  html:not(.dark) body:is(.theme-uponthesky, .theme-coretower, .theme-gravityfield) #app .VPNav .VPNavBar.top .VPNavBarSearchButton:is(:hover, :focus-visible) {
+    background: rgba(8, 47, 64, 0.8) !important;
+    border-color: rgba(103, 232, 249, 0.58) !important;
+    box-shadow: 0 8px 24px rgba(0, 7, 16, 0.2) !important;
+  }
+}
+
+/* Fuwari already supplies the visible Blog outline card. Do not nest the
+   generic Core Tower document-outline surface inside it. */
+html:not(.dark) body.theme-coretower.is-blog-page #app .fuwari-article-outline.fuwari-card-base .VPDocAsideOutline.has-outline {
+  background: transparent !important;
+  background-color: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+/* Core Tower and Gravity Field always sit on dark artwork. In light
+   appearance their mobile drawer therefore reuses the real dark-mode palette
+   as one complete surface instead of recoloring individual labels. */
+@media (max-width: 959px) {
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNavScreen {
+    color-scheme: dark;
+    --vp-c-text-1: rgba(255, 255, 245, 0.86);
+    --vp-c-text-2: rgba(235, 235, 245, 0.6);
+    --vp-c-brand-1: #67e8f9;
+    --vp-c-brand-2: #22d3ee;
+  }
+
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNavScreen .container {
+    color: var(--vp-c-text-1) !important;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.028) 0%, rgba(255, 255, 255, 0.012) 100%) !important;
+    background-color: rgba(255, 255, 255, 0.028) !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+  }
+
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNavScreen .VPNavScreenMenuLink,
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNavScreenMenuGroup > .button,
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNavScreenTranslations.translations .title,
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNavScreenTranslations.translations .VPLink.link,
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNavScreenAppearance.appearance {
+    color: var(--vp-c-text-1) !important;
+    background: rgba(18, 20, 26, 0.82) !important;
+    background-color: rgba(18, 20, 26, 0.82) !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.24) !important;
+    text-shadow: none !important;
+  }
+
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNavScreenMenuGroup .VPNavScreenMenuGroupLink,
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNavScreenMenuGroup .VPMenuLink > .VPLink.link {
+    color: var(--vp-c-text-1) !important;
+    background: rgba(18, 20, 26, 0.78) !important;
+    background-color: rgba(18, 20, 26, 0.78) !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2) !important;
+    text-shadow: none !important;
+  }
+
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNavScreen .VPNavScreenMenuLink:not([href^="/500days"]),
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNavScreen .VPNavScreenMenuLink:not([href^="/500days"]) *,
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNavScreenMenuGroup > .button,
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNavScreenMenuGroup > .button *,
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNavScreenMenuGroup .VPNavScreenMenuGroupLink,
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNavScreenMenuGroup .VPNavScreenMenuGroupLink *,
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNavScreenMenuGroup .VPMenuLink > .VPLink.link,
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNavScreenMenuGroup .VPMenuLink > .VPLink.link *,
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNavScreenTranslations.translations .title,
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNavScreenTranslations.translations .title *,
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNavScreenTranslations.translations .VPLink.link,
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNavScreenTranslations.translations .VPLink.link *,
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNavScreenAppearance.appearance .text {
+    color: var(--vp-c-text-1) !important;
+    text-shadow: none !important;
+  }
+
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNavScreenAppearance.appearance .VPSwitchAppearance[aria-checked="false"] {
+    background: rgba(148, 163, 184, 0.12) !important;
+    border-color: rgba(148, 163, 184, 0.18) !important;
+  }
+
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNavScreen .VPNavScreenMenuLink:not([href^="/500days"]):is(:hover, :focus-visible, .active),
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNavScreen .VPNavScreenMenuLink:not([href^="/500days"]):is(:hover, :focus-visible, .active) *,
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNavScreenMenuGroup:is(.open, :focus-within) > .button,
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNavScreenMenuGroup:is(.open, :focus-within) > .button *,
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNavScreenMenuGroup .VPNavScreenMenuGroupLink:is(:hover, :focus-visible, .active),
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNavScreenMenuGroup .VPNavScreenMenuGroupLink:is(:hover, :focus-visible, .active) *,
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNavScreenTranslations.translations:is(.open, :focus-within) .title,
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNavScreenTranslations.translations:is(.open, :focus-within) .title * {
+    color: #67e8f9 !important;
+    background: rgba(0, 255, 238, 0.12) !important;
+    background-color: rgba(0, 255, 238, 0.12) !important;
+    border-color: rgba(103, 232, 249, 0.28) !important;
+  }
+
+  /* Match the real dark-mode submenu interaction exactly. The broader rule
+     above must not paint its cyan feedback onto the option's inner span. */
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNavScreenMenuGroup .VPNavScreenMenuGroupLink:is(:hover, :focus-visible),
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNavScreenMenuGroup .VPMenuLink > .VPLink.link:is(:hover, :focus-visible) {
+    color: #00b8b8 !important;
+    background: rgba(18, 20, 26, 0.78) !important;
+    background-color: rgba(18, 20, 26, 0.78) !important;
+    background-image: none !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2) !important;
+  }
+
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNavScreenMenuGroup .VPNavScreenMenuGroupLink:is(:hover, :focus-visible) *,
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNavScreenMenuGroup .VPMenuLink > .VPLink.link:is(:hover, :focus-visible) * {
+    color: #00b8b8 !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+  }
+
+  /* The selected background theme is marked active independently of hover.
+     Keep its card dark as well, with the selection shown by cyan text only. */
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNavScreenMenuGroup .VPNavScreenMenuGroupLink:is(.active, .hb-current-theme),
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNavScreenMenuGroup .VPMenuLink > .VPLink.link:is(.active, .hb-current-theme) {
+    color: #00b8b8 !important;
+    background: rgba(18, 20, 26, 0.78) !important;
+    background-color: rgba(18, 20, 26, 0.78) !important;
+    background-image: none !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2) !important;
+  }
+
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNavScreenMenuGroup .VPNavScreenMenuGroupLink:is(.active, .hb-current-theme) *,
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNavScreenMenuGroup .VPMenuLink > .VPLink.link:is(.active, .hb-current-theme) * {
+    color: #00b8b8 !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+  }
+
+  /* Halloween now shares the site's normal light/dark drawer surfaces. Keep
+     only the viewport geometry fix and its orange theme accent. */
+  html body.theme-halloween #app .VPNav > .VPNavScreen {
+    position: fixed !important;
+    top: var(--vp-nav-height, 64px) !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: calc(100dvh - var(--vp-nav-height, 64px)) !important;
+    max-height: none !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    z-index: 35 !important;
+  }
+
+  /* Halloween's decorated navbar used backdrop-filter on the VPNav ancestor,
+     which turned it into a backdrop root and prevented the drawer glass below
+     it from sampling the page artwork. Disable only that ancestor filter while
+     the drawer is open, then use the same blur values as every other theme. */
+  html body.theme-halloween:has(.VPNavBarHamburger[aria-expanded="true"]) #app > .Layout > .VPNav,
+  html body.theme-halloween:has(.VPNavBarHamburger[aria-expanded="true"]) #app .VPNav {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+
+  html body.theme-halloween #app .VPNavScreen > .container {
+    -webkit-backdrop-filter: blur(10px) saturate(120%) !important;
+    backdrop-filter: blur(10px) saturate(120%) !important;
+  }
+
+  html:not(.dark) body.theme-halloween #app .VPNavScreen {
+    color-scheme: dark;
+  }
+
+  html:not(.dark) body.theme-halloween #app .VPNavScreen > .container {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.028) 0%, rgba(255, 255, 255, 0.012) 100%) !important;
+    background-color: rgba(255, 255, 255, 0.028) !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+  }
+
+  html:not(.dark) body.theme-halloween #app .VPNavScreen .VPNavScreenMenuLink,
+  html:not(.dark) body.theme-halloween #app .VPNavScreenMenuGroup > .button,
+  html:not(.dark) body.theme-halloween #app .VPNavScreenTranslations.translations .title,
+  html:not(.dark) body.theme-halloween #app .VPNavScreenTranslations.translations .VPLink.link,
+  html:not(.dark) body.theme-halloween #app .VPNavScreenAppearance.appearance {
+    background: rgba(18, 20, 26, 0.82) !important;
+    background-color: rgba(18, 20, 26, 0.82) !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.24) !important;
+  }
+
+  html:not(.dark) body.theme-halloween #app .VPNavScreenMenuGroup .VPNavScreenMenuGroupLink,
+  html:not(.dark) body.theme-halloween #app .VPNavScreenMenuGroup .VPMenuLink > .VPLink.link {
+    background: rgba(18, 20, 26, 0.78) !important;
+    background-color: rgba(18, 20, 26, 0.78) !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2) !important;
+  }
+
+  html:not(.dark) body.theme-halloween #app .VPNavScreenAppearance.appearance .VPSwitchAppearance[aria-checked="false"] {
+    background: rgba(148, 163, 184, 0.12) !important;
+    border-color: rgba(148, 163, 184, 0.18) !important;
+  }
+
+  html body.theme-halloween #app .VPNavScreen .VPNavScreenMenuLink,
+  html body.theme-halloween #app .VPNavScreenMenuGroup > .button,
+  html body.theme-halloween #app .VPNavScreenMenuGroup .VPNavScreenMenuGroupLink,
+  html body.theme-halloween #app .VPNavScreenMenuGroup .VPMenuLink > .VPLink.link,
+  html body.theme-halloween #app .VPNavScreenTranslations.translations .title,
+  html body.theme-halloween #app .VPNavScreenTranslations.translations .VPLink.link,
+  html body.theme-halloween #app .VPNavScreenAppearance.appearance {
+    -webkit-backdrop-filter: blur(16px) saturate(140%) !important;
+    backdrop-filter: blur(16px) saturate(140%) !important;
+  }
+
+  html body.theme-halloween #app .VPNavScreen .VPNavScreenMenuLink,
+  html body.theme-halloween #app .VPNavScreen .VPNavScreenMenuLink *,
+  html body.theme-halloween #app .VPNavScreenMenuGroup > .button,
+  html body.theme-halloween #app .VPNavScreenMenuGroup > .button *,
+  html body.theme-halloween #app .VPNavScreenMenuGroup .VPNavScreenMenuGroupLink,
+  html body.theme-halloween #app .VPNavScreenMenuGroup .VPNavScreenMenuGroupLink *,
+  html body.theme-halloween #app .VPNavScreenMenuGroup .VPMenuLink > .VPLink.link,
+  html body.theme-halloween #app .VPNavScreenMenuGroup .VPMenuLink > .VPLink.link *,
+  html body.theme-halloween #app .VPNavScreenTranslations.translations .title,
+  html body.theme-halloween #app .VPNavScreenTranslations.translations .title *,
+  html body.theme-halloween #app .VPNavScreenTranslations.translations .VPLink.link,
+  html body.theme-halloween #app .VPNavScreenTranslations.translations .VPLink.link *,
+  html body.theme-halloween #app .VPNavScreenAppearance.appearance,
+  html body.theme-halloween #app .VPNavScreenAppearance.appearance .text {
+    color: #ffb74d !important;
+    text-shadow: none !important;
+  }
+
+  html body.theme-halloween #app .VPNavScreen .VPNavScreenMenuLink:is(:hover, :focus-visible, .active),
+  html body.theme-halloween #app .VPNavScreenMenuGroup:is(.open, :focus-within) > .button,
+  html body.theme-halloween #app .VPNavScreenMenuGroup .VPNavScreenMenuGroupLink:is(:hover, :focus-visible, .active),
+  html body.theme-halloween #app .VPNavScreenMenuGroup .VPMenuLink > .VPLink.link:is(:hover, :focus-visible, .active),
+  html body.theme-halloween #app .VPNavScreenTranslations.translations:is(.open, :focus-within) .title,
+  html body.theme-halloween #app .VPNavScreenTranslations.translations .VPLink.link:is(:hover, :focus-visible, .current),
+  html body.theme-halloween #app .VPNavScreenAppearance.appearance:is(:hover, :focus-within) {
+    color: #ff9800 !important;
+    background: rgba(255, 152, 0, 0.14) !important;
+    background-color: rgba(255, 152, 0, 0.14) !important;
+    border-color: rgba(255, 152, 0, 0.28) !important;
+    box-shadow: 0 8px 24px rgba(255, 152, 0, 0.12) !important;
+  }
+}
+
+/* ==========================================================================
+   Mobile local navigation state
+   VPLocalNav is transparent over artwork near the page top, then becomes an
+   appearance-aware glass bar after the first 24px of scrolling.
+   ========================================================================== */
+@media (max-width: 959px) {
+  html body.hb-local-nav-at-top #app .VPLocalNav,
+  html body.hb-local-nav-at-top #app .VPLocalNav > .container,
+  html body.hb-local-nav-at-top #app .VPLocalNav::before,
+  html body.hb-local-nav-at-top #app .VPLocalNav::after,
+  html body.hb-local-nav-at-top #app .VPLocalNav .VPLocalNavOutlineDropdown > button {
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+
+  html:not(.dark) body:not(.hb-local-nav-at-top) #app .VPLocalNav {
+    background: rgba(237, 246, 249, 0.88) !important;
+    background-color: rgba(237, 246, 249, 0.88) !important;
+    background-image: none !important;
+    border-bottom-color: rgba(36, 94, 112, 0.14) !important;
+    box-shadow: 0 8px 24px rgba(35, 76, 94, 0.1) !important;
+    -webkit-backdrop-filter: blur(18px) saturate(145%) !important;
+    backdrop-filter: blur(18px) saturate(145%) !important;
+  }
+
+  html.dark body:not(.hb-local-nav-at-top) #app .VPLocalNav,
+  html body:is(.theme-coretower, .theme-gravityfield):not(.hb-local-nav-at-top) #app .VPLocalNav {
+    background: rgba(7, 17, 25, 0.86) !important;
+    background-color: rgba(7, 17, 25, 0.86) !important;
+    background-image: none !important;
+    border-bottom-color: rgba(148, 163, 184, 0.18) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.24) !important;
+    -webkit-backdrop-filter: blur(18px) saturate(140%) !important;
+    backdrop-filter: blur(18px) saturate(140%) !important;
+  }
+
+  html body.theme-halloween:not(.hb-local-nav-at-top) #app .VPLocalNav {
+    background: rgba(18, 20, 26, 0.88) !important;
+    background-color: rgba(18, 20, 26, 0.88) !important;
+    background-image: none !important;
+    border-bottom-color: rgba(255, 152, 0, 0.22) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.26) !important;
+    -webkit-backdrop-filter: blur(18px) saturate(140%) !important;
+    backdrop-filter: blur(18px) saturate(140%) !important;
+  }
+
+  html:not(.dark) body:not(.hb-local-nav-at-top) #app .VPLocalNav,
+  html:not(.dark) body:not(.hb-local-nav-at-top) #app .VPLocalNav :is(.menu, .menu-text, .menu-icon, .title),
+  html:not(.dark) body:not(.hb-local-nav-at-top) #app .VPLocalNav .VPLocalNavOutlineDropdown > button,
+  html:not(.dark) body:not(.hb-local-nav-at-top) #app .VPLocalNav .VPLocalNavOutlineDropdown > button * {
+    color: #294b59 !important;
+    text-shadow: none !important;
+  }
+
+  html.dark body:not(.hb-local-nav-at-top) #app .VPLocalNav,
+  html.dark body:not(.hb-local-nav-at-top) #app .VPLocalNav :is(.menu, .menu-text, .menu-icon, .title),
+  html.dark body:not(.hb-local-nav-at-top) #app .VPLocalNav .VPLocalNavOutlineDropdown > button,
+  html.dark body:not(.hb-local-nav-at-top) #app .VPLocalNav .VPLocalNavOutlineDropdown > button *,
+  html body:is(.theme-coretower, .theme-gravityfield):not(.hb-local-nav-at-top) #app .VPLocalNav,
+  html body:is(.theme-coretower, .theme-gravityfield):not(.hb-local-nav-at-top) #app .VPLocalNav :is(.menu, .menu-text, .menu-icon, .title),
+  html body:is(.theme-coretower, .theme-gravityfield):not(.hb-local-nav-at-top) #app .VPLocalNav .VPLocalNavOutlineDropdown > button,
+  html body:is(.theme-coretower, .theme-gravityfield):not(.hb-local-nav-at-top) #app .VPLocalNav .VPLocalNavOutlineDropdown > button * {
+    color: rgba(239, 249, 252, 0.96) !important;
+    text-shadow: 0 2px 10px rgba(2, 18, 31, 0.68) !important;
+  }
+
+  html body:is(.theme-coretower, .theme-gravityfield, .theme-uponthesky).hb-local-nav-at-top #app .VPLocalNav,
+  html body:is(.theme-coretower, .theme-gravityfield, .theme-uponthesky).hb-local-nav-at-top #app .VPLocalNav :is(.menu, .menu-text, .menu-icon, .title),
+  html body:is(.theme-coretower, .theme-gravityfield, .theme-uponthesky).hb-local-nav-at-top #app .VPLocalNav .VPLocalNavOutlineDropdown > button,
+  html body:is(.theme-coretower, .theme-gravityfield, .theme-uponthesky).hb-local-nav-at-top #app .VPLocalNav .VPLocalNavOutlineDropdown > button * {
+    color: rgba(248, 252, 255, 0.98) !important;
+    text-shadow: 0 2px 10px rgba(2, 18, 31, 0.76) !important;
+  }
+
+  html:not(.dark) body:not(:is(.theme-coretower, .theme-gravityfield, .theme-uponthesky, .theme-halloween)).hb-local-nav-at-top #app .VPLocalNav,
+  html:not(.dark) body:not(:is(.theme-coretower, .theme-gravityfield, .theme-uponthesky, .theme-halloween)).hb-local-nav-at-top #app .VPLocalNav :is(.menu, .menu-text, .menu-icon, .title),
+  html:not(.dark) body:not(:is(.theme-coretower, .theme-gravityfield, .theme-uponthesky, .theme-halloween)).hb-local-nav-at-top #app .VPLocalNav .VPLocalNavOutlineDropdown > button,
+  html:not(.dark) body:not(:is(.theme-coretower, .theme-gravityfield, .theme-uponthesky, .theme-halloween)).hb-local-nav-at-top #app .VPLocalNav .VPLocalNavOutlineDropdown > button * {
+    color: #294b59 !important;
+    text-shadow: none !important;
+  }
+
+  html.dark body.hb-local-nav-at-top #app .VPLocalNav,
+  html.dark body.hb-local-nav-at-top #app .VPLocalNav :is(.menu, .menu-text, .menu-icon, .title),
+  html.dark body.hb-local-nav-at-top #app .VPLocalNav .VPLocalNavOutlineDropdown > button,
+  html.dark body.hb-local-nav-at-top #app .VPLocalNav .VPLocalNavOutlineDropdown > button * {
+    color: rgba(248, 252, 255, 0.98) !important;
+    text-shadow: 0 2px 10px rgba(2, 18, 31, 0.76) !important;
+  }
+
+  html body.theme-halloween.hb-local-nav-at-top #app .VPLocalNav,
+  html body.theme-halloween.hb-local-nav-at-top #app .VPLocalNav :is(.menu, .menu-text, .menu-icon, .title),
+  html body.theme-halloween.hb-local-nav-at-top #app .VPLocalNav .VPLocalNavOutlineDropdown > button,
+  html body.theme-halloween.hb-local-nav-at-top #app .VPLocalNav .VPLocalNavOutlineDropdown > button * {
+    color: #ffb74d !important;
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.72) !important;
+  }
+
+  html body.theme-halloween:not(.hb-local-nav-at-top) #app .VPLocalNav,
+  html body.theme-halloween:not(.hb-local-nav-at-top) #app .VPLocalNav :is(.menu, .menu-text, .menu-icon, .title),
+  html body.theme-halloween:not(.hb-local-nav-at-top) #app .VPLocalNav .VPLocalNavOutlineDropdown > button,
+  html body.theme-halloween:not(.hb-local-nav-at-top) #app .VPLocalNav .VPLocalNavOutlineDropdown > button * {
+    color: #ffb74d !important;
+    text-shadow: none !important;
+  }
+
+  /* Core Tower and Gravity Field have stronger theme-level glass rules. */
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield).hb-local-nav-at-top #app .VPLocalNav,
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield).hb-local-nav-at-top #app .VPLocalNav > .container,
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield).hb-local-nav-at-top #app .VPLocalNav::before,
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield).hb-local-nav-at-top #app .VPLocalNav::after,
+  html:not(.dark) body:is(.theme-coretower, .theme-gravityfield).hb-local-nav-at-top #app .VPLocalNav .VPLocalNavOutlineDropdown > button {
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+}
+
+/* Mobile navbar controls use icon-only hover feedback. The search button and
+   VitePress hamburger are separate components, so keep their colors in sync. */
+@media (max-width: 767px) {
+  html body {
+    --hb-mobile-nav-control-hover: var(--vp-c-brand-1, #087f94);
+  }
+
+  html body:is(.theme-coretower, .theme-gravityfield, .theme-uponthesky) {
+    --hb-mobile-nav-control-hover: #42dff2;
+  }
+
+  html body.theme-halloween {
+    --hb-mobile-nav-control-hover: #ffd180;
+  }
+
+  html body #app .VPNav {
+    --hb-nav-hover-color: var(--hb-mobile-nav-control-hover) !important;
+  }
+
+  html body #app .VPNav .VPNavBar .VPNavBarTitle .title:is(:hover, :focus-visible),
+  html body #app .VPNav .VPNavBar .VPNavBarTitle .title:is(:hover, :focus-visible) * {
+    color: var(--hb-mobile-nav-control-hover) !important;
+    text-shadow: none !important;
+  }
+
+  /* Invariant for every current and future theme: the mobile search control is
+     an icon, not a card. Themes may customize the two variables, but should not
+     style the button surface or its internal icon directly. */
+  html body #app .VPNav .VPNavBar .VPNavBarSearchButton.fuwari-nav-search {
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    transition: color 0.2s ease !important;
+  }
+
+  html body #app .VPNav .VPNavBar .VPNavBarSearchButton.fuwari-nav-search:is(:hover, :focus-visible) {
+    color: var(--hb-mobile-nav-control-hover) !important;
+  }
+
+  html body #app .VPNav .VPNavBar .VPNavBarSearchButton.fuwari-nav-search:is(:hover, :focus-visible) .vpi-search,
+  html body #app .VPNav .VPNavBar .VPNavBarSearchButton.fuwari-nav-search:is(:hover, :focus-visible) .vpi-search::before {
+    color: var(--hb-mobile-nav-control-hover) !important;
+    text-shadow: none !important;
+  }
+
+  html body #app .VPNav .VPNavBar .VPNavBarHamburger :is(.top, .middle, .bottom) {
+    transition: background-color 0.2s ease, transform 0.25s ease !important;
+  }
+
+  html body #app .VPNav .VPNavBar .VPNavBarHamburger:is(:hover, :focus-visible) .top,
+  html body #app .VPNav .VPNavBar .VPNavBarHamburger:is(:hover, :focus-visible) .middle,
+  html body #app .VPNav .VPNavBar .VPNavBarHamburger:is(:hover, :focus-visible) .bottom {
+    background-color: var(--hb-mobile-nav-control-hover) !important;
+  }
+}
+
+/* Upon the Sky desktop top navigation has its own light-on-artwork palette.
+   Keep each navigation part explicit so a theme-specific text rule cannot lock
+   only one component to white. */
+@media (min-width: 768px) {
+  /* Website title */
+  html body.theme-uponthesky #app .VPNav .VPNavBar.top .VPNavBarTitle .title:is(:hover, :focus-visible),
+  html body.theme-uponthesky #app .VPNav .VPNavBar.top .VPNavBarTitle .title:is(:hover, :focus-visible) * {
+    color: #42dff2 !important;
+    text-shadow: none !important;
+  }
+
+  /* Regular navigation links */
+  html body.theme-uponthesky #app .VPNav .VPNavBar.top .VPNavBarMenuLink:not([href^="/500days"]):is(:hover, :focus-visible),
+  html body.theme-uponthesky #app .VPNav .VPNavBar.top .VPNavBarMenuLink:not([href^="/500days"]):is(:hover, :focus-visible) * {
+    color: #42dff2 !important;
+    text-shadow: none !important;
+  }
+
+  /* Service menu button */
+  html body.theme-uponthesky #app .VPNav .VPNavBar.top .VPNavBarMenuGroup:has(a[href="/maplestory"]):is(:hover, :focus-within) > .button,
+  html body.theme-uponthesky #app .VPNav .VPNavBar.top .VPNavBarMenuGroup:has(a[href="/maplestory"]):is(:hover, :focus-within) > .button *,
+  html body.theme-uponthesky #app .VPNav .VPNavBar.top .VPNavBarMenuGroup:has(a[href="/maplestory"]) > .button:is(:hover, :focus-visible),
+  html body.theme-uponthesky #app .VPNav .VPNavBar.top .VPNavBarMenuGroup:has(a[href="/maplestory"]) > .button:is(:hover, :focus-visible) * {
+    color: #42dff2 !important;
+    text-shadow: none !important;
+  }
+
+  /* Theme menu button */
+  html body.theme-uponthesky #app .VPNav .VPNavBar.top .VPNavBarMenuGroup:has(a[href="#theme-uponthesky"]):is(:hover, :focus-within) > .button,
+  html body.theme-uponthesky #app .VPNav .VPNavBar.top .VPNavBarMenuGroup:has(a[href="#theme-uponthesky"]):is(:hover, :focus-within) > .button *,
+  html body.theme-uponthesky #app .VPNav .VPNavBar.top .VPNavBarMenuGroup:has(a[href="#theme-uponthesky"]) > .button:is(:hover, :focus-visible),
+  html body.theme-uponthesky #app .VPNav .VPNavBar.top .VPNavBarMenuGroup:has(a[href="#theme-uponthesky"]) > .button:is(:hover, :focus-visible) * {
+    color: #42dff2 !important;
+    text-shadow: none !important;
+  }
+
+  /* Language button */
+  html body.theme-uponthesky #app .VPNav .VPNavBar.top .VPNavBarTranslations > .button:is(:hover, :focus-visible),
+  html body.theme-uponthesky #app .VPNav .VPNavBar.top .VPNavBarTranslations > .button:is(:hover, :focus-visible) *,
+  html body.theme-uponthesky #app .VPNav .VPNavBar.top .VPNavBarTranslations:is(:hover, :focus-within) > .button,
+  html body.theme-uponthesky #app .VPNav .VPNavBar.top .VPNavBarTranslations:is(:hover, :focus-within) > .button * {
+    color: #42dff2 !important;
+    text-shadow: none !important;
+  }
+
+  /* Search control remains a separate component. */
+  html body.theme-uponthesky #app .VPNav .VPNavBar.top .VPNavBarSearchButton:is(:hover, :focus-visible),
+  html body.theme-uponthesky #app .VPNav .VPNavBar.top .VPNavBarSearchButton:is(:hover, :focus-visible) * {
+    color: #42dff2 !important;
+    text-shadow: none !important;
+  }
+}
+
+/* Shared navigation interaction group.
+   These remain separate DOM components, but their interaction color comes
+   from one contract so a future theme only needs to provide one value. */
+html body #app .VPNav {
+  --hb-nav-hover-color: var(--vp-c-brand-1, #087f94) !important;
+}
+
+html body:is(.theme-uponthesky, .theme-coretower, .theme-gravityfield) #app .VPNav {
+  --hb-nav-hover-color: #42dff2 !important;
+}
+
+html body.theme-halloween #app .VPNav {
+  --hb-nav-hover-color: #ffb74d !important;
+}
+
+html body #app .VPNav .VPNavBar .VPNavBarTitle:is(:hover, :focus-within),
+html body #app .VPNav .VPNavBar .VPNavBarTitle:is(:hover, :focus-within) .title,
+html body #app .VPNav .VPNavBar .VPNavBarTitle:is(:hover, :focus-within) .title *,
+html body #app .VPNav .VPNavBar .VPNavBarMenuLink:not([href^="/500days"]):is(:hover, :focus-visible),
+html body #app .VPNav .VPNavBar .VPNavBarMenuLink:not([href^="/500days"]):is(:hover, :focus-visible) *,
+html body #app .VPNav .VPNavBar .VPNavBarMenuGroup:is(:hover, :focus-within) > .button,
+html body #app .VPNav .VPNavBar .VPNavBarMenuGroup:is(:hover, :focus-within) > .button *,
+html body #app .VPNav .VPNavBar .VPNavBarMenuGroup > .button:is(:hover, :focus-visible),
+html body #app .VPNav .VPNavBar .VPNavBarMenuGroup > .button:is(:hover, :focus-visible) *,
+html body #app .VPNav .VPNavBar .VPNavBarTranslations:is(:hover, :focus-within) > .button,
+html body #app .VPNav .VPNavBar .VPNavBarTranslations:is(:hover, :focus-within) > .button *,
+html body #app .VPNav .VPNavBar .VPNavBarTranslations > .button:is(:hover, :focus-visible),
+html body #app .VPNav .VPNavBar .VPNavBarTranslations > .button:is(:hover, :focus-visible) *,
+html body #app .VPNav .VPNavBar .VPNavBarSearchButton:is(:hover, :focus-visible),
+html body #app .VPNav .VPNavBar .VPNavBarSearchButton:is(:hover, :focus-visible) *,
+html body #app .VPNav .VPNavBar .VPNavBarAppearance:is(:hover, :focus-within) .VPSwitchAppearance,
+html body #app .VPNav .VPNavBar .VPNavBarAppearance:is(:hover, :focus-within) .VPSwitchAppearance *,
+html body #app .VPNav .VPNavBar .VPSwitchAppearance:is(:hover, :focus-visible),
+html body #app .VPNav .VPNavBar .VPSwitchAppearance:is(:hover, :focus-visible) *,
+html body #app .VPNav .VPNavBar .VPSocialLink:is(:hover, :focus-visible),
+html body #app .VPNav .VPNavBar .VPSocialLink:is(:hover, :focus-visible) *,
+html body #app .VPNav .VPNavBar .VPMenu .VPLink.link:is(:hover, :focus-visible, .active),
+html body #app .VPNav .VPNavBar .VPMenu .VPLink.link:is(:hover, :focus-visible, .active) *,
+html body #app .VPNav .VPNavBar .VPNavBarHamburger:is(:hover, :focus-visible) {
+  color: var(--hb-nav-hover-color) !important;
+  text-shadow: none !important;
+}
+
+/* The hamburger is drawn with background-color rather than text color. */
+html body #app .VPNav .VPNavBar .VPNavBarHamburger:is(:hover, :focus-visible) .top,
+html body #app .VPNav .VPNavBar .VPNavBarHamburger:is(:hover, :focus-visible) .middle,
+html body #app .VPNav .VPNavBar .VPNavBarHamburger:is(:hover, :focus-visible) .bottom {
+  background-color: var(--hb-nav-hover-color) !important;
+}
+
+/* The appearance switch is a bordered control, so synchronize its frame as
+   well as the sun/moon icon. */
+html body #app .VPNav .VPNavBar .VPNavBarAppearance:is(:hover, :focus-within) .VPSwitchAppearance,
+html body #app .VPNav .VPNavBar .VPSwitchAppearance:is(:hover, :focus-visible) {
+  border-color: var(--hb-nav-hover-color) !important;
+  background-color: color-mix(in srgb, var(--hb-nav-hover-color) 14%, transparent) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--hb-nav-hover-color) 28%, transparent) !important;
+}
+
+html body #app .VPNav .VPNavBar .VPNavBarAppearance:is(:hover, :focus-within) .VPSwitchAppearance .icon,
+html body #app .VPNav .VPNavBar .VPNavBarAppearance:is(:hover, :focus-within) .VPSwitchAppearance .icon [class^="vpi-"],
+html body #app .VPNav .VPNavBar .VPSwitchAppearance:is(:hover, :focus-visible) .icon,
+html body #app .VPNav .VPNavBar .VPSwitchAppearance:is(:hover, :focus-visible) .icon [class^="vpi-"] {
+  color: var(--hb-nav-hover-color) !important;
+}
+
+/* VitePress renders simple-icons as a CSS mask. Explicitly recolor the mask
+   span so TG/GitHub do not remain white after a theme overrides the anchor. */
+html body #app .VPNav .VPNavBar .VPSocialLink:is(:hover, :focus-visible) > span {
+  color: var(--hb-nav-hover-color) !important;
+  background-color: var(--hb-nav-hover-color) !important;
+}
+
+html body #app .VPNav .VPNavBar .VPSocialLink:is(:hover, :focus-visible) > span svg {
+  fill: currentColor !important;
+}
+
+/* Mobile top-state bridge: artwork themes have very specific base rules for
+   the title and hamburger. Keep the shared group authoritative while the
+   navbar is still at the top of the page. */
+@media (max-width: 767px) {
+  html body #app .VPNav.VPNav .VPNavBar.VPNavBar .VPNavBarTitle.VPNavBarTitle:is(:hover, :focus-within),
+  html body #app .VPNav.VPNav .VPNavBar.VPNavBar .VPNavBarTitle.VPNavBarTitle:is(:hover, :focus-within) .title,
+  html body #app .VPNav.VPNav .VPNavBar.VPNavBar .VPNavBarTitle.VPNavBarTitle:is(:hover, :focus-within) .title *,
+  html body #app .VPNav.VPNav .VPNavBar.VPNavBar .VPNavBarTitle.VPNavBarTitle .title:is(:hover, :focus-visible),
+  html body #app .VPNav.VPNav .VPNavBar.VPNavBar .VPNavBarTitle.VPNavBarTitle .title:is(:hover, :focus-visible) * {
+    color: var(--hb-nav-hover-color) !important;
+    text-shadow: none !important;
+  }
+
+  html body #app .VPNav.VPNav .VPNavBar.VPNavBar .VPNavBarHamburger.VPNavBarHamburger:is(:hover, :focus-visible) {
+    color: var(--hb-nav-hover-color) !important;
+  }
+
+  html body #app .VPNav.VPNav .VPNavBar.VPNavBar .VPNavBarHamburger.VPNavBarHamburger:is(:hover, :focus-visible) .top,
+  html body #app .VPNav.VPNav .VPNavBar.VPNavBar .VPNavBarHamburger.VPNavBarHamburger:is(:hover, :focus-visible) .middle,
+  html body #app .VPNav.VPNav .VPNavBar.VPNavBar .VPNavBarHamburger.VPNavBarHamburger:is(:hover, :focus-visible) .bottom {
+    background-color: var(--hb-nav-hover-color) !important;
+  }
+}
+
+/* Core Tower and Gravity Field keep a dark navbar after scrolling even when
+   the document appearance is light. Restore the complete readable chrome at
+   this state; otherwise the generic light-page rule turns the controls dark
+   against the dark artwork/glass surface. */
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav:has(.VPNavBar:not(.top)) .VPNavBar:not(.top) .VPNavBarTitle .title,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav:has(.VPNavBar:not(.top)) .VPNavBar:not(.top) .VPNavBarTitle .title *,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav:has(.VPNavBar:not(.top)) .VPNavBar:not(.top) .VPNavBarMenuLink:not([href^="/500days"]),
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav:has(.VPNavBar:not(.top)) .VPNavBar:not(.top) .VPNavBarMenuLink:not([href^="/500days"]) *,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav:has(.VPNavBar:not(.top)) .VPNavBar:not(.top) .VPNavBarMenuGroup > .button,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav:has(.VPNavBar:not(.top)) .VPNavBar:not(.top) .VPNavBarMenuGroup > .button *,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav:has(.VPNavBar:not(.top)) .VPNavBar:not(.top) .VPNavBarTranslations > .button,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav:has(.VPNavBar:not(.top)) .VPNavBar:not(.top) .VPNavBarTranslations > .button *,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav:has(.VPNavBar:not(.top)) .VPNavBar:not(.top) .VPNavBarSearchButton,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav:has(.VPNavBar:not(.top)) .VPNavBar:not(.top) .VPNavBarSearchButton *,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav:has(.VPNavBar:not(.top)) .VPNavBar:not(.top) .VPSocialLink,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav:has(.VPNavBar:not(.top)) .VPNavBar:not(.top) .VPSwitchAppearance,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav:has(.VPNavBar:not(.top)) .VPNavBar:not(.top) .VPSwitchAppearance * {
+  color: rgba(239, 249, 252, 0.94) !important;
+  text-shadow: 0 2px 10px rgba(2, 18, 31, 0.68) !important;
+}
+
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav:has(.VPNavBar:not(.top)) .VPNavBar:not(.top) .VPNavBarMenuLink[href^="/500days"],
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav:has(.VPNavBar:not(.top)) .VPNavBar:not(.top) .VPNavBarMenuLink[href^="/500days"] * {
+  color: #173747 !important;
+  text-shadow: 0 2px 8px rgba(17, 24, 39, 0.62) !important;
+}
+
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav:has(.VPNavBar:not(.top)) .VPNavBar:not(.top) .VPNavBarMenuLink[href^="/500days"] {
+  background: #f2c96d !important;
+  border-color: #ffe197 !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22), 0 2px 12px rgba(242, 201, 109, 0.2) !important;
+}
+
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav:has(.VPNavBar:not(.top)) .VPNavBar:not(.top) .VPNavBarMenuLink[href^="/500days"]:is(:hover, :focus-visible),
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav:has(.VPNavBar:not(.top)) .VPNavBar:not(.top) .VPNavBarMenuLink[href^="/500days"]:is(:hover, :focus-visible) * {
+  color: #173747 !important;
+  text-shadow: 0 2px 8px rgba(17, 24, 39, 0.62) !important;
+}
+
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav:has(.VPNavBar:not(.top)) .VPNavBar:not(.top) .VPNavBarMenuLink[href^="/500days"]:is(:hover, :focus-visible) {
+  background: #ffe197 !important;
+  border-color: #fff3c4 !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35), 0 3px 16px rgba(242, 201, 109, 0.28) !important;
+}
+
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav:has(.VPNavBar:not(.top)) .VPNavBar:not(.top) .VPNavBarHamburger .top,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav:has(.VPNavBar:not(.top)) .VPNavBar:not(.top) .VPNavBarHamburger .middle,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav:has(.VPNavBar:not(.top)) .VPNavBar:not(.top) .VPNavBarHamburger .bottom {
+  background-color: rgba(239, 249, 252, 0.94) !important;
+}
+
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav:has(.VPNavBar:not(.top)) .VPNavBar:not(.top) .VPSocialLink > span {
+  color: rgba(239, 249, 252, 0.94) !important;
+  background-color: currentColor !important;
+}
+
+/* Keep the search control on the same dark chrome instead of leaving a pale
+   button with pale text in the middle of the scrolled navbar. */
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav:has(.VPNavBar:not(.top)) .VPNavBar:not(.top) .VPNavBarSearchButton {
+  background: rgba(7, 25, 38, 0.72) !important;
+  background-color: rgba(7, 25, 38, 0.72) !important;
+  border-color: rgba(103, 232, 249, 0.4) !important;
+  box-shadow: 0 8px 24px rgba(0, 7, 16, 0.24) !important;
+}
+
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav:has(.VPNavBar:not(.top)) .VPNavBar:not(.top) .VPNavBarSearchButton .vpi-search,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav:has(.VPNavBar:not(.top)) .VPNavBar:not(.top) .VPNavBarSearchButton .text,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav:has(.VPNavBar:not(.top)) .VPNavBar:not(.top) .VPNavBarSearchButton .keys,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav:has(.VPNavBar:not(.top)) .VPNavBar:not(.top) .VPNavBarSearchButton .keys kbd {
+  color: rgba(239, 249, 252, 0.94) !important;
+  text-shadow: none !important;
+}
+
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav:has(.VPNavBar:not(.top)) .VPNavBar:not(.top) .VPNavBarSearchButton .keys {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 255, 255, 0.18) !important;
+}
+
+/* Scrolled dark-art controls still use the same shared hover variable. */
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav:has(.VPNavBar:not(.top)) .VPNavBar:not(.top) .VPNavBarTitle:is(:hover, :focus-within) .title,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav:has(.VPNavBar:not(.top)) .VPNavBar:not(.top) .VPNavBarTitle:is(:hover, :focus-within) .title *,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav:has(.VPNavBar:not(.top)) .VPNavBar:not(.top) .VPNavBarMenuLink:not([href^="/500days"]):is(:hover, :focus-visible),
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav:has(.VPNavBar:not(.top)) .VPNavBar:not(.top) .VPNavBarMenuLink:not([href^="/500days"]):is(:hover, :focus-visible) *,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav:has(.VPNavBar:not(.top)) .VPNavBar:not(.top) .VPNavBarMenuGroup:is(:hover, :focus-within) > .button,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav:has(.VPNavBar:not(.top)) .VPNavBar:not(.top) .VPNavBarMenuGroup:is(:hover, :focus-within) > .button *,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav:has(.VPNavBar:not(.top)) .VPNavBar:not(.top) .VPNavBarTranslations:is(:hover, :focus-within) > .button,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav:has(.VPNavBar:not(.top)) .VPNavBar:not(.top) .VPNavBarTranslations:is(:hover, :focus-within) > .button *,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav:has(.VPNavBar:not(.top)) .VPNavBar:not(.top) .VPNavBarSearchButton:is(:hover, :focus-visible),
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav:has(.VPNavBar:not(.top)) .VPNavBar:not(.top) .VPNavBarSearchButton:is(:hover, :focus-visible) *,
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav:has(.VPNavBar:not(.top)) .VPNavBar:not(.top) .VPSocialLink:is(:hover, :focus-visible),
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav:has(.VPNavBar:not(.top)) .VPNavBar:not(.top) .VPSocialLink:is(:hover, :focus-visible) * {
+  color: var(--hb-nav-hover-color) !important;
+  text-shadow: none !important;
+}
+
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #app .VPNav:has(.VPNavBar:not(.top)) .VPNavBar:not(.top) .VPSocialLink:is(:hover, :focus-visible) > span {
+  background-color: var(--hb-nav-hover-color) !important;
+}
+
+/* Upon the Sky light-mode component contract.
+   The artwork remains bright, but standalone tools and forms must render on
+   their own stable surface. Keep the palette here so a future page can opt in
+   by using the same component classes instead of adding one-off text fixes. */
+html:not(.dark) body.theme-uponthesky {
+  --hb-upon-light-surface: rgba(247, 252, 254, 0.96);
+  --hb-upon-light-surface-soft: rgba(232, 245, 249, 0.94);
+  --hb-upon-light-surface-muted: rgba(219, 238, 244, 0.88);
+  --hb-upon-light-text: #173747;
+  --hb-upon-light-text-strong: #0d3042;
+  --hb-upon-light-text-muted: #365967;
+  --hb-upon-light-text-faint: #587681;
+  --hb-upon-light-border: rgba(36, 94, 112, 0.28);
+  --hb-upon-light-border-strong: rgba(8, 127, 148, 0.48);
+  --hb-upon-light-accent: #087f94;
+  --hb-upon-light-accent-hover: #075a70;
+  --hb-upon-light-accent-soft: rgba(8, 127, 148, 0.12);
+}
+
+/* Standalone survey page: it is not inside #maplestory-root, so it needs the
+   same explicit palette as the survey card shown on the MapleStory page. */
+html:not(.dark) body.theme-uponthesky .maple-survey-page-shell {
+  color: var(--hb-upon-light-text) !important;
+}
+
+html:not(.dark) body.theme-uponthesky .maple-survey-page-brand,
+html:not(.dark) body.theme-uponthesky .maple-survey-page-heading h1 {
+  color: #f8fcff !important;
+  text-shadow: 0 2px 8px rgba(0, 24, 58, 0.86), 0 3px 14px rgba(0, 31, 70, 0.56) !important;
+}
+
+html:not(.dark) body.theme-uponthesky .maple-survey-page-brand:hover {
+  color: #d9fbff !important;
+}
+
+html:not(.dark) body.theme-uponthesky .maple-survey-page-heading .maple-survey-eyebrow,
+html:not(.dark) body.theme-uponthesky .maple-survey-eyebrow {
+  color: #d7faff !important;
+  text-shadow: 0 1px 6px rgba(0, 24, 58, 0.72) !important;
+}
+
+html:not(.dark) body.theme-uponthesky .maple-survey-page-heading > p:last-child {
+  color: rgba(244, 252, 255, 0.96) !important;
+  text-shadow: 0 1px 7px rgba(0, 24, 58, 0.76) !important;
+}
+
+html:not(.dark) body.theme-uponthesky .maple-survey-page-card,
+html:not(.dark) body.theme-uponthesky #maplestory-root .maple-survey-card {
+  color: var(--hb-upon-light-text) !important;
+  background: linear-gradient(135deg, var(--hb-upon-light-surface), var(--hb-upon-light-surface-soft)) !important;
+  border-color: var(--hb-upon-light-border) !important;
+  box-shadow: 0 16px 36px rgba(18, 64, 91, 0.18) !important;
+}
+
+html:not(.dark) body.theme-uponthesky .maple-survey-form legend,
+html:not(.dark) body.theme-uponthesky .maple-survey-textarea-label,
+html:not(.dark) body.theme-uponthesky #maplestory-root .maple-survey-card h2,
+html:not(.dark) body.theme-uponthesky #maplestory-root .maple-survey-form legend,
+html:not(.dark) body.theme-uponthesky #maplestory-root .maple-survey-textarea-label {
+  color: var(--hb-upon-light-text-strong) !important;
+  text-shadow: none !important;
+}
+
+html:not(.dark) body.theme-uponthesky .maple-survey-form fieldset label,
+html:not(.dark) body.theme-uponthesky .maple-survey-score-hint,
+html:not(.dark) body.theme-uponthesky .maple-survey-help,
+html:not(.dark) body.theme-uponthesky .maple-survey-privacy,
+html:not(.dark) body.theme-uponthesky #maplestory-root .maple-survey-description,
+html:not(.dark) body.theme-uponthesky #maplestory-root .maple-survey-form fieldset label {
+  color: var(--hb-upon-light-text-muted) !important;
+  text-shadow: none !important;
+}
+
+html:not(.dark) body.theme-uponthesky .maple-survey-score-options span {
+  color: var(--hb-upon-light-text) !important;
+  background: rgba(255, 255, 255, 0.72) !important;
+  border-color: var(--hb-upon-light-border) !important;
+}
+
+html:not(.dark) body.theme-uponthesky .maple-survey-score-options input:checked + span {
+  color: #ffffff !important;
+  background: var(--hb-upon-light-accent) !important;
+  border-color: var(--hb-upon-light-accent-hover) !important;
+}
+
+html:not(.dark) body.theme-uponthesky .maple-survey-textarea-label textarea {
+  color: var(--hb-upon-light-text) !important;
+  background: rgba(255, 255, 255, 0.84) !important;
+  border-color: var(--hb-upon-light-border) !important;
+}
+
+html:not(.dark) body.theme-uponthesky .maple-survey-textarea-label textarea::placeholder {
+  color: var(--hb-upon-light-text-faint) !important;
+}
+
+html:not(.dark) body.theme-uponthesky .maple-survey-toggle,
+html:not(.dark) body.theme-uponthesky .maple-survey-submit {
+  color: #ffffff !important;
+  background: var(--hb-upon-light-accent) !important;
+  border-color: var(--hb-upon-light-accent-hover) !important;
+}
+
+html:not(.dark) body.theme-uponthesky .maple-survey-toggle:hover,
+html:not(.dark) body.theme-uponthesky .maple-survey-submit:hover:not(:disabled),
+html:not(.dark) body.theme-uponthesky #maplestory-root .maple-survey-card-link:hover .maple-survey-toggle {
+  color: #ffffff !important;
+  background: var(--hb-upon-light-accent-hover) !important;
+  border-color: #06485b !important;
+}
+
+html:not(.dark) body.theme-uponthesky .maple-survey-submit:disabled {
+  opacity: 1 !important;
+  color: #f3fbfd !important;
+  background: #6b929d !important;
+  border-color: #527986 !important;
+  cursor: not-allowed !important;
+}
+
+html:not(.dark) body.theme-uponthesky .maple-survey-back-link {
+  color: var(--hb-upon-light-accent-hover) !important;
+  text-shadow: none !important;
+}
+
+/* Markdown editor: all independent child components inherit one readable
+   light glass palette, including the visual editor and generated preview. */
+html:not(.dark) body.theme-uponthesky .editor-with-preview {
+  --hb-editor-surface: var(--hb-upon-light-surface);
+  --hb-editor-surface-soft: var(--hb-upon-light-surface-soft);
+  --hb-editor-surface-muted: var(--hb-upon-light-surface-muted);
+  --hb-editor-text: var(--hb-upon-light-text);
+  --hb-editor-text-strong: var(--hb-upon-light-text-strong);
+  --hb-editor-text-muted: var(--hb-upon-light-text-muted);
+  --hb-editor-text-faint: var(--hb-upon-light-text-faint);
+  --hb-editor-border: var(--hb-upon-light-border);
+  --hb-editor-accent: var(--hb-upon-light-accent);
+  --hb-editor-accent-hover: var(--hb-upon-light-accent-hover);
+  color-scheme: light;
+  color: var(--hb-editor-text) !important;
+  background: linear-gradient(135deg, var(--hb-editor-surface), var(--hb-editor-surface-soft)) !important;
+  border-color: var(--hb-editor-border) !important;
+  text-shadow: none !important;
+}
+
+html:not(.dark) body.theme-uponthesky .editor-with-preview :is(
+  .top-toolbar,
+  .front-matter-inputs,
+  .markdown-editor-header,
+  .markdown-format-toolbar,
+  .preview-header,
+  .history-header,
+  .history-footer,
+  .editor-toolbar
+) {
+  color: var(--hb-editor-text) !important;
+  background: var(--hb-editor-surface-soft) !important;
+  border-color: var(--hb-editor-border) !important;
+}
+
+html:not(.dark) body.theme-uponthesky .editor-with-preview :is(
+  .content-area,
+  .editor-section,
+  .preview-section,
+  .visual-editor,
+  .markdown-editor,
+  .document-history,
+  .markdown-preview-wrapper,
+  .vp-editor-wrapper
+) {
+  color: var(--hb-editor-text) !important;
+  background: transparent !important;
+  border-color: var(--hb-editor-border) !important;
+}
+
+html:not(.dark) body.theme-uponthesky .editor-with-preview :is(
+  .toolbar-btn,
+  .markdown-format-btn,
+  .clear-btn,
+  .info-btn,
+  .emoji-option,
+  .load-btn,
+  .modal-btn
+) {
+  color: var(--hb-editor-text) !important;
+  background: rgba(255, 255, 255, 0.72) !important;
+  border-color: var(--hb-editor-border) !important;
+  text-shadow: none !important;
+}
+
+html:not(.dark) body.theme-uponthesky .editor-with-preview :is(
+  .toolbar-btn:hover,
+  .toolbar-btn:focus-visible,
+  .toolbar-btn.active,
+  .markdown-format-btn:hover,
+  .markdown-format-btn:focus-visible,
+  .markdown-format-btn.active,
+  .info-btn:hover,
+  .emoji-option:hover,
+  .emoji-option:focus-visible,
+  .load-btn:hover,
+  .modal-btn:hover
+) {
+  color: var(--hb-editor-accent-hover) !important;
+  background: var(--hb-upon-light-accent-soft) !important;
+  border-color: var(--hb-editor-accent) !important;
+}
+
+html:not(.dark) body.theme-uponthesky .editor-with-preview :is(
+  .front-matter-toggle-btn .btn-text,
+  .markdown-editor-header h3,
+  .preview-title,
+  .history-title,
+  .toolbar-info,
+  .markdown-tip,
+  .blog-checkbox-label,
+  .editor-loading,
+  .editor-loading p
+) {
+  color: var(--hb-editor-text) !important;
+  text-shadow: none !important;
+}
+
+html:not(.dark) body.theme-uponthesky .editor-with-preview :is(
+  .markdown-tip,
+  .markdown-preview .empty-preview,
+  .history-item .item-preview,
+  .history-item .item-time,
+  .empty-text,
+  .storage-limit,
+  .storage-info
+) {
+  color: var(--hb-editor-text-muted) !important;
+}
+
+html:not(.dark) body.theme-uponthesky .editor-with-preview :is(
+  .doc-title-input,
+  .search-input,
+  .markdown-textarea
+) {
+  color: var(--hb-editor-text) !important;
+  background: rgba(255, 255, 255, 0.78) !important;
+  border-color: var(--hb-editor-border) !important;
+  text-shadow: none !important;
+}
+
+html:not(.dark) body.theme-uponthesky .editor-with-preview :is(
+  .doc-title-input,
+  .search-input,
+  .markdown-textarea
+)::placeholder {
+  color: var(--hb-editor-text-faint) !important;
+  opacity: 1 !important;
+}
+
+html:not(.dark) body.theme-uponthesky .editor-with-preview :is(
+  .doc-title-input:focus,
+  .search-input:focus,
+  .markdown-textarea:focus
+) {
+  background: #ffffff !important;
+  border-color: var(--hb-editor-accent) !important;
+  outline-color: var(--hb-editor-accent) !important;
+}
+
+html:not(.dark) body.theme-uponthesky .editor-with-preview :is(
+  .history-item,
+  .emoji-picker,
+  .editor-container,
+  .export-preview-content
+) {
+  color: var(--hb-editor-text) !important;
+  background: var(--hb-editor-surface-muted) !important;
+  border-color: var(--hb-editor-border) !important;
+}
+
+html:not(.dark) body.theme-uponthesky .editor-with-preview .history-item:hover,
+html:not(.dark) body.theme-uponthesky .editor-with-preview .history-item.active {
+  color: var(--hb-editor-text-strong) !important;
+  background: var(--hb-upon-light-accent-soft) !important;
+  border-color: var(--hb-editor-accent) !important;
+}
+
+html:not(.dark) body.theme-uponthesky .editor-with-preview :is(
+  .item-title,
+  .item-preview,
+  .item-time,
+  .storage-info,
+  .storage-limit,
+  .empty-text,
+  .history-title,
+  .history-title i,
+  .search-icon,
+  .storage-info i
+) {
+  text-shadow: none !important;
+}
+
+html:not(.dark) body.theme-uponthesky .editor-with-preview :is(
+  .item-title,
+  .vp-editor-prose,
+  .vp-editor-prose h1,
+  .vp-editor-prose h2,
+  .vp-editor-prose h3,
+  .vp-editor-prose h4,
+  .vp-editor-prose h5,
+  .vp-editor-prose h6,
+  .vp-editor-prose p,
+  .vp-editor-prose li,
+  .markdown-preview,
+  .markdown-preview h1,
+  .markdown-preview h2,
+  .markdown-preview h3,
+  .markdown-preview h4,
+  .markdown-preview h5,
+  .markdown-preview h6,
+  .markdown-preview p,
+  .markdown-preview li,
+  .markdown-preview dt,
+  .markdown-preview dd,
+  .markdown-preview th,
+  .markdown-preview td,
+  .markdown-preview strong,
+  .markdown-preview em,
+  .markdown-preview small,
+  .markdown-preview summary
+) {
+  color: var(--hb-editor-text) !important;
+  text-shadow: none !important;
+}
+
+html:not(.dark) body.theme-uponthesky .editor-with-preview :is(
+  .vp-editor-prose h1,
+  .vp-editor-prose h2,
+  .vp-editor-prose h3,
+  .vp-editor-prose h4,
+  .vp-editor-prose h5,
+  .vp-editor-prose h6,
+  .markdown-preview h1,
+  .markdown-preview h2,
+  .markdown-preview h3,
+  .markdown-preview h4,
+  .markdown-preview h5,
+  .markdown-preview h6,
+  .markdown-preview .blog-post-title
+) {
+  color: var(--hb-editor-text-strong) !important;
+}
+
+html:not(.dark) body.theme-uponthesky .editor-with-preview :is(
+  .vp-editor-prose a,
+  .markdown-preview a,
+  .markdown-preview .blog-post-meta-row .category,
+  .markdown-preview .blog-post-meta-row .tags
+) {
+  color: var(--hb-editor-accent-hover) !important;
+}
+
+html:not(.dark) body.theme-uponthesky .editor-with-preview :is(
+  .vp-editor-prose pre,
+  .vp-editor-prose code,
+  .markdown-preview pre,
+  .markdown-preview code
+) {
+  color: var(--hb-editor-text) !important;
+  background: rgba(222, 239, 244, 0.92) !important;
+  border-color: var(--hb-editor-border) !important;
+}
+
+html:not(.dark) body.theme-uponthesky .editor-with-preview :is(
+  .vp-editor-prose blockquote,
+  .markdown-preview blockquote
+) {
+  color: var(--hb-editor-text-muted) !important;
+  border-left-color: var(--hb-editor-accent) !important;
+}
+
+html:not(.dark) body.theme-uponthesky .editor-with-preview :is(
+  .vp-editor-prose hr,
+  .markdown-preview hr,
+  .markdown-preview .blog-post-date-divider
+) {
+  border-color: var(--hb-editor-border) !important;
+}
+
+html:not(.dark) body.theme-uponthesky .editor-with-preview :is(
+  .export-modal,
+  .info-tooltip
+) {
+  color: var(--hb-editor-text) !important;
+  background: var(--hb-editor-surface) !important;
+  border-color: var(--hb-editor-border) !important;
+  box-shadow: 0 16px 36px rgba(18, 64, 91, 0.2) !important;
+}
+
+html:not(.dark) body.theme-uponthesky .editor-with-preview :is(
+  .export-modal h3,
+  .export-modal pre,
+  .export-modal-actions,
+  .info-tooltip
+) {
+  color: var(--hb-editor-text) !important;
+}
+
+html:not(.dark) body.theme-uponthesky .editor-with-preview .resize-handle:hover {
+  background: var(--hb-editor-accent) !important;
 }

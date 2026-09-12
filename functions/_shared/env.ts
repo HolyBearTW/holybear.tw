@@ -22,6 +22,7 @@ export interface Env {
   NEXON_REQUEST_DELAY_MS?: string;
   NEXON_RETRY_LIMIT?: string;
   NEXON_REQUEST_TIMEOUT_MS?: string;
+  MAINTENANCE_MODE?: string;
   IMPORT_D1_READ_BUDGET?: string;
   IMPORT_D1_WRITE_BUDGET?: string;
   RANKING_SNAPSHOT_SIZE?: string;

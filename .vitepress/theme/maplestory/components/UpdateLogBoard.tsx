@@ -31,7 +31,7 @@ export default function UpdateLogBoard() {
   };
 
   return (
-    <div className="mt-8 flex flex-col items-center gap-4">
+    <div className="mx-auto mt-2 flex w-full max-w-[1600px] flex-col items-center gap-4 px-6 pb-6">
       {/* 🔴 緊急紅色公告 (顯示到 2026/03/31) */}
       {showImportantNotice && (
         <div className="vp-tip custom-vp-tip-danger p-4 sm:p-6 rounded-lg border-l-4 border-red-500 bg-red-50/90 text-red-900 dark:bg-red-950/30 dark:text-red-200 shadow-sm transition-all duration-300 w-full max-w-2xl">
@@ -53,8 +53,20 @@ export default function UpdateLogBoard() {
         </div>
         <ul className="list-disc pl-5 text-sm space-y-1 mt-3 animate-in fade-in slide-in-from-top-1">
           {visibleLogs.map((item, idx) => (
-            <li key={`${item.date}-${(page - 1) * UPDATE_LOGS_PER_PAGE + idx}`}>
-              <span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">{item.date}</span> {item.content}
+            <li
+              key={`${item.date}-${(page - 1) * UPDATE_LOGS_PER_PAGE + idx}`}
+              className={`update-log-item${item.featured ? ' update-log-item--featured' : ''}`}
+            >
+              <span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">{item.date}</span>
+              {item.featured ? (
+                <>
+                  <span className="update-log-featured-label">{item.featuredLabel || '重大更新'}</span>
+                  {item.featuredTitle && <strong className="update-log-featured-title">｜{item.featuredTitle}</strong>}
+                  {item.featuredTitle ? '：' : ' '}{item.content}
+                </>
+              ) : (
+                <> {item.content}</>
+              )}
             </li>
           ))}
         </ul>

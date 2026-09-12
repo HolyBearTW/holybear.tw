@@ -5,7 +5,6 @@ import UpdateLogBoard from './components/UpdateLogBoard';
 import HeroHeader from './components/HeroHeader';
 import KeySettingsModal from './components/KeySettingsModal';
 import RecentPowerRanking from './components/RecentPowerRanking';
-import SurveyCard from './components/SurveyCard';
 
 import { useMapleSearch } from './hooks/useMapleSearch';
 import { useAiAnalysis } from './hooks/useAiAnalysis';
@@ -56,6 +55,60 @@ const ResultLoading = () => {
     <span className="mr-3 h-5 w-5 animate-spin rounded-full border-2 border-cyan-400/25 border-t-cyan-400" aria-hidden="true" />
     正在準備角色分析介面…
   </div>
+  );
+};
+
+const ServiceAdjustmentNotice = () => {
+  const [activeNotice, setActiveNotice] = React.useState(0);
+
+  React.useEffect(() => {
+    const timer = window.setInterval(() => {
+      setActiveNotice((current) => (current + 1) % 4);
+    }, 6500);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const isRedNotice = activeNotice === 0 || activeNotice === 2;
+  const targetHref = activeNotice === 0
+    ? '/maplestory/2026-09-12'
+    : activeNotice === 3
+      ? '/survey/'
+      : '/maplestory/service-notice';
+  const ariaLabel = activeNotice === 0
+    ? '新楓之谷戰力分析工具服務重新開放及資料來源取得方式說明'
+    : activeNotice === 3
+      ? 'HolyBearTW 戰力分析滿意度問卷'
+      : '分身資料同步與服務調整說明';
+
+  return (
+    <a
+      className="maple-sync-notice maple-sync-ticker text-inherit no-underline"
+      aria-live="polite"
+      href={targetHref}
+      aria-label={ariaLabel}
+    >
+      <span
+        className="maple-sync-notice-icon"
+        aria-hidden="true"
+        style={isRedNotice ? { color: '#dc2626', borderColor: 'rgba(220, 38, 38, 0.42)' } : undefined}
+      >
+        i
+      </span>
+      <div className="maple-sync-ticker-track">
+        <div className={`maple-sync-ticker-item ${activeNotice === 0 ? 'is-active' : ''}`} aria-hidden={activeNotice !== 0}>
+          <p><strong style={{ color: '#dc2626' }}>服務重新開放及資料來源說明</strong>：楓之谷戰力分析已重新開放，現以 NEXON 官方 API 與本站資料處理流程提供分析結果。</p>
+        </div>
+        <div className={`maple-sync-ticker-item ${activeNotice === 1 ? 'is-active' : ''}`} aria-hidden={activeNotice !== 1}>
+          <p><strong>分身資料同步中</strong>：部分角色的分身／聯盟資料仍在背景補齊，查詢結果可能暫時不完整，資料會持續自動更新。</p>
+        </div>
+        <div className={`maple-sync-ticker-item ${activeNotice === 2 ? 'is-active' : ''}`} aria-hidden={activeNotice !== 2}>
+          <p><strong style={{ color: '#dc2626' }}>服務調整與說明</strong>：關於先前 MapleKit API 的使用與後續爭議，我重新檢視了當時的做法與處理態度。對於先前沒有確認清楚服務使用界線就進行整合，以及後續處理事情時不好的態度，我在這裡正式向 MapleKit 作者道歉。</p>
+        </div>
+        <div className={`maple-sync-ticker-item ${activeNotice === 3 ? 'is-active' : ''}`} aria-hidden={activeNotice !== 3}>
+          <p><strong>HolyBearTW 戰力分析滿意度與未來開發意願調查</strong>：想了解大家的使用感受；問卷約 1 分鐘，回覆僅用於網站功能規劃與服務改善。</p>
+        </div>
+      </div>
+    </a>
   );
 };
 
@@ -158,10 +211,12 @@ const AuthorizedApp: React.FC<{ bypassKey: string }> = ({ bypassKey }) => {
           searchHistory={searchHistory}
           setSearchHistory={setSearchHistory}
         />
-        <SurveyCard />
+        <div className="maple-search-secondary">
+          <ServiceAdjustmentNotice />
+        </div>
       </div>
 
-      <main className={`max-w-[1600px] mx-auto px-6 pb-6 ${!data && !loading && !error ? 'pt-0 mt-0' : 'pt-6 mt-4'}`}>
+      <main className={`max-w-[1600px] mx-auto px-6 pb-6 ${data ? 'pt-2 mt-0' : error ? 'pt-6 mt-4' : 'pt-0 mt-0'}`}>
         <SearchStatus 
           loading={loading}
           isScanningBest={isScanningBest}
@@ -264,8 +319,8 @@ const AuthorizedApp: React.FC<{ bypassKey: string }> = ({ bypassKey }) => {
               background: rgba(0,255,238,0.12);
               /* #00FFEE 主題色系 */
               box-sizing: border-box;
-              width: calc(100% - 3rem);
-              max-width: 28rem;
+              width: 100%;
+              max-width: 42rem;
               margin-left: auto;
               margin-right: auto;
               padding-left: 1rem;
@@ -389,18 +444,6 @@ const MaintenanceView: React.FC<{
         {unlocking && <p className="mt-4 text-sm font-medium text-cyan-400">正在驗證密碼…</p>}
         {!unlocking && unlockError && <p className="mt-4 text-sm font-medium text-rose-400">{unlockError}</p>}
       </section>
-      <aside className="maple-service-notice mt-4 w-full max-w-2xl rounded-xl border border-cyan-400/20 bg-[#111923]/90 px-5 py-4 text-left shadow-lg shadow-black/10 backdrop-blur-sm sm:px-6">
-        <a className="block text-inherit no-underline" href="/maplestory/service-notice">
-          <h2 className="m-0 text-sm font-bold text-cyan-300 sm:text-base">📘 服務調整與說明</h2>
-          <p className="m-0 mt-2 text-sm leading-6 text-slate-400">
-            關於先前 MapleKit API 的使用與後續爭議，我重新檢視了當時的做法與處理態度。對於先前沒有確認清楚服務使用界線就進行整合，以及後續處理事情時不好的態度，我在這裡正式向 MapleKit 作者道歉。
-          </p>
-          <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-cyan-300">
-            閱讀完整說明 <span aria-hidden="true">→</span>
-          </span>
-        </a>
-      </aside>
-      <SurveyCard />
     </main>
   );
 };
@@ -412,6 +455,7 @@ const getInitialBypassKey = () => {
 
 const App: React.FC = () => {
   const [bypassKey, setBypassKey] = useState(getInitialBypassKey);
+  const [maintenanceEnabled, setMaintenanceEnabled] = useState<boolean | null>(null);
   const [unlocking, setUnlocking] = useState(false);
   const [unlockError, setUnlockError] = useState('');
 
@@ -430,6 +474,30 @@ const App: React.FC = () => {
     } finally {
       setUnlocking(false);
     }
+  }, []);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    const loadMaintenanceStatus = async () => {
+      try {
+        const response = await fetch('/api/maintenance/status', {
+          cache: 'no-store',
+          headers: { accept: 'application/json' },
+        });
+        if (!response.ok) throw new Error(`Maintenance status failed: ${response.status}`);
+        const payload = await response.json() as { maintenance?: unknown };
+        if (!cancelled) setMaintenanceEnabled(payload.maintenance === true);
+      } catch {
+        // Fail closed if the status endpoint is unavailable so a deployment
+        // cannot accidentally expose the tool while its lock state is unknown.
+        if (!cancelled) setMaintenanceEnabled(true);
+      }
+    };
+
+    void loadMaintenanceStatus();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   React.useEffect(() => {
@@ -466,9 +534,9 @@ const App: React.FC = () => {
     return () => window.clearTimeout(timer);
   }, [bypassKey]);
 
-  return bypassKey
-    ? <AuthorizedApp bypassKey={bypassKey} />
-    : <MaintenanceView onUnlock={unlock} unlocking={unlocking} unlockError={unlockError} />;
+  if (maintenanceEnabled === false) return <AuthorizedApp bypassKey="" />;
+  if (bypassKey) return <AuthorizedApp bypassKey={bypassKey} />;
+  return <MaintenanceView onUnlock={unlock} unlocking={unlocking} unlockError={unlockError} />;
 };
 
 export default App;

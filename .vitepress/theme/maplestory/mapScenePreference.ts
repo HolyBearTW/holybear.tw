@@ -1,4 +1,4 @@
-import { getJobBackgroundMap, MAP_SCENE_OPTIONS } from './constants';
+import { getJobEquipmentMap, MAP_SCENE_OPTIONS } from './constants';
 
 export const CHARACTER_MAP_SCENE_CHANGE_EVENT = 'maplestory-character-map-scene-change';
 
@@ -15,7 +15,7 @@ const storageKey = (characterName: string) =>
   `maplestory_character_map_scene_${encodeURIComponent(normalizeCharacterName(characterName))}`;
 
 const resolveMapId = (mapId: string | null | undefined, characterClass: string) => (
-  mapId && validMapIds.has(mapId) ? mapId : getJobBackgroundMap(characterClass)
+  mapId && validMapIds.has(mapId) ? mapId : getJobEquipmentMap(characterClass)
 );
 
 export const readCharacterMapScene = (characterName: string, characterClass: string): string => {

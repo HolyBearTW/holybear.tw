@@ -7,6 +7,13 @@ const PROTECTED_API_PREFIXES = [
   '/api/rankings',
 ] as const;
 
+export const isMaintenanceEnabled = (env: Pick<Env, 'MAINTENANCE_MODE'>) => {
+  const mode = env.MAINTENANCE_MODE?.trim().toLowerCase();
+  // Keep the existing lock as the safe fallback if a deployment omits the
+  // switch. Explicitly set MAINTENANCE_MODE=disabled to open the tool.
+  return mode !== 'disabled' && mode !== 'false' && mode !== '0';
+};
+
 const textEncoder = new TextEncoder();
 
 const constantTimeEqual = (left: string, right: string) => {

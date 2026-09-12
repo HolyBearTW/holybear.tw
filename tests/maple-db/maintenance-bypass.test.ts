@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { onRequest } from '../../functions/api/_middleware';
 import { onRequestPost as validateBypass } from '../../functions/api/maintenance/validate';
+import { onRequestGet as maintenanceStatus } from '../../functions/api/maintenance/status';
 import {
   hasValidMaintenanceBypass,
   hasValidRadarAutomationAccess,
@@ -9,8 +10,9 @@ import {
 
 const env = {
   MAINTENANCE_BYPASS_KEY: 'deployment-secret',
+  MAINTENANCE_MODE: 'enabled',
   RADAR_AUTOMATION_KEY: 'radar-secret',
-} as never;
+} as Parameters<typeof hasValidMaintenanceBypass>[1];
 
 describe('maintenance bypass middleware', () => {
   it('protects every public MapleStory data API group', () => {
@@ -86,6 +88,32 @@ describe('maintenance bypass middleware', () => {
     expect(next).not.toHaveBeenCalled();
     expect(response.status).toBe(503);
     expect(await response.json()).toEqual({ maintenance: true, message: '系統維護中' });
+  });
+
+  it('bypasses the lock when maintenance mode is disabled', async () => {
+    const next = vi.fn(async () => new Response('downstream'));
+    const response = await onRequest({
+      env: { ...env, MAINTENANCE_MODE: 'disabled' },
+      request: new Request('https://holybear.tw/api/nexon/id'),
+      next,
+    } as never);
+
+    expect(next).toHaveBeenCalledOnce();
+    expect(await response.text()).toBe('downstream');
+  });
+
+  it('exposes the configured maintenance state to the client', async () => {
+    const enabled = await maintenanceStatus({
+      env,
+      request: new Request('https://holybear.tw/api/maintenance/status'),
+    } as never);
+    const disabled = await maintenanceStatus({
+      env: { ...env, MAINTENANCE_MODE: 'disabled' },
+      request: new Request('https://holybear.tw/api/maintenance/status'),
+    } as never);
+
+    expect(await enabled.json()).toEqual({ maintenance: true });
+    expect(await disabled.json()).toEqual({ maintenance: false });
   });
 
   it('continues only after successful authentication', async () => {

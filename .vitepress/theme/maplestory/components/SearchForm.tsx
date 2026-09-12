@@ -281,8 +281,10 @@ export const SearchStatus: React.FC<SearchStatusProps> = ({
   return (
     <>
       {loading && !data && (
-         <div className="flex flex-col items-center justify-center min-h-[300px] animate-pulse">
-            <Loader2 className="w-12 h-12 text-indigo-500 animate-spin mb-4" />
+         <div className="maple-character-loading-state maple-empty-state mx-auto flex flex-col items-center justify-center min-h-[300px]">
+            <div className="maple-empty-state-icon maple-character-loading-icon w-20 h-20 rounded-full flex items-center justify-center mb-3">
+              <Loader2 className="w-8 h-8 animate-spin" />
+            </div>
             <p className="maple-character-loading-text font-medium">{isScanningBest ? '正在掃描過去七天數據，尋找最強狀態...' : '正在讀取角色資料...'}</p>
          </div>
       )}

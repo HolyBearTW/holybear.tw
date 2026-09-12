@@ -62,6 +62,10 @@ const earlyLoadingStyle = `
     html.dark.holy-bear-booting {
         background: #061018;
     }
+    html.holy-bear-booting,
+    html.holy-bear-loading-active {
+        scroll-behavior: auto !important;
+    }
     #holy-bear-boot-frame {
         display: none;
         position: fixed;
@@ -273,16 +277,51 @@ const earlyLoadingStyle = `
 
 const earlyLoadingScript = `(() => {
     const root = document.documentElement;
+    const isHomeEntry = /^\\/(?:en\\/)?$/.test(window.location.pathname) && !window.location.hash;
+
+    // Chrome can restore the previous homepage scroll position after the
+    // loading shell has already painted. Keep the home entry at the top while
+    // the shell is mounting, then return control to normal history behavior.
+    if (isHomeEntry) {
+        const resetHomeEntryScroll = () => window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+        try {
+            history.scrollRestoration = 'manual';
+        } catch {}
+        resetHomeEntryScroll();
+        window.addEventListener('pageshow', resetHomeEntryScroll, { once: true });
+        window.addEventListener('DOMContentLoaded', resetHomeEntryScroll, { once: true });
+        window.addEventListener('load', resetHomeEntryScroll, { once: true });
+        window.addEventListener('holybear-loading-complete', () => {
+            resetHomeEntryScroll();
+            try {
+                history.scrollRestoration = 'auto';
+            } catch {}
+        }, { once: true });
+    }
+
+    // Migrate the previous site-wide dark default once. Later manual dark or
+    // light selections are kept exactly like normal VitePress behavior.
+    const appearanceMigrationKey = 'holybear-appearance-default-migration';
+    const appearanceMigrationVersion = 'light-default-v2';
+    try {
+        if (localStorage.getItem(appearanceMigrationKey) !== appearanceMigrationVersion) {
+            if (localStorage.getItem('vitepress-theme-appearance') !== 'light') {
+                localStorage.setItem('vitepress-theme-appearance', 'light');
+            }
+            localStorage.setItem(appearanceMigrationKey, appearanceMigrationVersion);
+        }
+    } catch {}
+
     let savedAppearance = null;
     try {
         savedAppearance = localStorage.getItem('vitepress-theme-appearance');
     } catch {}
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const shouldUseDark = savedAppearance === 'light'
-        ? false
+    const shouldUseDark = savedAppearance === 'dark'
+        ? true
         : savedAppearance === 'auto'
             ? prefersDark
-            : true;
+            : false;
     root.classList.toggle('dark', shouldUseDark);
     root.classList.add('holy-bear-booting');
 
@@ -392,7 +431,8 @@ const config = defineConfig({
         'zh_TW/**/*.md'
     ],
     rewrites: {
-        'maplestory-service-notice.md': 'maplestory/service-notice.md'
+        'maplestory-service-notice.md': 'maplestory/service-notice.md',
+        'maplestory-2026-09-12.md': 'maplestory/2026-09-12.md'
     },
     sitemap: {
         hostname: 'https://holybear.tw'
@@ -453,7 +493,7 @@ const config = defineConfig({
             }
         }
     },
-    appearance: 'dark',
+    appearance: true,
     head: [
         ['meta', { name: 'theme-color', content: '#00FFEE' }],
         ['link', { rel: 'alternate', type: 'application/rss+xml', title: '聖小熊的秘密基地', href: 'https://holybear.tw/rss.xml' }],
@@ -464,13 +504,23 @@ const config = defineConfig({
         }],
         ['script', {}, `(() => {
             const root = document.documentElement;
+            const appearanceMigrationKey = 'holybear-appearance-default-migration';
+            const appearanceMigrationVersion = 'light-default-v2';
+            try {
+                if (localStorage.getItem(appearanceMigrationKey) !== appearanceMigrationVersion) {
+                    if (localStorage.getItem('vitepress-theme-appearance') !== 'light') {
+                        localStorage.setItem('vitepress-theme-appearance', 'light');
+                    }
+                    localStorage.setItem(appearanceMigrationKey, appearanceMigrationVersion);
+                }
+            } catch {}
             const savedAppearance = localStorage.getItem('vitepress-theme-appearance');
             const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            const shouldUseDark = savedAppearance === 'light'
-                ? false
+            const shouldUseDark = savedAppearance === 'dark'
+                ? true
                 : savedAppearance === 'auto'
                     ? prefersDark
-                    : true;
+                    : false;
             root.classList.toggle('dark', shouldUseDark);
         })()`],
         ['style', { id: 'holy-bear-boot-style' }, earlyLoadingStyle],

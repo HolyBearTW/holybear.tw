@@ -1,12 +1,10 @@
 <script setup>
 import { ref, watch, onMounted, onUnmounted, computed, nextTick } from 'vue'
-import { useRoute } from 'vitepress'
 import { defaultTheme, THEME_CHANGE_EVENT, getInitialBackgroundTheme } from './background/themes'
-
-const route = useRoute()
 
 /* --- 音樂清單 --- */
 const originalMusicList = ref([
+  { src: '/music/MapleStory_UponTheSky.mp3', title: '楓之谷 - 往天空之城' },
   { src: '/music/MapleStory_SilentProtocol.mp3', title: '楓之谷 - 核心塔' },
   { src: '/music/Zelda/Hyrule_Warriors_Age_of_Imprisonment_OST_-_Main_Theme.mp3', title: '薩爾達無雙：封印戰記 - 主題曲' },
   { src: '/music/Zelda/Hyrule_Warriors_Age_of_Imprisonment_OST_-_Those_Bold_of_Heart.mp3', title: '薩爾達無雙：封印戰記 - 勇敢的心' },
@@ -73,14 +71,27 @@ const PLAYING_KEY = 'holybear-bgm-playing'
 const INDEX_KEY = 'holybear-bgm-index'
 const PLAYER_OPEN_KEY = 'holybear-bgm-player-open'
 const REPEAT_ONE_KEY = 'holybear-bgm-repeat-one'
-const CORE_TOWER_MUSIC_INTRO_KEY = 'holybear-coretower-music-introduced'
+const THEME_MUSIC_ENABLED_KEY = 'holybear-theme-music-enabled'
 const PLAYLIST_RESET_VERSION_KEY = 'holybear-bgm-playlist-reset-version'
-const PLAYLIST_RESET_VERSION = 'silent-protocol-first-v1'
+const PLAYLIST_RESET_VERSION = 'upon-the-sky-first-v2'
+
+const THEME_MUSIC = {
+  uponthesky: {
+    src: '/music/MapleStory_UponTheSky.mp3',
+    title: '楓之谷 - 往天空之城'
+  },
+  coretower: {
+    src: '/music/MapleStory_SilentProtocol.mp3',
+    title: '楓之谷 - 核心塔'
+  }
+}
 
 /* --- Refs & 狀態 --- */
 const audio = ref(null)
 const playerContainer = ref(null)
 const sidebarToggle = ref(null)
+const themeMusicPromptRef = ref(null)
+const themeMusicPromptStyle = ref({})
 const playlistItemsRef = ref(null)
 const playing = ref(false)
 const volume = ref(0.6)
@@ -98,6 +109,9 @@ const showSidebarButton = ref(false)
 const showPlayerToggle = ref(false)
 const repeatOne = ref(false)
 const isPageLoaded = ref(false)
+const themeMusicEnabled = ref(null)
+const showThemeMusicPrompt = ref(false)
+const themeMusicPromptPositionReady = ref(false)
 
 const showTitleToast = ref(false)
 const toastText = ref('')
@@ -109,6 +123,11 @@ const isHovering = ref(false)
 const isClicked = ref(false)
 
 let autoPlayListener = null
+let themeMusicPromptListener = null
+let themeMusicPromptPositionFrame = null
+let themeMusicPromptResizeObserver = null
+let themeMusicPromptDomObserver = null
+let observedMusicNoteButton = null
 let internalAudioTransition = false
 let pendingTrackAdvance = false
 let trackAdvanceUnlockTimer = null
@@ -119,23 +138,174 @@ let mediaSessionSeekEnabled = false
 let initialPlaybackPending = false
 let currentBackgroundTheme = defaultTheme
 
-function isMapleStoryToolRoute(path = route.path) {
-  const normalizedPath = String(path || (typeof window !== 'undefined' ? window.location.pathname : ''))
-    .split(/[?#]/, 1)[0]
-    .replace(/\/+$/, '') || '/'
-  return normalizedPath === '/maplestory'
-}
-
 function clearAutoplayOnInteraction() {
   if (!autoPlayListener || typeof document === 'undefined') return
   document.body.removeEventListener('click', autoPlayListener, true)
   autoPlayListener = null
 }
 
-function rememberCoreTowerMusicChoice() {
-  if (currentBackgroundTheme === 'coretower') {
-    localStorage.setItem(CORE_TOWER_MUSIC_INTRO_KEY, 'true')
+function getThemeMusic(theme = currentBackgroundTheme) {
+  return THEME_MUSIC[theme] || null
+}
+
+function getVisibleMusicNoteButton() {
+  const isRenderable = (element) => {
+    if (!element) return false
+    const style = window.getComputedStyle(element)
+    const rect = element.getBoundingClientRect()
+    return style.display !== 'none'
+      && style.visibility !== 'hidden'
+      && rect.width > 0
+      && rect.height > 0
   }
+
+  if (isRenderable(sidebarToggle.value)) return sidebarToggle.value
+
+  if (typeof document === 'undefined') return null
+
+  return Array.from(document.querySelectorAll('.sidebar-toggle:not(.player-toggle)')).find(isRenderable)
+    || Array.from(document.querySelectorAll('.sidebar-toggle')).find(isRenderable)
+    || null
+}
+
+function getStableMusicNoteButtonRect(button) {
+  const rect = button.getBoundingClientRect()
+  const style = window.getComputedStyle(button)
+  const fixedRight = Number.parseFloat(style.right)
+  const fixedBottom = Number.parseFloat(style.bottom)
+
+  // The sidebar button enters with translateX(40px). Its transformed rect is
+  // temporary, so derive the fixed resting rect from CSS offsets instead.
+  if (style.position === 'fixed' && Number.isFinite(fixedRight) && Number.isFinite(fixedBottom)) {
+    const fixedViewportWidth = document.documentElement.clientWidth || window.innerWidth
+    const fixedViewportHeight = document.documentElement.clientHeight || window.innerHeight
+    const right = fixedViewportWidth - fixedRight
+    const bottom = fixedViewportHeight - fixedBottom
+
+    return {
+      left: right - rect.width,
+      right,
+      top: bottom - rect.height,
+      bottom,
+      width: rect.width,
+      height: rect.height
+    }
+  }
+
+  return rect
+}
+
+function syncThemeMusicPromptPosition() {
+  if (typeof window === 'undefined') return
+
+  const button = getVisibleMusicNoteButton()
+  if (button !== observedMusicNoteButton) {
+    themeMusicPromptResizeObserver?.disconnect()
+    observedMusicNoteButton = button
+
+    if (button && 'ResizeObserver' in window) {
+      themeMusicPromptResizeObserver = new ResizeObserver(() => scheduleThemeMusicPromptPosition())
+      themeMusicPromptResizeObserver.observe(button)
+    } else {
+      themeMusicPromptResizeObserver = null
+    }
+  }
+
+  if (!button) {
+    themeMusicPromptStyle.value = {}
+    themeMusicPromptPositionReady.value = false
+    return
+  }
+
+  const buttonRect = getStableMusicNoteButtonRect(button)
+  const promptRect = themeMusicPromptRef.value?.getBoundingClientRect()
+  const gap = 8
+  // Fixed-position coordinates follow the layout viewport (clientWidth),
+  // while innerWidth also includes a classic scrollbar on desktop Chrome.
+  // Using innerWidth here made the prompt drift farther left than intended.
+  const fixedViewportWidth = document.documentElement.clientWidth || window.innerWidth
+  const right = Math.max(12, Math.ceil(fixedViewportWidth - buttonRect.left + gap))
+  const safeEdge = 8
+  const centeredTop = promptRect
+    ? buttonRect.top + (buttonRect.height - promptRect.height) / 2
+    : buttonRect.top
+  const maxTop = Math.max(safeEdge, window.innerHeight - (promptRect?.height || 0) - safeEdge)
+  const top = Math.min(Math.max(centeredTop, safeEdge), maxTop)
+  themeMusicPromptStyle.value = {
+    right: `${right}px`,
+    top: `${Math.round(top)}px`,
+    bottom: 'auto'
+  }
+  themeMusicPromptPositionReady.value = true
+}
+
+function scheduleThemeMusicPromptPosition() {
+  if (typeof window === 'undefined' || themeMusicPromptPositionFrame) return
+
+  themeMusicPromptPositionFrame = window.requestAnimationFrame(() => {
+    themeMusicPromptPositionFrame = null
+    syncThemeMusicPromptPosition()
+  })
+}
+
+function clearThemeMusicPromptInteraction() {
+  if (!themeMusicPromptListener || typeof document === 'undefined') return
+  document.body.removeEventListener('click', themeMusicPromptListener, true)
+  themeMusicPromptListener = null
+}
+
+function armThemeMusicPromptOnInteraction() {
+  if (
+    themeMusicPromptListener
+    || themeMusicEnabled.value !== null
+    || !getThemeMusic()
+    || typeof document === 'undefined'
+  ) return
+
+  themeMusicPromptListener = () => {
+    themeMusicPromptListener = null
+    showThemeMusicPrompt.value = true
+  }
+  document.body.addEventListener('click', themeMusicPromptListener, { once: true, capture: true })
+}
+
+function setThemeMusicEnabled(enabled) {
+  themeMusicEnabled.value = enabled
+  localStorage.setItem(THEME_MUSIC_ENABLED_KEY, enabled ? 'true' : 'false')
+  showThemeMusicPrompt.value = false
+  clearThemeMusicPromptInteraction()
+}
+
+async function playCurrentThemeMusic() {
+  const themeSong = getThemeMusic()
+  if (!themeSong) return
+
+  const themeSongIndex = musicList.value.findIndex(song => song.src === themeSong.src)
+  if (themeSongIndex < 0) return
+
+  repeatOne.value = true
+  localStorage.setItem(REPEAT_ONE_KEY, 'true')
+  if (audio.value) audio.value.loop = true
+  await selectAndPlaySong(themeSongIndex, { forceRestart: true })
+}
+
+function acceptThemeMusicPrompt() {
+  setThemeMusicEnabled(true)
+  playCurrentThemeMusic()
+}
+
+function declineThemeMusicPrompt() {
+  setThemeMusicEnabled(false)
+  initialPlaybackPending = false
+  intendedToPlay = false
+  clearAutoplayOnInteraction()
+  if (!playing.value) localStorage.setItem(PLAYING_KEY, 'false')
+}
+
+function toggleThemeMusicEnabled() {
+  const enabled = themeMusicEnabled.value !== true
+  setThemeMusicEnabled(enabled)
+  if (enabled) playCurrentThemeMusic()
 }
 
 function isMobileViewport() {
@@ -157,7 +327,17 @@ function handleLoadingComplete() {
 function startInitialPlaybackWhenReady() {
   if (!isPageLoaded.value || !initialPlaybackPending) return
 
-  if (isMapleStoryToolRoute()) {
+  const themeSong = getThemeMusic()
+  if (themeSong && themeMusicEnabled.value === null) {
+    initialPlaybackPending = false
+    intendedToPlay = false
+    clearAutoplayOnInteraction()
+    armThemeMusicPromptOnInteraction()
+    return
+  }
+
+  if (themeSong && themeMusicEnabled.value === false) {
+    initialPlaybackPending = false
     intendedToPlay = false
     clearAutoplayOnInteraction()
     return
@@ -165,7 +345,8 @@ function startInitialPlaybackWhenReady() {
 
   initialPlaybackPending = false
   if (canAttemptPlaybackNow()) {
-    selectAndPlaySong(currentIndex.value, { forceRestart: true })
+    if (themeSong && themeMusicEnabled.value === true) playCurrentThemeMusic()
+    else selectAndPlaySong(currentIndex.value, { forceRestart: true })
   } else {
     // 尚未取得使用者互動，只更新畫面，不要把首次訪客誤記成「主動暫停」。
     playing.value = false
@@ -181,16 +362,12 @@ function canAttemptPlaybackNow() {
 }
 
 function armAutoplayOnInteraction() {
-  if (autoPlayListener || isMapleStoryToolRoute()) return
+  if (autoPlayListener) return
 
   autoPlayListener = () => {
     autoPlayListener = null
-    if (isMapleStoryToolRoute()) {
-      intendedToPlay = false
-      initialPlaybackPending = true
-      return
-    }
-    playMusic()
+    if (getThemeMusic() && themeMusicEnabled.value === true) playCurrentThemeMusic()
+    else playMusic()
   }
 
   document.body.addEventListener('click', autoPlayListener, { once: true, capture: true })
@@ -214,16 +391,20 @@ const progressPercent = computed(() => {
 const themeHandler = (e) => {
   currentBackgroundTheme = e.detail?.theme || currentBackgroundTheme;
   const isChristmasTheme = e.detail?.theme === 'christmas';
-  const shouldForceCoreTowerMusic = e.detail?.theme === 'coretower'
-    && e.detail?.userInitiated === true
-    && localStorage.getItem(CORE_TOWER_MUSIC_INTRO_KEY) !== 'true';
+  const themeSong = getThemeMusic();
+  const userInitiated = e.detail?.userInitiated === true;
+  const shouldSwitchToThemeMusic = Boolean(
+    themeSong && userInitiated && themeMusicEnabled.value === true
+  );
+  const shouldPromptForThemeMusic = Boolean(
+    themeSong && userInitiated && themeMusicEnabled.value === null
+  );
   const christmasSong = {
     src: '/music/MapleStory_WhiteChristmas.mp3',
     title: '楓之谷 - 幸福村（聖誕村莊）'
   };
   const isChristmasSongInList = musicList.value.some(m => m.src === christmasSong.src);
   const wasPlaying = playing.value; // 保存切換前是否正在播放
-  const automaticPlaybackAllowed = !isMapleStoryToolRoute() || wasPlaying;
 
   if (isChristmasTheme) {
     if (!isChristmasSongInList) {
@@ -231,11 +412,7 @@ const themeHandler = (e) => {
       musicList.value.unshift(christmasSong);
     }
     // 無論是否在播放，切換到聖誕主題時都強制播放聖誕音樂
-    if (automaticPlaybackAllowed) {
-      selectAndPlaySong(0, { forceRestart: true });
-    } else {
-      currentIndex.value = 0;
-    }
+    selectAndPlaySong(0, { forceRestart: true });
   } else {
     // 從聖誕主題切換到其他主題
     if (isChristmasSongInList) {
@@ -258,7 +435,7 @@ const themeHandler = (e) => {
         currentIndex.value = 0; // 可以簡化為總是設為0，或保持不變 (取決於設計)
       }
 
-      if (wasPlaying && !shouldForceCoreTowerMusic) {
+      if (wasPlaying && !shouldSwitchToThemeMusic && !shouldPromptForThemeMusic) {
         selectAndPlaySong(currentIndex.value, { forceRestart: true });
       } else {
         // 保持選曲狀態即可；等使用者真正播放時才載入音訊。
@@ -268,16 +445,11 @@ const themeHandler = (e) => {
     }
   }
 
-  if (shouldForceCoreTowerMusic && automaticPlaybackAllowed) {
-    repeatOne.value = true;
-    localStorage.setItem(REPEAT_ONE_KEY, 'true');
-    if (audio.value) audio.value.loop = true;
-
-    const coreTowerSongIndex = musicList.value.findIndex(
-      song => song.src === '/music/MapleStory_SilentProtocol.mp3'
-    );
-    localStorage.setItem(CORE_TOWER_MUSIC_INTRO_KEY, 'true');
-    selectAndPlaySong(coreTowerSongIndex >= 0 ? coreTowerSongIndex : 0, { forceRestart: true });
+  if (shouldPromptForThemeMusic) {
+    showThemeMusicPrompt.value = true;
+    clearThemeMusicPromptInteraction();
+  } else if (shouldSwitchToThemeMusic) {
+    playCurrentThemeMusic();
   }
 };
 
@@ -293,6 +465,15 @@ onMounted(async () => {
   // 頁面載入時檢查初始主題
   const savedTheme = getInitialBackgroundTheme();
   currentBackgroundTheme = savedTheme;
+  const savedThemeMusicEnabled = localStorage.getItem(THEME_MUSIC_ENABLED_KEY)
+  themeMusicEnabled.value = savedThemeMusicEnabled === 'true'
+    ? true
+    : savedThemeMusicEnabled === 'false'
+      ? false
+      : null
+  if (themeMusicEnabled.value === null && getThemeMusic(savedTheme)) {
+    armThemeMusicPromptOnInteraction()
+  }
 
   const christmasSong = {
     src: '/music/MapleStory_WhiteChristmas.mp3',
@@ -327,6 +508,13 @@ onMounted(async () => {
   window.addEventListener('pagehide', handlePageHide)
   window.addEventListener('focus', handleWindowFocus)
   window.addEventListener('resume', handleRuntimeResume)
+  window.addEventListener('resize', scheduleThemeMusicPromptPosition, { passive: true })
+  if ('MutationObserver' in window) {
+    themeMusicPromptDomObserver = new MutationObserver(() => {
+      if (showThemeMusicPrompt.value) scheduleThemeMusicPromptPosition()
+    })
+    themeMusicPromptDomObserver.observe(document.body, { childList: true, subtree: true })
+  }
   document.addEventListener('freeze', handleDocumentFreeze)
   document.addEventListener('mousemove', handleGlobalMouseMove)
   document.addEventListener('visibilitychange', handleVisibilityChange)
@@ -349,6 +537,7 @@ onMounted(async () => {
 
   // 等 template 綁定完畢再初始化 audio
   await nextTick()
+  scheduleThemeMusicPromptPosition()
   if (audio.value) {
     audio.value.volume = volume.value;
     audio.value.loop = repeatOne.value;
@@ -360,16 +549,17 @@ onMounted(async () => {
     // 統一處理初始播放邏輯
     const savedPlayingState = localStorage.getItem(PLAYING_KEY)
     const shouldStartOnInteraction = savedTheme === 'christmas' || savedPlayingState !== 'false'
-    const suppressInitialAutoplay = isMapleStoryToolRoute() && shouldStartOnInteraction
-    intendedToPlay = shouldStartOnInteraction && !suppressInitialAutoplay
+    const awaitsThemeMusicChoice = Boolean(
+      getThemeMusic(savedTheme) && themeMusicEnabled.value === null
+    )
+    intendedToPlay = shouldStartOnInteraction && !awaitsThemeMusicChoice
 
-    if (playerOpen.value && shouldStartOnInteraction && !suppressInitialAutoplay) {
-        initialPlaybackPending = true
-    } else if (playerOpen.value && suppressInitialAutoplay) {
-      // 保留原本的播放偏好，離開工具頁後再恢復全站既有的自動播放流程。
+    if (awaitsThemeMusicChoice) {
       initialPlaybackPending = true
       playing.value = false
       clearAutoplayOnInteraction()
+    } else if (playerOpen.value && shouldStartOnInteraction) {
+      initialPlaybackPending = true
     } else if (playerOpen.value) {
       intendedToPlay = false
       syncPlayingState(false)
@@ -414,6 +604,17 @@ onUnmounted(() => {
   if (autoPlayListener) {
     document.body.removeEventListener('click', autoPlayListener, true)
   }
+  window.removeEventListener('resize', scheduleThemeMusicPromptPosition)
+  themeMusicPromptResizeObserver?.disconnect()
+  themeMusicPromptResizeObserver = null
+  themeMusicPromptDomObserver?.disconnect()
+  themeMusicPromptDomObserver = null
+  observedMusicNoteButton = null
+  if (themeMusicPromptPositionFrame) {
+    window.cancelAnimationFrame(themeMusicPromptPositionFrame)
+    themeMusicPromptPositionFrame = null
+  }
+  clearThemeMusicPromptInteraction()
   if (hoverTimer) clearTimeout(hoverTimer)
   if (leaveTimer) clearTimeout(leaveTimer)
   if (trackAdvanceUnlockTimer) clearTimeout(trackAdvanceUnlockTimer)
@@ -445,25 +646,21 @@ watch(isPlaylistVisible, async (visible) => {
   await scrollActivePlaylistItem(false)
 })
 
-watch(() => route.path, (path, previousPath) => {
-  if (isMapleStoryToolRoute(path)) {
-    if (!playing.value) {
-      const savedPlayingState = localStorage.getItem(PLAYING_KEY)
-      initialPlaybackPending = playerOpen.value
-        && (currentBackgroundTheme === 'christmas' || savedPlayingState !== 'false')
-      intendedToPlay = false
-      resumeOnVisibilityReturn = false
-      cancelPlaybackRecovery()
-      clearAutoplayOnInteraction()
-    }
+watch(showThemeMusicPrompt, async (visible) => {
+  if (!visible) {
+    themeMusicPromptStyle.value = {}
+    themeMusicPromptPositionReady.value = false
     return
   }
 
-  if (isMapleStoryToolRoute(previousPath) && initialPlaybackPending && playerOpen.value) {
-    intendedToPlay = true
-    startInitialPlaybackWhenReady()
-  }
-})
+  await nextTick()
+  scheduleThemeMusicPromptPosition()
+}, { immediate: true })
+
+watch([showSidebarButton, showPlayerToggle], async () => {
+  await nextTick()
+  scheduleThemeMusicPromptPosition()
+}, { immediate: true })
 
 watch(volume, (newVolume) => {
   if (audio.value) audio.value.volume = newVolume
@@ -474,7 +671,6 @@ watch(volume, (newVolume) => {
 watch(playerOpen, (val) => {
   localStorage.setItem(PLAYER_OPEN_KEY, val ? 'true' : 'false')
   if (!val) {
-    rememberCoreTowerMusicChoice()
     intendedToPlay = false
     resumeOnVisibilityReturn = false
     cancelPlaybackRecovery()
@@ -551,7 +747,6 @@ function playMusic() {
 
 function pauseMusic() {
   if (!audio.value) return
-  rememberCoreTowerMusicChoice()
   intendedToPlay = false
   resumeOnVisibilityReturn = false
   cancelPlaybackRecovery()
@@ -1225,7 +1420,6 @@ function toggleRepeatOne() {
   repeatOne.value = !repeatOne.value
   localStorage.setItem(REPEAT_ONE_KEY, repeatOne.value ? 'true' : 'false')
   if (audio.value) audio.value.loop = repeatOne.value
-  if (!repeatOne.value) rememberCoreTowerMusicChoice()
 }
 </script>
 
@@ -1244,6 +1438,26 @@ function toggleRepeatOne() {
   @pause="handleAudioPause"
   @error="handleAudioError"
 ></audio>
+
+  <transition name="theme-music-prompt">
+    <aside
+      v-if="showThemeMusicPrompt"
+      ref="themeMusicPromptRef"
+      class="theme-music-prompt"
+      :class="{ 'is-positioned': themeMusicPromptPositionReady }"
+      :style="themeMusicPromptStyle"
+      role="dialog"
+      aria-live="polite"
+      aria-label="主題專屬背景音樂"
+    >
+      <p>目前主題有對應的專屬BGM，是否播放？</p>
+      <small>可從右下角播放器變更此設定</small>
+      <div class="theme-music-prompt-actions">
+        <button type="button" class="theme-music-decline" @click.stop="declineThemeMusicPrompt">暫不播放</button>
+        <button type="button" class="theme-music-accept" @click.stop="acceptThemeMusicPrompt">播放</button>
+      </div>
+    </aside>
+  </transition>
 
   <transition name="player-fade">
     <div
@@ -1327,6 +1541,16 @@ function toggleRepeatOne() {
       <transition name="slide-up">
         <div v-if="isPlaylistVisible" class="playlist-panel bg-slate-950/22 backdrop-blur-3xl backdrop-saturate-150 backdrop-contrast-125">
           <h3 class="playlist-title">播放清單</h3>
+          <button
+            type="button"
+            class="theme-music-setting"
+            :class="{ enabled: themeMusicEnabled === true }"
+            :aria-pressed="themeMusicEnabled === true"
+            @click.stop="toggleThemeMusicEnabled"
+          >
+            <span><i class="fas fa-music"></i> 主題專屬 BGM</span>
+            <strong>{{ themeMusicEnabled === true ? '開啟' : '關閉' }}</strong>
+          </button>
           <div ref="playlistItemsRef" class="playlist-items">
             <div
               v-for="(song, index) in musicList"
@@ -1368,6 +1592,159 @@ function toggleRepeatOne() {
 </template>
 
 <style>
+/* ==================== 主題專屬 BGM 詢問 ==================== */
+.theme-music-prompt {
+    position: fixed;
+    /* Keep the fallback beside the fixed music-note toggle (8px from the
+       viewport edge, 38px rendered outer width) instead of covering it. */
+    right: calc(8px + 38px + 8px);
+    bottom: 118px;
+    z-index: 10001;
+    width: min(360px, calc(100vw - 32px));
+    padding: 15px 16px 14px;
+    border: 1px solid rgba(139, 214, 255, 0.3);
+    border-radius: 18px;
+    color: #f7fbff;
+    background: rgba(9, 20, 43, 0.9);
+    box-shadow: 0 12px 34px rgba(0, 0, 0, 0.25), 0 0 24px rgba(71, 176, 255, 0.12);
+    backdrop-filter: blur(14px) saturate(125%);
+    -webkit-backdrop-filter: blur(14px) saturate(125%);
+}
+
+/* Do not expose the bottom-position fallback while the note button is still
+   mounting. The prompt should appear once, already aligned to its anchor. */
+.theme-music-prompt:not(.is-positioned) {
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.theme-music-prompt p {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.55;
+}
+
+.theme-music-prompt small {
+    display: block;
+    margin-top: 3px;
+    color: rgba(228, 241, 255, 0.72);
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+.theme-music-prompt-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.theme-music-prompt-actions button {
+    min-height: 34px;
+    padding: 6px 13px;
+    border: 1px solid rgba(153, 218, 255, 0.34);
+    border-radius: 10px;
+    color: inherit;
+    background: rgba(255, 255, 255, 0.07);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.theme-music-prompt-actions .theme-music-accept {
+    border-color: rgba(0, 238, 255, 0.62);
+    color: #03151f;
+    background: #71e8f5;
+}
+
+html:not(.dark) .theme-music-prompt {
+    color: #16314d;
+    border-color: rgba(38, 119, 180, 0.2);
+    background: rgba(247, 251, 255, 0.93);
+    box-shadow: 0 12px 34px rgba(24, 74, 120, 0.18), 0 0 24px rgba(42, 139, 209, 0.1);
+}
+
+html:not(.dark) .theme-music-prompt small {
+    color: rgba(22, 49, 77, 0.68);
+}
+
+html:not(.dark) .theme-music-prompt-actions button {
+    border-color: rgba(38, 119, 180, 0.24);
+    background: rgba(255, 255, 255, 0.74);
+}
+
+html:not(.dark) .theme-music-prompt-actions .theme-music-accept {
+    border-color: #087c9a;
+    color: #fff;
+    background: #087c9a;
+}
+
+.theme-music-prompt-enter-active,
+.theme-music-prompt-leave-active {
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.theme-music-prompt-enter-from,
+.theme-music-prompt-leave-to {
+    opacity: 0;
+    transform: translateY(10px);
+}
+
+.theme-music-setting {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    margin: 0 0 9px;
+    padding: 8px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.13);
+    border-radius: 10px;
+    color: inherit;
+    background: rgba(255, 255, 255, 0.06);
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.theme-music-setting strong {
+    color: #aebdca;
+    font-size: 12px;
+}
+
+.theme-music-setting.enabled {
+    border-color: rgba(0, 238, 255, 0.42);
+    background: rgba(0, 207, 232, 0.12);
+}
+
+.theme-music-setting.enabled strong {
+    color: #00e6f2;
+}
+
+html:not(.dark) .theme-music-setting {
+    border-color: rgba(18, 88, 135, 0.16);
+    background: rgba(255, 255, 255, 0.58);
+}
+
+html:not(.dark) .theme-music-setting strong {
+    color: #567086;
+}
+
+html:not(.dark) .theme-music-setting.enabled strong {
+    color: #087c9a;
+}
+
+@media (max-width: 768px) {
+    .theme-music-prompt {
+        right: calc(8px + 38px + 8px);
+        bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+        left: 12px;
+        width: auto;
+    }
+}
+
 /* ==================== 歌曲名稱 Toast ==================== */
 .title-toast {
     position: fixed;

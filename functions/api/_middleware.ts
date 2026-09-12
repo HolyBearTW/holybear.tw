@@ -2,6 +2,7 @@ import type { AppPagesFunction } from '../_shared/env';
 import {
   hasValidMaintenanceBypass,
   hasValidRadarAutomationAccess,
+  isMaintenanceEnabled,
   isMaintenanceProtectedPath,
   maintenanceResponse,
 } from '../_shared/maintenance-bypass';
@@ -9,7 +10,8 @@ import {
 export const onRequest: AppPagesFunction = async ({ env, request, next }) => {
   const { pathname } = new URL(request.url);
   if (
-    isMaintenanceProtectedPath(pathname)
+    isMaintenanceEnabled(env)
+    && isMaintenanceProtectedPath(pathname)
     && !hasValidMaintenanceBypass(request, env)
     && !hasValidRadarAutomationAccess(request, env)
   ) {

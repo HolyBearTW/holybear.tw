@@ -574,7 +574,7 @@ html:not(.dark) #maplestory-root .maple-ranking-podium-3 {
 html:not(.dark) #maplestory-root .maple-ranking-panel [class~="text-slate-400"],
 html:not(.dark) #maplestory-root .maple-ranking-panel [class~="text-slate-500"],
 html:not(.dark) #maplestory-root .maple-ranking-panel [class~="text-slate-300"] {
-  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.48);
+  text-shadow: none !important;
 }
 
 #maplestory-root .maple-character-loading-text {
@@ -786,24 +786,27 @@ html:not(.dark) body:has(#maplestory-root) #maplestory-root .custom-vp-tip form 
   background: #087f94 !important;
 }
 
-html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #maplestory-root .maple-hero-title {
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #maplestory-root .maple-hero-title,
+html body.theme-uponthesky #maplestory-root .maple-hero-title {
   color: #ffffff !important;
   text-shadow: 0 2px 9px rgba(0, 0, 0, 0.5);
 }
 
 html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #maplestory-root .maple-hero-subtitle,
-html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #maplestory-root .maple-settings-button {
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #maplestory-root .maple-settings-button,
+html body.theme-uponthesky #maplestory-root .maple-hero-subtitle,
+html body.theme-uponthesky #maplestory-root .maple-settings-button {
   color: rgba(255, 255, 255, 0.82) !important;
   text-shadow: 0 1px 6px rgba(0, 0, 0, 0.48);
 }
 
-html:not(.dark) body:not(.theme-coretower):not(.theme-gravityfield):not(.theme-halloween) #maplestory-root .maple-hero-title {
+html:not(.dark) body:not(.theme-coretower):not(.theme-gravityfield):not(.theme-uponthesky):not(.theme-halloween) #maplestory-root .maple-hero-title {
   color: #173746 !important;
   text-shadow: 0 1px 2px rgba(255, 255, 255, 0.62);
 }
 
-html:not(.dark) body:not(.theme-coretower):not(.theme-gravityfield):not(.theme-halloween) #maplestory-root .maple-hero-subtitle,
-html:not(.dark) body:not(.theme-coretower):not(.theme-gravityfield):not(.theme-halloween) #maplestory-root .maple-settings-button {
+html:not(.dark) body:not(.theme-coretower):not(.theme-gravityfield):not(.theme-uponthesky):not(.theme-halloween) #maplestory-root .maple-hero-subtitle,
+html:not(.dark) body:not(.theme-coretower):not(.theme-gravityfield):not(.theme-uponthesky):not(.theme-halloween) #maplestory-root .maple-settings-button {
   color: #526b78 !important;
   text-shadow: none;
 }
@@ -833,12 +836,14 @@ html:not(.dark) #maplestory-root .maple-hero-brand .maple-hero-title {
 }
 
 /* These headers sit directly on the dark Core Tower and Gravity Field artwork. */
-html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #maplestory-root .maple-maintenance-brand .maple-hero-title {
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #maplestory-root .maple-maintenance-brand .maple-hero-title,
+html body.theme-uponthesky #maplestory-root .maple-maintenance-brand .maple-hero-title {
   color: #ffffff !important;
   text-shadow: 0 2px 9px rgba(0, 0, 0, 0.5) !important;
 }
 
-html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #maplestory-root .maple-hero-brand .maple-hero-title {
+html:not(.dark) body:is(.theme-coretower, .theme-gravityfield) #maplestory-root .maple-hero-brand .maple-hero-title,
+html body.theme-uponthesky #maplestory-root .maple-hero-brand .maple-hero-title {
   color: #ffffff !important;
   text-shadow: 0 2px 9px rgba(0, 0, 0, 0.5) !important;
 }
@@ -2075,9 +2080,126 @@ html:not(.dark) .maple-calculator-scroll::-webkit-scrollbar-thumb:hover {
   border: 1px solid rgba(129, 140, 248, 0.32);
   border-radius: 18px;
   background: linear-gradient(135deg, rgba(20, 27, 53, 0.96), rgba(18, 25, 43, 0.94));
-  box-shadow: 0 16px 44px rgba(3, 7, 18, 0.22);
+  box-shadow: 0 12px 32px rgba(3, 7, 18, 0.18);
   color: #dbeafe;
   overflow: hidden;
+}
+
+#maplestory-root .maple-search-secondary {
+  width: min(100%, 672px);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: -14px;
+}
+
+#maplestory-root .maple-search-secondary .maple-sync-notice,
+#maplestory-root .maple-search-secondary .maple-survey-card {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+
+#maplestory-root .maple-sync-notice {
+  width: min(100%, 672px);
+  box-sizing: border-box;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0 auto;
+  padding: 7px 12px;
+  border: 1px solid rgba(56, 189, 248, 0.24);
+  border-radius: 10px;
+  background: rgba(14, 116, 144, 0.14);
+  color: #b9dce8;
+  font-size: 0.74rem;
+  line-height: 1.55;
+}
+
+#maplestory-root .maple-sync-notice p {
+  margin: 0;
+}
+
+#maplestory-root .maple-sync-notice strong {
+  color: #8de9f4;
+  font-weight: 800;
+}
+
+#maplestory-root .maple-sync-notice-icon {
+  display: inline-flex;
+  flex: none;
+  width: 17px;
+  height: 17px;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+  border: 1px solid rgba(141, 243, 255, 0.42);
+  border-radius: 50%;
+  color: #b9f5fc;
+  font-size: 0.7rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+#maplestory-root .maple-sync-ticker {
+  align-items: center;
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color 160ms ease, background-color 160ms ease;
+}
+
+#maplestory-root .maple-sync-ticker .maple-sync-notice-icon {
+  margin-top: 0;
+}
+
+#maplestory-root .maple-sync-ticker:hover {
+  border-color: rgba(56, 189, 248, 0.48);
+}
+
+#maplestory-root .maple-sync-ticker:focus-visible {
+  outline: 2px solid #67e8f9;
+  outline-offset: 2px;
+}
+
+#maplestory-root .maple-sync-ticker-track {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+#maplestory-root .maple-sync-ticker-item {
+  grid-area: 1 / 1;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+#maplestory-root .maple-sync-ticker-item.is-active {
+  visibility: visible;
+  pointer-events: auto;
+  animation: mapleSyncTickerRise 520ms ease-out both;
+}
+
+@keyframes mapleSyncTickerRise {
+  0% {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #maplestory-root .maple-sync-ticker-item.is-active {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
 }
 
 #maplestory-root .maple-survey-card-link {
@@ -2095,8 +2217,8 @@ html:not(.dark) .maple-calculator-scroll::-webkit-scrollbar-thumb:hover {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 20px;
-  padding: 22px 24px;
+  gap: 16px;
+  padding: 16px 20px;
 }
 
 #maplestory-root .maple-survey-card-header > div {
@@ -2104,7 +2226,7 @@ html:not(.dark) .maple-calculator-scroll::-webkit-scrollbar-thumb:hover {
 }
 
 #maplestory-root .maple-survey-eyebrow {
-  margin: 0 0 6px;
+  margin: 0 0 4px;
   color: #a5b4fc;
   font-size: 10px;
   font-weight: 700;
@@ -2114,16 +2236,16 @@ html:not(.dark) .maple-calculator-scroll::-webkit-scrollbar-thumb:hover {
 #maplestory-root .maple-survey-card h2 {
   margin: 0;
   color: #f8fafc;
-  font-size: 1.15rem;
+  font-size: 1.06rem;
   line-height: 1.55;
 }
 
 #maplestory-root .maple-survey-description {
   max-width: 680px;
-  margin: 8px 0 0;
+  margin: 5px 0 0;
   color: #a5b4cc;
   font-size: 0.84rem;
-  line-height: 1.7;
+  line-height: 1.58;
 }
 
 #maplestory-root .maple-survey-toggle,
@@ -2134,9 +2256,9 @@ html:not(.dark) .maple-calculator-scroll::-webkit-scrollbar-thumb:hover {
   background: rgba(99, 102, 241, 0.2);
   color: #e0e7ff;
   cursor: pointer;
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-weight: 700;
-  padding: 9px 16px;
+  padding: 7px 13px;
   transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
 }
 
@@ -2294,9 +2416,24 @@ html:not(.dark) .maple-calculator-scroll::-webkit-scrollbar-thumb:hover {
 
 html:not(.dark) #maplestory-root .maple-survey-card {
   border-color: rgba(67, 56, 202, 0.24);
-  background: linear-gradient(135deg, rgba(248, 250, 255, 0.98), rgba(239, 246, 255, 0.97));
-  box-shadow: 0 16px 36px rgba(45, 55, 90, 0.12);
+  background: linear-gradient(135deg, rgba(248, 250, 255, 0.94), rgba(239, 246, 255, 0.92));
+  box-shadow: 0 12px 30px rgba(45, 55, 90, 0.1);
   color: #25385a;
+}
+
+html:not(.dark) #maplestory-root .maple-sync-notice {
+  border-color: rgba(8, 127, 148, 0.24);
+  background: rgba(225, 246, 250, 0.78);
+  color: #365967;
+}
+
+html:not(.dark) #maplestory-root .maple-sync-notice strong {
+  color: #087f94;
+}
+
+html:not(.dark) #maplestory-root .maple-sync-notice-icon {
+  border-color: rgba(8, 127, 148, 0.42);
+  color: #087f94;
 }
 
 html:not(.dark) #maplestory-root .maple-survey-card h2,
@@ -2327,12 +2464,312 @@ html:not(.dark) #maplestory-root .maple-survey-textarea-label textarea {
 
   #maplestory-root .maple-survey-card-header {
     display: block;
-    padding: 18px 16px;
+    padding: 14px;
   }
 
-  #maplestory-root .maple-survey-card h2 { font-size: 1rem; }
-  #maplestory-root .maple-survey-toggle { margin-top: 16px; }
+  #maplestory-root .maple-survey-card h2 { font-size: 0.96rem; }
+  #maplestory-root .maple-survey-toggle { margin-top: 10px; }
   #maplestory-root .maple-survey-form { padding: 18px 16px 20px; }
   #maplestory-root .maple-survey-score-options span { width: 40px; }
+}
+
+/* Upon the Sky light-mode ranking surface. The ranking widget is authored
+   with dark Tailwind tokens, so normalize the complete hierarchy here rather
+   than recoloring isolated labels one at a time. */
+html:not(.dark) body.theme-uponthesky #maplestory-root .maple-ranking-panel {
+  color: #173747 !important;
+  background: linear-gradient(145deg, rgba(249, 254, 255, 0.98), rgba(225, 243, 248, 0.96)) !important;
+  border-color: rgba(36, 94, 112, 0.3) !important;
+  box-shadow: 0 18px 42px rgba(18, 64, 91, 0.2), inset 0 1px rgba(255, 255, 255, 0.7) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(115%) !important;
+  backdrop-filter: blur(18px) saturate(115%) !important;
+}
+
+html:not(.dark) body.theme-uponthesky #maplestory-root .maple-ranking-panel > h3 {
+  color: #0d3042 !important;
+  text-shadow: none !important;
+}
+
+html:not(.dark) body.theme-uponthesky #maplestory-root .maple-ranking-panel > details,
+html:not(.dark) body.theme-uponthesky #maplestory-root .maple-ranking-panel > details summary {
+  color: #365967 !important;
+  text-shadow: none !important;
+}
+
+html:not(.dark) body.theme-uponthesky #maplestory-root .maple-ranking-panel > details summary {
+  font-weight: 700;
+}
+
+html:not(.dark) body.theme-uponthesky #maplestory-root .maple-ranking-panel > details p {
+  color: #4c6b77 !important;
+  text-shadow: none !important;
+}
+
+html:not(.dark) body.theme-uponthesky #maplestory-root .maple-ranking-panel .maple-ranking-query-card {
+  color: #173747 !important;
+  background: rgba(237, 248, 251, 0.96) !important;
+  border-color: rgba(36, 94, 112, 0.34) !important;
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.58) !important;
+}
+
+html:not(.dark) body.theme-uponthesky #maplestory-root .maple-ranking-panel .maple-ranking-query-name {
+  color: #0d3042 !important;
+  text-shadow: none !important;
+}
+
+html:not(.dark) body.theme-uponthesky #maplestory-root .maple-ranking-panel .maple-ranking-query-meta {
+  color: #486673 !important;
+  text-shadow: none !important;
+}
+
+html:not(.dark) body.theme-uponthesky #maplestory-root .maple-ranking-panel .maple-ranking-podium-card {
+  color: #173747 !important;
+  box-shadow: 0 8px 18px rgba(18, 64, 91, 0.1), inset 0 1px rgba(255, 255, 255, 0.66) !important;
+}
+
+html:not(.dark) body.theme-uponthesky #maplestory-root .maple-ranking-panel .maple-ranking-podium-1 {
+  background: linear-gradient(145deg, rgba(255, 249, 224, 0.98), rgba(255, 239, 187, 0.92)) !important;
+  border-color: rgba(180, 125, 0, 0.74) !important;
+}
+
+html:not(.dark) body.theme-uponthesky #maplestory-root .maple-ranking-panel .maple-ranking-podium-2 {
+  background: linear-gradient(145deg, rgba(246, 251, 253, 0.98), rgba(222, 236, 241, 0.94)) !important;
+  border-color: rgba(78, 102, 116, 0.62) !important;
+}
+
+html:not(.dark) body.theme-uponthesky #maplestory-root .maple-ranking-panel .maple-ranking-podium-3 {
+  background: linear-gradient(145deg, rgba(255, 246, 237, 0.98), rgba(255, 226, 202, 0.94)) !important;
+  border-color: rgba(184, 99, 22, 0.7) !important;
+}
+
+html:not(.dark) body.theme-uponthesky #maplestory-root .maple-ranking-panel .maple-ranking-podium-card p {
+  color: #173747 !important;
+  text-shadow: none !important;
+}
+
+html:not(.dark) body.theme-uponthesky #maplestory-root .maple-ranking-panel .maple-ranking-podium-card > div[class*="bg-slate-800"] {
+  background: #dcecf1 !important;
+}
+
+html:not(.dark) body.theme-uponthesky #maplestory-root .maple-ranking-panel .maple-ranking-podium-card span[class*="bg-slate-950"] {
+  color: #f3fbfd !important;
+  background: rgba(9, 39, 49, 0.8) !important;
+}
+
+html:not(.dark) body.theme-uponthesky #maplestory-root .maple-ranking-panel button.group > span:last-child {
+  color: #365967 !important;
+  text-shadow: none !important;
+}
+
+html:not(.dark) body.theme-uponthesky #maplestory-root .maple-ranking-panel button.group:hover > span:last-child {
+  color: #075a70 !important;
+}
+
+html:not(.dark) body.theme-uponthesky #maplestory-root .maple-ranking-panel > div[class*="border-t"] {
+  color: #365967 !important;
+  border-color: rgba(36, 94, 112, 0.24) !important;
+}
+
+html:not(.dark) body.theme-uponthesky #maplestory-root .maple-ranking-panel > div[class*="border-t"] button:not(.maple-ranking-go-button) {
+  color: #365967 !important;
+  background: rgba(255, 255, 255, 0.7) !important;
+  border-color: rgba(36, 94, 112, 0.32) !important;
+}
+
+html:not(.dark) body.theme-uponthesky #maplestory-root .maple-ranking-panel > div[class*="border-t"] button:not(.maple-ranking-go-button):hover:not(:disabled) {
+  color: #075a70 !important;
+  background: rgba(214, 241, 246, 0.9) !important;
+  border-color: #087f94 !important;
+}
+
+html:not(.dark) body.theme-uponthesky #maplestory-root .maple-ranking-panel > div[class*="border-t"] button:disabled {
+  color: #78919b !important;
+  background: rgba(225, 237, 241, 0.78) !important;
+  border-color: rgba(91, 116, 128, 0.22) !important;
+  opacity: 0.9 !important;
+}
+
+/* The inline React theme has an older !important cyan background for
+   .custom-vp-tip. Keep the log readable over the artwork while preserving a
+   visible dark glass layer instead of replacing the background completely. */
+html.dark body:has(#maplestory-root) #maplestory-root .custom-vp-tip {
+  color: #e8f8fc !important;
+  background:
+    linear-gradient(135deg, rgba(224, 250, 255, 0.16) 0%, rgba(224, 250, 255, 0) 42%),
+    linear-gradient(145deg, rgba(12, 35, 55, 0.54) 0%, rgba(16, 69, 86, 0.46) 100%) !important;
+  border: 1px solid rgba(141, 243, 255, 0.24) !important;
+  border-left: 4px solid #55ddec !important;
+  box-shadow:
+    0 16px 38px rgba(1, 10, 20, 0.34),
+    inset 0 1px rgba(235, 253, 255, 0.2),
+    inset 0 -1px rgba(0, 13, 26, 0.24) !important;
+  -webkit-backdrop-filter: blur(26px) saturate(145%) brightness(0.82) !important;
+  backdrop-filter: blur(26px) saturate(145%) brightness(0.82) !important;
+}
+
+html.dark body:has(#maplestory-root) #maplestory-root .custom-vp-tip > .font-bold,
+html.dark body:has(#maplestory-root) #maplestory-root .custom-vp-tip > div.font-bold,
+html.dark body:has(#maplestory-root) #maplestory-root .custom-vp-tip > div.font-bold span {
+  color: #8df3ff !important;
+  text-shadow: 0 1px 4px rgba(0, 16, 28, 0.72) !important;
+}
+
+html.dark body:has(#maplestory-root) #maplestory-root .custom-vp-tip > ul,
+html.dark body:has(#maplestory-root) #maplestory-root .custom-vp-tip > ul li {
+  color: #e7f8fc !important;
+  text-shadow: 0 1px 4px rgba(0, 16, 28, 0.68) !important;
+}
+
+html.dark body:has(#maplestory-root) #maplestory-root .custom-vp-tip > ul li > span {
+  color: #8be9f4 !important;
+  text-shadow: 0 1px 4px rgba(0, 16, 28, 0.72) !important;
+}
+
+html.dark body:has(#maplestory-root) #maplestory-root .custom-vp-tip > div[class*="border-t"] {
+  color: #c8e6ed !important;
+  border-color: rgba(141, 243, 255, 0.24) !important;
+}
+
+html.dark body:has(#maplestory-root) #maplestory-root .custom-vp-tip > div[class*="border-t"] button,
+html.dark body:has(#maplestory-root) #maplestory-root .custom-vp-tip > div[class*="border-t"] input {
+  color: #e8f8fc !important;
+  background: rgba(8, 25, 38, 0.62) !important;
+  border-color: rgba(141, 243, 255, 0.34) !important;
+}
+
+html.dark body:has(#maplestory-root) #maplestory-root .custom-vp-tip > div[class*="border-t"] button:hover:not(:disabled),
+html.dark body:has(#maplestory-root) #maplestory-root .custom-vp-tip > div[class*="border-t"] input:focus {
+  border-color: #8df3ff !important;
+  background: rgba(16, 57, 73, 0.82) !important;
+}
+
+html.dark body:has(#maplestory-root) #maplestory-root .custom-vp-tip > div[class*="border-t"] button[type="submit"] {
+  color: #072532 !important;
+  background: #55ddec !important;
+  border-color: #8df3ff !important;
+  text-shadow: none !important;
+}
+
+/* Featured update: emphasize a major player-facing change without reusing the
+   red emergency notice treatment or changing the pagination structure. */
+#maplestory-root .update-log-item--featured {
+  margin: 0.7rem 0;
+  padding: 0.72rem 0.82rem 0.78rem 0.86rem;
+  border: 1px solid rgba(8, 127, 148, 0.28) !important;
+  border-left: 4px solid #0e9faf !important;
+  border-radius: 0.72rem;
+  background:
+    linear-gradient(135deg, rgba(224, 250, 255, 0.62), rgba(224, 250, 255, 0) 48%),
+    rgba(214, 244, 248, 0.62) !important;
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.58), 0 8px 18px rgba(8, 91, 112, 0.1) !important;
+  color: #19485a !important;
+}
+
+#maplestory-root .update-log-item--featured::marker {
+  color: #0e9faf;
+}
+
+#maplestory-root .update-log-featured-label {
+  display: inline-block;
+  margin-left: 0.45rem;
+  padding: 0.12rem 0.45rem;
+  border: 1px solid rgba(8, 127, 148, 0.34);
+  border-radius: 999px;
+  color: #075a70 !important;
+  background: rgba(183, 237, 243, 0.7);
+  font-size: 0.76rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+#maplestory-root .update-log-featured-title {
+  color: #0b3d50 !important;
+  font-weight: 800;
+}
+
+html.dark body:has(#maplestory-root) #maplestory-root .update-log-item--featured {
+  border-color: rgba(141, 243, 255, 0.26) !important;
+  border-left-color: #55ddec !important;
+  background:
+    linear-gradient(135deg, rgba(224, 250, 255, 0.12), rgba(224, 250, 255, 0) 48%),
+    linear-gradient(145deg, rgba(12, 59, 77, 0.7), rgba(15, 94, 111, 0.58)) !important;
+  box-shadow: inset 0 1px rgba(235, 253, 255, 0.16), 0 8px 20px rgba(1, 10, 20, 0.22) !important;
+  color: #e7f8fc !important;
+}
+
+html.dark body:has(#maplestory-root) #maplestory-root .update-log-item--featured::marker {
+  color: #8df3ff;
+}
+
+html.dark body:has(#maplestory-root) #maplestory-root .update-log-featured-label {
+  border-color: rgba(141, 243, 255, 0.72) !important;
+  color: #c5f8ff !important;
+  background: rgba(3, 39, 56, 0.94) !important;
+  box-shadow: inset 0 1px rgba(235, 253, 255, 0.16), 0 1px 4px rgba(0, 10, 20, 0.38);
+  text-shadow: 0 1px 3px rgba(0, 10, 20, 0.72) !important;
+}
+
+html.dark body:has(#maplestory-root) #maplestory-root .update-log-featured-title {
+  color: #9af4ff !important;
+}
+
+/* Keep the ranking and survey surfaces in the same glass family as the
+   update log, while leaving their existing content and interaction styles
+   unchanged. */
+#maplestory-root .maple-ranking-panel,
+#maplestory-root .maple-survey-card {
+  border-color: rgba(141, 243, 255, 0.24) !important;
+  background:
+    linear-gradient(135deg, rgba(224, 250, 255, 0.14), rgba(224, 250, 255, 0) 46%),
+    linear-gradient(145deg, rgba(12, 35, 55, 0.62), rgba(16, 69, 86, 0.48)) !important;
+  box-shadow:
+    0 16px 38px rgba(1, 10, 20, 0.28),
+    inset 0 1px rgba(235, 253, 255, 0.18),
+    inset 0 -1px rgba(0, 13, 26, 0.2) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(140%) brightness(0.9) !important;
+  backdrop-filter: blur(24px) saturate(140%) brightness(0.9) !important;
+}
+
+html:not(.dark) body:has(#maplestory-root) #maplestory-root .maple-ranking-panel,
+html:not(.dark) body:has(#maplestory-root) #maplestory-root .maple-survey-card {
+  border-color: rgba(36, 94, 112, 0.28) !important;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0) 52%),
+    linear-gradient(145deg, rgba(236, 249, 252, 0.74), rgba(201, 232, 239, 0.58)) !important;
+  box-shadow:
+    0 16px 38px rgba(18, 64, 91, 0.15),
+    inset 0 1px rgba(255, 255, 255, 0.72),
+    inset 0 -1px rgba(36, 94, 112, 0.1) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(135%) !important;
+  backdrop-filter: blur(24px) saturate(135%) !important;
+}
+
+#maplestory-root .maple-character-loading-state {
+  width: min(100%, 30rem);
+}
+
+#maplestory-root .maple-character-loading-icon {
+  color: #7dd3fc !important;
+  box-shadow:
+    inset 0 0 24px rgba(56, 189, 248, 0.1),
+    0 8px 22px rgba(1, 10, 20, 0.16) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-character-loading-icon {
+  color: #087f94 !important;
+  background: rgba(225, 246, 250, 0.78);
+  border-color: rgba(8, 127, 148, 0.3);
+  box-shadow:
+    inset 0 0 24px rgba(8, 127, 148, 0.08),
+    0 8px 22px rgba(18, 64, 91, 0.12) !important;
+}
+
+/* Light glass surfaces should not inherit the dark-art text treatment.
+   Keep the surface shadow, but remove text shadows from the survey label and
+   update-log copy where they otherwise appear as black halos. */
+html:not(.dark) body:has(#maplestory-root) #maplestory-root .maple-survey-eyebrow,
+html:not(.dark) body:has(#maplestory-root) #maplestory-root .custom-vp-tip,
+html:not(.dark) body:has(#maplestory-root) #maplestory-root .custom-vp-tip * {
+  text-shadow: none !important;
 }
 </style>

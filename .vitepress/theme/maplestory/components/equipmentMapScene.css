@@ -1,0 +1,36 @@
+html:not(.dark) #maplestory-root .maple-map-scene-control {
+  color: #1f6675 !important;
+}
+
+html:not(.dark) #maplestory-root .maple-map-scene-control:hover,
+html:not(.dark) #maplestory-root .maple-map-scene-control:focus-visible {
+  color: #075f70 !important;
+  background: rgba(213, 242, 247, 0.82) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-map-scene-menu {
+  color: #25343c !important;
+  background: rgba(249, 253, 255, 0.99) !important;
+  border-color: rgba(36, 94, 112, 0.28) !important;
+  box-shadow: 0 18px 44px rgba(35, 76, 94, 0.22) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-map-scene-label {
+  color: #286173 !important;
+}
+
+html:not(.dark) #maplestory-root .maple-map-scene-select {
+  color: #25343c !important;
+  background: #ffffff !important;
+  border-color: rgba(36, 94, 112, 0.35) !important;
+  color-scheme: light;
+}
+
+html:not(.dark) #maplestory-root .maple-map-scene-select option {
+  color: #25343c !important;
+  background: #ffffff !important;
+}
+
+html:not(.dark) #maplestory-root .maple-map-scene-hint {
+  color: #647983 !important;
+}

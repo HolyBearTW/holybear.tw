@@ -142,7 +142,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 @media (max-width: 767px) {
   .fuwari-search-overlay { padding-top: calc(var(--vp-nav-height, 64px) + 0.75rem); }
   .fuwari-nav-search { border-color: transparent; background: transparent; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
-  .fuwari-nav-search:hover { border-color: transparent; background: color-mix(in srgb, var(--vp-c-bg-soft) 54%, transparent); }
+  .fuwari-nav-search:hover { color: var(--hb-mobile-nav-control-hover, var(--vp-c-brand-1)); border-color: transparent; background: transparent; box-shadow: none; }
   .fuwari-nav-search:focus-visible { outline: 2px solid var(--vp-c-brand-1); outline-offset: -4px; }
 }
 </style>

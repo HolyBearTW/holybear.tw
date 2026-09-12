@@ -1,0 +1,81 @@
+#maplestory-root .maple-profile-banner--artwork {
+  isolation: isolate;
+  overflow: visible;
+}
+
+#maplestory-root .maple-profile-banner--artwork .maple-profile-city {
+  z-index: 0;
+}
+
+#maplestory-root .maple-profile-banner--artwork .maple-profile-scene {
+  z-index: 0;
+  overflow: hidden;
+}
+
+#maplestory-root .maple-job-artwork-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 9;
+  overflow: visible;
+  pointer-events: none;
+  user-select: none;
+}
+
+#maplestory-root .maple-job-artwork-image {
+  display: block;
+  width: min(62%, 14rem);
+  height: 155%;
+  margin-left: auto;
+  object-fit: contain;
+  object-position: right top;
+  opacity: 1;
+  filter: contrast(1.06) saturate(1.04) drop-shadow(0 12px 18px rgba(0, 0, 0, 0.48));
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 68%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 0%, #000 68%, transparent 100%);
+  transform: translateX(3%);
+}
+
+#maplestory-root .maple-profile-banner--artwork .maple-profile-shade {
+  z-index: 1;
+}
+
+html:not(.dark) #maplestory-root .maple-profile-banner--artwork .maple-profile-shade {
+  background: linear-gradient(
+    to bottom,
+    rgba(249, 253, 255, 0.02) 0%,
+    rgba(249, 253, 255, 0.86) 72%,
+    rgb(249, 253, 255) 100%
+  ) !important;
+}
+
+html.dark #maplestory-root .maple-profile-banner--artwork .maple-profile-shade {
+  background: linear-gradient(
+    to bottom,
+    rgba(22, 27, 34, 0) 0%,
+    rgba(22, 27, 34, 0.86) 72%,
+    rgb(22, 27, 34) 100%
+  ) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-job-artwork-image {
+  filter: contrast(1.08) saturate(1.04) drop-shadow(0 10px 16px rgba(24, 65, 84, 0.38));
+}
+
+@media (min-width: 1024px) {
+  #maplestory-root .maple-job-artwork-image {
+    transform: translateX(7%);
+  }
+}
+
+@media (max-width: 480px) {
+  #maplestory-root .maple-job-artwork-image {
+    opacity: 0.98;
+    transform: translateX(2%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #maplestory-root .maple-job-artwork-image {
+    transition: none;
+  }
+}

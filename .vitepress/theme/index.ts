@@ -543,7 +543,7 @@ export default {
                     const themeId = href.replace('#theme-', '');
                     localStorage.setItem(THEME_STORAGE_KEY, themeId);
                     window.dispatchEvent(new CustomEvent('theme-change', {
-                        detail: { theme: themeId }
+                        detail: { theme: themeId, userInitiated: true }
                     }));
                     syncCurrentThemeSelection();
 
