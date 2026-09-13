@@ -1,11 +1,20 @@
 html:not(.dark) #maplestory-root .maple-map-scene-control {
-  color: #1f6675 !important;
+  color: #e2e8f0 !important;
 }
 
 html:not(.dark) #maplestory-root .maple-map-scene-control:hover,
 html:not(.dark) #maplestory-root .maple-map-scene-control:focus-visible {
-  color: #075f70 !important;
-  background: rgba(213, 242, 247, 0.82) !important;
+  background: transparent !important;
+}
+
+html:not(.dark) #maplestory-root .maple-map-scene-gear:hover,
+html:not(.dark) #maplestory-root .maple-map-scene-gear:focus-visible {
+  color: #a5f3fc !important;
+}
+
+html:not(.dark) #maplestory-root .maple-map-scene-reset:hover,
+html:not(.dark) #maplestory-root .maple-map-scene-reset:focus-visible {
+  color: #67e8f9 !important;
 }
 
 html:not(.dark) #maplestory-root .maple-map-scene-menu {

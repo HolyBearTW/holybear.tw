@@ -6,13 +6,11 @@ import DyePreview from './DyePreview';
 import ReliableEquipmentIcon from './ReliableEquipmentIcon';
 import { mapleAsset } from '../assets';
 import { useEquipmentLayoutScale } from './useEquipmentLayoutScale';
+import { TooltipWindowFrame, windowAsset, windowBg } from './TooltipWindowFrame';
 
-const windowAsset = (name: string) => mapleAsset(`window/${name}`);
 const CUSTOM_CASH_ITEM_ICON_MAPPING = [
   { name: '神諭者的戒指', path: mapleAsset('maplestory_character/raw1.png') },
 ];
-
-const windowBg = (name: string) => ({ backgroundImage: `url('${windowAsset(name)}')` });
 
 const resolveCashItemIcon = (item?: CashItemEquipmentPreset): string | undefined => {
   if (!item) return undefined;
@@ -37,19 +35,10 @@ const CategoryBadge: React.FC<{ label: string }> = ({ label }) => (
 
 const CashTooltipWindow: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
   <div className={`maple-equipment-tooltip relative grid grid-cols-[14px_minmax(0,1fr)_15px] grid-rows-[14px_auto_15px] w-full text-white text-[12px] leading-[1.2] overflow-hidden z-50 text-left pointer-events-none ${className}`.trim()}>
-    <div className="bg-left-top" style={windowBg('window_nw.png')} />
-    <div className="bg-repeat-x" style={windowBg('window_n.png')} />
-    <div className="bg-left-top" style={windowBg('window_ne.png')} />
-
-    <div className="bg-repeat-y" style={windowBg('window_w.png')} />
-    <div className="relative" style={windowBg('window_c.png')}>
+    <TooltipWindowFrame />
+    <div className="relative z-[1] col-start-2 row-start-2">
       {children}
     </div>
-    <div className="bg-repeat-y" style={windowBg('window_e.png')} />
-
-    <div className="bg-left-top" style={windowBg('window_sw.png')} />
-    <div className="bg-repeat-x" style={windowBg('window_s.png')} />
-    <div className="bg-left-top" style={windowBg('window_se.png')} />
   </div>
 );
 

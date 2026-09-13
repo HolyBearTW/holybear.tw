@@ -1282,13 +1282,13 @@ html:not(.dark) #maplestory-root .maple-growth-create-button {
 }
 
 html:not(.dark) #maplestory-root .maple-growth-note-button {
-  color: #75500a !important;
+  color: #ffffff !important;
 }
 
 html:not(.dark) #maplestory-root .maple-growth-note-button:hover,
 html:not(.dark) #maplestory-root .maple-growth-note-button:focus-visible,
 html:not(.dark) #maplestory-root .maple-growth-note-button[aria-expanded="true"] {
-  color: #442700 !important;
+  color: #ffffff !important;
   background: rgba(217, 119, 6, 0.22) !important;
 }
 
@@ -1476,6 +1476,22 @@ html:not(.dark) #maplestory-root .maple-growth-event-before {
   color: #526b78 !important;
   background: rgba(238, 246, 248, 0.96) !important;
   border-color: rgba(36, 94, 112, 0.22) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-related-count {
+  color: #087f94 !important;
+}
+
+html:not(.dark) #maplestory-root .maple-related-guild {
+  color: #287487 !important;
+}
+
+html:not(.dark) #maplestory-root .maple-related-rank {
+  color: #8a5a00 !important;
+}
+
+html:not(.dark) #maplestory-root .maple-focus-power-rank {
+  color: #8a5a00 !important;
 }
 
 html:not(.dark) #maplestory-root .maple-growth-event-after {
@@ -1874,6 +1890,25 @@ html:not(.dark) .maple-appearance-preview-panel .maple-appearance-preview-close 
   color: var(--maple-light-text-muted) !important;
   background: rgba(229, 242, 247, 0.82) !important;
   border-color: rgba(36, 94, 112, 0.24) !important;
+}
+
+html:not(.dark) .maple-appearance-preview-panel .maple-appearance-preview-reset {
+  color: var(--maple-light-text-muted) !important;
+  background: rgba(229, 242, 247, 0.9) !important;
+  border-color: rgba(36, 94, 112, 0.3) !important;
+}
+
+html:not(.dark) .maple-appearance-preview-panel .maple-appearance-preview-reset:hover,
+html:not(.dark) .maple-appearance-preview-panel .maple-appearance-preview-reset:focus-visible {
+  color: #087f94 !important;
+  background: rgba(213, 242, 247, 0.98) !important;
+  border-color: rgba(8, 127, 148, 0.42) !important;
+}
+
+html:not(.dark) .maple-appearance-preview-panel .maple-appearance-preview-info {
+  color: var(--maple-light-text-muted) !important;
+  background: rgba(229, 242, 247, 0.84) !important;
+  border-color: rgba(36, 94, 112, 0.22) !important;
 }
 
 html:not(.dark) .maple-calculator-input,
@@ -2803,6 +2838,13 @@ html:not(.dark) body:has(#maplestory-root) #maplestory-root .maple-survey-card {
 
 #maplestory-root .maple-character-loading-state {
   width: min(100%, 30rem);
+}
+
+html:not(.dark) #maplestory-root .maple-character-result-loading {
+  color: var(--maple-light-text-muted) !important;
+  background: rgba(236, 249, 252, 0.78) !important;
+  border-color: rgba(36, 94, 112, 0.24) !important;
+  box-shadow: 0 10px 28px rgba(18, 64, 91, 0.12) !important;
 }
 
 #maplestory-root .maple-character-loading-icon {

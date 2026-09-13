@@ -154,7 +154,7 @@ const CharacterAppearancePreviewModal: React.FC<CharacterAppearancePreviewModalP
           <button
             type="button"
             onClick={resetPreview}
-            className="absolute right-2 top-2 rounded-lg border border-slate-700 bg-slate-800/60 p-2 text-slate-400 transition hover:border-cyan-400/50 hover:bg-cyan-500/10 hover:text-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+            className="maple-appearance-preview-reset absolute right-2 top-2 rounded-lg border border-slate-700 bg-slate-800/60 p-2 text-slate-400 transition hover:border-cyan-400/50 hover:bg-cyan-500/10 hover:text-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
             aria-label="重設外型預覽"
             title="重設"
           >
@@ -168,7 +168,7 @@ const CharacterAppearancePreviewModal: React.FC<CharacterAppearancePreviewModalP
           <PreviewSelect id="appearance-weapon-motion" label="武器動作" value={settings.weaponMotion} options={WEAPON_MOTION_OPTIONS} onChange={(weaponMotion) => onSettingsChange({ ...settings, weaponMotion })} />
         </div>
 
-        <div className="mt-4 flex items-start gap-2 rounded-lg border border-slate-700/60 bg-slate-800/70 px-3 py-2 text-xs leading-relaxed text-slate-400">
+        <div className="maple-appearance-preview-info mt-4 flex items-start gap-2 rounded-lg border border-slate-700/60 bg-slate-800/70 px-3 py-2 text-xs leading-relaxed text-slate-400">
           <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
           <span>圖像由 NEXON Open API 產生；選擇會自動套用至角色頭像與裝備區，並儲存在目前瀏覽器。部分動作或裝備組合可能無法正常顯示。</span>
         </div>

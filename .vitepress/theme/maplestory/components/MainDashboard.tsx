@@ -128,7 +128,7 @@ const RecentPowerRankStatus = React.forwardRef<RecentPowerRankHandle, RecentPowe
   if (status === 'syncing') return <span className="text-emerald-400">正在同步近期戰力排名中...</span>;
   if (status === 'found' && recentPowerRank) {
     return (
-      <span className="font-semibold text-yellow-300">
+      <span className="maple-focus-power-rank font-semibold text-yellow-300">
         近期戰力排名：第 {recentPowerRank.rank.toLocaleString()} / {recentPowerRank.total.toLocaleString()} 名
       </span>
     );

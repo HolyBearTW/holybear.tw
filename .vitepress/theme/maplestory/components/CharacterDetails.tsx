@@ -970,10 +970,10 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
                     <div className="flex flex-col md:flex-row md:justify-between md:items-end mb-4 gap-4">
                         <div>
                             <SectionHeader icon={<Atom />} title="核心技能 (V/Hexa)" />
-                            <div className="flex items-center gap-3 mt-1 flex-wrap">
+                            <div className="flex items-center gap-1 sm:gap-3 mt-1 flex-nowrap sm:flex-wrap">
                               <h4 className="text-sm font-bold text-purple-400">HEXA 矩陣</h4>
                               {commonSkillButtons.map(button => (
-                                <button key={button.key} onClick={button.onClick} className={`maple-core-toggle ${button.active ? 'is-active' : ''} text-[10px] px-2 py-0.5 rounded border flex items-center gap-1 transition-all ${button.active ? 'bg-purple-900/40 text-purple-300 border-purple-700/50 hover:bg-purple-900/60' : 'bg-slate-800 text-slate-500 border-slate-700 hover:bg-slate-700 hover:text-slate-400'}`}>
+                                <button key={button.key} onClick={button.onClick} className={`maple-core-toggle ${button.active ? 'is-active' : ''} whitespace-nowrap text-[10px] px-1 sm:px-2 py-0.5 rounded border flex items-center gap-1 transition-all ${button.active ? 'bg-purple-900/40 text-purple-300 border-purple-700/50 hover:bg-purple-900/60' : 'bg-slate-800 text-slate-500 border-slate-700 hover:bg-slate-700 hover:text-slate-400'}`}>
                                   {button.active ? <CheckSquare className="w-3 h-3" /> : <Square className="w-3 h-3" />}
                                   {button.active ? `計算${button.label}` : `排除${button.label}`}
                                 </button>

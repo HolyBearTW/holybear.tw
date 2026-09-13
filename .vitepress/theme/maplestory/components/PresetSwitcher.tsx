@@ -41,7 +41,7 @@ const PresetSwitcher: React.FC<PresetSwitcherProps> = ({
                   {activeNum > 0 ? (
                     <span className="maple-preset-active-badge text-[10px] leading-none bg-green-900/40 text-green-400 px-2 py-0.5 rounded border border-green-800 flex items-center gap-1 whitespace-nowrap">
                         <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shrink-0"></span>
-                        <span>生效中: 預設 {activeNum}</span>
+                        <span>預設 {activeNum}</span>
                     </span>
                   ) : null}
                </div>

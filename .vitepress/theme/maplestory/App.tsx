@@ -49,7 +49,7 @@ const ResultLoading = () => {
 
   if (!visible) return null;
   return (
-  <div className="my-4 flex min-h-28 items-center justify-center rounded-xl border border-slate-800 bg-[#161b22]/80 px-4 text-sm font-medium text-slate-400">
+  <div className="maple-character-result-loading my-4 flex min-h-28 items-center justify-center rounded-xl border border-slate-800 bg-[#161b22]/80 px-4 text-sm font-medium text-slate-400">
     <span className="mr-3 h-5 w-5 animate-spin rounded-full border-2 border-cyan-400/25 border-t-cyan-400" aria-hidden="true" />
     正在準備角色分析介面…
   </div>

@@ -163,7 +163,7 @@ const GrowthTracker: React.FC<GrowthTrackerProps> = ({
         onFocus={() => setShowNote(true)}
         onBlur={() => setShowNote(false)}
         onClick={() => setShowNote(true)}
-        className={`maple-growth-note-button flex h-7 w-7 items-center justify-center rounded-full transition-colors focus-visible:outline-none ${showNote
+        className={`maple-growth-note-button flex h-7 w-7 items-center justify-center rounded-full text-white transition-colors focus-visible:outline-none ${showNote
           ? 'bg-amber-700/75 text-white'
           : 'text-amber-100/85 hover:bg-amber-700/70 hover:text-white focus-visible:bg-amber-700/70 focus-visible:text-white'
         }`}
@@ -236,7 +236,7 @@ const GrowthTracker: React.FC<GrowthTrackerProps> = ({
           type="button"
           disabled={creating || !ocid}
           onClick={handleCreate}
-          className="maple-growth-create-button flex min-h-10 w-full items-center justify-center gap-2 rounded-lg bg-amber-500 px-10 py-2 text-xs font-bold text-white shadow-lg shadow-amber-900/25 transition-all hover:translate-y-[-1px] hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 dark:bg-amber-600 dark:hover:bg-amber-500"
+          className="maple-growth-create-button flex min-h-10 w-full items-center justify-center gap-2 rounded-lg bg-amber-500 px-10 py-2 text-sm font-bold text-white shadow-lg shadow-amber-900/25 transition-all hover:translate-y-[-1px] hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 dark:bg-amber-600 dark:hover:bg-amber-500"
         >
           {creating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Database className="h-3.5 w-3.5" />}
           {creating ? '正在生成成長檔案...' : '生成成長檔案'}

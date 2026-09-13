@@ -121,7 +121,7 @@ const RelatedCharacters: React.FC<RelatedCharactersProps> = ({
           </div>
           {status === 'ready' && (
             <div className="flex shrink-0 items-center gap-3">
-              <span className="text-xs text-cyan-300">共發現 {members.length} 個分身</span>
+              <span className="maple-related-count text-xs text-cyan-300">共發現 {members.length} 個分身</span>
               {pageCount > 1 && (
                 <nav className="flex items-center gap-1" aria-label="分身頁數">
                 <button
@@ -200,7 +200,7 @@ const RelatedCharacters: React.FC<RelatedCharactersProps> = ({
                 </span>
                 {character.combatPowerRank && (
                   <span
-                    className="shrink-0 text-[10px] font-bold text-amber-300"
+                    className="maple-related-rank shrink-0 text-[10px] font-bold text-amber-300"
                     title="近期戰力排行"
                     aria-label={`近期戰力排行第 ${character.combatPowerRank} 名`}
                   >
@@ -213,7 +213,7 @@ const RelatedCharacters: React.FC<RelatedCharactersProps> = ({
                   ? `資料待補 · ${character.characterClass}`
                   : `Lv.${character.characterLevel} · ${character.characterClass}`}
               </span>
-              <span className="mt-0.5 block truncate text-[11px] text-cyan-300/80">
+              <span className="maple-related-guild mt-0.5 block truncate text-[11px] text-cyan-300/80">
                 {character.metadataAvailable === false && character.characterGuildName == null
                   ? '角色資料待補'
                   : character.characterGuildName || '無公會'}
