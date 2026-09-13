@@ -1,6 +1,7 @@
 
 
-import { getJobBackgroundMap, getJobFallbackVillageMap, getMaplestoryIoMapVersion, SERVER_ICONS } from '../constants';
+import { mapleAsset } from '../assets';
+import { getJobBackgroundMap, SERVER_ICONS } from '../constants';
 import React from 'react';
 import { calculateWeeklyGrowth } from './ExpTrendChart';
 import { ThumbsUp, Star, Crown, Zap, ChevronUp, ChevronDown, Info, Mail, Share2, Loader2, Wand2, Sword, Shield, Flame, Calculator } from 'lucide-react';
@@ -257,11 +258,7 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
     );
     const hasJobArtwork = Boolean(getJobArtwork(data.basic.character_class));
     const profileMapId = getJobBackgroundMap(data.basic.character_class);
-    const fallbackVillageMapId = getJobFallbackVillageMap(data.basic.character_class);
-    const [profileCharacterLoaded, setProfileCharacterLoaded] = React.useState(false);
-    const [bannerRemoteMapId, setBannerRemoteMapId] = React.useState(profileMapId);
-    const [bannerRemoteLoaded, setBannerRemoteLoaded] = React.useState(false);
-    const [bannerRemoteFailed, setBannerRemoteFailed] = React.useState(false);
+    const profileBannerScene = mapleAsset(`map-banners/${profileMapId}.webp`);
     const selectedMapId = useCharacterMapScene(
       data.basic.character_name,
       data.basic.character_class,
@@ -273,22 +270,6 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
         settings: readCharacterAppearance(appearanceCharacterKey),
       });
     }, [appearanceCharacterKey]);
-
-    React.useEffect(() => {
-      setProfileCharacterLoaded(false);
-      setBannerRemoteMapId(profileMapId);
-      setBannerRemoteLoaded(false);
-      setBannerRemoteFailed(false);
-    }, [characterAppearanceImage, profileMapId]);
-
-    React.useEffect(() => {
-      if (!profileCharacterLoaded || bannerRemoteLoaded || bannerRemoteMapId !== profileMapId || profileMapId === fallbackVillageMapId) return;
-      const timer = window.setTimeout(() => {
-        setBannerRemoteMapId(fallbackVillageMapId);
-        setBannerRemoteLoaded(false);
-      }, 4000);
-      return () => window.clearTimeout(timer);
-    }, [bannerRemoteLoaded, bannerRemoteMapId, fallbackVillageMapId, profileCharacterLoaded, profileMapId]);
 
     const handleAppearanceSettingsChange = React.useCallback((settings: CharacterAppearanceSettings) => {
       setAppearanceState({ characterKey: appearanceCharacterKey, settings });
@@ -317,27 +298,16 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
                <div className="relative h-full overflow-hidden rounded-xl border border-slate-800 bg-[#161b22] shadow-xl group">
                   <div className={`maple-profile-banner h-32 bg-slate-800 relative overflow-hidden ${hasJobArtwork ? 'maple-profile-banner--artwork' : ''}`}>
                       <div className="maple-profile-scene absolute inset-0 overflow-hidden">
-                        {profileCharacterLoaded && !bannerRemoteFailed && (
-                          <img
-                            key={bannerRemoteMapId}
-                            src={`https://maplestory.io/api/GMS/${getMaplestoryIoMapVersion(bannerRemoteMapId)}/map/${bannerRemoteMapId}/render/back`}
-                            alt=""
-                            aria-hidden="true"
-                            loading="lazy"
-                            decoding="async"
-                            fetchPriority="low"
-                            className="maple-profile-city absolute inset-0 h-full w-full object-cover object-center opacity-[0.68] transition-all duration-700 group-hover:scale-110 group-hover:opacity-[0.82]"
-                            onLoad={() => setBannerRemoteLoaded(true)}
-                            onError={() => {
-                              if (bannerRemoteMapId !== fallbackVillageMapId) {
-                                setBannerRemoteMapId(fallbackVillageMapId);
-                                setBannerRemoteLoaded(false);
-                              } else {
-                                setBannerRemoteFailed(true);
-                              }
-                            }}
-                          />
-                        )}
+                        <img
+                          key={profileMapId}
+                          src={profileBannerScene}
+                          alt=""
+                          data-profile-map-scene={profileMapId}
+                          aria-hidden="true"
+                          loading="eager"
+                          decoding="async"
+                          className="maple-profile-city absolute inset-0 h-full w-full object-cover object-center opacity-[0.68] transition-all duration-700 group-hover:scale-110 group-hover:opacity-[0.82]"
+                        />
                         <div className="maple-profile-shade absolute inset-0 bg-gradient-to-b from-transparent to-[#161b22]"></div>
                       </div>
                       <JobArtworkDecoration
@@ -371,7 +341,6 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
                                 characterImage={characterAppearanceImage}
                                 alt="Character"
                                 className="relative z-10 w-[150%] h-[150%] object-cover mt-8"
-                                onLoad={() => setProfileCharacterLoaded(true)}
                               />
                           </div>
                           {showRecentLoginStatus && (

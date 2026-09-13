@@ -95,7 +95,7 @@ export const MAP_SCENE_OPTIONS = [
   ['410004000', '菈菈起始地'],
   ['410004100', '蓮起始地'],
   ['410007500', '卡莉起始地'],
-  ['807000000', '劍豪／陰陽師起始地'],
+  ['807000000', '楓葉丘陵（劍豪／陰陽師）'],
   ['875000000', '墨玄起始地'],
   ['875010000', '琳恩起始地'],
 ] as const;
@@ -122,7 +122,7 @@ export const getJobBackgroundMap = (jobName: string): string => {
   if (jobName.includes('卡莉')) return '410007500';
   if (jobName.includes('神之子')) return '320000000';
   if (jobName.includes('凱內西斯')) return '331000000';
-  if (['劍豪', '陰陽師'].some(k => jobName.includes(k))) return '102000000';
+  if (['劍豪', '陰陽師'].some(k => jobName.includes(k))) return '807000000';
   if (jobName.includes('墨玄')) return '875000000';
   if (jobName.includes('琳恩')) return '875010000';
   if (jobName.includes('開拓者')) return '100051000';
@@ -135,8 +135,6 @@ export const getJobBackgroundMap = (jobName: string): string => {
   return '100000000';
 };
 
-// The equipment scene preserves the original Akatsuki artwork, while the
-// profile banner uses the separate GMS village fallback above.
 export const getJobEquipmentMap = (jobName: string): string => (
   ['劍豪', '陰陽師'].some(k => jobName.includes(k)) ? '807000000' : getJobBackgroundMap(jobName)
 );
@@ -144,7 +142,7 @@ export const getJobEquipmentMap = (jobName: string): string => (
 export const getJobFallbackVillageMap = (jobName: string): string => {
   if (!jobName) return '100000000';
   if (jobName.includes('爆拳槍神')) return '102000000';
-  if (['劍豪', '陰陽師'].some(k => jobName.includes(k))) return '102000000';
+  if (['劍豪', '陰陽師'].some(k => jobName.includes(k))) return '807000000';
 
   if (['法師', '巫師', '魔導士', '主教', '僧侶', '祭司', '烈焰巫師', '龍魔導士', '夜光', '煉獄巫師', '凱內西斯', '伊利恩', '菈菈', '陰陽師', '幻獸師', '琳恩'].some((keyword) => jobName.includes(keyword))) return '101000000';
   if (['弓箭手', '弓手', '箭神', '神射手', '破風使者', '精靈遊俠', '狂豹獵人', '開拓者', '凱殷'].some((keyword) => jobName.includes(keyword))) return '100000000';
