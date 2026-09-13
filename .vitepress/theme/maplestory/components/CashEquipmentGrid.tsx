@@ -3,6 +3,7 @@ import { BorderBeam } from 'border-beam';
 import { CharacterCashItemEquipment, CashItemEquipmentPreset, CharacterBeautyEquipment } from '../types';
 import PresetSwitcher from './PresetSwitcher';
 import DyePreview from './DyePreview';
+import ReliableEquipmentIcon from './ReliableEquipmentIcon';
 import { mapleAsset } from '../assets';
 import { useEquipmentLayoutScale } from './useEquipmentLayoutScale';
 
@@ -430,7 +431,7 @@ const CashSlot: React.FC<{ label: string; item?: CashItemEquipmentPreset; toolti
                 <img src={mapleAsset('cashitem.png')} alt="染色" className="absolute bottom-[3px] left-[3px] w-3 h-3 z-20" title="染色" />
               </>
             ) : (
-              <img src={displayIcon} alt={item.cash_item_name} className="max-w-full max-h-full object-contain z-10 translate-x-[1px] translate-y-[1px]" />
+              <ReliableEquipmentIcon src={displayIcon} alt={item.cash_item_name} className="max-w-full max-h-full object-contain z-10 translate-x-[1px] translate-y-[1px]" />
             )}
           </>
         ) : (

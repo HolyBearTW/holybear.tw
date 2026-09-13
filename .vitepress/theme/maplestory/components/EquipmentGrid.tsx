@@ -3,6 +3,7 @@ import { EquipmentItem, CharacterEquipment, CharacterSetEffect } from '../types'
 import EquipmentTooltip from './EquipmentTooltip';
 import PresetSwitcher from './PresetSwitcher';
 import CharacterAppearancePreviewModal from './CharacterAppearancePreviewModal';
+import ReliableEquipmentIcon from './ReliableEquipmentIcon';
 import { Eye, RotateCcw, Square, CheckSquare, X } from 'lucide-react';
 
 import { CharacterAndroidEquipment } from '../types';
@@ -356,7 +357,7 @@ const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'lef
       >
         {item ? (
           <>
-            <img 
+            <ReliableEquipmentIcon
               src={displayIcon} 
               alt={item.item_name} 
               className={`max-w-full max-h-full object-contain z-10 ${skillRingToggle || zeroWeaponToggle ? '-translate-x-[2px] -translate-y-[2px]' : ['Gem', 'Pocket', 'Badge', 'Ring1', 'Ring2', 'Ring3', 'Ring4'].includes(slotKey) ? 'translate-x-[1px] translate-y-[1px]' : ''}`}
