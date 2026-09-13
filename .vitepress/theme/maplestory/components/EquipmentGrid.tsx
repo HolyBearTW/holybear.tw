@@ -101,6 +101,9 @@ const TOTEM_MAPPING = [
   { name: '柏林的痕跡', path: characterAsset('totem25.png') },
   { name: 'TMS勇者號意念', path: characterAsset('totem26.png') },
   { name: '時空挑戰者的圖騰', path: characterAsset('totem27.png') },
+  { name: '芙莉蓮圖騰', path: characterAsset('totem28.png') },
+  { name: '費倫圖騰', path: characterAsset('totem29.png') },
+  { name: '修塔爾克圖騰', path: characterAsset('totem30.png') },
 ];
 
 const CUSTOM_ITEM_ICON_MAPPING = [

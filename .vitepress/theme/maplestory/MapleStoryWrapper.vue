@@ -860,22 +860,79 @@ html:not(.dark) #maplestory-root .maple-ranking-go-button:hover {
   border-color: #056f82 !important;
 }
 
+/* 裝備 Tooltip 使用遊戲內的深色視窗素材；淺色網站主題也沿用同一套
+   深色模式文字色，避免全站淺色 token 把文字改成低對比的淺色面板配色。 */
 html:not(.dark) #maplestory-root .maple-equipment-tooltip,
 html:not(.dark) #maplestory-root .maple-equipment-tooltip [class~="text-white"] {
   color: #ffffff !important;
+}
+
+html:not(.dark) #maplestory-root .maple-equipment-tooltip [class~="text-slate-200"] {
+  color: #e2e8f0 !important;
 }
 
 html:not(.dark) #maplestory-root .maple-equipment-tooltip [class~="text-slate-300"] {
   color: #cbd5e1 !important;
 }
 
-html:not(.dark) #maplestory-root .maple-equipment-tooltip [class~="text-slate-400"],
+html:not(.dark) #maplestory-root .maple-equipment-tooltip [class~="text-slate-400"] {
+  color: #94a3b8 !important;
+}
+
 html:not(.dark) #maplestory-root .maple-equipment-tooltip [class~="text-[#B8BFC5]"] {
   color: #b8bfc5 !important;
 }
 
+html:not(.dark) #maplestory-root .maple-equipment-tooltip [class~="text-slate-500"] {
+  color: #64748b !important;
+}
+
+html:not(.dark) #maplestory-root .maple-equipment-tooltip [class~="text-slate-700"] {
+  color: #334155 !important;
+}
+
+html:not(.dark) #maplestory-root .maple-equipment-tooltip [class~="text-[#b7b5ff]"] {
+  color: #b7b5ff !important;
+}
+
+html:not(.dark) #maplestory-root .maple-equipment-tooltip [class~="text-[#F0D38A]"] {
+  color: #f0d38a !important;
+}
+
+html:not(.dark) #maplestory-root .maple-equipment-tooltip [class~="text-[#2e353d]"] {
+  color: #2e353d !important;
+}
+
 html:not(.dark) #maplestory-root .maple-equipment-tooltip [class~="text-indigo-300"] {
   color: #a5b4fc !important;
+}
+
+html:not(.dark) #maplestory-root .maple-equipment-tooltip [class~="text-blue-400"] {
+  color: #60a5fa !important;
+}
+
+html:not(.dark) #maplestory-root .maple-equipment-tooltip [class~="text-purple-400"] {
+  color: #c084fc !important;
+}
+
+html:not(.dark) #maplestory-root .maple-equipment-tooltip [class~="text-green-400"] {
+  color: #4ade80 !important;
+}
+
+html:not(.dark) #maplestory-root .maple-equipment-tooltip [class~="text-yellow-400"] {
+  color: #facc15 !important;
+}
+
+html:not(.dark) #maplestory-root .maple-equipment-tooltip [class~="text-orange-300"] {
+  color: #fdba74 !important;
+}
+
+html:not(.dark) #maplestory-root .maple-equipment-tooltip [class~="text-orange-400"] {
+  color: #fb923c !important;
+}
+
+html:not(.dark) #maplestory-root .maple-equipment-tooltip [class~="text-red-400"] {
+  color: #f87171 !important;
 }
 
 /* 拼圖彈窗依網站實際主題切換，避免作業系統深色偏好覆蓋手動淺色模式。 */
