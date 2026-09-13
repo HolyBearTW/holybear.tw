@@ -6598,8 +6598,10 @@ html:not(.dark) body.theme-coretower.is-blog-page #app .fuwari-article-outline.f
 /* Mobile navbar controls use icon-only hover feedback. The search button and
    VitePress hamburger are separate components, so keep their colors in sync. */
 @media (max-width: 767px) {
-  /* Keep the global mobile navigation reachable after the page scrolls. */
-  .VPNav {
+  /* Custom pages without VPDoc have no VPLocalNav replacement after scroll,
+     so only those pages keep the global navigation reachable. Document pages
+     retain VitePress's native VPNav -> VPLocalNav handoff. */
+  body:not(:has(.VPDoc, .hb-home-lobby, .VPHero)) #app .VPNav {
     position: sticky !important;
     top: 0 !important;
   }
@@ -6607,9 +6609,9 @@ html:not(.dark) body.theme-coretower.is-blog-page #app .fuwari-article-outline.f
   /* Body scroll locking changes the sticky containing block. Keep the navbar
      pinned until both the drawer's leave transition and its scroll lock have
      finished; otherwise closing it briefly sends the bar back to page top. */
-  .VPNav:has(.VPNavBar.screen-open),
-  .VPNav:has(> .VPNavScreen),
-  body[style*="overflow: hidden"] #app .VPNav {
+  body:not(:has(.VPDoc, .hb-home-lobby, .VPHero)) #app .VPNav:has(.VPNavBar.screen-open),
+  body:not(:has(.VPDoc, .hb-home-lobby, .VPHero)) #app .VPNav:has(> .VPNavScreen),
+  body:not(:has(.VPDoc, .hb-home-lobby, .VPHero))[style*="overflow: hidden"] #app .VPNav {
     position: fixed !important;
     inset: 0 0 auto !important;
   }
@@ -6621,9 +6623,9 @@ html:not(.dark) body.theme-coretower.is-blog-page #app .fuwari-article-outline.f
     backdrop-filter: none !important;
   }
 
-  body:not(:has(.VPHome)):not(.is-home-page):not(:has(.hb-home-lobby)):not(:has(.VPHero)):has(.VPNavBarHamburger[aria-expanded="true"]) #app .Layout > .VPContent,
-  body:not(:has(.VPHome)):not(.is-home-page):not(:has(.hb-home-lobby)):not(:has(.VPHero)):has(.VPNavScreen) #app .Layout > .VPContent,
-  body:not(:has(.VPHome)):not(.is-home-page):not(:has(.hb-home-lobby)):not(:has(.VPHero))[style*="overflow: hidden"] #app .Layout > .VPContent {
+  body:not(:has(.VPDoc, .VPHome, .hb-home-lobby, .VPHero)):not(.is-home-page):has(.VPNavBarHamburger[aria-expanded="true"]) #app .Layout > .VPContent,
+  body:not(:has(.VPDoc, .VPHome, .hb-home-lobby, .VPHero)):not(.is-home-page):has(.VPNavScreen) #app .Layout > .VPContent,
+  body:not(:has(.VPDoc, .VPHome, .hb-home-lobby, .VPHero)):not(.is-home-page)[style*="overflow: hidden"] #app .Layout > .VPContent {
     margin-top: calc(var(--vp-nav-height, 64px) + 1px) !important;
   }
 
@@ -6643,9 +6645,11 @@ html:not(.dark) body.theme-coretower.is-blog-page #app .fuwari-article-outline.f
 
   /* The mobile local-nav row ("回到頂部" on pages without an outline) sits
      below the main navbar. The full-screen hamburger drawer replaces it while
-     open, so do not leave a second navigation row visible underneath. */
+     open. Keep its flow space so opening the drawer does not move VPContent. */
   body:has(.VPNavBarHamburger[aria-expanded="true"]) .VPLocalNav {
-    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
   }
 
   html body {
