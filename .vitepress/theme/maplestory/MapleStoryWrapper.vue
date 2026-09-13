@@ -1494,6 +1494,10 @@ html:not(.dark) #maplestory-root .maple-focus-power-rank {
   color: #8a5a00 !important;
 }
 
+html:not(.dark) #maplestory-root .maple-ranking-rank-label {
+  color: #ffffff !important;
+}
+
 html:not(.dark) #maplestory-root .maple-growth-event-after {
   color: #087a4b !important;
   background: rgba(218, 246, 231, 0.96) !important;
