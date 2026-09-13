@@ -10,7 +10,7 @@ import {
   upsertCanonicalNexonCharacter,
 } from '../../functions/_shared/character-repository';
 import { getCharacterCombatPowerRank } from '../../functions/_shared/ranking-repository';
-import { fromD1Alt, mergeRelatedCharacters } from '../../.vitepress/theme/maplestory/services/relatedCharacterMerge';
+import { fromD1Alt } from '../../.vitepress/theme/maplestory/services/relatedCharacter';
 import type { Env } from '../../functions/_shared/env';
 import { createTestD1 } from './sqlite-d1';
 
@@ -207,7 +207,7 @@ describe('character metadata refresh queue', () => {
     })).toBe(false);
   });
 
-  it('keeps complete static metadata when the API relation is waiting for refresh', () => {
+  it('preserves an incomplete D1 relation without inventing metadata', () => {
     const unavailable = fromD1Alt({
       ocid: null,
       characterName: '待補分身',
@@ -219,12 +219,12 @@ describe('character metadata refresh queue', () => {
       guildName: null,
       metadataAvailable: false,
     });
-    const staticMember = {
-      characterName: '待補分身', worldName: '艾麗亞', characterClass: '夜使者',
-      characterLevel: 285, characterImage: 'static-image', characterPower: '123',
-      maxCharacterPower: '123', combatPowerRank: 10, characterGuildName: '公會',
-      characterDateCreate: '2020-01-01T00:00:00+08:00',
-    };
-    expect(mergeRelatedCharacters([unavailable], [staticMember])).toEqual([staticMember]);
+    expect(unavailable).toMatchObject({
+      characterName: '待補分身',
+      characterLevel: null,
+      characterImage: null,
+      maxCharacterPower: null,
+      metadataAvailable: false,
+    });
   });
 });

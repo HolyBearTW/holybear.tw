@@ -1,8 +1,7 @@
 import React from 'react';
 import { ChevronLeft, ChevronRight, Search, User, Users } from 'lucide-react';
-import { findRelatedCharacters } from '../services/aliasService';
-import type { RelatedCharacter } from '../services/aliasService';
-import { fromD1Alt, mergeRelatedCharacters } from '../services/relatedCharacterMerge';
+import { fromD1Alt } from '../services/relatedCharacter';
+import type { RelatedCharacter } from '../services/relatedCharacter';
 import type { DashboardData } from '../types';
 import CharacterAvatar from './CharacterAvatar';
 import {
@@ -62,22 +61,10 @@ const RelatedCharacters: React.FC<RelatedCharactersProps> = ({
     setStatus('loading');
     setPage(1);
 
-    Promise.allSettled([
-      fetchHolyBearAlts(currentCharacterName, controller.signal),
-      findRelatedCharacters(data, controller.signal),
-    ])
-      .then((results) => {
+    fetchHolyBearAlts(currentCharacterName, controller.signal)
+      .then((result) => {
         if (controller.signal.aborted) throw new DOMException('Aborted', 'AbortError');
-        const d1Members = results[0].status === 'fulfilled'
-          ? results[0].value.alts.map(fromD1Alt)
-          : [];
-        const staticMembers = results[1].status === 'fulfilled' ? results[1].value : [];
-        if (d1Members.length === 0 && staticMembers.length === 0
-          && results.every((result) => result.status === 'rejected')) {
-          const failure = results.find((result) => result.status === 'rejected');
-          throw failure?.reason ?? new Error('分身資料目前無法取得');
-        }
-        return mergeRelatedCharacters(d1Members, staticMembers);
+        return result.alts.map(fromD1Alt);
       })
       .then(async (result) => {
         const rankingSnapshot = await fetchHolyBearRankingSnapshot();
@@ -112,7 +99,7 @@ const RelatedCharacters: React.FC<RelatedCharactersProps> = ({
       });
 
     return () => controller.abort();
-  }, [currentCharacterName, data.unionChampion, data.unionRaider]);
+  }, [currentCharacterName]);
 
   const pageCount = Math.max(1, Math.ceil(members.length / pageSize));
 

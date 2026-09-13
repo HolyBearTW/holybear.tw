@@ -8,7 +8,6 @@ import {
   canonicalizeRaiderPresets,
 } from '../../functions/_shared/union-fingerprint';
 import { singleParam } from '../../functions/_shared/http';
-import { createAliasSignatureInputs } from '../../.vitepress/theme/maplestory/services/aliasFingerprint.js';
 
 const character = (updatedAt: string): PublicCharacter => ({
   ocid: 'ocid-1',
@@ -106,9 +105,6 @@ describe('union account signals', () => {
     });
     expect(first).toEqual(second);
     expect(first).toHaveLength(1);
-    expect(createAliasSignatureInputs({
-      union_raider_preset_1: { union_raider_stat: ['STR +5', 'DEX +5'], union_block: blocks },
-    }, undefined)).toContain(`raider-v1:${first[0]}`);
   });
 
   it('rejects small union raider layouts that are unsafe account signals', () => {

@@ -1,4 +1,4 @@
-name: Update TMS character references
+name: Update TMS radar reference
 
 on:
   schedule:

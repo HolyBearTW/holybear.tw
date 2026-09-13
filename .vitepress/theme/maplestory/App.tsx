@@ -9,7 +9,6 @@ import RecentPowerRanking from './components/RecentPowerRanking';
 import { useMapleSearch } from './hooks/useMapleSearch';
 import { useAiAnalysis } from './hooks/useAiAnalysis';
 import { useCharacterStats } from './hooks/useCharacterStats';
-import { preloadAliasIndex } from './services/aliasService';
 import { mapleAsset } from './assets';
 import {
   BYPASS_STORAGE_KEY,
@@ -38,7 +37,6 @@ const preloadResultSections = () => Promise.allSettled([
   loadCharacterGrowthHistory(),
   loadAiAnalysisPanel(),
   loadCharacterDetails(),
-  preloadAliasIndex(),
 ]);
 
 const ResultLoading = () => {
