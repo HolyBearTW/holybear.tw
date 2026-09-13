@@ -213,7 +213,7 @@ export const consumeQueueBatch = async (
   }
   if (selection.accountSignals) {
     labels.push('accountSignals');
-    tasks.push(backfillAccountSignalBatch(env));
+    tasks.push(backfillAccountSignalBatch(env, source));
   }
   if (selection.growth) {
     labels.push('growth');

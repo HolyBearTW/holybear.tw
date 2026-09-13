@@ -6,7 +6,7 @@ import { errorResponse, json, methodNotAllowed } from '../../../_shared/http';
 export const onRequestPost: AppPagesFunction = async ({ env, request }) => {
   try {
     requireImportAdmin(request, env);
-    return json(await backfillAccountSignalBatch(env));
+    return json(await backfillAccountSignalBatch(env, 'admin_backfill'));
   } catch (error) {
     return errorResponse(error);
   }

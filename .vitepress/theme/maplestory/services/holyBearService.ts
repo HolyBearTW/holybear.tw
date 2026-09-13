@@ -62,6 +62,16 @@ export interface HolyBearAltsResponse {
     metadataAvailable: boolean;
   }>;
   lastVerifiedAt: string | null;
+  resolution: {
+    status: 'complete' | 'partial';
+    scope: 'available_signal_graph';
+    officialAccountComplete: false;
+    partialReasons: Array<{
+      signalType: 'union_champion_roster' | 'union_raider_preset' | 'union_raider_full';
+      reason: string;
+      retryable: boolean;
+    }>;
+  };
   disclosure: string;
 }
 

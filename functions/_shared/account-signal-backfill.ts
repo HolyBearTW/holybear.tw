@@ -1,4 +1,7 @@
-import { syncCharacterAccountSignals } from './account-group-repository';
+import {
+  syncCharacterAccountSignals,
+  type AccountSignalTriggerSource,
+} from './account-group-repository';
 import {
   ACCOUNT_SIGNAL_TYPE,
   type AccountSignalClaim,
@@ -21,7 +24,10 @@ import {
 
 const nowIso = () => new Date().toISOString();
 
-export const backfillAccountSignalBatch = async (env: Env) => {
+export const backfillAccountSignalBatch = async (
+  env: Env,
+  triggerSource: AccountSignalTriggerSource = 'background',
+) => {
   const batchStartedAt = Date.now();
   const instrumentation = createAccountSignalInstrumentation();
   const config = getRuntimeConfig(env);
@@ -80,6 +86,7 @@ export const backfillAccountSignalBatch = async (env: Env) => {
           toPublicCharacter(row),
           [ACCOUNT_SIGNAL_TYPE],
           metrics,
+          triggerSource,
         );
         const failure = synced.failures[0]?.error;
         if (failure) throw failure;

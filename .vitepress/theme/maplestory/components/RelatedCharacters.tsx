@@ -46,6 +46,7 @@ const RelatedCharacters: React.FC<RelatedCharactersProps> = ({
   const currentCharacterName = data.basic.character_name;
   const [members, setMembers] = React.useState<RelatedCharacter[]>([]);
   const [status, setStatus] = React.useState<'loading' | 'ready' | 'empty' | 'error'>('loading');
+  const [resolutionPartial, setResolutionPartial] = React.useState(false);
   const [page, setPage] = React.useState(1);
   const [pageSize, setPageSize] = React.useState(getResponsivePageSize);
 
@@ -59,11 +60,13 @@ const RelatedCharacters: React.FC<RelatedCharactersProps> = ({
     const controller = new AbortController();
     setMembers([]);
     setStatus('loading');
+    setResolutionPartial(false);
     setPage(1);
 
     fetchHolyBearAlts(currentCharacterName, controller.signal)
       .then((result) => {
         if (controller.signal.aborted) throw new DOMException('Aborted', 'AbortError');
+        setResolutionPartial(result.resolution?.status === 'partial');
         return result.alts.map(fromD1Alt);
       })
       .then(async (result) => {
@@ -164,6 +167,9 @@ const RelatedCharacters: React.FC<RelatedCharactersProps> = ({
           )}
         </div>
         <p className="mt-1 text-xs text-slate-500">依公開聯盟資料推定，並非 NEXON 官方 Account ID。</p>
+        {resolutionPartial && (
+          <p className="mt-1 text-xs text-amber-300">部分官方資料暫時無法取得，已顯示目前可確認的分身；系統會自動重試。</p>
+        )}
       </header>
 
       {status === 'loading' && (
