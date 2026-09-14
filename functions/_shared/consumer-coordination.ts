@@ -1,4 +1,4 @@
-import { backfillAccountSignalBatch } from './account-signal-backfill';
+import { backfillAccountChampionBatch, backfillAccountSignalBatch } from './account-signal-backfill';
 import { refreshCharacterMetadataBatch } from './character-metadata-refresh';
 import type { Env } from './env';
 import { getRuntimeConfig } from './runtime-config';
@@ -20,6 +20,7 @@ interface ConsumerHeartbeatRow {
 export interface ConsumerQueueCounts {
   pendingMetadata: number;
   pendingAccountSignals: number;
+  pendingAccountChampionSignals: number;
   pendingGrowthProfiles: number;
   pendingGuildJobs: number;
   hasImmediateWork: boolean;
@@ -28,6 +29,7 @@ export interface ConsumerQueueCounts {
 interface ConsumerSelection {
   metadata: boolean;
   accountSignals: boolean;
+  accountChampionSignals?: boolean;
   growth?: boolean;
   guild?: boolean;
 }
@@ -83,14 +85,42 @@ const recordError = async (
 export const getImmediateConsumerQueueCounts = async (
   db: D1Database,
   timestamp = nowIso(),
+  env?: Env,
 ): Promise<ConsumerQueueCounts> => {
   const targetDate = latestAvailableGrowthDate(new Date(timestamp));
-  const [metadata, accountSignals, growthProfiles, guildJobs] = await Promise.all([
+  const config = env ? getRuntimeConfig(env) : { accountSignalChampionBackfillEnabled: false };
+  const [metadata, accountSignals, accountChampionSignals, growthProfiles, guildJobs] = await Promise.all([
     db.prepare(`
       SELECT COUNT(*) AS count FROM character_metadata_refresh
       WHERE (status = 'pending' OR (status = 'retry' AND (next_retry_at IS NULL OR next_retry_at <= ?1)))
         AND (claim_until IS NULL OR claim_until <= ?1)
     `).bind(timestamp).first<{ count: number }>(),
+    config.accountSignalChampionBackfillEnabled
+      ? db.prepare(`
+        SELECT COUNT(*) AS count
+        FROM characters c
+        JOIN account_signal_sync full_sync
+          ON full_sync.ocid = c.ocid AND full_sync.signal_type = 'union_raider_full'
+          AND full_sync.status = 'completed'
+        LEFT JOIN account_signal_sync champion_sync
+          ON champion_sync.ocid = c.ocid AND champion_sync.signal_type = 'union_champion_roster'
+        LEFT JOIN account_group_signals champion_signal
+          ON champion_signal.ocid = c.ocid
+          AND champion_signal.signal_type = 'union_champion_roster'
+          AND champion_signal.confidence = 'high'
+          AND champion_signal.fingerprint_version = 1
+          AND length(champion_signal.union_fingerprint) = 64
+        WHERE (full_sync.claim_until IS NULL OR full_sync.claim_until <= ?1)
+          AND (
+            (champion_sync.ocid IS NULL AND champion_signal.ocid IS NULL)
+            OR champion_sync.status = 'pending'
+            OR (champion_sync.status = 'retry'
+              AND (champion_sync.next_retry_at IS NULL OR champion_sync.next_retry_at <= ?1))
+            OR (champion_sync.status = 'completed' AND champion_signal.ocid IS NULL
+              AND COALESCE(champion_sync.last_error, '') <> 'no_valid_roster')
+          )
+      `).bind(timestamp).first<{ count: number }>()
+      : Promise.resolve({ count: 0 }),
     db.prepare(`
       SELECT COUNT(*) AS count FROM account_signal_sync
       WHERE signal_type = 'union_raider_full'
@@ -124,14 +154,16 @@ export const getImmediateConsumerQueueCounts = async (
   ]);
   const pendingMetadata = Number(metadata?.count) || 0;
   const pendingAccountSignals = Number(accountSignals?.count) || 0;
+  const pendingAccountChampionSignals = Number(accountChampionSignals?.count) || 0;
   const pendingGrowthProfiles = Number(growthProfiles?.count) || 0;
   const pendingGuildJobs = Number(guildJobs?.count) || 0;
   return {
     pendingMetadata,
     pendingAccountSignals,
+    pendingAccountChampionSignals,
     pendingGrowthProfiles,
     pendingGuildJobs,
-    hasImmediateWork: pendingMetadata > 0 || pendingAccountSignals > 0
+    hasImmediateWork: pendingMetadata > 0 || pendingAccountSignals > 0 || pendingAccountChampionSignals > 0
       || pendingGrowthProfiles > 0 || pendingGuildJobs > 0,
   };
 };
@@ -178,7 +210,7 @@ export const getConsumerFailoverStatus = async (env: Env, timestamp = nowIso()) 
   const latestSuccessful = [...rows.results]
     .filter((row) => row.last_success_at)
     .sort((left, right) => String(right.last_success_at).localeCompare(String(left.last_success_at)))[0] || null;
-  const queues = await getImmediateConsumerQueueCounts(env.DB, timestamp);
+  const queues = await getImmediateConsumerQueueCounts(env.DB, timestamp, env);
   return {
     checkedAt: timestamp,
     primarySchedulerHeartbeat: {
@@ -215,6 +247,10 @@ export const consumeQueueBatch = async (
     labels.push('accountSignals');
     tasks.push(backfillAccountSignalBatch(env, source));
   }
+  if (selection.accountChampionSignals ?? selection.accountSignals) {
+    labels.push('accountChampionSignals');
+    tasks.push(backfillAccountChampionBatch(env, source));
+  }
   if (selection.growth) {
     labels.push('growth');
     tasks.push(backfillGrowthBatch(env));
@@ -250,6 +286,7 @@ export const runFallbackConsumer = async (env: Env) => {
   const batch = await consumeQueueBatch(env, 'github_actions_fallback', {
     metadata: before.queues.pendingMetadata > 0,
     accountSignals: before.queues.pendingAccountSignals > 0,
+    accountChampionSignals: before.queues.pendingAccountChampionSignals > 0,
     growth: before.queues.pendingGrowthProfiles > 0,
     guild: before.queues.pendingGuildJobs > 0,
   });

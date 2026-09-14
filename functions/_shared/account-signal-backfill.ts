@@ -3,9 +3,12 @@ import {
   type AccountSignalTriggerSource,
 } from './account-group-repository';
 import {
+  ACCOUNT_CHAMPION_SIGNAL_TYPE,
   ACCOUNT_SIGNAL_TYPE,
   type AccountSignalClaim,
+  claimAccountChampionSignalForBackground,
   claimAccountSignalForBackground,
+  ensureAccountSignalQueueRow,
   completeAccountSignalClaim,
   failAccountSignalClaim,
 } from './account-signal-queue';
@@ -144,4 +147,155 @@ export const backfillAccountSignalBatch = async (
       Date.now() - batchStartedAt,
     ),
   };
+};
+
+/**
+ * Supplement champion rosters for characters whose full signal is already
+ * complete. This queue is deliberately independent from the full-scan queue:
+ * a champion API failure never changes full status, and a resolver failure
+ * after the signal write remains retryable through the champion claim.
+ */
+export const backfillAccountChampionBatch = async (
+  env: Env,
+  triggerSource: AccountSignalTriggerSource = 'background',
+) => {
+  const batchStartedAt = Date.now();
+  const instrumentation = createAccountSignalInstrumentation();
+  const config = getRuntimeConfig(env);
+  if (!config.accountSignalChampionBackfillEnabled) {
+    return {
+      enabled: false,
+      processed: 0,
+      completed: 0,
+      retry: 0,
+      failed: 0,
+      signals: 0,
+      noValidRoster: 0,
+      instrumentation: summarizeAccountSignalInstrumentation(instrumentation, Date.now() - batchStartedAt),
+    };
+  }
+
+  const now = nowIso();
+  const candidates = await env.DB.prepare(`
+    SELECT c.*
+    FROM characters c
+    JOIN account_signal_sync full_sync
+      ON full_sync.ocid = c.ocid AND full_sync.signal_type = ?1
+      AND full_sync.status = 'completed'
+      AND (full_sync.claim_until IS NULL OR full_sync.claim_until <= ?2)
+    LEFT JOIN account_signal_sync champion_sync
+      ON champion_sync.ocid = c.ocid AND champion_sync.signal_type = ?3
+    LEFT JOIN account_group_signals champion_signal
+      ON champion_signal.ocid = c.ocid
+      AND champion_signal.signal_type = ?3
+      AND champion_signal.confidence = 'high'
+      AND champion_signal.fingerprint_version = 1
+      AND length(champion_signal.union_fingerprint) = 64
+    WHERE (
+      (champion_sync.ocid IS NULL AND champion_signal.ocid IS NULL)
+      OR champion_sync.status = 'pending'
+      OR (champion_sync.status = 'retry'
+        AND (champion_sync.next_retry_at IS NULL OR champion_sync.next_retry_at <= ?2))
+      OR (champion_sync.status = 'completed'
+        AND champion_signal.ocid IS NULL
+        AND COALESCE(champion_sync.last_error, '') <> 'no_valid_roster')
+    )
+    ORDER BY CASE
+      WHEN champion_sync.status = 'retry' THEN 0
+      WHEN champion_sync.status = 'pending' THEN 1
+      ELSE 2
+    END, c.combat_power DESC, c.ocid ASC
+    LIMIT ?4
+  `).bind(
+    ACCOUNT_SIGNAL_TYPE,
+    now,
+    ACCOUNT_CHAMPION_SIGNAL_TYPE,
+    config.accountSignalChampionBackfillBatchSize,
+  ).all<CharacterRow>();
+
+  const claimedRows: Array<{ row: CharacterRow; claim: AccountSignalClaim }> = [];
+  for (const row of candidates.results) {
+    await ensureAccountSignalQueueRow(env.DB, row.ocid, ACCOUNT_CHAMPION_SIGNAL_TYPE);
+    const claimStartedAt = Date.now();
+    const claim = await claimAccountChampionSignalForBackground(env.DB, row.ocid);
+    instrumentation.queueClaimMs += metricTimer(claimStartedAt);
+    if (claim) claimedRows.push({ row, claim });
+  }
+
+  const settled = await runWithConcurrency(
+    claimedRows,
+    config.accountSignalChampionBackfillConcurrency,
+    config.accountSignalChampionBackfillDelayMs,
+    async ({ row, claim }) => {
+      const metrics = createAccountSignalInstrumentation();
+      const startedAt = Date.now();
+      try {
+        const synced = await syncCharacterAccountSignals(
+          env,
+          toPublicCharacter(row),
+          [ACCOUNT_CHAMPION_SIGNAL_TYPE],
+          metrics,
+          triggerSource,
+        );
+        const failure = synced.failures.find(({ type }) => type === ACCOUNT_CHAMPION_SIGNAL_TYPE)?.error;
+        if (failure) throw failure;
+        return { claim, synced, metrics };
+      } catch (error) {
+        if (metrics.characterWallMs.length === 0) metrics.characterWallMs.push(metricTimer(startedAt));
+        throw { accountSignalError: error, metrics };
+      }
+    },
+  );
+
+  let completed = 0;
+  let retry = 0;
+  let failed = 0;
+  let signals = 0;
+  let noValidRoster = 0;
+  for (let index = 0; index < claimedRows.length; index += 1) {
+    const { claim } = claimedRows[index];
+    const outcome = settled[index];
+    if (outcome.status === 'fulfilled') {
+      completed += 1;
+      const signalCount = outcome.value.synced.signalCount;
+      signals += signalCount;
+      if (signalCount === 0) noValidRoster += 1;
+      addInstrumentation(instrumentation, outcome.value.metrics);
+      const finalizeStartedAt = Date.now();
+      await completeAccountSignalClaim(
+        env.DB,
+        claim,
+        signalCount,
+        signalCount === 0 ? 'no_valid_roster' : null,
+      );
+      instrumentation.queueFinalizeMs += metricTimer(finalizeStartedAt);
+      continue;
+    }
+    const taskFailure = outcome.reason as { accountSignalError?: unknown; metrics?: AccountSignalInstrumentation };
+    if (taskFailure?.metrics) addInstrumentation(instrumentation, taskFailure.metrics);
+    const error = taskFailure?.accountSignalError ?? outcome.reason;
+    const retryable = !(error instanceof NexonRequestError) || error.retryable;
+    const finalizeStartedAt = Date.now();
+    const failure = await failAccountSignalClaim(env.DB, claim, error, retryable, config.nexonRetryLimit);
+    instrumentation.queueFinalizeMs += metricTimer(finalizeStartedAt);
+    if (failure.shouldRetry) retry += 1;
+    else failed += 1;
+  }
+
+  const result = {
+    enabled: true,
+    processed: claimedRows.length,
+    completed,
+    retry,
+    failed,
+    signals,
+    noValidRoster,
+    instrumentation: summarizeAccountSignalInstrumentation(instrumentation, Date.now() - batchStartedAt),
+  };
+  console.info(JSON.stringify({
+    event: 'account_champion_backfill_batch',
+    triggerSource,
+    ...result,
+  }));
+  return result;
 };

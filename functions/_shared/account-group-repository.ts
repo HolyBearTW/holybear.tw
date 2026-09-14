@@ -25,6 +25,7 @@ import {
   type AccountSignalInstrumentation,
 } from './account-signal-metrics';
 import { hashChampionRoster, hashCompleteUnionRaider, hashRaiderPresets } from './union-fingerprint';
+import { writeEvidencePayload } from './evidence-storage';
 import type {
   ChampionMember, UnionChampionResponse, UnionRaiderResponse, UnionSummaryResponse,
 } from './union-fingerprint';
@@ -122,6 +123,9 @@ const fetchSignals = async (
         undefined,
         (metric) => recordNexonMetric(metrics, metric),
       );
+      if (!payload || !Array.isArray(payload.union_champion)) {
+        throw new Error('Invalid union champion roster payload');
+      }
       const canonicalizationStartedAt = Date.now();
       const signal = await hashChampionRoster(payload);
       metrics.fingerprintCanonicalizationMs += metricTimer(canonicalizationStartedAt);
@@ -501,18 +505,26 @@ const storeAndMatchSignals = async (
   }
   const timestamp = nowIso();
 
+  // R2 is the only destination for new complete payloads. Every route that
+  // reaches this shared writer therefore gets the same retry-safe behavior.
+  await Promise.all(signals.map((signal) => writeEvidencePayload(env, {
+    ocid: character.ocid,
+    signalType: signal.type,
+    fingerprintVersion: 1,
+    unionFingerprint: signal.fingerprint,
+  }, signal.canonical)));
+
   const signalWriteStartedAt = Date.now();
   await env.DB.batch(signals.map((signal) => env.DB.prepare(`
     INSERT INTO account_group_signals (
       ocid, account_group_id, signal_type, fingerprint_version, union_fingerprint,
-      confidence, evidence_json, first_seen_at, last_seen_at, created_at, updated_at
-    ) VALUES (?1, ?2, ?3, 1, ?4, 'high', ?5, ?6, ?6, ?6, ?6)
+      confidence, first_seen_at, last_seen_at, created_at, updated_at
+    ) VALUES (?1, ?2, ?3, 1, ?4, 'high', ?5, ?5, ?5, ?5)
     ON CONFLICT(ocid, signal_type, fingerprint_version, union_fingerprint) DO UPDATE SET
       account_group_id = COALESCE(excluded.account_group_id, account_group_signals.account_group_id),
-      evidence_json = excluded.evidence_json,
       last_seen_at = excluded.last_seen_at,
       updated_at = excluded.updated_at
-  `).bind(character.ocid, character.accountGroupId, signal.type, signal.fingerprint, signal.canonical, timestamp)));
+  `).bind(character.ocid, character.accountGroupId, signal.type, signal.fingerprint, timestamp)));
   metrics.signalDbWriteMs += metricTimer(signalWriteStartedAt);
   return convergeAccountGroup(env, character, triggerSource, metrics);
 };

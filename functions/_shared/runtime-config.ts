@@ -28,6 +28,25 @@ export const getRuntimeConfig = (env: Env) => ({
   accountSignalBackfillBatchSize: integerSetting(env.ACCOUNT_SIGNAL_BACKFILL_BATCH_SIZE, 8, 1, 25),
   accountSignalBackfillConcurrency: integerSetting(env.ACCOUNT_SIGNAL_BACKFILL_CONCURRENCY, 1, 1, 4),
   accountSignalBackfillDelayMs: integerSetting(env.ACCOUNT_SIGNAL_BACKFILL_DELAY_MS, 500, 100, 10_000),
+  accountSignalChampionBackfillEnabled: env.ACCOUNT_SIGNAL_CHAMPION_BACKFILL_ENABLED === 'true',
+  accountSignalChampionBackfillBatchSize: integerSetting(
+    env.ACCOUNT_SIGNAL_CHAMPION_BACKFILL_BATCH_SIZE,
+    4,
+    1,
+    25,
+  ),
+  accountSignalChampionBackfillConcurrency: integerSetting(
+    env.ACCOUNT_SIGNAL_CHAMPION_BACKFILL_CONCURRENCY,
+    1,
+    1,
+    4,
+  ),
+  accountSignalChampionBackfillDelayMs: integerSetting(
+    env.ACCOUNT_SIGNAL_CHAMPION_BACKFILL_DELAY_MS,
+    1_000,
+    100,
+    10_000,
+  ),
   // On-demand /alts uses the shorter 24h window below. Background refresh is
   // intentionally independent so a large population does not continuously
   // re-enter the queue before one full scan can finish.
@@ -78,6 +97,18 @@ export const getRuntimeConfig = (env: Env) => ({
     60,
     3_600,
   ),
+  // Retention is opt-in at deployment time. The runner remains dry-run only
+  // until RETENTION_ENABLED is explicitly set true after review.
+  retentionEnabled: env.RETENTION_ENABLED === 'true',
+  retentionStagingDays: integerSetting(env.RETENTION_STAGING_DAYS, 30, 1, 3650),
+  retentionImportErrorDays: integerSetting(env.RETENTION_IMPORT_ERROR_DAYS, 90, 1, 3650),
+  retentionGuildDays: integerSetting(env.RETENTION_GUILD_DAYS, 30, 1, 3650),
+  retentionMergeEventDays: integerSetting(env.RETENTION_MERGE_EVENT_DAYS, 180, 1, 3650),
+  retentionBatchSize: integerSetting(env.RETENTION_BATCH_SIZE, 500, 1, 2_000),
+  retentionMaxBatches: integerSetting(env.RETENTION_MAX_BATCHES, 4, 1, 32),
+  retentionMaxRowsDeleted: integerSetting(env.RETENTION_MAX_ROWS_DELETED, 2_000, 1, 10_000),
+  retentionMaxRuntimeMs: integerSetting(env.RETENTION_MAX_RUNTIME_MS, 4_000, 1_000, 120_000),
+  retentionMaxD1Operations: integerSetting(env.RETENTION_MAX_D1_OPERATIONS, 32, 8, 128),
 });
 
 export const requireSecret = (value: string | undefined, name: string) => {

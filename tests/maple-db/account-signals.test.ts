@@ -1,13 +1,21 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createTestD1 } from './sqlite-d1';
+import { createTestD1, createTestR2 } from './sqlite-d1';
 import { getCharacterAlts, syncCharacterAccountSignals } from '../../functions/_shared/account-group-repository';
-import { backfillAccountSignalBatch } from '../../functions/_shared/account-signal-backfill';
-import { claimAccountSignalForBackground, completeAccountSignalClaim } from '../../functions/_shared/account-signal-queue';
+import { backfillAccountChampionBatch, backfillAccountSignalBatch } from '../../functions/_shared/account-signal-backfill';
+import {
+  ACCOUNT_CHAMPION_SIGNAL_TYPE,
+  ACCOUNT_SIGNAL_TYPE,
+  claimAccountChampionSignalForBackground,
+  claimAccountSignalForBackground,
+  completeAccountSignalClaim,
+} from '../../functions/_shared/account-signal-queue';
 import { findCharacterByOcid, upsertCanonicalNexonCharacter } from '../../functions/_shared/character-repository';
 import type { Env } from '../../functions/_shared/env';
 import type { CharacterWrite } from '../../functions/_shared/models';
+import { hashChampionRoster } from '../../functions/_shared/union-fingerprint';
 
 let local: ReturnType<typeof createTestD1>;
+let evidence: ReturnType<typeof createTestR2>;
 let env: Env;
 const baseTime = '2026-09-07T00:00:00.000Z';
 
@@ -120,9 +128,11 @@ const altNames = (result: Awaited<ReturnType<typeof getCharacterAlts>>) => (
 
 beforeEach(async () => {
   local = createTestD1();
+  evidence = createTestR2();
   env = {
     DB: local.db,
     SURVEY_DB: local.db,
+    EVIDENCE_ARCHIVE: evidence.bucket,
     NEXON_API_KEY: 'test-only',
     NEXON_RETRY_LIMIT: '1',
     NEXON_REQUEST_DELAY_MS: '0',
@@ -250,6 +260,140 @@ describe('account-signal queue and on-demand synchronization', () => {
     expect(first.signalCount).toBe(1);
     expect(main?.accountGroupId).not.toBeNull();
     expect(alt?.accountGroupId).toBe(main?.accountGroupId);
+  });
+
+  it('background champion supplementation links completed full-scan characters', async () => {
+    env.ACCOUNT_SIGNAL_CHAMPION_BACKFILL_ENABLED = 'true';
+    env.ACCOUNT_SIGNAL_CHAMPION_BACKFILL_BATCH_SIZE = '4';
+    installNamedSignalApi(['主角色', '分身角色']);
+    await backfillAccountSignalBatch(env);
+    vi.mocked(fetch).mockClear();
+
+    const result = await backfillAccountChampionBatch(env, 'cloudflare_cron');
+    expect(result).toMatchObject({ enabled: true, processed: 2, completed: 2, retry: 0, failed: 0, signals: 2 });
+    expect(local.sqlite.prepare(`SELECT COUNT(*) AS count FROM account_group_signals WHERE signal_type='union_champion_roster'`).get()?.count)
+      .toBe(2);
+    expect(local.sqlite.prepare(`SELECT COUNT(DISTINCT account_group_id) AS count FROM characters WHERE account_group_id IS NOT NULL`).get()?.count)
+      .toBe(1);
+  });
+
+  it('records a successful empty champion roster and does not immediately re-fetch it', async () => {
+    env.ACCOUNT_SIGNAL_CHAMPION_BACKFILL_ENABLED = 'true';
+    installNamedSignalApi([]);
+    await backfillAccountSignalBatch(env);
+    vi.mocked(fetch).mockClear();
+
+    const first = await backfillAccountChampionBatch(env);
+    expect(first).toMatchObject({ processed: 2, completed: 2, signals: 0, noValidRoster: 2 });
+    expect(local.sqlite.prepare(`
+      SELECT status, signal_count, last_error FROM account_signal_sync
+      WHERE ocid='ocid-主角色' AND signal_type=?
+    `).get(ACCOUNT_CHAMPION_SIGNAL_TYPE)).toMatchObject({
+      status: 'completed', signal_count: 0, last_error: 'no_valid_roster',
+    });
+    vi.mocked(fetch).mockClear();
+    const second = await backfillAccountChampionBatch(env);
+    expect(second.processed).toBe(0);
+    expect(vi.mocked(fetch)).not.toHaveBeenCalled();
+  });
+
+  it('does not classify a malformed champion response as an empty roster', async () => {
+    env.ACCOUNT_SIGNAL_CHAMPION_BACKFILL_ENABLED = 'true';
+    env.NEXON_RETRY_LIMIT = '2';
+    vi.stubGlobal('fetch', vi.fn(async (input: string) => {
+      const path = new URL(input).pathname;
+      if (path.endsWith('/user/union-champion')) return Response.json({ unexpected: true });
+      throw new Error(`Unexpected endpoint ${path}`);
+    }));
+    local.sqlite.prepare(`
+      UPDATE account_signal_sync SET status='completed', completed_at=?, updated_at=?
+      WHERE signal_type=?
+    `).run(baseTime, baseTime, ACCOUNT_SIGNAL_TYPE);
+
+    const result = await backfillAccountChampionBatch(env);
+    expect(result).toMatchObject({ processed: 2, completed: 0, retry: 2, noValidRoster: 0 });
+    expect(local.sqlite.prepare(`
+      SELECT status, last_error FROM account_signal_sync
+      WHERE ocid='ocid-主角色' AND signal_type=?
+    `).get(ACCOUNT_CHAMPION_SIGNAL_TYPE)).toMatchObject({ status: 'retry' });
+  });
+
+  it('keeps a champion retry eligible when the signal was written before resolver failure', async () => {
+    env.ACCOUNT_SIGNAL_CHAMPION_BACKFILL_ENABLED = 'true';
+    env.NEXON_RETRY_LIMIT = '2';
+    installNamedSignalApi(['主角色', '分身角色']);
+    // Model a completed full scan whose resolver has not yet linked either
+    // character; champion work must still be able to create the link.
+    local.sqlite.prepare(`
+      UPDATE account_signal_sync SET status='completed', completed_at=?, updated_at=?
+      WHERE signal_type=?
+    `).run(baseTime, baseTime, ACCOUNT_SIGNAL_TYPE);
+    const existingChampion = await hashChampionRoster(championPayload());
+    await seedSignal('主角色', existingChampion!.fingerprint, ACCOUNT_CHAMPION_SIGNAL_TYPE);
+    await seedGroup(['主角色']);
+    const originalSync = syncCharacterAccountSignals;
+    vi.spyOn(
+      await import('../../functions/_shared/account-group-repository'),
+      'syncCharacterAccountSignals',
+    ).mockImplementation(async (...args) => {
+      const result = await originalSync(...args);
+      throw new Error('resolver test failure');
+    });
+
+    const first = await backfillAccountChampionBatch(env);
+    expect(first).toMatchObject({ processed: 1, completed: 0, retry: 1 });
+    expect(local.sqlite.prepare(`
+      SELECT status FROM account_signal_sync WHERE ocid='ocid-分身角色' AND signal_type=?
+    `).get(ACCOUNT_CHAMPION_SIGNAL_TYPE)?.status).toBe('retry');
+    expect(local.sqlite.prepare(`SELECT COUNT(*) AS count FROM account_group_signals WHERE signal_type=?`)
+      .get(ACCOUNT_CHAMPION_SIGNAL_TYPE)?.count).toBe(2);
+
+    vi.restoreAllMocks();
+    vi.setSystemTime(new Date(Date.parse(baseTime) + 31_000));
+    const second = await backfillAccountChampionBatch(env);
+    expect(second).toMatchObject({ processed: 1, completed: 1, retry: 0 });
+    expect(local.sqlite.prepare(`SELECT COUNT(*) AS count FROM characters WHERE account_group_id IS NOT NULL`).get()?.count)
+      .toBeGreaterThanOrEqual(1);
+  });
+
+  it('isolates full and champion claims and rejects stale or cross-type completion', async () => {
+    const full = await claimAccountSignalForBackground(env.DB, 'ocid-主角色', 300);
+    expect(full?.signalType).toBe(ACCOUNT_SIGNAL_TYPE);
+    await completeAccountSignalClaim(env.DB, full!, 1);
+    const champion = await claimAccountChampionSignalForBackground(env.DB, 'ocid-主角色');
+    expect(champion?.signalType).toBe(ACCOUNT_CHAMPION_SIGNAL_TYPE);
+    await completeAccountSignalClaim(env.DB, {
+      ...(champion!), signalType: ACCOUNT_SIGNAL_TYPE,
+    }, 99);
+    const rows = local.sqlite.prepare(`SELECT signal_type, status, signal_count FROM account_signal_sync WHERE ocid='ocid-主角色' ORDER BY signal_type`).all() as Array<{ signal_type: string; status: string; signal_count: number }>;
+    expect(rows.find((row) => row.signal_type === ACCOUNT_SIGNAL_TYPE)?.status).toBe('completed');
+    expect(rows.find((row) => row.signal_type === ACCOUNT_CHAMPION_SIGNAL_TYPE)?.status).toBe('pending');
+  });
+
+  it('keeps cron, fallback, and interactive work isolated for the same OCID', async () => {
+    env.ACCOUNT_SIGNAL_CHAMPION_BACKFILL_ENABLED = 'true';
+    installNamedSignalApi(['主角色', '分身角色']);
+    await backfillAccountSignalBatch(env);
+    vi.mocked(fetch).mockClear();
+
+    const [cron, fallback, interactive] = await Promise.all([
+      backfillAccountChampionBatch(env, 'cloudflare_cron'),
+      backfillAccountChampionBatch(env, 'github_actions_fallback'),
+      getCharacterAlts(env, '主角色'),
+    ]);
+    expect(cron.processed + fallback.processed).toBeGreaterThanOrEqual(1);
+    expect(interactive.alts.some((alt) => alt.characterName === '分身角色')).toBe(true);
+    const queueRows = local.sqlite.prepare(`
+      SELECT signal_type, status, claim_token FROM account_signal_sync WHERE ocid='ocid-主角色'
+    `).all() as Array<{ signal_type: string; status: string; claim_token: string | null }>;
+    expect(queueRows).toEqual(expect.arrayContaining([
+      expect.objectContaining({ signal_type: ACCOUNT_SIGNAL_TYPE, status: 'completed', claim_token: null }),
+      expect.objectContaining({ signal_type: ACCOUNT_CHAMPION_SIGNAL_TYPE, status: 'completed', claim_token: null }),
+    ]));
+    expect(local.sqlite.prepare(`
+      SELECT COUNT(*) AS count FROM account_group_signals
+      WHERE ocid='ocid-主角色' AND signal_type=?
+    `).get(ACCOUNT_CHAMPION_SIGNAL_TYPE)?.count).toBe(1);
   });
 
   it('converges a cold first search across every reachable signal layer', async () => {

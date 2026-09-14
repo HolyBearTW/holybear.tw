@@ -19,6 +19,10 @@ RANKING_SNAPSHOT_SIZE = "1000"
 ACCOUNT_SIGNAL_BACKFILL_BATCH_SIZE = "8"
 ACCOUNT_SIGNAL_BACKFILL_CONCURRENCY = "1"
 ACCOUNT_SIGNAL_BACKFILL_DELAY_MS = "500"
+ACCOUNT_SIGNAL_CHAMPION_BACKFILL_ENABLED = "false"
+ACCOUNT_SIGNAL_CHAMPION_BACKFILL_BATCH_SIZE = "4"
+ACCOUNT_SIGNAL_CHAMPION_BACKFILL_CONCURRENCY = "1"
+ACCOUNT_SIGNAL_CHAMPION_BACKFILL_DELAY_MS = "1000"
 ACCOUNT_SIGNAL_FRESHNESS_SECONDS = "86400"
 ACCOUNT_SIGNAL_BACKGROUND_REFRESH_SECONDS = "7776000"
 ACCOUNT_SIGNAL_BACKGROUND_STALE_RESERVE_EVERY = "10"
@@ -42,6 +46,12 @@ script_name = "holybear-nexon-rate-limiter"
 
 [[d1_databases]]
 binding = "DB"
+database_name = "holybear-maple-db-2"
+database_id = "83a4d165-d1ac-44d2-82c2-ca3ed111c50e"
+migrations_dir = "migrations"
+
+[[d1_databases]]
+binding = "LEGACY_DB"
 database_name = "holybear-maple-db"
 database_id = "3c43260e-d144-45d3-94e7-3aedaf57db84"
 migrations_dir = "migrations"
@@ -52,6 +62,10 @@ binding = "SURVEY_DB"
 database_name = "holybear-survey-db"
 database_id = "edea16a9-d316-4c96-bbf5-87c3fb696975"
 migrations_dir = "migrations-survey"
+
+[[r2_buckets]]
+binding = "EVIDENCE_ARCHIVE"
+bucket_name = "holybear-maple-evidence"
 
 [env.production.vars]
 MAINTENANCE_MODE = "disabled"
@@ -74,6 +88,10 @@ RANKING_SNAPSHOT_SIZE = "1000"
 ACCOUNT_SIGNAL_BACKFILL_BATCH_SIZE = "8"
 ACCOUNT_SIGNAL_BACKFILL_CONCURRENCY = "1"
 ACCOUNT_SIGNAL_BACKFILL_DELAY_MS = "500"
+ACCOUNT_SIGNAL_CHAMPION_BACKFILL_ENABLED = "false"
+ACCOUNT_SIGNAL_CHAMPION_BACKFILL_BATCH_SIZE = "4"
+ACCOUNT_SIGNAL_CHAMPION_BACKFILL_CONCURRENCY = "1"
+ACCOUNT_SIGNAL_CHAMPION_BACKFILL_DELAY_MS = "1000"
 ACCOUNT_SIGNAL_FRESHNESS_SECONDS = "86400"
 ACCOUNT_SIGNAL_BACKGROUND_REFRESH_SECONDS = "7776000"
 ACCOUNT_SIGNAL_BACKGROUND_STALE_RESERVE_EVERY = "10"
@@ -97,6 +115,12 @@ script_name = "holybear-nexon-rate-limiter"
 
 [[env.production.d1_databases]]
 binding = "DB"
+database_name = "holybear-maple-db-2"
+database_id = "83a4d165-d1ac-44d2-82c2-ca3ed111c50e"
+migrations_dir = "migrations"
+
+[[env.production.d1_databases]]
+binding = "LEGACY_DB"
 database_name = "holybear-maple-db"
 database_id = "3c43260e-d144-45d3-94e7-3aedaf57db84"
 migrations_dir = "migrations"
@@ -106,3 +130,7 @@ binding = "SURVEY_DB"
 database_name = "holybear-survey-db"
 database_id = "edea16a9-d316-4c96-bbf5-87c3fb696975"
 migrations_dir = "migrations-survey"
+
+[[env.production.r2_buckets]]
+binding = "EVIDENCE_ARCHIVE"
+bucket_name = "holybear-maple-evidence"
