@@ -98,27 +98,16 @@ export const getImmediateConsumerQueueCounts = async (
     config.accountSignalChampionBackfillEnabled
       ? db.prepare(`
         SELECT COUNT(*) AS count
-        FROM characters c
+        FROM account_signal_sync champion_sync
         JOIN account_signal_sync full_sync
-          ON full_sync.ocid = c.ocid AND full_sync.signal_type = 'union_raider_full'
+          ON full_sync.ocid = champion_sync.ocid
+          AND full_sync.signal_type = 'union_raider_full'
           AND full_sync.status = 'completed'
-        LEFT JOIN account_signal_sync champion_sync
-          ON champion_sync.ocid = c.ocid AND champion_sync.signal_type = 'union_champion_roster'
-        LEFT JOIN account_group_signals champion_signal
-          ON champion_signal.ocid = c.ocid
-          AND champion_signal.signal_type = 'union_champion_roster'
-          AND champion_signal.confidence = 'high'
-          AND champion_signal.fingerprint_version = 1
-          AND length(champion_signal.union_fingerprint) = 64
-        WHERE (full_sync.claim_until IS NULL OR full_sync.claim_until <= ?1)
-          AND (
-            (champion_sync.ocid IS NULL AND champion_signal.ocid IS NULL)
-            OR champion_sync.status = 'pending'
+        WHERE champion_sync.signal_type = 'union_champion_roster'
+          AND (full_sync.claim_until IS NULL OR full_sync.claim_until <= ?1)
+          AND (champion_sync.status = 'pending'
             OR (champion_sync.status = 'retry'
-              AND (champion_sync.next_retry_at IS NULL OR champion_sync.next_retry_at <= ?1))
-            OR (champion_sync.status = 'completed' AND champion_signal.ocid IS NULL
-              AND COALESCE(champion_sync.last_error, '') <> 'no_valid_roster')
-          )
+              AND (champion_sync.next_retry_at IS NULL OR champion_sync.next_retry_at <= ?1)))
       `).bind(timestamp).first<{ count: number }>()
       : Promise.resolve({ count: 0 }),
     db.prepare(`

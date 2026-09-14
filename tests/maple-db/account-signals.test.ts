@@ -8,6 +8,7 @@ import {
   claimAccountChampionSignalForBackground,
   claimAccountSignalForBackground,
   completeAccountSignalClaim,
+  ensureAccountSignalQueueRow,
 } from '../../functions/_shared/account-signal-queue';
 import { findCharacterByOcid, upsertCanonicalNexonCharacter } from '../../functions/_shared/character-repository';
 import type { Env } from '../../functions/_shared/env';
@@ -309,6 +310,8 @@ describe('account-signal queue and on-demand synchronization', () => {
       UPDATE account_signal_sync SET status='completed', completed_at=?, updated_at=?
       WHERE signal_type=?
     `).run(baseTime, baseTime, ACCOUNT_SIGNAL_TYPE);
+    await ensureAccountSignalQueueRow(env.DB, 'ocid-主角色', ACCOUNT_CHAMPION_SIGNAL_TYPE);
+    await ensureAccountSignalQueueRow(env.DB, 'ocid-分身角色', ACCOUNT_CHAMPION_SIGNAL_TYPE);
 
     const result = await backfillAccountChampionBatch(env);
     expect(result).toMatchObject({ processed: 2, completed: 0, retry: 2, noValidRoster: 0 });
@@ -331,6 +334,7 @@ describe('account-signal queue and on-demand synchronization', () => {
     const existingChampion = await hashChampionRoster(championPayload());
     await seedSignal('主角色', existingChampion!.fingerprint, ACCOUNT_CHAMPION_SIGNAL_TYPE);
     await seedGroup(['主角色']);
+    await ensureAccountSignalQueueRow(env.DB, 'ocid-分身角色', ACCOUNT_CHAMPION_SIGNAL_TYPE);
     const originalSync = syncCharacterAccountSignals;
     vi.spyOn(
       await import('../../functions/_shared/account-group-repository'),

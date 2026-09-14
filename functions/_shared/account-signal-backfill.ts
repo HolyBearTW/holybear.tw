@@ -114,6 +114,9 @@ export const backfillAccountSignalBatch = async (
       addInstrumentation(instrumentation, outcome.value.metrics);
       const finalizeStartedAt = Date.now();
       await completeAccountSignalClaim(env.DB, claim, outcome.value.synced.signalCount);
+      if (config.accountSignalChampionBackfillEnabled) {
+        await ensureAccountSignalQueueRow(env.DB, claim.ocid, ACCOUNT_CHAMPION_SIGNAL_TYPE);
+      }
       instrumentation.queueFinalizeMs += metricTimer(finalizeStartedAt);
       continue;
     }
@@ -178,33 +181,20 @@ export const backfillAccountChampionBatch = async (
   const now = nowIso();
   const candidates = await env.DB.prepare(`
     SELECT c.*
-    FROM characters c
+    FROM account_signal_sync champion_sync
+    JOIN characters c ON c.ocid = champion_sync.ocid
     JOIN account_signal_sync full_sync
       ON full_sync.ocid = c.ocid AND full_sync.signal_type = ?1
       AND full_sync.status = 'completed'
       AND (full_sync.claim_until IS NULL OR full_sync.claim_until <= ?2)
-    LEFT JOIN account_signal_sync champion_sync
-      ON champion_sync.ocid = c.ocid AND champion_sync.signal_type = ?3
-    LEFT JOIN account_group_signals champion_signal
-      ON champion_signal.ocid = c.ocid
-      AND champion_signal.signal_type = ?3
-      AND champion_signal.confidence = 'high'
-      AND champion_signal.fingerprint_version = 1
-      AND length(champion_signal.union_fingerprint) = 64
-    WHERE (
-      (champion_sync.ocid IS NULL AND champion_signal.ocid IS NULL)
-      OR champion_sync.status = 'pending'
-      OR (champion_sync.status = 'retry'
-        AND (champion_sync.next_retry_at IS NULL OR champion_sync.next_retry_at <= ?2))
-      OR (champion_sync.status = 'completed'
-        AND champion_signal.ocid IS NULL
-        AND COALESCE(champion_sync.last_error, '') <> 'no_valid_roster')
-    )
-    ORDER BY CASE
-      WHEN champion_sync.status = 'retry' THEN 0
-      WHEN champion_sync.status = 'pending' THEN 1
-      ELSE 2
-    END, c.combat_power DESC, c.ocid ASC
+    WHERE champion_sync.signal_type = ?3
+      AND (
+        champion_sync.status = 'pending'
+        OR (champion_sync.status = 'retry'
+          AND (champion_sync.next_retry_at IS NULL OR champion_sync.next_retry_at <= ?2))
+      )
+    ORDER BY CASE WHEN champion_sync.status = 'retry' THEN 0 ELSE 1 END,
+      COALESCE(champion_sync.next_retry_at, ''), champion_sync.ocid ASC
     LIMIT ?4
   `).bind(
     ACCOUNT_SIGNAL_TYPE,
