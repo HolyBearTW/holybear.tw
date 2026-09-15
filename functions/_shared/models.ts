@@ -44,6 +44,11 @@ export interface CharacterSourceWrite {
   observedAt?: string;
   sourceUpdatedAt?: string | null;
   rawJson?: string | null;
+  rawObjectKey?: string | null;
+  rawSha256?: string | null;
+  rawSize?: number | null;
+  rawStoredAt?: string | null;
+  rawContentType?: string | null;
 }
 
 export interface PublicCharacter {

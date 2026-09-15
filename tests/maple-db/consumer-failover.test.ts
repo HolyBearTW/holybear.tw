@@ -11,9 +11,10 @@ import { resolveGuildMembers, withGuildImportLock } from '../../functions/_share
 import { upsertCanonicalNexonCharacter } from '../../functions/_shared/character-repository';
 import { onRequestPost as postFallback } from '../../functions/api/internal/consumer/fallback';
 import type { Env } from '../../functions/_shared/env';
-import { createTestD1 } from './sqlite-d1';
+import { createTestD1, createTestR2 } from './sqlite-d1';
 
 let local: ReturnType<typeof createTestD1>;
+let evidence: ReturnType<typeof createTestR2>;
 let env: Env;
 const baseTime = '2026-09-08T00:00:00.000Z';
 
@@ -60,9 +61,11 @@ const seedGuildJob = async (characterName = '待補角色') => {
 
 beforeEach(() => {
   local = createTestD1();
+  evidence = createTestR2();
   env = {
     DB: local.db,
     SURVEY_DB: local.db,
+    EVIDENCE_ARCHIVE: evidence.bucket,
     NEXON_API_KEY: 'test-only',
     CONSUMER_FALLBACK_SECRET: 'fallback-only-secret',
     CONSUMER_PRIMARY_HEARTBEAT_FRESHNESS_SECONDS: '300',

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createTestD1 } from './sqlite-d1';
+import { createTestD1, createTestR2 } from './sqlite-d1';
 import { getImportJob, getOrCreateImportJob, checkpointSeedPage, resolveStagingBatch } from '../../functions/_shared/import-repository';
 import { findCharacterByOcid, upsertCanonicalNexonCharacter } from '../../functions/_shared/character-repository';
 import { estimateGuildSampling, guildProgress, initializeGuildCandidates, stageNextGuild, withGuildImportLock } from '../../functions/_shared/guild-import';
@@ -14,6 +14,7 @@ import { onRequestPost } from '../../functions/api/admin/import/[source]';
 import { requestGuildImporter, runGuildImport } from '../../scripts/run-guild-import.mjs';
 
 let local: ReturnType<typeof createTestD1>;
+let evidence: ReturnType<typeof createTestR2>;
 let env: Env;
 const baseTime = '2026-09-07T00:00:00.000Z';
 const official = (name: string, overrides: Partial<CharacterWrite> = {}): CharacterWrite => ({
@@ -43,7 +44,15 @@ const mockApi = (members = ['舊角色', '新角色']) => vi.stubGlobal('fetch',
 
 beforeEach(() => {
   local = createTestD1();
-  env = { DB: local.db, SURVEY_DB: local.db, NEXON_API_KEY: 'test-only', NEXON_RETRY_LIMIT: '2', NEXON_REQUEST_DELAY_MS: '0' };
+  evidence = createTestR2();
+  env = {
+    DB: local.db,
+    SURVEY_DB: local.db,
+    EVIDENCE_ARCHIVE: evidence.bucket,
+    NEXON_API_KEY: 'test-only',
+    NEXON_RETRY_LIMIT: '2',
+    NEXON_REQUEST_DELAY_MS: '0',
+  };
   vi.useFakeTimers({ toFake: ['Date'] });
   vi.setSystemTime(baseTime);
   vi.stubGlobal('fetch', vi.fn(() => { throw new Error('Unexpected network access'); }));
