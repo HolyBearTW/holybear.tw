@@ -139,6 +139,20 @@ describe('DB2 retention dry-run and guardrails', () => {
     expect(r2.objects.get(key)).toContain('"id":42');
   });
 
+  it('keeps direct merge-event DELETE blocked without the retention lease', () => {
+    local.sqlite.exec(`
+      INSERT INTO account_group_merge_events
+        (id, timestamp, trigger_ocid, trigger_character, signal_type, fingerprint,
+         source_group_id, target_group_id, merged_group_ids_json, merged_ocids_json,
+         trigger_source, status, reason)
+      VALUES (91, '${old}', 'ocid-91', '角色', 'same_fingerprint', 'fp-91',
+        1, 2, '[]', '[]', 'test', 'success', 'guard');
+    `);
+    expect(() => local.sqlite.exec('DELETE FROM account_group_merge_events WHERE id = 91'))
+      .toThrow(/requires retention lease/);
+    expect(local.sqlite.prepare('SELECT COUNT(*) AS count FROM account_group_merge_events WHERE id = 91').get()?.count).toBe(1);
+  });
+
   it('archives and deletes only verified old merge events within the shared budget', async () => {
     local.sqlite.exec(`
       INSERT INTO account_group_merge_events
