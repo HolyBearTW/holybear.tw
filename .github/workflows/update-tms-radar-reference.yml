@@ -4,6 +4,12 @@ on:
   schedule:
     - cron: '20 19 * * 1'
   workflow_dispatch:
+    inputs:
+      force_refresh:
+        description: Ignore fresh radar cache entries and refresh sampled characters
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: write
@@ -42,6 +48,8 @@ jobs:
           RADAR_SAMPLES_PER_JOB: 500
           RADAR_CONCURRENCY: 12
           RADAR_CACHE_TTL_DAYS: 21
+          RADAR_FORCE_REFRESH: ${{ github.event_name == 'workflow_dispatch' && inputs.force_refresh || false }}
+          RADAR_MIN_SOURCE_COUNT: 100000
           RADAR_RUN_BUDGET_MINUTES: 20
         run: node scripts/generate-tms-radar-reference.mjs
 

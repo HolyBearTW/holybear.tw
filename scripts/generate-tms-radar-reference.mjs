@@ -1,6 +1,13 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { deduplicateRadarCharacters, radarCharacterKey, selectStratifiedRadarSamples } from './lib/tms-radar-sampling.mjs';
+import {
+  assertCandidateUniverseIntegrity,
+  assertRankingPageIntegrity,
+  finalizeRadarReference,
+  prepareRadarCandidates,
+  radarCharacterKey,
+  shouldRefreshRadarCache,
+} from './lib/tms-radar-sampling.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
 const envPath = path.join(root, '.env');
@@ -32,6 +39,8 @@ const minimumLevel = 260;
 const samplesPerJob = boundedInteger(process.env.RADAR_SAMPLES_PER_JOB, 500, 10, 1_000);
 const concurrency = boundedInteger(process.env.RADAR_CONCURRENCY, 8, 1, 20);
 const cacheTtlMs = boundedInteger(process.env.RADAR_CACHE_TTL_DAYS, 21, 1, 90) * 24 * 60 * 60 * 1000;
+const minimumSourceCount = boundedInteger(process.env.RADAR_MIN_SOURCE_COUNT, 100_000, 1, 1_000_000);
+const forceRefresh = /^(1|true|yes)$/i.test(String(process.env.RADAR_FORCE_REFRESH || ''));
 const runBudgetMs = boundedInteger(process.env.RADAR_RUN_BUDGET_MINUTES, 20, 5, 25) * 60 * 1000;
 const runStartedAt = Date.now();
 
@@ -179,6 +188,14 @@ const saveCache = (cache) => {
   }
 };
 
+const previousReference = (() => {
+  try {
+    return JSON.parse(fs.readFileSync(outputPath, 'utf8'));
+  } catch (error) {
+    if (error?.code !== 'ENOENT') throw error;
+    return null;
+  }
+})();
 const ranking = [];
 const normalizeRankingItems = (items = []) => items.map((item) => ({
   ocid: item.ocid,
@@ -189,47 +206,46 @@ const normalizeRankingItems = (items = []) => items.map((item) => ({
   level: Number(item.level || 0),
   combatPower: Number(item.combatPower || 0),
 }));
-const useCompleteRankingSnapshot = async () => {
-  const snapshot = await getJson(`${holyBearApiBase}/maplestory/rankings/current.json`);
-  const rawSnapshotItems = snapshot.items || [];
-  const snapshotItems = normalizeRankingItems(rawSnapshotItems).filter((entry) => entry.level >= minimumLevel);
-  const snapshotTotal = Number(snapshot.total);
-  if (!snapshotItems.length || (Number.isFinite(snapshotTotal) && rawSnapshotItems.length < snapshotTotal)) {
-    console.warn('HolyBear ranking is degraded and its static snapshot is incomplete; preserving the previous radar reference');
-    process.exit(0);
-  }
-  console.warn(`HolyBear ranking is degraded; using the complete ${snapshotItems.length}-character static snapshot`);
-  ranking.splice(0, ranking.length, ...snapshotItems);
-};
 const fetchRankingPage = (page) => {
   const params = new URLSearchParams({ page: String(page), pageSize: String(rankingPageSize), minLevel: String(minimumLevel) });
   return getJson(`${holyBearApiBase}/api/rankings/combat-power?${params}`);
 };
 
 const firstRankingPage = await fetchRankingPage(1);
-if (firstRankingPage.degraded) {
-  await useCompleteRankingSnapshot();
-} else {
-  ranking.push(...normalizeRankingItems(firstRankingPage.items || []));
-  const totalPages = Math.max(1, Number(firstRankingPage.totalPages) || Math.ceil(Number(firstRankingPage.total || 0) / rankingPageSize));
-  let degraded = false;
-  for (let startPage = 2; startPage <= totalPages; startPage += concurrency) {
-    const pages = Array.from(
-      { length: Math.min(concurrency, totalPages - startPage + 1) },
-      (_, index) => startPage + index,
+const firstPage = assertRankingPageIntegrity(firstRankingPage, 1, rankingPageSize);
+ranking.push(...normalizeRankingItems(firstPage.items));
+for (let startPage = 2; startPage <= firstPage.totalPages; startPage += concurrency) {
+  const pages = Array.from(
+    { length: Math.min(concurrency, firstPage.totalPages - startPage + 1) },
+    (_, index) => startPage + index,
+  );
+  const responses = await Promise.all(pages.map(fetchRankingPage));
+  responses.forEach((response, index) => {
+    const checked = assertRankingPageIntegrity(
+      response,
+      pages[index],
+      rankingPageSize,
+      firstPage.total,
+      firstPage.totalPages,
     );
-    const responses = await Promise.all(pages.map(fetchRankingPage));
-    if (responses.some((response) => response.degraded)) {
-      degraded = true;
-      break;
-    }
-    for (const response of responses) ranking.push(...normalizeRankingItems(response.items || []));
-  }
-  if (degraded) await useCompleteRankingSnapshot();
+    ranking.push(...normalizeRankingItems(checked.items));
+  });
 }
 
-const trackedCharacters = deduplicateRadarCharacters(ranking.filter((entry) => entry.level >= minimumLevel));
-const sampledCharacters = selectStratifiedRadarSamples(trackedCharacters, samplesPerJob, normalizeJob);
+const eligibleRanking = ranking.filter((entry) => entry.level >= minimumLevel);
+const {
+  trackedCharacters,
+  sampledCharacters,
+  sourceCount,
+  sampledSourceCount,
+} = prepareRadarCandidates(eligibleRanking, samplesPerJob, normalizeJob);
+assertCandidateUniverseIntegrity({
+  sourceCount,
+  fetchedCount: ranking.length,
+  expectedTotal: firstPage.total,
+  previousSourceCount: Number(previousReference?.sourceCount || 0),
+  minimumSourceCount,
+});
 const cache = loadCache();
 const recordsByKey = new Map();
 const refreshEntries = [];
@@ -243,7 +259,7 @@ for (const entry of sampledCharacters) {
   const compatible = cached?.radar && cached.job === normalizeJob(entry.job);
   if (compatible) {
     recordsByKey.set(key, withCurrentRankingValues(cached.radar, entry));
-    if (Number.isFinite(cachedAt) && Date.now() - cachedAt <= cacheTtlMs) {
+    if (!shouldRefreshRadarCache({ forceRefresh, cachedAt, now: Date.now(), cacheTtlMs })) {
       freshCacheHits += 1;
       continue;
     }
@@ -307,15 +323,20 @@ const percentile = (values, p) => values[Math.min(values.length - 1, Math.max(0,
 const referenceMax = Math.ceil(percentile(allEffectiveMain, 0.99) / 5000) * 5000;
 fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 const generatedAt = new Date().toISOString();
-fs.writeFileSync(outputPath, `${JSON.stringify({
-  generatedAt,
-  sourceCount: trackedCharacters.length,
-  sampledSourceCount: sampledCharacters.length,
+const nextPayload = {
+  sourceCount,
+  sampledSourceCount,
   usableCount: radarRecords.length,
   samplesPerJob,
   referenceMax,
   jobs,
-}, null, 2)}\n`);
+};
+const finalized = finalizeRadarReference(previousReference, nextPayload, generatedAt);
+if (finalized.changed) {
+  fs.writeFileSync(outputPath, `${JSON.stringify(finalized.reference, null, 2)}\n`);
+} else {
+  process.stdout.write('Radar payload is unchanged; preserving the existing generatedAt and output file\n');
+}
 
-process.stdout.write(`Wrote ${outputPath} with ${radarRecords.length}/${sampledCharacters.length} sampled records from ${trackedCharacters.length} eligible characters; max ${referenceMax}\n`);
+process.stdout.write(`${finalized.changed ? 'Wrote' : 'Kept'} ${outputPath} with ${radarRecords.length}/${sampledCharacters.length} sampled records from ${trackedCharacters.length} eligible characters; max ${referenceMax}\n`);
 process.stdout.write(`Cache: ${freshCacheHits} fresh hits, ${staleCacheFallbacks} stale fallbacks, ${refreshed} refreshed, ${failed} failed${stoppedEarly ? ', run budget reached' : ''}\n`);
