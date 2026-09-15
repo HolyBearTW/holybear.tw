@@ -23,7 +23,11 @@ export const createTestD1 = () => {
     }
     async first(column?: string) { const row = this.execute()[0]; return column ? row?.[column] ?? null : row ?? null; }
     async all() { return { results: this.execute(), success: true }; }
-    async run() { return { results: this.execute(), success: true }; }
+    async run() {
+      const results = this.execute();
+      const changes = Number(sqlite.prepare('SELECT changes() AS changes').get()?.changes) || 0;
+      return { results, success: true, meta: { changes } };
+    }
   }
   const db = {
     prepare: (sql: string) => new Statement(sql),
@@ -37,4 +41,18 @@ export const createTestD1 = () => {
     },
   } as unknown as D1Database;
   return { db, sqlite };
+};
+
+export const createTestR2 = () => {
+  const objects = new Map<string, string>();
+  const bucket = {
+    put: async (key: string, value: string) => {
+      objects.set(key, value);
+    },
+    get: async (key: string) => {
+      const value = objects.get(key);
+      return value === undefined ? null : { text: async () => value };
+    },
+  } as unknown as R2Bucket;
+  return { bucket, objects };
 };

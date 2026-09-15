@@ -54,11 +54,6 @@ binding = "DB"
 database_name = "holybear-maple-db-2"
 database_id = "83a4d165-d1ac-44d2-82c2-ca3ed111c50e"
 
-[[d1_databases]]
-binding = "LEGACY_DB"
-database_name = "holybear-maple-db"
-database_id = "3c43260e-d144-45d3-94e7-3aedaf57db84"
-
 [[r2_buckets]]
 binding = "EVIDENCE_ARCHIVE"
 bucket_name = "holybear-maple-evidence"

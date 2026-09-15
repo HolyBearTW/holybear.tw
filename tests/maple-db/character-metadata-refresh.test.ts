@@ -12,9 +12,10 @@ import {
 import { getCharacterCombatPowerRank } from '../../functions/_shared/ranking-repository';
 import { fromD1Alt } from '../../.vitepress/theme/maplestory/services/relatedCharacter';
 import type { Env } from '../../functions/_shared/env';
-import { createTestD1 } from './sqlite-d1';
+import { createTestD1, createTestR2 } from './sqlite-d1';
 
 let local: ReturnType<typeof createTestD1>;
+let evidence: ReturnType<typeof createTestR2>;
 let env: Env;
 const timestamp = '2026-09-08T00:00:00.000Z';
 
@@ -55,9 +56,11 @@ const signalResponse = (path: string) => {
 
 beforeEach(async () => {
   local = createTestD1();
+  evidence = createTestR2();
   env = {
     DB: local.db,
     SURVEY_DB: local.db,
+    EVIDENCE_ARCHIVE: evidence.bucket,
     NEXON_API_KEY: 'test-only',
     NEXON_RETRY_LIMIT: '1',
     NEXON_REQUEST_DELAY_MS: '0',

@@ -2,7 +2,7 @@ import {
   findCharacterByWorldAndName,
   isCanonicalCharacterMetadataComplete,
   normalizeCharacterName,
-  upsertCanonicalNexonCharacter,
+  upsertCanonicalNexonCharacterWithStorage,
 } from './character-repository';
 import type { Env } from './env';
 import { NexonRequestError, resolveNexonCharacter, runWithConcurrency } from './nexon-client';
@@ -215,7 +215,7 @@ export const refreshCharacterMetadataBatch = async (env: Env) => {
         () => { requestCount += 1; },
         claim.row.expected_world_name,
       );
-      await upsertCanonicalNexonCharacter(env.DB, character, [{
+      await upsertCanonicalNexonCharacterWithStorage(env, character, [{
         source: 'nexon',
         sourceCharacterId: character.ocid,
         observedAt: character.observedAt,

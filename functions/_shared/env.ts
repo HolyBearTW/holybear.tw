@@ -1,6 +1,5 @@
 export interface Env {
   DB: D1Database;
-  LEGACY_DB?: D1Database;
   SURVEY_DB: D1Database;
   EVIDENCE_ARCHIVE?: R2Bucket;
   ASSETS?: Fetcher;

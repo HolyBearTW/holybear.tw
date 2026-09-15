@@ -1,6 +1,7 @@
 import {
   canonicalNexonCharacterStatements,
   characterSourceStatement,
+  prepareCharacterSourceWithStorage,
   isCanonicalCharacterMetadataComplete,
   isCharacterFresh,
   normalizeCharacterName,
@@ -466,19 +467,29 @@ export const resolveStagingBatch = async (
     for (const row of existing.results) existingOcids.add(row.ocid);
   }
   const writeStatements: D1PreparedStatement[] = [];
+  // Publish every staged source payload before preparing the D1 transaction.
+  // A failed R2 write leaves resolving rows retryable and prevents a locator
+  // from being committed without its object.
+  const storedSources = await Promise.all(resolutions.map(async (result, index) => {
+    if (result.status !== 'fulfilled') return null;
+    const row = rows[index];
+    const source = {
+      source: row.source,
+      sourceCharacterId: row.source_id,
+      observedAt: row.observed_at ?? undefined,
+      sourceUpdatedAt: row.source_updated_at,
+      rawJson: row.source_metadata_json,
+    };
+    return prepareCharacterSourceWithStorage(env, result.value.character.ocid, source);
+  }));
   for (let index = 0; index < rows.length; index += 1) {
     const row = rows[index];
     const result = resolutions[index];
     if (result.status === 'fulfilled') {
       const { character, reused: reuse, metrics } = result.value;
       addResolutionInstrumentation(batchMetrics, metrics);
-      const source = {
-        source: row.source,
-        sourceCharacterId: row.source_id,
-        observedAt: row.observed_at ?? undefined,
-        sourceUpdatedAt: row.source_updated_at,
-        rawJson: row.source_metadata_json,
-      };
+      const source = storedSources[index];
+      if (!source) throw new Error('Resolved staging row did not produce a source write');
       if (reuse) {
         writeStatements.push(characterSourceStatement(env.DB, character.ocid, source));
         if (!isCanonicalCharacterMetadataComplete(character)) {

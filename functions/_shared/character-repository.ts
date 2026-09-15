@@ -6,6 +6,8 @@ import type {
 } from './models';
 import { canonicalUpdateGuard, validateCharacterWrite } from './character-policy.mjs';
 import { enqueueAccountSignalStatement } from './account-signal-queue';
+import { writeCharacterSourcePayload } from './evidence-storage';
+import type { Env } from './env';
 
 export const normalizeCharacterName = (name: string) => name.trim().normalize('NFC').toLocaleLowerCase('zh-TW');
 
@@ -151,6 +153,40 @@ export const upsertCanonicalNexonCharacter = async (
   return { character: stored, created: !existed };
 };
 
+/**
+ * Production entry point for canonical writes. Source payloads are published
+ * to R2 before the D1 batch, so an R2 failure leaves the caller retryable and
+ * never creates a D1 locator for a missing object.
+ */
+export const prepareCharacterSourceWithStorage = async (
+  env: Pick<Env, 'EVIDENCE_ARCHIVE'>,
+  ocid: string,
+  source: CharacterSourceWrite,
+) => {
+  if (source.rawJson == null) return source;
+  const stored = await writeCharacterSourcePayload(env, { ocid, source: source.source }, source.rawJson);
+  return {
+    ...source,
+    rawJson: null,
+    rawObjectKey: stored.objectKey,
+    rawSha256: stored.sha256,
+    rawSize: stored.size,
+    rawStoredAt: stored.storedAt,
+    rawContentType: stored.contentType,
+  };
+};
+
+export const upsertCanonicalNexonCharacterWithStorage = async (
+  env: Pick<Env, 'DB' | 'EVIDENCE_ARCHIVE'>,
+  character: CharacterWrite,
+  sources: CharacterSourceWrite[],
+) => {
+  const storedSources = await Promise.all(sources.map((source) => (
+    prepareCharacterSourceWithStorage(env, character.ocid, source)
+  )));
+  return upsertCanonicalNexonCharacter(env.DB, character, storedSources);
+};
+
 export const isCharacterFresh = (
   character: PublicCharacter,
   freshnessSeconds: number,
@@ -167,8 +203,9 @@ export const characterSourceStatement = (
   return db.prepare(`
       INSERT INTO character_sources (
         ocid, source, source_character_id, source_first_seen_at,
-        source_last_seen_at, raw_json, created_at, updated_at, source_updated_at
-      ) VALUES (?1, ?2, ?3, ?4, ?4, ?5, ?4, ?4, ?6)
+        source_last_seen_at, raw_json, created_at, updated_at, source_updated_at,
+        raw_object_key, raw_sha256, raw_size, raw_stored_at, raw_content_type
+      ) VALUES (?1, ?2, ?3, ?4, ?4, ?5, ?4, ?4, ?6, ?7, ?8, ?9, ?10, ?11)
       ON CONFLICT(ocid, source) DO UPDATE SET
         source_character_id = CASE WHEN excluded.source_last_seen_at >= character_sources.source_last_seen_at
           THEN COALESCE(excluded.source_character_id, character_sources.source_character_id) ELSE character_sources.source_character_id END,
@@ -176,6 +213,16 @@ export const characterSourceStatement = (
         source_last_seen_at = MAX(character_sources.source_last_seen_at, excluded.source_last_seen_at),
         raw_json = CASE WHEN excluded.source_last_seen_at >= character_sources.source_last_seen_at
           THEN COALESCE(excluded.raw_json, character_sources.raw_json) ELSE character_sources.raw_json END,
+        raw_object_key = CASE WHEN excluded.source_last_seen_at >= character_sources.source_last_seen_at
+          THEN COALESCE(excluded.raw_object_key, character_sources.raw_object_key) ELSE character_sources.raw_object_key END,
+        raw_sha256 = CASE WHEN excluded.source_last_seen_at >= character_sources.source_last_seen_at
+          THEN COALESCE(excluded.raw_sha256, character_sources.raw_sha256) ELSE character_sources.raw_sha256 END,
+        raw_size = CASE WHEN excluded.source_last_seen_at >= character_sources.source_last_seen_at
+          THEN COALESCE(excluded.raw_size, character_sources.raw_size) ELSE character_sources.raw_size END,
+        raw_stored_at = CASE WHEN excluded.source_last_seen_at >= character_sources.source_last_seen_at
+          THEN COALESCE(excluded.raw_stored_at, character_sources.raw_stored_at) ELSE character_sources.raw_stored_at END,
+        raw_content_type = CASE WHEN excluded.source_last_seen_at >= character_sources.source_last_seen_at
+          THEN COALESCE(excluded.raw_content_type, character_sources.raw_content_type) ELSE character_sources.raw_content_type END,
         source_updated_at = CASE
           WHEN excluded.source_updated_at IS NULL THEN character_sources.source_updated_at
           WHEN character_sources.source_updated_at IS NULL THEN excluded.source_updated_at
@@ -189,5 +236,10 @@ export const characterSourceStatement = (
       sourceObservedAt,
       source.rawJson ?? null,
       source.sourceUpdatedAt ?? null,
+      source.rawObjectKey ?? null,
+      source.rawSha256 ?? null,
+      source.rawSize ?? null,
+      source.rawStoredAt ?? null,
+      source.rawContentType ?? null,
     );
 };
