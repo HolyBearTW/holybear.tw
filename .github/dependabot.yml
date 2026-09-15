@@ -9,6 +9,12 @@ updates:
     directory: "/" # Location of package manifests
     schedule:
       interval: "daily"
+    groups:
+      react-runtime:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "react-is"
     ignore:
       - dependency-name: "@vitejs/plugin-react"
       # Core Tower's extracted .skel assets were exported by Spine 4.1.
