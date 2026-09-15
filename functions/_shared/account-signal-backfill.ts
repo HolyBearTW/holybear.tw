@@ -200,26 +200,34 @@ export const backfillAccountChampionBatch = async (
     ACCOUNT_SIGNAL_TYPE,
     now,
     ACCOUNT_CHAMPION_SIGNAL_TYPE,
-    config.accountSignalChampionBackfillBatchSize,
+    Math.min(400, config.accountSignalChampionBackfillBatchSize * 4),
   ).all<CharacterRow>();
 
-  const claimResults = await runWithConcurrency(
-    candidates.results,
-    config.accountSignalChampionBackfillConcurrency,
-    0,
-    async (row) => {
-      const claimStartedAt = Date.now();
-      const claim = await claimAccountChampionSignalForBackground(env.DB, row.ocid);
-      instrumentation.queueClaimMs += metricTimer(claimStartedAt);
-      return claim ? { row, claim } : null;
-    },
-  );
-  const claimedRows = claimResults
-    .filter((outcome): outcome is PromiseFulfilledResult<{ row: CharacterRow; claim: AccountSignalClaim } | null> => (
-      outcome.status === 'fulfilled'
-    ))
-    .map((outcome) => outcome.value)
-    .filter((value): value is { row: CharacterRow; claim: AccountSignalClaim } => value !== null);
+  const claimedRows: Array<{ row: CharacterRow; claim: AccountSignalClaim }> = [];
+  // Full and champion consumers intentionally run together. A full claim can
+  // win the race after the candidate SELECT, so oversample candidates and
+  // claim in bounded waves until the requested champion batch is filled.
+  for (
+    let offset = 0;
+    offset < candidates.results.length && claimedRows.length < config.accountSignalChampionBackfillBatchSize;
+    offset += config.accountSignalChampionBackfillConcurrency
+  ) {
+    const claimResults = await runWithConcurrency(
+      candidates.results.slice(offset, offset + config.accountSignalChampionBackfillConcurrency),
+      config.accountSignalChampionBackfillConcurrency,
+      0,
+      async (row) => {
+        const claimStartedAt = Date.now();
+        const claim = await claimAccountChampionSignalForBackground(env.DB, row.ocid);
+        instrumentation.queueClaimMs += metricTimer(claimStartedAt);
+        return claim ? { row, claim } : null;
+      },
+    );
+    for (const outcome of claimResults) {
+      if (outcome.status === 'fulfilled' && outcome.value) claimedRows.push(outcome.value);
+      if (claimedRows.length >= config.accountSignalChampionBackfillBatchSize) break;
+    }
+  }
 
   const settled = await runWithPacedConcurrency(
     claimedRows,
