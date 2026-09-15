@@ -19,21 +19,46 @@ export const mergeEventObjectKey = (row: Pick<MergeEventArchiveRow, 'id' | 'time
   return `account-group-merge-events/v1/${year}/${month}/${row.id}.json`;
 };
 
-/**
- * Optional archive primitive. The scheduled runner intentionally does not
- * invoke it yet: callers must complete a bounded R2-success audit before any
- * append-only merge history can be removed from D1.
- */
+const stableJson = (row: MergeEventArchiveRow) => JSON.stringify(
+  Object.fromEntries(Object.keys(row).sort().map((key) => [key, row[key]])),
+);
+
+const sha256Hex = async (bytes: Uint8Array) => {
+  // Copy into a concrete ArrayBuffer for the Workers and Node WebCrypto type
+  // definitions (which reject SharedArrayBuffer-backed views).
+  const input = new Uint8Array(bytes.byteLength);
+  input.set(bytes);
+  const digest = await crypto.subtle.digest('SHA-256', input.buffer);
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
+};
+
+const readArchivedBytes = async (object: R2ObjectBody) => {
+  if (typeof object.arrayBuffer === 'function') return new Uint8Array(await object.arrayBuffer());
+  if (typeof object.text === 'function') return new TextEncoder().encode(await object.text());
+  throw new Error('Archived merge-event object has no readable body');
+};
+
+/** Archive one immutable merge event and verify the exact stored bytes. */
 export const archiveMergeEvent = async (
   env: Pick<Env, 'EVIDENCE_ARCHIVE'>,
   row: MergeEventArchiveRow,
 ) => {
   if (!env.EVIDENCE_ARCHIVE) throw new Error('Evidence archive is not configured');
   const key = mergeEventObjectKey(row);
-  const payload = JSON.stringify(row);
+  const payload = stableJson(row);
+  const bytes = new TextEncoder().encode(payload);
+  const sha256 = await sha256Hex(bytes);
   await env.EVIDENCE_ARCHIVE.put(key, payload, {
     httpMetadata: { contentType: 'application/json; charset=utf-8' },
+    customMetadata: { sha256, size: String(bytes.byteLength) },
   });
+  const archived = await env.EVIDENCE_ARCHIVE.get(key);
+  if (!archived) throw new Error(`Archived merge-event object missing (${key})`);
+  const archivedBytes = await readArchivedBytes(archived);
+  const archivedSha256 = await sha256Hex(archivedBytes);
+  if (archivedBytes.byteLength !== bytes.byteLength || archivedSha256 !== sha256) {
+    throw new Error(`Archived merge-event verification failed (${key})`);
+  }
   return key;
 };
 
@@ -67,6 +92,8 @@ export interface RetentionCategoryResult {
   oldestEligibleAgeSeconds: number | null;
   /** Rows that entered eligibility during the 24h window immediately before cutoff. */
   newlyEligibleRows: number;
+  archived: number;
+  archiveFailures: number;
   error?: string;
 }
 
@@ -166,6 +193,8 @@ const category = (
     ? Math.max(0, Math.floor((Date.parse(now) - Date.parse(aggregateRow.oldest_at)) / 1000))
     : null,
   newlyEligibleRows: Number(aggregateRow?.newly) || 0,
+  archived: 0,
+  archiveFailures: 0,
 });
 
 const stagingStats = async (db: D1Database, cutoff: string, now: string, budget?: OperationBudget) => {
@@ -257,9 +286,6 @@ const guildStats = async (db: D1Database, cutoff: string, now: string, budget?: 
 };
 
 const mergeEventStats = async (db: D1Database, cutoff: string, _now: string, budget?: OperationBudget) => {
-  // Merge events are append-only audit history. This runner only measures the
-  // archive candidate; R2 archival and removal remain a separately reviewed
-  // operation so grouping semantics cannot be affected accidentally.
   const newlyCutoff = new Date(Date.parse(cutoff) - 86_400_000).toISOString();
   const eligible = await aggregate(
     db,
@@ -276,6 +302,45 @@ const mergeEventStats = async (db: D1Database, cutoff: string, _now: string, bud
     budget,
   );
   return category(cutoff, eligible, 0, 0, skippedRecent, 0, _now);
+};
+
+const selectMergeEventBatch = async (
+  db: D1Database,
+  cutoff: string,
+  limit: number,
+  budget: OperationBudget,
+) => {
+  consumeOperation(budget);
+  const result = await db.prepare(`
+    SELECT * FROM account_group_merge_events
+    WHERE timestamp < ?1
+    ORDER BY timestamp ASC, id ASC
+    LIMIT ?2
+  `).bind(cutoff, limit).all<MergeEventArchiveRow>();
+  return result.results;
+};
+
+const deleteMergeEventRows = async (
+  db: D1Database,
+  rows: MergeEventArchiveRow[],
+  cutoff: string,
+  budget: OperationBudget,
+) => {
+  let deleted = 0;
+  // Keep well below D1's bound-parameter limit while deleting a verified
+  // archive batch with a bounded number of statements.
+  for (let offset = 0; offset < rows.length; offset += 90) {
+    const ids = rows.slice(offset, offset + 90).map((row) => row.id);
+    const placeholders = ids.map((_, index) => `?${index + 2}`).join(', ');
+    consumeOperation(budget);
+    const result = await db.prepare(`
+      DELETE FROM account_group_merge_events
+      WHERE timestamp < ?1 AND id IN (${placeholders})
+    `).bind(cutoff, ...ids).run() as { meta?: { changes?: number } };
+    const changes = Number(result.meta?.changes);
+    deleted += Number.isFinite(changes) ? changes : 0;
+  }
+  return deleted;
 };
 
 const deleteStagingBatch = (db: D1Database, cutoff: string, now: string, limit: number) => db.prepare(`
@@ -311,32 +376,58 @@ const deleteGuildBatch = (db: D1Database, cutoff: string, now: string, limit: nu
   )
 `).bind(cutoff, now, limit);
 
-const executeCategoryBatches = async (
+const executeOneDeleteBatch = async (
   db: D1Database,
   makeStatement: (limit: number) => D1PreparedStatement,
   initial: RetentionCategoryResult,
   state: { batches: number; rowsDeleted: number; startedMs: number },
   limits: Required<Pick<RetentionRunOptions, 'batchSize' | 'maxBatches' | 'maxRowsDeleted' | 'maxRuntimeMs'>> & { operationBudget: OperationBudget },
 ) => {
-  if (initial.eligible === 0) return;
-  while (
-    state.batches < limits.maxBatches
-    && state.rowsDeleted < limits.maxRowsDeleted
-    && Date.now() - state.startedMs < limits.maxRuntimeMs
-  ) {
-    const limit = Math.min(limits.batchSize, limits.maxRowsDeleted - state.rowsDeleted);
-    const statement = makeStatement(limit);
-    consumeOperation(limits.operationBudget);
-    const result = await statement.run() as { meta?: { changes?: number } };
-    const deleted = Number.isFinite(Number(result.meta?.changes))
-      ? Number(result.meta?.changes)
-      : (consumeOperation(limits.operationBudget), Number((await db.prepare('SELECT changes() AS count').first<CountRow>())?.count) || 0);
-    if (deleted <= 0) break;
-    state.batches += 1;
-    state.rowsDeleted += deleted;
-    initial.deleted += deleted;
-    if (deleted < limit) break;
+  if (initial.eligible <= initial.deleted || state.batches >= limits.maxBatches
+    || state.rowsDeleted >= limits.maxRowsDeleted
+    || Date.now() - state.startedMs >= limits.maxRuntimeMs) return false;
+  const limit = Math.min(limits.batchSize, limits.maxRowsDeleted - state.rowsDeleted);
+  consumeOperation(limits.operationBudget);
+  const result = await makeStatement(limit).run() as { meta?: { changes?: number } };
+  const changes = Number(result.meta?.changes);
+  const deleted = Number.isFinite(changes) ? changes : 0;
+  state.batches += 1;
+  state.rowsDeleted += deleted;
+  initial.deleted += deleted;
+  return deleted > 0;
+};
+
+const executeOneMergeEventBatch = async (
+  env: Pick<Env, 'DB' | 'EVIDENCE_ARCHIVE'>,
+  cutoff: string,
+  initial: RetentionCategoryResult,
+  state: { batches: number; rowsDeleted: number; startedMs: number },
+  limits: Required<Pick<RetentionRunOptions, 'batchSize' | 'maxBatches' | 'maxRowsDeleted' | 'maxRuntimeMs'>> & { operationBudget: OperationBudget },
+) => {
+  if (initial.eligible <= initial.deleted || state.batches >= limits.maxBatches
+    || state.rowsDeleted >= limits.maxRowsDeleted
+    || Date.now() - state.startedMs >= limits.maxRuntimeMs) return false;
+  if (!env.EVIDENCE_ARCHIVE) throw new Error('Evidence archive is not configured');
+  const limit = Math.min(limits.batchSize, limits.maxRowsDeleted - state.rowsDeleted);
+  const rows = await selectMergeEventBatch(env.DB, cutoff, limit, limits.operationBudget);
+  if (!rows.length) return false;
+  state.batches += 1;
+  const verified: MergeEventArchiveRow[] = [];
+  for (const row of rows) {
+    try {
+      await archiveMergeEvent(env, row);
+      initial.archived += 1;
+      verified.push(row);
+    } catch (error) {
+      initial.archiveFailures += 1;
+      initial.error = errorMessage(error);
+    }
   }
+  if (!verified.length) return true;
+  const deleted = await deleteMergeEventRows(env.DB, verified, cutoff, limits.operationBudget);
+  initial.deleted += deleted;
+  state.rowsDeleted += deleted;
+  return true;
 };
 
 export const getRetentionGuardrails = async (db: D1Database) => {
@@ -367,7 +458,7 @@ export const getRetentionState = async (db: D1Database) => db.prepare(`
   FROM maintenance_state WHERE name = 'retention'
 `).first<Record<string, string | null>>();
 
-export const runRetention = async (env: Pick<Env, 'DB'>, options: RetentionRunOptions = {}): Promise<RetentionRunResult> => {
+export const runRetention = async (env: Pick<Env, 'DB' | 'EVIDENCE_ARCHIVE'>, options: RetentionRunOptions = {}): Promise<RetentionRunResult> => {
   const config = getRuntimeConfig(env as Env);
   const startedAt = options.now ?? nowIso();
   const startedMs = Date.now();
@@ -425,36 +516,96 @@ export const runRetention = async (env: Pick<Env, 'DB'>, options: RetentionRunOp
     { name: 'guild_import_candidates', cutoff: cutoffs.guildCandidates, stats: () => guildStats(env.DB, cutoffs.guildCandidates, startedAt, operationBudget), statement: (cutoff, now, limit) => deleteGuildBatch(env.DB, cutoff, now, limit) },
   ];
   const state = { batches: 0, rowsDeleted: 0, startedMs };
+  const runnableCategories: Array<{
+    name: string;
+    cutoff: string;
+    stats: RetentionCategoryResult;
+    statement: (cutoff: string, now: string, limit: number) => D1PreparedStatement;
+    disabled: boolean;
+  }> = [];
   for (const item of categories) {
     try {
       const stats = await item.stats();
       result.categories[item.name] = stats;
       result.rowsExamined += stats.rowsExamined;
-      if (!result.dryRun) await executeCategoryBatches(env.DB, (limit) => item.statement(item.cutoff, startedAt, limit), stats, state, { ...limits, operationBudget });
       result.rowsDeleted[item.name] = stats.deleted;
+      runnableCategories.push({ name: item.name, cutoff: item.cutoff, stats, statement: item.statement, disabled: false });
     } catch (error) {
       const message = errorMessage(error);
       result.errors.push({ category: item.name, message });
       result.categories[item.name] = {
         cutoff: item.cutoff, rowsExamined: 0, eligible: 0, deleted: 0,
         skippedActive: 0, skippedPaused: 0, skippedFailed: 0, skippedRecent: 0,
-        oldestEligibleAt: null, oldestEligibleAgeSeconds: null, newlyEligibleRows: 0, error: message,
+        oldestEligibleAt: null, oldestEligibleAgeSeconds: null, newlyEligibleRows: 0,
+        archived: 0, archiveFailures: 0, error: message,
       };
+      result.rowsDeleted[item.name] = 0;
     }
   }
+  let mergeStats: RetentionCategoryResult | null = null;
   try {
-    const merge = await mergeEventStats(env.DB, cutoffs.mergeEvents, startedAt, operationBudget);
-    result.categories.account_group_merge_events = merge;
-    result.rowsExamined += merge.rowsExamined;
-    result.rowsDeleted.account_group_merge_events = 0;
+    mergeStats = await mergeEventStats(env.DB, cutoffs.mergeEvents, startedAt, operationBudget);
+    result.categories.account_group_merge_events = mergeStats;
+    result.rowsExamined += mergeStats.rowsExamined;
+    result.rowsDeleted.account_group_merge_events = mergeStats.deleted;
   } catch (error) {
     const message = errorMessage(error);
     result.errors.push({ category: 'account_group_merge_events', message });
     result.categories.account_group_merge_events = {
       cutoff: cutoffs.mergeEvents, rowsExamined: 0, eligible: 0, deleted: 0,
       skippedActive: 0, skippedPaused: 0, skippedFailed: 0, skippedRecent: 0,
-      oldestEligibleAt: null, oldestEligibleAgeSeconds: null, newlyEligibleRows: 0, error: message,
+      oldestEligibleAt: null, oldestEligibleAgeSeconds: null, newlyEligibleRows: 0,
+      archived: 0, archiveFailures: 0, error: message,
     };
+    result.rowsDeleted.account_group_merge_events = 0;
+  }
+  if (!result.dryRun) {
+    if (mergeStats) {
+      runnableCategories.push({
+        name: 'account_group_merge_events',
+        cutoff: cutoffs.mergeEvents,
+        stats: mergeStats,
+        statement: () => env.DB.prepare('SELECT 1'),
+        disabled: false,
+      });
+    }
+    // One batch per category per round prevents a single backlog from
+    // permanently starving the other retention sources.
+    while (state.batches < limits.maxBatches && state.rowsDeleted < limits.maxRowsDeleted
+      && Date.now() - state.startedMs < limits.maxRuntimeMs) {
+      let progressed = false;
+      for (const item of runnableCategories) {
+        if (item.disabled) continue;
+        if (state.batches >= limits.maxBatches || state.rowsDeleted >= limits.maxRowsDeleted
+          || Date.now() - state.startedMs >= limits.maxRuntimeMs) break;
+        try {
+          const didWork = item.name === 'account_group_merge_events'
+            ? await executeOneMergeEventBatch(env, item.cutoff, item.stats, state, { ...limits, operationBudget })
+            : await executeOneDeleteBatch(env.DB, (limit) => item.statement(item.cutoff, startedAt, limit), item.stats, state, { ...limits, operationBudget });
+          result.rowsDeleted[item.name] = item.stats.deleted;
+          if (item.name === 'account_group_merge_events' && item.stats.archiveFailures > 0) {
+            result.errors.push({
+              category: item.name,
+              message: item.stats.error ?? 'merge-event archive failed; rows retained',
+            });
+            // Do not retry the same failed rows repeatedly in one run; the
+            // next scheduled run provides the bounded retry opportunity.
+            item.disabled = true;
+          }
+          progressed = progressed || didWork;
+        } catch (error) {
+          const message = errorMessage(error);
+          result.errors.push({ category: item.name, message });
+          item.stats.error = message;
+          item.disabled = true;
+          break;
+        }
+      }
+      if (!progressed) break;
+    }
+  }
+  for (const item of runnableCategories) {
+    result.rowsDeleted[item.name] = item.stats.deleted;
   }
 
   result.finishedAt = nowIso();
@@ -471,7 +622,7 @@ export const runRetention = async (env: Pick<Env, 'DB'>, options: RetentionRunOp
   return result;
 };
 
-export const getRetentionStatus = async (env: Pick<Env, 'DB'>) => ({
+export const getRetentionStatus = async (env: Pick<Env, 'DB' | 'EVIDENCE_ARCHIVE'>) => ({
   state: await getRetentionState(env.DB),
   guardrails: await getRetentionGuardrails(env.DB),
   dryRun: await runRetention(env, { dryRun: true }),

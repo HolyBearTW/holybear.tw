@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createTestD1, createTestR2 } from './sqlite-d1';
 import { archiveMergeEvent, getRetentionGuardrails, mergeEventObjectKey, runRetention } from '../../functions/_shared/retention';
 import { getRuntimeConfig } from '../../functions/_shared/runtime-config';
@@ -137,5 +137,66 @@ describe('DB2 retention dry-run and guardrails', () => {
     expect(key).toBe('account-group-merge-events/v1/2026/01/42.json');
     expect(key).toBe(mergeEventObjectKey(row));
     expect(r2.objects.get(key)).toContain('"id":42');
+  });
+
+  it('archives and deletes only verified old merge events within the shared budget', async () => {
+    local.sqlite.exec(`
+      INSERT INTO account_group_merge_events
+        (id, timestamp, trigger_ocid, trigger_character, signal_type, fingerprint,
+         source_group_id, target_group_id, merged_group_ids_json, merged_ocids_json,
+         trigger_source, status, reason)
+      VALUES (101, '${old}', 'ocid-101', '角色', 'same_fingerprint', 'fp-101',
+        1, 2, '[]', '[]', 'test', 'success', 'verified'),
+        (102, '${recent}', 'ocid-102', '角色', 'same_fingerprint', 'fp-102',
+        1, 2, '[]', '[]', 'test', 'success', 'recent');
+    `);
+    const result = await runRetention(env, {
+      dryRun: false, now, batchSize: 10, maxBatches: 4, maxRowsDeleted: 10, maxRuntimeMs: 5_000,
+    });
+    expect(result.errors).toEqual([]);
+    expect(result.categories.account_group_merge_events).toMatchObject({
+      eligible: 1, archived: 1, archiveFailures: 0, deleted: 1,
+    });
+    expect(local.sqlite.prepare('SELECT COUNT(*) AS count FROM account_group_merge_events WHERE id = 101').get()?.count).toBe(0);
+    expect(local.sqlite.prepare('SELECT COUNT(*) AS count FROM account_group_merge_events WHERE id = 102').get()?.count).toBe(1);
+  });
+
+  it('keeps the D1 row when R2 archival or verification fails', async () => {
+    local.sqlite.exec(`
+      INSERT INTO account_group_merge_events
+        (id, timestamp, trigger_ocid, trigger_character, signal_type, fingerprint,
+         source_group_id, target_group_id, merged_group_ids_json, merged_ocids_json,
+         trigger_source, status, reason)
+      VALUES (201, '${old}', 'ocid-201', '角色', 'same_fingerprint', 'fp-201',
+        1, 2, '[]', '[]', 'test', 'success', 'verified');
+    `);
+    const failingArchive = {
+      put: async () => { throw new Error('R2 unavailable'); },
+      get: async () => null,
+    } as unknown as R2Bucket;
+    const result = await runRetention({ DB: local.db, EVIDENCE_ARCHIVE: failingArchive }, {
+      dryRun: false, now, batchSize: 10, maxBatches: 4, maxRowsDeleted: 10, maxRuntimeMs: 5_000,
+    });
+    expect(result.categories.account_group_merge_events).toMatchObject({ archived: 0, archiveFailures: 1, deleted: 0 });
+    expect(local.sqlite.prepare('SELECT COUNT(*) AS count FROM account_group_merge_events WHERE id = 201').get()?.count).toBe(1);
+  });
+
+  it('does not PUT or DELETE merge events during dry-run', async () => {
+    local.sqlite.exec(`
+      INSERT INTO account_group_merge_events
+        (id, timestamp, trigger_ocid, trigger_character, signal_type, fingerprint,
+         source_group_id, target_group_id, merged_group_ids_json, merged_ocids_json,
+         trigger_source, status, reason)
+      VALUES (301, '${old}', 'ocid-301', '角色', 'same_fingerprint', 'fp-301',
+        1, 2, '[]', '[]', 'test', 'success', 'verified');
+    `);
+    const put = vi.fn(async () => undefined);
+    const get = vi.fn(async () => null);
+    const dryEnv = { DB: local.db, EVIDENCE_ARCHIVE: { put, get } as unknown as R2Bucket };
+    const result = await runRetention(dryEnv, { dryRun: true, now });
+    expect(result.categories.account_group_merge_events).toMatchObject({ eligible: 1, archived: 0, deleted: 0 });
+    expect(put).not.toHaveBeenCalled();
+    expect(get).not.toHaveBeenCalled();
+    expect(local.sqlite.prepare('SELECT COUNT(*) AS count FROM account_group_merge_events WHERE id = 301').get()?.count).toBe(1);
   });
 });
