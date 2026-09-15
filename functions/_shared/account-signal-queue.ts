@@ -53,17 +53,13 @@ export const isAccountSignalFresh = (
     && now - completedAt <= freshnessSeconds * 1000;
 };
 
-/**
- * The canonical write uses this statement in the same D1 batch as the
- * character upsert. The EXISTS guard means a source-only update or an older
- * rejected canonical response cannot enqueue account-signals.
- */
-export const enqueueAccountSignalStatement = (
+const canonicalAccountSignalInsert = (
   db: D1Database,
   ocid: string,
   observedAt: string,
   requestedAt: string,
   nexonUpdatedAt: string | null,
+  conflictAction: string,
 ) => db.prepare(`
   INSERT INTO account_signal_sync (
     ocid, signal_type, status, signal_count, attempt_count,
@@ -76,7 +72,49 @@ export const enqueueAccountSignalStatement = (
     WHERE ocid = ?1 AND updated_at = ?3 AND nexon_requested_at = ?4
       AND ((nexon_updated_at = ?5) OR (nexon_updated_at IS NULL AND ?5 IS NULL))
   )
-  ON CONFLICT(ocid, signal_type) DO UPDATE SET
+  ${conflictAction}
+`).bind(ocid, ACCOUNT_SIGNAL_TYPE, observedAt, requestedAt, nexonUpdatedAt);
+
+/**
+ * Canonical character writes share this statement's batch with the character
+ * upsert. A new character gets full-signal work, while an existing row keeps
+ * its completed, pending, retry, and lease state during basic/stat refreshes.
+ * The EXISTS guard means a source-only update or an older rejected canonical
+ * response cannot create a queue row.
+ */
+export const enqueueAccountSignalStatement = (
+  db: D1Database,
+  ocid: string,
+  observedAt: string,
+  requestedAt: string,
+  nexonUpdatedAt: string | null,
+) => canonicalAccountSignalInsert(
+  db,
+  ocid,
+  observedAt,
+  requestedAt,
+  nexonUpdatedAt,
+  'ON CONFLICT(ocid, signal_type) DO NOTHING',
+);
+
+/**
+ * Explicit account-relevant reset path. Callers that have new union/account
+ * evidence may use this statement to force a fresh full-signal calculation;
+ * ordinary canonical basic/stat writes must use enqueueAccountSignalStatement.
+ */
+export const forceEnqueueAccountSignalStatement = (
+  db: D1Database,
+  ocid: string,
+  observedAt: string,
+  requestedAt: string,
+  nexonUpdatedAt: string | null,
+) => canonicalAccountSignalInsert(
+  db,
+  ocid,
+  observedAt,
+  requestedAt,
+  nexonUpdatedAt,
+  `ON CONFLICT(ocid, signal_type) DO UPDATE SET
     status = 'pending',
     signal_count = 0,
     next_retry_at = NULL,
@@ -91,8 +129,8 @@ export const enqueueAccountSignalStatement = (
     claim_until = CASE
       WHEN account_signal_sync.claim_until IS NOT NULL
         AND account_signal_sync.claim_until > ?3
-      THEN account_signal_sync.claim_until ELSE NULL END
-`).bind(ocid, ACCOUNT_SIGNAL_TYPE, observedAt, requestedAt, nexonUpdatedAt);
+      THEN account_signal_sync.claim_until ELSE NULL END`,
+);
 
 export const ensureAccountSignalQueueRow = async (
   db: D1Database,

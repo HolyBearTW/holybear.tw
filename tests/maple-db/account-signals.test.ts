@@ -9,6 +9,7 @@ import {
   claimAccountSignalForBackground,
   completeAccountSignalClaim,
   ensureAccountSignalQueueRow,
+  forceEnqueueAccountSignalStatement,
 } from '../../functions/_shared/account-signal-queue';
 import { findCharacterByOcid, upsertCanonicalNexonCharacter } from '../../functions/_shared/character-repository';
 import type { Env } from '../../functions/_shared/env';
@@ -248,6 +249,157 @@ describe('account-signal queue and on-demand synchronization', () => {
     }), [{ source: 'nexon' }]);
     expect(local.sqlite.prepare(`SELECT status FROM account_signal_sync WHERE ocid='ocid-主角色'`).get()?.status)
       .toBe('completed');
+  });
+
+  it('creates a pending full queue row for a first canonical basic/stat upsert', async () => {
+    await upsertCanonicalNexonCharacter(env.DB, character('新角色'), [{ source: 'nexon' }]);
+    expect(local.sqlite.prepare(`
+      SELECT status, signal_count, queue_version
+      FROM account_signal_sync
+      WHERE ocid='ocid-新角色' AND signal_type=?
+    `).get(ACCOUNT_SIGNAL_TYPE)).toEqual({ status: 'pending', signal_count: 0, queue_version: 0 });
+  });
+
+  it('keeps a completed full queue row completed during a later canonical refresh', async () => {
+    local.sqlite.prepare(`
+      UPDATE account_signal_sync SET
+        status='completed', signal_count=7, attempt_count=3,
+        last_attempted_at=?, completed_at=?, queue_version=4,
+        updated_at=?
+      WHERE ocid='ocid-主角色' AND signal_type=?
+    `).run(baseTime, baseTime, baseTime, ACCOUNT_SIGNAL_TYPE);
+
+    const refreshAt = '2026-09-07T00:15:00.000Z';
+    await upsertCanonicalNexonCharacter(env.DB, character('主角色', {
+      observedAt: refreshAt,
+      requestedAt: refreshAt,
+    }), [{ source: 'nexon', observedAt: refreshAt }]);
+
+    expect(local.sqlite.prepare(`
+      SELECT status, signal_count, attempt_count, last_attempted_at,
+        completed_at, queue_version, updated_at
+      FROM account_signal_sync
+      WHERE ocid='ocid-主角色' AND signal_type=?
+    `).get(ACCOUNT_SIGNAL_TYPE)).toEqual({
+      status: 'completed', signal_count: 7, attempt_count: 3,
+      last_attempted_at: baseTime, completed_at: baseTime,
+      queue_version: 4, updated_at: baseTime,
+    });
+  });
+
+  it('keeps pending attempt, lease, and queue version during a canonical refresh', async () => {
+    const retryAt = '2026-09-07T00:30:00.000Z';
+    const leaseUntil = '2026-09-07T01:00:00.000Z';
+    local.sqlite.prepare(`
+      UPDATE account_signal_sync SET
+        status='pending', signal_count=4, attempt_count=2,
+        next_retry_at=?, last_error='in-flight', last_attempted_at=?,
+        completed_at=NULL, queue_version=9, claim_token='claim-token',
+        claim_until=?, updated_at=?
+      WHERE ocid='ocid-主角色' AND signal_type=?
+    `).run(retryAt, baseTime, leaseUntil, baseTime, ACCOUNT_SIGNAL_TYPE);
+
+    const refreshAt = '2026-09-07T00:15:00.000Z';
+    await upsertCanonicalNexonCharacter(env.DB, character('主角色', {
+      observedAt: refreshAt,
+      requestedAt: refreshAt,
+    }), [{ source: 'nexon', observedAt: refreshAt }]);
+
+    expect(local.sqlite.prepare(`
+      SELECT status, signal_count, attempt_count, next_retry_at, last_error,
+        last_attempted_at, completed_at, queue_version, claim_token,
+        claim_until, updated_at
+      FROM account_signal_sync
+      WHERE ocid='ocid-主角色' AND signal_type=?
+    `).get(ACCOUNT_SIGNAL_TYPE)).toEqual({
+      status: 'pending', signal_count: 4, attempt_count: 2,
+      next_retry_at: retryAt, last_error: 'in-flight', last_attempted_at: baseTime,
+      completed_at: null, queue_version: 9, claim_token: 'claim-token',
+      claim_until: leaseUntil, updated_at: baseTime,
+    });
+  });
+
+  it('keeps retry backoff and error state during a canonical refresh', async () => {
+    const retryAt = '2026-09-07T00:30:00.000Z';
+    local.sqlite.prepare(`
+      UPDATE account_signal_sync SET
+        status='retry', signal_count=2, attempt_count=3,
+        next_retry_at=?, last_error='temporary failure', last_attempted_at=?,
+        completed_at=NULL, queue_version=11, claim_token=NULL,
+        claim_until=NULL, updated_at=?
+      WHERE ocid='ocid-主角色' AND signal_type=?
+    `).run(retryAt, baseTime, baseTime, ACCOUNT_SIGNAL_TYPE);
+
+    const refreshAt = '2026-09-07T00:15:00.000Z';
+    await upsertCanonicalNexonCharacter(env.DB, character('主角色', {
+      observedAt: refreshAt,
+      requestedAt: refreshAt,
+    }), [{ source: 'nexon', observedAt: refreshAt }]);
+
+    expect(local.sqlite.prepare(`
+      SELECT status, signal_count, attempt_count, next_retry_at, last_error,
+        last_attempted_at, completed_at, queue_version, claim_token,
+        claim_until, updated_at
+      FROM account_signal_sync
+      WHERE ocid='ocid-主角色' AND signal_type=?
+    `).get(ACCOUNT_SIGNAL_TYPE)).toEqual({
+      status: 'retry', signal_count: 2, attempt_count: 3,
+      next_retry_at: retryAt, last_error: 'temporary failure', last_attempted_at: baseTime,
+      completed_at: null, queue_version: 11, claim_token: null,
+      claim_until: null, updated_at: baseTime,
+    });
+  });
+
+  it('does not alter a champion queue row during a canonical refresh', async () => {
+    await ensureAccountSignalQueueRow(env.DB, 'ocid-主角色', ACCOUNT_CHAMPION_SIGNAL_TYPE);
+    local.sqlite.prepare(`
+      UPDATE account_signal_sync SET
+        status='completed', signal_count=5, attempt_count=2,
+        last_attempted_at=?, completed_at=?, queue_version=6, updated_at=?
+      WHERE ocid='ocid-主角色' AND signal_type=?
+    `).run(baseTime, baseTime, baseTime, ACCOUNT_CHAMPION_SIGNAL_TYPE);
+
+    const refreshAt = '2026-09-07T00:15:00.000Z';
+    await upsertCanonicalNexonCharacter(env.DB, character('主角色', {
+      observedAt: refreshAt,
+      requestedAt: refreshAt,
+    }), [{ source: 'nexon', observedAt: refreshAt }]);
+
+    expect(local.sqlite.prepare(`
+      SELECT status, signal_count, attempt_count, last_attempted_at,
+        completed_at, queue_version, updated_at
+      FROM account_signal_sync
+      WHERE ocid='ocid-主角色' AND signal_type=?
+    `).get(ACCOUNT_CHAMPION_SIGNAL_TYPE)).toEqual({
+      status: 'completed', signal_count: 5, attempt_count: 2,
+      last_attempted_at: baseTime, completed_at: baseTime,
+      queue_version: 6, updated_at: baseTime,
+    });
+  });
+
+  it('keeps the explicit force enqueue path able to reset a full queue row', async () => {
+    local.sqlite.prepare(`
+      UPDATE account_signal_sync SET
+        status='completed', signal_count=8, completed_at=?, queue_version=12,
+        updated_at=?
+      WHERE ocid='ocid-主角色' AND signal_type=?
+    `).run(baseTime, baseTime, ACCOUNT_SIGNAL_TYPE);
+
+    await env.DB.batch([forceEnqueueAccountSignalStatement(
+      env.DB,
+      'ocid-主角色',
+      baseTime,
+      baseTime,
+      null,
+    )]);
+
+    expect(local.sqlite.prepare(`
+      SELECT status, signal_count, completed_at, queue_version
+      FROM account_signal_sync
+      WHERE ocid='ocid-主角色' AND signal_type=?
+    `).get(ACCOUNT_SIGNAL_TYPE)).toEqual({
+      status: 'pending', signal_count: 0, completed_at: null, queue_version: 13,
+    });
   });
 
   it('a new character with the same full fingerprint joins an existing group', async () => {
