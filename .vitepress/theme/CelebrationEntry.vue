@@ -101,7 +101,18 @@ onMounted(async () => {
     playerObserver.observe(player, { attributes: true, attributeFilter: ['class', 'style'] })
   }
 
-  documentObserver = new MutationObserver(schedulePositionUpdate)
+  documentObserver = new MutationObserver((records) => {
+    // These in-flow search/results updates cannot move the fixed obstacles.
+    // Avoid a whole-document computed-style scan while typing or loading avatars.
+    const searchContent = '.maple-search-form, .maple-ranking-panel'
+    const affectsObstacles = records.some((record) => {
+      const target = record.target instanceof Element ? record.target : record.target.parentElement
+      if (target?.closest(searchContent)) return false
+      const changedNodes = [...record.addedNodes, ...record.removedNodes]
+      return changedNodes.some((node) => node instanceof Element && !node.matches(searchContent))
+    })
+    if (affectsObstacles) schedulePositionUpdate()
+  })
   documentObserver.observe(document.body, { childList: true, subtree: true })
 
   expiryTimer = window.setInterval(syncCampaignState, 60_000)

@@ -200,13 +200,13 @@ const SearchForm: React.FC<SearchFormProps> = ({
                 />
             </div>
 
-            <form onSubmit={submitSearch} className="w-full max-w-2xl relative group">
+            <form onSubmit={submitSearch} className="maple-search-form w-full max-w-2xl relative group">
                 <Search className="maple-search-leading-icon absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors" />
                 <input 
                     ref={searchInputRef}
                     defaultValue={characterName}
                     onChange={(e) => updateDraftName(e.target.value)}
-                    onFocus={() => setShowHistory(true)}
+                    onFocus={() => React.startTransition(() => setShowHistory(true))}
                     onBlur={() => {
                         const draftName = searchInputRef.current?.value ?? characterName;
                         const name = draftName.trim();
