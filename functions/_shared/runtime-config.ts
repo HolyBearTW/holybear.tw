@@ -33,7 +33,7 @@ export const getRuntimeConfig = (env: Env) => ({
     env.ACCOUNT_SIGNAL_CHAMPION_BACKFILL_BATCH_SIZE,
     4,
     1,
-    25,
+    100,
   ),
   accountSignalChampionBackfillConcurrency: integerSetting(
     env.ACCOUNT_SIGNAL_CHAMPION_BACKFILL_CONCURRENCY,

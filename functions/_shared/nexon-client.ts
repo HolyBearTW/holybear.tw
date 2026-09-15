@@ -201,3 +201,36 @@ export const runWithConcurrency = async <Input, Output>(
   await Promise.all(workers);
   return results;
 };
+
+/**
+ * Run work with a global start interval while retaining a bounded number of
+ * in-flight tasks. Unlike runWithConcurrency's per-worker delay, this gate
+ * prevents concurrent workers from releasing a burst at the same instant.
+ */
+export const runWithPacedConcurrency = async <Input, Output>(
+  inputs: Input[],
+  concurrency: number,
+  intervalMs: number,
+  task: (input: Input) => Promise<Output>,
+) => {
+  const results: Array<PromiseSettledResult<Output>> = new Array(inputs.length);
+  let cursor = 0;
+  let nextStartAt = Date.now();
+  const workers = Array.from({ length: Math.min(concurrency, inputs.length) }, async () => {
+    while (cursor < inputs.length) {
+      const index = cursor;
+      cursor += 1;
+      const now = Date.now();
+      const waitMs = Math.max(0, nextStartAt - now);
+      nextStartAt = Math.max(nextStartAt, now) + Math.max(0, intervalMs);
+      if (waitMs > 0) await wait(waitMs);
+      try {
+        results[index] = { status: 'fulfilled', value: await task(inputs[index]) };
+      } catch (reason) {
+        results[index] = { status: 'rejected', reason };
+      }
+    }
+  });
+  await Promise.all(workers);
+  return results;
+};

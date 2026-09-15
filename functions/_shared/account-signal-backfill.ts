@@ -15,7 +15,7 @@ import {
 import { toPublicCharacter } from './character-repository';
 import type { Env } from './env';
 import type { CharacterRow } from './models';
-import { NexonRequestError, runWithConcurrency } from './nexon-client';
+import { NexonRequestError, runWithConcurrency, runWithPacedConcurrency } from './nexon-client';
 import { getRuntimeConfig } from './runtime-config';
 import {
   addInstrumentation,
@@ -203,16 +203,25 @@ export const backfillAccountChampionBatch = async (
     config.accountSignalChampionBackfillBatchSize,
   ).all<CharacterRow>();
 
-  const claimedRows: Array<{ row: CharacterRow; claim: AccountSignalClaim }> = [];
-  for (const row of candidates.results) {
-    await ensureAccountSignalQueueRow(env.DB, row.ocid, ACCOUNT_CHAMPION_SIGNAL_TYPE);
-    const claimStartedAt = Date.now();
-    const claim = await claimAccountChampionSignalForBackground(env.DB, row.ocid);
-    instrumentation.queueClaimMs += metricTimer(claimStartedAt);
-    if (claim) claimedRows.push({ row, claim });
-  }
+  const claimResults = await runWithConcurrency(
+    candidates.results,
+    config.accountSignalChampionBackfillConcurrency,
+    0,
+    async (row) => {
+      const claimStartedAt = Date.now();
+      const claim = await claimAccountChampionSignalForBackground(env.DB, row.ocid);
+      instrumentation.queueClaimMs += metricTimer(claimStartedAt);
+      return claim ? { row, claim } : null;
+    },
+  );
+  const claimedRows = claimResults
+    .filter((outcome): outcome is PromiseFulfilledResult<{ row: CharacterRow; claim: AccountSignalClaim } | null> => (
+      outcome.status === 'fulfilled'
+    ))
+    .map((outcome) => outcome.value)
+    .filter((value): value is { row: CharacterRow; claim: AccountSignalClaim } => value !== null);
 
-  const settled = await runWithConcurrency(
+  const settled = await runWithPacedConcurrency(
     claimedRows,
     config.accountSignalChampionBackfillConcurrency,
     config.accountSignalChampionBackfillDelayMs,
