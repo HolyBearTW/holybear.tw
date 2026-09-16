@@ -33,7 +33,7 @@ jobs:
           node-version: 22
 
       - name: Restore TMS radar cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: .cache/tms-radar
           key: tms-radar-v2-${{ github.run_id }}
@@ -55,7 +55,7 @@ jobs:
 
       - name: Save TMS radar cache
         if: always()
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: .cache/tms-radar
           key: tms-radar-v2-${{ github.run_id }}
