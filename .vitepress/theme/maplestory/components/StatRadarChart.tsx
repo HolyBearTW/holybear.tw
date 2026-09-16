@@ -63,7 +63,7 @@ const StatRadarChart: React.FC<StatRadarChartProps> = ({ data }) => {
     <div className="w-full">
       <h4 className="mb-1 text-center text-xs font-bold uppercase tracking-widest text-yellow-300">能力雷達圖</h4>
       <div className="mb-2 text-center text-[11px] font-semibold text-slate-500">
-        台版樣本曲線・同職業 {radar.referenceSampleSize} 名／全體 {radar.referenceTotalSize} 名・更新 {referenceDate}
+        台版樣本曲線・同職業 {radar.referenceSampleSize.toLocaleString('zh-TW')} 名／Lv.260+ 玩家 {radar.referenceTotalSize.toLocaleString('zh-TW')} 名・更新 {referenceDate}
       </div>
       <details className="mb-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
         <summary className="cursor-pointer text-center">樣本來源與限制</summary>
