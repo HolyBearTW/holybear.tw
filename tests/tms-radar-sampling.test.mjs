@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import test from 'node:test';
 import {
   assertCandidateUniverseIntegrity,
+  assertRadarCandidateResponse,
   assertRankingPageIntegrity,
   finalizeRadarReference,
   prepareRadarCandidates,
@@ -84,6 +85,7 @@ test('workflow exposes force_refresh only to manual runs and keeps scheduled TTL
   assert.match(workflow, /RADAR_FORCE_REFRESH:.*github\.event_name == 'workflow_dispatch'.*inputs\.force_refresh/);
   assert.match(workflow, /schedule:\s+- cron:/);
   assert.match(workflow, /RADAR_CACHE_TTL_DAYS: 21/);
+  assert.match(workflow, /if: steps\.commit\.outputs\.changed == 'true'/);
 });
 
 test('rejects degraded, inconsistent, and sharply reduced candidate sources', () => {
@@ -105,4 +107,36 @@ test('rejects degraded, inconsistent, and sharply reduced candidate sources', ()
     }),
     /below the required minimum|shrank/,
   );
+});
+
+test('rejects degraded, partial, or internally inconsistent candidate endpoint responses', () => {
+  assert.throws(() => assertRadarCandidateResponse({ degraded: true }), /degraded/);
+  assert.throws(() => assertRadarCandidateResponse({ schemaVersion: 1, partial: true }), /partial/);
+  assert.throws(() => assertRadarCandidateResponse({
+    schemaVersion: 1,
+    degraded: false,
+    partial: false,
+    sourceCount: 2,
+    sampledSourceCount: 1,
+    samplesPerJob: 500,
+    jobs: [{ job: '英雄', sourceCount: 2, sampledCount: 1 }],
+    candidates: [],
+  }), /invalid totals/);
+  assert.throws(() => assertRadarCandidateResponse({
+    schemaVersion: 1,
+    degraded: false,
+    partial: false,
+    sourceCount: 600,
+    sampledSourceCount: 499,
+    samplesPerJob: 500,
+    jobs: [{ job: '英雄', sourceCount: 600, sampledCount: 499 }],
+    candidates: Array.from({ length: 499 }, (_, index) => ({
+      ocid: `ocid-${index}`, characterName: `角色${index}`, jobName: '英雄', level: 260,
+    })),
+  }), /invalid job summaries/);
+});
+
+test('force refresh cannot make an unsafe candidate response valid', () => {
+  assert.equal(shouldRefreshRadarCache({ forceRefresh: true, cachedAt: 900, now: 1000, cacheTtlMs: 500 }), true);
+  assert.throws(() => assertRadarCandidateResponse({ degraded: true, partial: true }), /degraded/);
 });

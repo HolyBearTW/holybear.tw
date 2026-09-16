@@ -2,9 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {
   assertCandidateUniverseIntegrity,
-  assertRankingPageIntegrity,
+  assertRadarCandidateResponse,
   finalizeRadarReference,
-  prepareRadarCandidates,
   radarCharacterKey,
   shouldRefreshRadarCache,
 } from './lib/tms-radar-sampling.mjs';
@@ -34,7 +33,6 @@ const nexonHeaders = { 'x-nxopen-api-key': apiKey };
 const holyBearHeaders = radarAutomationKey
   ? { 'x-radar-automation-key': radarAutomationKey }
   : bypassKey ? { 'x-bypass-key': bypassKey } : undefined;
-const rankingPageSize = 100;
 const minimumLevel = 260;
 const samplesPerJob = boundedInteger(process.env.RADAR_SAMPLES_PER_JOB, 500, 10, 1_000);
 const concurrency = boundedInteger(process.env.RADAR_CONCURRENCY, 8, 1, 20);
@@ -196,7 +194,6 @@ const previousReference = (() => {
     return null;
   }
 })();
-const ranking = [];
 const normalizeRankingItems = (items = []) => items.map((item) => ({
   ocid: item.ocid,
   name: item.characterName,
@@ -206,43 +203,20 @@ const normalizeRankingItems = (items = []) => items.map((item) => ({
   level: Number(item.level || 0),
   combatPower: Number(item.combatPower || 0),
 }));
-const fetchRankingPage = (page) => {
-  const params = new URLSearchParams({ page: String(page), pageSize: String(rankingPageSize), minLevel: String(minimumLevel) });
-  return getJson(`${holyBearApiBase}/api/rankings/combat-power?${params}`);
-};
-
-const firstRankingPage = await fetchRankingPage(1);
-const firstPage = assertRankingPageIntegrity(firstRankingPage, 1, rankingPageSize);
-ranking.push(...normalizeRankingItems(firstPage.items));
-for (let startPage = 2; startPage <= firstPage.totalPages; startPage += concurrency) {
-  const pages = Array.from(
-    { length: Math.min(concurrency, firstPage.totalPages - startPage + 1) },
-    (_, index) => startPage + index,
-  );
-  const responses = await Promise.all(pages.map(fetchRankingPage));
-  responses.forEach((response, index) => {
-    const checked = assertRankingPageIntegrity(
-      response,
-      pages[index],
-      rankingPageSize,
-      firstPage.total,
-      firstPage.totalPages,
-    );
-    ranking.push(...normalizeRankingItems(checked.items));
-  });
+const candidateResponse = assertRadarCandidateResponse(
+  await getJson(`${holyBearApiBase}/api/radar/candidates`),
+  normalizeJob,
+);
+if (candidateResponse.minimumLevel !== minimumLevel || candidateResponse.samplesPerJob !== samplesPerJob) {
+  throw new Error('Radar candidate endpoint configuration does not match the generator');
 }
-
-const eligibleRanking = ranking.filter((entry) => entry.level >= minimumLevel);
-const {
-  trackedCharacters,
-  sampledCharacters,
-  sourceCount,
-  sampledSourceCount,
-} = prepareRadarCandidates(eligibleRanking, samplesPerJob, normalizeJob);
+const sampledCharacters = normalizeRankingItems(candidateResponse.candidates);
+const sourceCount = Number(candidateResponse.sourceCount);
+const sampledSourceCount = Number(candidateResponse.sampledSourceCount);
 assertCandidateUniverseIntegrity({
   sourceCount,
-  fetchedCount: ranking.length,
-  expectedTotal: firstPage.total,
+  fetchedCount: sampledCharacters.length,
+  expectedTotal: sampledSourceCount,
   previousSourceCount: Number(previousReference?.sourceCount || 0),
   minimumSourceCount,
 });
@@ -338,5 +312,5 @@ if (finalized.changed) {
   process.stdout.write('Radar payload is unchanged; preserving the existing generatedAt and output file\n');
 }
 
-process.stdout.write(`${finalized.changed ? 'Wrote' : 'Kept'} ${outputPath} with ${radarRecords.length}/${sampledCharacters.length} sampled records from ${trackedCharacters.length} eligible characters; max ${referenceMax}\n`);
+process.stdout.write(`${finalized.changed ? 'Wrote' : 'Kept'} ${outputPath} with ${radarRecords.length}/${sampledCharacters.length} sampled records from ${sourceCount} eligible characters; max ${referenceMax}\n`);
 process.stdout.write(`Cache: ${freshCacheHits} fresh hits, ${staleCacheFallbacks} stale fallbacks, ${refreshed} refreshed, ${failed} failed${stoppedEarly ? ', run budget reached' : ''}\n`);

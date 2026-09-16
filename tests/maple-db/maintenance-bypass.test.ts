@@ -19,6 +19,7 @@ describe('maintenance bypass middleware', () => {
     expect(isMaintenanceProtectedPath('/api/nexon/id')).toBe(true);
     expect(isMaintenanceProtectedPath('/api/characters/test')).toBe(true);
     expect(isMaintenanceProtectedPath('/api/rankings/combat-power')).toBe(true);
+    expect(isMaintenanceProtectedPath('/api/radar/candidates')).toBe(true);
     expect(isMaintenanceProtectedPath('/api/health')).toBe(false);
     expect(isMaintenanceProtectedPath('/api/admin/import/status')).toBe(false);
   });
@@ -35,7 +36,7 @@ describe('maintenance bypass middleware', () => {
     expect(hasValidMaintenanceBypass(valid, {} as never)).toBe(false);
   });
 
-  it('limits the radar automation key to GET ranking routes', () => {
+  it('limits the radar automation key to GET ranking and radar candidate routes', () => {
     const ranking = new Request('https://holybear.tw/api/rankings/combat-power', {
       headers: { 'x-radar-automation-key': 'radar-secret' },
     });
@@ -49,11 +50,19 @@ describe('maintenance bypass middleware', () => {
       method: 'POST',
       headers: { 'x-radar-automation-key': 'radar-secret' },
     });
+    const candidates = new Request('https://holybear.tw/api/radar/candidates', {
+      headers: { 'x-radar-automation-key': 'radar-secret' },
+    });
+    const radarOther = new Request('https://holybear.tw/api/radar/other', {
+      headers: { 'x-radar-automation-key': 'radar-secret' },
+    });
 
     expect(hasValidRadarAutomationAccess(ranking, env)).toBe(true);
     expect(hasValidRadarAutomationAccess(character, env)).toBe(false);
     expect(hasValidRadarAutomationAccess(nexon, env)).toBe(false);
     expect(hasValidRadarAutomationAccess(rankingPost, env)).toBe(false);
+    expect(hasValidRadarAutomationAccess(candidates, env)).toBe(true);
+    expect(hasValidRadarAutomationAccess(radarOther, env)).toBe(false);
   });
 
   it('allows the radar workflow through middleware without granting character access', async () => {

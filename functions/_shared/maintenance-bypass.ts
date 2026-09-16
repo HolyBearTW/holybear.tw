@@ -5,6 +5,7 @@ const PROTECTED_API_PREFIXES = [
   '/api/nexon',
   '/api/characters',
   '/api/rankings',
+  '/api/radar',
 ] as const;
 
 export const isMaintenanceEnabled = (env: Pick<Env, 'MAINTENANCE_MODE'>) => {
@@ -48,7 +49,11 @@ export const hasValidRadarAutomationAccess = (request: Request, env: Env) => {
   const providedKey = request.headers.get('x-radar-automation-key');
   return Boolean(
     request.method === 'GET'
-    && (pathname === '/api/rankings' || pathname.startsWith('/api/rankings/'))
+    && (
+      pathname === '/api/rankings'
+      || pathname.startsWith('/api/rankings/')
+      || pathname === '/api/radar/candidates'
+    )
     && configuredKey
     && providedKey
     && constantTimeEqual(providedKey, configuredKey)

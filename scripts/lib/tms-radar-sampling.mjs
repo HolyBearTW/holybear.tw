@@ -102,6 +102,56 @@ export function assertCandidateUniverseIntegrity({
   }
 }
 
+export function assertRadarCandidateResponse(response, normalizeJob = (value) => String(value || '')) {
+  if (response?.degraded || response?.unavailable || response?.partial) {
+    throw new Error('Radar candidate endpoint is degraded, unavailable, or partial');
+  }
+  if (response?.schemaVersion !== 1 || !Array.isArray(response.jobs) || !Array.isArray(response.candidates)) {
+    throw new Error('Radar candidate response has an unsupported schema');
+  }
+  const sourceCount = Number(response.sourceCount);
+  const sampledSourceCount = Number(response.sampledSourceCount);
+  const samplesPerJob = Number(response.samplesPerJob);
+  if (!Number.isSafeInteger(sourceCount) || sourceCount < 1
+    || !Number.isSafeInteger(sampledSourceCount) || sampledSourceCount < 1
+    || !Number.isSafeInteger(samplesPerJob) || samplesPerJob < 1
+    || response.candidates.length !== sampledSourceCount) {
+    throw new Error('Radar candidate response has invalid totals');
+  }
+
+  const summaries = new Map();
+  let summedSource = 0;
+  let summedSampled = 0;
+  for (const summary of response.jobs) {
+    const job = String(summary?.job || '');
+    const jobSource = Number(summary?.sourceCount);
+    const jobSampled = Number(summary?.sampledCount);
+    if (!job || summaries.has(job)
+      || !Number.isSafeInteger(jobSource) || jobSource < 1
+      || !Number.isSafeInteger(jobSampled) || jobSampled < 1
+      || jobSampled !== Math.min(jobSource, samplesPerJob)) {
+      throw new Error('Radar candidate response has invalid job summaries');
+    }
+    summaries.set(job, { sourceCount: jobSource, sampledCount: jobSampled, seen: 0 });
+    summedSource += jobSource;
+    summedSampled += jobSampled;
+  }
+  for (const candidate of response.candidates) {
+    const job = normalizeJob(candidate?.jobName);
+    const summary = summaries.get(job);
+    if (!candidate?.ocid || !candidate?.characterName || !job || !summary
+      || Number(candidate.level) < 260) {
+      throw new Error('Radar candidate response contains an invalid candidate');
+    }
+    summary.seen += 1;
+  }
+  if (summedSource !== sourceCount || summedSampled !== sampledSourceCount
+    || [...summaries.values()].some((summary) => summary.seen !== summary.sampledCount)) {
+    throw new Error('Radar candidate response counts are inconsistent');
+  }
+  return response;
+}
+
 export function shouldRefreshRadarCache({ forceRefresh, cachedAt, now, cacheTtlMs }) {
   if (forceRefresh) return true;
   return !Number.isFinite(cachedAt) || now - cachedAt > cacheTtlMs;
