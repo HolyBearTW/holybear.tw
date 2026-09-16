@@ -22,8 +22,10 @@ const getResponsivePageSize = () => {
   return 3;
 };
 const formatPower = (value: string | null) => {
-  const power = Number(value || 0);
-  if (!Number.isFinite(power) || power <= 0) return '0';
+  // D1 stores 0 until the canonical basic/stat sync has supplied combat power.
+  if (value == null || value.trim() === '') return '戰力尚未同步';
+  const power = Number(value);
+  if (!Number.isFinite(power) || power <= 0) return '戰力尚未同步';
   if (power >= 100_000_000) {
     const yi = Math.floor(power / 100_000_000);
     const wan = Math.floor((power % 100_000_000) / 10_000);
