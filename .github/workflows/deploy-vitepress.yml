@@ -256,7 +256,7 @@ jobs:
           set -euo pipefail
 
           timeout=1500
-          interval=10
+          interval=5
           elapsed=0
           response_file="$(mktemp)"
           last_reported_state=""

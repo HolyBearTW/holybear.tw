@@ -10,7 +10,7 @@ echo "確認 Cloudflare checkout 與完整 Git 歷史..."
 if [ "$(git rev-parse --is-shallow-repository)" = "true" ]; then
   git fetch --unshallow --tags origin
 else
-  git fetch --tags --prune origin
+  echo "Checkout 已包含完整歷史，略過不必要的遠端 fetch。"
 fi
 
 if [ "$(git rev-parse --is-shallow-repository)" != "false" ]; then
