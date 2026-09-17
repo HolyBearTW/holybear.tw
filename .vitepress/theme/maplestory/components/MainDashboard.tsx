@@ -4,7 +4,7 @@ import { mapleAsset } from '../assets';
 import { getJobBackgroundMap, SERVER_ICONS } from '../constants';
 import React from 'react';
 import { calculateWeeklyGrowth } from './ExpTrendChart';
-import { ThumbsUp, Star, Crown, Zap, ChevronUp, ChevronDown, Info, Mail, Share2, Loader2, Wand2, Sword, Shield, Flame, Calculator } from 'lucide-react';
+import { ThumbsUp, Star, Crown, Zap, ChevronUp, ChevronDown, Info, Mail, Share2, Loader2, Wand2, Sword, Shield, Flame, Calculator, ImageDown } from 'lucide-react';
 import StatRadarChart from './StatRadarChart';
 import PresetSwitcher from './PresetSwitcher';
 import StatTooltip from './StatTooltip';
@@ -30,10 +30,12 @@ import {
 } from '../characterAppearance';
 import { getJobArtwork } from '../jobArtwork';
 import JobArtworkDecoration from './JobArtworkDecoration';
+import { formatMapleBigNumber } from '../services/shareCard';
 
 // Keep the calculator and its formula code out of the character result's first paint.
 const CharacterCalculatorModal = React.lazy(() => import('./CharacterCalculatorModal'));
 const BossDamageCalculatorModal = React.lazy(() => import('./BossDamageCalculatorModal'));
+const CharacterCardModal = React.lazy(() => import('./CharacterCardModal'));
 
 interface MainDashboardProps {
     data: any;
@@ -61,19 +63,6 @@ const formatNumber = (val: string | number) => {
   if (val === '-' || val == null) return '-';
   const valStr = String(val);
   return parseInt(valStr.replace(/,/g, '') || '0').toLocaleString();
-};
-
-const formatBigNumber = (val: string | number) => {
-  if (val === '-' || val == null) return '-';
-  const valStr = String(val);
-  const num = parseInt(valStr.replace(/,/g, '') || '0');
-  if (num > 100000000) {
-    const yi = Math.floor(num / 100000000);
-    const wan = Math.floor((num % 100000000) / 10000);
-    const rest = num % 10000;
-    return `${yi}億 ${wan}萬 ${rest}`;
-  }
-  return num.toLocaleString();
 };
 
 interface RecentPowerRankHandle {
@@ -200,7 +189,7 @@ const BestCombatPowerInfo = React.memo(({ characterName, apiKey }: { characterNa
           role="status"
           className="maple-best-combat-power-tooltip absolute left-3 top-11 z-40 min-w-60 rounded-lg border border-emerald-400/30 bg-black/95 px-3 py-2 text-xs text-slate-200 shadow-xl shadow-black/50 backdrop-blur-sm"
         >
-          <div className="font-bold text-emerald-300">近7日最高戰鬥力：{formatBigNumber(record.combatPower)}</div>
+          <div className="font-bold text-emerald-300">近7日最高戰鬥力：{formatMapleBigNumber(record.combatPower)}</div>
           <div className="mt-1 text-slate-400">紀錄時間：{record.date.replace(/-/g, '/')}</div>
         </div>
       )}
@@ -235,9 +224,11 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
     const [showRecentLoginStatus, setShowRecentLoginStatus] = React.useState(false);
     const [showCalculator, setShowCalculator] = React.useState(false);
     const [showBossDamageCalculator, setShowBossDamageCalculator] = React.useState(false);
+    const [showCharacterCard, setShowCharacterCard] = React.useState(false);
     const [growthTrackingState, setGrowthTrackingState] = React.useState<GrowthTrackingState>('loading');
     const recentPowerRankRef = React.useRef<RecentPowerRankHandle>(null);
     const growthButtonRef = React.useRef<HTMLButtonElement>(null);
+    const characterCardButtonRef = React.useRef<HTMLButtonElement>(null);
     const aiCheckButtonRef = React.useRef<HTMLButtonElement>(null);
     const calculatorButtonRef = React.useRef<HTMLButtonElement>(null);
     const bossCalculatorButtonRef = React.useRef<HTMLButtonElement>(null);
@@ -431,9 +422,13 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
                         onTrackingStatusChange={setGrowthTrackingState}
                       />
 
-                      <button ref={aiCheckButtonRef} onClick={handleAiAnalyze} disabled={analyzing} className="maple-ai-check-button w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold rounded-lg flex items-center justify-center gap-2 transition-all shadow-lg shadow-indigo-900/20 hover:translate-y-[-1px]">
+                      <button ref={characterCardButtonRef} onClick={() => setShowCharacterCard(true)} aria-label={`生成 ${data.basic.character_name} 的角色圖卡`} className="maple-character-card-button w-full py-2.5 bg-violet-600 hover:bg-violet-500 text-white text-sm font-bold rounded-lg flex items-center justify-center gap-2 transition-all shadow-lg shadow-violet-900/20 hover:translate-y-[-1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300">
+                         <ImageDown className="w-4 h-4" aria-hidden="true" />
+                         生成角色圖卡
+                      </button>
+                      <button ref={aiCheckButtonRef} onClick={handleAiAnalyze} disabled={analyzing} className="maple-ai-check-button mt-2.5 w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold rounded-lg flex items-center justify-center gap-2 transition-all shadow-lg shadow-indigo-900/20 hover:translate-y-[-1px]">
                          {analyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
-                         {aiAnalysis ? '重新分析' : 'AI 健檢'}
+                         {analyzing ? '分析中，查看結果' : aiAnalysis ? '重新分析' : 'AI 健檢'}
                       </button>
                       <button ref={calculatorButtonRef} onClick={() => setShowCalculator(true)} className="maple-calculator-open-button mt-2.5 w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold rounded-lg flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-900/20 hover:translate-y-[-1px]">
                          <Calculator className="w-4 h-4" />
@@ -458,7 +453,7 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
                         <span>戰鬥力</span>
                         <BestCombatPowerInfo key={data.basic.character_name} characterName={data.basic.character_name} apiKey={apiKey} />
                      </div>
-                     <div className="text-xl font-bold text-indigo-400 font-mono tracking-tight">{formatBigNumber(getStatVal('Combat Power'))}</div>
+                     <div className="text-xl font-bold text-indigo-400 font-mono tracking-tight">{formatMapleBigNumber(getStatVal('Combat Power'))}</div>
                      <div className="mt-1 text-xs">
                        <RecentPowerRankStatus
                          ref={recentPowerRankRef}
@@ -643,10 +638,26 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
                 <BossDamageCalculatorModal data={data} apiKey={apiKey} onClose={() => setShowBossDamageCalculator(false)} />
               </React.Suspense>
             )}
+            {showCharacterCard && (
+              <React.Suspense fallback={(
+                <div className="fixed inset-0 z-[10020] flex items-center justify-center bg-black/70 backdrop-blur-sm">
+                  <div className="maple-character-card-loading flex items-center gap-2 rounded-xl border border-slate-700 bg-[#161b22] px-5 py-3 text-sm font-bold text-cyan-200 shadow-2xl">
+                    <Loader2 className="h-4 w-4 animate-spin" /> 正在準備角色圖卡...
+                  </div>
+                </div>
+              )}>
+                <CharacterCardModal
+                  data={data}
+                  characterImage={characterAppearanceImage}
+                  onClose={() => setShowCharacterCard(false)}
+                />
+              </React.Suspense>
+            )}
             <MapleFeatureTour
               characterKey={data.ocid || data.basic.character_name}
               growthTrackingState={growthTrackingState}
               growthTargetRef={growthButtonRef}
+              characterCardTargetRef={characterCardButtonRef}
               aiTargetRef={aiCheckButtonRef}
               calculatorTargetRef={calculatorButtonRef}
               bossCalculatorTargetRef={bossCalculatorButtonRef}

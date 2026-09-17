@@ -61,22 +61,22 @@ const ServiceAdjustmentNotice = () => {
 
   React.useEffect(() => {
     const timer = window.setInterval(() => {
-      setActiveNotice((current) => (current + 1) % 4);
+      setActiveNotice((current) => (current + 1) % 3);
     }, 6500);
     return () => window.clearInterval(timer);
   }, []);
 
-  const isRedNotice = activeNotice === 0 || activeNotice === 2;
+  const isRedNotice = activeNotice === 0 || activeNotice === 1;
   const targetHref = activeNotice === 0
     ? '/maplestory/2026-09-12'
-    : activeNotice === 3
+    : activeNotice === 2
       ? '/survey/'
       : '/maplestory/service-notice';
   const ariaLabel = activeNotice === 0
     ? '新楓之谷戰力分析工具服務重新開放及資料來源取得方式說明'
-    : activeNotice === 3
+    : activeNotice === 2
       ? 'HolyBearTW 戰力分析滿意度問卷'
-      : '分身資料同步與服務調整說明';
+      : '服務調整與說明';
 
   return (
     <a
@@ -97,12 +97,9 @@ const ServiceAdjustmentNotice = () => {
           <p><strong style={{ color: '#dc2626' }}>服務重新開放及資料來源說明</strong>：楓之谷戰力分析已重新開放，現以 NEXON 官方 API 與本站資料處理流程提供分析結果。</p>
         </div>
         <div className={`maple-sync-ticker-item ${activeNotice === 1 ? 'is-active' : ''}`} aria-hidden={activeNotice !== 1}>
-          <p><strong>分身資料同步中</strong>：部分角色的分身／聯盟資料仍在背景補齊，查詢結果可能暫時不完整，資料會持續自動更新。</p>
-        </div>
-        <div className={`maple-sync-ticker-item ${activeNotice === 2 ? 'is-active' : ''}`} aria-hidden={activeNotice !== 2}>
           <p><strong style={{ color: '#dc2626' }}>服務調整與說明</strong>：關於先前 MapleKit API 的使用與後續爭議，我重新檢視了當時的做法與處理態度。對於先前沒有確認清楚服務使用界線就進行整合，以及後續處理事情時不好的態度，我在這裡正式向 MapleKit 作者道歉。</p>
         </div>
-        <div className={`maple-sync-ticker-item ${activeNotice === 3 ? 'is-active' : ''}`} aria-hidden={activeNotice !== 3}>
+        <div className={`maple-sync-ticker-item ${activeNotice === 2 ? 'is-active' : ''}`} aria-hidden={activeNotice !== 2}>
           <p><strong>HolyBearTW 戰力分析滿意度與未來開發意願調查</strong>：想了解大家的使用感受；問卷約 1 分鐘，回覆僅用於網站功能規劃與服務改善。</p>
         </div>
       </div>
@@ -141,7 +138,7 @@ const AuthorizedApp: React.FC<{ bypassKey: string }> = ({ bypassKey }) => {
     progressMessage,
     dropRateWarningData, setDropRateWarningData,
     aiResultRef, isHighScore, handleAiAnalyze
-  } = useAiAnalysis(data, setError);
+  } = useAiAnalysis(data, setError, error);
 
   const {
     showDetailStats, setShowDetailStats,

@@ -1,10 +1,10 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { Calculator, Database, Flame, Sparkles } from 'lucide-react';
+import { Calculator, Database, Flame, ImageDown, Sparkles } from 'lucide-react';
 
 export type GrowthTrackingState = 'loading' | 'tracked' | 'untracked' | 'unavailable';
 
-type TourStepId = 'growth-profile' | 'boss-damage-calculator' | 'ai-check' | 'combat-calculator';
+type TourStepId = 'growth-profile' | 'character-card' | 'boss-damage-calculator' | 'ai-check' | 'combat-calculator';
 
 interface TourTargetRef {
   current: HTMLButtonElement | null;
@@ -14,6 +14,7 @@ interface MapleFeatureTourProps {
   characterKey: string;
   growthTrackingState: GrowthTrackingState;
   growthTargetRef: TourTargetRef;
+  characterCardTargetRef: TourTargetRef;
   aiTargetRef: TourTargetRef;
   calculatorTargetRef: TourTargetRef;
   bossCalculatorTargetRef: TourTargetRef;
@@ -35,6 +36,13 @@ interface SpotlightRect {
 }
 
 const TOUR_STORAGE_PREFIX = 'maple-feature-tour-v1';
+const TOUR_STARTED_STORAGE_KEY = `${TOUR_STORAGE_PREFIX}:started`;
+
+// MainDashboard can be remounted when a new character result is rendered. Keep
+// an in-memory guard as a fallback for browsers where localStorage is blocked,
+// and persist the same guard when storage is available so a new character does
+// not restart the automatic tour.
+let autoTourStartedInMemory = false;
 
 const storageKey = (id: TourStepId) => `${TOUR_STORAGE_PREFIX}:${id}`;
 
@@ -43,6 +51,24 @@ const hasSeenStep = (id: TourStepId) => {
     return window.localStorage.getItem(storageKey(id)) === '1';
   } catch {
     return false;
+  }
+};
+
+const hasStartedTour = () => {
+  if (autoTourStartedInMemory) return true;
+  try {
+    return window.localStorage.getItem(TOUR_STARTED_STORAGE_KEY) === '1';
+  } catch {
+    return false;
+  }
+};
+
+const rememberTourStarted = () => {
+  autoTourStartedInMemory = true;
+  try {
+    window.localStorage.setItem(TOUR_STARTED_STORAGE_KEY, '1');
+  } catch {
+    // In-memory guard still prevents repeated starts during this page session.
   }
 };
 
@@ -58,6 +84,7 @@ const MapleFeatureTour: React.FC<MapleFeatureTourProps> = ({
   characterKey,
   growthTrackingState,
   growthTargetRef,
+  characterCardTargetRef,
   aiTargetRef,
   calculatorTargetRef,
   bossCalculatorTargetRef,
@@ -80,6 +107,13 @@ const MapleFeatureTour: React.FC<MapleFeatureTourProps> = ({
     }
 
     availableSteps.push(
+      {
+        id: 'character-card',
+        title: '把角色做成分享圖卡',
+        description: '使用角色、戰力與近期站內排名生成 PNG 圖卡，可選擇是否附上角色查詢 QR Code。',
+        targetRef: characterCardTargetRef,
+        icon: <ImageDown className="h-5 w-5" />,
+      },
       {
         id: 'ai-check',
         title: '讓 AI 幫角色做一次健檢',
@@ -104,15 +138,23 @@ const MapleFeatureTour: React.FC<MapleFeatureTourProps> = ({
     );
 
     return availableSteps;
-  }, [aiTargetRef, bossCalculatorTargetRef, calculatorTargetRef, growthTargetRef, growthTrackingState]);
+  }, [aiTargetRef, bossCalculatorTargetRef, calculatorTargetRef, characterCardTargetRef, growthTargetRef, growthTrackingState]);
 
   React.useEffect(() => {
     if (!characterKey || growthTrackingState === 'loading') return;
+    if (hasStartedTour()) return;
     if (initializedCharacterRef.current === characterKey) return;
 
     initializedCharacterRef.current = characterKey;
+    const requiredGrowthStep = growthTrackingState === 'untracked'
+      ? steps.find((step) => step.id === 'growth-profile')
+      : undefined;
     const firstUnseenStep = steps.find((step) => !hasSeenStep(step.id));
-    setCurrentStepId(firstUnseenStep?.id ?? null);
+    const initialStep = requiredGrowthStep?.id ?? firstUnseenStep?.id ?? null;
+    if (initialStep) {
+      rememberTourStarted();
+      setCurrentStepId(initialStep);
+    }
   }, [characterKey, growthTrackingState, steps]);
 
   const currentStep = steps.find((step) => step.id === currentStepId) ?? null;

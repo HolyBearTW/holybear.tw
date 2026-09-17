@@ -763,7 +763,7 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, setEffect, cha
         extraControls={
           <button 
              onClick={() => setShowSetEffect(!showSetEffect)} 
-             className={`text-[10px] px-2 py-0.5 rounded border flex shrink-0 items-center gap-1 whitespace-nowrap transition-all ${showSetEffect ? 'bg-purple-900/40 text-purple-300 border-purple-700/50 hover:bg-purple-900/60' : 'bg-slate-800 text-slate-500 border-slate-700 hover:bg-slate-700 hover:text-slate-400'}`}
+             className={`maple-set-effect-toggle text-[10px] px-2 py-0.5 rounded border flex shrink-0 items-center gap-1 whitespace-nowrap transition-all ${showSetEffect ? 'is-active bg-purple-900/40 text-purple-300 border-purple-700/50 hover:bg-purple-900/60' : 'bg-slate-800 text-slate-500 border-slate-700 hover:bg-slate-700 hover:text-slate-400'}`}
           >
              {showSetEffect ? <CheckSquare className="w-3 h-3" /> : <Square className="w-3 h-3" />}
              套裝效果

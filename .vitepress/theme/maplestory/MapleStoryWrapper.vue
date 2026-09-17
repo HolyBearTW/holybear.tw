@@ -458,6 +458,88 @@ html:not(.dark) #maplestory-root [class~="text-red-500"] {
   color: #c22f3f !important;
 }
 
+/* Keep the exported card colors stable while giving the modal shell a true
+   light treatment. The preview canvas stays dark so its transparent edge is visible. */
+html:not(.dark) #maplestory-root .maple-character-share-card [class~="text-white"] {
+  color: #ffffff !important;
+}
+
+html:not(.dark) #maplestory-root .maple-character-share-card [class~="text-slate-200"] {
+  color: #e2e8f0 !important;
+}
+
+html:not(.dark) #maplestory-root .maple-character-share-card [class~="text-slate-300"] {
+  color: #cbd5e1 !important;
+}
+
+html:not(.dark) #maplestory-root .maple-character-share-card [class~="text-amber-200"] {
+  color: #fde68a !important;
+}
+
+html:not(.dark) #maplestory-root .maple-character-card-modal {
+  color: #0f172a !important;
+  background: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+}
+
+html:not(.dark) #maplestory-root .maple-character-card-modal-header,
+html:not(.dark) #maplestory-root .maple-character-card-modal-footer {
+  border-color: #e2e8f0 !important;
+}
+
+html:not(.dark) #maplestory-root .maple-character-card-modal-body {
+  background: #f1f5f9 !important;
+}
+
+html:not(.dark) #maplestory-root .maple-character-card-modal-footer {
+  background: #ffffff !important;
+}
+
+html:not(.dark) #maplestory-root .maple-character-card-modal-title {
+  color: #0f172a !important;
+}
+
+html:not(.dark) #maplestory-root .maple-character-card-button,
+html:not(.dark) #maplestory-root .maple-character-card-download,
+html:not(.dark) #maplestory-root .maple-character-card-qr-toggle {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+html:not(.dark) #maplestory-root .maple-character-card-button svg,
+html:not(.dark) #maplestory-root .maple-character-card-download svg,
+html:not(.dark) #maplestory-root .maple-character-card-qr-toggle svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+html:not(.dark) #maplestory-root .maple-character-card-modal-title svg {
+  color: #0891b2 !important;
+}
+
+html:not(.dark) #maplestory-root .maple-character-card-modal-subtitle {
+  color: #64748b !important;
+}
+
+html:not(.dark) #maplestory-root .maple-character-card-modal-close {
+  color: #64748b !important;
+}
+
+html:not(.dark) #maplestory-root .maple-character-card-modal-close:hover {
+  color: #0f172a !important;
+  background: #e2e8f0 !important;
+}
+
+html:not(.dark) #maplestory-root .maple-character-card-qr-toggle {
+  background: #334155 !important;
+  border-color: #475569 !important;
+}
+
+html:not(.dark) #maplestory-root .maple-character-card-qr-toggle[aria-checked="true"] {
+  background: #0891b2 !important;
+  border-color: #22d3ee !important;
+}
+
 html:not(.dark) #maplestory-root [class~="border-[#1f242e]"],
 html:not(.dark) #maplestory-root [class~="border-slate-600"],
 html:not(.dark) #maplestory-root [class~="border-slate-700"],
@@ -1235,6 +1317,40 @@ html:not(.dark) #maplestory-root .maple-core-toggle.is-active {
   border-color: rgba(8, 127, 148, 0.4) !important;
 }
 
+/* Equipment preset's 套裝效果 toggle is rendered outside the HEXA toggle
+   group, so give it the same explicit light-mode treatment instead of
+   letting the dark Tailwind utility colours bleed through. */
+html:not(.dark) #maplestory-root .maple-set-effect-toggle {
+  color: #526b78 !important;
+  background: rgba(237, 247, 250, 0.96) !important;
+  border-color: rgba(36, 94, 112, 0.22) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-set-effect-toggle:hover,
+html:not(.dark) #maplestory-root .maple-set-effect-toggle:focus-visible {
+  color: #6730a2 !important;
+  background: rgba(237, 225, 255, 0.98) !important;
+  border-color: rgba(122, 61, 184, 0.48) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-set-effect-toggle.is-active {
+  color: #6730a2 !important;
+  background: rgba(232, 211, 255, 0.96) !important;
+  border-color: rgba(122, 61, 184, 0.42) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-set-effect-toggle.is-active:hover,
+html:not(.dark) #maplestory-root .maple-set-effect-toggle.is-active:focus-visible {
+  color: #542582 !important;
+  background: rgba(220, 194, 255, 0.98) !important;
+  border-color: rgba(106, 48, 162, 0.58) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-set-effect-toggle svg {
+  color: currentColor !important;
+  stroke: currentColor !important;
+}
+
 html:not(.dark) #maplestory-root .maple-core-item {
   background: rgba(249, 253, 255, 0.94) !important;
   border-color: rgba(81, 69, 205, 0.2) !important;
@@ -1271,6 +1387,78 @@ html:not(.dark) #maplestory-root .maple-ai-check-button {
 
 html:not(.dark) #maplestory-root .maple-ai-check-button:hover {
   background: linear-gradient(135deg, #076f82, #009bb6) !important;
+}
+
+/* The action stack uses different Tailwind colour utilities.  Pin each
+   button to an explicit light-mode palette so the background and hover state
+   remain visible instead of being washed out by the global light remapping. */
+html:not(.dark) #maplestory-root .maple-character-card-button,
+html:not(.dark) #maplestory-root .maple-ai-check-button,
+html:not(.dark) #maplestory-root .maple-calculator-open-button,
+html:not(.dark) #maplestory-root .maple-boss-calculator-open-button,
+html:not(.dark) #maplestory-root .maple-growth-create-button {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-character-card-button {
+  background: linear-gradient(135deg, #6d28d9, #8b5cf6) !important;
+  box-shadow: 0 8px 20px rgba(109, 40, 217, 0.24) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-character-card-button:hover:not(:disabled),
+html:not(.dark) #maplestory-root .maple-character-card-button:focus-visible {
+  background: linear-gradient(135deg, #5b21b6, #7c3aed) !important;
+  box-shadow: 0 10px 24px rgba(109, 40, 217, 0.34) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-ai-check-button:hover:not(:disabled),
+html:not(.dark) #maplestory-root .maple-ai-check-button:focus-visible {
+  background: linear-gradient(135deg, #076f82, #009bb6) !important;
+  box-shadow: 0 10px 24px rgba(0, 150, 180, 0.34) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-calculator-open-button {
+  background: linear-gradient(135deg, #087a4b, #0ba978) !important;
+  box-shadow: 0 8px 20px rgba(8, 122, 75, 0.2) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-calculator-open-button:hover:not(:disabled),
+html:not(.dark) #maplestory-root .maple-calculator-open-button:focus-visible {
+  background: linear-gradient(135deg, #06663e, #088e65) !important;
+  box-shadow: 0 10px 24px rgba(8, 122, 75, 0.3) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-boss-calculator-open-button {
+  background: linear-gradient(135deg, #d90d47, #f20546) !important;
+  box-shadow: 0 8px 20px rgba(217, 13, 71, 0.22) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-boss-calculator-open-button:hover:not(:disabled),
+html:not(.dark) #maplestory-root .maple-boss-calculator-open-button:focus-visible {
+  background: linear-gradient(135deg, #bf0b3f, #dc043d) !important;
+  box-shadow: 0 10px 24px rgba(217, 13, 71, 0.32) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-growth-create-button {
+  background: linear-gradient(135deg, #d97706, #f59e0b) !important;
+  box-shadow: 0 8px 20px rgba(180, 83, 9, 0.22) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-growth-create-button:hover:not(:disabled),
+html:not(.dark) #maplestory-root .maple-growth-create-button:focus-visible {
+  background: linear-gradient(135deg, #b45309, #d97706) !important;
+  box-shadow: 0 10px 24px rgba(180, 83, 9, 0.32) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-character-card-button svg,
+html:not(.dark) #maplestory-root .maple-ai-check-button svg,
+html:not(.dark) #maplestory-root .maple-calculator-open-button svg,
+html:not(.dark) #maplestory-root .maple-boss-calculator-open-button svg,
+html:not(.dark) #maplestory-root .maple-growth-create-button svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
 }
 
 html:not(.dark) #maplestory-root .maple-ai-check-button:disabled {
@@ -2874,5 +3062,216 @@ html:not(.dark) body:has(#maplestory-root) #maplestory-root .maple-survey-eyebro
 html:not(.dark) body:has(#maplestory-root) #maplestory-root .custom-vp-tip,
 html:not(.dark) body:has(#maplestory-root) #maplestory-root .custom-vp-tip * {
   text-shadow: none !important;
+}
+
+/* Exported character-card colors are theme-independent. Keep these rules last
+   so light-mode utility remapping cannot alter the preview or generated PNG. */
+#maplestory-root .maple-character-share-card .maple-share-card-name,
+#maplestory-root .maple-character-share-card .maple-share-card-stat-label,
+#maplestory-root .maple-character-share-card .maple-share-card-stat-value,
+#maplestory-root .maple-character-share-card .maple-share-card-brand {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+#maplestory-root .maple-character-share-card .maple-share-card-identity,
+#maplestory-root .maple-character-share-card .maple-share-card-power-title,
+#maplestory-root .maple-character-share-card .maple-share-card-bright-text,
+#maplestory-root .maple-character-share-card .maple-share-card-url,
+#maplestory-root .maple-character-share-card .maple-share-card-date,
+#maplestory-root .maple-character-share-card .maple-share-card-hexa-title {
+  color: #ecfeff !important;
+  -webkit-text-fill-color: #ecfeff !important;
+}
+
+#maplestory-root .maple-character-share-card .maple-share-card-level,
+#maplestory-root .maple-character-share-card .maple-share-card-power,
+#maplestory-root .maple-character-share-card .maple-share-card-rank {
+  color: #fde68a !important;
+  -webkit-text-fill-color: #fde68a !important;
+}
+
+#maplestory-root .maple-character-share-card .maple-share-card-hexa-value {
+  color: #e9d5ff !important;
+  -webkit-text-fill-color: #e9d5ff !important;
+}
+
+#maplestory-root .maple-character-share-card .maple-share-card-hexa-track {
+  background: rgba(7, 21, 38, 0.68) !important;
+  border-color: rgba(207, 250, 254, 0.28) !important;
+}
+
+#maplestory-root .maple-character-share-card .maple-share-card-hexa-fill {
+  background: linear-gradient(90deg, #38bdf8 0%, #818cf8 55%, #e879f9 100%) !important;
+  box-shadow: 0 0 8px rgba(129, 140, 248, 0.72) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-character-card-loading {
+  color: #67e8f9 !important;
+}
+
+/* AI 健檢 has its own light surface; do not let the dark analysis palette
+   make the result, warning, or action controls unreadable in light mode. */
+html:not(.dark) #maplestory-root .maple-ai-result-panel {
+  color: #1e293b !important;
+  background: #f8fafc !important;
+  border-color: #c7d2fe !important;
+  box-shadow: 0 12px 30px rgba(51, 65, 85, 0.14) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-ai-result-heading {
+  color: #4338ca !important;
+  border-color: #c7d2fe !important;
+}
+
+html:not(.dark) #maplestory-root .maple-ai-result-heading.text-amber-400 {
+  color: #b45309 !important;
+  border-color: #fcd34d !important;
+}
+
+html:not(.dark) #maplestory-root .maple-ai-analyzing .text-slate-500,
+html:not(.dark) #maplestory-root .maple-ai-analyzing .text-slate-600 {
+  color: #475569 !important;
+}
+
+html:not(.dark) #maplestory-root .maple-ai-analyzing .text-indigo-300,
+html:not(.dark) #maplestory-root .maple-ai-analyzing .text-indigo-400,
+html:not(.dark) #maplestory-root .maple-ai-analyzing .text-indigo-500 {
+  color: #4f46e5 !important;
+}
+
+html:not(.dark) #maplestory-root .maple-ai-analyzing .text-amber-400 {
+  color: #b45309 !important;
+}
+
+html:not(.dark) #maplestory-root .maple-ai-warning {
+  color: #92400e !important;
+  background: #fffbeb !important;
+  border-color: #fcd34d !important;
+}
+
+html:not(.dark) #maplestory-root .maple-ai-warning p,
+html:not(.dark) #maplestory-root .maple-ai-warning .text-slate-300,
+html:not(.dark) #maplestory-root .maple-ai-warning .text-slate-400 {
+  color: #475569 !important;
+}
+
+html:not(.dark) #maplestory-root .maple-ai-warning .text-yellow-400,
+html:not(.dark) #maplestory-root .maple-ai-warning .text-yellow-500 {
+  color: #a16207 !important;
+}
+
+html:not(.dark) #maplestory-root .maple-ai-warning-cancel {
+  color: #334155 !important;
+  background: #e2e8f0 !important;
+}
+
+html:not(.dark) #maplestory-root .maple-ai-warning-cancel:hover,
+html:not(.dark) #maplestory-root .maple-ai-warning-cancel:focus-visible {
+  color: #0f172a !important;
+  background: #cbd5e1 !important;
+}
+
+html:not(.dark) #maplestory-root .maple-ai-warning-continue {
+  color: #92400e !important;
+  background: #fef3c7 !important;
+  border-color: #f59e0b !important;
+}
+
+html:not(.dark) #maplestory-root .maple-ai-warning-continue:hover,
+html:not(.dark) #maplestory-root .maple-ai-warning-continue:focus-visible {
+  color: #78350f !important;
+  background: #fde68a !important;
+  border-color: #d97706 !important;
+}
+
+html:not(.dark) #maplestory-root .maple-ai-error {
+  color: #9f1239 !important;
+  background: #fff1f2 !important;
+  border-color: #fda4af !important;
+}
+
+html:not(.dark) #maplestory-root .maple-ai-markdown {
+  color: #334155 !important;
+}
+
+html:not(.dark) #maplestory-root .maple-ai-markdown h1,
+html:not(.dark) #maplestory-root .maple-ai-markdown h2,
+html:not(.dark) #maplestory-root .maple-ai-markdown h3 {
+  color: #4338ca !important;
+}
+
+html:not(.dark) #maplestory-root .maple-ai-markdown strong {
+  color: #3730a3 !important;
+}
+
+html:not(.dark) #maplestory-root .maple-ai-markdown th {
+  color: #3730a3 !important;
+  background-color: #e0e7ff !important;
+}
+
+html:not(.dark) #maplestory-root .maple-ai-markdown tr:nth-child(even) {
+  background-color: #eef2ff !important;
+}
+
+html:not(.dark) #maplestory-root .maple-ai-actions {
+  border-color: #c7d2fe !important;
+}
+
+html:not(.dark) #maplestory-root .maple-ai-retry-button {
+  color: #047857 !important;
+  background: #ecfdf5 !important;
+}
+
+html:not(.dark) #maplestory-root .maple-ai-retry-button:hover,
+html:not(.dark) #maplestory-root .maple-ai-retry-button:focus-visible {
+  color: #065f46 !important;
+  background: #d1fae5 !important;
+}
+
+html:not(.dark) #maplestory-root .maple-ai-settings-button {
+  color: #4338ca !important;
+  background: #eef2ff !important;
+}
+
+html:not(.dark) #maplestory-root .maple-ai-settings-button:hover,
+html:not(.dark) #maplestory-root .maple-ai-settings-button:focus-visible {
+  color: #3730a3 !important;
+  background: #e0e7ff !important;
+}
+
+html:not(.dark) #maplestory-root .maple-ai-retry-button svg,
+html:not(.dark) #maplestory-root .maple-ai-settings-button svg {
+  color: currentColor !important;
+}
+
+/* AI key settings is opened from the same action stack.  Keep its close and
+   confirmation controls readable in light mode as well. */
+html:not(.dark) #maplestory-root .maple-key-settings-modal {
+  color: #1e293b !important;
+  background: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+}
+
+html:not(.dark) #maplestory-root .maple-key-settings-close {
+  color: #64748b !important;
+}
+
+html:not(.dark) #maplestory-root .maple-key-settings-close:hover,
+html:not(.dark) #maplestory-root .maple-key-settings-close:focus-visible {
+  color: #0f172a !important;
+}
+
+html:not(.dark) #maplestory-root .maple-key-settings-done {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  background: linear-gradient(135deg, #4f46e5, #6366f1) !important;
+  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.24) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-key-settings-done:hover,
+html:not(.dark) #maplestory-root .maple-key-settings-done:focus-visible {
+  background: linear-gradient(135deg, #4338ca, #4f46e5) !important;
+  box-shadow: 0 8px 20px rgba(79, 70, 229, 0.34) !important;
 }
 </style>

@@ -7,7 +7,8 @@ const DEFAULT_GEMINI_KEY = '';
 
 export const useAiAnalysis = (
   data: DashboardData | null,
-  setError: (error: string | null) => void
+  setError: (error: string | null) => void,
+  error: string | null = null,
 ) => {
   const [geminiKey, setGeminiKey] = useState<string | null>(() => {
     return typeof localStorage !== 'undefined' ? localStorage.getItem('gemini_api_key') || null : null;
@@ -77,12 +78,26 @@ export const useAiAnalysis = (
   }, [analyzing]);
 
   useEffect(() => {
-    if ((aiAnalysis || analyzing) && aiResultRef.current) {
-      setTimeout(() => {
-        aiResultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 100);
+    const hasAiError = Boolean(error && (error.includes('AI') || error.includes('Quota')));
+    if ((aiAnalysis || analyzing || hasAiError || dropRateWarningData) && aiResultRef.current) {
+      let attempts = 0;
+      const scrollToResult = () => {
+        const result = aiResultRef.current;
+        if (!result) return;
+        result.scrollIntoView({ behavior: attempts === 0 ? 'smooth' : 'auto', block: 'start' });
+      };
+
+      // The panel is lazy-loaded and can mount after the state update. Retry
+      // briefly so the click always lands on the visible AI status/result area.
+      scrollToResult();
+      const retryTimer = window.setInterval(() => {
+        attempts += 1;
+        scrollToResult();
+        if (attempts >= 12 || aiResultRef.current) window.clearInterval(retryTimer);
+      }, 80);
+      return () => window.clearInterval(retryTimer);
     }
-  }, [aiAnalysis, analyzing]);
+  }, [aiAnalysis, analyzing, dropRateWarningData, error]);
 
   const handleAiAnalyze = useCallback(async (overrideIgnoreWarnings?: boolean | any) => {
     if (!data) return;

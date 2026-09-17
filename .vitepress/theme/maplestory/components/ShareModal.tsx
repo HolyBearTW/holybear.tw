@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Copy, Check, QrCode } from 'lucide-react';
+import { buildCharacterShareUrl } from '../services/shareCard';
 
 interface ShareModalProps {
   characterName: string;
@@ -10,9 +11,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ characterName, onClose }) => {
   const [copied, setCopied] = useState(false);
   
   // Construct URL
-  const url = typeof window !== 'undefined' 
-    ? `${window.location.origin}${window.location.pathname}#${characterName}`
-    : `https://holybear.tw/maplestory#${characterName}`;
+  const url = buildCharacterShareUrl(characterName);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(url);

@@ -39,10 +39,11 @@ const KeySettingsModal: React.FC<KeySettingsModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-      <div className="bg-slate-900 border border-slate-700 rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl relative">
+      <div className="maple-key-settings-modal bg-slate-900 border border-slate-700 rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl relative">
         <button 
           onClick={onClose}
-          className="absolute right-4 top-4 text-slate-500 hover:text-white"
+          aria-label="關閉 AI 設定"
+          className="maple-key-settings-close absolute right-4 top-4 text-slate-500 hover:text-white"
         >
           <X className="w-5 h-5" />
         </button>
@@ -191,7 +192,7 @@ const KeySettingsModal: React.FC<KeySettingsModalProps> = ({
         <div className="flex justify-end">
           <button 
             onClick={onClose}
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-bold"
+            className="maple-key-settings-done px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-bold"
           >
             完成
           </button>

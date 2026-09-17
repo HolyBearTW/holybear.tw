@@ -9,6 +9,7 @@ import UnionRaiderSection from './UnionRaiderSection';
 import CharacterAvatar from './CharacterAvatar';
 import { mapleAsset } from '../assets';
 import { fetchCharacterBasic } from '../services/nexonService';
+import { calculateHexaProgress } from '../services/hexaProgress';
 
 interface CharacterDetailsProps {
   data: DashboardData;
@@ -46,36 +47,6 @@ const HEXA_STAT_CORE_ICONS = [
   mapleAsset('hexa/hexa-stat3.png'),
 ];
 
-// HEXA 六轉技能設定
-
-const HEXA_SETTINGS = {
-  SKILL: {
-    key: 'SKILL', quantity: 2, keywords: ['skill', '技能'],
-    costs: [0, 30, 35, 40, 45, 50, 55, 60, 65, 200, 80, 90, 100, 110, 120, 130, 140, 150, 160, 350, 170, 180, 190, 200, 210, 220, 230, 240, 250, 500],
-    erdaCosts: [0, 1, 1, 1, 2, 2, 2, 3, 3, 10, 3, 3, 4, 4, 4, 4, 4, 4, 5, 15, 5, 5, 5, 5, 5, 6, 6, 6, 7, 20]
-  },
-  MASTERY: {
-    key: 'MASTERY', quantity: 4, keywords: ['mastery', '精通'],
-    costs: [50, 15, 18, 20, 23, 25, 28, 30, 33, 100, 40, 45, 50, 55, 60, 65, 70, 75, 80, 175, 85, 90, 95, 100, 105, 110, 115, 120, 125, 250],
-    erdaCosts: [3, 1, 1, 1, 1, 1, 1, 2, 2, 5, 2, 2, 2, 2, 2, 2, 2, 2, 3, 8, 3, 3, 3, 3, 3, 3, 3, 3, 4, 10]
-  },
-  ENHANCEMENT: {
-    key: 'ENHANCEMENT', quantity: 4, keywords: ['enhancement', '強化'],
-    costs: [75, 23, 27, 30, 34, 38, 42, 45, 49, 150, 60, 68, 75, 83, 90, 98, 105, 113, 120, 263, 128, 135, 143, 150, 158, 165, 173, 180, 188, 375],
-    erdaCosts: [4, 1, 1, 1, 2, 2, 2, 3, 3, 8, 3, 3, 3, 3, 3, 3, 3, 3, 4, 12, 4, 4, 4, 4, 4, 5, 5, 5, 6, 15]
-  },
-  COMMON: {
-    key: 'COMMON', quantity: 1, keywords: ['common', '共用'],
-    costs: [125, 38, 44, 50, 57, 63, 69, 75, 82, 300, 110, 124, 138, 152, 165, 179, 193, 207, 220, 525, 234, 248, 262, 275, 289, 303, 317, 330, 344, 750],
-    erdaCosts: [7, 2, 2, 2, 3, 3, 3, 5, 5, 14, 5, 5, 6, 6, 6, 6, 6, 6, 7, 17, 7, 7, 7, 7, 7, 9, 9, 9, 10, 20]
-  },
-  COMMON_3: {
-    key: 'COMMON_3', quantity: 1, keywords: [],
-    costs: [90, 25, 30, 35, 40, 45, 50, 55, 60, 180, 73, 81, 90, 98, 107, 115, 124, 132, 141, 315, 151, 160, 170, 179, 189, 198, 208, 217, 227, 450],
-    erdaCosts: [4, 1, 1, 1, 2, 2, 2, 3, 3, 9, 3, 3, 3, 3, 4, 4, 4, 4, 4, 14, 4, 5, 5, 5, 5, 5, 5, 5, 6, 18]
-  }
-};
-
 const LINK_SKILL_DATA: Record<string, (lv: number) => Record<string, number>> = {
   '狂暴鬥氣': (lv) => ({ '傷害': lv * 5 }),
   '惡魔之怒': (lv) => ({ 'BOSS 傷害': lv === 1 ? 10 : 15 }),
@@ -101,91 +72,6 @@ const CONDITIONAL_SKILLS = [
     '不屈的信念', '自由精神', '連續擊殺優勢', '輪之堅持', '光之守護',
     '蒼刃傳授', '紫扇傳授'
 ];
-
-const HEXA_COMMON_SKILLS = [
-  { key: 'JANUS', label: '靈魂雅努斯', matcher: /雅努斯|janus/ },
-  { key: 'HECATE', label: '靈魂赫卡忒', matcher: /赫卡忒|hecate/ },
-];
-
-const getHexaCommonSkillKey = (name: string) => {
-  const normalized = (name || '').toLowerCase();
-  return HEXA_COMMON_SKILLS.find(skill => skill.matcher.test(normalized))?.key ?? null;
-};
-
-// ---------------------------
-// 2. Helper 函式
-// ---------------------------
-
-const calculateHexaProgress = (hexaMatrix: any, commonSkillFlags: Record<string, boolean>) => {
-  if (!hexaMatrix || !hexaMatrix.character_hexa_core_equipment) {
-    return { current: 0, total: 1, percent: 0, currentErda: 0, remainingFragments: 0, remainingErda: 0, hasJanus: false, hasHecate: false };
-  }
-  let totalFragmentsUsed = 0;
-  let totalErdaUsed = 0;
-  let grandTotalFragments = 0;
-  let grandTotalErda = 0;
-  let hasJanus = false;
-  let hasHecate = false;
-  const enabledCommonCount = Object.values(commonSkillFlags).filter(Boolean).length;
-
-  Object.values(HEXA_SETTINGS).forEach(setting => {
-    if (setting.key === 'COMMON') {
-      if (enabledCommonCount === 0) return;
-      const costPerCore = setting.costs.reduce((a, b) => a + b, 0);
-      const erdaPerCore = setting.erdaCosts.reduce((a, b) => a + b, 0);
-      grandTotalFragments += costPerCore * enabledCommonCount;
-      grandTotalErda += erdaPerCore * enabledCommonCount;
-      return;
-    }
-    const costPerCore = setting.costs.reduce((a, b) => a + b, 0);
-    const erdaPerCore = setting.erdaCosts.reduce((a, b) => a + b, 0);
-    grandTotalFragments += costPerCore * setting.quantity;
-    grandTotalErda += erdaPerCore * setting.quantity;
-  });
-
-  hexaMatrix.character_hexa_core_equipment.forEach((core: any) => {
-    const level = parseInt(core.hexa_core_level, 10);
-    const type = (core.hexa_core_type || '').toLowerCase();
-    const name = (core.hexa_core_name || '').toLowerCase();
-    const commonSkillKey = getHexaCommonSkillKey(name);
-    const isJanus = commonSkillKey === 'JANUS';
-    const isHecate = commonSkillKey === 'HECATE';
-    if (isJanus) hasJanus = true;
-    if (isHecate) hasHecate = true;
-
-    let targetSetting = null;
-    if (HEXA_SETTINGS.SKILL.keywords.some(k => type.includes(k))) targetSetting = HEXA_SETTINGS.SKILL;
-    else if (HEXA_SETTINGS.MASTERY.keywords.some(k => type.includes(k))) targetSetting = HEXA_SETTINGS.MASTERY;
-    else if (HEXA_SETTINGS.ENHANCEMENT.keywords.some(k => type.includes(k))) targetSetting = HEXA_SETTINGS.ENHANCEMENT;
-    else if (HEXA_SETTINGS.COMMON.keywords.some(k => type.includes(k))) {
-      // 雅努斯與赫卡忒是共用核心 I、II；其餘職業專屬名稱的共用核心為 III。
-      targetSetting = commonSkillKey ? HEXA_SETTINGS.COMMON : HEXA_SETTINGS.COMMON_3;
-    }
-
-    if (targetSetting) {
-      const shouldIncludeCommon = targetSetting.key !== 'COMMON'
-        || (commonSkillKey && commonSkillFlags[commonSkillKey]);
-
-      if (shouldIncludeCommon) {
-        for (let i = 0; i < level; i++) {
-          totalFragmentsUsed += targetSetting.costs[i] || 0;
-          totalErdaUsed += targetSetting.erdaCosts[i] || 0;
-        }
-      }
-    }
-  });
-
-  return {
-    current: totalFragmentsUsed,
-    total: grandTotalFragments,
-    percent: grandTotalFragments === 0 ? 0 : (totalFragmentsUsed / grandTotalFragments) * 100,
-    currentErda: totalErdaUsed,
-    remainingFragments: grandTotalFragments - totalFragmentsUsed,
-    remainingErda: grandTotalErda - totalErdaUsed,
-    hasJanus: hasJanus,
-    hasHecate: hasHecate
-  };
-};
 
 const getChampionBgImage = (jobClass: string) => {
     const thief = ['夜使者', '暗影神偷', '影武者', '暗夜行者', '幻影俠盜', '卡蒂娜', '虎影', '卡莉'];

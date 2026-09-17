@@ -47,7 +47,7 @@ const AiAnalysisPanel: React.FC<AiAnalysisPanelProps> = ({
         <>
             {/* AI Response Area */}
            {/* Fix: Always show container if we have result OR analyzing OR specific error OR warning. Button is now always visible inside. */}
-           <div ref={aiResultRef} className={`relative transition-all duration-700 ${!analyzing && !aiAnalysis && !error?.includes('AI') && !dropRateWarningData ? 'hidden' : 'block'} 
+           <div ref={aiResultRef} className={`maple-ai-result-panel relative scroll-mt-24 transition-all duration-700 ${!analyzing && !aiAnalysis && !error?.includes('AI') && !dropRateWarningData ? 'hidden' : 'block'}
              ${isHighScore ? 'bg-gradient-to-br from-[#1c1f33] to-[#2a1b3d] border-2 border-amber-400/50 shadow-[0_0_40px_rgba(251,191,36,0.15)]' : 'bg-[#161b22] border border-indigo-500/30 shadow-lg'} 
              rounded-xl p-5 mt-6`}>
                
@@ -60,7 +60,7 @@ const AiAnalysisPanel: React.FC<AiAnalysisPanelProps> = ({
                  </div>
                )}
 
-               <h3 className={`relative font-bold text-base mb-3 flex items-center justify-between border-b pb-2 ${isHighScore ? 'text-amber-400 border-amber-500/30' : 'text-indigo-400 border-indigo-500/20'}`}>
+               <h3 className={`maple-ai-result-heading relative font-bold text-base mb-3 flex items-center justify-between border-b pb-2 ${isHighScore ? 'text-amber-400 border-amber-500/30' : 'text-indigo-400 border-indigo-500/20'}`}>
                  <div className="flex items-center gap-2 relative z-10">
                     {isHighScore ? (
                         <div className="relative">
@@ -91,7 +91,7 @@ const AiAnalysisPanel: React.FC<AiAnalysisPanelProps> = ({
                </h3>
                
                {analyzing ? (
-                 <div className="flex flex-col items-center py-20 animate-pulse">
+                 <div className="maple-ai-analyzing flex flex-col items-center py-20 animate-pulse">
                    <Loader2 className="w-10 h-10 text-indigo-500 animate-spin mb-4" />
                    <p className="text-slate-500 font-medium">AI 正在分析裝備與數據...</p>
                    <p className="text-xs text-indigo-400 mt-2 font-bold tracking-wide flex items-center gap-1">
@@ -108,7 +108,7 @@ const AiAnalysisPanel: React.FC<AiAnalysisPanelProps> = ({
                    </p>
                  </div>
                ) : dropRateWarningData ? (
-                 <div className="p-5 bg-yellow-950/20 border border-yellow-600/50 rounded-lg text-yellow-200 mb-4 animate-in fade-in slide-in-from-bottom-2">
+                 <div className="maple-ai-warning p-5 bg-yellow-950/20 border border-yellow-600/50 rounded-lg text-yellow-200 mb-4 animate-in fade-in slide-in-from-bottom-2">
                      <h4 className="font-bold text-lg mb-2 flex items-center gap-2">
                         <AlertTriangle className="w-5 h-5 text-yellow-500" />
                         檢測到您目前穿著練功/打寶裝備
@@ -125,13 +125,13 @@ const AiAnalysisPanel: React.FC<AiAnalysisPanelProps> = ({
                      <div className="flex gap-3">
                          <button 
                             onClick={() => setDropRateWarningData(null)}
-                            className="px-4 py-2 bg-slate-700/50 hover:bg-slate-700/80 text-slate-300 rounded text-sm transition-colors"
+                            className="maple-ai-warning-cancel px-4 py-2 bg-slate-700/50 hover:bg-slate-700/80 text-slate-300 rounded text-sm transition-colors"
                          >
                              取消 (更換裝備)
                          </button>
                          <button 
                             onClick={() => handleAiAnalyze(true)}
-                            className="px-4 py-2 bg-yellow-600/20 hover:bg-yellow-600/40 border border-yellow-600/50 text-yellow-200 rounded text-sm transition-colors flex items-center gap-2"
+                            className="maple-ai-warning-continue px-4 py-2 bg-yellow-600/20 hover:bg-yellow-600/40 border border-yellow-600/50 text-yellow-200 rounded text-sm transition-colors flex items-center gap-2"
                          >
                              仍然繼續分析
                              <ArrowRight className="w-4 h-4" />
@@ -141,7 +141,7 @@ const AiAnalysisPanel: React.FC<AiAnalysisPanelProps> = ({
                ) : (
                  <>
                    {error && (error.includes('AI') || error.includes('Quota')) ? (
-  <div className="p-4 bg-red-950/20 border border-red-900/50 rounded-lg text-red-300 text-sm mb-4">
+  <div className="maple-ai-error p-4 bg-red-950/20 border border-red-900/50 rounded-lg text-red-300 text-sm mb-4">
     {/* 加入 Markdown 渲染與 CSS 樣式修正 */}
     <div 
       className="leading-relaxed [&>p]:mb-2 [&>ul]:list-disc [&>ul]:pl-5 [&>a]:underline [&>a]:font-bold"
@@ -152,7 +152,7 @@ const AiAnalysisPanel: React.FC<AiAnalysisPanelProps> = ({
   </div>
 ) : aiAnalysis ? (
                       <div 
-                        className="text-sm text-slate-300 leading-relaxed ai-markdown-content"
+                        className="maple-ai-markdown text-sm text-slate-300 leading-relaxed ai-markdown-content"
                         dangerouslySetInnerHTML={{ 
                           __html: new MarkdownIt({ html: true, breaks: true, linkify: true }).render(aiAnalysis || '') 
                         }}
@@ -160,14 +160,14 @@ const AiAnalysisPanel: React.FC<AiAnalysisPanelProps> = ({
                    ) : null}
 
                    {/* Footer Actions - ALWAYS Visible if container is visible */}
-                   <div className="mt-4 pt-3 border-t border-indigo-500/20 flex justify-between items-center">
+                   <div className="maple-ai-actions mt-4 pt-3 border-t border-indigo-500/20 flex justify-between items-center">
                      <span className="text-[10px] text-slate-500">Generated by {isCompatibleAiModel(geminiModel) ? '自訂相容服務' : isOpenAiModel(geminiModel) ? 'OpenAI GPT' : 'Google Gemini'}</span>
                      
                      <div className="flex items-center gap-2">
                        <button 
                         onClick={handleAiAnalyze}
                         disabled={analyzing}
-                        className="text-[10px] flex items-center gap-1 transition-colors px-2 py-1 rounded text-emerald-400 hover:text-emerald-300 bg-emerald-950/30 hover:bg-emerald-900/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="maple-ai-retry-button text-[10px] flex items-center gap-1 transition-colors px-2 py-1 rounded text-emerald-400 hover:text-emerald-300 bg-emerald-950/30 hover:bg-emerald-900/50 disabled:opacity-50 disabled:cursor-not-allowed"
                        >
                         <RefreshCw className={`w-3 h-3 ${analyzing ? 'animate-spin' : ''}`} />
                         重新分析
@@ -175,7 +175,7 @@ const AiAnalysisPanel: React.FC<AiAnalysisPanelProps> = ({
 
                        <button 
                         onClick={() => setShowKeySettings(true)}
-                        className="text-[10px] flex items-center gap-1 transition-colors px-2 py-1 rounded text-indigo-400 hover:text-indigo-300 bg-indigo-950/30 hover:bg-indigo-900/50"
+                        className="maple-ai-settings-button text-[10px] flex items-center gap-1 transition-colors px-2 py-1 rounded text-indigo-400 hover:text-indigo-300 bg-indigo-950/30 hover:bg-indigo-900/50"
                        >
                         <Settings className="w-3 h-3" />
                         設定模型 / API Key
