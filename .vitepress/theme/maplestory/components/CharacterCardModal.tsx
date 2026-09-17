@@ -21,12 +21,21 @@ const waitForCardAssets = async (node: HTMLElement) => {
   if (typeof document !== 'undefined' && document.fonts) await document.fonts.ready;
   const images = Array.from(node.querySelectorAll('img'));
   await Promise.all(images.map(async (image) => {
-    if (!image.complete) {
-      await new Promise<void>((resolve) => {
-        image.addEventListener('load', () => resolve(), { once: true });
-        image.addEventListener('error', () => resolve(), { once: true });
-      });
-    }
+    if (!image.complete) await new Promise<void>((resolve) => {
+      let settled = false;
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        image.removeEventListener('load', finish);
+        image.removeEventListener('error', finish);
+        resolve();
+      };
+      image.addEventListener('load', finish, { once: true });
+      image.addEventListener('error', finish, { once: true });
+      // A cached response may complete between the initial check and listener
+      // registration. Re-check immediately so export cannot wait forever.
+      if (image.complete) finish();
+    });
     if (image.complete && image.naturalWidth > 0 && typeof image.decode === 'function') {
       await image.decode().catch(() => undefined);
     }

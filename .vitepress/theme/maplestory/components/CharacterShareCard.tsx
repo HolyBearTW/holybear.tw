@@ -46,13 +46,57 @@ const CharacterShareCard = React.forwardRef<HTMLDivElement, CharacterShareCardPr
     jobArtworkUrl ? 'loading' : 'error',
   );
   const [brandLogoState, setBrandLogoState] = React.useState<'loading' | 'ready' | 'error'>('loading');
+  const backgroundImageRef = React.useRef<HTMLImageElement>(null);
+  const characterImageRef = React.useRef<HTMLImageElement>(null);
+  const jobArtworkImageRef = React.useRef<HTMLImageElement>(null);
+  const brandLogoImageRef = React.useRef<HTMLImageElement>(null);
+  const resourceKey = `${view.characterName}\u0000${characterImage}\u0000${jobArtworkUrl}`;
+  const previousResourceKeyRef = React.useRef<string | null>(null);
 
   React.useEffect(() => {
-    setBackgroundState('loading');
-    setCharacterState(characterImage ? 'loading' : 'error');
-    setJobArtworkState(jobArtworkUrl ? 'loading' : 'error');
-    setBrandLogoState('loading');
-  }, [characterImage, jobArtworkUrl, view.characterName]);
+    const isFirstRender = previousResourceKeyRef.current === null;
+    previousResourceKeyRef.current = resourceKey;
+
+    // Do not reset state on an unrelated parent render. When the actual image
+    // source changes, reset first and then reconcile already-cached images so
+    // a fast cache hit cannot leave the card stuck in "preparing" forever.
+    if (!isFirstRender) {
+      setBackgroundState('loading');
+      setCharacterState(characterImage ? 'loading' : 'error');
+      setJobArtworkState(jobArtworkUrl ? 'loading' : 'error');
+      setBrandLogoState('loading');
+    }
+
+    const syncLoadedImages = () => {
+      const backgroundImage = backgroundImageRef.current;
+      if (backgroundImage?.complete) {
+        setBackgroundState(backgroundImage.naturalWidth > 0 ? 'ready' : 'error');
+      }
+
+      const characterImageElement = characterImageRef.current;
+      if (!characterImage) {
+        setCharacterState('error');
+      } else if (characterImageElement?.complete) {
+        setCharacterState(characterImageElement.naturalWidth > 0 ? 'ready' : 'error');
+      }
+
+      const jobArtworkImage = jobArtworkImageRef.current;
+      if (!jobArtworkUrl) {
+        setJobArtworkState('error');
+      } else if (jobArtworkImage?.complete) {
+        setJobArtworkState(jobArtworkImage.naturalWidth > 0 ? 'ready' : 'error');
+      }
+
+      const brandLogoImage = brandLogoImageRef.current;
+      if (brandLogoImage?.complete) {
+        setBrandLogoState(brandLogoImage.naturalWidth > 0 ? 'ready' : 'error');
+      }
+    };
+
+    syncLoadedImages();
+    const frame = window.requestAnimationFrame(syncLoadedImages);
+    return () => window.cancelAnimationFrame(frame);
+  }, [characterImage, jobArtworkUrl, resourceKey]);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -88,6 +132,7 @@ const CharacterShareCard = React.forwardRef<HTMLDivElement, CharacterShareCardPr
       aria-label={`${view.characterName} 角色圖卡`}
     >
       <img
+        ref={backgroundImageRef}
         src={CHARACTER_CARD_BACKGROUND}
         alt=""
         aria-hidden="true"
@@ -109,6 +154,7 @@ const CharacterShareCard = React.forwardRef<HTMLDivElement, CharacterShareCardPr
 
       {jobArtworkUrl && jobArtworkState !== 'error' && (
         <img
+          ref={jobArtworkImageRef}
           src={jobArtworkUrl}
           alt={`${view.characterClass || '角色'}職業立繪`}
           className="absolute left-[796px] top-[432px] z-10 h-[300px] w-[300px] object-contain object-bottom [filter:drop-shadow(0_7px_5px_rgba(2,10,22,0.72))]"
@@ -124,6 +170,7 @@ const CharacterShareCard = React.forwardRef<HTMLDivElement, CharacterShareCardPr
         <div className="absolute bottom-[10px] h-[54px] w-[178px] rounded-full bg-cyan-300/15 blur-xl" aria-hidden="true" />
         {characterImage && characterState !== 'error' ? (
           <img
+            ref={characterImageRef}
             src={characterImage}
             alt={`${view.characterName} 角色造型`}
             className="relative z-10 h-full w-full object-contain [filter:drop-shadow(0_5px_1px_rgba(4,12,24,0.65))_drop-shadow(0_0_8px_rgba(186,230,253,0.35))]"
@@ -219,6 +266,7 @@ const CharacterShareCard = React.forwardRef<HTMLDivElement, CharacterShareCardPr
         <div className="min-w-0">
           <div className="flex items-center justify-center gap-2">
             <img
+              ref={brandLogoImageRef}
               src={CHARACTER_CARD_BRAND_LOGO}
               alt="聖小熊 Logo"
               className="h-6 w-6 shrink-0 object-contain [filter:drop-shadow(0_2px_3px_rgba(3,15,28,0.75))]"
@@ -236,12 +284,15 @@ const CharacterShareCard = React.forwardRef<HTMLDivElement, CharacterShareCardPr
       </footer>
 
       {showQrCode && (
-        <div className="absolute bottom-[180px] left-[350px] z-30 rounded-xl bg-white p-2 shadow-lg" data-character-card-qr>
+        <div
+          className="absolute bottom-[180px] left-[350px] z-30 rounded-lg bg-white p-1.5 shadow-md"
+          data-character-card-qr
+        >
           <QRCodeSVG
             value={shareUrl}
-            size={104}
+            size={84}
             level="M"
-            marginSize={4}
+            marginSize={2}
             bgColor="#ffffff"
             fgColor="#071526"
             title={`${view.characterName} 角色查詢網址`}
