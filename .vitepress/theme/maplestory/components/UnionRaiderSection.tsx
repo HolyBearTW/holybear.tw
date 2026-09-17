@@ -8,6 +8,7 @@ import {
   UnionRaiderPreset,
 } from '../types';
 import { mapleAsset } from '../assets';
+import { getUnionMemberEffectOverride } from '../constants';
 
 interface UnionRaiderSectionProps {
   union?: CharacterUnion;
@@ -193,7 +194,7 @@ const getClassPortrait = (className?: string | null) => {
 
 const getUnionBlockName = (block: UnionBlock) => {
   const name = block.block_class || block.block_type || '(Unknown)';
-  return name.trim().toLocaleLowerCase() === '(unknown)' ? '納希沙漠' : name;
+  return name.trim().toLocaleLowerCase() === '(unknown)' ? '官方未命名特殊方塊' : name;
 };
 
 type UnionEffectKind =
@@ -287,7 +288,8 @@ const matchesUnionEffect = (effect: string, kind: UnionEffectKind, value: number
     case 'IGNORE_DEF': return normalized.includes(`無視防禦率${value}%`);
     case 'CRIT_RATE': return normalized.includes(`爆擊機率${value}%`);
     case 'BUFF_DURATION': return normalized.includes(`加持有效時間${value}%`);
-    case 'SUMMON_DURATION': return normalized.includes(`召喚獸持續時間${value}%`);
+    case 'SUMMON_DURATION': return normalized.includes(`召喚獸持續時間${value}%`)
+      || normalized.includes(`召喚獸有效時間${value}%`);
     case 'COOLDOWN': return normalized.includes(`技能冷卻時間降低${value}%`);
     case 'EXP': return normalized.includes(`經驗值獲得量${value}%`);
     case 'MESO': return normalized.includes(`楓幣獲得量${value}%`);
@@ -335,12 +337,19 @@ const formatUnionEffectFallback = (kind: UnionEffectKind, value: number) => {
 
 const resolveUnionMemberBonuses = (blocks: UnionBlock[], stats: string[]) => {
   // Nexon returns the placed blocks and member effects as separate arrays; their indexes are not related.
-  // Match known jobs by effect type and card rank, then leave the remaining official effects to special blocks.
+  // Match known jobs by effect type and card rank. Never assign an unrelated leftover effect to a block.
   const bonuses = new Array<string>(blocks.length);
   const usedStats = new Set<number>();
   const unresolvedBlockIndexes: number[] = [];
 
   blocks.forEach((block, blockIndex) => {
+    const override = getUnionMemberEffectOverride(block.block_class, block.block_level)
+      || getUnionMemberEffectOverride(block.block_type, block.block_level);
+    if (override) {
+      bonuses[blockIndex] = override;
+      return;
+    }
+
     const kind = unionEffectKinds.get(normalizeClassName(block.block_class || ''));
     if (!kind) {
       unresolvedBlockIndexes.push(blockIndex);
@@ -357,9 +366,8 @@ const resolveUnionMemberBonuses = (blocks: UnionBlock[], stats: string[]) => {
     }
   });
 
-  const remainingStats = stats.filter((_, index) => !usedStats.has(index));
-  unresolvedBlockIndexes.forEach((blockIndex, index) => {
-    bonuses[blockIndex] = remainingStats[index]?.trim() || '暫無成員加成資料';
+  unresolvedBlockIndexes.forEach((blockIndex) => {
+    bonuses[blockIndex] = '暫無成員加成資料';
   });
 
   return bonuses;

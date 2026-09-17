@@ -21,6 +21,26 @@ export const SERVER_ICONS: Record<string, string> = {
   '挑戰者': mapleAsset('ChallengerServer.png')
 };
 
+// These special Union Raider entries are returned as map names instead of
+// regular job names, so their member effects need an explicit display rule.
+const UNION_MEMBER_EFFECT_OVERRIDES: Record<string, string> = {
+  '米納爾森林': '增加攻擊力/魔力 35',
+  '冰原雪域': '增加攻擊力/魔力 35',
+  '納希沙漠': '增加攻擊力/魔力 35',
+};
+
+export const getUnionMemberEffectOverride = (memberName?: string | null, blockLevel?: number | string | null): string | undefined => {
+  const normalizedName = String(memberName || '').trim();
+  const level = Number(blockLevel);
+  if (normalizedName === '強化型LAB聯盟方塊') {
+    return `增加攻擊力/魔力 ${level >= 250 ? 35 : 28}`;
+  }
+  if (normalizedName === 'LAB' || normalizedName === 'LAB聯盟方塊') {
+    return `增加攻擊力/魔力 ${level >= 250 ? 25 : 20}`;
+  }
+  return UNION_MEMBER_EFFECT_OVERRIDES[normalizedName];
+};
+
 export const getMaplestoryIoMapVersion = (mapId: string): string => (
   ['410004100', '875000000', '875010000'].includes(mapId) ? '270' : '248'
 );

@@ -1,4 +1,5 @@
 import { DashboardData, EquipmentItem, ItemOption, CharacterHexaMatrixStat } from '../types';
+import { getUnionMemberEffectOverride } from '../constants';
 
 interface BreakdownItem {
   label: string;
@@ -101,7 +102,7 @@ const getKeywords = (statKey: string): string[] => {
         'HP': ['MaxHP', 'HP'],
         'MP': ['MaxMP', 'MP', '魔力'],
         '攻擊力': ['攻擊力', 'Attack Power', 'ATT'],
-        '魔法攻擊力': ['魔法攻擊力', 'Magic Power', 'Magic ATT'],
+        '魔法攻擊力': ['魔法攻擊力', '魔力', 'Magic Power', 'Magic ATT'],
         // 增強關鍵字匹配，包含長字串 (因為 Regex 匹配是貪婪或順序匹配)
         'BOSS怪物傷害': ['攻擊Boss怪物時傷害', '攻擊BOSS怪物時傷害', 'BOSS', 'Boss', '首領'],
         '無視防禦率': ['無視怪物防禦率', '無視', 'Ignore'],
@@ -250,6 +251,39 @@ const getUnionStatValue = (unionRaider: any, statKey: string): number => {
              }
         }
     });
+
+    // Some special Union Raider entries are returned as map names and may not
+    // have a corresponding line in union_raider_stat. Apply their fixed
+    // attack/magic effect when the API omits that line, without double-counting
+    // an effect that was already reported by the API.
+    if (['攻擊力', '魔法攻擊力', 'Attack Power', 'Magic Power'].includes(statKey)) {
+        const presetNo = Math.max(1, Math.min(5, Number(unionRaider.use_preset_no || 1)));
+        const activePreset = unionRaider[`union_raider_preset_${presetNo}`];
+        const blocks = activePreset?.union_block || unionRaider.union_block || [];
+        const expectedSpecialEffectCounts = new Map<number, number>();
+        blocks.forEach((block: any) => {
+            const effect = getUnionMemberEffectOverride(block?.block_class, block?.block_level)
+                || getUnionMemberEffectOverride(block?.block_type, block?.block_level);
+            const value = Number(effect?.match(/(\d+(?:\.\d+)?)/)?.[1]);
+            if (!Number.isFinite(value)) return;
+            expectedSpecialEffectCounts.set(value, (expectedSpecialEffectCounts.get(value) || 0) + 1);
+        });
+
+        const reportedSpecialEffectCounts = new Map<number, number>();
+        allLines.forEach((line: string) => {
+            const normalized = line.replace(/\s+/g, '').replace(/／/g, '/');
+            if (!normalized.includes('攻擊力/魔力') && !normalized.includes('魔力/攻擊力')) return;
+            const value = Number(normalized.match(/(\d+(?:\.\d+)?)/)?.[1]);
+            if (!Number.isFinite(value)) return;
+            reportedSpecialEffectCounts.set(value, (reportedSpecialEffectCounts.get(value) || 0) + 1);
+        });
+
+        expectedSpecialEffectCounts.forEach((expectedCount, value) => {
+            const reportedCount = reportedSpecialEffectCounts.get(value) || 0;
+            sum += Math.max(0, expectedCount - reportedCount) * value;
+        });
+    }
+
     return sum;
 };
 
