@@ -19,11 +19,6 @@ const jobs = [
     stateFile: path.join(projectRoot, '.wrangler', 'manual-seed-import', 'latest.json'),
     starter: path.join(projectRoot, 'scripts', 'start-manual-seed-background.mjs'),
   },
-  {
-    id: BACKGROUND_JOB_IDS.accountSignals,
-    stateFile: path.join(projectRoot, '.wrangler', 'account-signal-backfill', 'latest.json'),
-    starter: path.join(projectRoot, 'scripts', 'start-account-signal-backfill.mjs'),
-  },
 ];
 
 const log = (event, details = {}) => appendFileSync(logFile, `${JSON.stringify({

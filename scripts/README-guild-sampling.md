@@ -74,7 +74,7 @@ npm run benchmark:nexon-resolver -- --execute --names-file benchmark-names.txt -
 
 ## Consumer scheduler failover
 
-Cloudflare Cron 仍是 primary scheduler。`consumer_heartbeat` 會分別記錄 `cloudflare_cron` 與 `github_actions_fallback` 的 invocation、成功、錯誤及最近 batch 結果。GitHub Actions 每五分鐘讀取受保護 status；primary 最近五分鐘內有 invocation 時直接跳過，primary stale 且 metadata 或 account-signal 有 pending／到期 retry 時，才呼叫一次固定大小的 fallback batch。fallback endpoint 不接受 OCID、SQL、source 或 batch 參數，並在執行前再次檢查 heartbeat 與 queue。
+Cloudflare Cron 仍是 primary scheduler。`consumer_heartbeat` 會分別記錄 `cloudflare_cron` 與 `github_actions_fallback` 的 invocation、成功、錯誤及最近 batch 結果。GitHub Actions fallback 每 30 分鐘於第 17、47 分執行一次；它仍讀取受保護 status，primary 最近五分鐘內有 invocation 時直接跳過，primary stale 且 metadata 或 account-signal 有 pending／到期 retry 時，才呼叫一次固定大小的 fallback batch。fallback endpoint 不接受 OCID、SQL、source 或 batch 參數，並在執行前再次檢查 heartbeat 與 queue。
 
 兩個 scheduler 共用 queue 既有的 `claim_token`、`claim_until`、`queue_version` 與 lease。即使檢查後 Cloudflare 恢復而短暫重疊，同一筆也只有一方能 claim；兩邊的 NEXON 請求也共用 Production Durable Object rate limiter。
 

@@ -3,7 +3,6 @@ import path from 'node:path';
 
 export const BACKGROUND_JOB_IDS = Object.freeze({
   manualImport: 'manual-import',
-  accountSignals: 'account-signals',
 });
 
 const watchdogDirectory = (cwd = process.cwd()) => path.join(cwd, '.wrangler', 'background-watchdog');

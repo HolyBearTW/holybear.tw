@@ -5,6 +5,11 @@ import { parse } from 'yaml';
 const workflowUrl = new URL('../../.github/workflows/account-signals-fallback.yml', import.meta.url);
 
 describe('account-signals fallback workflow policy', () => {
+  it('runs on the staggered 30-minute fallback schedule', async () => {
+    const workflow = parse(await readFile(workflowUrl, 'utf8'));
+    expect(workflow.on.schedule).toEqual([{ cron: '17,47 * * * *' }]);
+  });
+
   it('parses and grants Actions write only to the isolated cleanup job', async () => {
     const workflow = parse(await readFile(workflowUrl, 'utf8'));
     expect(workflow.permissions).toEqual({});

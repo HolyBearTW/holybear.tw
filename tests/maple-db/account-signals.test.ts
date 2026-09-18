@@ -185,6 +185,24 @@ describe('account-signal queue and on-demand synchronization', () => {
     expect(paths.filter((path) => path.endsWith('/user/union-champion'))).toHaveLength(1);
   });
 
+  it('keeps on-demand champion synchronization available when background champion work is disabled', async () => {
+    env.ACCOUNT_SIGNAL_CHAMPION_BACKFILL_ENABLED = 'false';
+    installNamedSignalApi(['主角色', '分身角色']);
+
+    const background = await backfillAccountChampionBatch(env, 'cloudflare_cron');
+    expect(background).toMatchObject({ enabled: false, processed: 0, completed: 0 });
+
+    const result = await getCharacterAlts(env, '主角色');
+    expect(result.alts.some((alt) => alt.characterName === '分身角色')).toBe(true);
+    expect(local.sqlite.prepare(`
+      SELECT COUNT(*) AS count FROM account_group_signals
+      WHERE signal_type='union_champion_roster'
+    `).get()?.count).toBe(1);
+    expect(vi.mocked(fetch).mock.calls.filter(([input]) => (
+      new URL(String(input)).pathname.endsWith('/user/union-champion')
+    ))).toHaveLength(1);
+  });
+
   it('revalidates a stale full signal using the same freshness window', async () => {
     env.ACCOUNT_SIGNAL_FRESHNESS_SECONDS = '300';
     installSignalApi();
