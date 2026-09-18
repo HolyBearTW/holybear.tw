@@ -1,8 +1,6 @@
 name: Account signals consumer fallback
 
 on:
-  schedule:
-    - cron: '17,47 * * * *'
   workflow_dispatch:
 
 # The endpoint secret authenticates the consumer call. GITHUB_TOKEN is not
