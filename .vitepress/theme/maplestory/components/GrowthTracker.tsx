@@ -163,9 +163,13 @@ const GrowthTracker: React.FC<GrowthTrackerProps> = ({
         onFocus={() => setShowNote(true)}
         onBlur={() => setShowNote(false)}
         onClick={() => setShowNote(true)}
-        className={`maple-growth-note-button flex h-7 w-7 items-center justify-center rounded-full text-white transition-colors focus-visible:outline-none ${showNote
-          ? 'bg-amber-700/75 text-white'
-          : 'text-amber-100/85 hover:bg-amber-700/70 hover:text-white focus-visible:bg-amber-700/70 focus-visible:text-white'
+        className={`maple-growth-note-button flex h-7 w-7 items-center justify-center rounded-full transition-colors focus-visible:outline-none ${creating ? 'maple-growth-note-button-progress' : ''} ${showNote
+          ? creating
+            ? 'bg-emerald-700/75 text-white'
+            : 'bg-amber-700/75 text-white'
+          : creating
+            ? 'text-emerald-700 hover:bg-emerald-100 hover:text-emerald-700 focus-visible:bg-emerald-100 focus-visible:text-emerald-700 dark:text-emerald-300 dark:hover:bg-emerald-800/40 dark:hover:text-emerald-300'
+            : 'text-amber-100/85 hover:bg-amber-700/70 hover:text-white focus-visible:bg-amber-700/70 focus-visible:text-white'
         }`}
       >
         <Info className="h-4 w-4" />
@@ -217,7 +221,7 @@ const GrowthTracker: React.FC<GrowthTrackerProps> = ({
               )}
               {isInitialBackfill && (
                 <span className="maple-growth-progress-hint text-center text-[10px] leading-4 text-emerald-700/80 dark:text-emerald-300/70">
-                  可以關閉此頁面；資料會在背景分批處理，通常每 30 分鐘更新一次，完成後再回來查看。
+                  可以關閉此頁面；資料會在背景每分鐘分批處理，通常幾分鐘到 30 分鐘內完成，完成後再回來查看。
                 </span>
               )}
             </div>

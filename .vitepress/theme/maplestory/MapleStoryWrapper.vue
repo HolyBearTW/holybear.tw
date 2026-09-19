@@ -1473,11 +1473,22 @@ html:not(.dark) #maplestory-root .maple-growth-note-button {
   color: #ffffff !important;
 }
 
+html:not(.dark) #maplestory-root .maple-growth-note-button-progress {
+  color: #124c3a !important;
+}
+
 html:not(.dark) #maplestory-root .maple-growth-note-button:hover,
 html:not(.dark) #maplestory-root .maple-growth-note-button:focus-visible,
 html:not(.dark) #maplestory-root .maple-growth-note-button[aria-expanded="true"] {
   color: #ffffff !important;
   background: rgba(217, 119, 6, 0.22) !important;
+}
+
+html:not(.dark) #maplestory-root .maple-growth-note-button-progress:hover,
+html:not(.dark) #maplestory-root .maple-growth-note-button-progress:focus-visible,
+html:not(.dark) #maplestory-root .maple-growth-note-button-progress[aria-expanded="true"] {
+  color: #124c3a !important;
+  background: rgba(8, 122, 75, 0.12) !important;
 }
 
 html:not(.dark) #maplestory-root .maple-growth-create-tooltip {
