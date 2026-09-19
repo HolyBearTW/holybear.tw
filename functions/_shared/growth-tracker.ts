@@ -643,21 +643,30 @@ export const backfillGrowthBatch = async (env: Env) => {
   let claimD1Ms = 0;
   const results: unknown[] = [];
 
-  // Each cycle reads the oldest eligible profiles once. Completed batches
-  // update updated_at and fall behind their peers, producing round-robin
-  // progress without holding one profile's lease for the whole invocation.
+  // Reselect after every bounded group so an unfinished first-generation
+  // profile remains ahead of daily incremental work. Daily profiles still use
+  // updated_at ordering, which keeps their existing round-robin behavior.
   while (processed < config.growthMaxBatchesPerInvocation
     && (processed === 0 || Date.now() - invocationStartedAt < config.growthInvocationBudgetMs)) {
     const timestamp = nowIso();
     const remainingBatchBudget = config.growthMaxBatchesPerInvocation - processed;
     const eligibleStartedAt = Date.now();
+    const eligibleLimit = Math.min(config.growthProfileConcurrency, remainingBatchBudget);
     const eligible = await env.DB.prepare(`
       SELECT * FROM growth_profiles
       WHERE (status = 'pending' OR (status = 'retry' AND (next_retry_at IS NULL OR next_retry_at <= ?1)))
         AND (claim_until IS NULL OR claim_until <= ?1)
-      ORDER BY CASE WHEN status = 'pending' THEN 0 ELSE 1 END, updated_at, ocid
+      ORDER BY
+        CASE
+          WHEN last_synced_date IS NULL THEN 0
+          WHEN status = 'pending' THEN 1
+          ELSE 2
+        END,
+        CASE WHEN last_synced_date IS NULL THEN created_at ELSE updated_at END,
+        created_at,
+        ocid
       LIMIT ?2
-    `).bind(timestamp, remainingBatchBudget).all<GrowthProfileRow>();
+    `).bind(timestamp, eligibleLimit).all<GrowthProfileRow>();
     eligibleD1Ms += Math.max(0, Date.now() - eligibleStartedAt);
     if (eligible.results.length === 0) break;
 

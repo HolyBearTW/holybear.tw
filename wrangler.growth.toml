@@ -1,0 +1,31 @@
+name = "holybear-growth"
+main = "workers/growth-consumer.ts"
+compatibility_date = "2026-09-04"
+
+[vars]
+GROWTH_BACKFILL_BATCH_SIZE = "20"
+GROWTH_DATE_CONCURRENCY = "4"
+GROWTH_MAX_BATCHES_PER_INVOCATION = "12"
+GROWTH_INVOCATION_BUDGET_MS = "45000"
+GROWTH_PROFILE_CONCURRENCY = "1"
+GROWTH_CLAIM_LEASE_SECONDS = "600"
+GROWTH_NEW_PROFILE_24H_LIMIT = "12"
+GROWTH_PENDING_PROFILE_LIMIT = "8"
+NEXON_RETRY_LIMIT = "5"
+NEXON_REQUEST_DELAY_MS = "0"
+NEXON_GLOBAL_RPS_LIMIT = "50"
+NEXON_RATE_LIMITER_REQUIRED = "true"
+NEXON_REQUEST_TIMEOUT_MS = "10000"
+
+[[durable_objects.bindings]]
+name = "NEXON_RATE_LIMITER"
+class_name = "NexonRateLimiter"
+script_name = "holybear-nexon-rate-limiter"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "holybear-maple-db-2"
+database_id = "83a4d165-d1ac-44d2-82c2-ca3ed111c50e"
+
+[triggers]
+crons = ["* * * * *"]

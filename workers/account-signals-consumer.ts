@@ -10,7 +10,13 @@ import { RETENTION_CRON, runRetention } from '../functions/_shared/retention';
  */
 export default {
   scheduled(_controller: ScheduledController, env: Env, context: ExecutionContext) {
-    context.waitUntil(consumeQueueBatch(env, 'cloudflare_cron').catch((error) => {
+    context.waitUntil(consumeQueueBatch(env, 'cloudflare_cron', {
+      metadata: true,
+      accountSignals: true,
+      accountChampionSignals: true,
+      growth: false,
+      guild: true,
+    }).catch((error) => {
       console.error('scheduled consumer batch failed', error);
       throw error;
     }));

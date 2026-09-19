@@ -137,10 +137,14 @@ describe('persistent growth tracking', () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 
-  it('rotates pending profiles after each bounded batch', async () => {
+  it('reselects the same first-generation profile after each bounded batch', async () => {
     env.GROWTH_BACKFILL_BATCH_SIZE = '1';
-    await createGrowthProfile(env.DB, OCID, '2025-10-15');
-    await createGrowthProfile(env.DB, SECOND_OCID, '2025-10-15');
+    await createGrowthProfile(env.DB, OCID, '2025-10-20');
+    await createGrowthProfile(env.DB, SECOND_OCID, '2025-10-20');
+    local.sqlite.prepare(`UPDATE growth_profiles SET created_at=? WHERE ocid=?`)
+      .run('2025-10-17T19:00:00.000Z', OCID);
+    local.sqlite.prepare(`UPDATE growth_profiles SET created_at=? WHERE ocid=?`)
+      .run('2025-10-17T19:00:01.000Z', SECOND_OCID);
     vi.setSystemTime('2025-10-17T19:00:01.000Z');
     vi.stubGlobal('fetch', vi.fn(async (input: string) => {
       const url = new URL(input);
@@ -152,11 +156,12 @@ describe('persistent growth tracking', () => {
       .toMatchObject({ basic_last_synced_date: '2025-10-15' });
     expect(local.sqlite.prepare(`SELECT basic_last_synced_date FROM growth_profiles WHERE ocid=?`).get(SECOND_OCID))
       .toMatchObject({ basic_last_synced_date: null });
-
     vi.setSystemTime('2025-10-17T19:00:02.000Z');
     expect(await backfillGrowthBatch(env)).toMatchObject({ processed: 1, requests: 1 });
+    expect(local.sqlite.prepare(`SELECT basic_last_synced_date FROM growth_profiles WHERE ocid=?`).get(OCID))
+      .toMatchObject({ basic_last_synced_date: '2025-10-16' });
     expect(local.sqlite.prepare(`SELECT basic_last_synced_date FROM growth_profiles WHERE ocid=?`).get(SECOND_OCID))
-      .toMatchObject({ basic_last_synced_date: '2025-10-15' });
+      .toMatchObject({ basic_last_synced_date: null });
   });
 
   it('allows only one Growth lease owner when consumers overlap', async () => {
@@ -194,11 +199,15 @@ describe('persistent growth tracking', () => {
     expect(await getGrowthStatus(env.DB, OCID)).toMatchObject({ status: 'completed', progress: 100 });
   });
 
-  it('round-robins two pending profiles across repeated checkpoints', async () => {
+  it('keeps the oldest first-generation profile ahead across repeated checkpoints', async () => {
     env.GROWTH_BACKFILL_BATCH_SIZE = '1';
     env.GROWTH_MAX_BATCHES_PER_INVOCATION = '4';
-    await createGrowthProfile(env.DB, OCID, '2025-10-17');
-    await createGrowthProfile(env.DB, SECOND_OCID, '2025-10-17');
+    await createGrowthProfile(env.DB, OCID, '2025-10-20');
+    await createGrowthProfile(env.DB, SECOND_OCID, '2025-10-20');
+    local.sqlite.prepare(`UPDATE growth_profiles SET created_at=? WHERE ocid=?`)
+      .run('2025-10-17T19:00:00.000Z', OCID);
+    local.sqlite.prepare(`UPDATE growth_profiles SET created_at=? WHERE ocid=?`)
+      .run('2025-10-17T19:00:01.000Z', SECOND_OCID);
     vi.stubGlobal('fetch', vi.fn(async (input: string) => {
       const date = new URL(input).searchParams.get('date')!;
       return Response.json(basic(date));
@@ -206,29 +215,54 @@ describe('persistent growth tracking', () => {
 
     const run = await backfillGrowthBatch(env);
     expect(run).toMatchObject({ processed: 4, requests: 4 });
-    for (const ocid of [OCID, SECOND_OCID]) {
-      expect(local.sqlite.prepare(`SELECT basic_last_synced_date FROM growth_profiles WHERE ocid=?`).get(ocid))
-        .toMatchObject({ basic_last_synced_date: '2025-10-16' });
-    }
+    expect(local.sqlite.prepare(`SELECT basic_last_synced_date FROM growth_profiles WHERE ocid=?`).get(OCID))
+      .toMatchObject({ basic_last_synced_date: '2025-10-18' });
+    expect(local.sqlite.prepare(`SELECT basic_last_synced_date FROM growth_profiles WHERE ocid=?`).get(SECOND_OCID))
+      .toMatchObject({ basic_last_synced_date: null });
   });
 
-  it('gives five pending profiles one checkpoint before repeating any profile', async () => {
+  it('prioritizes first-generation work over an existing daily profile', async () => {
     env.GROWTH_BACKFILL_BATCH_SIZE = '1';
-    env.GROWTH_MAX_BATCHES_PER_INVOCATION = '5';
-    const ocids = Array.from({ length: 5 }, (_, index) => `${index + 1}`.repeat(32));
-    for (const ocid of ocids) await createGrowthProfile(env.DB, ocid, '2025-10-15');
+    const dailyOcid = `${'c'.repeat(31)}1`;
+    await createGrowthProfile(env.DB, dailyOcid, '2025-10-20');
+    await createGrowthProfile(env.DB, OCID, '2025-10-20');
+    local.sqlite.prepare(`
+      UPDATE growth_profiles
+      SET status='pending', phase='basic', last_synced_date='2025-10-15',
+        basic_last_synced_date='2025-10-15', current_processing_date='2025-10-16',
+        created_at='2025-10-17T19:00:00.000Z', updated_at='2025-10-17T19:00:00.000Z'
+      WHERE ocid=?
+    `).run(dailyOcid);
+    local.sqlite.prepare(`UPDATE growth_profiles SET created_at=? WHERE ocid=?`)
+      .run('2025-10-17T19:00:01.000Z', OCID);
     vi.stubGlobal('fetch', vi.fn(async (input: string) => {
       const date = new URL(input).searchParams.get('date')!;
       return Response.json(basic(date));
     }));
 
     const run = await backfillGrowthBatch(env);
-    expect(run).toMatchObject({ processed: 5, requests: 5 });
-    for (const ocid of ocids) {
-      expect(local.sqlite.prepare(`SELECT basic_last_synced_date FROM growth_profiles WHERE ocid=?`).get(ocid))
-        .toMatchObject({ basic_last_synced_date: '2025-10-15' });
-    }
-    expect(new Set(run.results.map((result) => (result as { ocid: string }).ocid)).size).toBe(5);
+    expect(run).toMatchObject({ processed: 1, requests: 1 });
+    expect(run.results).toHaveLength(1);
+    expect((run.results[0] as { ocid: string }).ocid).toBe(OCID);
+    expect(local.sqlite.prepare(`SELECT basic_last_synced_date FROM growth_profiles WHERE ocid=?`).get(OCID))
+      .toMatchObject({ basic_last_synced_date: '2025-10-15' });
+    expect(local.sqlite.prepare(`SELECT current_processing_date FROM growth_profiles WHERE ocid=?`).get(dailyOcid))
+      .toMatchObject({ current_processing_date: '2025-10-16' });
+  });
+
+  it('does not run a retry before its retry time, then runs it when due', async () => {
+    env.GROWTH_BACKFILL_BATCH_SIZE = '1';
+    await createGrowthProfile(env.DB, OCID, '2025-10-20');
+    local.sqlite.prepare(`UPDATE growth_profiles SET status='retry', next_retry_at=? WHERE ocid=?`)
+      .run('2025-10-17T19:01:00.000Z', OCID);
+    vi.stubGlobal('fetch', vi.fn(async (input: string) => {
+      const date = new URL(input).searchParams.get('date')!;
+      return Response.json(basic(date));
+    }));
+
+    expect(await backfillGrowthBatch(env)).toMatchObject({ processed: 0, requests: 0 });
+    vi.setSystemTime('2025-10-17T19:01:00.000Z');
+    expect(await backfillGrowthBatch(env)).toMatchObject({ processed: 1, requests: 1 });
   });
 
   it('stops after a completed checkpoint when the invocation wall budget is exhausted', async () => {
