@@ -211,13 +211,13 @@ const GrowthTracker: React.FC<GrowthTrackerProps> = ({
                 </span>
               )}
               {status?.job?.phase && status?.currentProcessingDate && (
-                <span className="text-[10px] text-emerald-600/80 dark:text-emerald-400/70">
+                <span className="maple-growth-progress-meta text-[10px] text-emerald-600/80 dark:text-emerald-400/70">
                   {status.job.phase === 'basic' ? '基本資料' : '武陵資料'} · 正在處理 {status.currentProcessingDate.replace(/-/g, '/')}
                 </span>
               )}
               {isInitialBackfill && (
-                <span className="text-center text-[10px] leading-4 text-emerald-700/80 dark:text-emerald-300/70">
-                  可以關閉此頁面，背景仍會繼續生成，稍後再回來查看。
+                <span className="maple-growth-progress-hint text-center text-[10px] leading-4 text-emerald-700/80 dark:text-emerald-300/70">
+                  可以關閉此頁面；資料會在背景分批處理，通常每 30 分鐘更新一次，完成後再回來查看。
                 </span>
               )}
             </div>

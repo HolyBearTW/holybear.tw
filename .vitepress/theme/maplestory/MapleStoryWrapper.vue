@@ -1492,19 +1492,19 @@ html:not(.dark) #maplestory-root .maple-growth-create-tooltip-meta {
 }
 
 html:not(.dark) #maplestory-root .maple-growth-progress-card {
-  color: #244a44 !important;
-  background: rgba(233, 246, 241, 0.94) !important;
-  border-color: rgba(8, 122, 75, 0.25) !important;
+  color: #163d33 !important;
+  background: rgba(248, 253, 250, 0.98) !important;
+  border-color: rgba(8, 122, 75, 0.42) !important;
   box-shadow: 0 7px 18px rgba(35, 76, 94, 0.08) !important;
 }
 
 html:not(.dark) #maplestory-root .maple-growth-progress-header {
-  color: #245d4d !important;
+  color: #124c3a !important;
   font-weight: 600;
 }
 
 html:not(.dark) #maplestory-root .maple-growth-progress-percent {
-  color: #087a4b !important;
+  color: #05613c !important;
   font-weight: 700;
 }
 
@@ -1518,7 +1518,12 @@ html:not(.dark) #maplestory-root .maple-growth-progress-fill {
 }
 
 html:not(.dark) #maplestory-root .maple-growth-progress-date {
-  color: #527168 !important;
+  color: #355d52 !important;
+}
+
+html:not(.dark) #maplestory-root .maple-growth-progress-meta,
+html:not(.dark) #maplestory-root .maple-growth-progress-hint {
+  color: #315e50 !important;
 }
 
 html:not(.dark) #maplestory-root .maple-link-summary {
