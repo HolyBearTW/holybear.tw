@@ -22,6 +22,7 @@ interface RankingSnapshot {
 
 const cacheOrigin = 'https://holybear.tw/__ranking-cache';
 const cacheHeaders = { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'public, max-age=604800' };
+const characterRankCacheHeaders = { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'public, max-age=300' };
 const rankingCache = () => (caches as unknown as { default: Cache }).default;
 const pageKey = (filters: RankingFilters) => {
   const params = new URLSearchParams({ page: String(filters.page), pageSize: String(filters.pageSize) });
@@ -31,6 +32,7 @@ const pageKey = (filters: RankingFilters) => {
   return new Request(`${cacheOrigin}/pages?${params}`);
 };
 const characterKey = (name: string) => new Request(`${cacheOrigin}/characters/${encodeURIComponent(normalizeCharacterName(name))}`);
+const characterRankV2Key = (name: string) => new Request(`${cacheOrigin}/characters-v2/${encodeURIComponent(normalizeCharacterName(name))}`);
 const snapshotKey = () => new Request(`${cacheOrigin}/snapshot`);
 const staticSnapshotRequest = () => new Request('https://holybear.tw/maplestory/rankings/current.json');
 
@@ -38,9 +40,9 @@ const readCache = async <T>(key: Request): Promise<T | null> => {
   const response = await rankingCache().match(key);
   return response ? response.json<T>() : null;
 };
-const writeCache = (key: Request, value: unknown) => rankingCache().put(
+const writeCache = (key: Request, value: unknown, headers = cacheHeaders) => rankingCache().put(
   key,
-  new Response(JSON.stringify(value), { headers: cacheHeaders }),
+  new Response(JSON.stringify(value), { headers }),
 );
 
 const readStaticSnapshot = async (env: Env): Promise<RankingSnapshot | null> => {
@@ -60,6 +62,13 @@ const readSnapshots = async (env: Env): Promise<RankingSnapshot[]> => {
 
 export const cacheRankingPage = (filters: RankingFilters, page: RankingPage) => writeCache(pageKey(filters), page);
 export const cacheCharacterRank = (name: string, result: unknown) => writeCache(characterKey(name), result);
+export const cacheCharacterRankV2 = (name: string, result: unknown) => writeCache(
+  characterRankV2Key(name), result, characterRankCacheHeaders,
+);
+
+export const getCachedCharacterRankV2 = async (name: string) => (
+  readCache<{ entry: RankingEntry; rank: number; total: number }>(characterRankV2Key(name))
+);
 
 export const refreshRankingSnapshot = async (env: Env) => {
   const pageSize = getRuntimeConfig(env).rankingSnapshotSize;

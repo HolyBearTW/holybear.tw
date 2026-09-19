@@ -1,16 +1,18 @@
 import type { AppPagesFunction } from '../../../_shared/env';
 import { errorResponse, HttpError, json, methodNotAllowed, singleParam } from '../../../_shared/http';
 import { getCharacterCombatPowerRank } from '../../../_shared/ranking-repository';
-import { cacheCharacterRank, getCachedCharacterRank } from '../../../_shared/ranking-cache';
+import { cacheCharacterRankV2, getCachedCharacterRank, getCachedCharacterRankV2 } from '../../../_shared/ranking-cache';
 
 export const onRequestGet: AppPagesFunction<'name'> = async ({ env, params, waitUntil }) => {
   const name = singleParam(params.name).trim();
   try {
     if (!name) throw new HttpError(400, 'invalid_character_name', '請提供角色名稱');
+    const fresh = await getCachedCharacterRankV2(name).catch(() => null);
+    if (fresh) return json(fresh, { headers: { 'x-holybear-cache': 'hit' } });
     const result = await getCharacterCombatPowerRank(env.DB, name);
     if (!result) throw new HttpError(404, 'character_not_ranked', 'HolyBear 排行榜尚未收錄此角色');
-    waitUntil(cacheCharacterRank(name, result).catch((error: unknown) => console.error('Unable to cache character rank', error)));
-    return json(result);
+    waitUntil(cacheCharacterRankV2(name, result).catch((error: unknown) => console.error('Unable to cache character rank', error)));
+    return json(result, { headers: { 'x-holybear-cache': 'miss' } });
   } catch (error) {
     if (error instanceof HttpError) return errorResponse(error);
     console.error('D1 character rank unavailable; using cached snapshot', error);

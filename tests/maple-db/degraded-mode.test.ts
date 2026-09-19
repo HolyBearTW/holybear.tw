@@ -17,6 +17,113 @@ const laterEntry = {
   rank: 1001,
 };
 
+const exactCharacterRank = {
+  entry: { ...entry, characterName: '精確角色', rank: 123 },
+  rank: 123,
+  total: 334285,
+};
+
+const createCharacterRankDb = (result: typeof exactCharacterRank | null = exactCharacterRank) => ({
+  prepare: vi.fn(() => ({
+    bind: vi.fn(() => ({ first: vi.fn(async () => (result ? {
+      ocid: result.entry.ocid,
+      character_name: result.entry.characterName,
+      world_name: result.entry.worldName,
+      job_name: result.entry.jobName,
+      level: result.entry.level,
+      combat_power: result.entry.combatPower,
+      character_image: result.entry.characterImage,
+      guild_name: result.entry.guildName,
+      rank: result.rank,
+      total: result.total,
+    } : null)) })),
+  })),
+});
+
+const createCharacterRankCache = () => {
+  const entries = new Map<string, Response>();
+  const match = vi.fn(async (request: Request) => entries.get(request.url)?.clone());
+  const put = vi.fn(async (request: Request, response: Response) => {
+    entries.set(request.url, response.clone());
+  });
+  vi.stubGlobal('caches', { default: { match, put } });
+  return { entries, match, put };
+};
+
+const getCharacterRankWithCache = async (
+  env: unknown,
+  name: string,
+  waits: Promise<unknown>[] = [],
+) => getCharacterRank({
+  env,
+  params: { name: encodeURIComponent(name) },
+  request: new Request('https://example.test'),
+  waitUntil: vi.fn((promise: Promise<unknown>) => waits.push(promise)),
+} as never);
+
+const responseBody = async (response: Response) => response.json() as Promise<Record<string, unknown>>;
+
+describe('character rank cache-first path', () => {
+  it('caches an exact D1 result on the first request and hits it on the second request', async () => {
+    const cache = createCharacterRankCache();
+    const env = { DB: createCharacterRankDb() };
+    const waits: Promise<unknown>[] = [];
+    const first = await getCharacterRankWithCache(env, '精確角色', waits);
+
+    expect(first.status).toBe(200);
+    expect(first.headers.get('x-holybear-cache')).toBe('miss');
+    expect(await responseBody(first)).toEqual(exactCharacterRank);
+    await Promise.all(waits);
+    expect(cache.put).toHaveBeenCalledTimes(1);
+    expect([...cache.entries.keys()][0]).toContain('/characters-v2/');
+    expect([...cache.entries.keys()][0]).not.toContain('/characters/');
+    expect([...cache.entries.values()][0].headers.get('cache-control')).toBe('public, max-age=300');
+    expect(env.DB.prepare).toHaveBeenCalledTimes(1);
+
+    const second = await getCharacterRankWithCache(env, ' 精確角色 ');
+    expect(second.status).toBe(200);
+    expect(second.headers.get('x-holybear-cache')).toBe('hit');
+    expect(await responseBody(second)).toEqual(exactCharacterRank);
+    expect(env.DB.prepare).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not reuse a different character cache entry and preserves normalization', async () => {
+    const cache = createCharacterRankCache();
+    const env = { DB: createCharacterRankDb() };
+    const waits: Promise<unknown>[] = [];
+    await getCharacterRankWithCache(env, '精確角色', waits);
+    await Promise.all(waits);
+
+    const differentWaits: Promise<unknown>[] = [];
+    const different = await getCharacterRankWithCache(env, '另一角色', differentWaits);
+    expect(different.status).toBe(200);
+    expect(different.headers.get('x-holybear-cache')).toBe('miss');
+    await Promise.all(differentWaits);
+    expect(env.DB.prepare).toHaveBeenCalledTimes(2);
+    expect([...cache.entries.keys()].filter((key) => key.includes('/characters-v2/'))).toHaveLength(2);
+  });
+
+  it('uses the exact D1 path when the v2 cache is missing or expired', async () => {
+    const cache = createCharacterRankCache();
+    const env = { DB: createCharacterRankDb() };
+    const firstWaits: Promise<unknown>[] = [];
+    await getCharacterRankWithCache(env, '精確角色', firstWaits);
+    await Promise.all(firstWaits);
+    cache.match.mockResolvedValue(undefined);
+    const response = await getCharacterRankWithCache(env, '精確角色');
+    expect(response.status).toBe(200);
+    expect(response.headers.get('x-holybear-cache')).toBe('miss');
+    expect(env.DB.prepare).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps the 404 behavior when the exact rank query finds no character', async () => {
+    createCharacterRankCache();
+    const response = await getCharacterRankWithCache({ DB: createCharacterRankDb(null) }, '不存在角色');
+    expect(response.status).toBe(404);
+    expect(await responseBody(response)).toMatchObject({ error: { code: 'character_not_ranked' } });
+  });
+});
+
 describe('ranking degraded mode', () => {
   it('paginates the compact CDN snapshot without reading D1 again', async () => {
     vi.stubGlobal('caches', { default: { match: vi.fn(async (request: Request) => (
