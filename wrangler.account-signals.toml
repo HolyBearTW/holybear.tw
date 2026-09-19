@@ -47,7 +47,7 @@ class_name = "NexonRateLimiter"
 script_name = "holybear-nexon-rate-limiter"
 
 [triggers]
-crons = ["0,15,30,45 * * * *", "17 3 * * *"]
+crons = ["*/30 * * * *", "17 3 * * *"]
 
 [[d1_databases]]
 binding = "DB"
