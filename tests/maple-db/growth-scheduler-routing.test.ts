@@ -33,6 +33,7 @@ describe('Growth scheduler routing', () => {
     const accountConfig = read('wrangler.account-signals.toml');
     const growthConfig = read('wrangler.growth.toml');
     expect(accountConfig).toContain('crons = ["*/30 * * * *", "17 3 * * *"]');
+    expect(accountConfig).not.toContain('GROWTH_');
     expect(growthConfig).toContain('crons = ["* * * * *"]');
     expect(growthConfig).toContain('name = "holybear-growth"');
     expect(growthConfig).toContain('name = "NEXON_RATE_LIMITER"');
