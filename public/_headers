@@ -11,6 +11,15 @@
 /music/*
   Cache-Control: public, max-age=31536000, immutable
 
+/fonts/*.woff
+  Cache-Control: public, max-age=31536000, immutable
+
+/fonts/*.woff2
+  Cache-Control: public, max-age=31536000, immutable
+
+/fonts/*.css
+  Cache-Control: public, max-age=31536000, immutable
+
 /themes/*.png
   Cache-Control: public, max-age=31536000, immutable
 
