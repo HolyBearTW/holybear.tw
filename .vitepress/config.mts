@@ -341,12 +341,16 @@ const earlyLoadingScript = `(() => {
     // A mobile browser may discard a background tab before its CSS or module
     // scripts finish loading. Recover that incomplete document when it returns.
     const retryKey = 'holybear-incomplete-boot-retry';
+    const bootStartedAt = Date.now();
     let wasBackgrounded = false;
-    let criticalAssetFailed = false;
+    let mainStyleFailed = false;
     let recoveryTimer;
     const bootIsPending = () => root.classList.contains('holy-bear-booting')
         && !!document.getElementById('holy-bear-boot-frame');
-    const needsRecovery = () => bootIsPending() || criticalAssetFailed;
+    const mainStyleIsMissing = () => Array.from(document.querySelectorAll('link[rel~="stylesheet"]'))
+        .some((link) => /\\/assets\\/style\\.[^/]+\\.css$/.test(new URL(link.href).pathname) && !link.sheet);
+    const needsRecovery = () => (bootIsPending() && Date.now() - bootStartedAt >= 12000)
+        || (mainStyleFailed && mainStyleIsMissing());
     const showBootTimeout = () => {
         const frame = document.getElementById('holy-bear-boot-frame');
         if (!frame || document.visibilityState !== 'visible') return;
@@ -379,13 +383,13 @@ const earlyLoadingScript = `(() => {
     });
     window.addEventListener('holybear-loading-complete', () => {
         if (recoveryTimer) window.clearTimeout(recoveryTimer);
-        if (criticalAssetFailed) scheduleRecovery();
+        if (mainStyleFailed && mainStyleIsMissing()) scheduleRecovery();
         else try { sessionStorage.removeItem(retryKey); } catch {}
     }, { once: true });
     window.addEventListener('error', (event) => {
-        if ((event.target instanceof HTMLLinkElement && event.target.rel.includes('stylesheet'))
-            || (event.target instanceof HTMLScriptElement && event.target.type === 'module')) {
-            criticalAssetFailed = true;
+        if (event.target instanceof HTMLLinkElement
+            && /\\/assets\\/style\\.[^/]+\\.css$/.test(new URL(event.target.href).pathname)) {
+            mainStyleFailed = true;
             scheduleRecovery();
         }
     }, true);

@@ -46,6 +46,16 @@ export const isOpenAiModel = (id: string): boolean => id.startsWith('openai:');
 
 export const isCompatibleAiModel = (id: string): boolean => id === CUSTOM_COMPATIBLE_AI_MODEL;
 
+export const getGeminiModelsToTry = (selectedId: string, options: AiModelOption[]): string[] => {
+  const availableIds = options.filter(option => option.provider === 'google').map(option => option.id);
+  const selected = availableIds.includes(selectedId) ? selectedId : availableIds[0] || DEFAULT_GOOGLE_AI_MODEL;
+  const flashLite = availableIds.find(id => id !== selected && /-flash-lite(?:-preview)?$/.test(id));
+  const otherModels = availableIds
+    .filter(id => id !== selected && id !== flashLite)
+    .slice(0, flashLite ? 2 : 3);
+  return [...new Set([selected, ...otherModels, ...(flashLite ? [flashLite] : [])])];
+};
+
 const isGeminiTextModel = (id: string): boolean =>
   /^gemini-(\d+(?:\.\d+)?)-(flash(?:-lite)?|pro)(?:-preview)?$/.test(id) &&
   Number(id.match(/^gemini-([\d.]+)/)?.[1]) >= 3 && id !== 'gemini-3-pro-preview';

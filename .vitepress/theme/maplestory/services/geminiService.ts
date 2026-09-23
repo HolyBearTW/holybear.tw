@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { DashboardData } from "../types";
-import { DEFAULT_AI_MODEL, getAiModelOption, isCompatibleAiModel, isOpenAiModel } from "../data/aiModels";
+import { DEFAULT_AI_MODEL, getAiModelOption, getGeminiModelsToTry, isCompatibleAiModel, isOpenAiModel } from "../data/aiModels";
 import type { AiModelOption, CompatibleAiServiceConfig } from "../data/aiModels";
 import type { BossDamageAiSnapshot } from "../calculator/bossDamageCalculator";
 
@@ -651,9 +651,8 @@ export const analyzeCharacter = async (data: DashboardData, bossDamageSnapshot: 
     return analyzeWithOpenAi(prompt, openAiApiKey, modelId, onProgress, availableModels);
   }
 
-  const availableIds = availableModels.filter(option => option.provider === 'google').map(option => option.id);
-  const effectiveModel = availableIds.includes(modelId) ? modelId : availableIds[0] || DEFAULT_AI_MODEL;
-  const modelsToTry = [...new Set([effectiveModel, ...availableIds.filter(id => id !== effectiveModel).slice(0, 3)])];
+  const modelsToTry = getGeminiModelsToTry(modelId, availableModels);
+  const effectiveModel = modelsToTry[0];
 
   let lastError: any = null;
   // 關鍵新增：用來暫存「額度滿」的錯誤，因為它的優先級比「找不到模型」高
