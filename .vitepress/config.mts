@@ -66,6 +66,13 @@ const earlyLoadingStyle = `
     html.holy-bear-loading-active {
         scroll-behavior: auto !important;
     }
+    html.holy-bear-booting,
+    html.holy-bear-booting body {
+        overflow: hidden !important;
+    }
+    html.holy-bear-booting #app {
+        visibility: hidden;
+    }
     #holy-bear-boot-frame {
         display: none;
         position: fixed;
@@ -331,6 +338,58 @@ const earlyLoadingScript = `(() => {
     const hasLimitedCpu = logicalProcessors > 0 && logicalProcessors <= 4;
     root.classList.toggle('holy-bear-constrained-device', hasLimitedMemory || hasLimitedCpu);
 
+    // A mobile browser may discard a background tab before its CSS or module
+    // scripts finish loading. Recover that incomplete document when it returns.
+    const retryKey = 'holybear-incomplete-boot-retry';
+    let wasBackgrounded = false;
+    let criticalAssetFailed = false;
+    let recoveryTimer;
+    const bootIsPending = () => root.classList.contains('holy-bear-booting')
+        && !!document.getElementById('holy-bear-boot-frame');
+    const needsRecovery = () => bootIsPending() || criticalAssetFailed;
+    const showBootTimeout = () => {
+        const frame = document.getElementById('holy-bear-boot-frame');
+        if (!frame || document.visibilityState !== 'visible') return;
+        frame.classList.add('is-timeout');
+        frame.querySelector('button')?.addEventListener('click', () => window.location.reload(), { once: true });
+    };
+    const retryIncompleteBoot = () => {
+        if (!needsRecovery() || document.visibilityState !== 'visible') return;
+        if (!navigator.onLine) { showBootTimeout(); return; }
+        try {
+            const lastRetry = Number(sessionStorage.getItem(retryKey) || 0);
+            if (Date.now() - lastRetry < 30000) { showBootTimeout(); return; }
+            sessionStorage.setItem(retryKey, String(Date.now()));
+        } catch {}
+        window.location.reload();
+    };
+    const scheduleRecovery = () => {
+        if (recoveryTimer) window.clearTimeout(recoveryTimer);
+        if (needsRecovery() && document.visibilityState === 'visible') {
+            recoveryTimer = window.setTimeout(retryIncompleteBoot, 1500);
+        }
+    };
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') wasBackgrounded = true;
+        else if (wasBackgrounded) scheduleRecovery();
+    });
+    window.addEventListener('pagehide', () => { wasBackgrounded = true; });
+    window.addEventListener('pageshow', () => {
+        if (wasBackgrounded) scheduleRecovery();
+    });
+    window.addEventListener('holybear-loading-complete', () => {
+        if (recoveryTimer) window.clearTimeout(recoveryTimer);
+        if (criticalAssetFailed) scheduleRecovery();
+        else try { sessionStorage.removeItem(retryKey); } catch {}
+    }, { once: true });
+    window.addEventListener('error', (event) => {
+        if ((event.target instanceof HTMLLinkElement && event.target.rel.includes('stylesheet'))
+            || (event.target instanceof HTMLScriptElement && event.target.type === 'module')) {
+            criticalAssetFailed = true;
+            scheduleRecovery();
+        }
+    }, true);
+
     const runCpuProbe = (iterations) => {
         let checksum = 0;
         for (let index = 1; index <= iterations; index += 1) {
@@ -349,11 +408,14 @@ const earlyLoadingScript = `(() => {
         }
     }, 0));
     window.setTimeout(() => {
-        const frame = document.getElementById('holy-bear-boot-frame');
-        if (!frame || !root.classList.contains('holy-bear-booting')) return;
+        if (!bootIsPending()) return;
 
-        frame.classList.add('is-timeout');
-        frame.querySelector('button')?.addEventListener('click', () => window.location.reload(), { once: true });
+        if (document.visibilityState !== 'visible' || wasBackgrounded) {
+            if (document.visibilityState === 'visible') scheduleRecovery();
+            return;
+        }
+
+        showBootTimeout();
     }, 12000);
 })()`
 
