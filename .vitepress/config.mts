@@ -564,6 +564,7 @@ const config = defineConfig({
         ['meta', { name: 'theme-color', content: '#00FFEE' }],
         ['link', { rel: 'alternate', type: 'application/rss+xml', title: '聖小熊的秘密基地', href: 'https://holybear.tw/rss.xml' }],
         ['script', {
+            id: 'holybear-adsense',
             async: '',
             src: 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9896576854551135',
             crossorigin: 'anonymous'
