@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { DashboardData } from "../types";
 import { DEFAULT_AI_MODEL, getAiModelOption, isCompatibleAiModel, isOpenAiModel } from "../data/aiModels";
-import type { CompatibleAiServiceConfig } from "../data/aiModels";
+import type { AiModelOption, CompatibleAiServiceConfig } from "../data/aiModels";
 import type { BossDamageAiSnapshot } from "../calculator/bossDamageCalculator";
 
 // === Helper: 錯誤訊息美化 ===
@@ -342,12 +342,15 @@ const analyzeWithOpenAi = async (
   prompt: string,
   apiKey: string,
   selectionId: string,
-  onProgress?: (msg: string) => void
+  onProgress?: (msg: string) => void,
+  availableModels: AiModelOption[] = [],
 ): Promise<string> => {
+  const availableIds = availableModels.filter(option => option.provider === 'openai').map(option => option.id);
+  const selectedModel = availableIds.includes(selectionId) ? selectionId : availableIds[0] || selectionId;
   const modelsToTry = [...new Set([
-    selectionId,
-    'openai:gpt-5.6-terra:standard',
-    'openai:gpt-5.6-luna:standard',
+    selectedModel,
+    ...['openai:gpt-6-luna:standard', 'openai:gpt-5.6-terra:standard', 'openai:gpt-5.6-luna:standard'].filter(id => availableIds.includes(id)),
+    ...availableIds.slice(0, 3),
   ])];
   let lastError: unknown = null;
   let quotaError: unknown = null;
@@ -491,7 +494,7 @@ const analyzeWithCompatibleService = async (
   }
 };
 
-export const analyzeCharacter = async (data: DashboardData, bossDamageSnapshot: BossDamageAiSnapshot, geminiApiKey: string, openAiApiKey: string, compatibleConfig: CompatibleAiServiceConfig, modelId: string = DEFAULT_AI_MODEL, ignoreWarnings: boolean = false, onProgress?: (msg: string) => void): Promise<string> => {
+export const analyzeCharacter = async (data: DashboardData, bossDamageSnapshot: BossDamageAiSnapshot, geminiApiKey: string, openAiApiKey: string, compatibleConfig: CompatibleAiServiceConfig, modelId: string = DEFAULT_AI_MODEL, ignoreWarnings: boolean = false, onProgress?: (msg: string) => void, availableModels: AiModelOption[] = []): Promise<string> => {
   if (isCompatibleAiModel(modelId) && (!compatibleConfig.apiKey || !compatibleConfig.baseUrl || !compatibleConfig.model)) {
     return 'AI Analysis Failed: 💡 **請先完成 AI 自訂相容服務設定**\n\n請填寫 Base URL、模型 ID 與該服務提供的 API Key。';
   }
@@ -645,22 +648,12 @@ export const analyzeCharacter = async (data: DashboardData, bossDamageSnapshot: 
   }
 
   if (isOpenAiModel(modelId)) {
-    return analyzeWithOpenAi(prompt, openAiApiKey, modelId, onProgress);
+    return analyzeWithOpenAi(prompt, openAiApiKey, modelId, onProgress, availableModels);
   }
 
-  // === 修正開始: 重新定義模型列表與錯誤優先級 ===
-  
-  // 1. 強制過濾：若傳入 gemini-2.0-flash (可能來自舊緩存)，直接升級為 2.5，避免觸發 2.0 額度錯誤
-  const effectiveModel = modelId === 'gemini-2.0-flash' ? 'gemini-2.5-flash' : modelId;
-
-  // 依目前穩定性與速度排序；保留 2.5 Flash 作為跨世代最後備援。
-  let modelsToTry = [effectiveModel, 'gemini-3.7-flash', 'gemini-3.6-flash', 'gemini-2.5-flash'];
-  
-  // 2. 去除重複並過濾空值
-  modelsToTry = [...new Set(modelsToTry)].filter(Boolean);
-  
-  // 3. 再次確保清單中沒有 2.0 (雙重保險)
-  modelsToTry = modelsToTry.filter(m => m !== 'gemini-2.0-flash');
+  const availableIds = availableModels.filter(option => option.provider === 'google').map(option => option.id);
+  const effectiveModel = availableIds.includes(modelId) ? modelId : availableIds[0] || DEFAULT_AI_MODEL;
+  const modelsToTry = [...new Set([effectiveModel, ...availableIds.filter(id => id !== effectiveModel).slice(0, 3)])];
 
   let lastError: any = null;
   // 關鍵新增：用來暫存「額度滿」的錯誤，因為它的優先級比「找不到模型」高
@@ -714,8 +707,8 @@ export const analyzeCharacter = async (data: DashboardData, bossDamageSnapshot: 
           maxOutputTokens: 10000,
       };
 
-      // Gemini 3.7 已移除舊式取樣參數，舊模型則維持原本設定。
-      if (currentModel !== 'gemini-3.7-flash') {
+      // Gemini 3.5 以後不接受舊式取樣參數。
+      if (Number(currentModel.match(/^gemini-([\d.]+)/)?.[1]) < 3.5) {
         generationConfig.temperature = 0.7;
       }
 

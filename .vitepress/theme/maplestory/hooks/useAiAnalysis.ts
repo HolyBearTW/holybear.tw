@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { DashboardData } from '../types';
-import { DEFAULT_AI_MODEL, getRecommendedAiModel, isCompatibleAiModel, isOpenAiModel } from '../data/aiModels';
+import { AI_MODEL_OPTIONS, DEFAULT_AI_MODEL, discoverAiModels, getRecommendedAiModel, isCompatibleAiModel, isOpenAiModel } from '../data/aiModels';
+import type { AiModelOption } from '../data/aiModels';
 import { createBossPlayerContext, readBossDamageAiSnapshot } from '../calculator/bossDamageCalculator';
 
 const DEFAULT_GEMINI_KEY = ''; 
@@ -41,6 +42,57 @@ export const useAiAnalysis = (
   });
 
   const [showKeySettings, setShowKeySettings] = useState(false);
+  const [modelRefresh, setModelRefresh] = useState(0);
+  const lastDiscoveryKeys = useRef({ google: geminiKey, openai: openAiKey });
+  const [discoveredModels, setDiscoveredModels] = useState<Partial<Record<'google' | 'openai', AiModelOption[]>>>({});
+  const [modelSyncStatus, setModelSyncStatus] = useState<Partial<Record<'google' | 'openai', 'loading' | 'ok' | 'failed'>>>({});
+  const modelOptions = useMemo(() => AI_MODEL_OPTIONS.filter(option => option.provider === 'compatible').concat(
+    discoveredModels.google ?? AI_MODEL_OPTIONS.filter(option => option.provider === 'google'),
+    discoveredModels.openai ?? AI_MODEL_OPTIONS.filter(option => option.provider === 'openai'),
+  ), [discoveredModels]);
+
+  useEffect(() => {
+    if (showKeySettings) setModelRefresh(current => current + 1);
+  }, [showKeySettings]);
+
+  useEffect(() => {
+    const controllers: AbortController[] = [];
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      for (const [provider, key] of [['google', geminiKey], ['openai', openAiKey]] as const) {
+        if (lastDiscoveryKeys.current[provider] !== key) {
+          lastDiscoveryKeys.current[provider] = key;
+          setDiscoveredModels(current => ({ ...current, [provider]: undefined }));
+        }
+        if (!key) {
+          setDiscoveredModels(current => ({ ...current, [provider]: undefined }));
+          setModelSyncStatus(current => ({ ...current, [provider]: undefined }));
+          continue;
+        }
+        const controller = new AbortController();
+        controllers.push(controller);
+        setModelSyncStatus(current => ({ ...current, [provider]: 'loading' }));
+        const timeout = window.setTimeout(() => controller.abort(), 10000);
+        void discoverAiModels(provider, key, controller.signal).then(options => {
+          if (controller.signal.aborted || options.length === 0) throw new Error('沒有適用的文字模型');
+          setDiscoveredModels(current => ({ ...current, [provider]: options }));
+          setModelSyncStatus(current => ({ ...current, [provider]: 'ok' }));
+          setGeminiModel(selected => {
+            const selectedProvider = isOpenAiModel(selected) ? 'openai' : 'google';
+            if (selectedProvider !== provider || options.some(option => option.id === selected)) return selected;
+            const replacement = options.find(option => option.id === (provider === 'google' ? DEFAULT_AI_MODEL : getRecommendedAiModel(false, true)))?.id || options[0].id;
+            localStorage.setItem('gemini_model', replacement);
+            return replacement;
+          });
+        }).catch(() => {
+          if (!cancelled) {
+            setModelSyncStatus(current => ({ ...current, [provider]: 'failed' }));
+          }
+        }).finally(() => window.clearTimeout(timeout));
+      }
+    }, 600);
+    return () => { cancelled = true; window.clearTimeout(timer); controllers.forEach(controller => controller.abort()); };
+  }, [geminiKey, openAiKey, modelRefresh]);
   const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0); 
@@ -126,7 +178,7 @@ export const useAiAnalysis = (
         model: compatibleAiModel,
       }, geminiModel, ignoreWarnings, (msg) => {
           setProgressMessage(msg);
-      });
+      }, modelOptions);
       
       console.log("[App.tsx] Analyze Result Received (Length):", result?.length);
 
@@ -177,7 +229,7 @@ export const useAiAnalysis = (
     } finally {
       setAnalyzing(false);
     }
-  }, [data, geminiKey, openAiKey, compatibleAiKey, compatibleAiBaseUrl, compatibleAiModel, geminiModel, setError]);
+  }, [data, geminiKey, openAiKey, compatibleAiKey, compatibleAiBaseUrl, compatibleAiModel, geminiModel, modelOptions, setError]);
 
   return {
     geminiKey, setGeminiKey,
@@ -186,6 +238,7 @@ export const useAiAnalysis = (
     compatibleAiBaseUrl, setCompatibleAiBaseUrl,
     compatibleAiModel, setCompatibleAiModel,
     geminiModel, setGeminiModel,
+    modelOptions, modelSyncStatus,
     showKeySettings, setShowKeySettings,
     aiAnalysis, setAiAnalysis,
     analyzing, setAnalyzing,

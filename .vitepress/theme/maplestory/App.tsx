@@ -131,6 +131,7 @@ const AuthorizedApp: React.FC<{ bypassKey: string }> = ({ bypassKey }) => {
     compatibleAiBaseUrl, setCompatibleAiBaseUrl,
     compatibleAiModel, setCompatibleAiModel,
     geminiModel, setGeminiModel,
+    modelOptions, modelSyncStatus,
     showKeySettings, setShowKeySettings,
     aiAnalysis,
     analyzing,
@@ -175,6 +176,8 @@ const AuthorizedApp: React.FC<{ bypassKey: string }> = ({ bypassKey }) => {
         setCompatibleAiModel={setCompatibleAiModel}
         geminiModel={geminiModel}
         setGeminiModel={setGeminiModel}
+        modelOptions={modelOptions}
+        modelSyncStatus={modelSyncStatus}
       />
 
       {/* Search Section */}

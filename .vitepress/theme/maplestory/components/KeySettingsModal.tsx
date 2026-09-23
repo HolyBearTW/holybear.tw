@@ -1,6 +1,7 @@
 import React from 'react';
 import { ExternalLink, Settings, X } from 'lucide-react';
-import { AI_MODEL_OPTIONS, isCompatibleAiModel } from '../data/aiModels';
+import { isCompatibleAiModel } from '../data/aiModels';
+import type { AiModelOption } from '../data/aiModels';
 
 interface KeySettingsModalProps {
   show: boolean;
@@ -17,6 +18,8 @@ interface KeySettingsModalProps {
   setCompatibleAiModel: (model: string) => void;
   geminiModel: string;
   setGeminiModel: (model: string) => void;
+  modelOptions: AiModelOption[];
+  modelSyncStatus: Partial<Record<'google' | 'openai', 'loading' | 'ok' | 'failed'>>;
 }
 
 const KeySettingsModal: React.FC<KeySettingsModalProps> = ({
@@ -33,7 +36,9 @@ const KeySettingsModal: React.FC<KeySettingsModalProps> = ({
   compatibleAiModel,
   setCompatibleAiModel,
   geminiModel,
-  setGeminiModel
+  setGeminiModel,
+  modelOptions,
+  modelSyncStatus,
 }) => {
   if (!show) return null;
 
@@ -105,21 +110,28 @@ const KeySettingsModal: React.FC<KeySettingsModalProps> = ({
               className="w-full p-3 bg-slate-950 border border-slate-700 rounded-lg text-white focus:border-indigo-500 outline-none appearance-none"
             >
               <optgroup label="Google Gemini">
-                {AI_MODEL_OPTIONS.filter(option => option.provider === 'google').map(option => (
+                {modelOptions.filter(option => option.provider === 'google').map(option => (
                   <option key={option.id} value={option.id}>{option.label}</option>
                 ))}
               </optgroup>
               <optgroup label="OpenAI GPT（依 API 額度計費）">
-                {AI_MODEL_OPTIONS.filter(option => option.provider === 'openai').map(option => (
+                {modelOptions.filter(option => option.provider === 'openai').map(option => (
                   <option key={option.id} value={option.id}>{option.label}</option>
                 ))}
               </optgroup>
               <optgroup label="其他服務">
-                {AI_MODEL_OPTIONS.filter(option => option.provider === 'compatible').map(option => (
+                {modelOptions.filter(option => option.provider === 'compatible').map(option => (
                   <option key={option.id} value={option.id}>{option.label}</option>
                 ))}
               </optgroup>
             </select>
+            <p className="mt-1.5 text-xs text-slate-500" aria-live="polite">
+              {(['google', 'openai'] as const).filter(provider => provider === 'google' ? geminiKey : openAiKey).map(provider => (
+                <span key={provider} className="mr-3">
+                  {provider === 'google' ? 'Gemini' : 'GPT'}：{modelSyncStatus[provider] === 'ok' ? '已同步帳號模型' : modelSyncStatus[provider] === 'failed' ? '同步失敗，使用現有清單' : '正在同步模型…'}
+                </span>
+              ))}
+            </p>
           </div>
           {isCompatibleAiModel(geminiModel) && (
             <div className="rounded-xl border border-cyan-700/30 bg-cyan-50/70 p-4 space-y-4 dark:border-cyan-500/30 dark:bg-cyan-950/20">
