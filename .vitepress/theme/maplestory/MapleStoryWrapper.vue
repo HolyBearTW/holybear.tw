@@ -184,6 +184,10 @@ onBeforeUnmount(() => {
   margin: 0 auto 16px;
 }
 
+#maplestory-root .maple-manual-ad-below-ticker {
+  margin-bottom: 0;
+}
+
 #maplestory-root .maple-manual-ad-inline ins.adsbygoogle {
   display: block !important;
   width: 100% !important;
