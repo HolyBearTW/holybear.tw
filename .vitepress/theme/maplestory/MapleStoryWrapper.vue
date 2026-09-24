@@ -250,6 +250,37 @@ onBeforeUnmount(() => {
   }
 }
 
+@media (max-width: 767px) {
+  #maplestory-root .maple-manual-ad-inline,
+  #maplestory-root .maple-manual-ad-inline.maple-manual-ad-bottom {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    padding-inline: 24px;
+    overflow: hidden;
+  }
+
+  #maplestory-root .maple-manual-ad-inline .maple-manual-ad,
+  #maplestory-root .maple-manual-ad-inline .maple-container-responsive-ad,
+  #maplestory-root .maple-manual-ad-inline .adsense-slot {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  #maplestory-root .maple-manual-ad-inline ins.adsbygoogle[data-ad-format="horizontal"] {
+    box-sizing: border-box !important;
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin-inline: 0 !important;
+    overflow: hidden !important;
+  }
+}
+
 /* Google can leave an empty ad's dimensions in place; collapse only our manual slots. */
 #maplestory-root .maple-manual-ad ins.adsbygoogle[data-ad-status="unfilled"],
 .maple-side-ads-overlay .maple-manual-ad ins.adsbygoogle[data-ad-status="unfilled"] {
