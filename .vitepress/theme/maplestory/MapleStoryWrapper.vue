@@ -182,9 +182,15 @@ onBeforeUnmount(() => {
 #maplestory-root .maple-manual-ad-side { display: none; }
 
 #maplestory-root .maple-manual-ad-horizontal {
-  width: min(970px, calc(100% - 48px));
+  width: min(672px, calc(100% - 48px));
   min-height: 90px;
   margin: 0 auto 24px;
+}
+
+/* AdSense may narrow a banner after loading; center the ad itself within its slot. */
+#maplestory-root .maple-manual-ad-horizontal ins.adsbygoogle {
+  margin-inline: auto !important;
+  max-width: 100% !important;
 }
 
 /* Google can leave an empty ad's dimensions in place; collapse only our manual slots. */

@@ -8,7 +8,7 @@
       :data-ad-client="ADSENSE_CLIENT_ID"
       :data-ad-slot="validSlotId"
       :data-ad-format="format === 'horizontal' ? undefined : 'auto'"
-      :data-full-width-responsive="format === 'horizontal' ? undefined : 'true'"
+      :data-full-width-responsive="format === 'horizontal' ? 'false' : 'true'"
     ></ins>
   </div>
 </template>
