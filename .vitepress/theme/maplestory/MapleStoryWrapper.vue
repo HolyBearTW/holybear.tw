@@ -185,11 +185,26 @@ onBeforeUnmount(() => {
 }
 
 #maplestory-root .maple-manual-ad-inline ins.adsbygoogle {
+  display: block !important;
+  width: 100% !important;
+  height: 90px !important;
   margin-inline: auto !important;
   max-width: 100% !important;
 }
 
 #maplestory-root .maple-manual-ad-inline .adsense-slot { margin: 0; }
+
+@media (max-width: 767px) {
+  #maplestory-root .maple-manual-ad-inline ins.adsbygoogle[data-ad-format="horizontal"] {
+    height: 60px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  #maplestory-root .maple-manual-ad-inline ins.adsbygoogle[data-ad-format="horizontal"] {
+    height: 50px !important;
+  }
+}
 
 /* Google can leave an empty ad's dimensions in place; collapse only our manual slots. */
 #maplestory-root .maple-manual-ad ins.adsbygoogle[data-ad-status="unfilled"],

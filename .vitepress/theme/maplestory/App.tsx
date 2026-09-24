@@ -220,7 +220,7 @@ const AuthorizedApp: React.FC<{ bypassKey: string }> = ({ bypassKey }) => {
       </div>
 
       <div className="maple-manual-ad-inline maple-manual-ad-below-ticker" aria-label="跑馬燈下方廣告">
-        <MapleAdPlacement slotId={MAPLESTORY_AD_SLOTS.belowTicker} />
+        <MapleAdPlacement slotId={MAPLESTORY_AD_SLOTS.belowTicker} format="horizontal" />
       </div>
 
       <main className={`maple-result-content relative max-w-[1600px] mx-auto px-6 pb-6 ${data ? 'pt-2 mt-0' : error ? 'pt-6 mt-4' : 'pt-0 mt-0'}`}>
@@ -313,7 +313,7 @@ const AuthorizedApp: React.FC<{ bypassKey: string }> = ({ bypassKey }) => {
             <UpdateLogBoard />
           )}
           <div className="maple-manual-ad-inline maple-manual-ad-bottom" aria-label="頁尾廣告">
-            <MapleAdPlacement slotId={MAPLESTORY_AD_SLOTS.pageBottom} />
+            <MapleAdPlacement slotId={MAPLESTORY_AD_SLOTS.pageBottom} format="horizontal" />
           </div>
           <style>{`
             .custom-vp-tip-danger {

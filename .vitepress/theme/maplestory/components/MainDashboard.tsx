@@ -285,7 +285,7 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <div className="h-full space-y-4 lg:col-span-3">
+            <div className="h-full space-y-4 lg:col-span-3" data-maple-side-ad-anchor="profile">
                <div className="relative h-full overflow-hidden rounded-xl border border-slate-800 bg-[#161b22] shadow-xl group">
                   <div className={`maple-profile-banner h-32 bg-slate-800 relative overflow-hidden ${hasJobArtwork ? 'maple-profile-banner--artwork' : ''}`}>
                       <div className="maple-profile-scene absolute inset-0 overflow-hidden">
@@ -595,7 +595,7 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
                </div>
             </div>
 
-            <div className="flex flex-col gap-6 lg:col-span-4 [&>*]:min-h-0 [&>*]:grow [&>*]:basis-auto">
+            <div className="flex flex-col gap-6 lg:col-span-4 [&>*]:min-h-0 [&>*]:grow [&>*]:basis-auto" data-maple-side-ad-anchor="equipment">
                       <EquipmentGrid 
                  equipment={data.equipment} 
                  setEffect={data.setEffect}

@@ -4,11 +4,11 @@
       :key="validSlotId"
       ref="adElement"
       class="adsbygoogle"
-      :style="format === 'horizontal' ? 'display:block;width:100%;height:90px' : 'display:block'"
+      style="display:block"
       :data-ad-client="ADSENSE_CLIENT_ID"
       :data-ad-slot="validSlotId"
-      :data-ad-format="format === 'horizontal' ? undefined : 'auto'"
-      :data-full-width-responsive="format === 'horizontal' ? 'false' : 'true'"
+      :data-ad-format="format"
+      data-full-width-responsive="true"
     ></ins>
   </div>
 </template>
@@ -22,12 +22,22 @@ const validSlotId = computed(() => /^\d+$/.test(props.slotId) ? props.slotId : '
 const adElement = ref<HTMLElement | null>(null)
 const initializedElements = new WeakSet<HTMLElement>()
 let mounted = false
+let connectionObserver: MutationObserver | null = null
 let sizeObserver: ResizeObserver | null = null
 
 function requestAd() {
   const element = adElement.value
-  if (!element || !element.isConnected || initializedElements.has(element)) return
+  if (!element || initializedElements.has(element)) return
   if (element.hasAttribute('data-adsbygoogle-status')) return
+  if (!element.isConnected) {
+    connectionObserver ??= new MutationObserver(requestAd)
+    connectionObserver.observe(document.documentElement, { childList: true, subtree: true })
+    return
+  }
+
+  connectionObserver?.disconnect()
+  connectionObserver = null
+
   if (element.getBoundingClientRect().width <= 0) {
     sizeObserver ??= new ResizeObserver(requestAd)
     sizeObserver.observe(element)
@@ -61,7 +71,10 @@ watch(validSlotId, async () => {
 
 onBeforeUnmount(() => {
   mounted = false
+  connectionObserver?.disconnect()
+  connectionObserver = null
   sizeObserver?.disconnect()
+  sizeObserver = null
 })
 </script>
 
