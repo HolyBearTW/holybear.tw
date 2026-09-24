@@ -2994,24 +2994,28 @@ html:not(.dark) body.theme-uponthesky #maplestory-root .maple-ranking-panel butt
   color: #075a70 !important;
 }
 
-html:not(.dark) body.theme-uponthesky #maplestory-root .maple-ranking-panel > div[class*="border-t"] {
+html:not(.dark) body.theme-uponthesky #maplestory-root .maple-ranking-panel > div[class*="border-t"],
+html:not(.dark) body.theme-uponthesky #maplestory-root .maple-related-pagination {
   color: #365967 !important;
   border-color: rgba(36, 94, 112, 0.24) !important;
 }
 
-html:not(.dark) body.theme-uponthesky #maplestory-root .maple-ranking-panel > div[class*="border-t"] button:not(.maple-ranking-go-button) {
+html:not(.dark) body.theme-uponthesky #maplestory-root .maple-ranking-panel > div[class*="border-t"] button:not(.maple-ranking-go-button),
+html:not(.dark) body.theme-uponthesky #maplestory-root .maple-related-pagination button:not(.maple-ranking-go-button) {
   color: #365967 !important;
   background: rgba(255, 255, 255, 0.7) !important;
   border-color: rgba(36, 94, 112, 0.32) !important;
 }
 
-html:not(.dark) body.theme-uponthesky #maplestory-root .maple-ranking-panel > div[class*="border-t"] button:not(.maple-ranking-go-button):hover:not(:disabled) {
+html:not(.dark) body.theme-uponthesky #maplestory-root .maple-ranking-panel > div[class*="border-t"] button:not(.maple-ranking-go-button):hover:not(:disabled),
+html:not(.dark) body.theme-uponthesky #maplestory-root .maple-related-pagination button:not(.maple-ranking-go-button):hover:not(:disabled) {
   color: #075a70 !important;
   background: rgba(214, 241, 246, 0.9) !important;
   border-color: #087f94 !important;
 }
 
-html:not(.dark) body.theme-uponthesky #maplestory-root .maple-ranking-panel > div[class*="border-t"] button:disabled {
+html:not(.dark) body.theme-uponthesky #maplestory-root .maple-ranking-panel > div[class*="border-t"] button:disabled,
+html:not(.dark) body.theme-uponthesky #maplestory-root .maple-related-pagination button:disabled {
   color: #78919b !important;
   background: rgba(225, 237, 241, 0.78) !important;
   border-color: rgba(91, 116, 128, 0.22) !important;

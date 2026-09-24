@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronLeft, ChevronRight, Search, User, Users } from 'lucide-react';
+import { Search, User, Users } from 'lucide-react';
 import { fromD1Alt } from '../services/relatedCharacter';
 import type { RelatedCharacter } from '../services/relatedCharacter';
 import type { DashboardData } from '../types';
@@ -50,6 +50,7 @@ const RelatedCharacters: React.FC<RelatedCharactersProps> = ({
   const [status, setStatus] = React.useState<'loading' | 'ready' | 'empty' | 'error'>('loading');
   const [resolutionPartial, setResolutionPartial] = React.useState(false);
   const [page, setPage] = React.useState(1);
+  const [pageInput, setPageInput] = React.useState('1');
   const [pageSize, setPageSize] = React.useState(getResponsivePageSize);
 
   React.useEffect(() => {
@@ -64,6 +65,7 @@ const RelatedCharacters: React.FC<RelatedCharactersProps> = ({
     setStatus('loading');
     setResolutionPartial(false);
     setPage(1);
+    setPageInput('1');
 
     fetchHolyBearAlts(currentCharacterName, controller.signal)
       .then((result) => {
@@ -112,6 +114,20 @@ const RelatedCharacters: React.FC<RelatedCharactersProps> = ({
     setPage((current) => Math.min(current, pageCount));
   }, [pageCount]);
 
+  React.useEffect(() => {
+    setPageInput(String(page));
+  }, [page]);
+
+  const goToPage = (event: React.FormEvent) => {
+    event.preventDefault();
+    const requestedPage = Number.parseInt(pageInput, 10);
+    const nextPage = Number.isFinite(requestedPage)
+      ? Math.min(Math.max(requestedPage, 1), pageCount)
+      : page;
+    setPageInput(String(nextPage));
+    setPage(nextPage);
+  };
+
   if (status === 'empty') return null;
 
   const pageCharacters = members.slice((page - 1) * pageSize, page * pageSize);
@@ -119,53 +135,13 @@ const RelatedCharacters: React.FC<RelatedCharactersProps> = ({
   return (
     <section className="maple-related-characters space-y-5 rounded-xl border border-slate-800 bg-[#161b22] p-4 shadow-xl sm:p-5">
       <header>
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex shrink-0 items-center gap-2">
             <Users className="h-5 w-5 shrink-0 text-cyan-400" aria-hidden="true" />
             <h2 className="text-base font-bold text-slate-100">分身</h2>
           </div>
           {status === 'ready' && (
-            <div className="flex shrink-0 items-center gap-3">
-              <span className="maple-related-count text-xs text-cyan-300">共發現 {members.length} 個分身</span>
-              {pageCount > 1 && (
-                <nav className="flex items-center gap-1" aria-label="分身頁數">
-                <button
-                  type="button"
-                  onClick={() => setPage((current) => Math.max(1, current - 1))}
-                  disabled={page === 1}
-                  className="rounded-md border border-slate-700 p-1.5 text-slate-300 transition hover:border-cyan-500/60 hover:text-cyan-300 disabled:cursor-not-allowed disabled:opacity-30"
-                  aria-label="上一頁"
-                >
-                  <ChevronLeft className="h-3.5 w-3.5" aria-hidden="true" />
-                </button>
-                {Array.from({ length: pageCount }, (_, index) => index + 1).map((pageNumber) => (
-                  <button
-                    key={pageNumber}
-                    type="button"
-                    onClick={() => setPage(pageNumber)}
-                    className={`h-7 min-w-7 rounded-md px-2 text-xs font-bold transition ${
-                      pageNumber === page
-                        ? 'bg-cyan-500 text-slate-950'
-                        : 'border border-slate-700 text-slate-400 hover:border-cyan-500/60 hover:text-cyan-300'
-                    }`}
-                    aria-label={`第 ${pageNumber} 頁`}
-                    aria-current={pageNumber === page ? 'page' : undefined}
-                  >
-                    {pageNumber}
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => setPage((current) => Math.min(pageCount, current + 1))}
-                  disabled={page === pageCount}
-                  className="rounded-md border border-slate-700 p-1.5 text-slate-300 transition hover:border-cyan-500/60 hover:text-cyan-300 disabled:cursor-not-allowed disabled:opacity-30"
-                  aria-label="下一頁"
-                >
-                  <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
-                </button>
-                </nav>
-              )}
-            </div>
+            <span className="maple-related-count shrink-0 whitespace-nowrap text-xs text-cyan-300">共發現 {members.length} 個分身</span>
           )}
         </div>
         <p className="mt-1 text-xs text-slate-500">依公開聯盟資料推定，並非 NEXON 官方 Account ID。</p>
@@ -241,6 +217,46 @@ const RelatedCharacters: React.FC<RelatedCharactersProps> = ({
           </button>
         ))}
       </div>}
+
+      {status === 'ready' && pageCount > 1 && (
+        <nav className="maple-related-pagination flex flex-wrap items-center justify-between gap-3 border-t border-slate-800 pt-4 text-sm text-slate-300" aria-label="分身頁數">
+          <span>第 {page} / {pageCount} 頁</span>
+          <form onSubmit={goToPage} className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              disabled={page <= 1}
+              onClick={() => setPage((current) => current - 1)}
+              className="rounded border border-slate-700 px-2 py-1 transition-colors hover:border-indigo-400 hover:text-indigo-300 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              上一頁
+            </button>
+            <label htmlFor="related-characters-page" className="sr-only">輸入分身頁次</label>
+            <input
+              id="related-characters-page"
+              type="number"
+              min={1}
+              max={pageCount}
+              value={pageInput}
+              onChange={(event) => setPageInput(event.target.value)}
+              className="maple-ranking-page-input w-16 rounded border px-2 py-1 text-center outline-none"
+            />
+            <button
+              type="submit"
+              className="maple-ranking-go-button rounded bg-indigo-600 px-2 py-1 font-semibold text-white transition-colors hover:bg-indigo-500"
+            >
+              前往
+            </button>
+            <button
+              type="button"
+              disabled={page >= pageCount}
+              onClick={() => setPage((current) => current + 1)}
+              className="rounded border border-slate-700 px-2 py-1 transition-colors hover:border-indigo-400 hover:text-indigo-300 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              下一頁
+            </button>
+          </form>
+        </nav>
+      )}
 
     </section>
   );
