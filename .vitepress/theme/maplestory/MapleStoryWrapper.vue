@@ -181,7 +181,7 @@ onBeforeUnmount(() => {
 /* Content slots stay responsive; their wrapper only caps the available width. */
 #maplestory-root .maple-manual-ad-inline {
   width: min(672px, calc(100% - 48px));
-  margin: 16px auto;
+  margin: 0 auto 16px;
 }
 
 #maplestory-root .maple-manual-ad-inline ins.adsbygoogle {
