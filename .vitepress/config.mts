@@ -9,7 +9,14 @@ import gitMetaPlugin from './git-meta.ts'
 import TelegramRoseBotDocsSidebar from './sidebars/Telegram-Rose-Bot-docs.sidebar.ts'
 import VitepressBlogDocsSidebar from './sidebars/Vitepress-Blog-docs-sidebar.ts'
 import SpoilerComponentDocsSidebar from './sidebars/spoiler-component-docs-sidebar.ts'
-import { ADSENSE_SCRIPT_ID, ADSENSE_SCRIPT_SRC } from './adsense.ts'
+import {
+    ADSENSE_SCRIPT_ID,
+    ADSENSE_SCRIPT_SRC,
+    FUNDING_CHOICES_SCRIPT_ID,
+    FUNDING_CHOICES_SCRIPT_SRC,
+    FUNDING_CHOICES_SIGNAL_SCRIPT_ID,
+    FUNDING_CHOICES_SIGNAL_SCRIPT,
+} from './adsense.ts'
 
 const viteLogger = createLogger()
 const viteWarn = viteLogger.warn.bind(viteLogger)
@@ -930,6 +937,14 @@ const config = defineConfig({
             // Direct visits get the same script in the initial HTML head.
             // Client-side visits use the idempotent loader in the theme.
             if (normalizedPath === '/maplestory') {
+                cleanHead.push(['script', {
+                    id: FUNDING_CHOICES_SCRIPT_ID,
+                    async: '',
+                    src: FUNDING_CHOICES_SCRIPT_SRC,
+                }]);
+                cleanHead.push(['script', {
+                    id: FUNDING_CHOICES_SIGNAL_SCRIPT_ID,
+                }, FUNDING_CHOICES_SIGNAL_SCRIPT]);
                 cleanHead.push(['script', {
                     id: ADSENSE_SCRIPT_ID,
                     async: '',
