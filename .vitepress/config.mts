@@ -9,6 +9,7 @@ import gitMetaPlugin from './git-meta.ts'
 import TelegramRoseBotDocsSidebar from './sidebars/Telegram-Rose-Bot-docs.sidebar.ts'
 import VitepressBlogDocsSidebar from './sidebars/Vitepress-Blog-docs-sidebar.ts'
 import SpoilerComponentDocsSidebar from './sidebars/spoiler-component-docs-sidebar.ts'
+import { ADSENSE_SCRIPT_ID, ADSENSE_SCRIPT_SRC } from './adsense.ts'
 
 const viteLogger = createLogger()
 const viteWarn = viteLogger.warn.bind(viteLogger)
@@ -563,12 +564,6 @@ const config = defineConfig({
     head: [
         ['meta', { name: 'theme-color', content: '#00FFEE' }],
         ['link', { rel: 'alternate', type: 'application/rss+xml', title: '聖小熊的秘密基地', href: 'https://holybear.tw/rss.xml' }],
-        ['script', {
-            id: 'holybear-adsense',
-            async: '',
-            src: 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9896576854551135',
-            crossorigin: 'anonymous'
-        }],
         ['script', {}, `(() => {
             const root = document.documentElement;
             const appearanceMigrationKey = 'holybear-appearance-default-migration';
@@ -931,6 +926,18 @@ const config = defineConfig({
                 as: 'image',
                 type: 'image/png'
             }]);
+
+            // Direct visits get the same script in the initial HTML head.
+            // Client-side visits use the idempotent loader in the theme.
+            if (normalizedPath === '/maplestory') {
+                cleanHead.push(['script', {
+                    id: ADSENSE_SCRIPT_ID,
+                    async: '',
+                    src: ADSENSE_SCRIPT_SRC,
+                    'data-overlays': 'bottom',
+                    crossorigin: 'anonymous'
+                }]);
+            }
 
             return cleanHead;
     },

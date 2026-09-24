@@ -8,6 +8,10 @@ import { defaultTheme, THEME_STORAGE_KEY } from './background/themes';
 import ShareButtons from '../components/ShareButtons.vue';
 import HeroSection from '../components/HeroSection.vue';
 import FuwariPostLayout from './fuwari/components/FuwariPostLayout.vue';
+import { ensureMapleAdSenseScript } from '../adsense';
+
+const isMapleToolRoute = (pathname: string) => pathname.replace(/\.html$/, '').replace(/\/$/, '') === '/maplestory';
+const mayHaveMobileAnchor = () => window.innerWidth <= 1000;
 
 export default {
     extends: VPLTheme,
@@ -442,6 +446,16 @@ export default {
             });
         }
 
+        // Follow the existing body class convention, but update this route
+        // scope only at initial load and VitePress route completion.
+        let mapleBodyScope: boolean | null = null;
+        function syncMapleBodyScope(pathname: string) {
+            const active = isMapleToolRoute(pathname);
+            if (mapleBodyScope === active) return;
+            document.body.classList.toggle('is-maplestory-tool', active);
+            mapleBodyScope = active;
+        }
+
         // 建立 DOM 觀察者，精準取代 setInterval，並加入「絕對領域防護罩」
         if (typeof window !== 'undefined') {
             let timeoutId: NodeJS.Timeout | null = null;
@@ -482,7 +496,13 @@ export default {
                     // 注意：這裡絕對不要加 attributes: true，這樣就無敵了
                 });
                 updateBodyClasses(); // 首次載入先執行一次
+                syncMapleBodyScope(window.location.pathname);
             });
+
+            if (document.readyState !== 'loading') {
+                updateBodyClasses();
+                syncMapleBodyScope(window.location.pathname);
+            }
 
             window.addEventListener('resize', applyDesktopBlogNavFix);
             window.addEventListener('resize', scheduleDesktopNavMenuStateUpdate);
@@ -699,6 +719,16 @@ export default {
         });
 
         if (router) {
+            let previousRouteWasMapleTool = isMapleToolRoute(window.location.pathname);
+
+            // Popstate bypasses VitePress's before-route hook. Reload only
+            // when leaving the tool at widths where a mobile Anchor may remain.
+            window.addEventListener('popstate', (event) => {
+                if (!previousRouteWasMapleTool || isMapleToolRoute(window.location.pathname) || !mayHaveMobileAnchor()) return;
+                event.stopImmediatePropagation();
+                window.location.reload();
+            }, true);
+
             let fuwariRouteTransitionActive = false;
             const isFuwariBlogRoute = (pathname: string) => /^\/(?:en\/)?blog(?:\/|$)/.test(pathname);
             const waitForFuwariTransition = (duration = 200) => new Promise<void>((resolve) => window.setTimeout(resolve, duration));
@@ -707,6 +737,10 @@ export default {
             const previousBeforeRouteChange = router.onBeforeRouteChange;
             router.onBeforeRouteChange = async (to) => {
                 const targetUrl = new URL(to, window.location.origin);
+                if (isMapleToolRoute(window.location.pathname) && !isMapleToolRoute(targetUrl.pathname) && mayHaveMobileAnchor()) {
+                    window.location.assign(targetUrl.href);
+                    return false;
+                }
                 const isSameDocument = targetUrl.pathname === window.location.pathname && targetUrl.search === window.location.search;
                 const isBlogToBlog = !isSameDocument
                     && isFuwariBlogRoute(window.location.pathname)
@@ -727,6 +761,11 @@ export default {
 
             const previousAfterRouteChange = router.onAfterRouteChange;
             router.onAfterRouteChange = async (to) => {
+                const mapleToolRoute = isMapleToolRoute(new URL(to, window.location.origin).pathname);
+                const enteringMapleTool = mapleToolRoute && !previousRouteWasMapleTool;
+                previousRouteWasMapleTool = mapleToolRoute;
+                syncMapleBodyScope(window.location.pathname);
+                if (enteringMapleTool) ensureMapleAdSenseScript();
                 await previousAfterRouteChange?.(to);
                 const routePath = new URL(to, window.location.origin).pathname.replace(/\/$/, '');
                 if (fuwariRouteTransitionActive) {

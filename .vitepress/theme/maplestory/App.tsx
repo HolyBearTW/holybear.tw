@@ -5,6 +5,8 @@ import UpdateLogBoard from './components/UpdateLogBoard';
 import HeroHeader from './components/HeroHeader';
 import KeySettingsModal from './components/KeySettingsModal';
 import RecentPowerRanking from './components/RecentPowerRanking';
+import MapleAdPlacement from './components/MapleAdPlacement';
+import { MAPLESTORY_AD_SLOTS } from './adsenseSlots';
 
 import { useMapleSearch } from './hooks/useMapleSearch';
 import { useAiAnalysis } from './hooks/useAiAnalysis';
@@ -159,7 +161,13 @@ const AuthorizedApp: React.FC<{ bypassKey: string }> = ({ bypassKey }) => {
   }, [loading]);
 
   return (
-    <div className="min-h-screen bg-transparent text-slate-200 font-sans">
+    <div className="relative min-h-screen bg-transparent text-slate-200 font-sans">
+      <aside className="maple-manual-ad-side maple-manual-ad-left" aria-label="左側廣告">
+        <MapleAdPlacement side slotId={MAPLESTORY_AD_SLOTS.left} />
+      </aside>
+      <aside className="maple-manual-ad-side maple-manual-ad-right" aria-label="右側廣告">
+        <MapleAdPlacement side slotId={MAPLESTORY_AD_SLOTS.right} />
+      </aside>
       {/* Key Settings Modal */}
       <KeySettingsModal 
         show={showKeySettings}
@@ -303,6 +311,9 @@ const AuthorizedApp: React.FC<{ bypassKey: string }> = ({ bypassKey }) => {
           {(!data && !loading && !error) && (
             <UpdateLogBoard />
           )}
+          <div className="maple-manual-ad-bottom max-w-[1000px] mx-auto px-6">
+            <MapleAdPlacement slotId={MAPLESTORY_AD_SLOTS.pageBottom} />
+          </div>
           <style>{`
             .custom-vp-tip-danger {
                box-sizing: border-box;

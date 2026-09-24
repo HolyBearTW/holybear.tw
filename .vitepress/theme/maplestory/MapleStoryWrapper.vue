@@ -7,6 +7,7 @@ import { onMounted, onBeforeUnmount } from 'vue'
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
+import { ensureMapleAdSenseScript } from '../../adsense'
 
 let root = null
 let readyObserver = null
@@ -110,6 +111,7 @@ function announceReady(container) {
 }
 
 onMounted(() => {
+  ensureMapleAdSenseScript()
   const container = document.getElementById('maplestory-root')
   if (container) {
     root = ReactDOM.createRoot(container)
@@ -176,6 +178,21 @@ onBeforeUnmount(() => {
 </style>
 
 <style>
+/* Reserve side gutters only on wide desktops; never cover tool controls or results. */
+#maplestory-root .maple-manual-ad-side { display: none; }
+
+@media (min-width: 2000px) {
+  #maplestory-root .maple-manual-ad-side {
+    display: block;
+    position: absolute;
+    top: 170px;
+    width: 160px;
+  }
+
+  #maplestory-root .maple-manual-ad-left { left: calc(50% - 990px); }
+  #maplestory-root .maple-manual-ad-right { right: calc(50% - 990px); }
+}
+
 /* MapleStory tool: transparent navigation at the top, glass surface after scrolling. */
 #maplestory-root .maple-character-details {
   content-visibility: auto;
