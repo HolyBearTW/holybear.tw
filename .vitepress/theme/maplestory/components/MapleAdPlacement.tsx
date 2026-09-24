@@ -9,11 +9,13 @@ type FixedAdHeight = 90 | 600
 export default function MapleAdPlacement({
   slotId,
   format = 'auto',
+  fullWidthResponsive,
   fixedWidth,
   fixedHeight,
 }: {
   slotId: string
   format?: AdFormat
+  fullWidthResponsive?: boolean
   fixedWidth?: FixedAdWidth
   fixedHeight?: FixedAdHeight
 }) {
@@ -23,10 +25,10 @@ export default function MapleAdPlacement({
     const container = containerRef.current
     if (!container || !/^\d+$/.test(slotId)) return
 
-    const app: VueApp = createApp(AdSenseSlot, { slotId, format, fixedWidth, fixedHeight })
+    const app: VueApp = createApp(AdSenseSlot, { slotId, format, fullWidthResponsive, fixedWidth, fixedHeight })
     app.mount(container)
     return () => app.unmount()
-  }, [slotId, format, fixedWidth, fixedHeight])
+  }, [slotId, format, fullWidthResponsive, fixedWidth, fixedHeight])
 
   if (!/^\d+$/.test(slotId)) return null
   return (
@@ -69,6 +71,7 @@ export function MapleResponsiveAdPlacement({
     <MapleAdPlacement
       slotId={useFixedDesktopUnit ? desktopSlotId : mobileSlotId}
       format={useFixedDesktopUnit ? 'fixed' : 'horizontal'}
+      fullWidthResponsive={useFixedDesktopUnit ? undefined : false}
       fixedWidth={desktopWidth}
       fixedHeight={90}
     />
@@ -113,6 +116,7 @@ export function MapleContainerResponsiveAdPlacement({
         <MapleAdPlacement
           slotId={hasEnoughWidth ? fixedSlotId : responsiveSlotId}
           format={hasEnoughWidth ? 'fixed' : 'horizontal'}
+          fullWidthResponsive={hasEnoughWidth ? undefined : false}
           fixedWidth={1200}
           fixedHeight={90}
         />

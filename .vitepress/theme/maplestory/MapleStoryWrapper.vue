@@ -181,7 +181,7 @@ onBeforeUnmount(() => {
 /* Content slots stay responsive; their wrapper only caps the available width. */
 #maplestory-root .maple-manual-ad-inline {
   width: min(672px, calc(100% - 48px));
-  margin: 0 auto 24px;
+  margin: 16px auto;
 }
 
 #maplestory-root .maple-manual-ad-inline ins.adsbygoogle {
@@ -194,6 +194,7 @@ onBeforeUnmount(() => {
 
 #maplestory-root .maple-manual-ad-inline.maple-manual-ad-bottom {
   width: min(1200px, calc(100% - 48px));
+  margin: 0 auto 16px;
 }
 
 #maplestory-root .maple-manual-ad-bottom .maple-container-responsive-ad {
@@ -278,15 +279,18 @@ onBeforeUnmount(() => {
   }
 }
 
-/* Google can leave an empty ad's dimensions in place; collapse only our manual slots. */
+/* Collapse manual ad containers when Google reports an empty slot or the loader fails. */
 #maplestory-root .maple-manual-ad ins.adsbygoogle[data-ad-status="unfilled"],
+#maplestory-root .maple-manual-ad ins.adsbygoogle[data-adsense-load-status="failed"],
 .maple-side-ads-overlay .maple-manual-ad ins.adsbygoogle[data-ad-status="unfilled"] {
   display: none !important;
 }
 
-#maplestory-root .maple-manual-ad-inline:has(ins.adsbygoogle[data-ad-status="unfilled"]) {
-  margin-top: 0;
-  margin-bottom: 0;
+#maplestory-root .maple-manual-ad:has(ins.adsbygoogle[data-ad-status="unfilled"], ins.adsbygoogle[data-adsense-load-status="failed"]),
+.maple-side-ads-overlay .maple-manual-ad:has(ins.adsbygoogle[data-ad-status="unfilled"], ins.adsbygoogle[data-adsense-load-status="failed"]),
+#maplestory-root .maple-manual-ad-inline:has(ins.adsbygoogle[data-ad-status="unfilled"], ins.adsbygoogle[data-adsense-load-status="failed"]),
+.maple-side-ads-overlay .maple-side-ad:has(ins.adsbygoogle[data-ad-status="unfilled"], ins.adsbygoogle[data-adsense-load-status="failed"]) {
+  display: none !important;
 }
 
 .maple-side-ads-overlay {
