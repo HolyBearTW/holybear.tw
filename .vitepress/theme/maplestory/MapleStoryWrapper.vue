@@ -192,6 +192,41 @@ onBeforeUnmount(() => {
   max-width: 100% !important;
 }
 
+#maplestory-root .maple-manual-ad-inline.maple-manual-ad-bottom {
+  width: min(672px, calc(100% - 48px));
+}
+
+@media (min-width: 768px) {
+  #maplestory-root .maple-manual-ad-below-ticker ins.adsbygoogle[data-ad-slot="3168472787"] {
+    display: inline-block !important;
+    width: 672px !important;
+    height: 90px !important;
+  }
+}
+
+.maple-side-ad ins.adsbygoogle[data-ad-slot="6772761597"],
+.maple-side-ad ins.adsbygoogle[data-ad-slot="5459679922"] {
+  display: inline-block !important;
+  width: 160px !important;
+  height: 600px !important;
+  max-width: none !important;
+}
+
+.maple-side-ad--left .adsense-slot { text-align: right; }
+.maple-side-ad--right .adsense-slot { text-align: left; }
+
+@media (min-width: 1264px) {
+  #maplestory-root .maple-manual-ad-inline.maple-manual-ad-bottom {
+    width: min(1200px, calc(100% - 48px));
+  }
+
+  #maplestory-root .maple-manual-ad-bottom ins.adsbygoogle[data-ad-slot="4058882622"] {
+    display: inline-block !important;
+    width: 1200px !important;
+    height: 90px !important;
+  }
+}
+
 #maplestory-root .maple-manual-ad-inline .adsense-slot { margin: 0; }
 
 @media (max-width: 767px) {
@@ -243,11 +278,11 @@ onBeforeUnmount(() => {
 }
 
 .maple-side-ad--left {
-  right: calc(100% + 10px);
+  right: calc(100% + 10px - var(--maple-side-fixed-overflow, 0px));
 }
 
 .maple-side-ad--right {
-  left: calc(100% + 10px);
+  left: calc(100% + 10px - var(--maple-side-fixed-overflow, 0px));
 }
 
 .maple-side-ad .maple-manual-ad,

@@ -81,7 +81,10 @@ export default function MapleSideAdsOverlay() {
   return createPortal(
     <div
       className="maple-side-ads-overlay"
-      style={{ '--maple-side-width': `${sideWidth}px` } as React.CSSProperties}
+      style={{
+        '--maple-side-width': `${sideWidth}px`,
+        '--maple-side-fixed-overflow': `${Math.max(0, 160 - sideWidth)}px`,
+      } as React.CSSProperties}
     >
       <div className="maple-side-ads-frame">
         <aside
@@ -89,14 +92,14 @@ export default function MapleSideAdsOverlay() {
           aria-label="左側廣告"
           style={alignmentStyle(anchorTops.left)}
         >
-          <MapleAdPlacement slotId={MAPLESTORY_AD_SLOTS.left} />
+          <MapleAdPlacement slotId={MAPLESTORY_AD_SLOTS.left} format="fixed" fixedWidth={160} fixedHeight={600} />
         </aside>
         <aside
           className="maple-side-ad maple-side-ad--right"
           aria-label="右側廣告"
           style={alignmentStyle(anchorTops.right)}
         >
-          <MapleAdPlacement slotId={MAPLESTORY_AD_SLOTS.right} />
+          <MapleAdPlacement slotId={MAPLESTORY_AD_SLOTS.right} format="fixed" fixedWidth={160} fixedHeight={600} />
         </aside>
       </div>
     </div>,

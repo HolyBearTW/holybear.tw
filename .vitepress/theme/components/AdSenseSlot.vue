@@ -4,11 +4,11 @@
       :key="validSlotId"
       ref="adElement"
       class="adsbygoogle"
-      style="display:block"
+      :style="adStyle"
       :data-ad-client="ADSENSE_CLIENT_ID"
       :data-ad-slot="validSlotId"
-      :data-ad-format="format"
-      data-full-width-responsive="true"
+      :data-ad-format="adFormat"
+      :data-full-width-responsive="fullWidthResponsive"
     ></ins>
   </div>
 </template>
@@ -17,8 +17,22 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { ADSENSE_CLIENT_ID } from '../../adsense'
 
-const props = defineProps<{ slotId: string; format?: 'auto' | 'horizontal' }>()
+const props = withDefaults(defineProps<{
+  slotId: string
+  format?: 'auto' | 'horizontal' | 'fixed'
+  fixedWidth?: 160 | 672 | 1200
+  fixedHeight?: 90 | 600
+}>(), {
+  format: 'auto',
+  fixedWidth: 672,
+  fixedHeight: 90,
+})
 const validSlotId = computed(() => /^\d+$/.test(props.slotId) ? props.slotId : '')
+const adStyle = computed(() => props.format === 'fixed'
+  ? `display:inline-block;width:${props.fixedWidth}px;height:${props.fixedHeight}px`
+  : 'display:block')
+const adFormat = computed(() => props.format === 'fixed' ? undefined : props.format)
+const fullWidthResponsive = computed(() => props.format === 'fixed' ? undefined : 'true')
 const adElement = ref<HTMLElement | null>(null)
 const initializedElements = new WeakSet<HTMLElement>()
 let mounted = false

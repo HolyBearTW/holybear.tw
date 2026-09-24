@@ -5,7 +5,7 @@ import UpdateLogBoard from './components/UpdateLogBoard';
 import HeroHeader from './components/HeroHeader';
 import KeySettingsModal from './components/KeySettingsModal';
 import RecentPowerRanking from './components/RecentPowerRanking';
-import MapleAdPlacement from './components/MapleAdPlacement';
+import MapleAdPlacement, { MapleResponsiveAdPlacement } from './components/MapleAdPlacement';
 import MapleSideAdsOverlay from './components/MapleSideAdsOverlay';
 import { MAPLESTORY_AD_SLOTS } from './adsenseSlots';
 
@@ -220,7 +220,12 @@ const AuthorizedApp: React.FC<{ bypassKey: string }> = ({ bypassKey }) => {
       </div>
 
       <div className="maple-manual-ad-inline maple-manual-ad-below-ticker" aria-label="跑馬燈下方廣告">
-        <MapleAdPlacement slotId={MAPLESTORY_AD_SLOTS.belowTicker} format="horizontal" />
+        <MapleResponsiveAdPlacement
+          desktopSlotId={MAPLESTORY_AD_SLOTS.belowTicker}
+          mobileSlotId={MAPLESTORY_AD_SLOTS.belowTickerMobile}
+          desktopMinWidth={768}
+          desktopWidth={672}
+        />
       </div>
 
       <main className={`maple-result-content relative max-w-[1600px] mx-auto px-6 pb-6 ${data ? 'pt-2 mt-0' : error ? 'pt-6 mt-4' : 'pt-0 mt-0'}`}>
@@ -313,7 +318,12 @@ const AuthorizedApp: React.FC<{ bypassKey: string }> = ({ bypassKey }) => {
             <UpdateLogBoard />
           )}
           <div className="maple-manual-ad-inline maple-manual-ad-bottom" aria-label="頁尾廣告">
-            <MapleAdPlacement slotId={MAPLESTORY_AD_SLOTS.pageBottom} format="horizontal" />
+            <MapleResponsiveAdPlacement
+              desktopSlotId={MAPLESTORY_AD_SLOTS.pageBottom}
+              mobileSlotId={MAPLESTORY_AD_SLOTS.pageBottomMobile}
+              desktopMinWidth={1264}
+              desktopWidth={1200}
+            />
           </div>
           <style>{`
             .custom-vp-tip-danger {
