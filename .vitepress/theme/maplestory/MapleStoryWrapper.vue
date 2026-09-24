@@ -178,19 +178,38 @@ onBeforeUnmount(() => {
 </style>
 
 <style>
-/* Reserve side gutters only on wide desktops; never cover tool controls or results. */
+/* Align side ads with the result row's profile and equipment cards. */
 #maplestory-root .maple-manual-ad-side { display: none; }
+
+#maplestory-root .maple-manual-ad-horizontal {
+  width: min(970px, calc(100% - 48px));
+  min-height: 90px;
+  margin: 0 auto 24px;
+}
+
+/* Google can leave an empty ad's dimensions in place; collapse only our manual slots. */
+#maplestory-root .maple-manual-ad ins.adsbygoogle[data-ad-status="unfilled"] {
+  display: none !important;
+}
+
+#maplestory-root .maple-manual-ad-horizontal:has(ins.adsbygoogle[data-ad-status="unfilled"]) {
+  min-height: 0;
+  margin-bottom: 0;
+}
+
+#maplestory-root .maple-manual-ad-horizontal .adsense-slot,
+#maplestory-root .maple-manual-ad-side .adsense-slot { margin: 0; }
 
 @media (min-width: 2000px) {
   #maplestory-root .maple-manual-ad-side {
     display: block;
     position: absolute;
-    top: 170px;
+    top: 8px;
     width: 160px;
   }
 
-  #maplestory-root .maple-manual-ad-left { left: calc(50% - 990px); }
-  #maplestory-root .maple-manual-ad-right { right: calc(50% - 990px); }
+  #maplestory-root .maple-manual-ad-left { left: -164px; }
+  #maplestory-root .maple-manual-ad-right { right: -164px; }
 }
 
 /* MapleStory tool: transparent navigation at the top, glass surface after scrolling. */

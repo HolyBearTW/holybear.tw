@@ -4,11 +4,11 @@
       :key="validSlotId"
       ref="adElement"
       class="adsbygoogle"
-      style="display: block"
+      :style="format === 'horizontal' ? 'display:block;width:100%;height:90px' : 'display:block'"
       :data-ad-client="ADSENSE_CLIENT_ID"
       :data-ad-slot="validSlotId"
-      data-ad-format="auto"
-      data-full-width-responsive="true"
+      :data-ad-format="format === 'horizontal' ? undefined : 'auto'"
+      :data-full-width-responsive="format === 'horizontal' ? undefined : 'true'"
     ></ins>
   </div>
 </template>
@@ -17,7 +17,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { ADSENSE_CLIENT_ID } from '../../adsense'
 
-const props = defineProps<{ slotId: string }>()
+const props = defineProps<{ slotId: string; format?: 'auto' | 'horizontal' }>()
 const validSlotId = computed(() => /^\d+$/.test(props.slotId) ? props.slotId : '')
 const adElement = ref<HTMLElement | null>(null)
 const initializedElements = new WeakSet<HTMLElement>()

@@ -3,5 +3,6 @@
 export const MAPLESTORY_AD_SLOTS = {
   left: '3761574546',
   right: '3761574546',
+  belowTicker: '3761574546',
   pageBottom: '3761574546',
 } as const
