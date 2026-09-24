@@ -211,7 +211,13 @@ onBeforeUnmount(() => {
     display: block;
     position: absolute;
     top: 8px;
+    bottom: 0;
     width: 160px;
+  }
+
+  #maplestory-root .maple-manual-ad-side > .maple-manual-ad {
+    position: sticky;
+    top: calc(var(--vp-nav-height, 64px) + 1rem);
   }
 
   #maplestory-root .maple-manual-ad-left { left: -164px; }
