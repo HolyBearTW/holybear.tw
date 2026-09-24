@@ -178,50 +178,72 @@ onBeforeUnmount(() => {
 </style>
 
 <style>
-/* Align side ads with the result row's profile and equipment cards. */
-#maplestory-root .maple-manual-ad-side { display: none; }
-
-#maplestory-root .maple-manual-ad-horizontal {
+/* Content slots stay responsive; their wrapper only caps the available width. */
+#maplestory-root .maple-manual-ad-inline {
   width: min(672px, calc(100% - 48px));
-  min-height: 90px;
   margin: 0 auto 24px;
 }
 
-/* AdSense may narrow a banner after loading; center the ad itself within its slot. */
-#maplestory-root .maple-manual-ad-horizontal ins.adsbygoogle {
+#maplestory-root .maple-manual-ad-inline ins.adsbygoogle {
   margin-inline: auto !important;
   max-width: 100% !important;
 }
 
+#maplestory-root .maple-manual-ad-inline .adsense-slot { margin: 0; }
+
 /* Google can leave an empty ad's dimensions in place; collapse only our manual slots. */
-#maplestory-root .maple-manual-ad ins.adsbygoogle[data-ad-status="unfilled"] {
+#maplestory-root .maple-manual-ad ins.adsbygoogle[data-ad-status="unfilled"],
+.maple-side-ads-overlay .maple-manual-ad ins.adsbygoogle[data-ad-status="unfilled"] {
   display: none !important;
 }
 
-#maplestory-root .maple-manual-ad-horizontal:has(ins.adsbygoogle[data-ad-status="unfilled"]) {
-  min-height: 0;
+#maplestory-root .maple-manual-ad-inline:has(ins.adsbygoogle[data-ad-status="unfilled"]) {
+  margin-top: 0;
   margin-bottom: 0;
 }
 
-#maplestory-root .maple-manual-ad-horizontal .adsense-slot,
-#maplestory-root .maple-manual-ad-side .adsense-slot { margin: 0; }
+.maple-side-ads-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 15;
+  pointer-events: none;
+}
 
-@media (min-width: 2000px) {
-  #maplestory-root .maple-manual-ad-side {
-    display: block;
-    position: absolute;
-    top: 8px;
-    bottom: 0;
-    width: 160px;
-  }
+.maple-side-ads-frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  max-width: 1600px;
+  margin-inline: auto;
+  pointer-events: none;
+}
 
-  #maplestory-root .maple-manual-ad-side > .maple-manual-ad {
-    position: sticky;
-    top: calc(var(--vp-nav-height, 64px) + 1rem);
-  }
+.maple-side-ad {
+  position: absolute;
+  top: 50%;
+  width: var(--maple-side-width);
+  max-width: 300px;
+  transform: translateY(-50%);
+  pointer-events: auto;
+}
 
-  #maplestory-root .maple-manual-ad-left { left: -164px; }
-  #maplestory-root .maple-manual-ad-right { right: -164px; }
+.maple-side-ad--left {
+  right: calc(100% + 10px);
+}
+
+.maple-side-ad--right {
+  left: calc(100% + 10px);
+}
+
+.maple-side-ad .maple-manual-ad,
+.maple-side-ad .adsense-slot {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+}
+
+.maple-side-ad ins.adsbygoogle {
+  max-width: 100% !important;
 }
 
 /* MapleStory tool: transparent navigation at the top, glass surface after scrolling. */
