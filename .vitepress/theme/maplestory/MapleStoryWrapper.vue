@@ -7,7 +7,6 @@ import { onMounted, onBeforeUnmount } from 'vue'
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
-import { ensureMapleAdSenseScript } from '../../adsense'
 
 let root = null
 let readyObserver = null
@@ -111,7 +110,6 @@ function announceReady(container) {
 }
 
 onMounted(() => {
-  ensureMapleAdSenseScript()
   const container = document.getElementById('maplestory-root')
   if (container) {
     root = ReactDOM.createRoot(container)

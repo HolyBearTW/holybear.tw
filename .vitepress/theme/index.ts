@@ -8,7 +8,7 @@ import { defaultTheme, THEME_STORAGE_KEY } from './background/themes';
 import ShareButtons from '../components/ShareButtons.vue';
 import HeroSection from '../components/HeroSection.vue';
 import FuwariPostLayout from './fuwari/components/FuwariPostLayout.vue';
-import { ensureAdBlockingRecoveryTag, ensureMapleAdSenseScript } from '../adsense';
+import { ensureAdBlockingRecoveryTag } from '../adsense';
 
 const isMapleToolRoute = (pathname: string) => pathname.replace(/\.html$/, '').replace(/\/$/, '') === '/maplestory';
 const mayHaveMobileAnchor = () => window.innerWidth <= 1000;
@@ -722,7 +722,6 @@ export default {
             let previousRouteWasMapleTool = isMapleToolRoute(window.location.pathname);
             if (previousRouteWasMapleTool) {
                 ensureAdBlockingRecoveryTag();
-                ensureMapleAdSenseScript();
             }
 
             // Popstate bypasses VitePress's before-route hook. Reload only
@@ -771,7 +770,6 @@ export default {
                 syncMapleBodyScope(window.location.pathname);
                 if (enteringMapleTool) {
                     ensureAdBlockingRecoveryTag();
-                    ensureMapleAdSenseScript();
                 }
                 await previousAfterRouteChange?.(to);
                 const routePath = new URL(to, window.location.origin).pathname.replace(/\/$/, '');

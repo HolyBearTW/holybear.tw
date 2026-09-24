@@ -10,8 +10,6 @@ import TelegramRoseBotDocsSidebar from './sidebars/Telegram-Rose-Bot-docs.sideba
 import VitepressBlogDocsSidebar from './sidebars/Vitepress-Blog-docs-sidebar.ts'
 import SpoilerComponentDocsSidebar from './sidebars/spoiler-component-docs-sidebar.ts'
 import {
-    ADSENSE_SCRIPT_ID,
-    ADSENSE_SCRIPT_SRC,
     FUNDING_CHOICES_SCRIPT_ID,
     FUNDING_CHOICES_SCRIPT_SRC,
     FUNDING_CHOICES_SIGNAL_SCRIPT_ID,
@@ -934,8 +932,9 @@ const config = defineConfig({
                 type: 'image/png'
             }]);
 
-            // Direct visits get the same script in the initial HTML head.
-            // Client-side visits use the idempotent loader in the theme.
+            // Keep the ad-blocking recovery message scoped to the MapleStory tool.
+            // AdSense itself starts from the first mounted manual slot after the
+            // loading frame closes, through the shared loader in adsense.ts.
             if (normalizedPath === '/maplestory') {
                 cleanHead.push(['script', {
                     id: FUNDING_CHOICES_SCRIPT_ID,
@@ -945,13 +944,6 @@ const config = defineConfig({
                 cleanHead.push(['script', {
                     id: FUNDING_CHOICES_SIGNAL_SCRIPT_ID,
                 }, FUNDING_CHOICES_SIGNAL_SCRIPT]);
-                cleanHead.push(['script', {
-                    id: ADSENSE_SCRIPT_ID,
-                    async: '',
-                    src: ADSENSE_SCRIPT_SRC,
-                    'data-overlays': 'bottom',
-                    crossorigin: 'anonymous'
-                }]);
             }
 
             return cleanHead;

@@ -28,6 +28,7 @@ function restorePageScroll() {
   document.documentElement.style.overflow = previousDocumentOverflow
   document.body.classList.remove('holy-bear-loading-active')
   document.documentElement.classList.remove('holy-bear-loading-active')
+  window.dispatchEvent(new CustomEvent('holybear-loading-overlay-hidden'))
 }
 
 function lockPageScroll() {

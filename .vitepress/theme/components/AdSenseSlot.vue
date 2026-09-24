@@ -44,6 +44,30 @@ const initializedElements = new WeakSet<HTMLElement>()
 let mounted = false
 let connectionObserver: MutationObserver | null = null
 let sizeObserver: ResizeObserver | null = null
+let cancelLoadingOverlayWait: (() => void) | null = null
+
+function waitForLoadingOverlayToClose(): Promise<void> {
+  const overlayActive = () => document.documentElement.classList.contains('holy-bear-booting')
+    || document.documentElement.classList.contains('holy-bear-loading-active')
+    || document.body.classList.contains('holy-bear-loading-active')
+
+  if (!overlayActive()) return Promise.resolve()
+
+  return new Promise((resolve) => {
+    let timeoutId: number | undefined
+    const finish = () => {
+      window.removeEventListener('holybear-loading-overlay-hidden', finish)
+      if (timeoutId !== undefined) window.clearTimeout(timeoutId)
+      if (cancelLoadingOverlayWait === finish) cancelLoadingOverlayWait = null
+      resolve()
+    }
+
+    cancelLoadingOverlayWait = finish
+    window.addEventListener('holybear-loading-overlay-hidden', finish, { once: true })
+    timeoutId = window.setTimeout(finish, 15_000)
+    if (!overlayActive()) finish()
+  })
+}
 
 function requestAd() {
   const element = adElement.value
@@ -82,6 +106,8 @@ function requestAd() {
 onMounted(async () => {
   mounted = true
   await nextTick()
+  await waitForLoadingOverlayToClose()
+  if (!mounted) return
   adSenseLoadStatus.value = await ensureMapleAdSenseScript()
   if (mounted && adSenseLoadStatus.value === 'loaded') requestAd()
 })
@@ -94,6 +120,8 @@ watch(validSlotId, async () => {
 
 onBeforeUnmount(() => {
   mounted = false
+  cancelLoadingOverlayWait?.()
+  cancelLoadingOverlayWait = null
   connectionObserver?.disconnect()
   connectionObserver = null
   sizeObserver?.disconnect()
