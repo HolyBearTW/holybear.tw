@@ -5,6 +5,8 @@ import { MAPLE_SIDE_AD_LAYOUT, MAPLESTORY_AD_SLOTS } from '../adsenseSlots'
 
 function getSideWidth() {
   const viewportWidth = document.documentElement.clientWidth || window.innerWidth
+  if (viewportWidth < MAPLE_SIDE_AD_LAYOUT.minViewportWidth) return 0
+
   const availableWidth = (viewportWidth - MAPLE_SIDE_AD_LAYOUT.contentMaxWidth) / 2 - MAPLE_SIDE_AD_LAYOUT.gap
   return Math.max(0, Math.min(MAPLE_SIDE_AD_LAYOUT.maxSideWidth, Math.floor(availableWidth)))
 }
@@ -71,7 +73,7 @@ export default function MapleSideAdsOverlay() {
     }
   }, [])
 
-  if (!portalContainer || sideWidth < MAPLE_SIDE_AD_LAYOUT.minSideWidth) return null
+  if (!portalContainer || sideWidth < MAPLE_SIDE_AD_LAYOUT.fixedAdWidth) return null
 
   const alignmentStyle = (top: number | null): React.CSSProperties => ({
     top: top === null ? '50%' : `${top}px`,
@@ -83,7 +85,6 @@ export default function MapleSideAdsOverlay() {
       className="maple-side-ads-overlay"
       style={{
         '--maple-side-width': `${sideWidth}px`,
-        '--maple-side-fixed-overflow': `${Math.max(0, 160 - sideWidth)}px`,
       } as React.CSSProperties}
     >
       <div className="maple-side-ads-frame">

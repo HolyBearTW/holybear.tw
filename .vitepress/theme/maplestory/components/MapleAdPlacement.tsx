@@ -29,7 +29,12 @@ export default function MapleAdPlacement({
   }, [slotId, format, fixedWidth, fixedHeight])
 
   if (!/^\d+$/.test(slotId)) return null
-  return <div ref={containerRef} className="maple-manual-ad" />
+  return (
+    <div
+      ref={containerRef}
+      className={`maple-manual-ad${format === 'fixed' ? ' maple-manual-ad-fixed' : ''}`}
+    />
+  )
 }
 
 function useMediaQuery(query: string) {
@@ -67,5 +72,51 @@ export function MapleResponsiveAdPlacement({
       fixedWidth={desktopWidth}
       fixedHeight={90}
     />
+  )
+}
+
+export function MapleContainerResponsiveAdPlacement({
+  fixedSlotId,
+  responsiveSlotId,
+  requiredWidth = 1200,
+}: {
+  fixedSlotId: string
+  responsiveSlotId: string
+  requiredWidth?: number
+}) {
+  const containerRef = React.useRef<HTMLDivElement>(null)
+  const [hasEnoughWidth, setHasEnoughWidth] = React.useState<boolean | null>(null)
+
+  React.useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+
+    const updateWidth = () => {
+      const availableWidth = container.clientWidth
+      if (availableWidth > 0) setHasEnoughWidth(availableWidth >= requiredWidth)
+    }
+
+    updateWidth()
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(updateWidth)
+    observer?.observe(container)
+    window.addEventListener('resize', updateWidth, { passive: true })
+
+    return () => {
+      observer?.disconnect()
+      window.removeEventListener('resize', updateWidth)
+    }
+  }, [requiredWidth])
+
+  return (
+    <div ref={containerRef} className="maple-container-responsive-ad">
+      {hasEnoughWidth === null ? null : (
+        <MapleAdPlacement
+          slotId={hasEnoughWidth ? fixedSlotId : responsiveSlotId}
+          format={hasEnoughWidth ? 'fixed' : 'horizontal'}
+          fixedWidth={1200}
+          fixedHeight={90}
+        />
+      )}
+    </div>
   )
 }

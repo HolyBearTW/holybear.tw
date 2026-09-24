@@ -193,7 +193,21 @@ onBeforeUnmount(() => {
 }
 
 #maplestory-root .maple-manual-ad-inline.maple-manual-ad-bottom {
-  width: min(672px, calc(100% - 48px));
+  width: min(1200px, calc(100% - 48px));
+}
+
+#maplestory-root .maple-manual-ad-bottom .maple-container-responsive-ad {
+  width: 100%;
+}
+
+#maplestory-root .maple-manual-ad-bottom .maple-container-responsive-ad > .maple-manual-ad {
+  width: min(672px, 100%);
+  margin-inline: auto;
+}
+
+#maplestory-root .maple-manual-ad-bottom .maple-container-responsive-ad > .maple-manual-ad-fixed {
+  width: 1200px;
+  max-width: none;
 }
 
 @media (min-width: 768px) {
@@ -215,16 +229,11 @@ onBeforeUnmount(() => {
 .maple-side-ad--left .adsense-slot { text-align: right; }
 .maple-side-ad--right .adsense-slot { text-align: left; }
 
-@media (min-width: 1264px) {
-  #maplestory-root .maple-manual-ad-inline.maple-manual-ad-bottom {
-    width: min(1200px, calc(100% - 48px));
-  }
-
-  #maplestory-root .maple-manual-ad-bottom ins.adsbygoogle[data-ad-slot="4058882622"] {
-    display: inline-block !important;
-    width: 1200px !important;
-    height: 90px !important;
-  }
+#maplestory-root .maple-manual-ad-bottom ins.adsbygoogle[data-ad-slot="4058882622"] {
+  display: inline-block !important;
+  width: 1200px !important;
+  height: 90px !important;
+  max-width: none !important;
 }
 
 #maplestory-root .maple-manual-ad-inline .adsense-slot { margin: 0; }
@@ -278,11 +287,11 @@ onBeforeUnmount(() => {
 }
 
 .maple-side-ad--left {
-  right: calc(100% + 10px - var(--maple-side-fixed-overflow, 0px));
+  right: calc(100% + 10px);
 }
 
 .maple-side-ad--right {
-  left: calc(100% + 10px - var(--maple-side-fixed-overflow, 0px));
+  left: calc(100% + 10px);
 }
 
 .maple-side-ad .maple-manual-ad,
