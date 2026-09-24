@@ -257,7 +257,6 @@ onBeforeUnmount(() => {
     width: 100%;
     max-width: 100%;
     padding-inline: 24px;
-    overflow: hidden;
   }
 
   #maplestory-root .maple-manual-ad-inline .maple-manual-ad,
@@ -267,7 +266,6 @@ onBeforeUnmount(() => {
     width: 100%;
     max-width: 100%;
     min-width: 0;
-    overflow: hidden;
   }
 
   #maplestory-root .maple-manual-ad-inline ins.adsbygoogle[data-ad-format="horizontal"] {
@@ -277,7 +275,6 @@ onBeforeUnmount(() => {
     max-width: 100% !important;
     min-width: 0 !important;
     margin-inline: 0 !important;
-    overflow: hidden !important;
   }
 }
 
