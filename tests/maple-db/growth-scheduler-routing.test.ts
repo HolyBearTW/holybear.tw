@@ -36,6 +36,11 @@ describe('Growth scheduler routing', () => {
     expect(accountConfig).not.toContain('GROWTH_');
     expect(growthConfig).toContain('crons = ["* * * * *"]');
     expect(growthConfig).toContain('name = "holybear-growth"');
+    expect(growthConfig).toContain('GROWTH_MAX_BATCHES_PER_INVOCATION = "48"');
+    expect(growthConfig).toContain('GROWTH_PROFILE_CONCURRENCY = "4"');
+    expect(growthConfig).toContain('GROWTH_NEW_PROFILE_24H_LIMIT = "2500"');
+    expect(growthConfig).toContain('GROWTH_PENDING_PROFILE_LIMIT = "2500"');
+    expect(growthConfig).toContain('NEXON_GLOBAL_RPS_LIMIT = "50"');
     expect(growthConfig).toContain('name = "NEXON_RATE_LIMITER"');
     expect(growthConfig).toContain('script_name = "holybear-nexon-rate-limiter"');
     expect(growthConfig).not.toContain('EVIDENCE_ARCHIVE');

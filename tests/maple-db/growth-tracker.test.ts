@@ -7,6 +7,7 @@ import {
   latestAvailableGrowthDate,
 } from '../../functions/_shared/growth-tracker';
 import type { Env } from '../../functions/_shared/env';
+import { getRuntimeConfig } from '../../functions/_shared/runtime-config';
 import { createTestD1 } from './sqlite-d1';
 
 const OCID = 'a3e399217d603631033dd65ebaa08275';
@@ -53,6 +54,22 @@ afterEach(() => {
 });
 
 describe('persistent growth tracking', () => {
+  it('accepts the Growth throughput clamps without changing date concurrency', () => {
+    const config = getRuntimeConfig({
+      ...env,
+      GROWTH_DATE_CONCURRENCY: '99',
+      GROWTH_MAX_BATCHES_PER_INVOCATION: '999',
+      GROWTH_PROFILE_CONCURRENCY: '999',
+      GROWTH_NEW_PROFILE_24H_LIMIT: '99999',
+      GROWTH_PENDING_PROFILE_LIMIT: '99999',
+    });
+    expect(config.growthDateConcurrency).toBe(4);
+    expect(config.growthMaxBatchesPerInvocation).toBe(96);
+    expect(config.growthProfileConcurrency).toBe(8);
+    expect(config.growthNewProfile24hLimit).toBe(10_000);
+    expect(config.growthPendingProfileLimit).toBe(10_000);
+  });
+
   it('uses the 02:00 TST boundary for the newest historical target', () => {
     expect(latestAvailableGrowthDate(new Date('2025-10-17T17:59:59Z'))).toBe('2025-10-16');
     expect(latestAvailableGrowthDate(new Date('2025-10-17T18:00:00Z'))).toBe('2025-10-17');
@@ -166,6 +183,7 @@ describe('persistent growth tracking', () => {
 
   it('allows only one Growth lease owner when consumers overlap', async () => {
     env.GROWTH_BACKFILL_BATCH_SIZE = '1';
+    env.GROWTH_PROFILE_CONCURRENCY = '4';
     await createGrowthProfile(env.DB, OCID, '2025-10-15');
     let releaseFetch: ((response: Response) => void) | undefined;
     const fetchMock = vi.fn(() => new Promise<Response>((resolve) => { releaseFetch = resolve; }));
@@ -178,6 +196,82 @@ describe('persistent growth tracking', () => {
     releaseFetch?.(Response.json(basic('2025-10-15')));
     expect(await first).toMatchObject({ processed: 1, requests: 1 });
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('processes up to four different profiles concurrently', async () => {
+    env.GROWTH_BACKFILL_BATCH_SIZE = '1';
+    env.GROWTH_MAX_BATCHES_PER_INVOCATION = '4';
+    env.GROWTH_PROFILE_CONCURRENCY = '4';
+    const ocids = [
+      'd'.repeat(31) + '0',
+      'd'.repeat(31) + '1',
+      'd'.repeat(31) + '2',
+      'd'.repeat(31) + '3',
+    ];
+    await Promise.all(ocids.map((ocid) => createGrowthProfile(env.DB, ocid, '2025-10-15')));
+    let active = 0;
+    let maximumActive = 0;
+    vi.stubGlobal('fetch', vi.fn(async (input: string) => {
+      active += 1;
+      maximumActive = Math.max(maximumActive, active);
+      await Promise.resolve();
+      active -= 1;
+      const url = new URL(input);
+      return Response.json(basic(url.searchParams.get('date') || '2025-10-15'));
+    }));
+
+    const run = await backfillGrowthBatch(env);
+    expect(run).toMatchObject({ claimed: 4, processed: 4, requests: 4 });
+    expect(maximumActive).toBe(4);
+    expect(local.sqlite.prepare(`SELECT COUNT(*) AS count FROM growth_profiles WHERE basic_last_synced_date='2025-10-15'`).get()?.count)
+      .toBe(4);
+  });
+
+  it('applies one shared batch budget across all concurrent profiles', async () => {
+    env.GROWTH_BACKFILL_BATCH_SIZE = '1';
+    env.GROWTH_MAX_BATCHES_PER_INVOCATION = '6';
+    env.GROWTH_PROFILE_CONCURRENCY = '4';
+    const ocids = [
+      'e'.repeat(31) + '0',
+      'e'.repeat(31) + '1',
+      'e'.repeat(31) + '2',
+      'e'.repeat(31) + '3',
+    ];
+    await Promise.all(ocids.map((ocid) => createGrowthProfile(env.DB, ocid, '2025-10-20')));
+    vi.stubGlobal('fetch', vi.fn(async (input: string) => {
+      const date = new URL(input).searchParams.get('date') || '2025-10-15';
+      return Response.json(basic(date));
+    }));
+
+    const run = await backfillGrowthBatch(env);
+    expect(run.processed).toBe(6);
+    expect(run.instrumentation.basic.batches).toBe(6);
+    expect(run.instrumentation.dojang.batches).toBe(0);
+  });
+
+  it('lets other profiles advance when one concurrent profile is rate limited', async () => {
+    env.GROWTH_BACKFILL_BATCH_SIZE = '1';
+    env.GROWTH_MAX_BATCHES_PER_INVOCATION = '4';
+    env.GROWTH_PROFILE_CONCURRENCY = '4';
+    const limited = 'f'.repeat(31) + '0';
+    const others = ['1', '2', '3'].map((suffix) => 'f'.repeat(31) + suffix);
+    await Promise.all([limited, ...others].map((ocid) => createGrowthProfile(env.DB, ocid, '2025-10-15')));
+    vi.stubGlobal('fetch', vi.fn(async (input: string) => {
+      const url = new URL(input);
+      if (url.searchParams.get('ocid') === limited) {
+        return new Response(JSON.stringify({ error: { name: 'OPENAPI00009', message: 'rate limited' } }), {
+          status: 429,
+          headers: { 'retry-after': '0' },
+        });
+      }
+      return Response.json(basic(url.searchParams.get('date') || '2025-10-15'));
+    }));
+
+    const run = await backfillGrowthBatch(env);
+    expect(run).toMatchObject({ processed: 4, retry: 1, requests: 4 });
+    expect(run.instrumentation.basic.errors[429]).toBe(1);
+    expect(local.sqlite.prepare(`SELECT COUNT(*) AS count FROM growth_profiles WHERE basic_last_synced_date='2025-10-15'`).get()?.count)
+      .toBe(3);
   });
 
   it('finishes multiple bounded checkpoints for one profile in one invocation', async () => {
@@ -248,6 +342,30 @@ describe('persistent growth tracking', () => {
       .toMatchObject({ basic_last_synced_date: '2025-10-15' });
     expect(local.sqlite.prepare(`SELECT current_processing_date FROM growth_profiles WHERE ocid=?`).get(dailyOcid))
       .toMatchObject({ current_processing_date: '2025-10-16' });
+  });
+
+  it('reserves a bounded daily slot during a large initial backlog', async () => {
+    env.GROWTH_BACKFILL_BATCH_SIZE = '1';
+    env.GROWTH_MAX_BATCHES_PER_INVOCATION = '16';
+    env.GROWTH_PROFILE_CONCURRENCY = '4';
+    const initialOcids = Array.from({ length: 20 }, (_, index) => (
+      'a'.repeat(30) + index.toString(16).padStart(2, '0')
+    ));
+    const dailyOcid = 'b'.repeat(31) + '1';
+    await Promise.all([...initialOcids, dailyOcid].map((ocid) => createGrowthProfile(env.DB, ocid, '2025-10-20')));
+    local.sqlite.prepare(`
+      UPDATE growth_profiles SET status='pending', phase='basic', last_synced_date='2025-10-15',
+        basic_last_synced_date='2025-10-15', current_processing_date='2025-10-16'
+      WHERE ocid=?
+    `).run(dailyOcid);
+    vi.stubGlobal('fetch', vi.fn(async (input: string) => {
+      const url = new URL(input);
+      return Response.json(basic(url.searchParams.get('date') || '2025-10-15'));
+    }));
+
+    await backfillGrowthBatch(env);
+    expect(vi.mocked(fetch).mock.calls.some(([input]) => new URL(String(input)).searchParams.get('ocid') === dailyOcid))
+      .toBe(true);
   });
 
   it('does not run a retry before its retry time, then runs it when due', async () => {

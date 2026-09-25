@@ -10,6 +10,9 @@ import { getRuntimeConfig } from './runtime-config';
 
 export const GROWTH_HISTORY_START_DATE = '2025-10-15';
 const DAY_MS = 86_400_000;
+// Keep initial backfill ahead of normal daily refreshes, but reserve one
+// bounded group for daily work so a large initial queue cannot starve it.
+const GROWTH_DAILY_RESERVE_AFTER_INITIAL_GROUPS = 3;
 const nowIso = () => new Date().toISOString();
 const dateOnly = (value: string | null | undefined) => value?.slice(0, 10) || null;
 const addDays = (value: string, days: number) => {
@@ -159,6 +162,38 @@ const summarizeGrowthRequestInstrumentation = (metrics: GrowthRequestInstrumenta
   limiterWaitMs: Math.round(metrics.limiterWaitMs * 100) / 100,
   errors: { ...metrics.errors },
 });
+
+interface GrowthBatchFailureInstrumentation {
+  wallMs: number;
+  d1WriteMs: number;
+  d1LogicalMutations: number;
+  requests: number;
+  transportAttempts: number;
+  retries: number;
+  requestP50Ms: number;
+  requestP95Ms: number;
+  limiterWaitMs: number;
+  errors: { 403: number; 429: number; timeout: number; '5xx': number; rateLimit: number };
+}
+
+const annotateGrowthBatchFailure = (
+  error: unknown,
+  metrics: GrowthRequestInstrumentation,
+  batchStartedAt: number,
+  requests: number,
+) => {
+  const failure = error instanceof Error ? error : new Error(String(error));
+  Object.assign(failure, {
+    growthInstrumentation: {
+      wallMs: Math.max(0, Date.now() - batchStartedAt),
+      d1WriteMs: 0,
+      d1LogicalMutations: 0,
+      requests,
+      ...summarizeGrowthRequestInstrumentation(metrics),
+    } satisfies GrowthBatchFailureInstrumentation,
+  });
+  return failure;
+};
 
 const getProfile = async (db: D1Database, ocid: string) => db.prepare(`
   SELECT * FROM growth_profiles WHERE ocid = ?1 LIMIT 1
@@ -402,7 +437,9 @@ const fetchBasicBatch = async (
     }
   });
   const rejected = settled.find((outcome) => outcome.status === 'rejected');
-  if (rejected?.status === 'rejected') throw rejected.reason;
+  if (rejected?.status === 'rejected') {
+    throw annotateGrowthBatchFailure(rejected.reason, requestMetrics, batchStartedAt, dates.length);
+  }
   for (const outcome of settled) {
     if (outcome.status !== 'fulfilled' || !outcome.value.basic) continue;
     firstValidDate ||= outcome.value.date;
@@ -543,7 +580,9 @@ const fetchDojangBatch = async (
     return { date, payload };
   });
   const rejected = settled.find((outcome) => outcome.status === 'rejected');
-  if (rejected?.status === 'rejected') throw rejected.reason;
+  if (rejected?.status === 'rejected') {
+    throw annotateGrowthBatchFailure(rejected.reason, requestMetrics, batchStartedAt, dates.length);
+  }
   for (const outcome of settled) {
     if (outcome.status !== 'fulfilled') continue;
     statements.push(dojangUpdateStatement(
@@ -642,6 +681,7 @@ export const backfillGrowthBatch = async (env: Env) => {
   let eligibleD1Ms = 0;
   let claimD1Ms = 0;
   const results: unknown[] = [];
+  let initialGroupsSinceDaily = 0;
 
   // Reselect after every bounded group so an unfinished first-generation
   // profile remains ahead of daily incremental work. Daily profiles still use
@@ -652,28 +692,83 @@ export const backfillGrowthBatch = async (env: Env) => {
     const remainingBatchBudget = config.growthMaxBatchesPerInvocation - processed;
     const eligibleStartedAt = Date.now();
     const eligibleLimit = Math.min(config.growthProfileConcurrency, remainingBatchBudget);
-    const eligible = await env.DB.prepare(`
-      SELECT * FROM growth_profiles
-      WHERE (status = 'pending' OR (status = 'retry' AND (next_retry_at IS NULL OR next_retry_at <= ?1)))
-        AND (claim_until IS NULL OR claim_until <= ?1)
-      ORDER BY
-        CASE
-          WHEN last_synced_date IS NULL THEN 0
-          WHEN status = 'pending' THEN 1
-          ELSE 2
-        END,
-        CASE WHEN last_synced_date IS NULL THEN created_at ELSE updated_at END,
-        created_at,
-        ocid
-      LIMIT ?2
-    `).bind(timestamp, eligibleLimit).all<GrowthProfileRow>();
+    const reserveDaily = config.growthProfileConcurrency > 1
+      && initialGroupsSinceDaily >= GROWTH_DAILY_RESERVE_AFTER_INITIAL_GROUPS;
+    let eligibleResults: GrowthProfileRow[];
+    if (reserveDaily) {
+      // Select the daily reservation independently of the initial queue. A
+      // single LIMIT over the initial-first ordering could never discover a
+      // daily row while thousands of first-generation rows remain ahead of it.
+      const daily = await env.DB.prepare(`
+        SELECT * FROM growth_profiles
+        WHERE last_synced_date IS NOT NULL
+          AND (status = 'pending' OR (status = 'retry' AND (next_retry_at IS NULL OR next_retry_at <= ?1)))
+          AND (claim_until IS NULL OR claim_until <= ?1)
+        ORDER BY
+          CASE WHEN status = 'pending' THEN 0 ELSE 1 END,
+          updated_at,
+          created_at,
+          ocid
+        LIMIT 1
+      `).bind(timestamp).all<GrowthProfileRow>();
+      if (daily.results.length > 0) {
+        const initialLimit = Math.max(0, eligibleLimit - 1);
+        const initial = initialLimit > 0
+          ? await env.DB.prepare(`
+            SELECT * FROM growth_profiles
+            WHERE last_synced_date IS NULL
+              AND (status = 'pending' OR (status = 'retry' AND (next_retry_at IS NULL OR next_retry_at <= ?1)))
+              AND (claim_until IS NULL OR claim_until <= ?1)
+            ORDER BY created_at, ocid
+            LIMIT ?2
+          `).bind(timestamp, initialLimit).all<GrowthProfileRow>()
+          : { results: [] as GrowthProfileRow[] };
+        eligibleResults = [daily.results[0], ...initial.results];
+      } else {
+        const eligible = await env.DB.prepare(`
+          SELECT * FROM growth_profiles
+          WHERE (status = 'pending' OR (status = 'retry' AND (next_retry_at IS NULL OR next_retry_at <= ?1)))
+            AND (claim_until IS NULL OR claim_until <= ?1)
+          ORDER BY
+            CASE
+              WHEN last_synced_date IS NULL THEN 0
+              WHEN status = 'pending' THEN 1
+              ELSE 2
+            END,
+            CASE WHEN last_synced_date IS NULL THEN created_at ELSE updated_at END,
+            created_at,
+            ocid
+          LIMIT ?2
+        `).bind(timestamp, eligibleLimit).all<GrowthProfileRow>();
+        eligibleResults = eligible.results;
+      }
+    } else {
+      const eligible = await env.DB.prepare(`
+        SELECT * FROM growth_profiles
+        WHERE (status = 'pending' OR (status = 'retry' AND (next_retry_at IS NULL OR next_retry_at <= ?1)))
+          AND (claim_until IS NULL OR claim_until <= ?1)
+        ORDER BY
+          CASE
+            WHEN last_synced_date IS NULL THEN 0
+            WHEN status = 'pending' THEN 1
+            ELSE 2
+          END,
+          CASE WHEN last_synced_date IS NULL THEN created_at ELSE updated_at END,
+          created_at,
+          ocid
+        LIMIT ?2
+      `).bind(timestamp, eligibleLimit).all<GrowthProfileRow>();
+      eligibleResults = eligible.results;
+    }
     eligibleD1Ms += Math.max(0, Date.now() - eligibleStartedAt);
-    if (eligible.results.length === 0) break;
+    if (eligibleResults.length === 0) break;
 
-    for (let offset = 0; offset < eligible.results.length; offset += config.growthProfileConcurrency) {
+    const includesDaily = eligibleResults.some((row) => row.last_synced_date !== null);
+    initialGroupsSinceDaily = includesDaily ? 0 : initialGroupsSinceDaily + 1;
+    for (let offset = 0; offset < eligibleResults.length; offset += config.growthProfileConcurrency) {
       if (processed >= config.growthMaxBatchesPerInvocation
         || (processed > 0 && Date.now() - invocationStartedAt >= config.growthInvocationBudgetMs)) break;
-      const rows = eligible.results.slice(offset, offset + config.growthProfileConcurrency);
+      const rows = eligibleResults.slice(offset, offset + config.growthProfileConcurrency);
       const claims: GrowthClaim[] = [];
       for (const row of rows) {
         const claimStartedAt = Date.now();
@@ -706,10 +801,15 @@ export const backfillGrowthBatch = async (env: Env) => {
         const failure = await failGrowthClaim(env, claims[index], outcome.reason);
         if (failure.retryable) retry += 1;
         else failed += 1;
+        const failedInstrumentation = (outcome.reason as {
+          growthInstrumentation?: GrowthBatchFailureInstrumentation;
+        })?.growthInstrumentation;
+        if (failedInstrumentation) requests += failedInstrumentation.requests;
         results.push({
           ocid: claims[index].row.ocid,
           phase: claims[index].row.phase,
           error: outcome.reason instanceof Error ? outcome.reason.message : String(outcome.reason),
+          ...(failedInstrumentation ? { instrumentation: failedInstrumentation } : {}),
         });
       }
     }
@@ -753,8 +853,15 @@ export const backfillGrowthBatch = async (env: Env) => {
       errors,
     };
   };
+  const pendingStartedAt = Date.now();
+  const pendingResult = await env.DB.prepare(`
+    SELECT COUNT(*) AS count FROM growth_profiles WHERE status IN ('pending', 'retry')
+  `).first<{ count: number }>();
+  const pending = Number(pendingResult?.count) || 0;
+  const pendingD1Ms = Math.max(0, Date.now() - pendingStartedAt);
   return {
     scheduled,
+    claimed: processed,
     processed,
     completed,
     retry,
@@ -766,6 +873,8 @@ export const backfillGrowthBatch = async (env: Env) => {
       schedulerD1Ms,
       eligibleD1Ms,
       claimD1Ms,
+      pendingD1Ms,
+      pending,
       stoppedBy: processed >= config.growthMaxBatchesPerInvocation ? 'batch_budget'
         : Date.now() - invocationStartedAt >= config.growthInvocationBudgetMs ? 'wall_budget'
           : 'queue_empty',
