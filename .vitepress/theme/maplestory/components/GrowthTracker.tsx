@@ -2,9 +2,44 @@ import React from 'react';
 import { Database, Info, Loader2 } from 'lucide-react';
 import {
   createGrowthProfile,
+  fetchGrowthSiteKey,
   fetchGrowthHistoryStatus,
   GrowthHistoryStatus,
 } from '../services/growthService';
+
+type TurnstileWidget = {
+  render: (container: HTMLElement, options: {
+    sitekey: string;
+    appearance?: 'interaction-only';
+    callback: (token: string) => void;
+    'expired-callback'?: () => void;
+    'error-callback'?: () => void;
+  }) => string;
+  reset?: (widgetId?: string) => void;
+  remove?: (widgetId?: string) => void;
+};
+
+type TurnstileWindow = Window & { turnstile?: TurnstileWidget };
+
+const loadTurnstileScript = () => new Promise<void>((resolve, reject) => {
+  const existing = document.querySelector<HTMLScriptElement>('script[data-hb-turnstile]');
+  if (existing) {
+    if ((window as TurnstileWindow).turnstile) resolve();
+    else {
+      existing.addEventListener('load', () => resolve(), { once: true });
+      existing.addEventListener('error', () => reject(new Error('turnstile_script_failed')), { once: true });
+    }
+    return;
+  }
+  const script = document.createElement('script');
+  script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+  script.async = true;
+  script.defer = true;
+  script.dataset.hbTurnstile = 'true';
+  script.onload = () => resolve();
+  script.onerror = () => reject(new Error('turnstile_script_failed'));
+  document.head.appendChild(script);
+});
 
 interface GrowthTrackerProps {
   ocid: string;
@@ -56,6 +91,14 @@ const GrowthTracker: React.FC<GrowthTrackerProps> = ({
   const [submitted, setSubmitted] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [showNote, setShowNote] = React.useState(false);
+  const [siteKey, setSiteKey] = React.useState<string | null>(null);
+  const [turnstileToken, setTurnstileToken] = React.useState('');
+  const [captchaState, setCaptchaState] = React.useState<'idle' | 'loading' | 'ready' | 'unavailable'>('idle');
+  const [captchaActive, setCaptchaActive] = React.useState(false);
+  const captchaRef = React.useRef<HTMLDivElement>(null);
+  const widgetIdRef = React.useRef<string | null>(null);
+  const pendingGenerateRef = React.useRef(false);
+  const startingGenerateRef = React.useRef(false);
   const completionNotifiedRef = React.useRef(false);
 
   const notifyTrackingComplete = React.useCallback(() => {
@@ -79,6 +122,12 @@ const GrowthTracker: React.FC<GrowthTrackerProps> = ({
     setSubmitted(false);
     setError(null);
     setShowNote(false);
+    setSiteKey(null);
+    setTurnstileToken('');
+    setCaptchaState('idle');
+    setCaptchaActive(false);
+    pendingGenerateRef.current = false;
+    startingGenerateRef.current = false;
 
     fetchGrowthHistoryStatus(ocid)
       .then((result) => {
@@ -95,6 +144,104 @@ const GrowthTracker: React.FC<GrowthTrackerProps> = ({
       active = false;
     };
   }, [ocid]);
+
+  const resetCaptcha = React.useCallback(() => {
+    setTurnstileToken('');
+    const turnstile = (window as TurnstileWindow).turnstile;
+    if (widgetIdRef.current && turnstile?.reset) turnstile.reset(widgetIdRef.current);
+  }, []);
+
+  React.useEffect(() => {
+    if (!captchaActive || siteKey || captchaState !== 'loading') return undefined;
+    let cancelled = false;
+    fetchGrowthSiteKey()
+      .then(async (configuredSiteKey) => {
+        if (cancelled) return;
+        if (!configuredSiteKey) {
+          pendingGenerateRef.current = false;
+          setCaptchaState('unavailable');
+          setSubmitting(false);
+          setError('目前無法準備安全驗證，請稍後再試');
+          return;
+        }
+        setSiteKey(configuredSiteKey);
+        await loadTurnstileScript();
+        if (!cancelled) setCaptchaState('ready');
+      })
+      .catch(() => {
+        if (!cancelled) {
+          pendingGenerateRef.current = false;
+          setCaptchaState('unavailable');
+          setSiteKey(null);
+          setSubmitting(false);
+          setError('目前無法準備安全驗證，請稍後再試');
+        }
+      });
+    return () => { cancelled = true; };
+  }, [captchaActive, captchaState, siteKey]);
+
+  const submitWithToken = React.useCallback(async (token: string) => {
+    if (!pendingGenerateRef.current || !token) return;
+    pendingGenerateRef.current = false;
+    setTurnstileToken(token);
+    setCaptchaActive(false);
+    setCaptchaState('idle');
+    setSiteKey(null);
+    try {
+      await createGrowthProfile(ocid, token);
+      setSubmitted(true);
+      window.dispatchEvent(new CustomEvent('maple-growth-profile-updated', { detail: { ocid } }));
+      const result = await loadStatus();
+      if (result.tracked && !isCreating(result)) {
+        notifyTrackingComplete();
+      }
+    } catch (err) {
+      setError(formatGrowthTrackerError(err, '生成成長檔案失敗'));
+    } finally {
+      resetCaptcha();
+      setSubmitting(false);
+    }
+  }, [loadStatus, notifyTrackingComplete, ocid, resetCaptcha]);
+
+  React.useEffect(() => {
+    if (!captchaActive || captchaState !== 'ready' || !siteKey || !captchaRef.current || widgetIdRef.current) {
+      return undefined;
+    }
+    const turnstile = (window as TurnstileWindow).turnstile;
+    if (!turnstile) {
+      pendingGenerateRef.current = false;
+      setCaptchaState('unavailable');
+      setSiteKey(null);
+      setSubmitting(false);
+      setError('目前無法準備安全驗證，請稍後再試');
+      return undefined;
+    }
+    widgetIdRef.current = turnstile.render(captchaRef.current, {
+      sitekey: siteKey,
+      appearance: 'interaction-only',
+      callback: (token) => {
+        setTurnstileToken(token);
+        setError(null);
+        void submitWithToken(token);
+      },
+      'expired-callback': () => {
+        pendingGenerateRef.current = false;
+        setTurnstileToken('');
+        setSubmitting(false);
+        setError('安全驗證已過期，請重新驗證');
+      },
+      'error-callback': () => {
+        pendingGenerateRef.current = false;
+        setTurnstileToken('');
+        setSubmitting(false);
+        setError('安全驗證暫時無法完成，請重新嘗試');
+      },
+    });
+    return () => {
+      if (widgetIdRef.current && turnstile.remove) turnstile.remove(widgetIdRef.current);
+      widgetIdRef.current = null;
+    };
+  }, [captchaActive, captchaState, siteKey, submitWithToken]);
 
   React.useEffect(() => {
     if (loading) {
@@ -126,26 +273,37 @@ const GrowthTracker: React.FC<GrowthTrackerProps> = ({
   }, [loadStatus, notifyTrackingComplete, status]);
 
   const handleCreate = async () => {
-    setSubmitting(true);
+    if (submitting || startingGenerateRef.current) return;
+    startingGenerateRef.current = true;
     setError(null);
     try {
-      await createGrowthProfile(ocid);
-      setSubmitted(true);
-      window.dispatchEvent(new CustomEvent('maple-growth-profile-updated', { detail: { ocid } }));
-      const result = await loadStatus();
-      if (result.tracked && !isCreating(result)) {
-        notifyTrackingComplete();
+      // Recheck immediately after the user's click so a stale untracked view
+      // cannot start verification for a profile created in another tab.
+      const latest = await loadStatus();
+      if (latest.tracked) return;
+
+      pendingGenerateRef.current = true;
+      setSubmitting(true);
+      setCaptchaActive(true);
+      if (widgetIdRef.current) {
+        setCaptchaState('ready');
+        const turnstile = (window as TurnstileWindow).turnstile;
+        if (turnstile?.reset) turnstile.reset(widgetIdRef.current);
+      } else {
+        setCaptchaState('loading');
       }
     } catch (err) {
-      setError(formatGrowthTrackerError(err, '生成成長檔案失敗'));
-    } finally {
+      pendingGenerateRef.current = false;
+      setError(formatGrowthTrackerError(err, '無法確認成長檔案狀態'));
       setSubmitting(false);
+    } finally {
+      startingGenerateRef.current = false;
     }
   };
 
   if (loading || (status?.tracked && !submitted && !isCreating(status))) return null;
 
-  const creating = submitting || isCreating(status);
+  const creating = isCreating(status) || (submitting && !captchaActive);
   const isInitialBackfill = !status?.lastSyncedDate;
   const creationProgress = creating ? calculateCreationProgress(status) : null;
   const dailyProgress = status?.dailyLimit
@@ -238,13 +396,16 @@ const GrowthTracker: React.FC<GrowthTrackerProps> = ({
         <button
           ref={createButtonRef}
           type="button"
-          disabled={creating || !ocid}
+          disabled={creating || submitting || !ocid}
           onClick={handleCreate}
           className="maple-growth-create-button flex min-h-10 w-full items-center justify-center gap-2 rounded-lg bg-amber-500 px-10 py-2 text-sm font-bold text-white shadow-lg shadow-amber-900/25 transition-all hover:translate-y-[-1px] hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 dark:bg-amber-600 dark:hover:bg-amber-500"
         >
-          {creating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Database className="h-3.5 w-3.5" />}
-          {creating ? '正在生成成長檔案...' : '生成成長檔案'}
+          {submitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Database className="h-3.5 w-3.5" />}
+          {submitting ? '正在驗證並生成...' : '生成成長檔案'}
         </button>
+        {captchaActive && <div ref={captchaRef} className="mt-1 flex min-h-0 justify-center" aria-live="polite" />}
+        {captchaActive && captchaState === 'loading' && <p className="mt-1 text-center text-[10px] text-slate-400">正在準備安全驗證…</p>}
+        {captchaActive && captchaState === 'unavailable' && <p className="mt-1 text-center text-[10px] text-rose-400">目前無法準備安全驗證，請稍後再試。</p>}
         {note}
       </div>
       {error && <p role="alert" className="mt-1.5 text-[10px] text-rose-400">{error}</p>}

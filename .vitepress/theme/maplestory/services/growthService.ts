@@ -17,10 +17,20 @@ export const fetchGrowthHistoryStatus = async (ocid: string): Promise<GrowthHist
   return response.json();
 };
 
-export const createGrowthProfile = async (ocid: string) => {
+export const fetchGrowthSiteKey = async (): Promise<string | null> => {
+  const response = await fetch('/api/growth/site-key', { cache: 'no-store' });
+  if (!response.ok) throw new Error(`成長驗證設定讀取失敗 (${response.status})`);
+  const payload = await response.json() as { siteKey?: unknown };
+  return typeof payload.siteKey === 'string' && payload.siteKey.trim() ? payload.siteKey.trim() : null;
+};
+
+export const createGrowthProfile = async (ocid: string, turnstileToken: string) => {
   const response = await fetch('/api/growth/generate', {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers: {
+      'content-type': 'application/json',
+      'x-turnstile-token': turnstileToken,
+    },
     body: JSON.stringify({ ocid }),
     cache: 'no-store',
   });
