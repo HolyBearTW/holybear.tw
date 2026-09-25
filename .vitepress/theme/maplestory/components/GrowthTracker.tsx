@@ -21,24 +21,58 @@ type TurnstileWidget = {
 
 type TurnstileWindow = Window & { turnstile?: TurnstileWidget };
 
+const TURNSTILE_SCRIPT_TIMEOUT_MS = 10000;
+
 const loadTurnstileScript = () => new Promise<void>((resolve, reject) => {
-  const existing = document.querySelector<HTMLScriptElement>('script[data-hb-turnstile]');
-  if (existing) {
-    if ((window as TurnstileWindow).turnstile) resolve();
-    else {
-      existing.addEventListener('load', () => resolve(), { once: true });
-      existing.addEventListener('error', () => reject(new Error('turnstile_script_failed')), { once: true });
-    }
+  if ((window as TurnstileWindow).turnstile) {
+    resolve();
     return;
   }
-  const script = document.createElement('script');
-  script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
-  script.async = true;
-  script.defer = true;
-  script.dataset.hbTurnstile = 'true';
-  script.onload = () => resolve();
-  script.onerror = () => reject(new Error('turnstile_script_failed'));
-  document.head.appendChild(script);
+
+  const existing = document.querySelector<HTMLScriptElement>('script[data-hb-turnstile]');
+  const script = existing ?? document.createElement('script');
+  const readyState = (script as HTMLScriptElement & { readyState?: string }).readyState;
+
+  if (existing?.dataset.hbTurnstileState === 'error' || (!existing?.dataset.hbTurnstileState && (readyState === 'loaded' || readyState === 'complete'))) {
+    reject(new Error('turnstile_script_failed'));
+    return;
+  }
+
+  let settled = false;
+  let timer: number;
+  const cleanup = () => {
+    window.clearTimeout(timer);
+    script.removeEventListener('load', handleLoad);
+    script.removeEventListener('error', handleError);
+  };
+  const finish = (error?: Error) => {
+    if (settled) return;
+    settled = true;
+    cleanup();
+    if (error) reject(error);
+    else resolve();
+  };
+  const handleLoad = () => {
+    script.dataset.hbTurnstileState = 'loaded';
+    finish((window as TurnstileWindow).turnstile ? undefined : new Error('turnstile_script_failed'));
+  };
+  const handleError = () => {
+    script.dataset.hbTurnstileState = 'error';
+    finish(new Error('turnstile_script_failed'));
+  };
+
+  script.addEventListener('load', handleLoad, { once: true });
+  script.addEventListener('error', handleError, { once: true });
+  timer = window.setTimeout(() => finish(new Error('turnstile_script_timeout')), TURNSTILE_SCRIPT_TIMEOUT_MS);
+
+  if (!existing) {
+    script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+    script.async = true;
+    script.defer = true;
+    script.dataset.hbTurnstile = 'true';
+    script.dataset.hbTurnstileState = 'loading';
+    document.head.appendChild(script);
+  }
 });
 
 interface GrowthTrackerProps {
@@ -152,7 +186,7 @@ const GrowthTracker: React.FC<GrowthTrackerProps> = ({
   }, []);
 
   React.useEffect(() => {
-    if (!captchaActive || siteKey || captchaState !== 'loading') return undefined;
+    if (!captchaActive || captchaState !== 'loading') return undefined;
     let cancelled = false;
     fetchGrowthSiteKey()
       .then(async (configuredSiteKey) => {
@@ -164,9 +198,10 @@ const GrowthTracker: React.FC<GrowthTrackerProps> = ({
           setError('目前無法準備安全驗證，請稍後再試');
           return;
         }
-        setSiteKey(configuredSiteKey);
         await loadTurnstileScript();
-        if (!cancelled) setCaptchaState('ready');
+        if (cancelled) return;
+        setSiteKey(configuredSiteKey);
+        setCaptchaState('ready');
       })
       .catch(() => {
         if (!cancelled) {
@@ -178,7 +213,7 @@ const GrowthTracker: React.FC<GrowthTrackerProps> = ({
         }
       });
     return () => { cancelled = true; };
-  }, [captchaActive, captchaState, siteKey]);
+  }, [captchaActive, captchaState]);
 
   const submitWithToken = React.useCallback(async (token: string) => {
     if (!pendingGenerateRef.current || !token) return;
@@ -403,11 +438,11 @@ const GrowthTracker: React.FC<GrowthTrackerProps> = ({
           {submitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Database className="h-3.5 w-3.5" />}
           {submitting ? '正在驗證並生成...' : '生成成長檔案'}
         </button>
-        {captchaActive && <div ref={captchaRef} className="mt-1 flex min-h-0 justify-center" aria-live="polite" />}
-        {captchaActive && captchaState === 'loading' && <p className="mt-1 text-center text-[10px] text-slate-400">正在準備安全驗證…</p>}
-        {captchaActive && captchaState === 'unavailable' && <p className="mt-1 text-center text-[10px] text-rose-400">目前無法準備安全驗證，請稍後再試。</p>}
         {note}
       </div>
+      {captchaActive && <div ref={captchaRef} className="mt-1 flex min-h-0 justify-center" aria-live="polite" />}
+      {captchaActive && captchaState === 'loading' && <p className="mt-1 text-center text-[10px] text-slate-400">正在準備安全驗證…</p>}
+      {captchaActive && captchaState === 'unavailable' && <p className="mt-1 text-center text-[10px] text-rose-400">目前無法準備安全驗證，請稍後再試。</p>}
       {error && <p role="alert" className="mt-1.5 text-[10px] text-rose-400">{error}</p>}
     </div>
   );
