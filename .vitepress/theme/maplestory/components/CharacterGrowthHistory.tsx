@@ -56,6 +56,11 @@ const compactNumber = (value: string | number) => {
   }).format(Number.isFinite(parsed) ? parsed : 0);
 };
 
+const formatDailyGrowthPercent = (value: number | null | undefined) => {
+  if (value == null || !Number.isFinite(value) || value < 0) return null;
+  return new Intl.NumberFormat('zh-TW', { maximumFractionDigits: 3 }).format(value);
+};
+
 const eventLabels: Record<string, string> = {
   level: '角色升級',
   name: '角色改名',
@@ -69,13 +74,18 @@ const eventLabels: Record<string, string> = {
 const GrowthTooltip = ({ active, payload }: any) => {
   const point = payload?.[0]?.payload;
   if (!active || !point) return null;
+  const growthPercent = formatDailyGrowthPercent(point.growthPercent);
   return (
     <div className="maple-growth-tooltip rounded-lg border border-slate-700 bg-[#11151b] px-3 py-2 text-xs shadow-xl">
       <div className="font-semibold text-slate-200">{point.date}</div>
-      <div className="mt-1 text-emerald-400">Lv.{point.level} · {point.expRate}%</div>
-      <div className="mt-0.5 text-slate-400">
-        {point.expPending ? '當日增量等待 Nexon 歷史資料更新' : `當日增加 ${compactNumber(point.expGain)} EXP`}
+      <div className="mt-1 font-semibold text-emerald-400">
+        {point.expPending
+          ? '當日增量等待 Nexon 歷史資料更新'
+          : growthPercent === null
+            ? `當日增加經驗（${compactNumber(point.expGain)} EXP）`
+            : `當日增加經驗 ${growthPercent}%（${compactNumber(point.expGain)} EXP）`}
       </div>
+      <div className="mt-0.5 text-slate-400">Lv.{point.level} · {point.expRate}%</div>
     </div>
   );
 };
@@ -338,13 +348,18 @@ const CharacterGrowthHistory: React.FC<CharacterGrowthHistoryProps> = ({ data, a
       && Number.isFinite(previousExp);
     const expPending = Boolean(day.expPending || previous?.expPending || !previous || !currentExpAvailable || !previousExpAvailable);
     let expGain = 0;
+    let growthPercent: number | null = null;
     if (!expPending && previous) {
       const levelDiff = Number(day.level) - Number(previous.level);
+      const currentRate = Number(day.expRate);
+      const previousRate = Number(previous.expRate);
       if (levelDiff === 0) {
         expGain = Math.max(0, currentExp - previousExp);
-      } else if (levelDiff === 1 && Number(previous.expRate) > 0) {
-        const previousRequiredExp = previousExp / (Number(previous.expRate) / 100);
+        growthPercent = Math.max(0, currentRate - previousRate);
+      } else if (levelDiff === 1 && previousRate > 0) {
+        const previousRequiredExp = previousExp / (previousRate / 100);
         expGain = Math.max(0, previousRequiredExp - previousExp + currentExp);
+        growthPercent = Math.max(0, 100 - previousRate + currentRate);
       }
     }
     return {
@@ -354,6 +369,7 @@ const CharacterGrowthHistory: React.FC<CharacterGrowthHistoryProps> = ({ data, a
       expRate: String(Number(day.expRate) || 0),
       expGain: String(Math.round(expGain)),
       expPending,
+      growthPercent,
       growthBucket: 0,
       active: !expPending && expGain > 0,
     };
