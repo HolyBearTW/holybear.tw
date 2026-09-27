@@ -440,7 +440,7 @@ const Familiar: React.FC<FamiliarProps> = ({ data }) => {
 
   if (!fam || !Array.isArray(familiarList) || familiarList.length === 0) {
     return (
-      <div className="maple-familiar-section bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0">
+      <div className="maple-result-surface maple-familiar-section bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <span className="text-pink-400 flex-shrink-0"><PawPrint className="w-5 h-5" /></span>
@@ -456,7 +456,7 @@ const Familiar: React.FC<FamiliarProps> = ({ data }) => {
   }
 
   return (
-    <div className="maple-familiar-section bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0">
+    <div className="maple-result-surface maple-familiar-section bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0">
       <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-2">
           <span className="text-pink-400 flex-shrink-0"><PawPrint className="w-5 h-5" /></span>

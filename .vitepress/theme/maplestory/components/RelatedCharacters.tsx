@@ -133,7 +133,7 @@ const RelatedCharacters: React.FC<RelatedCharactersProps> = ({
   const pageCharacters = members.slice((page - 1) * pageSize, page * pageSize);
 
   return (
-    <section className="maple-related-characters space-y-5 rounded-xl border border-slate-800 bg-[#161b22] p-4 shadow-xl sm:p-5">
+    <section className="maple-result-surface maple-related-characters space-y-5 rounded-xl border border-slate-800 bg-[#161b22] p-4 shadow-xl sm:p-5">
       <header>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex shrink-0 items-center gap-2">

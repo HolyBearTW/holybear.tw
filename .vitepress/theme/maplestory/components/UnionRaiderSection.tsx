@@ -539,7 +539,7 @@ const UnionRaiderSection: React.FC<UnionRaiderSectionProps> = ({ union, unionRai
   const occupiedCells = new Set(preset.union_block.flatMap((block) => block.block_position.map((position) => `${position.x},${position.y}`))).size;
 
   return (
-    <section className="maple-union-raider w-full rounded-xl border border-slate-800 bg-[#161b22] p-5 shadow-inner sm:p-6">
+    <section className="maple-result-surface maple-union-raider w-full rounded-xl border border-slate-800 bg-[#161b22] p-5 shadow-inner sm:p-6">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Shield className="h-5 w-5 text-yellow-500" />

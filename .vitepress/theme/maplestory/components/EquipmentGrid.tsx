@@ -729,7 +729,7 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({ equipment, setEffect, cha
   });
 
   return (
-    <div ref={cardRef} className="relative rounded-xl border border-slate-800 bg-[#161b22] p-6 shadow-inner">
+    <div ref={cardRef} className="maple-result-surface relative rounded-xl border border-slate-800 bg-[#161b22] p-6 shadow-inner">
       <h3 className="mb-6 flex items-center justify-between gap-3 text-sm font-bold uppercase tracking-widest text-slate-400">
          <span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-indigo-500"></span> 裝備 (Equipment)</span>
          {characterImage && (

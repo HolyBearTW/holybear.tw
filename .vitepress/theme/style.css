@@ -7451,3 +7451,9 @@ html:not(.dark) body.theme-uponthesky .editor-with-preview :is(
 html:not(.dark) body.theme-uponthesky .editor-with-preview .resize-handle:hover {
   background: var(--hb-editor-accent) !important;
 }
+/* Match the dark Blog cards across the MapleStory result sections. */
+html.dark #maplestory-root .maple-result-surface {
+  background-color: color-mix(in srgb, var(--vp-c-bg) 76%, transparent);
+  -webkit-backdrop-filter: blur(14px) saturate(118%);
+  backdrop-filter: blur(14px) saturate(118%);
+}

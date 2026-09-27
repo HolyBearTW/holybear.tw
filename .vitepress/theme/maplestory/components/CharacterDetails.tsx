@@ -232,7 +232,7 @@ const LinkSkillSection = ({ linkSkill }: { linkSkill: any }) => {
   });
 
   return (
-    <div className="maple-link-section bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0 h-full">
+    <div className="maple-result-surface maple-link-section bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0 h-full">
       <SectionHeader icon={<Link />} title="連結技能 (Link Skills)" presetState={{ current: selectedPreset, setCurrent: setSelectedPreset, active: activePresetNo }} />
       {Object.keys(totals).length > 0 && (
         <div className="maple-link-summary bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-4 mb-6">
@@ -548,7 +548,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
 
   return (
     <div className="maple-character-details flex flex-col gap-6 mt-6">
-      <div className="bg-[#161b22] p-6 rounded-xl min-w-0 w-full">
+      <div className="maple-result-surface bg-[#161b22] p-6 rounded-xl min-w-0 w-full">
         <HyperStatSection hyperStat={hyperStat} />
       </div>
 
@@ -560,7 +560,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
       <div className="columns-1 lg:columns-2 gap-6 [column-fill:_balance] lg:-mb-6">
 
       {/* Union & Artifact - w-full + min-w-0 */}
-      <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full max-w-full min-w-0 break-inside-avoid mb-6 block self-stretch">
+      <div className="maple-result-surface bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full max-w-full min-w-0 break-inside-avoid mb-6 block self-stretch">
         <SectionHeader icon={<Layers />} title="聯盟 & 神器" />
         <div className="space-y-2">
           {union && (
@@ -670,7 +670,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
       </div>
 
       {/* Symbols - w-full + min-w-0 */}
-      <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0 break-inside-avoid mb-6 inline-block align-top">
+      <div className="maple-result-surface bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0 break-inside-avoid mb-6 inline-block align-top">
         <SectionHeader icon={<Hexagon />} title="符文 & 力量" />
         {symbolEquipment && (
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
@@ -714,7 +714,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
           const hasRates = rates.drop > 0 || rates.meso > 0 || rates.exp > 0;
 
           return (
-            <div className="maple-symbol-stats bg-[#161b22] p-4 rounded-xl border border-slate-800 shadow-inner mt-4">
+            <div className="maple-result-surface maple-symbol-stats bg-[#161b22] p-4 rounded-xl border border-slate-800 shadow-inner mt-4">
               <h4 className="text-xs font-bold text-slate-300 mb-4 flex items-center gap-2"><Hexagon className="w-4 h-4 text-slate-400" /> 符文詳細統計</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="maple-symbol-card is-arc bg-purple-900/20 border border-purple-500/30 rounded-lg p-4 flex flex-col justify-start min-h-[100px]">
@@ -741,7 +741,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
       </div>
 
       {/* Pets - independent column card */}
-      <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0 break-inside-avoid mb-6 inline-block align-top">
+      <div className="maple-result-surface bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0 break-inside-avoid mb-6 inline-block align-top">
         <SectionHeader icon={<PawPrint />} title="寵物資訊" />
         {petEquipment ? (
           <div className="space-y-3">
@@ -822,7 +822,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
       </div>
 
       {/* Set Effects - w-full + min-w-0 */}
-      <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0 break-inside-avoid mb-6 inline-block align-top">
+      <div className="maple-result-surface bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0 break-inside-avoid mb-6 inline-block align-top">
         <SectionHeader icon={<Crown />} title="套裝效果" />
         <div className="space-y-3">
           {setEffect?.set_effect.map((set, idx) => (
@@ -835,7 +835,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
       </div>
 
       {/* Dojo - w-full + min-w-0 */}
-      <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0 self-start break-inside-avoid mb-6 block">
+      <div className="maple-result-surface bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0 self-start break-inside-avoid mb-6 block">
            <SectionHeader icon={<Sword />} title="武陵道場" />
            {dojo ? (
              <div className="flex flex-col gap-3">
@@ -847,7 +847,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
       </div>
 
       {/* Skills (V/Hexa) - w-full + min-w-0 */}
-      <div className="maple-core-skills bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0 break-inside-avoid mb-6 inline-block align-top">
+      <div className="maple-result-surface maple-core-skills bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0 break-inside-avoid mb-6 inline-block align-top">
         {hexaMatrix && hexaMatrix.character_hexa_core_equipment && hexaMatrix.character_hexa_core_equipment.length > 0 && (
           <div className="mb-6">
             {(() => {
@@ -901,7 +901,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
 
         {/* HEXA Stats - full width like LinkSkillSection */}
         {hexaMatrixStat && (
-        <div className="maple-hexa-stats bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0">
+        <div className="maple-result-surface maple-hexa-stats bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0">
           <SectionHeader icon={<Hexagon />} title="HEXA 屬性" />
           {(() => {
             const totals: Record<string, number> = {};
@@ -987,7 +987,7 @@ const CharacterDetails: React.FC<CharacterDetailsProps> = ({ data, apiKey }) => 
 
         {/* --- Union Champion (聯盟冠軍) full width like LinkSkillSection --- */}
         {unionChampion && (
-        <div className="bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0">
+        <div className="maple-result-surface bg-[#161b22] p-6 rounded-xl border border-slate-800 shadow-inner w-full min-w-0">
           <SectionHeader icon={<Trophy />} title="聯盟冠軍" />
 
           <div className="px-6">

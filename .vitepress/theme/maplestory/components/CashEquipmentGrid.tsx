@@ -526,7 +526,7 @@ const CashEquipmentGrid: React.FC<CashEquipmentGridProps> = ({ cashEquipment, be
     );
 
   return (
-    <div ref={cardRef} className="relative rounded-xl border border-slate-800 bg-[#161b22] p-6 shadow-inner">
+    <div ref={cardRef} className="maple-result-surface relative rounded-xl border border-slate-800 bg-[#161b22] p-6 shadow-inner">
       <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
         <span className="w-2 h-2 rounded-full bg-sky-400"></span> 時裝 (Cash Items)
       </h3>

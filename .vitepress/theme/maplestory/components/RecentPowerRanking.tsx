@@ -102,7 +102,7 @@ const RecentPowerRanking: React.FC<RecentPowerRankingProps> = ({ onSelectCharact
   if (loading) {
     return (
       <div
-        className="maple-ranking-panel mx-auto mt-6 flex min-h-44 w-full max-w-2xl flex-col items-center justify-center rounded-xl border border-slate-800 bg-[#161b22] p-4 text-sm text-slate-400 shadow-lg sm:p-6"
+        className="maple-result-surface maple-ranking-panel mx-auto mt-6 flex min-h-44 w-full max-w-2xl flex-col items-center justify-center rounded-xl border border-slate-800 bg-[#161b22] p-4 text-sm text-slate-400 shadow-lg sm:p-6"
         role="status"
         aria-live="polite"
       >
@@ -121,7 +121,7 @@ const RecentPowerRanking: React.FC<RecentPowerRankingProps> = ({ onSelectCharact
   }
 
   return (
-    <div className="maple-ranking-panel mx-auto mt-6 w-full max-w-2xl rounded-xl border border-slate-800 bg-[#161b22] p-4 shadow-lg sm:p-6">
+    <div className="maple-result-surface maple-ranking-panel mx-auto mt-6 w-full max-w-2xl rounded-xl border border-slate-800 bg-[#161b22] p-4 shadow-lg sm:p-6">
       <h3 className="mb-4 flex items-center gap-2 text-base font-semibold text-slate-200">
         <Crown className="w-4 h-4 text-yellow-400" />
         近期戰力排名

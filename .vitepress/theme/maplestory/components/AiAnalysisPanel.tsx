@@ -47,7 +47,7 @@ const AiAnalysisPanel: React.FC<AiAnalysisPanelProps> = ({
         <>
             {/* AI Response Area */}
            {/* Fix: Always show container if we have result OR analyzing OR specific error OR warning. Button is now always visible inside. */}
-           <div ref={aiResultRef} className={`maple-ai-result-panel relative scroll-mt-24 transition-all duration-700 ${!analyzing && !aiAnalysis && !error?.includes('AI') && !dropRateWarningData ? 'hidden' : 'block'}
+           <div ref={aiResultRef} className={`maple-result-surface maple-ai-result-panel relative scroll-mt-24 transition-all duration-700 ${!analyzing && !aiAnalysis && !error?.includes('AI') && !dropRateWarningData ? 'hidden' : 'block'}
              ${isHighScore ? 'bg-gradient-to-br from-[#1c1f33] to-[#2a1b3d] border-2 border-amber-400/50 shadow-[0_0_40px_rgba(251,191,36,0.15)]' : 'bg-[#161b22] border border-indigo-500/30 shadow-lg'} 
              rounded-xl p-5 mt-6`}>
                

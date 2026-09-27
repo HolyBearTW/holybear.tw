@@ -286,7 +286,7 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
     return (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <div className="h-full space-y-4 lg:col-span-3" data-maple-side-ad-anchor="profile">
-               <div className="relative h-full overflow-hidden rounded-xl border border-slate-800 bg-[#161b22] shadow-xl group">
+               <div className="maple-result-surface relative h-full overflow-hidden rounded-xl border border-slate-800 bg-[#161b22] shadow-xl group">
                   <div className={`maple-profile-banner h-32 bg-slate-800 relative overflow-hidden ${hasJobArtwork ? 'maple-profile-banner--artwork' : ''}`}>
                       <div className="maple-profile-scene absolute inset-0 overflow-hidden">
                         <img
@@ -444,7 +444,7 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
 
             <div className="grid grid-cols-1 content-start gap-6 lg:col-span-9 lg:grid-cols-9">
             <div className="space-y-6 lg:col-span-5">
-               <div className="bg-[#161b22] border border-slate-800 rounded-xl p-5 flex flex-col">
+               <div className="maple-result-surface bg-[#161b22] border border-slate-800 rounded-xl p-5 flex flex-col">
                   <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                      <Sword className="w-4 h-4" /> 焦點屬性
                   </h3>

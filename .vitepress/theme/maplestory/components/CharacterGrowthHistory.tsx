@@ -428,7 +428,7 @@ const CharacterGrowthHistory: React.FC<CharacterGrowthHistoryProps> = ({ data, a
 
   if ((loading || historyRenderPending || weeklyLoading) && !deferredHistory && !weeklyDays.length) {
     return (
-      <div className="maple-growth-state mt-6 flex min-h-28 items-center justify-center rounded-xl border border-slate-800 bg-[#161b22] text-sm text-slate-500">
+      <div className="maple-result-surface maple-growth-state mt-6 flex min-h-28 items-center justify-center rounded-xl border border-slate-800 bg-[#161b22] text-sm text-slate-500">
         <RefreshCw className="mr-2 h-4 w-4 animate-spin" />讀取成長紀錄中...
       </div>
     );
@@ -444,7 +444,7 @@ const CharacterGrowthHistory: React.FC<CharacterGrowthHistoryProps> = ({ data, a
 
   if (!deferredHistory && weeklyDays.length) {
     return (
-      <section className="maple-growth-history mt-6 space-y-5 rounded-xl border border-slate-800 bg-[#161b22] p-5 shadow-xl">
+      <section className="maple-result-surface maple-growth-history mt-6 space-y-5 rounded-xl border border-slate-800 bg-[#161b22] p-5 shadow-xl">
         <header>
           <div className="flex items-center gap-2 text-lg font-bold text-slate-100">
             <TrendingUp className="h-5 w-5 text-emerald-400" />經驗成長資訊
@@ -473,7 +473,7 @@ const CharacterGrowthHistory: React.FC<CharacterGrowthHistoryProps> = ({ data, a
   const sortedEvents = [...deferredHistory.events].sort((a, b) => b.date.localeCompare(a.date));
 
   return (
-    <section className="maple-growth-history mt-6 space-y-5 rounded-xl border border-slate-800 bg-[#161b22] p-5 shadow-xl">
+    <section className="maple-result-surface maple-growth-history mt-6 space-y-5 rounded-xl border border-slate-800 bg-[#161b22] p-5 shadow-xl">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2 text-lg font-bold text-slate-100">
