@@ -341,6 +341,7 @@ const Slot: React.FC<{ slotKey: string; item?: EquipmentItem; tooltipSide?: 'lef
   return (
     <div 
       ref={containerRef}
+      data-maple-tooltip-open={showTooltip || undefined}
       className={`relative group ${showTooltip ? 'z-[100]' : 'z-0'} !transform-none !transition-none !translate-y-0 !m-0`}
     >
       <div 

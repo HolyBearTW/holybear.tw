@@ -269,6 +269,7 @@ const BeautySlot: React.FC<BeautySlotProps> = ({ label, name, baseColor, mixColo
   return (
     <div 
       ref={containerRef}
+      data-maple-tooltip-open={showTooltip || undefined}
       className={`relative group ${showTooltip ? 'z-[300] isolate' : 'z-0'} !transform-none !transition-none !translate-y-0 !m-0`}
     >
       <div 
@@ -397,6 +398,7 @@ const CashSlot: React.FC<{ label: string; item?: CashItemEquipmentPreset; toolti
   return (
     <div 
       ref={containerRef}
+      data-maple-tooltip-open={showTooltip || undefined}
       className={`relative group ${showTooltip ? 'z-[300] isolate' : 'z-0'} !transform-none !transition-none !translate-y-0 !m-0`}
     >
       {/* 1. 格子本體 (Slot) */}

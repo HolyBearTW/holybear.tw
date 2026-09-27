@@ -7457,3 +7457,8 @@ html.dark #maplestory-root .maple-result-surface {
   -webkit-backdrop-filter: blur(14px) saturate(118%);
   backdrop-filter: blur(14px) saturate(118%);
 }
+
+/* A blurred card creates a stacking context; raise the card while its tooltip is open. */
+html.dark #maplestory-root .maple-result-surface:has([data-maple-tooltip-open="true"]) {
+  z-index: 1;
+}
