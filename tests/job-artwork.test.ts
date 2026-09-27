@@ -50,7 +50,10 @@ describe('MapleStory job artwork mapping', () => {
   })
 
   it('resolves matching gender, default, and single-gender fallbacks in order', () => {
-    expect(resolveJobArtworkFileName('龍魔導士', 'male')).toBe('ClassArtwork_Evan_(Chaos,_Male).png')
+    expect(resolveJobArtworkFileName('狂狼勇士', 'male')).toBe('ClassArtwork_Evan_(Chaos,_Male).png')
+    expect(resolveJobArtworkFileName('狂狼勇士', 'female')).toBe('ClassArtwork_Aran_(Milestone).png')
+    expect(resolveJobArtworkFileName('狂狼勇士')).toBe('ClassArtwork_Aran_(Milestone).png')
+    expect(resolveJobArtworkFileName('龍魔導士', 'male')).toBe('ClassArtwork_Evan_(MapleStory_M).png')
     expect(resolveJobArtworkFileName('龍魔導士', 'female')).toBe('ClassArtwork_Evan_(MapleStory_M).png')
     expect(resolveJobArtworkFileName('英雄', 'female')).toBe('ClassArtwork_Hero_(NEXT,_Male).png')
     expect(resolveJobArtworkFileName('大魔導士(火、毒)', 'male')).toBe(

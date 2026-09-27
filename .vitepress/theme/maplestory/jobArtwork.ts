@@ -41,11 +41,11 @@ export const JOB_ARTWORK_MAPPING: JobArtworkMapping = {
   暗夜行者: 'ClassArtwork_Night_Walker_(MapleStory_M).png',
   閃雷悍將: 'ClassArtwork_Thunder_Breaker_(MapleStory_M).png',
   米哈逸: 'ClassArtwork_Mihile_(Ignition).png',
-  狂狼勇士: 'ClassArtwork_Aran_(Milestone).png',
-  龍魔導士: {
-    default: 'ClassArtwork_Evan_(MapleStory_M).png',
+  狂狼勇士: {
+    default: 'ClassArtwork_Aran_(Milestone).png',
     male: 'ClassArtwork_Evan_(Chaos,_Male).png',
   },
+  龍魔導士: 'ClassArtwork_Evan_(MapleStory_M).png',
   夜光: 'ClassArtwork_Luminous_(Nova).png',
   精靈遊俠: 'ClassArtwork_Mercedes_(Nova).png',
   幻影俠盜: 'ClassArtwork_Phantom_(Nova).png',
