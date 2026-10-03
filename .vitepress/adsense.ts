@@ -64,7 +64,11 @@ export function ensureMapleAdSenseScript(): Promise<AdSenseScriptStatus> {
     script.async = true
     script.src = ADSENSE_SCRIPT_SRC
     script.crossOrigin = 'anonymous'
-    script.dataset.overlays = 'bottom'
+    // Preserve mobile bottom anchors without forcing desktop anchors over the footer.
+    // Google uses 1000px as the cutoff for its desktop anchor setting.
+    if (window.matchMedia('(max-width: 1000px)').matches) {
+      script.dataset.overlays = 'bottom'
+    }
   }
 
   mapleAdSenseScriptStatus = 'loading'
