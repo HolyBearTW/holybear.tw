@@ -59,15 +59,47 @@ const ResultLoading = () => {
   );
 };
 
+// Only the ticker entries expire; their announcement pages remain available.
+const SERVICE_NOTICE_EXPIRATIONS = [
+  Date.parse('2026-10-12T00:00:00+08:00'),
+  Date.parse('2026-10-08T00:00:00+08:00'),
+  Number.POSITIVE_INFINITY,
+];
+
 const ServiceAdjustmentNotice = () => {
-  const [activeNotice, setActiveNotice] = React.useState(0);
+  const [noticeTime, setNoticeTime] = React.useState(Date.now);
+  const [selectedNotice, setSelectedNotice] = React.useState(0);
+  const visibleNotices = React.useMemo(
+    () => SERVICE_NOTICE_EXPIRATIONS.flatMap((expiresAt, index) => noticeTime < expiresAt ? [index] : []),
+    [noticeTime],
+  );
+  const activeNotice = visibleNotices.includes(selectedNotice) ? selectedNotice : visibleNotices[0];
 
   React.useEffect(() => {
+    const nextExpiration = Math.min(...SERVICE_NOTICE_EXPIRATIONS.filter((expiresAt) => expiresAt > noticeTime));
+    if (!Number.isFinite(nextExpiration)) return;
+
+    const refreshTime = () => setNoticeTime(Date.now());
+    const timer = window.setTimeout(refreshTime, Math.min(Math.max(0, nextExpiration - Date.now()), 2_147_483_647));
+    document.addEventListener('visibilitychange', refreshTime);
+    window.addEventListener('focus', refreshTime);
+    return () => {
+      window.clearTimeout(timer);
+      document.removeEventListener('visibilitychange', refreshTime);
+      window.removeEventListener('focus', refreshTime);
+    };
+  }, [noticeTime]);
+
+  React.useEffect(() => {
+    if (visibleNotices.length < 2) return;
     const timer = window.setInterval(() => {
-      setActiveNotice((current) => (current + 1) % 3);
+      setSelectedNotice((current) => {
+        const currentIndex = Math.max(0, visibleNotices.indexOf(current));
+        return visibleNotices[(currentIndex + 1) % visibleNotices.length];
+      });
     }, 6500);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [visibleNotices]);
 
   const isRedNotice = activeNotice === 0 || activeNotice === 1;
   const targetHref = activeNotice === 0
@@ -96,12 +128,16 @@ const ServiceAdjustmentNotice = () => {
         i
       </span>
       <div className="maple-sync-ticker-track">
-        <div className={`maple-sync-ticker-item ${activeNotice === 0 ? 'is-active' : ''}`} aria-hidden={activeNotice !== 0}>
-          <p><strong style={{ color: '#dc2626' }}>服務重新開放及資料來源說明</strong>：楓之谷戰力分析已重新開放，現以 NEXON 官方 API 與本站資料處理流程提供分析結果。</p>
-        </div>
-        <div className={`maple-sync-ticker-item ${activeNotice === 1 ? 'is-active' : ''}`} aria-hidden={activeNotice !== 1}>
-          <p><strong style={{ color: '#dc2626' }}>服務調整與說明</strong>：關於先前 MapleKit API 的使用與後續爭議，我重新檢視了當時的做法與處理態度。對於先前沒有確認清楚服務使用界線就進行整合，以及後續處理事情時不好的態度，我在這裡正式向 MapleKit 作者道歉。</p>
-        </div>
+        {visibleNotices.includes(0) && (
+          <div className={`maple-sync-ticker-item ${activeNotice === 0 ? 'is-active' : ''}`} aria-hidden={activeNotice !== 0}>
+            <p><strong style={{ color: '#dc2626' }}>服務重新開放及資料來源說明</strong>：楓之谷戰力分析已重新開放，現以 NEXON 官方 API 與本站資料處理流程提供分析結果。</p>
+          </div>
+        )}
+        {visibleNotices.includes(1) && (
+          <div className={`maple-sync-ticker-item ${activeNotice === 1 ? 'is-active' : ''}`} aria-hidden={activeNotice !== 1}>
+            <p><strong style={{ color: '#dc2626' }}>服務調整與說明</strong>：關於先前 MapleKit API 的使用與後續爭議，我重新檢視了當時的做法與處理態度。對於先前沒有確認清楚服務使用界線就進行整合，以及後續處理事情時不好的態度，我在這裡正式向 MapleKit 作者道歉。</p>
+          </div>
+        )}
         <div className={`maple-sync-ticker-item ${activeNotice === 2 ? 'is-active' : ''}`} aria-hidden={activeNotice !== 2}>
           <p><strong>HolyBearTW 戰力分析滿意度與未來開發意願調查</strong>：想了解大家的使用感受；問卷約 1 分鐘，回覆僅用於網站功能規劃與服務改善。</p>
         </div>
