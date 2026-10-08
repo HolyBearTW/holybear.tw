@@ -2,6 +2,8 @@
 layout: page
 title: 問卷管理
 description: HolyBearTW 站點問卷管理頁面。
+sidebar: false
+aside: false
 head:
   - - meta
     - name: robots

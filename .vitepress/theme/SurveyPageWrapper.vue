@@ -4,7 +4,7 @@
       class="maple-survey-page-brand"
       role="button"
       tabindex="0"
-      aria-label="新楓之谷戰力分析，連續點擊五次進入問卷管理"
+      aria-label="新楓之谷戰力分析，連續點擊五次進入管理後台"
       @click="handleAdminTitleClick"
       @keydown="handleAdminTitleKeydown"
     >
@@ -43,7 +43,7 @@ const handleAdminTitleClick = () => {
 
   if (adminTitleClickCount >= 5) {
     adminTitleClickCount = 0
-    void router.go('/admin/survey/')
+    void router.go('/admin/')
     return
   }
 
