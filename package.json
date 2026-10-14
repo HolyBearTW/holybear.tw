@@ -8,7 +8,7 @@
     "@lando/vitepress-theme-default-plus": "^1.2.0",
     "@tailwindcss/postcss": "^4.3.3",
     "@vitejs/plugin-react": "6.0.5",
-    "concurrently": "^10.0.5",
+    "concurrently": "^10.0.6",
     "markdown-it-task-lists": "^2.1.1",
     "sass-embedded": "^1.105.1",
     "tailwindcss": "^4.3.3",
