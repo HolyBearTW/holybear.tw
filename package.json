@@ -31,7 +31,7 @@
     "front-matter": "^4.0.2",
     "lucide-react": "^1.58.0",
     "lucide-vue-next": "^1.0.0",
-    "markdown-it": "^15.0.2",
+    "markdown-it": "^15.0.3",
     "markdown-it-front-matter": "^0.2.4",
     "medium-zoom": "^1.1.0",
     "modern-screenshot": "4.7.0",
