@@ -54,11 +54,3 @@ If you want to translate the website content into another language, you need to 
 ## Acknowledgements
 
 Thanks to [VitePress](https://vitepress.dev) and [VuePress](https://v2.vuepress.vuejs.org) (previously used) for the framework.
-
-## License
-
-Website **source code** for which this project has valid relicensing rights is distributed under the [MIT License](./LICENSE). See [LICENSE_SCOPE.md](./LICENSE_SCOPE.md) for the scope and exceptions.
-
-**The website's code license does not license all website content.** Blog posts, editorial content, photos, images, audio, fonts, trademarks, game assets, and third-party components remain subject to their respective owners' rights and applicable licenses.
-
-Versions previously distributed under AGPL-3.0 retain the permissions already granted under that license.

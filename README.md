@@ -51,11 +51,3 @@ pnpm run dev
 
 - 感謝 [VitePress](https://vitepress.dev) 以及 [VuePress](https://v2.vuepress.vuejs.org)（曾使用）架構。
 - 感謝 [HyperCeiler](https://github.com/ReChronoRain/website) 提供網頁範本。
-
-## 授權
-
-本專案具備合法重新授權權利的**網站程式碼**採用 [MIT License](./LICENSE)，授權範圍及例外請參閱 [LICENSE_SCOPE.md](./LICENSE_SCOPE.md)。
-
-**網站程式碼授權不等於網站內容授權。** Blog 文章、其他編輯性內容、照片、圖片、影音、字型、商標、遊戲素材及第三方元件，仍依各權利人原有授權或相關條款處理；並非自動獲得 MIT 授權。
-
-先前依 AGPL-3.0 提供的版本，其既有授權權利不因後續授權調整而失效。
