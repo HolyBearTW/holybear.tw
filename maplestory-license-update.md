@@ -12,16 +12,16 @@ lastUpdated: false
 <div class="service-notice-hero">
   <p class="service-notice-eyebrow">SERVICE NOTICE</p>
   <h1>網站程式碼授權調整公告</h1>
-  <span class="service-notice-date">公告日期：正式發布前補上</span>
+  <span class="service-notice-date">公告日期：2026 年 10 月 21 日</span>
 </div>
 
-聖小熊的秘密基地網站經過持續開發及重構，為了讓程式碼的使用規範更加清楚，**本站已將具備重新授權權利的網站程式碼由 GNU AGPL-3.0 調整為 MIT License。**
+聖小熊的秘密基地網站經過持續開發及重構，為了讓程式碼的使用規範更加清楚，**本站已於 2026 年 10 月 21 日，將具備重新授權權利的網站程式碼由 GNU AGPL-3.0 改採 MIT License。**
 
-此次變更已將相關貢獻者及原始專案的程式碼授權問題列入確認範圍；僅對完成授權確認的程式碼適用 MIT。
+本次授權調整已獲原始網站範本相關開發者 [Sevtinge](https://github.com/HolyBearTW/holybear.tw/pull/574#issuecomment-6313554907) 與本站程式碼貢獻者 [Tim0320](https://github.com/HolyBearTW/holybear.tw/pull/574#issuecomment-6313809418) 在 GitHub 公開回覆同意。相關授權討論及合併紀錄可參閱 [PR #574](https://github.com/HolyBearTW/holybear.tw/pull/574)。同意的範圍以各權利人有權授權的程式碼為限，不會自動涵蓋其他第三方作品。
 
 ## 這次調整了什麼？
 
-MIT 是較寬鬆的開源授權。使用者可依授權條款使用、修改及再散布相關網站程式碼，包括商業用途與閉源衍生版本，但仍須保留必要的著作權及授權聲明。
+MIT 是較寬鬆的開源授權。對於本次 MIT 授權範圍內的網站程式碼，使用者可以依條款使用、修改及再散布，包括商業用途與閉源衍生版本，但仍須保留必要的著作權及授權聲明。
 
 **這不代表整個網站的所有內容都開放以 MIT 使用。**
 
@@ -31,11 +31,11 @@ Blog 文章及翻譯、圖片、影音、字型、商標、遊戲素材和其他
 
 ## 過去的 AGPL 版本怎麼辦？
 
-先前已依 AGPL-3.0 授權發布的版本，原有授權及使用者權利仍然有效。本次 MIT 授權適用範圍，以正式發布後的版本、根目錄授權及範圍說明為準。
+先前已依 AGPL-3.0 授權發布的版本，原有授權及使用者權利仍然有效。現在採用 MIT 授權的程式碼範圍，請以 GitHub 儲存庫的授權文件與授權範圍說明為準。
 
 完整內容可參閱 [網站程式碼 MIT 授權](https://github.com/HolyBearTW/holybear.tw/blob/main/LICENSE) 與 [授權範圍說明](https://github.com/HolyBearTW/holybear.tw/blob/main/LICENSE_SCOPE.md)。
 
-感謝過去協助本站開發及提供程式碼的貢獻者。這次調整也希望讓網站的原始碼來源、使用方式及不同內容的權利界線更加明確。
+感謝 Sevtinge、Tim0320 對本次授權調整的回覆與支持，也感謝過去所有協助本站開發的朋友。希望這次整理能讓網站程式碼的使用方式、第三方內容及各項著作權界線更加清楚。
 
 <p class="service-notice-signature">聖小熊的秘密基地站長 聖小熊 啟</p>
 
