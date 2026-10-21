@@ -3,6 +3,10 @@ pages_build_output_dir = ".vitepress/dist"
 compatibility_date = "2026-09-04"
 
 [vars]
+NODE_VERSION = "24"
+SKIP_DEPENDENCY_INSTALL = "1"
+YARN_ENABLE_IMMUTABLE_INSTALLS = "false"
+YARN_VERSION = "1.22.22"
 MAINTENANCE_MODE = "disabled"
 CHARACTER_FRESHNESS_SECONDS = "900"
 IMPORT_SOURCE_PAGE_SIZE = "100"

@@ -1,0 +1,44 @@
+name: 發布最新 PR 到 Cloudflare Pages
+
+on:
+  pull_request_target:
+    branches: [main]
+    types: [opened, synchronize, reopened, closed]
+  workflow_dispatch:
+    inputs:
+      pull_request_number:
+        description: 要發布預覽的 PR 編號
+        required: true
+        type: number
+
+permissions:
+  contents: write
+  pull-requests: read
+
+concurrency:
+  group: cloudflare-preview-pr-${{ github.event.pull_request.number || inputs.pull_request_number }}
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: 等待連續推送結束
+        if: github.event.action != 'closed'
+        run: sleep 60
+
+      # pull_request_target 只執行預設分支的腳本，不執行 PR 程式碼。
+      - name: 遷出受信任的部署腳本
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: 將最新 Commit 交給 Cloudflare
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const syncPreview = require('./.github/scripts/sync-cloudflare-preview.cjs');
+            await syncPreview({ github, context, core });

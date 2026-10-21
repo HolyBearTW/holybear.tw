@@ -19,10 +19,36 @@ on:
 
 concurrency:
   group: holybear-cloudflare-release
-  queue: max
+  cancel-in-progress: true
 
 jobs:
+  latest-commit:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      current: ${{ steps.latest.outputs.current }}
+    steps:
+      - name: 等待連續推送結束
+        if: github.event_name == 'push'
+        run: sleep 60
+
+      - name: 確認仍是分支最新 Commit
+        id: latest
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const { data: ref } = await github.rest.git.getRef({
+              ...context.repo,
+              ref: context.ref.replace(/^refs\//, '')
+            });
+            const current = ref.object.sha === context.sha;
+            core.setOutput('current', String(current));
+            if (!current) core.notice('已有更新的 Commit，略過這次發布。');
+
   full-pipeline:
+    needs: latest-commit
+    if: needs.latest-commit.outputs.current == 'true'
     runs-on: ubuntu-latest
 
     steps:
