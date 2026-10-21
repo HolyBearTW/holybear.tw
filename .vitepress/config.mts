@@ -504,7 +504,8 @@ const config = defineConfig({
     ],
     rewrites: {
         'maplestory-service-notice.md': 'maplestory/service-notice.md',
-        'maplestory-2026-09-12.md': 'maplestory/2026-09-12.md'
+        'maplestory-2026-09-12.md': 'maplestory/2026-09-12.md',
+        'maplestory-license-update.md': 'maplestory/license-update.md'
     },
     sitemap: {
         hostname: 'https://holybear.tw'
