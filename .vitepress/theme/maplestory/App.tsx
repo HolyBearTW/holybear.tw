@@ -63,7 +63,7 @@ const ResultLoading = () => {
 const SERVICE_NOTICE_EXPIRATIONS = [
   Date.parse('2026-10-12T00:00:00+08:00'),
   Date.parse('2026-10-08T00:00:00+08:00'),
-  Number.POSITIVE_INFINITY, // MIT 授權調整正式發布後公告
+  Number.POSITIVE_INFINITY, // 2026/10/21 MIT 授權正式公告
   Number.POSITIVE_INFINITY, // 既有滿意度調查
 ];
 
@@ -144,7 +144,7 @@ const ServiceAdjustmentNotice = () => {
           </div>
         )}
         <div className={`maple-sync-ticker-item ${activeNotice === 2 ? 'is-active' : ''}`} aria-hidden={activeNotice !== 2}>
-          <p><strong>網站程式碼授權調整公告</strong>：本站已將取得合法重新授權權利的網站程式碼由 AGPL-3.0 調整為 MIT 授權；Blog 文章與第三方素材維持原有權利與授權，詳情請見公告。</p>
+          <p><strong>網站程式碼授權調整公告</strong>：經原始範本相關開發者與本站程式碼貢獻者公開同意，網站具備重新授權權利的程式碼已改採 MIT 授權；Blog 文章及第三方素材維持各自的授權，詳情請見公告。</p>
         </div>
         <div className={`maple-sync-ticker-item ${activeNotice === 3 ? 'is-active' : ''}`} aria-hidden={activeNotice !== 3}>
           <p><strong>HolyBearTW 戰力分析滿意度與未來開發意願調查</strong>：想了解大家的使用感受；問卷約 1 分鐘，回覆僅用於網站功能規劃與服務改善。</p>

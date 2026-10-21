@@ -1,6 +1,8 @@
 # License Scope / 授權範圍
 
-> This document describes the **proposed** code-license transition in the associated draft pull request. Its terms take effect only if the pull request is merged after the necessary permissions and checks have been completed.
+> 本專案已於 2026 年 10 月 21 日透過 [PR #574](https://github.com/HolyBearTW/holybear.tw/pull/574) 更新網站程式碼授權。原始範本相關開發者 [Sevtinge](https://github.com/HolyBearTW/holybear.tw/pull/574#issuecomment-6313554907) 與本站程式碼貢獻者 [Tim0320](https://github.com/HolyBearTW/holybear.tw/pull/574#issuecomment-6313809418) 均已在該 PR 公開回覆同意。這些確認僅涵蓋各自有權授權的程式碼，不會自動重新授權其他第三方內容。
+>
+> The repository's code license was updated on October 21, 2026 via [PR #574](https://github.com/HolyBearTW/holybear.tw/pull/574). Sevtinge and Tim0320 publicly agreed in that PR. Their consent only covers code they have the right to license, and does not automatically relicense third-party works.
 
 ## 網站程式碼 / Website source code
 
