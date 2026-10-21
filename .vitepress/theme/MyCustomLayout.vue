@@ -804,7 +804,7 @@ onUnmounted(() => {
             <footer class="BlogVPFooter" :aria-label="footerCopy.ariaLabel">
                 <div class="container">
                     <p class="footer-line copyright">
-                        <a href="https://github.com/HolyBearTW/holybear.tw/blob/main/LICENSE_SCOPE.md" target="_blank" rel="license noopener">{{ isEnglish ? 'Site code: MIT Licensed' : '網站程式碼：MIT 授權' }}</a>
+                        <a href="https://github.com/HolyBearTW/holybear.tw/blob/main/LICENSE" target="_blank" rel="license noopener">MIT License</a>
                         &copy; {{ copyrightYears }}
                         <a href="https://github.com/HolyBearTW" target="_blank" rel="noopener">HolyBear</a>
                     </p>
