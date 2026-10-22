@@ -77,7 +77,16 @@ const collectStats = async (db: D1Database, whereClause = ''): Promise<SurveySta
   };
 };
 
-const csvCell = (value: unknown) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+const csvCell = (value: unknown) => {
+  const text = String(value ?? '');
+  // CSV quoting protects the file structure, but spreadsheet applications can
+  // still interpret a quoted cell as a formula. Export untrusted feedback as
+  // text; leave the stored response and the JSON API unchanged.
+  const safeText = /^[\s\uFEFF]*[=+\-@]/u.test(text) || /^[\t\r\n]/u.test(text)
+    ? `'${text}`
+    : text;
+  return `"${safeText.replace(/"/g, '""')}"`;
+};
 const fingerprintPreview = (value: string) => value ? `${value.slice(0, 8)}…` : '';
 
 const csvResponse = (rows: SurveyFeedbackRow[]) => {

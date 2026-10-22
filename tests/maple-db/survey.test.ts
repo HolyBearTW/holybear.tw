@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { onRequest as previewGate } from '../../functions/_middleware';
 import { onRequestGet as getSurveyAdmin } from '../../functions/api/admin/survey';
 import { onRequestDelete as deleteSurveyResponse } from '../../functions/api/admin/survey/[id]';
 import { onRequestPost as submitSurvey } from '../../functions/api/survey';
@@ -167,6 +168,22 @@ beforeEach(() => {
 });
 
 describe('survey submission API', () => {
+  it('the survey-only Preview middleware permits a real submission using only its isolated mock D1', async () => {
+    const state = makeStatefulDb();
+    const env = {
+      ...(envFor(state.db) as object),
+      PAGES_DEPLOYMENT_ENV: 'survey-preview', PREVIEW_FUNCTIONS_ENABLED: 'true',
+      PREVIEW_RESOURCE_SCOPE: 'survey-only', TURNSTILE_SITE_KEY: 'test-only-public-site-key',
+    };
+    const request = makeRequest();
+    const response = await previewGate({ env, request, next: () => submitSurvey({ env, request } as never) } as never);
+    expect(response.status).toBe(201);
+    expect(state.responses).toHaveLength(1);
+    expect(env).not.toHaveProperty('DB');
+    expect(env).not.toHaveProperty('EVIDENCE_ARCHIVE');
+    expect(env).not.toHaveProperty('NEXON_RATE_LIMITER');
+  });
+
   it('accepts a valid submission', async () => {
     const response = await submitSurvey({ env: envFor(), request: makeRequest() } as never);
     expect(response.status).toBe(201);
@@ -361,6 +378,29 @@ describe('survey admin API', () => {
     } as never);
     expect(deleted.status).toBe(200);
   });
+
+  it.each(['=HYPERLINK("https://example.test","open")', '+1+1', '-1+1', '@SUM(1,1)', '  =1+1', '\t=1+1', '\r=1+1', '\n=1+1'])(
+    'exports formula-like feedback as spreadsheet text: %s',
+    async (feedback) => {
+      const state = makeStatefulDb([{ improvement_feedback: feedback, other_feedback: '一般回饋 "內容",保留' }]);
+      const response = await getSurveyAdmin({
+        env: envFor(state.db),
+        request: new Request('https://holybear.tw/api/admin/survey?format=csv', { headers: { authorization: 'Bearer survey-admin-secret' } }),
+      } as never);
+      expect(response.status).toBe(200);
+      const exported = await response.text();
+      expect(exported).toContain(`"'${feedback.replace(/"/g, '""')}"`);
+      expect(exported).toContain('"一般回饋 ""內容"",保留"');
+      expect(state.responses[0].improvement_feedback).toBe(feedback);
+
+      const jsonResponse = await getSurveyAdmin({
+        env: envFor(state.db),
+        request: new Request('https://holybear.tw/api/admin/survey', { headers: { authorization: 'Bearer survey-admin-secret' } }),
+      } as never);
+      const payload = await jsonResponse.json() as { feedback: Array<{ improvementFeedback: string }> };
+      expect(payload.feedback[0].improvementFeedback).toBe(feedback);
+    },
+  );
 
   it('returns trusted statistics separately from all accepted responses', async () => {
     const state = makeStatefulDb([

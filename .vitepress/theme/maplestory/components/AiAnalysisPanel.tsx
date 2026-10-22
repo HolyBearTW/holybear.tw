@@ -1,7 +1,7 @@
 import React from 'react';
 import { Crown, Star, Wand2, Sparkles, Loader2, AlertTriangle, AlertCircle, RefreshCw, ThumbsUp, ArrowRight, Settings } from 'lucide-react';
 import { BorderBeam } from 'border-beam';
-import MarkdownIt from 'markdown-it';
+import { renderAiMarkdown } from '../utils/aiMarkdown';
 import { getAiModelOption, isCompatibleAiModel, isOpenAiModel } from '../data/aiModels';
 
 interface AiAnalysisPanelProps {
@@ -18,8 +18,6 @@ interface AiAnalysisPanelProps {
     setShowKeySettings: (show: boolean) => void;
     setDropRateWarningData: (data: { drop: number; meso: number } | null) => void;
 }
-
-const md = new MarkdownIt({ breaks: true, html: true });
 
 const getModelDisplayName = (id: string) => {
   return getAiModelOption(id)?.label || id;
@@ -146,7 +144,7 @@ const AiAnalysisPanel: React.FC<AiAnalysisPanelProps> = ({
     <div 
       className="leading-relaxed [&>p]:mb-2 [&>ul]:list-disc [&>ul]:pl-5 [&>a]:underline [&>a]:font-bold"
       dangerouslySetInnerHTML={{ 
-        __html: new MarkdownIt({ html: true, breaks: true, linkify: true }).render(error) 
+        __html: renderAiMarkdown(error)
       }} 
     />
   </div>
@@ -154,7 +152,7 @@ const AiAnalysisPanel: React.FC<AiAnalysisPanelProps> = ({
                       <div 
                         className="maple-ai-markdown text-sm text-slate-300 leading-relaxed ai-markdown-content"
                         dangerouslySetInnerHTML={{ 
-                          __html: new MarkdownIt({ html: true, breaks: true, linkify: true }).render(aiAnalysis || '') 
+                          __html: renderAiMarkdown(aiAnalysis)
                         }}
                       />
                    ) : null}

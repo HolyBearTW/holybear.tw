@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, watch, nextTick, onMounted, computed } from 'vue';
+import { ref, watch, nextTick, computed } from 'vue';
 import { useData } from 'vitepress';
 import MarkdownIt from 'markdown-it';
 import markdownItTaskLists from 'markdown-it-task-lists';
+import { escapeEditorHtml as escapeHtml, sanitizeEditorHtml } from './utils/sanitizeEditorHtml';
 
 // 引入容器樣式
 import './tools/complete-container-styles.scss';
@@ -52,16 +53,16 @@ const generateStyledHeaderHtml = computed(() => {
   headerHtml += `<div class="blog-post-header-injected">`;
 
   if (props.title) {
-    headerHtml += `<h1 class="blog-post-title">${props.title}</h1>`;
+    headerHtml += `<h1 class="blog-post-title">${escapeHtml(props.title)}</h1>`;
   }
 
   if (hasMeta) {
     headerHtml += `<div class="blog-post-meta-row">`;
     if (props.categories && props.categories.length > 0) {
-      headerHtml += props.categories.map(c => `<span class="category">${c}</span>`).join('');
+      headerHtml += props.categories.map(c => `<span class="category">${escapeHtml(c)}</span>`).join('');
     }
     if (props.tags && props.tags.length > 0) {
-      headerHtml += props.tags.map(t => `<span class="tags">${t}</span>`).join('');
+      headerHtml += props.tags.map(t => `<span class="tags">${escapeHtml(t)}</span>`).join('');
     }
     headerHtml += `</div>`;
   }
@@ -73,14 +74,8 @@ const generateStyledHeaderHtml = computed(() => {
 });
 
 const renderMarkdown = async () => {
-  console.log('MarkdownPreview: props.markdown =', props.markdown);
-  console.log('MarkdownPreview: props.title =', props.title);
-  console.log('MarkdownPreview: props.categories =', props.categories);
-  console.log('MarkdownPreview: props.tags =', props.tags);
-  console.log('MarkdownPreview: props.isBlogPost =', props.isBlogPost); // Log new prop
   
   if (!previewContainer.value) {
-    console.log('previewContainer 不存在');
     return;
   }
   
@@ -88,12 +83,10 @@ const renderMarkdown = async () => {
   const markdownToProcess = props.markdown.trim();
 
   if (!markdownToProcess && !headerContentHtml.trim()) {
-    console.log('markdown 和 headerContentHtml 都是空的');
     previewContainer.value.innerHTML = '<div class="empty-preview"><p>開始編輯以查看預覽...</p></div>';
     return;
   }
   
-  console.log('開始渲染 markdown');
   isRendering.value = true;
   renderError.value = '';
   
@@ -101,7 +94,7 @@ const renderMarkdown = async () => {
     let processedMarkdown = markdownToProcess;
     
     // 1. 預處理 YouTube 組件
-    processedMarkdown = processedMarkdown.replace(/<YouTube\s+id=["']([^"']+)["']\s*\/>/g, 
+    processedMarkdown = processedMarkdown.replace(/<YouTube\s+id=["']([A-Za-z0-9_-]{11})["']\s*\/>/g,
       '<div class="youtube-container"><iframe src="https://www.youtube.com/embed/$1" frameborder="0" allowfullscreen></iframe></div>');
     
     // 2. 處理 tabs 容器中的 == 分隔符(先處理,避免被容器處理影響)
@@ -140,7 +133,7 @@ const renderMarkdown = async () => {
         const panelId = `panel-${tab.title}-${i + 1}`;
         const isActive = i === 0;
 
-        tabsHtml += `<button id="${tabId}" role="tab" class="plugin-tabs--tab" aria-selected="${isActive}" aria-controls="${panelId}" tabindex="${isActive ? '0' : '-1'}">${tab.title}</button>`;
+        tabsHtml += `<button id="${escapeHtml(tabId)}" role="tab" class="plugin-tabs--tab" aria-selected="${isActive}" aria-controls="${escapeHtml(panelId)}" tabindex="${isActive ? '0' : '-1'}">${escapeHtml(tab.title)}</button>`;
 
         tabsData.push({
           title: tab.title,
@@ -151,7 +144,7 @@ const renderMarkdown = async () => {
         });
 
         if (isActive) {
-          contentHtml += `<div data-v-47429141="" id="${panelId}" class="plugin-tabs--content" role="tabpanel" tabindex="0" aria-labelledby="${tabId}">${md.render(tab.content.trim())}</div>`;
+          contentHtml += `<div data-v-47429141="" id="${escapeHtml(panelId)}" class="plugin-tabs--content" role="tabpanel" tabindex="0" aria-labelledby="${escapeHtml(tabId)}">${md.render(tab.content.trim())}</div>`;
         }
       }
 
@@ -159,7 +152,7 @@ const renderMarkdown = async () => {
 
       const tabsDataAttr = encodeURIComponent(JSON.stringify(tabsData));
 
-      return `<div class="plugin-tabs ${tabStyle}" data-tabs-data="${tabsDataAttr}">` + tabsHtml + contentHtml + '<!--v-if--></div>';
+      return `<div class="plugin-tabs ${escapeHtml(tabStyle)}" data-tabs-data="${tabsDataAttr}">` + tabsHtml + contentHtml + '<!--v-if--></div>';
     });
     
     // 3. 遞歸處理容器 (排除tabs容器)
@@ -235,7 +228,7 @@ const renderMarkdown = async () => {
             const cardTitle = params.trim();
             processedContent = md.render(content.trim());
             if (cardTitle) {
-              processedContent = `<div class="card-header">${cardTitle}</div><div class="card-body">${processedContent}</div>`;
+              processedContent = `<div class="card-header">${escapeHtml(cardTitle)}</div><div class="card-body">${processedContent}</div>`;
             } else {
               processedContent = `<div class="card-body">${processedContent}</div>`;
             }
@@ -276,8 +269,7 @@ const renderMarkdown = async () => {
     const renderedMarkdownHtml = md.render(processedMarkdown);
     
     // 5. 設置內容
-    previewContainer.value.innerHTML = headerContentHtml + renderedMarkdownHtml; // Combine header HTML and rendered markdown
-    console.log('最終渲染的HTML:', previewContainer.value.innerHTML);
+    previewContainer.value.innerHTML = sanitizeEditorHtml(headerContentHtml + renderedMarkdownHtml);
     
     await nextTick();
     
@@ -311,7 +303,7 @@ const renderMarkdown = async () => {
               
               const selectedTab = tabsData.find((tab: any) => tab.tabId === tabId);
               if (selectedTab && contentDiv) {
-                contentDiv.innerHTML = md.render(selectedTab.content);
+                contentDiv.innerHTML = sanitizeEditorHtml(md.render(selectedTab.content));
                 contentDiv.setAttribute('id', selectedTab.panelId);
                 contentDiv.setAttribute('aria-labelledby', selectedTab.tabId);
                 contentDiv.setAttribute('role', 'tabpanel');
@@ -336,37 +328,25 @@ const renderMarkdown = async () => {
     renderError.value = error instanceof Error ? error.message : '未知錯誤';
     
     if (previewContainer.value) {
-      previewContainer.value.innerHTML = `
+      previewContainer.value.innerHTML = sanitizeEditorHtml(`
         <div class="render-error">
           <p class="error-title">⚠️ 渲染失敗</p>
-          <p class="error-message">${renderError.value}</p>
+          <p class="error-message">${escapeHtml(renderError.value)}</p>
           <details class="error-details">
             <summary>查看原始 Markdown</summary>
             <pre>${escapeHtml(markdownToProcess)}</pre>
           </details>
         </div>
-      `;
+      `);
     }
   } finally {
-    console.log('渲染完成');
     isRendering.value = false;
   }
-};
-
-// HTML 轉義
-const escapeHtml = (str: string) => {
-  return str
-    .replace(/&/g, '&')
-    .replace(/</g, '<')
-    .replace(/>/g, '>')
-    .replace(/"/g, '"')
-    .replace(/'/g, '&#039;');
 };
 
 // 監聽所有相關 props 變化
 let renderTimer: number | null = null;
 watch([() => props.markdown, () => props.title, () => props.categories, () => props.tags, () => props.isBlogPost, isDark], () => {
-  console.log('Preview props 或暗色模式變化監聽器被觸發');
   if (renderTimer) {
     clearTimeout(renderTimer);
   }
@@ -375,10 +355,6 @@ watch([() => props.markdown, () => props.title, () => props.categories, () => pr
   }, 300); // 300ms 防抖
 }, { immediate: true }); // immediate: true to render on mount as well
 
-onMounted(() => {
-  console.log('MarkdownPreview 組件掛載');
-  // Initial render handled by immediate: true in watch
-});
 </script>
 
 <template>

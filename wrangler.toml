@@ -2,8 +2,16 @@ name = "holybear-tw"
 pages_build_output_dir = ".vitepress/dist"
 compatibility_date = "2026-09-04"
 
+# No default binding may fall back to a production resource.
+d1_databases = []
+r2_buckets = []
+durable_objects = { bindings = [] }
+
 [vars]
-NODE_VERSION = "24"
+PAGES_DEPLOYMENT_ENV = "preview"
+PREVIEW_FUNCTIONS_ENABLED = "false"
+PREVIEW_RESOURCE_SCOPE = "unconfigured"
+NODE_VERSION = "24.22.1"
 SKIP_DEPENDENCY_INSTALL = "1"
 YARN_ENABLE_IMMUTABLE_INSTALLS = "false"
 YARN_VERSION = "1.22.22"
@@ -43,31 +51,63 @@ GROWTH_NEW_PROFILE_24H_LIMIT = "12"
 GROWTH_PENDING_PROFILE_LIMIT = "8"
 CONSUMER_PRIMARY_HEARTBEAT_FRESHNESS_SECONDS = "300"
 
-[[durable_objects.bindings]]
-name = "NEXON_RATE_LIMITER"
-class_name = "NexonRateLimiter"
-script_name = "holybear-nexon-rate-limiter"
+# PR Preview only checks build/deployment. APIs stay disabled with no data bindings.
+[env.preview]
+d1_databases = []
+r2_buckets = []
+durable_objects = { bindings = [] }
 
-[[d1_databases]]
-binding = "DB"
-database_name = "holybear-maple-db-2"
-database_id = "83a4d165-d1ac-44d2-82c2-ca3ed111c50e"
-migrations_dir = "migrations"
-
-# Survey data is isolated from the MapleStory database.
-[[d1_databases]]
-binding = "SURVEY_DB"
-database_name = "holybear-survey-db"
-database_id = "edea16a9-d316-4c96-bbf5-87c3fb696975"
-migrations_dir = "migrations-survey"
-
-[[r2_buckets]]
-binding = "EVIDENCE_ARCHIVE"
-bucket_name = "holybear-maple-evidence"
+[env.preview.vars]
+PAGES_DEPLOYMENT_ENV = "preview"
+PREVIEW_FUNCTIONS_ENABLED = "false"
+PREVIEW_RESOURCE_SCOPE = "unconfigured"
+NODE_VERSION = "24.22.1"
+SKIP_DEPENDENCY_INSTALL = "1"
+YARN_ENABLE_IMMUTABLE_INSTALLS = "false"
+YARN_VERSION = "1.22.22"
+MAINTENANCE_MODE = "disabled"
+CHARACTER_FRESHNESS_SECONDS = "900"
+IMPORT_SOURCE_PAGE_SIZE = "100"
+NEXON_RESOLUTION_BATCH_SIZE = "32"
+NEXON_CONCURRENCY = "8"
+NEXON_REQUEST_DELAY_MS = "0"
+NEXON_GLOBAL_RPS_LIMIT = "50"
+NEXON_RATE_LIMITER_REQUIRED = "true"
+NEXON_RETRY_LIMIT = "5"
+NEXON_REQUEST_TIMEOUT_MS = "10000"
+IMPORT_D1_READ_BUDGET = "25000000"
+IMPORT_D1_WRITE_BUDGET = "20000000"
+RANKING_SNAPSHOT_SIZE = "1000"
+ACCOUNT_SIGNAL_BACKFILL_BATCH_SIZE = "8"
+ACCOUNT_SIGNAL_BACKFILL_CONCURRENCY = "1"
+ACCOUNT_SIGNAL_BACKFILL_DELAY_MS = "500"
+ACCOUNT_SIGNAL_CHAMPION_BACKFILL_ENABLED = "false"
+ACCOUNT_SIGNAL_CHAMPION_BACKFILL_BATCH_SIZE = "4"
+ACCOUNT_SIGNAL_CHAMPION_BACKFILL_CONCURRENCY = "1"
+ACCOUNT_SIGNAL_CHAMPION_BACKFILL_DELAY_MS = "1000"
+ACCOUNT_SIGNAL_FRESHNESS_SECONDS = "86400"
+ACCOUNT_SIGNAL_BACKGROUND_REFRESH_SECONDS = "7776000"
+ACCOUNT_SIGNAL_BACKGROUND_STALE_RESERVE_EVERY = "10"
+CHARACTER_METADATA_REFRESH_BATCH_SIZE = "8"
+CHARACTER_METADATA_REFRESH_CONCURRENCY = "4"
+CHARACTER_METADATA_REFRESH_DELAY_MS = "0"
+GROWTH_BACKFILL_BATCH_SIZE = "20"
+GROWTH_DATE_CONCURRENCY = "4"
+GROWTH_MAX_BATCHES_PER_INVOCATION = "12"
+GROWTH_INVOCATION_BUDGET_MS = "45000"
+GROWTH_PROFILE_CONCURRENCY = "1"
+GROWTH_CLAIM_LEASE_SECONDS = "600"
+GROWTH_NEW_PROFILE_24H_LIMIT = "12"
+GROWTH_PENDING_PROFILE_LIMIT = "8"
+CONSUMER_PRIMARY_HEARTBEAT_FRESHNESS_SECONDS = "300"
 
 [env.production.vars]
+PAGES_DEPLOYMENT_ENV = "production"
+# Vars do not inherit. These Preview-only gates are ignored in Production.
+PREVIEW_FUNCTIONS_ENABLED = "false"
+PREVIEW_RESOURCE_SCOPE = "unconfigured"
 MAINTENANCE_MODE = "disabled"
-NODE_VERSION = "24"
+NODE_VERSION = "24.22.1"
 SKIP_DEPENDENCY_INSTALL = "1"
 YARN_ENABLE_IMMUTABLE_INSTALLS = "false"
 YARN_VERSION = "1.22.22"

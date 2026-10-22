@@ -1,6 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Check the actual executable, including Dashboard overrides of .node-version.
+# The supported Node 22/24 branches must include the 2026-10-21 fixes.
+node --input-type=module <<'NODE'
+const [major, minor, patch] = process.versions.node.split('.').map(Number)
+const minimum = major === 22 ? [23, 4] : major === 24 ? [22, 1] : null
+if (!minimum || minor < minimum[0] || (minor === minimum[0] && patch < minimum[1])) {
+  console.error(`Cloudflare build requires patched Node.js 22 (>=22.23.4) or 24 (>=24.22.1); got ${process.versions.node}. Check NODE_VERSION in both Pages environments.`)
+  process.exit(1)
+}
+console.log(`Build Node.js: ${process.versions.node}`)
+NODE
+
 readonly HISTORY_SENTINEL_COMMIT="5418d386d77f6e80e4cbd28af956e5849c2103bc"
 readonly HISTORY_SENTINEL_FILE="blog/2025-07-18.md"
 readonly HISTORY_SENTINEL_DATE="2025-07-18T21:53:14+08:00"
@@ -53,15 +65,6 @@ rm -rf .vitepress/dist
 
 echo "安裝鎖定版本的專案套件..."
 yarn install --frozen-lockfile --non-interactive --prefer-offline
-
-echo "安裝部署用 Sharp（不修改 package.json / yarn.lock）..."
-yarn add \
-  --dev \
-  --ignore-scripts \
-  --pure-lockfile \
-  --non-interactive \
-  --prefer-offline \
-  sharp@0.35.3
 
 echo "最佳化部署圖片..."
 yarn run optimize:deploy-images
