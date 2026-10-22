@@ -21,11 +21,12 @@ concurrency:
 
 jobs:
   preview:
+    name: 提交 PR Preview（成敗另見 Cloudflare Pages）
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - name: 等待連續推送結束
-        if: github.event.action != 'closed'
+        if: vars.CLOUDFLARE_PREVIEW_ENABLED != 'false' && github.event.action != 'closed'
         run: sleep 60
 
       # pull_request_target 只執行預設分支的腳本，不執行 PR 程式碼。
@@ -34,11 +35,26 @@ jobs:
         with:
           ref: ${{ github.event.repository.default_branch }}
           persist-credentials: false
-          fetch-depth: 1
+          fetch-depth: 0
 
       - name: 將最新 Commit 交給 Cloudflare
         uses: actions/github-script@v9
+        env:
+          CLOUDFLARE_PREVIEW_ENABLED: ${{ vars.CLOUDFLARE_PREVIEW_ENABLED }}
         with:
           script: |
+            const { execFileSync } = require('node:child_process');
             const syncPreview = require('./.github/scripts/sync-cloudflare-preview.cjs');
-            await syncPreview({ github, context, core });
+            await syncPreview({
+              github, context, core,
+              previewEnabled: !process.env.CLOUDFLARE_PREVIEW_ENABLED || process.env.CLOUDFLARE_PREVIEW_ENABLED === 'true',
+              isolationBaseSha: syncPreview.resolveIsolationBaseSha(execFileSync),
+              validatePreviewConfig: (content) => {
+                execFileSync('python3', ['scripts/check-pages-isolation.py', '--stdin', '--pr-preview'], {
+                  input: content,
+                  stdio: ['pipe', 'pipe', 'pipe'],
+                  timeout: 10000
+                });
+                return true;
+              }
+            });

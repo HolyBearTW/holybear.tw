@@ -1,0 +1,10 @@
+# This isolated Worker has not been created or deployed by the security fix.
+# A different script name gives the exported class a separate DO namespace.
+name = "holybear-nexon-rate-limiter-preview"
+main = "workers/nexon-rate-limiter.ts"
+compatibility_date = "2026-09-04"
+workers_dev = false
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["NexonRateLimiter"]

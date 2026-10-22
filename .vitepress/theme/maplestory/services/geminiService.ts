@@ -3,9 +3,10 @@ import { DashboardData } from "../types";
 import { DEFAULT_AI_MODEL, getAiModelOption, getGeminiModelsToTry, isCompatibleAiModel, isOpenAiModel } from "../data/aiModels";
 import type { AiModelOption, CompatibleAiServiceConfig } from "../data/aiModels";
 import type { BossDamageAiSnapshot } from "../calculator/bossDamageCalculator";
+import { redactAiSecrets } from './aiErrorPrivacy';
 
 // === Helper: 錯誤訊息美化 ===
-const extractErrorMessage = (error: any): string => {
+const extractRawErrorMessage = (error: any): string => {
   if (!error) return 'Unknown Error';
   
   // 優先檢查 axios 或 fetch 錯誤物件結構
@@ -29,6 +30,9 @@ const extractErrorMessage = (error: any): string => {
   
   return msg;
 };
+
+const extractErrorMessage = (error: unknown, apiKey: string): string =>
+  redactAiSecrets(String(extractRawErrorMessage(error)), [apiKey]);
 
 const hasValue = (value: unknown) => value !== undefined && value !== null && value !== '';
 
@@ -362,7 +366,7 @@ const analyzeWithOpenAi = async (
       if (currentModel === selectionId) return result;
       return `${result}\n\n_(您選擇的是 **${selectionId}**，本次已自動切換備用模型)_`;
     } catch (error: any) {
-      const message = extractErrorMessage(error);
+      const message = extractErrorMessage(error, apiKey);
       console.error(`[OpenAI Error] Model: ${currentModel} Failed`);
       console.error(`[OpenAI Error] Details: ${message}`);
       lastError = error;
@@ -373,7 +377,7 @@ const analyzeWithOpenAi = async (
     }
   }
 
-  const message = extractErrorMessage(quotaError || lastError);
+  const message = extractErrorMessage(quotaError || lastError, apiKey);
   if (isCredentialError(message)) {
     return 'AI Analysis Failed: ⚠️ **OpenAI API Key 無效或沒有權限**\n\n請在設定中確認 OpenAI API Key 與專案權限。\n\n👉 [前往 OpenAI Platform 建立或管理 API Key](https://platform.openai.com/api-keys)';
   }
@@ -393,6 +397,9 @@ const getCompatibleChatCompletionsUrl = (baseUrl: string): string => {
 
   if (url.protocol !== 'https:') {
     throw new Error('自訂服務 Base URL 必須使用 HTTPS');
+  }
+  if (url.username || url.password) {
+    throw new Error('自訂服務 Base URL 不可包含帳號或密碼');
   }
 
   url.hash = '';
@@ -418,10 +425,7 @@ const analyzeWithCompatibleService = async (
   config: CompatibleAiServiceConfig,
   onProgress?: (msg: string) => void,
 ): Promise<string> => {
-  let endpoint = config.baseUrl.trim();
   let responseStatus: number | null = null;
-  let responseStatusText = '';
-  let responsePayload: unknown = null;
   const controller = new AbortController();
   let timedOut = false;
   const timeoutMs = 120000;
@@ -433,7 +437,7 @@ const analyzeWithCompatibleService = async (
   onProgress?.(`正在連線自訂服務的 ${config.model}...`);
 
   try {
-    endpoint = getCompatibleChatCompletionsUrl(config.baseUrl);
+    const endpoint = getCompatibleChatCompletionsUrl(config.baseUrl);
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
@@ -451,8 +455,6 @@ const analyzeWithCompatibleService = async (
     onProgress?.('自訂服務已接收資料，正在生成精簡健檢報告...');
     const payload = await response.json().catch(() => ({}));
     responseStatus = response.status;
-    responseStatusText = response.statusText;
-    responsePayload = payload;
     if (!response.ok) {
       const message = payload?.error?.message || payload?.message || `自訂服務回應失敗 (${response.status})`;
       throw new Error(`${response.status}: ${message}`);
@@ -462,13 +464,9 @@ const analyzeWithCompatibleService = async (
     if (!text) throw new Error(`自訂服務的 ${config.model} 沒有回傳文字內容`);
     return `${text}\n\n_(自訂相容服務模型：**${config.model}**)_`;
   } catch (error: any) {
-    const message = extractErrorMessage(error);
+    const message = extractErrorMessage(error, config.apiKey);
     console.error('[AI 健檢][自訂相容服務] 請求失敗', {
-      endpoint,
-      model: config.model,
       status: responseStatus,
-      statusText: responseStatusText,
-      response: responsePayload,
       error: message,
     });
 
@@ -764,14 +762,11 @@ export const analyzeCharacter = async (data: DashboardData, bossDamageSnapshot: 
       return fullText + `\n\n${modelNote}`;
 
     } catch (error: any) {
-      const cleanMsg = extractErrorMessage(error);
+      const cleanMsg = extractErrorMessage(error, geminiApiKey);
       
       // 使用 console.error 確保在控制台顯示紅色錯誤 (使用者可能過濾了 warn)
       console.error(`[Gemini Error] Model: ${currentModel} Failed`);
       console.error(`[Gemini Error] Details: ${cleanMsg}`);
-      console.error('--- RAW ERROR OBJECT ---');
-      console.dir(error); 
-      console.error('------------------------');
       
       // === 關鍵邏輯：優先捕捉 429 錯誤 ===
       if (isQuotaError(cleanMsg)) {
@@ -791,7 +786,7 @@ export const analyzeCharacter = async (data: DashboardData, bossDamageSnapshot: 
   const finalError = quotaError || serverOverloadedError || lastError; 
   
   if (finalError) {
-      const errorMsg = extractErrorMessage(finalError);
+      const errorMsg = extractErrorMessage(finalError, geminiApiKey);
       console.error("All Gemini Models Failed. Final Error:", errorMsg);
 
       if (isCredentialError(errorMsg)) {

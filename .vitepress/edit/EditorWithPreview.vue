@@ -6,6 +6,7 @@ import MarkdownPreview from './MarkdownPreview.vue'
 import MarkdownIt from 'markdown-it'
 import fm from 'front-matter'
 import markdownItFrontMatter from 'markdown-it-front-matter'
+import { sanitizeEditorHtml } from './utils/sanitizeEditorHtml'
 
 // 常數與 interface
 const historyUpdateKey = ref(0) // 用來強制刷新歷史列表
@@ -438,9 +439,6 @@ const saveCurrentDoc = () => {
 watch(documentTag, (val) => {
   documentTagString.value = val.join(', ') // 使用逗號和空格重新組合
 })
-watch(documentTitle, (val) => {
-  console.log('documentTitle changed:', val);
-});
 watch(documentCategory, (val) => {
   documentCategoryString.value = val.join(', ') // 使用逗號和空格重新組合
 })
@@ -542,7 +540,7 @@ const handleLoadHistory = (item: HistoryItem) => {
     
     // 如果在視覺模式 (雖然現在預設是 markdown 模式)，需要將 Markdown 轉回 HTML
     if (editMode.value === 'visual' && editorRef.value) {
-      const htmlContent = md.render(bodyContent)
+      const htmlContent = sanitizeEditorHtml(md.render(bodyContent))
       editorRef.value.setContent(htmlContent)
     }
   } catch (e) {
@@ -595,7 +593,7 @@ const toggleEditMode = () => {
     markdownContent.value = markdownSource.value
     // 將 Markdown 轉換為 HTML 並設置到編輯器
     if (editorRef.value) {
-      const htmlContent = md.render(markdownSource.value)
+      const htmlContent = sanitizeEditorHtml(md.render(markdownSource.value))
       editorRef.value.setContent(htmlContent)
     }
   }
@@ -1109,9 +1107,6 @@ onBeforeUnmount(() => {
               :is-blog-post="documentBlog"
             />
         </div>
-        {{ console.log('EditorWithPreview: documentTitle =', documentTitle) }}
-        {{ console.log('EditorWithPreview: documentCategory =', documentCategory) }}
-        {{ console.log('EditorWithPreview: documentTag =', documentTag) }}
       </div>
     </div>
 

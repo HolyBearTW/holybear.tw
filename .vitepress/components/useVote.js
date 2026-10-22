@@ -1,4 +1,5 @@
 import { ref, onMounted, watch } from 'vue';
+import { canUseProductionCounters } from './production-data-origin';
 
 // 支援 articleId 為 ref/computed（reactive），SPA 切頁時自動刷新
 export function useVote(articleIdRef) {
@@ -17,6 +18,10 @@ export function useVote(articleIdRef) {
   let firebaseInitialized = false;
 
   async function initFirebaseIfNeeded() {
+    if (!canUseProductionCounters()) {
+      loading.value = false;
+      return;
+    }
     if (typeof window !== 'undefined' && !firebaseInitialized) {
       try {
         const { db: sharedDb } = await import('./firebase');

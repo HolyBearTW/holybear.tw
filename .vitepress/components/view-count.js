@@ -1,8 +1,10 @@
 import { doc, getDoc, setDoc, updateDoc, increment } from "firebase/firestore";
 import { db } from "../components/firebase";
+import { canUseProductionCounters } from './production-data-origin';
 
 // 新增 opts 參數，支援 onlyRead
 export async function incrementAndGetViews(slug, opts = {}) {
+  if (!canUseProductionCounters()) return 0;
   try {
     const ref = doc(db, "views", slug);
     const snap = await getDoc(ref);

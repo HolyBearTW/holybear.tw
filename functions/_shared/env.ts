@@ -1,4 +1,7 @@
 export interface Env {
+  PAGES_DEPLOYMENT_ENV?: string;
+  PREVIEW_FUNCTIONS_ENABLED?: string;
+  PREVIEW_RESOURCE_SCOPE?: string;
   DB: D1Database;
   SURVEY_DB: D1Database;
   EVIDENCE_ARCHIVE?: R2Bucket;

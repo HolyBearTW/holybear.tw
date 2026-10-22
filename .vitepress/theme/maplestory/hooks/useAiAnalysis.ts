@@ -3,6 +3,7 @@ import { DashboardData } from '../types';
 import { AI_MODEL_OPTIONS, DEFAULT_AI_MODEL, discoverAiModels, getRecommendedAiModel, isCompatibleAiModel, isOpenAiModel } from '../data/aiModels';
 import type { AiModelOption } from '../data/aiModels';
 import { createBossPlayerContext, readBossDamageAiSnapshot } from '../calculator/bossDamageCalculator';
+import { redactAiSecrets } from '../services/aiErrorPrivacy';
 
 const DEFAULT_GEMINI_KEY = ''; 
 
@@ -215,7 +216,7 @@ export const useAiAnalysis = (
         setAiAnalysis(result);
       }
     } catch (err: any) {
-      const errorMessage = err?.message || '';
+      const errorMessage = redactAiSecrets(String(err?.message || ''), [geminiKey, openAiKey, compatibleAiKey]);
       if (errorMessage.includes('429') || errorMessage.includes('Quota')) {
         setError(isCompatibleAiModel(geminiModel)
           ? '⚠️ **AI 自訂服務額度已達上限 (Rate Limit Exceeded)**\n\n請檢查第三方服務的額度、速率限制或 API Key。'
