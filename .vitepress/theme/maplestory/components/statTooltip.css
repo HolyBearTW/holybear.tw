@@ -1,0 +1,41 @@
+.maple-stat-tooltip {
+  --maple-stat-tooltip-surface: #161b22;
+  color: #e2e8f0;
+}
+
+.maple-stat-tooltip,
+.maple-stat-tooltip-arrow {
+  background-color: var(--maple-stat-tooltip-surface);
+}
+
+/* Portals sit outside the tool root. Keep its existing light palette here. */
+html:not(.dark) .maple-stat-tooltip {
+  --maple-stat-tooltip-surface: #f9fdff;
+  color: #294b59;
+  border-color: rgba(36, 94, 112, 0.28);
+}
+
+html:not(.dark) .maple-stat-tooltip :is([class~='text-white'], [class~='text-slate-200']) {
+  color: #082936 !important;
+}
+
+html:not(.dark) .maple-stat-tooltip [class~='text-slate-400'] {
+  color: #526b78 !important;
+}
+
+html:not(.dark) .maple-stat-tooltip [class~='text-slate-500'] {
+  color: #657d89 !important;
+}
+
+html:not(.dark) .maple-stat-tooltip :is([class~='text-yellow-500'], [class~='text-yellow-500/80']) {
+  color: #9a6400 !important;
+}
+
+html:not(.dark) .maple-stat-tooltip [class*='border-slate-'] {
+  border-color: rgba(36, 94, 112, 0.24) !important;
+}
+
+html body.theme-halloween .maple-stat-tooltip h4 {
+  color: #ff5722;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
