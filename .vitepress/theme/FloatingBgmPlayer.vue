@@ -2,6 +2,8 @@
 import { ref, watch, onMounted, onUnmounted, computed, nextTick } from 'vue'
 import { defaultTheme, THEME_CHANGE_EVENT, getInitialBackgroundTheme } from './background/themes'
 
+const emit = defineEmits(['sidebar-visibility-change'])
+
 /* --- 音樂清單 --- */
 const originalMusicList = ref([
   { src: '/music/MapleStory_UponTheSky.mp3', title: '楓之谷 - 往天空之城' },
@@ -109,6 +111,14 @@ const showSidebarButton = ref(false)
 const showPlayerToggle = ref(false)
 const repeatOne = ref(false)
 const isPageLoaded = ref(false)
+
+watch(
+  () => (!playerOpen.value || musicInfoHidden.value)
+    && ((showSidebarButton.value && playerOpen.value) || showPlayerToggle.value),
+  visible => emit('sidebar-visibility-change', visible),
+  { immediate: true }
+)
+
 const themeMusicEnabled = ref(null)
 const showThemeMusicPrompt = ref(false)
 const themeMusicPromptPositionReady = ref(false)
@@ -1224,7 +1234,8 @@ function collapsePlayerToSidebarButton() {
 
 function closePlayerOnOutsideInteract(event) {
   const clickedInsidePlayer = playerContainer.value && playerContainer.value.contains(event.target)
-  const clickedInsideSidebar = sidebarToggle.value && sidebarToggle.value.contains(event.target)
+  const clickedInsideSidebar = (sidebarToggle.value && sidebarToggle.value.contains(event.target))
+    || (event.target instanceof Element && event.target.closest('.sidebar-toggle'))
 
   if (!clickedInsidePlayer && !clickedInsideSidebar) {
     isPlaylistVisible.value = false
@@ -1399,6 +1410,11 @@ function showMusicInfo() {
   isVolumeVisible.value = false
   playerMinimized.value = false
   isClicked.value = false
+}
+
+function openPlayerFromSidebar() {
+  playerOpen.value = true
+  showMusicInfo()
 }
 
 /* --- 歌曲 title toast --- */
@@ -1585,7 +1601,7 @@ function toggleRepeatOne() {
   </transition>
 
   <transition name="sidebar-fade">
-    <div v-if="showPlayerToggle" class="sidebar-toggle player-toggle" @click.stop.prevent="playerOpen = true" @touchend.stop.prevent="playerOpen = true">
+    <div v-if="showPlayerToggle" class="sidebar-toggle player-toggle" @click.stop.prevent="openPlayerFromSidebar" @touchend.stop.prevent="openPlayerFromSidebar">
       <i class="fa-solid fa-music sidebar-icon"></i>
     </div>
   </transition>
@@ -1947,12 +1963,13 @@ html:not(.dark) .theme-music-setting.enabled strong {
 }
 
 /* ==================== 側邊欄按鈕 ==================== */
-.sidebar-toggle {
+.sidebar-toggle,
+:global(.global-scroll-cue) {
     position: fixed;
-  right: 8px;
-    bottom: 24px;
-    width: 30px;
-    height: 108px;
+    right: var(--hb-floating-control-right);
+    bottom: var(--hb-floating-music-bottom);
+    width: var(--hb-floating-control-width);
+    height: var(--hb-floating-music-height);
     background: rgba(22, 24, 31, 0.84);
     -webkit-backdrop-filter: blur(16px);
     backdrop-filter: blur(16px);
@@ -1972,7 +1989,8 @@ html:not(.dark) .theme-music-setting.enabled strong {
     touch-action: manipulation;
 }
 
-.sidebar-toggle::before {
+.sidebar-toggle::before,
+:global(.global-scroll-cue::before) {
     content: '';
     position: absolute;
     inset: -4px;
@@ -1984,7 +2002,8 @@ html:not(.dark) .theme-music-setting.enabled strong {
     z-index: -1;
 }
 
-.sidebar-toggle:hover {
+.sidebar-toggle:hover,
+:global(.global-scroll-cue:hover) {
   background: rgba(26, 29, 37, 0.92);
   border-color: rgba(0, 255, 238, 0.18);
   box-shadow: 0 14px 32px rgba(0, 0, 0, 0.32),
@@ -1992,7 +2011,8 @@ html:not(.dark) .theme-music-setting.enabled strong {
     transform: translateX(-3px);
 }
 
-.sidebar-icon {
+.sidebar-icon,
+:global(.global-scroll-cue svg) {
   font-size: 17px;
   font-weight: 600;
     color: var(--vp-c-brand);
@@ -2002,13 +2022,18 @@ html:not(.dark) .theme-music-setting.enabled strong {
 }
 
 .sidebar-fade-enter-active,
-.sidebar-fade-leave-active {
+.sidebar-fade-leave-active,
+:global(.global-scroll-cue.sidebar-fade-enter-active),
+:global(.global-scroll-cue.sidebar-fade-leave-active) {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.sidebar-fade-enter-from,
-.sidebar-fade-leave-to {
+.sidebar-toggle.sidebar-fade-enter-from,
+.sidebar-toggle.sidebar-fade-leave-to,
+:global(.global-scroll-cue.sidebar-fade-enter-from),
+:global(.global-scroll-cue.sidebar-fade-leave-to) {
     transform: translateX(40px);
+    opacity: 0;
 }
 
 .music-info .title {
@@ -2519,26 +2544,30 @@ html:not(.dark) .theme-music-setting.enabled strong {
   background: rgba(0, 127, 152, 0.62);
 }
 
-:global(html:not(.dark) .sidebar-toggle) {
+:global(html:not(.dark) .sidebar-toggle),
+:global(html:not(.dark) .global-scroll-cue) {
   background: rgba(249, 253, 255, 0.86);
   border-color: rgba(7, 108, 133, 0.22);
   box-shadow: 0 10px 28px rgba(35, 76, 94, 0.18),
               inset 0 0 0 1px rgba(0, 184, 212, 0.06);
 }
 
-:global(html:not(.dark) .sidebar-toggle:hover) {
+:global(html:not(.dark) .sidebar-toggle:hover),
+:global(html:not(.dark) .global-scroll-cue:hover) {
   background: rgba(241, 252, 254, 0.96);
   border-color: rgba(0, 150, 180, 0.38);
   box-shadow: 0 14px 32px rgba(35, 76, 94, 0.22),
               inset 0 0 0 1px rgba(0, 184, 212, 0.1);
 }
 
-:global(html:not(.dark) .sidebar-toggle .sidebar-icon) {
+:global(html:not(.dark) .sidebar-toggle .sidebar-icon),
+:global(html:not(.dark) .global-scroll-cue svg) {
   color: #087f94;
   text-shadow: 0 2px 10px rgba(8, 127, 148, 0.2);
 }
 
-:global(html:not(.dark) .sidebar-toggle:hover .sidebar-icon) {
+:global(html:not(.dark) .sidebar-toggle:hover .sidebar-icon),
+:global(html:not(.dark) .global-scroll-cue:hover svg) {
   color: #076f82;
   text-shadow: 0 2px 12px rgba(8, 127, 148, 0.28);
 }
@@ -2617,7 +2646,8 @@ html:not(.dark) .theme-music-setting.enabled strong {
     }
 
     /* 深色模式下的側邊欄按鈕 */
-    .dark .sidebar-toggle {
+    .dark .sidebar-toggle,
+    :global(.dark .global-scroll-cue) {
         background: rgba(0, 0, 0, 0.35);
         border-color: var(--vp-c-brand-dark);
         box-shadow: 0 0 20px rgba(0, 204, 238, 0.2),
@@ -2625,7 +2655,8 @@ html:not(.dark) .theme-music-setting.enabled strong {
                     inset 0 0 20px rgba(0, 204, 238, 0.05);
     }
 
-    .dark .sidebar-toggle:hover {
+    .dark .sidebar-toggle:hover,
+    :global(.dark .global-scroll-cue:hover) {
         background: rgba(0, 0, 0, 0.75);
         border-color: var(--vp-c-brand);
         box-shadow: 0 0 25px rgba(0, 204, 238, 0.4),
@@ -2633,7 +2664,8 @@ html:not(.dark) .theme-music-setting.enabled strong {
                     inset 0 0 25px rgba(0, 204, 238, 0.15);
     }
 
-    .dark .sidebar-icon {
+    .dark .sidebar-icon,
+    :global(.dark .global-scroll-cue svg) {
         color: var(--vp-c-brand);
         text-shadow: 0 0 8px var(--vp-c-brand-dark);
     }

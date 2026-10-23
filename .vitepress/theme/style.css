@@ -11,6 +11,12 @@
 :root {
   color-scheme: light;
 
+  /* Keep the right-side scroll and music controls aligned. */
+  --hb-floating-control-right: 8px;
+  --hb-floating-control-width: 30px;
+  --hb-floating-music-bottom: 24px;
+  --hb-floating-music-height: 108px;
+
   /* brand colors */
   --vp-c-brand: #00FFEE !important;
   --vp-c-brand-light: #33FFFF !important;
@@ -2552,6 +2558,12 @@ body.holy-bear-loading-active .title-toast {
 
 /* Mobile refinements */
 @media (max-width: 768px) {
+  :root {
+    --hb-floating-control-right: 10px;
+    --hb-floating-control-width: 38px;
+    --hb-floating-music-height: 112px;
+  }
+
   /* Single source of truth for every VitePress document on phones. Page-level
      layouts may change their desktop max-width, but should not add mobile
      gutters or top spacing on top of these values. */
@@ -2621,10 +2633,10 @@ body.holy-bear-loading-active .title-toast {
 
   
 
-  body .sidebar-toggle {
-    right: 10px !important;
-    width: 38px !important;
-    height: 112px !important;
+  body .sidebar-toggle,
+  body .global-scroll-cue {
+    right: var(--hb-floating-control-right) !important;
+    width: var(--hb-floating-control-width) !important;
     border-radius: 16px !important;
     background: rgba(249, 253, 255, 0.9) !important;
     border: 1px solid rgba(7, 108, 133, 0.22) !important;
@@ -2634,14 +2646,20 @@ body.holy-bear-loading-active .title-toast {
     -webkit-backdrop-filter: blur(16px) !important;
   }
 
-  html.dark body .sidebar-toggle {
+  body .sidebar-toggle {
+    height: var(--hb-floating-music-height) !important;
+  }
+
+  html.dark body .sidebar-toggle,
+  html.dark body .global-scroll-cue {
     background: rgba(14, 20, 30, 0.82) !important;
     border-color: rgba(255, 255, 255, 0.1) !important;
     box-shadow: 0 14px 32px rgba(0, 0, 0, 0.32),
       0 0 0 1px rgba(0, 255, 238, 0.08) inset !important;
   }
 
-  body .sidebar-toggle .sidebar-icon {
+  body .sidebar-toggle .sidebar-icon,
+  body .global-scroll-cue svg {
     font-size: 20px !important;
     text-shadow: 0 0 12px rgba(0, 255, 238, 0.24) !important;
   }

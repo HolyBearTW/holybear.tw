@@ -5,6 +5,7 @@ import { computed, defineAsyncComponent, onMounted, onUnmounted, watch, ref, pro
 import { useRoute } from 'vitepress'
 import { useAuthors } from '../components/useAuthors.js'
 import FloatingBgmPlayer from './FloatingBgmPlayer.vue'
+import GlobalScrollCue from './GlobalScrollCue.vue'
 import CelebrationEntry from './CelebrationEntry.vue'
 import GiscusComments from '../components/GiscusComments.vue'
 import VotePanel from '../components/VotePanel.vue'
@@ -51,6 +52,7 @@ const gitCommitUrl = `https://github.com/HolyBearTW/holybear.tw/commit/${gitComm
 
 // 當前背景主題
 const currentBackgroundTheme = ref(defaultTheme)
+const musicSidebarVisible = ref(false)
 const isConstrainedDevice = ref(
     typeof document !== 'undefined' && document.documentElement.classList.contains('holy-bear-constrained-device')
 )
@@ -714,7 +716,8 @@ onUnmounted(() => {
 <template>
     <HolyBearLoadingFrame />
     <MigrationNotice :intro-finished="true" />
-    <FloatingBgmPlayer />
+    <FloatingBgmPlayer @sidebar-visibility-change="musicSidebarVisible = $event" />
+    <GlobalScrollCue :visible="musicSidebarVisible" />
     <ClientOnly>
         <CelebrationEntry />
     </ClientOnly>

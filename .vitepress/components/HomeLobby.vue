@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import {
-  ArrowDown,
   BookOpen,
   Code2,
   Gamepad2,
@@ -287,11 +286,6 @@ const getUnitStyle = (unit: typeof units[number], index: number) => ({
   '--node-delay': `${index * 0.18}s`
 })
 
-const scrollToStory = () => {
-  const target = document.getElementById('hero-story')
-  target?.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth' })
-}
-
 onMounted(() => {
   syncViewportWidth()
   window.addEventListener('resize', syncViewportWidth, { passive: true })
@@ -430,10 +424,6 @@ onBeforeUnmount(() => {
         </div>
       </div>
 
-      <button class="scroll-cue" type="button" @click="scrollToStory" aria-label="前往站內入口">
-        <ArrowDown aria-hidden="true" />
-        <span>SCROLL</span>
-      </button>
     </section>
 
     <section id="hero-story" class="story-band" aria-labelledby="story-title">
@@ -1118,82 +1108,6 @@ onBeforeUnmount(() => {
   transform: translate3d(calc(var(--mx) * -12px), calc(var(--my) * -18px), 0);
 }
 
-.scroll-cue {
-  position: fixed;
-  right: clamp(12px, 2vw, 22px);
-  bottom: clamp(106px, 13vh, 142px);
-  z-index: 30;
-  display: inline-grid;
-  place-items: center;
-  width: 54px;
-  height: 54px;
-  min-height: 54px;
-  padding: 0;
-  overflow: hidden;
-  border: 1px solid var(--lobby-cue-border);
-  border-radius: 18px;
-  color: rgba(244, 248, 255, 0.96);
-  background: var(--lobby-cue-bg);
-  box-shadow:
-    0 18px 36px rgba(0, 0, 0, 0.28),
-    0 0 0 1px rgba(255, 255, 255, 0.08) inset;
-  backdrop-filter: blur(18px) saturate(160%);
-  -webkit-backdrop-filter: blur(18px) saturate(160%);
-  cursor: pointer;
-  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.scroll-cue::before {
-  content: "";
-  position: absolute;
-  inset: 8px;
-  border-radius: 14px;
-  background: linear-gradient(135deg, var(--vp-c-brand) 0%, var(--vp-c-brand-dark) 100%);
-  box-shadow:
-    0 6px 20px rgba(0, 204, 238, 0.3),
-    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
-  transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.scroll-cue svg {
-  position: relative;
-  z-index: 1;
-  width: 22px;
-  height: 22px;
-  color: #ffffff;
-  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.28));
-}
-
-.scroll-cue span {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  padding: 0;
-  overflow: hidden;
-  white-space: nowrap;
-  border: 0;
-  clip: rect(0 0 0 0);
-  clip-path: inset(50%);
-}
-
-.scroll-cue:hover,
-.scroll-cue:focus-visible {
-  border-color: rgba(0, 255, 238, 0.42);
-  outline: none;
-  transform: translateY(-3px);
-  box-shadow:
-    0 22px 44px rgba(0, 0, 0, 0.34),
-    0 0 22px rgba(0, 204, 238, 0.22),
-    0 0 0 1px rgba(255, 255, 255, 0.12) inset;
-}
-
-.scroll-cue:hover::before,
-.scroll-cue:focus-visible::before {
-  background: linear-gradient(135deg, var(--vp-c-brand-dark) 0%, var(--vp-c-brand-darker) 100%);
-  transform: scale(1.04);
-}
-
 .story-band {
   position: relative;
   z-index: 2;
@@ -1428,20 +1342,6 @@ onBeforeUnmount(() => {
     display: none;
   }
 
-  .scroll-cue {
-    right: 50px;
-    bottom: 54px;
-    width: 48px;
-    height: 48px;
-    min-height: 48px;
-    border-radius: 16px;
-  }
-
-  .scroll-cue::before {
-    inset: 7px;
-    border-radius: 12px;
-  }
-
   .story-grid {
     grid-template-columns: 1fr;
   }
@@ -1485,11 +1385,6 @@ onBeforeUnmount(() => {
 
   .scene-node {
     width: 56px;
-  }
-
-  .scroll-cue {
-    right: 50px;
-    bottom: 54px;
   }
 
   .node-label {
