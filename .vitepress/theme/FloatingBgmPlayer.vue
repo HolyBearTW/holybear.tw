@@ -67,7 +67,8 @@ const originalMusicList = ref([
   { src: '/music/MapleStory_NeoTokyo_Tokyosky.mp3', title: '楓之谷：未來東京 - 東京上空 2102年' },
   { src: '/music/MapleStory_NeoTokyo_Rockbongi.mp3', title: '楓之谷：未來東京 - 澀谷 2102年' },
   { src: '/music/MapleStory_AnEternalBreath.mp3', title: '楓之谷：克拉奇亞 - 永恆的氣息' },
-  { src: '/music/MapleStory_old_title.mp3', title: '楓之谷 - 懷舊登入音樂' }
+  { src: '/music/MapleStory_old_title.mp3', title: '楓之谷 - 懷舊登入音樂' },
+  { src: '/music/MapleStory_halloweenMainHall.mp3', title: '楓之谷 - 萬聖節主廳' }
 ])
 
 const musicList = ref([...originalMusicList.value])
@@ -88,6 +89,10 @@ const THEME_MUSIC = {
   coretower: {
     src: '/music/MapleStory_SilentProtocol.mp3',
     title: '楓之谷 - 核心塔'
+  },
+  halloween: {
+    src: '/music/MapleStory_halloweenMainHall.mp3',
+    title: '楓之谷 - 萬聖節主廳'
   }
 }
 
