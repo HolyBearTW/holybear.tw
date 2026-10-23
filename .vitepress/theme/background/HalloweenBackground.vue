@@ -15,6 +15,19 @@ let pumpkinIntervalId = null;
 let mutationObserver = null;
 let navObserver = null;
 
+// Separate edge positions keep the flight paths out of the main reading area.
+// The first four remain visible on phones; tablets show six and desktops eight.
+const batPlacements = [
+  { x: 6, y: 18, size: 22, mobileX: 4, mobileY: 19, mobileSize: 14 },
+  { x: 91, y: 32, size: 32, mobileX: 89, mobileY: 40, mobileSize: 20 },
+  { x: 4, y: 58, size: 18, mobileX: 5, mobileY: 64, mobileSize: 12 },
+  { x: 93, y: 77, size: 26, mobileX: 91, mobileY: 85, mobileSize: 17 },
+  { x: 93, y: 14, size: 16 },
+  { x: 5, y: 83, size: 34 },
+  { x: 3, y: 38, size: 28 },
+  { x: 92, y: 58, size: 20 },
+];
+
 // 處理導覽列開關：開啟時隱藏蝙蝠，避免覆蓋
 function handleNavToggle() {
   if (typeof document === 'undefined') return;
@@ -26,8 +39,9 @@ function handleNavToggle() {
 }
 
 function startHalloween() {
+  const background = document.getElementById('halloween-bg');
   // 防呆：已經存在就不再建立
-  if (document.getElementById('halloween-bats') || document.getElementById('halloween-pumpkin')) return;
+  if (!background || document.getElementById('halloween-bats') || document.getElementById('halloween-pumpkin')) return;
 
   // 設定 Halloween 專屬 CSS 變數（以 inline 覆蓋，切換時會移除）
   try {
@@ -68,32 +82,40 @@ function startHalloween() {
     });
   } catch (e) {}
 
-  // --- 1. 蝙蝠動畫 (滿版) ---
+  // --- 1. 蝙蝠動畫（背景邊緣點綴） ---
   const batContainer = document.createElement('div');
   batContainer.id = 'halloween-bats';
-  batContainer.style.position = 'fixed';
+  batContainer.setAttribute('aria-hidden', 'true');
+  batContainer.style.position = 'absolute';
   batContainer.style.left = '0';
   batContainer.style.top = '0';
   batContainer.style.width = '100%';
-  batContainer.style.height = '100dvh';
-  batContainer.style.minHeight = '100dvh';
-  batContainer.style.zIndex = '9998';
+  batContainer.style.height = '100%';
+  batContainer.style.zIndex = '1';
   batContainer.style.pointerEvents = 'none';
   batContainer.style.transform = 'translate3d(0, 0, 0)';
   batContainer.style.backfaceVisibility = 'hidden';
   batContainer.style.contain = 'paint';
 
-  for (let i = 0; i < 12; i++) {
+  for (const placement of batPlacements) {
     const bat = document.createElement('div');
     bat.className = 'halloween-bat';
-    bat.style.left = `${Math.random() * 92}vw`;
-    bat.style.top = `${Math.random() * 88}vh`;
-    bat.style.setProperty('--bat-drift-x', `${Math.random() * 64 - 32}px`);
-    bat.style.setProperty('--bat-drift-y', `${Math.random() * 42 - 21}px`);
-    bat.style.setProperty('--bat-flight-duration', `${7 + Math.random() * 5}s`);
-    bat.style.setProperty('--bat-flap-duration', `${0.44 + Math.random() * 0.2}s`);
-    bat.style.setProperty('--bat-flight-delay', `${Math.random() * -8}s`);
-    bat.style.setProperty('--bat-flap-delay', `${Math.random() * -0.8}s`);
+    bat.style.setProperty('--bat-x', `${placement.x}%`);
+    bat.style.setProperty('--bat-y', `${placement.y}%`);
+    bat.style.setProperty('--bat-size', `${placement.size}px`);
+    bat.style.setProperty('--bat-mobile-x', `${placement.mobileX ?? placement.x}%`);
+    bat.style.setProperty('--bat-mobile-y', `${placement.mobileY ?? placement.y}%`);
+    bat.style.setProperty('--bat-mobile-size', `${placement.mobileSize ?? placement.size}px`);
+    bat.style.setProperty('--bat-opacity', (0.22 + (placement.size - 16) * 0.006).toFixed(2));
+    const inwardDirection = placement.x < 50 ? 1 : -1;
+    const flightDuration = 20 + Math.random() * 12;
+    bat.style.setProperty('--bat-desktop-drift-x', `${inwardDirection * (4 + Math.random() * 4)}px`);
+    bat.style.setProperty('--bat-mobile-drift-x', `${inwardDirection * 3}px`);
+    bat.style.setProperty('--bat-drift-y', `${Math.random() * 8 - 4}px`);
+    bat.style.setProperty('--bat-flight-duration', `${flightDuration}s`);
+    bat.style.setProperty('--bat-flap-duration', `${0.9 + Math.random() * 0.35}s`);
+    bat.style.setProperty('--bat-flight-delay', `${Math.random() * -flightDuration}s`);
+    bat.style.setProperty('--bat-flap-delay', `${Math.random() * -2}s`);
 
     const leftWing = document.createElement('img');
     leftWing.src = halloweenBatUrl;
@@ -116,7 +138,8 @@ function startHalloween() {
     bat.append(leftWing, rightWing, body);
     batContainer.appendChild(bat);
   }
-  document.body.appendChild(batContainer);
+  // Keep the decoration behind cards and text rather than over the interface.
+  background.appendChild(batContainer);
 
   // 新增：立即檢查導覽列狀態，避免主題切換時蝙蝠覆蓋已開啟的選單
   handleNavToggle();
@@ -290,11 +313,14 @@ onUnmounted(() => {
 }
 
 .halloween-bat {
+  --bat-drift-x: var(--bat-desktop-drift-x, 6px);
   position: absolute;
   display: block;
-  width: 48px;
+  left: var(--bat-x);
+  top: var(--bat-y);
+  width: var(--bat-size, 24px);
   aspect-ratio: 1;
-  opacity: 0.72;
+  opacity: var(--bat-opacity, 0.26);
   transform: translate3d(0, 0, 0);
   animation: halloween-bat-flight var(--bat-flight-duration, 9s) ease-in-out var(--bat-flight-delay, 0s) infinite alternate;
   will-change: transform;
@@ -337,18 +363,24 @@ onUnmounted(() => {
 }
 
 @keyframes halloween-bat-left-flap {
-  from { transform: rotate(12deg); }
-  to { transform: rotate(-17deg); }
+  from { transform: rotate(6deg); }
+  to { transform: rotate(-10deg); }
 }
 
 @keyframes halloween-bat-right-flap {
-  from { transform: rotate(-12deg); }
-  to { transform: rotate(17deg); }
+  from { transform: rotate(-6deg); }
+  to { transform: rotate(10deg); }
 }
 
 @keyframes halloween-bat-flight {
-  0%, 100% { transform: translate3d(0, 0, 0) rotate(-2deg); }
-  50% { transform: translate3d(var(--bat-drift-x), var(--bat-drift-y), 0) rotate(3deg); }
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(-1deg); }
+  50% { transform: translate3d(var(--bat-drift-x), var(--bat-drift-y), 0) rotate(1.5deg); }
+}
+
+@media (max-width: 1024px) {
+  .halloween-bat:nth-child(n + 7) {
+    display: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -360,6 +392,18 @@ onUnmounted(() => {
 }
 
 @media (max-width: 600px) {
+  .halloween-bat {
+    left: var(--bat-mobile-x);
+    top: var(--bat-mobile-y);
+    width: var(--bat-mobile-size, 16px);
+    opacity: calc(var(--bat-opacity, 0.26) * 0.8);
+    --bat-drift-x: var(--bat-mobile-drift-x);
+  }
+
+  .halloween-bat:nth-child(n + 5) {
+    display: none;
+  }
+
   .halloween-background {
     background-image: url('./assets/halloween/halloween-theme-mobile-background.webp');
     background-position: center top;
