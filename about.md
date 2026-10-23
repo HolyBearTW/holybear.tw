@@ -13,8 +13,44 @@ class: about-page
 pageClass: custom-footer-layout
 ---
 
-<figure class="about-visual">
-  <img class="about-visual__image no-zoom" src="/holybear.png" alt="聖小熊人物形象圖" width="2528" height="1684" />
+<script setup lang="ts">
+import { onBeforeUnmount, onMounted, ref } from 'vue'
+import halloweenTechIslandAvatarUrl from './.vitepress/theme/background/assets/halloween/halloween-tech-island-character.png?url'
+import { THEME_CHANGE_EVENT, THEME_STORAGE_KEY } from './.vitepress/theme/background/themes'
+
+const isHalloweenSelected = () => {
+  if (typeof document === 'undefined') return false
+  if (
+    document.body.classList.contains('theme-halloween') ||
+    document.documentElement.dataset.backgroundTheme === 'halloween'
+  ) {
+    return true
+  }
+  try {
+    return window.localStorage.getItem(THEME_STORAGE_KEY) === 'halloween'
+  } catch {
+    return false
+  }
+}
+
+const isHalloweenTheme = ref(isHalloweenSelected())
+
+const updateSeasonalAvatar = (event: Event) => {
+  isHalloweenTheme.value = (event as CustomEvent<{ theme?: string }>).detail?.theme === 'halloween'
+}
+
+onMounted(() => {
+  isHalloweenTheme.value = isHalloweenSelected()
+  window.addEventListener(THEME_CHANGE_EVENT, updateSeasonalAvatar)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener(THEME_CHANGE_EVENT, updateSeasonalAvatar)
+})
+</script>
+
+<figure class="about-visual" :class="{ 'is-halloween-visual': isHalloweenTheme }">
+  <img class="about-visual__image no-zoom" :src="isHalloweenTheme ? halloweenTechIslandAvatarUrl : '/holybear.png'" alt="聖小熊人物形象圖" width="2528" height="1684" />
   <figcaption class="about-visual__meta">
     <span>HOLYBEAR / CHARACTER VISUAL</span>
     <span>PERSONAL SITE · TAIWAN</span>
@@ -127,6 +163,8 @@ pageClass: custom-footer-layout
 .about-page .vp-doc a { text-decoration: none; }
 .about-visual { position: relative; overflow: hidden; margin: 0 0 1rem !important; border: 1px solid rgba(180, 103, 255, .3); border-radius: 28px; background: #070511; box-shadow: 0 24px 70px rgba(23, 6, 42, .28); }
 .about-visual__image { display: block; width: 100%; height: auto; margin: 0 !important; object-fit: contain; }
+.about-visual.is-halloween-visual { background: radial-gradient(circle at 50% 54%, rgba(44, 12, 62, .58), #070511 74%); }
+.about-visual.is-halloween-visual .about-visual__image { aspect-ratio: 2528 / 1684; object-fit: contain; object-position: center bottom; }
 .about-visual__meta { display: flex; justify-content: space-between; gap: 1rem; padding: .72rem 1rem; border-top: 1px solid rgba(194, 129, 255, .2); color: rgba(239, 222, 255, .72); background: linear-gradient(90deg, #0b0714, #150822); font-size: .7rem; font-weight: 750; letter-spacing: .13em; }
 .about-lead { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(300px, .92fr); gap: clamp(2rem, 5vw, 4.5rem); padding: clamp(2rem, 6vw, 4.5rem) clamp(.2rem, 2vw, 1.25rem); align-items: start; }
 .about-kicker { margin-bottom: .7rem !important; color: #a76bec; font-size: .76rem; font-weight: 850; letter-spacing: .16em; }
