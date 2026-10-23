@@ -1,0 +1,244 @@
+/* Shared navigation, typography, and reading surfaces for the Sky City themes.
+ * Kept separate from the scene renderer so either theme can load directly.
+ */
+/* Keep the WZ artwork visible in both appearances. Contrast is applied only to
+   the actual reading surfaces below, rather than tinting the whole viewport. */
+html body.theme-uponthesky .hb-home-lobby {
+  --lobby-text: #173b53;
+  --lobby-text-strong: #092f49;
+  --lobby-text-muted: rgba(12, 50, 73, 0.90);
+  --lobby-text-soft: rgba(12, 50, 73, 0.82);
+  --lobby-border: rgba(10, 88, 132, 0.24);
+  --lobby-border-strong: rgba(10, 88, 132, 0.34);
+  --lobby-surface: rgba(247, 252, 255, 0.88);
+  --lobby-surface-soft: rgba(244, 250, 255, 0.84);
+  --lobby-panel: rgba(247, 252, 255, 0.92);
+  --lobby-chip: rgba(244, 250, 255, 0.86);
+  --lobby-primary-bg: rgba(255, 255, 255, 0.94);
+  --lobby-primary-text: #082b48;
+  --lobby-ghost-bg: rgba(244, 250, 255, 0.88);
+  --lobby-ghost-text: #0b3550;
+  --lobby-shadow: rgba(18, 64, 91, 0.20);
+  --lobby-panel-shadow: rgba(18, 64, 91, 0.22);
+  --lobby-chip-shadow: rgba(18, 64, 91, 0.18);
+  --lobby-story-divider: rgba(10, 88, 132, 0.20);
+  --lobby-story-border: rgba(10, 88, 132, 0.26);
+  --lobby-story-shadow: 0 14px 34px rgba(18, 64, 91, 0.18);
+  --lobby-inset: rgba(255, 255, 255, 0.72);
+  --lobby-node-active-base: #eefaff;
+  --lobby-node-border-blend: #087f94;
+  --lobby-active-border: rgba(8, 127, 148, 0.72);
+  --lobby-label-shadow: rgba(1, 12, 28, 0.96);
+  --lobby-accent-text: var(--active-accent);
+  --lobby-node-accent: var(--node-accent);
+}
+
+/* Dark appearance uses the same night-blue glass language across every
+   homepage surface, including the story cards and interactive entry points. */
+html.dark body.theme-uponthesky .hb-home-lobby {
+  --lobby-text: #edf8ff;
+  --lobby-text-strong: #ffffff;
+  --lobby-text-muted: rgba(232, 245, 255, 0.86);
+  --lobby-text-soft: rgba(218, 238, 250, 0.78);
+  --lobby-border: rgba(174, 225, 255, 0.24);
+  --lobby-border-strong: rgba(223, 247, 255, 0.32);
+  --lobby-grid-border: rgba(174, 225, 255, 0.16);
+  --lobby-ring-border: rgba(174, 225, 255, 0.22);
+  --lobby-grid-line: rgba(174, 225, 255, 0.18);
+  --lobby-surface: rgba(6, 18, 38, 0.78);
+  --lobby-surface-soft: rgba(5, 17, 38, 0.68);
+  --lobby-panel: rgba(5, 16, 35, 0.82);
+  --lobby-chip: rgba(6, 18, 38, 0.70);
+  --lobby-primary-bg: rgba(8, 27, 53, 0.84);
+  --lobby-primary-text: #f3fcff;
+  --lobby-ghost-bg: rgba(6, 18, 38, 0.68);
+  --lobby-ghost-text: #ebf8ff;
+  --lobby-shadow: rgba(0, 10, 35, 0.48);
+  --lobby-avatar-shadow: rgba(0, 7, 28, 0.58);
+  --lobby-panel-shadow: rgba(0, 8, 30, 0.48);
+  --lobby-chip-shadow: rgba(0, 8, 30, 0.38);
+  --lobby-story-divider: rgba(174, 225, 255, 0.16);
+  --lobby-story-border: rgba(174, 225, 255, 0.22);
+  --lobby-story-shadow: 0 14px 34px rgba(0, 8, 30, 0.30);
+  --lobby-inset: rgba(224, 248, 255, 0.12);
+  --lobby-node-active-base: #071831;
+  --lobby-node-border-blend: #d8f7ff;
+  --lobby-active-border: #d8f7ff;
+  --lobby-avatar-border: rgba(223, 247, 255, 0.82);
+  --lobby-avatar-base: rgba(6, 15, 34, 0.92);
+  --lobby-avatar-sheen: rgba(218, 247, 255, 0.14);
+  --lobby-label-shadow: rgba(0, 10, 35, 0.82);
+  --lobby-cue-bg: rgba(5, 15, 31, 0.84);
+  --lobby-cue-border: rgba(185, 239, 255, 0.34);
+  --lobby-accent-text: color-mix(in srgb, var(--active-accent), #e8f8ff 22%);
+  --lobby-node-accent: color-mix(in srgb, var(--node-accent), #e8f8ff 18%);
+}
+html body.theme-uponthesky .hb-home-lobby .hero-copy {
+  position: relative;
+  isolation: isolate;
+}
+html body.theme-uponthesky .hb-home-lobby .hero-copy::after {
+  content: none;
+}
+html body.theme-uponthesky .hb-home-lobby .hero-home-text,html body.theme-uponthesky .hb-home-lobby .hero-intro,html body.theme-uponthesky .hb-home-lobby .story-heading h2,html body.theme-uponthesky .hb-home-lobby .node-label {
+  color: #f7fbff !important;
+  text-shadow: 0 2px 3px rgba(0, 20, 50, 0.92), 0 4px 14px rgba(0, 24, 58, 0.70) !important;
+}
+html body.theme-uponthesky .hb-home-lobby .eyebrow,html body.theme-uponthesky .hb-home-lobby .story-item > span {
+  text-shadow: 0 1px 1px rgba(0, 28, 58, 0.58), 0 0 5px rgba(255, 255, 255, 0.42);
+}
+html body.theme-uponthesky .hb-home-lobby .panel-kicker,html body.theme-uponthesky .hb-home-lobby .floating-chip svg {
+  filter: drop-shadow(0 1px 1px rgba(0, 28, 58, 0.46));
+}
+html body.theme-uponthesky .hb-home-lobby .hero-copy h1 {
+  filter: drop-shadow(0 2px 2px rgba(0, 20, 50, 0.82)) drop-shadow(0 4px 10px rgba(0, 24, 58, 0.46));
+}
+html body.theme-uponthesky .hb-home-lobby .hero-action,html body.theme-uponthesky .hb-home-lobby .scene-node,html body.theme-uponthesky .hb-home-lobby .active-panel,html body.theme-uponthesky .hb-home-lobby .floating-chip,html body.theme-uponthesky .hb-home-lobby .story-item {
+  -webkit-backdrop-filter: blur(4px) saturate(112%);
+  backdrop-filter: blur(4px) saturate(112%);
+}
+html body.theme-uponthesky .hb-home-lobby .active-panel strong,html body.theme-uponthesky .hb-home-lobby .active-panel a,html body.theme-uponthesky .hb-home-lobby .story-item h3 {
+  color: #092f49 !important;
+}
+html body.theme-uponthesky .hb-home-lobby .active-panel p,body.theme-uponthesky .hb-home-lobby .floating-chip,html body.theme-uponthesky .hb-home-lobby .story-item p {
+  color: rgba(12, 50, 73, 0.88) !important;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.72);
+}
+html.dark body.theme-uponthesky .hb-home-lobby .active-panel strong,html.dark body.theme-uponthesky .hb-home-lobby .active-panel a,html.dark body.theme-uponthesky .hb-home-lobby .story-item h3 {
+  color: #f2fbff !important;
+  text-shadow: 0 1px 3px rgba(0, 10, 35, 0.72) !important;
+}
+html.dark body.theme-uponthesky .hb-home-lobby .active-panel p,html.dark body.theme-uponthesky .hb-home-lobby .floating-chip,html.dark body.theme-uponthesky .hb-home-lobby .story-item p {
+  color: rgba(218, 238, 250, 0.82) !important;
+  text-shadow: 0 1px 3px rgba(0, 10, 35, 0.64) !important;
+}
+html.dark body.theme-uponthesky .hb-home-lobby .hero-action,html.dark body.theme-uponthesky .hb-home-lobby .scene-node,html.dark body.theme-uponthesky .hb-home-lobby .active-panel,html.dark body.theme-uponthesky .hb-home-lobby .floating-chip,html.dark body.theme-uponthesky .hb-home-lobby .story-item {
+  -webkit-backdrop-filter: blur(12px) saturate(118%);
+  backdrop-filter: blur(12px) saturate(118%);
+}
+html body.theme-uponthesky .VPNavBar.top {
+  background: linear-gradient(180deg, rgba(3, 38, 84, 0.38) 0%, rgba(3, 38, 84, 0.18) 68%, transparent 100%) !important;
+  -webkit-backdrop-filter: blur(4px) saturate(110%) !important;
+  backdrop-filter: blur(4px) saturate(110%) !important;
+}
+html body.theme-uponthesky #app .VPNav {
+  --hb-nav-hover-color: #42dff2;
+  --hb-mobile-nav-control-hover: #42dff2;
+}
+html body.theme-uponthesky .VPNavBar.top .VPNavBarTitle .title,html body.theme-uponthesky .VPNavBar.top .VPNavBarTitle .title *,html body.theme-uponthesky .VPNavBar.top .VPNavBarMenuLink,html body.theme-uponthesky .VPNavBar.top .VPNavBarMenuGroup > .button,html body.theme-uponthesky .VPNavBar.top .VPNavBarMenuGroup > .button .text,html body.theme-uponthesky .VPNavBar.top .VPNavBarMenuGroup > .button .text *,html body.theme-uponthesky .VPNavBar.top .VPNavBarTranslations > .button,html body.theme-uponthesky .VPNavBar.top .VPNavBarTranslations > .button .text,html body.theme-uponthesky .VPNavBar.top .VPNavBarTranslations > .button .text *,html body.theme-uponthesky .VPNavBar.top .VPSocialLink,html body.theme-uponthesky .VPNavBar.top .VPNavBarSearchButton,html body.theme-uponthesky .VPNavBar.top .VPNavBarSearchButton * {
+  color: rgba(248, 252, 255, 0.98) !important;
+  text-shadow: 0 2px 7px rgba(1, 12, 28, 0.76) !important;
+}
+html body.theme-uponthesky .VPNavBar.top .VPNavBarTitle .title:is(:hover, :focus-visible),html body.theme-uponthesky .VPNavBar.top .VPNavBarTitle .title:is(:hover, :focus-visible) *,html body.theme-uponthesky .VPNavBar.top .VPNavBarSearchButton:is(:hover, :focus-visible),html body.theme-uponthesky .VPNavBar.top .VPNavBarSearchButton:is(:hover, :focus-visible) * {
+  color: var(--hb-mobile-nav-control-hover, #42dff2) !important;
+  text-shadow: none !important;
+}
+html body.theme-uponthesky .VPNavBar.top .VPNavBarSearchButton {
+  border-color: rgba(232, 248, 255, 0.34) !important;
+  background: rgba(4, 29, 66, 0.66) !important;
+}
+
+/* Keep the mobile hamburger in the same light-on-blue navigation palette. */
+html body.theme-uponthesky .VPNavBar.top .VPNavBarHamburger .top,html body.theme-uponthesky .VPNavBar.top .VPNavBarHamburger .middle,html body.theme-uponthesky .VPNavBar.top .VPNavBarHamburger .bottom {
+  background-color: rgba(248, 252, 255, 0.98) !important;
+}
+html body.theme-uponthesky .VPNavBar.top .VPNavBarHamburger:is(:hover, :focus-visible) .top,html body.theme-uponthesky .VPNavBar.top .VPNavBarHamburger:is(:hover, :focus-visible) .middle,html body.theme-uponthesky .VPNavBar.top .VPNavBarHamburger:is(:hover, :focus-visible) .bottom {
+  background-color: var(--hb-mobile-nav-control-hover, #42dff2) !important;
+}
+
+/* In dark mode match the hamburger bars to VitePress' softer search-icon
+   control color instead of the brighter default text color. */
+html.dark body.theme-uponthesky .VPNavBar.top .VPNavBarHamburger .top,html.dark body.theme-uponthesky .VPNavBar.top .VPNavBarHamburger .middle,html.dark body.theme-uponthesky .VPNavBar.top .VPNavBarHamburger .bottom {
+  background-color: var(--vp-c-text-2) !important;
+}
+html body.theme-uponthesky .BlogVPFooter .container {
+  padding: 0;
+  color: #123f6a !important;
+  background: transparent !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+html body.theme-uponthesky .BlogVPFooter .footer-line {
+  color: #123f6a !important;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.92), 0 0 8px rgba(255, 255, 255, 0.60) !important;
+}
+html body.theme-uponthesky .BlogVPFooter a {
+  color: #075a9c !important;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.92), 0 0 8px rgba(255, 255, 255, 0.60);
+}
+
+/* Night-sky footer: use a cool light foreground with a deep outline so the
+   copy stays readable when the artwork transitions into bright clouds. */
+html.dark body.theme-uponthesky .BlogVPFooter,html.dark body.theme-uponthesky .BlogVPFooter .footer-line {
+  color: rgba(239, 250, 255, 0.96) !important;
+  text-shadow: 0 1px 2px rgba(0, 18, 48, 0.98), 0 0 8px rgba(0, 20, 56, 0.68) !important;
+}
+html.dark body.theme-uponthesky .BlogVPFooter a {
+  color: #b9f1ff !important;
+  text-shadow: 0 1px 2px rgba(0, 18, 48, 0.98), 0 0 8px rgba(0, 20, 56, 0.72) !important;
+}
+html.dark body.theme-uponthesky .BlogVPFooter a:hover,html.dark body.theme-uponthesky .BlogVPFooter a:focus-visible {
+  color: #ffffff !important;
+}
+html.dark body.theme-uponthesky .BlogVPFooter .footer-location {
+  color: rgba(220, 243, 251, 0.88) !important;
+}
+html.dark body.theme-uponthesky .BlogVPFooter .footer-commit {
+  color: rgba(205, 233, 243, 0.78) !important;
+}
+
+/* The MapleStory landing copy sits directly on Upon the Sky's blue canvas. */
+html body.theme-uponthesky #maplestory-root .maple-hero-title,html body.theme-uponthesky #maplestory-root .maple-empty-state h2 {
+  color: #f8fcff !important;
+  text-shadow: 0 2px 3px rgba(0, 24, 58, 0.88), 0 4px 12px rgba(0, 31, 70, 0.54) !important;
+}
+html body.theme-uponthesky #maplestory-root .maple-hero-subtitle,html body.theme-uponthesky #maplestory-root .maple-empty-state p,html body.theme-uponthesky #maplestory-root .maple-settings-button {
+  color: rgba(247, 252, 255, 0.94) !important;
+  text-shadow: 0 2px 3px rgba(0, 24, 58, 0.82), 0 3px 10px rgba(0, 31, 70, 0.48) !important;
+}
+
+/* Shared light-mode readability contract for every Upon the Sky page. The
+   artwork stays bright, so normal document surfaces use one consistent dark
+   palette and future pages inherit the same tokens automatically. */
+html:not(.dark) body.theme-uponthesky {
+  --vp-c-text-1: #173747 !important;
+  --vp-c-text-2: #365967 !important;
+  --vp-c-text-3: #5b7480 !important;
+  --vp-c-brand-1: #087f94 !important;
+  --vp-c-brand-2: #0e7490 !important;
+  --hb-upon-light-text: #173747;
+  --hb-upon-light-text-strong: #0d3042;
+  --hb-upon-light-text-muted: #365967;
+  --hb-upon-light-border: rgba(36, 94, 112, 0.24);
+  color: var(--hb-upon-light-text);
+}
+html:not(.dark) body.theme-uponthesky .VPDoc .vp-doc {
+  color: var(--hb-upon-light-text);
+}
+
+/* This card sits near the blue canvas rather than inside a normal Markdown
+   reading surface. Give it its own light glass layer so its dark text always
+   has a stable contrast background. */
+html:not(.dark) body.theme-uponthesky #maplestory-root .maple-survey-card {
+  color: var(--hb-upon-light-text) !important;
+  background: linear-gradient(135deg, rgba(248, 252, 255, 0.96), rgba(232, 246, 250, 0.94)) !important;
+  border-color: var(--hb-upon-light-border) !important;
+  box-shadow: 0 16px 36px rgba(18, 64, 91, 0.18) !important;
+}
+html:not(.dark) body.theme-uponthesky #maplestory-root .maple-survey-card h2 {
+  color: var(--hb-upon-light-text-strong) !important;
+  text-shadow: none !important;
+}
+html:not(.dark) body.theme-uponthesky #maplestory-root .maple-survey-description {
+  color: var(--hb-upon-light-text-muted) !important;
+  font-weight: 500;
+  text-shadow: none !important;
+}
+html:not(.dark) body.theme-uponthesky #maplestory-root .maple-survey-eyebrow {
+  color: var(--vp-c-brand-2) !important;
+}
+html:not(.dark) body.theme-uponthesky #maplestory-root .maple-survey-toggle {
+  color: #075a70 !important;
+  background: rgba(8, 127, 148, 0.1) !important;
+  border-color: rgba(8, 127, 148, 0.36) !important;
+}

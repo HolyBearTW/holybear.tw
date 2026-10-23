@@ -3,6 +3,7 @@
 // 添加新主題只需在這個數組中添加一行
 
 export const backgroundThemes = [
+  ['🌇 夕陽天空之城', '🌇 Sunset Sky City', 'sunsetskycity', '🌇'],
   ['✈️ 往天空之城', '✈️ To the Sky City', 'uponthesky', '✈️'],
   ['🏙️ 核心塔', '🏙️ Core Tower', 'coretower', '🏙️'],
   ['⚡ 科技感', '⚡ Tech', 'tech', '⚡'],
@@ -19,14 +20,14 @@ export const backgroundThemes = [
 ] as const
 
 // 預設主題 (使用主題ID)
-export const defaultTheme = 'uponthesky'
+export const defaultTheme = 'sunsetskycity'
 
 // 主題本地存儲鍵名
 export const THEME_STORAGE_KEY = 'vitepress-background-theme'
 
 // 一次性重設舊使用者的背景選擇；更新版本值即可安排下一次遷移。
 const THEME_RESET_VERSION_KEY = 'vitepress-background-theme-reset-version'
-const THEME_RESET_VERSION = 'uponthesky-default-v1'
+const THEME_RESET_VERSION = 'sunset-sky-city-default-v1'
 
 // 主題切換事件名稱
 export const THEME_CHANGE_EVENT = 'theme-change'

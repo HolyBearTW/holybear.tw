@@ -5,8 +5,13 @@ import { defaultTheme, THEME_CHANGE_EVENT, getInitialBackgroundTheme } from './b
 const emit = defineEmits(['sidebar-visibility-change'])
 
 /* --- 音樂清單 --- */
+const SKY_CITY_MUSIC = {
+  src: '/music/MapleStory_UponTheSky.mp3',
+  title: '楓之谷 - 往天空之城'
+}
+
 const originalMusicList = ref([
-  { src: '/music/MapleStory_UponTheSky.mp3', title: '楓之谷 - 往天空之城' },
+  SKY_CITY_MUSIC,
   { src: '/music/MapleStory_SilentProtocol.mp3', title: '楓之谷 - 核心塔' },
   { src: '/music/Zelda/Hyrule_Warriors_Age_of_Imprisonment_OST_-_Main_Theme.mp3', title: '薩爾達無雙：封印戰記 - 主題曲' },
   { src: '/music/Zelda/Hyrule_Warriors_Age_of_Imprisonment_OST_-_Those_Bold_of_Heart.mp3', title: '薩爾達無雙：封印戰記 - 勇敢的心' },
@@ -78,10 +83,8 @@ const PLAYLIST_RESET_VERSION_KEY = 'holybear-bgm-playlist-reset-version'
 const PLAYLIST_RESET_VERSION = 'upon-the-sky-first-v2'
 
 const THEME_MUSIC = {
-  uponthesky: {
-    src: '/music/MapleStory_UponTheSky.mp3',
-    title: '楓之谷 - 往天空之城'
-  },
+  uponthesky: SKY_CITY_MUSIC,
+  sunsetskycity: SKY_CITY_MUSIC,
   coretower: {
     src: '/music/MapleStory_SilentProtocol.mp3',
     title: '楓之谷 - 核心塔'

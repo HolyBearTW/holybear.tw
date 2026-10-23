@@ -272,7 +272,7 @@ const AuthorizedApp: React.FC<{ bypassKey: string }> = ({ bypassKey }) => {
         />
       </div>
 
-      <main className={`maple-result-content relative max-w-[1600px] mx-auto px-6 pb-6 ${data ? 'pt-2 mt-0' : error ? 'pt-6 mt-4' : 'pt-0 mt-0'}`}>
+      <main data-maple-result={data && !loading ? 'true' : undefined} className={`maple-result-content relative max-w-[1600px] mx-auto px-6 pb-6 ${data ? 'pt-2 mt-0' : error ? 'pt-6 mt-4' : 'pt-0 mt-0'}`}>
         <SearchStatus 
           loading={loading}
           isScanningBest={isScanningBest}

@@ -34,6 +34,7 @@ const HyperOS = defineAsyncComponent(() => import('./background/HyperOSTheme.vue
 const HyperOS2 = defineAsyncComponent(() => import('./background/HyperOS2Theme.vue'))
 const CoreTower = defineAsyncComponent(() => import('./background/CoreTowerBackground.vue'))
 const UponTheSky = defineAsyncComponent(() => import('./background/UponTheSkyBackground.vue'))
+const SunsetSkyCity = defineAsyncComponent(() => import('./background/SunsetSkyCityBackground.vue'))
 const Christmas = defineAsyncComponent(() => import('./background/ChristmasBackground.vue'))
 const Halloween = defineAsyncComponent(() => import('./background/HalloweenBackground.vue'))
 const GravityFieldSimulation = defineAsyncComponent(() => import('./background/GravityFieldSimulation.vue'))
@@ -59,6 +60,7 @@ const isConstrainedDevice = ref(
 
 const mobileFallbackBackground = computed(() => {
     const theme = currentBackgroundTheme.value
+    if (theme === 'sunsetskycity') return '#8c6e9e'
     const darkFallbackThemes = new Set(['tech', 'gaming', 'gravityfield', 'slow3dfly', 'coretower', 'uponthesky', 'halloween', 'christmas'])
     const adaptiveThemes = new Set(['animated', 'hyperos', 'hyperos2', 'halo', 'none'])
 
@@ -196,6 +198,9 @@ const updateBodyClass = (theme: string) => {
   // 添加當前主題 class
   if (theme && theme !== 'none' && !isConstrainedDevice.value) {
     document.body.classList.add(`theme-${theme}`)
+    // 夕陽天空之城共用往天空之城的導航列、字色與閱讀表面規則。
+    // 背景元件與選單仍由 currentBackgroundTheme 決定，切換時一併清除這個樣式 class。
+    if (theme === 'sunsetskycity') document.body.classList.add('theme-uponthesky')
   }
 }
 
@@ -733,6 +738,7 @@ onUnmounted(() => {
         <HyperOS2 v-if="!isConstrainedDevice && currentBackgroundTheme === 'hyperos2'" />
         <CoreTower v-if="!isConstrainedDevice && currentBackgroundTheme === 'coretower'" />
         <UponTheSky v-if="currentBackgroundTheme === 'uponthesky'" />
+        <SunsetSkyCity v-if="currentBackgroundTheme === 'sunsetskycity'" />
         <Halloween v-if="!isConstrainedDevice && currentBackgroundTheme === 'halloween'" />
         <GravityFieldSimulation v-if="!isConstrainedDevice && currentBackgroundTheme === 'gravityfield'" />
         <Christmas v-if="!isConstrainedDevice && currentBackgroundTheme === 'christmas'" />
