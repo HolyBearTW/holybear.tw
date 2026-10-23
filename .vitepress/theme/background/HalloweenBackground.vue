@@ -14,6 +14,24 @@ import halloweenPumpkinUrl from './assets/halloween/halloween1.png?url'
 let pumpkinIntervalId = null;
 let mutationObserver = null;
 let navObserver = null;
+let navResizeObserver = null;
+let navOffsetFrame = 0;
+
+function updateBackgroundNavOffset() {
+  navOffsetFrame = 0;
+  const background = document.getElementById('halloween-bg');
+  if (!background) return;
+  const navbar = document.querySelector('.VPNavBar');
+  const bottom = navbar?.getBoundingClientRect().bottom ?? 0;
+  const offset = `${Math.round(Math.max(0, Math.min(window.innerHeight, bottom)))}px`;
+  if (background.style.getPropertyValue('--halloween-nav-offset') !== offset) {
+    background.style.setProperty('--halloween-nav-offset', offset);
+  }
+}
+
+function scheduleBackgroundNavOffset() {
+  if (!navOffsetFrame) navOffsetFrame = window.requestAnimationFrame(updateBackgroundNavOffset);
+}
 
 // Separate edge positions keep the flight paths out of the main reading area.
 // The first four remain visible on phones; tablets show six and desktops eight.
@@ -40,6 +58,7 @@ function handleNavToggle() {
 
 function startHalloween() {
   const background = document.getElementById('halloween-bg');
+  scheduleBackgroundNavOffset();
   // 防呆：已經存在就不再建立
   if (!background || document.getElementById('halloween-bats') || document.getElementById('halloween-pumpkin')) return;
 
@@ -267,6 +286,15 @@ function stopHalloween() {
 onMounted(() => {
   if (typeof document === 'undefined') return;
 
+  updateBackgroundNavOffset();
+  window.addEventListener('scroll', scheduleBackgroundNavOffset, { passive: true });
+  window.addEventListener('resize', scheduleBackgroundNavOffset);
+  const navbar = document.querySelector('.VPNavBar');
+  if (navbar) {
+    navResizeObserver = new ResizeObserver(scheduleBackgroundNavOffset);
+    navResizeObserver.observe(navbar);
+  }
+
   // 啟動或停止，視當前 body class
   if (document.body.classList.contains('theme-halloween')) startHalloween();
 
@@ -287,6 +315,13 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  window.removeEventListener('scroll', scheduleBackgroundNavOffset);
+  window.removeEventListener('resize', scheduleBackgroundNavOffset);
+  if (navOffsetFrame) window.cancelAnimationFrame(navOffsetFrame);
+  if (navResizeObserver) {
+    navResizeObserver.disconnect();
+    navResizeObserver = null;
+  }
   if (mutationObserver) {
     mutationObserver.disconnect();
     mutationObserver = null;
@@ -307,9 +342,17 @@ onUnmounted(() => {
   z-index: -1;
   background-color: #1a1a1a;
   background-image: url('./assets/halloween/halloween-theme-wide-background.webp');
-  background-position: center;
+  background-position: center top;
   background-repeat: no-repeat;
   background-size: cover;
+}
+
+/* Size the artwork to the space below the persistent navigation bar. */
+body.theme-halloween:has(.VPNavBar) .halloween-background {
+  top: var(--halloween-nav-offset, var(--vp-nav-height, 64px)) !important;
+  height: calc(100vh - var(--halloween-nav-offset, var(--vp-nav-height, 64px))) !important;
+  height: calc(100dvh - var(--halloween-nav-offset, var(--vp-nav-height, 64px))) !important;
+  min-height: 0 !important;
 }
 
 .halloween-bat {
