@@ -47,8 +47,8 @@ export default function UpdateLogBoard() {
       )}
 
       {/* 🔹 更新日誌區塊 */}
-      <div className="vp-tip custom-vp-tip p-4 sm:p-6 rounded-lg border-l-4 border-indigo-400 bg-indigo-50/90 text-indigo-900 dark:bg-[#23263a] dark:text-indigo-200 dark:border-indigo-500 shadow-sm transition-all duration-300 w-full max-w-2xl">
-        <div className="font-bold mb-1 text-indigo-700 dark:text-indigo-300 flex justify-between items-center">
+      <div className="maple-update-log-panel vp-tip custom-vp-tip p-4 sm:p-6 rounded-lg border-l-4 border-indigo-400 bg-indigo-50/90 text-indigo-900 dark:bg-[#23263a] dark:text-indigo-200 dark:border-indigo-500 shadow-sm transition-all duration-300 w-full max-w-2xl">
+        <div className="maple-update-log-heading font-bold mb-1 text-indigo-700 dark:text-indigo-300 flex justify-between items-center">
           <span className="font-bold">更新日誌</span>
         </div>
         <ul className="list-disc pl-5 text-sm space-y-1 mt-3 animate-in fade-in slide-in-from-top-1">
@@ -57,7 +57,7 @@ export default function UpdateLogBoard() {
               key={`${item.date}-${(page - 1) * UPDATE_LOGS_PER_PAGE + idx}`}
               className={`update-log-item${item.featured ? ' update-log-item--featured' : ''}`}
             >
-              <span className="font-mono text-xs text-indigo-700 dark:text-indigo-300">{item.date}</span>
+              <span className="maple-update-log-date font-mono text-xs text-indigo-700 dark:text-indigo-300">{item.date}</span>
               {item.featured ? (
                 <>
                   <span className="update-log-featured-label">{item.featuredLabel || '重大更新'}</span>
@@ -70,9 +70,9 @@ export default function UpdateLogBoard() {
             </li>
           ))}
         </ul>
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-indigo-300/30 pt-3 text-xs">
+        <div className="maple-pagination maple-update-log-pagination mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-indigo-300/30 pt-3 text-xs">
           <span>第 {page} / {totalPages} 頁</span>
-          <form onSubmit={goToPage} className="flex flex-wrap items-center gap-2">
+          <form onSubmit={goToPage} className="maple-pagination-controls flex flex-wrap items-center gap-2 text-xs">
             <button
               type="button"
               disabled={page <= 1}
@@ -89,11 +89,11 @@ export default function UpdateLogBoard() {
               max={totalPages}
               value={pageInput}
               onChange={(event) => setPageInput(event.target.value)}
-              className="w-16 rounded border border-indigo-400/50 bg-transparent px-2 py-1 text-center outline-none focus:border-indigo-300"
+              className="maple-pagination-page-input w-16 rounded border border-indigo-400/50 bg-transparent px-2 py-1 text-center outline-none focus:border-indigo-300"
             />
             <button
               type="submit"
-              className="rounded bg-indigo-600 px-2 py-1 font-semibold text-white transition-colors hover:bg-indigo-500"
+              className="maple-pagination-go-button rounded bg-indigo-600 px-2 py-1 font-semibold text-white transition-colors hover:bg-indigo-500"
             >
               前往
             </button>

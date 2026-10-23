@@ -225,7 +225,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
                             </span>
                         </div>
                     )}
-                    <button type="submit" disabled={loading || isScanningBest} className="p-1.5 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    <button type="submit" disabled={loading || isScanningBest} className="maple-search-submit p-1.5 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                         {loading && !isScanningBest ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
                     </button>
                     <div className="w-px h-6 bg-slate-700 mx-1"></div>
@@ -233,7 +233,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
                         type="button" 
                         onClick={startBestSearch}
                         disabled={loading || isScanningBest}
-                        className="p-1.5 hover:bg-indigo-900/50 rounded-lg text-indigo-400 hover:text-indigo-300 transition-colors disabled:opacity-50 group/best relative"
+                        className="maple-search-best p-1.5 hover:bg-indigo-900/50 rounded-lg text-indigo-400 hover:text-indigo-300 transition-colors disabled:opacity-50 group/best relative"
                         title="自動搜尋近七日最高戰力"
                     >
                         {isScanningBest ? <Loader2 className="w-5 h-5 animate-spin" /> : <TrendingUp className="w-5 h-5" />}

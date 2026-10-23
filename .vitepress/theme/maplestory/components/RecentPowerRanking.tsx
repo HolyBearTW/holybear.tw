@@ -252,14 +252,14 @@ const RecentPowerRanking: React.FC<RecentPowerRankingProps> = ({ onSelectCharact
           })}
         </div>
       </div>
-      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-800 pt-4 text-sm text-slate-300">
+      <div className="maple-pagination maple-ranking-pagination mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-800 pt-4 text-sm text-slate-300">
         <span>共 {total.toLocaleString()} 名・第 {page} / {totalPages} 頁</span>
-        <form onSubmit={goToPage} className="flex items-center gap-2">
+        <form onSubmit={goToPage} className="maple-pagination-controls flex flex-wrap items-center gap-2 text-xs">
           <button
             type="button"
             disabled={page <= 1 || loading}
             onClick={() => setPage((current) => Math.max(1, current - 1))}
-            className="rounded border border-slate-700 px-2 py-1 transition-colors hover:border-indigo-400 hover:text-indigo-300 disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded border border-indigo-400/50 px-2 py-1 transition-colors hover:border-indigo-300 disabled:cursor-not-allowed disabled:opacity-40"
           >
             上一頁
           </button>
@@ -271,11 +271,11 @@ const RecentPowerRanking: React.FC<RecentPowerRankingProps> = ({ onSelectCharact
             max={totalPages}
             value={pageInput}
             onChange={(event) => setPageInput(event.target.value)}
-            className="maple-ranking-page-input w-16 rounded border px-2 py-1 text-center outline-none"
+            className="maple-pagination-page-input w-16 rounded border border-indigo-400/50 bg-transparent px-2 py-1 text-center outline-none focus:border-indigo-300"
           />
           <button
             type="submit"
-            className="maple-ranking-go-button rounded bg-indigo-600 px-2 py-1 font-semibold text-white transition-colors hover:bg-indigo-500"
+            className="maple-pagination-go-button rounded bg-indigo-600 px-2 py-1 font-semibold text-white transition-colors hover:bg-indigo-500"
           >
             前往
           </button>
@@ -283,7 +283,7 @@ const RecentPowerRanking: React.FC<RecentPowerRankingProps> = ({ onSelectCharact
             type="button"
             disabled={page >= totalPages || loading}
             onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
-            className="rounded border border-slate-700 px-2 py-1 transition-colors hover:border-indigo-400 hover:text-indigo-300 disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded border border-indigo-400/50 px-2 py-1 transition-colors hover:border-indigo-300 disabled:cursor-not-allowed disabled:opacity-40"
           >
             下一頁
           </button>

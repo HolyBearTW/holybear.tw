@@ -844,7 +844,8 @@ html:not(.dark) #maplestory-root .maple-ranking-panel [class~="text-slate-300"] 
   text-shadow: 0 1px 8px rgba(0, 0, 0, 0.72);
 }
 
-#maplestory-root .maple-ranking-page-input {
+#maplestory-root .maple-ranking-page-input,
+#maplestory-root .maple-pagination-page-input {
   color: #e2e8f0 !important;
   background: transparent !important;
   border-color: rgba(203, 213, 225, 0.46) !important;
@@ -852,7 +853,8 @@ html:not(.dark) #maplestory-root .maple-ranking-panel [class~="text-slate-300"] 
   color-scheme: dark;
 }
 
-#maplestory-root .maple-ranking-page-input:focus {
+#maplestory-root .maple-ranking-page-input:focus,
+#maplestory-root .maple-pagination-page-input:focus {
   border-color: #818cf8 !important;
   box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.18) !important;
 }
@@ -931,14 +933,16 @@ html:not(.dark) #maplestory-root .maple-character-loading-text {
   text-shadow: 0 1px 3px rgba(255, 255, 255, 0.78);
 }
 
-html:not(.dark) #maplestory-root .maple-ranking-page-input {
+html:not(.dark) #maplestory-root .maple-ranking-page-input,
+html:not(.dark) #maplestory-root .maple-pagination-page-input {
   color: #173746 !important;
   background: transparent !important;
   border-color: rgba(36, 94, 112, 0.38) !important;
   color-scheme: light;
 }
 
-html:not(.dark) #maplestory-root .maple-ranking-page-input:focus {
+html:not(.dark) #maplestory-root .maple-ranking-page-input:focus,
+html:not(.dark) #maplestory-root .maple-pagination-page-input:focus {
   border-color: #087f94 !important;
   box-shadow: 0 0 0 2px rgba(8, 127, 148, 0.14) !important;
 }
@@ -1034,7 +1038,7 @@ html:not(.dark) body:has(#maplestory-root) #maplestory-root .custom-vp-tip .font
 
 html:not(.dark) body:has(#maplestory-root) #maplestory-root .custom-vp-tip li,
 html:not(.dark) body:has(#maplestory-root) #maplestory-root .custom-vp-tip form,
-html:not(.dark) body:has(#maplestory-root) #maplestory-root .custom-vp-tip form button {
+html:not(.dark) body:has(#maplestory-root) #maplestory-root .maple-pagination-controls button {
   color: #294b59 !important;
 }
 
@@ -1043,7 +1047,7 @@ html:not(.dark) body:has(#maplestory-root) #maplestory-root .custom-vp-tip .font
   font-weight: 600;
 }
 
-html:not(.dark) body:has(#maplestory-root) #maplestory-root .custom-vp-tip form button[type="submit"] {
+html:not(.dark) body:has(#maplestory-root) #maplestory-root .maple-pagination-controls button[type="submit"] {
   color: #ffffff !important;
   background: #087f94 !important;
 }
@@ -1121,6 +1125,8 @@ html:not(.dark) #maplestory-root .maple-ranking-go-button:hover {
   background: #056f82 !important;
   border-color: #056f82 !important;
 }
+
+
 
 /* 裝備 Tooltip 使用遊戲內的深色視窗素材；淺色網站主題也沿用同一套
    深色模式文字色，避免全站淺色 token 把文字改成低對比的淺色面板配色。 */
@@ -3051,21 +3057,18 @@ html:not(.dark) body.theme-uponthesky #maplestory-root .maple-related-pagination
   border-color: rgba(36, 94, 112, 0.24) !important;
 }
 
-html:not(.dark) body.theme-uponthesky #maplestory-root .maple-ranking-panel > div[class*="border-t"] button:not(.maple-ranking-go-button),
 html:not(.dark) body.theme-uponthesky #maplestory-root .maple-related-pagination button:not(.maple-ranking-go-button) {
   color: #365967 !important;
   background: rgba(255, 255, 255, 0.7) !important;
   border-color: rgba(36, 94, 112, 0.32) !important;
 }
 
-html:not(.dark) body.theme-uponthesky #maplestory-root .maple-ranking-panel > div[class*="border-t"] button:not(.maple-ranking-go-button):hover:not(:disabled),
 html:not(.dark) body.theme-uponthesky #maplestory-root .maple-related-pagination button:not(.maple-ranking-go-button):hover:not(:disabled) {
   color: #075a70 !important;
   background: rgba(214, 241, 246, 0.9) !important;
   border-color: #087f94 !important;
 }
 
-html:not(.dark) body.theme-uponthesky #maplestory-root .maple-ranking-panel > div[class*="border-t"] button:disabled,
 html:not(.dark) body.theme-uponthesky #maplestory-root .maple-related-pagination button:disabled {
   color: #78919b !important;
   background: rgba(225, 237, 241, 0.78) !important;
@@ -3114,20 +3117,20 @@ html.dark body:has(#maplestory-root) #maplestory-root .custom-vp-tip > div[class
   border-color: rgba(141, 243, 255, 0.24) !important;
 }
 
-html.dark body:has(#maplestory-root) #maplestory-root .custom-vp-tip > div[class*="border-t"] button,
-html.dark body:has(#maplestory-root) #maplestory-root .custom-vp-tip > div[class*="border-t"] input {
+html.dark body:has(#maplestory-root) #maplestory-root .maple-pagination-controls button,
+html.dark body:has(#maplestory-root) #maplestory-root .maple-pagination-controls input {
   color: #e8f8fc !important;
   background: rgba(8, 25, 38, 0.62) !important;
   border-color: rgba(141, 243, 255, 0.34) !important;
 }
 
-html.dark body:has(#maplestory-root) #maplestory-root .custom-vp-tip > div[class*="border-t"] button:hover:not(:disabled),
-html.dark body:has(#maplestory-root) #maplestory-root .custom-vp-tip > div[class*="border-t"] input:focus {
+html.dark body:has(#maplestory-root) #maplestory-root .maple-pagination-controls button:hover:not(:disabled),
+html.dark body:has(#maplestory-root) #maplestory-root .maple-pagination-controls input:focus {
   border-color: #8df3ff !important;
   background: rgba(16, 57, 73, 0.82) !important;
 }
 
-html.dark body:has(#maplestory-root) #maplestory-root .custom-vp-tip > div[class*="border-t"] button[type="submit"] {
+html.dark body:has(#maplestory-root) #maplestory-root .maple-pagination-controls button[type="submit"] {
   color: #072532 !important;
   background: #55ddec !important;
   border-color: #8df3ff !important;

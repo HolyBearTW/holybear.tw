@@ -733,3 +733,155 @@ html body.theme-halloween #app .VPDocFooter .pager-link:is(:hover, :focus-visibl
 html body.theme-halloween #app .vote-panel .vote-button--up {
   --vote-accent: #ffad42 !important;
 }
+
+/* Seasonal accents for the analysis UI. Limit these to its site controls;
+   equipment rarity, charts, and exported character cards keep their colors. */
+html.dark body.theme-halloween:has(#maplestory-root) #maplestory-root .maple-update-log-panel,
+html.dark body.theme-halloween:has(#maplestory-root) #maplestory-root .maple-ranking-panel {
+  color: #fff0df !important;
+  border-color: rgba(255, 173, 66, 0.4) !important;
+  background:
+    linear-gradient(135deg, rgba(255, 227, 190, 0.12), transparent 46%),
+    linear-gradient(145deg, rgba(43, 22, 28, 0.62), rgba(67, 32, 26, 0.5)) !important;
+  box-shadow: 0 16px 38px rgba(20, 5, 0, 0.3), inset 0 1px rgba(255, 224, 178, 0.18) !important;
+}
+
+html.dark body.theme-halloween:has(#maplestory-root) #maplestory-root .maple-update-log-panel {
+  border-left-color: #ffad42 !important;
+}
+
+html.dark body.theme-halloween:has(#maplestory-root) #maplestory-root .maple-update-log-panel .maple-update-log-heading,
+html.dark body.theme-halloween:has(#maplestory-root) #maplestory-root .maple-update-log-panel .maple-update-log-heading span,
+html.dark body.theme-halloween:has(#maplestory-root) #maplestory-root .maple-update-log-panel .maple-update-log-date {
+  color: #ffc266 !important;
+  text-shadow: 0 1px 3px rgba(20, 5, 0, 0.9) !important;
+}
+
+html.dark body.theme-halloween:has(#maplestory-root) #maplestory-root .maple-update-log-panel > ul,
+html.dark body.theme-halloween:has(#maplestory-root) #maplestory-root .maple-update-log-panel .update-log-item {
+  color: #fff0df !important;
+  text-shadow: 0 1px 3px rgba(20, 5, 0, 0.8) !important;
+}
+
+html.dark body.theme-halloween:has(#maplestory-root) #maplestory-root .maple-update-log-panel .update-log-item--featured {
+  border-color: rgba(255, 173, 66, 0.44) !important;
+  border-left-color: #ffad42 !important;
+  background: rgba(134, 57, 17, 0.24) !important;
+  box-shadow: inset 0 1px rgba(255, 224, 178, 0.12), 0 8px 18px rgba(20, 5, 0, 0.2) !important;
+}
+
+html.dark body.theme-halloween:has(#maplestory-root) #maplestory-root .maple-update-log-panel .update-log-featured-label,
+html.dark body.theme-halloween:has(#maplestory-root) #maplestory-root .maple-update-log-panel .update-log-featured-title {
+  color: #ffd7a1 !important;
+  border-color: rgba(255, 173, 66, 0.44) !important;
+  background-color: rgba(134, 57, 17, 0.24) !important;
+}
+
+html.dark body.theme-halloween:has(#maplestory-root) #maplestory-root .maple-pagination {
+  color: #fff0df !important;
+  border-color: rgba(255, 173, 66, 0.3) !important;
+}
+
+html.dark body.theme-halloween:has(#maplestory-root) #maplestory-root .maple-pagination-controls :is(button, input) {
+  color: #ffe3c4 !important;
+  background: rgba(43, 22, 24, 0.72) !important;
+  border-color: rgba(255, 173, 66, 0.46) !important;
+}
+
+html.dark body.theme-halloween:has(#maplestory-root) #maplestory-root .maple-pagination-controls button:hover:not(:disabled),
+html.dark body.theme-halloween:has(#maplestory-root) #maplestory-root .maple-pagination-controls input:focus {
+  color: #fff3e0 !important;
+  border-color: #ffb74d !important;
+  background: rgba(134, 57, 17, 0.42) !important;
+}
+
+html.dark body.theme-halloween:has(#maplestory-root) #maplestory-root .maple-pagination-controls .maple-pagination-go-button {
+  color: #291105 !important;
+  background: linear-gradient(135deg, #ff8f00, #ffc266) !important;
+  border-color: #ffb74d !important;
+  text-shadow: none !important;
+}
+
+html.dark body.theme-halloween:has(#maplestory-root) #maplestory-root .maple-pagination-controls .maple-pagination-go-button:hover:not(:disabled) {
+  color: #291105 !important;
+  background: linear-gradient(135deg, #ffad42, #ffd7a1) !important;
+  border-color: #ffc266 !important;
+}
+
+html.dark body.theme-halloween:has(#maplestory-root) #maplestory-root .maple-pagination-controls :focus-visible {
+  outline: 2px solid #ffb74d !important;
+  outline-offset: 2px;
+}
+
+html.dark body.theme-halloween:has(#maplestory-root) #maplestory-root .maple-character-search-input {
+  color: #fff0df !important;
+  border-color: rgba(255, 173, 66, 0.46) !important;
+  background: rgba(43, 22, 28, 0.82) !important;
+}
+
+html.dark body.theme-halloween:has(#maplestory-root) #maplestory-root .maple-character-search-input::placeholder {
+  color: rgba(255, 224, 178, 0.64) !important;
+}
+
+html.dark body.theme-halloween:has(#maplestory-root) #maplestory-root .maple-character-search-input:focus,
+html.dark body.theme-halloween:has(#maplestory-root) #maplestory-root .maple-date-control input:focus {
+  border-color: #ffb74d !important;
+  box-shadow: 0 0 0 2px rgba(255, 152, 0, 0.26) !important;
+}
+
+html.dark body.theme-halloween:has(#maplestory-root) #maplestory-root .maple-search-leading-icon,
+html.dark body.theme-halloween:has(#maplestory-root) #maplestory-root :is(.maple-search-submit, .maple-search-best),
+html.dark body.theme-halloween:has(#maplestory-root) #maplestory-root .maple-search-form [class~='text-indigo-400'] {
+  color: #ffb74d !important;
+}
+
+html.dark body.theme-halloween:has(#maplestory-root) #maplestory-root :is(.maple-search-submit, .maple-search-best):hover:not(:disabled),
+html.dark body.theme-halloween:has(#maplestory-root) #maplestory-root .maple-search-history-panel [class~='group/item']:hover {
+  color: #ffd7a1 !important;
+  background: rgba(255, 109, 0, 0.16) !important;
+}
+
+html.dark body.theme-halloween:has(#maplestory-root) #maplestory-root .maple-search-history-panel {
+  background: rgba(37, 19, 26, 0.95) !important;
+  border-color: rgba(255, 173, 66, 0.44) !important;
+}
+
+html.dark body.theme-halloween:has(#maplestory-root) #maplestory-root .maple-empty-state-icon {
+  color: #ffb74d !important;
+  background: rgba(80, 38, 22, 0.76) !important;
+  border-color: rgba(255, 173, 66, 0.44) !important;
+  box-shadow: inset 0 0 24px rgba(255, 152, 0, 0.12), 0 8px 22px rgba(20, 5, 0, 0.3) !important;
+}
+
+html.dark body.theme-halloween:has(#maplestory-root) #maplestory-root .maple-empty-state :is(h2, p),
+html.dark body.theme-halloween:has(#maplestory-root) #maplestory-root .maple-character-loading-text {
+  color: #fff0df !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95), 0 0 7px rgba(0, 0, 0, 0.7) !important;
+}
+
+html.dark body.theme-halloween:has(#maplestory-root) #maplestory-root .maple-sync-notice {
+  color: #fff0df !important;
+  border-color: rgba(255, 173, 66, 0.46) !important;
+  background: rgba(30, 15, 24, 0.74) !important;
+}
+
+html.dark body.theme-halloween:has(#maplestory-root) #maplestory-root .maple-sync-notice:hover {
+  border-color: #ffc266 !important;
+  background: rgba(57, 27, 26, 0.84) !important;
+}
+
+html.dark body.theme-halloween:has(#maplestory-root) #maplestory-root .maple-sync-notice:focus-visible {
+  outline-color: #ffc266 !important;
+}
+
+html.dark body.theme-halloween:has(#maplestory-root) #maplestory-root .maple-sync-ticker-item p {
+  color: #fff0df !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.95), 0 0 6px rgba(0, 0, 0, 0.9) !important;
+}
+
+html.dark body.theme-halloween:has(#maplestory-root) #maplestory-root .maple-sync-notice strong:not([style]),
+html.dark body.theme-halloween:has(#maplestory-root) #maplestory-root .maple-sync-notice-icon:not([style]) {
+  color: #ffc266 !important;
+  border-color: rgba(255, 173, 66, 0.54) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.95), 0 0 5px rgba(0, 0, 0, 0.8) !important;
+}
