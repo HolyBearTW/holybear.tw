@@ -1744,7 +1744,7 @@ html:not(.dark) .theme-music-prompt-actions .theme-music-accept {
 
 html:not(.dark) .theme-music-setting {
     border-color: rgba(18, 88, 135, 0.16);
-    background: rgba(255, 255, 255, 0.58);
+    background: rgba(255, 255, 255, 0.28);
 }
 
 html:not(.dark) .theme-music-setting strong {
@@ -1883,7 +1883,7 @@ html:not(.dark) .theme-music-setting.enabled strong {
 
 /* ==================== 歌曲資訊 ==================== */
 .music-info {
-  background: rgba(10, 16, 24, 0.12);
+  background: rgba(10, 16, 24, 0.64);
   border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 16px;
     position: absolute;
@@ -1907,20 +1907,8 @@ html:not(.dark) .theme-music-setting.enabled strong {
     transform: translate3d(0, 0, 0);
     backface-visibility: hidden;
     contain: paint;
-    -webkit-backdrop-filter: blur(84px) saturate(170%) contrast(116%) brightness(108%);
-    backdrop-filter: blur(84px) saturate(170%) contrast(116%) brightness(108%);
-  }
-
-  .music-info::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    border-radius: inherit;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(8, 14, 22, 0.22) 28%, rgba(8, 14, 22, 0.3));
-    -webkit-backdrop-filter: blur(84px) saturate(170%) contrast(116%) brightness(108%);
-    backdrop-filter: blur(84px) saturate(170%) contrast(116%) brightness(108%);
-    pointer-events: none;
+    -webkit-backdrop-filter: blur(24px) saturate(125%);
+    backdrop-filter: blur(24px) saturate(125%);
   }
 
   .music-info::after {
@@ -2402,17 +2390,12 @@ html:not(.dark) .theme-music-setting.enabled strong {
 
 .volume-panel, .playlist-panel {
   border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(10, 16, 24, 0.64);
+  -webkit-backdrop-filter: blur(24px) saturate(125%);
+  backdrop-filter: blur(24px) saturate(125%);
 }
 
 /* ==================== 響應式設計 ==================== */
-@media (max-width: 768px) {
-  .music-info,
-  .music-info::before {
-    -webkit-backdrop-filter: blur(24px) saturate(140%) contrast(108%) brightness(104%);
-    backdrop-filter: blur(24px) saturate(140%) contrast(108%) brightness(104%);
-  }
-}
-
 @media (max-width: 480px) {
     .music-container {
         left: 12px;
@@ -2463,19 +2446,11 @@ html:not(.dark) .theme-music-setting.enabled strong {
 }
 
 :global(html:not(.dark) .music-info) {
-  background: rgba(249, 253, 255, 0.76);
+  background: rgba(249, 253, 255, 0.64);
   border-color: rgba(7, 108, 133, 0.2);
   box-shadow: 0 22px 48px rgba(35, 76, 94, 0.18),
               0 0 0 1px rgba(255, 255, 255, 0.72) inset,
               0 0 24px rgba(0, 184, 212, 0.06) inset;
-}
-
-:global(html:not(.dark) .music-info::before) {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(232, 249, 252, 0.7) 42%, rgba(238, 241, 255, 0.76));
-}
-
-:global(html:not(.dark) .music-info::after) {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.18) 40%, transparent);
 }
 
 :global(html:not(.dark) .music-info .title),
@@ -2500,7 +2475,7 @@ html:not(.dark) .theme-music-setting.enabled strong {
 
 :global(html:not(.dark) .volume-panel),
 :global(html:not(.dark) .playlist-panel) {
-  background: rgba(246, 252, 255, 0.9);
+  background: rgba(246, 252, 255, 0.64);
   border-color: rgba(7, 108, 133, 0.22);
   box-shadow: 0 20px 44px rgba(35, 76, 94, 0.2),
               0 0 0 1px rgba(255, 255, 255, 0.72) inset;
@@ -2516,19 +2491,19 @@ html:not(.dark) .theme-music-setting.enabled strong {
 }
 
 :global(html:not(.dark) .playlist-item) {
-  background: rgba(255, 255, 255, 0.54);
+  background: rgba(255, 255, 255, 0.24);
   border-color: rgba(7, 108, 133, 0.14);
   box-shadow: 0 2px 8px rgba(35, 76, 94, 0.08);
 }
 
 :global(html:not(.dark) .playlist-item:hover) {
-  background: rgba(222, 248, 252, 0.84);
+  background: rgba(222, 248, 252, 0.48);
   border-color: rgba(0, 150, 180, 0.42);
   box-shadow: 0 4px 12px rgba(0, 150, 180, 0.14);
 }
 
 :global(html:not(.dark) .playlist-item.active) {
-  background: rgba(213, 245, 250, 0.92);
+  background: rgba(213, 245, 250, 0.48);
   border-color: rgba(0, 150, 180, 0.5);
   border-left-color: var(--vp-c-brand-dark);
   box-shadow: 0 4px 16px rgba(0, 150, 180, 0.16),
