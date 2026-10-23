@@ -125,7 +125,7 @@ export function createSunsetScene(images: SceneImages) {
   }
 
   function viewportLayers(width: number, height: number, ratio: number, scale: number, left: number) {
-    const key = `${width}:${height}:${ratio}`
+    const key = `${width}:${height}:${ratio}:${islandOffsetY}`
     if (key === viewportKey) return
     for (const [name, texture] of textures) {
       if (!name.startsWith('viewport-')) continue
@@ -134,18 +134,19 @@ export function createSunsetScene(images: SceneImages) {
     }
     const paintWorld = (ctx: CanvasRenderingContext2D) => {
       ctx.setTransform(ratio * scale, 0, 0, ratio * scale, left * ratio, 0)
+      ctx.translate(0, islandOffsetY)
     }
     front = bitmap('viewport-front', width * ratio, height * ratio, ctx => {
       paintWorld(ctx)
       ctx.drawImage(images.front, 0, 384, 2560, 1696)
     })
-    const glowLayer = (name: string, flash: boolean) => bitmap(name, width * ratio, Math.min(800 * scale, Math.max(1, height - 384 * scale)) * ratio, ctx => {
+    const glowLayer = (name: string, flash: boolean) => bitmap(name, width * ratio, Math.min(800 * scale, Math.max(1, height - (384 + islandOffsetY) * scale)) * ratio, ctx => {
       paintWorld(ctx)
-      ctx.translate(0, -384)
+      ctx.translate(0, -384 - islandOffsetY)
       ctx.drawImage(images.glow, 0, 384, 2560, 800)
       ctx.globalCompositeOperation = 'destination-in'
       const radius = Math.hypot(1733.12, 1526.4)
-      const mask = ctx.createRadialGradient(lightX + 1.12, 553.6, 0, lightX + 1.12, 553.6, radius)
+      const mask = ctx.createRadialGradient(lightX + 1.12, 553.6 - islandOffsetY, 0, lightX + 1.12, 553.6 - islandOffsetY, radius)
       if (flash) {
         mask.addColorStop(.25, '#000')
         mask.addColorStop(.6, 'rgba(0,0,0,.75)')
@@ -163,7 +164,7 @@ export function createSunsetScene(images: SceneImages) {
     const bandHeight = Math.ceil(399.36 * scale * ratio)
     bandMask = bitmap('viewport-band-mask', width * ratio, bandHeight, ctx => {
       ctx.setTransform(ratio * scale, 0, 0, ratio * scale, left * ratio, 0)
-      ctx.translate(lightX + 1.12, 24.32)
+      ctx.translate(lightX + 1.12, 24.32 - islandOffsetY)
       ctx.scale(1792, 665.6)
       const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, 1)
       gradient.addColorStop(.25, '#000')
@@ -377,7 +378,7 @@ export function createSunsetScene(images: SceneImages) {
       ctx.save()
       ctx.globalAlpha = alpha
       ctx.globalCompositeOperation = 'screen'
-      ;(ctx as SunsetGpuContext).setRadialMask({ x: lightX + 1.12, y: 552.96, rx: 1792, ry: 665.6, stops: [[.25, 1], [1, .5]] })
+      ;(ctx as SunsetGpuContext).setRadialMask({ x: lightX + 1.12, y: 552.96 - islandOffsetY, rx: 1792, ry: 665.6, stops: [[.25, 1], [1, .5]] })
       repeater.draw(ctx, images.cloudRim, 528.64, 399.36, time / 1000, visibleLeft, visibleRight, getCloudRush(time, false))
       ctx.restore()
       return
@@ -393,7 +394,7 @@ export function createSunsetScene(images: SceneImages) {
     bandContext.globalCompositeOperation = 'source-over'
     ctx.save()
     ctx.resetTransform()
-    const y = Math.round(528.64 * scale * ratio)
+    const y = Math.round((528.64 + islandOffsetY) * scale * ratio)
     blendRegion('band-light', ctx, 0, y, bandFrame.width, bandFrame.height, layer => {
       layer.globalAlpha = alpha
       layer.drawImage(bandFrame!, 0, y)
@@ -408,12 +409,12 @@ export function createSunsetScene(images: SceneImages) {
       ctx.globalCompositeOperation = 'screen'
       ctx.globalAlpha = getCloudFlash(time)
       if (ctx.globalAlpha > 0) {
-        ;(ctx as SunsetGpuContext).setRadialMask({ x: lightX + 1.12, y: 553.6, rx: radius, ry: radius, stops: [[.25, 1], [.6, .75], [1, .5]] })
+        ;(ctx as SunsetGpuContext).setRadialMask({ x: lightX + 1.12, y: 553.6 - islandOffsetY, rx: radius, ry: radius, stops: [[.25, 1], [.6, .75], [1, .5]] })
         ctx.drawImage(images.glow, 0, 384, 2560, 800)
       }
       ctx.globalAlpha = getCloudGlow(time)
       if (ctx.globalAlpha > 0) {
-        ;(ctx as SunsetGpuContext).setRadialMask({ x: lightX + 1.12, y: 553.6, rx: radius, ry: radius, stops: [[0, 1], [.22, .4], [.45, 0]] })
+        ;(ctx as SunsetGpuContext).setRadialMask({ x: lightX + 1.12, y: 553.6 - islandOffsetY, rx: radius, ry: radius, stops: [[0, 1], [.22, .4], [.45, 0]] })
         ctx.drawImage(images.glow, 0, 384, 2560, 800)
       }
       ctx.restore()
@@ -642,14 +643,19 @@ export function createSunsetScene(images: SceneImages) {
       ctx.setTransform(ratio * scale, 0, 0, ratio * scale, left * ratio, 0)
       ctx.fillStyle = '#8c6e9e'
       ctx.fillRect(visibleLeft, 0, visibleRight - visibleLeft, height / scale)
-      repeater.draw(ctx, images.sky, -1 / scale, 896, time / 1000, visibleLeft, visibleRight, getCloudRush(time, true))
+      repeater.draw(ctx, images.sky, -1 / scale, 896 + islandOffsetY, time / 1000, visibleLeft, visibleRight, getCloudRush(time, true))
       drawStars(ctx, time)
       drawSun(ctx, time)
       drawBirds(ctx, time)
       if (!mobilePortrait) for (const index of [2, 4]) drawIsland(ctx, index, time)
+      ctx.save()
+      ctx.translate(0, islandOffsetY)
       repeater.draw(ctx, images.clouds, 528.64, 399.36, time / 1000, visibleLeft, visibleRight, getCloudRush(time, false))
       drawBandGlint(ctx, time, ratio, scale, left, visibleLeft, visibleRight)
+      ctx.restore()
       if (!mobilePortrait) for (const index of [0, 1, 3]) drawIsland(ctx, index, time)
+      ctx.save()
+      ctx.translate(0, islandOffsetY)
       if (gpu) ctx.drawImage(images.front, 0, 384, 2560, 1696)
       else {
         ctx.save()
@@ -657,7 +663,8 @@ export function createSunsetScene(images: SceneImages) {
         if (front) ctx.drawImage(front, 0, 0)
         ctx.restore()
       }
-      drawCloudLight(ctx, time, Math.round(384 * scale * ratio))
+      drawCloudLight(ctx, time, Math.round((384 + islandOffsetY) * scale * ratio))
+      ctx.restore()
       if (mobilePortrait) for (const index of [2, 4, 0, 1, 3]) drawIsland(ctx, index, time)
       ctx.save()
       ctx.translate(shipCenterX, 495.68 + islandOffsetY)
