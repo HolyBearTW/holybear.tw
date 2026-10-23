@@ -56,10 +56,15 @@ html:not(.dark) body.theme-coretower .eyebrow {
 /* Halloween 全域主題色彩強制覆蓋 */
 body.theme-halloween {
   --vp-c-brand: #ff9800 !important;
+  --vp-c-brand-1: #ff9800 !important;
+  --vp-c-brand-2: #ffb74d !important;
+  --vp-c-brand-3: #e65100 !important;
+  --vp-c-brand-soft: rgba(255, 152, 0, 0.14) !important;
   --vp-c-brand-light: #ffb74d !important;
   --vp-c-brand-lighter: #ffe0b2 !important;
   --vp-c-brand-dark: #e65100 !important;
   --vp-c-brand-darker: #bf360c !important;
+  --vp-c-brand-dimm: rgba(255, 152, 0, 0.24) !important;
   --vp-c-bg: #1a1a1a !important;
   --vp-c-bg-soft: #222 !important;
   --vp-c-text-1: #ff9800 !important;
@@ -68,8 +73,7 @@ body.theme-halloween {
 
 /* 強制覆蓋 VitePress 導航欄、標題、全站顏色 */
 html body.theme-halloween #app .VPNav,
-html body.theme-halloween #app .VPNavBar,
-html body.theme-halloween #app header {
+html body.theme-halloween #app .VPNavBar {
   /* Apply the semi-transparent background directly to the nav bar */
   background: rgba(34,34,34,0.7) url('./assets/halloween/halloween1.png') repeat-x !important;
   background-size: 90px auto !important;
@@ -77,51 +81,20 @@ html body.theme-halloween #app header {
   color: #ff9800 !important;
 }
 html body.theme-halloween #app .VPNav *,
-html body.theme-halloween #app .VPNavBar *,
-html body.theme-halloween #app header * {
+html body.theme-halloween #app .VPNavBar * {
   color: #ff9800 !important;
-}
-html body.theme-halloween #app .VPNav::before,
-html body.theme-halloween #app .VPNavBar::before,
-html body.theme-halloween #app header::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  /* This pseudo-element is now ONLY for the blur effect */
-  -webkit-backdrop-filter: blur(2px) !important;
-  backdrop-filter: blur(2px) !important;
-  pointer-events: none;
-}
-html body.theme-halloween #app .VPNav > *,
-html body.theme-halloween #app .VPNavBar > *,
-html body.theme-halloween #app header > * {
-  position: relative;
-  z-index: 1;
-}
-
-/* --- Scrolled State --- */
-
-/* 1. Hide the non-scrolled pseudo-elements to prevent conflicts. */
-body.theme-halloween .VPNav.is-scrolled::before,
-body.theme-halloween .VPNav.is-scrolled .VPNavBar::before,
-body.theme-halloween .VPNav.is-scrolled header::before {
-  content: none !important;
-}
-
-/* 2. Apply blur to VitePress's dedicated scrolled-nav background element. */
-body.theme-halloween .VPNav.is-scrolled .VPNavBar-bg {
-  /* Use a semi-transparent background to allow the blur to be visible. */
-  background-color: rgba(34, 34, 34, 0.7) !important;
-  -webkit-backdrop-filter: blur(2px) !important;
-  backdrop-filter: blur(2px) !important;
 }
 body.theme-halloween {
   --vp-c-brand: #ff9800 !important;
+  --vp-c-brand-1: #ff9800 !important;
+  --vp-c-brand-2: #ffb74d !important;
+  --vp-c-brand-3: #e65100 !important;
+  --vp-c-brand-soft: rgba(255, 152, 0, 0.14) !important;
   --vp-c-brand-light: #ffb74d !important;
   --vp-c-brand-lighter: #ffe0b2 !important;
   --vp-c-brand-dark: #e65100 !important;
   --vp-c-brand-darker: #bf360c !important;
+  --vp-c-brand-dimm: rgba(255, 152, 0, 0.24) !important;
   --vp-c-bg: #1a1a1a !important;
   --vp-c-bg-soft: #222 !important;
   --vp-c-text-1: #ff9800 !important;
@@ -135,6 +108,42 @@ body.theme-halloween h5,
 body.theme-halloween h6 {
   color: #ff5722 !important;
   text-shadow: 2px 2px 4px #000 !important;
+}
+
+/* Keep Halloween's orange palette while giving its dark scene the same
+   layered text contrast used by the night version of the Sky City theme. */
+html.dark body.theme-halloween h1,
+html.dark body.theme-halloween h2,
+html.dark body.theme-halloween h3,
+html.dark body.theme-halloween h4,
+html.dark body.theme-halloween h5,
+html.dark body.theme-halloween h6 {
+  text-shadow: 0 2px 3px rgba(0, 20, 50, 0.92), 0 4px 14px rgba(0, 24, 58, 0.70) !important;
+}
+
+html.dark body.theme-halloween .hb-home-lobby .hero-home-text,
+html.dark body.theme-halloween .hb-home-lobby .hero-intro,
+html.dark body.theme-halloween .hb-home-lobby .story-heading h2,
+html.dark body.theme-halloween .hb-home-lobby .node-label {
+  text-shadow: 0 2px 3px rgba(0, 20, 50, 0.92), 0 4px 14px rgba(0, 24, 58, 0.70) !important;
+}
+
+html.dark body.theme-halloween .hb-home-lobby .active-panel strong,
+html.dark body.theme-halloween .hb-home-lobby .active-panel a,
+html.dark body.theme-halloween .hb-home-lobby .story-item h3 {
+  text-shadow: 0 1px 3px rgba(0, 10, 35, 0.72) !important;
+}
+
+html.dark body.theme-halloween .hb-home-lobby .active-panel p,
+html.dark body.theme-halloween .hb-home-lobby .floating-chip,
+html.dark body.theme-halloween .hb-home-lobby .story-item p {
+  text-shadow: 0 1px 3px rgba(0, 10, 35, 0.64) !important;
+}
+
+html.dark body.theme-halloween .BlogVPFooter,
+html.dark body.theme-halloween .BlogVPFooter .footer-line,
+html.dark body.theme-halloween .BlogVPFooter a {
+  text-shadow: 0 1px 2px rgba(0, 18, 48, 0.98), 0 0 8px rgba(0, 20, 56, 0.68) !important;
 }
 
 /* 按鈕：使用站內按鈕變數以與預設主題一致 */
@@ -156,13 +165,90 @@ body.theme-halloween .VPHome .VPButton.brand {
   box-shadow: 0 0 20px rgba(255, 152, 0, 0.25) !important;
 }
 
-/* Change logo and hero image for Halloween theme */
-body.theme-halloween .VPImage.logo {
-  content: url('./assets/halloween/halloween.png');
+/* Preserve the supplied Halloween logo's silhouette without corner clipping. */
+body.theme-halloween .hb-home-lobby .hero-logo {
+  border-radius: 0 !important;
+  object-fit: contain !important;
 }
 
-body.theme-halloween .VPHero .image-container .VPImage {
-  content: url('./assets/halloween/halloween.png');
+body.theme-halloween .hb-home-lobby .hero-logo-card {
+  border-radius: 0 !important;
+  width: min(290px, calc(100vw - 24px)) !important;
+}
+
+body.theme-halloween .hb-home-lobby .hero-logo-card::before {
+  width: 94% !important;
+  height: 94% !important;
+}
+
+/* Keep the technology-island frame and halo, replacing only its character art. */
+body.theme-halloween .hb-home-lobby .avatar-rig {
+  width: min(42%, 350px) !important;
+  min-width: 0 !important;
+}
+
+body.theme-halloween .hb-home-lobby .avatar-frame {
+  overflow: visible !important;
+  aspect-ratio: 1 !important;
+  border: 3px solid rgba(255, 152, 0, 0.9) !important;
+  border-radius: 50% !important;
+  background: radial-gradient(circle, rgba(38, 10, 53, 0.48), rgba(14, 8, 27, 0.84)) !important;
+  box-shadow: 0 0 0 7px rgba(193, 60, 255, 0.22), 0 0 34px rgba(194, 60, 255, 0.42), 0 26px 80px rgba(0, 0, 0, 0.52) !important;
+}
+
+body.theme-halloween .hb-home-lobby .avatar-frame img {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  object-position: center bottom !important;
+  transform: translate3d(calc(var(--mx) * -3px), calc(var(--my) * -2px), 0) scale(0.92) !important;
+}
+
+@media (max-width: 720px) {
+  body.theme-halloween .hb-home-lobby .hero-logo-card {
+    width: clamp(156px, 46vw, 204px) !important;
+  }
+
+  body.theme-halloween .hb-home-lobby .avatar-rig {
+    width: min(62%, 300px) !important;
+  }
+
+  body.theme-halloween .hb-home-lobby .avatar-frame img {
+    transform: scale(0.9) !important;
+  }
+}
+
+body.theme-halloween .VPHero .image-container .VPImage,
+body.theme-halloween .VPHero .image-container img.image-src {
+  content: url('/halloween_logo.png') !important;
+  border-radius: 0 !important;
+  object-fit: contain !important;
+}
+
+html body.theme-halloween #app .VPNavBarTitle .VPImage.logo {
+  content: url('/halloween_logo.png') !important;
+  border-radius: 0 !important;
+  object-fit: contain !important;
+}
+
+/* Keep the two VitePress utility-page hero images compact in this theme only. */
+body.theme-halloween .VPHomeHero {
+  --hb-hero-logo-size: min(264px, calc(100vw - 40px)) !important;
+}
+
+body.theme-halloween .VPHero .image-container .VPImage,
+body.theme-halloween .VPHero .image-container img.image-src {
+  width: min(252px, calc(100vw - 40px)) !important;
+  height: min(252px, calc(100vw - 40px)) !important;
+  max-width: none !important;
+  max-height: none !important;
+  object-fit: contain !important;
+}
+
+body.theme-halloween .VPHero .image-bg {
+  width: 252px !important;
+  height: 252px !important;
 }
 
 /* --- Global Overrides --- */
@@ -209,4 +295,441 @@ body.theme-christmas .VPImage.logo {
 
 body.theme-christmas .VPHero .image-container .VPImage {
   content: url('./assets/christmas/christmas.png');
+}
+
+/* Match the Halloween home lobby: animated gradient eyebrow, white main title. */
+body.theme-halloween .VPHero .name,
+body.theme-halloween .VPHero .name .clip {
+  background-image: linear-gradient(120deg, #fff2bd 0%, #ffc15a 20%, #ff6d00 43%, #c23cff 68%, #75208f 86%, #ffe3a1 100%) !important;
+  background-size: 320% 320% !important;
+  background-clip: text !important;
+  -webkit-background-clip: text !important;
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+  text-shadow: none !important;
+  filter: drop-shadow(0 3px 1px rgba(0, 0, 0, 0.94)) drop-shadow(0 0 8px rgba(255, 109, 0, 0.48)) drop-shadow(0 0 18px rgba(117, 32, 143, 0.5)) !important;
+  animation: halloweenThemeHeroTitleFlow 6.5s ease-in-out infinite alternate !important;
+}
+
+body.theme-halloween .VPHero .text {
+  background: none !important;
+  color: #fff3e6 !important;
+  -webkit-text-fill-color: #fff3e6 !important;
+  text-shadow: 0 2px 2px rgba(0, 0, 0, 0.96), 0 0 12px rgba(117, 32, 143, 0.62) !important;
+  filter: none !important;
+  animation: none !important;
+}
+
+body.theme-halloween .opencc-converter-page > h1 {
+  background-image: linear-gradient(120deg, #fff2bd 0%, #ffc15a 20%, #ff6d00 43%, #c23cff 68%, #75208f 86%, #ffe3a1 100%) !important;
+  background-size: 320% 320% !important;
+  background-repeat: no-repeat !important;
+  background-clip: text !important;
+  -webkit-background-clip: text !important;
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+  text-shadow: none !important;
+  filter: drop-shadow(0 3px 1px rgba(0, 0, 0, 0.94)) drop-shadow(0 0 8px rgba(255, 109, 0, 0.48)) drop-shadow(0 0 18px rgba(117, 32, 143, 0.5)) !important;
+  animation: halloweenThemeHeroTitleFlow 6.5s ease-in-out infinite alternate !important;
+}
+
+body.theme-halloween .VPHero .tagline,
+body.theme-halloween .opencc-converter-page .intro-text {
+  color: #fff3e6 !important;
+  text-shadow: 0 2px 2px rgba(0, 0, 0, 0.96), 0 0 12px rgba(117, 32, 143, 0.62) !important;
+}
+
+body.theme-halloween .VPHero .actions .VPButton {
+  min-height: 46px !important;
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+  border-radius: 8px !important;
+  padding: 11px 16px !important;
+  font-weight: 900 !important;
+  box-shadow: none !important;
+  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease !important;
+}
+
+body.theme-halloween .VPHero .actions .VPButton.brand {
+  border-color: rgba(255, 196, 77, 0.74) !important;
+  background: linear-gradient(135deg, #e65100, #ff9800) !important;
+  color: #2a1000 !important;
+}
+
+body.theme-halloween .VPHero .actions .VPButton.alt {
+  border-color: rgba(255, 152, 0, 0.55) !important;
+  background: rgba(47, 22, 14, 0.74) !important;
+  color: #ffe0b2 !important;
+}
+
+body.theme-halloween .VPHero .actions .VPButton:is(:hover, :focus-visible) {
+  border-color: #ffe0b2 !important;
+  background: linear-gradient(135deg, #ff9800, #ffb74d) !important;
+  color: #281000 !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 24px rgba(255, 109, 0, 0.34) !important;
+}
+
+@keyframes halloweenThemeHeroTitleFlow {
+  0% {
+    background-position: 0% 45%;
+    filter: drop-shadow(0 3px 1px rgba(0, 0, 0, 0.94)) drop-shadow(0 0 7px rgba(255, 109, 0, 0.42)) drop-shadow(0 0 15px rgba(117, 32, 143, 0.4));
+  }
+  52% {
+    background-position: 62% 55%;
+    filter: drop-shadow(0 3px 1px rgba(0, 0, 0, 0.94)) drop-shadow(0 0 11px rgba(255, 109, 0, 0.58)) drop-shadow(0 0 22px rgba(117, 32, 143, 0.58));
+  }
+  100% {
+    background-position: 100% 45%;
+    filter: drop-shadow(0 3px 1px rgba(0, 0, 0, 0.94)) drop-shadow(0 0 8px rgba(255, 196, 77, 0.5)) drop-shadow(0 0 18px rgba(194, 60, 255, 0.5));
+  }
+}
+
+@media (max-width: 720px) {
+  body.theme-halloween .VPHomeHero {
+    --hb-hero-logo-size: clamp(168px, 42vw, 194px) !important;
+  }
+
+  body.theme-halloween .VPHero .image-container .VPImage,
+  body.theme-halloween .VPHero .image-container img.image-src {
+    width: clamp(168px, 42vw, 194px) !important;
+    height: clamp(168px, 42vw, 194px) !important;
+  }
+
+  body.theme-halloween .VPHero .image-bg {
+    width: 194px !important;
+    height: 194px !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.theme-halloween .VPHero .name,
+  body.theme-halloween .opencc-converter-page > h1 {
+    animation: none !important;
+    background-position: 50% 50% !important;
+  }
+}
+
+/* Halloween links use the seasonal orange palette across every site page. */
+body.theme-halloween a:not(.VPButton):not(.hero-action):not(.about-button):not(.new-post-btn):not(.card):not(.post-item-link):not([role='button']) {
+  color: #ffb74d !important;
+  text-decoration-color: rgba(255, 183, 77, 0.68);
+}
+
+body.theme-halloween a:not(.VPButton):not(.hero-action):not(.about-button):not(.new-post-btn):not(.card):not(.post-item-link):not([role='button']):is(:hover, :focus-visible) {
+  color: #ffd180 !important;
+  text-decoration-color: currentColor;
+}
+
+/* Keep the shared player and floating controls in Halloween orange while
+   retaining their dark glass surfaces. These selectors only match Halloween. */
+html body.theme-halloween .music-container {
+  border-color: rgba(255, 152, 0, 0.28) !important;
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.38),
+    0 0 0 1px rgba(255, 152, 0, 0.12) inset,
+    0 0 28px rgba(255, 109, 0, 0.12) !important;
+}
+
+html body.theme-halloween .music-info {
+  border-color: rgba(255, 152, 0, 0.30) !important;
+  background: rgba(48, 25, 24, 0.82) !important;
+  box-shadow: 0 22px 48px rgba(0, 0, 0, 0.34),
+    0 0 0 1px rgba(255, 183, 77, 0.10) inset,
+    0 0 24px rgba(255, 109, 0, 0.10) inset !important;
+}
+
+html body.theme-halloween .music-info .title,
+html body.theme-halloween .playlist-title {
+  color: #ff8a3d !important;
+  text-shadow: 0 1px 3px rgba(35, 8, 2, 0.9), 0 0 10px rgba(255, 87, 34, 0.34) !important;
+}
+
+html body.theme-halloween .time-info,
+html body.theme-halloween .song-title,
+html body.theme-halloween .volume-percentage-display {
+  color: #fff0df !important;
+}
+
+html body.theme-halloween .progress-container,
+html body.theme-halloween .volume-slider-vertical {
+  background: rgba(255, 183, 77, 0.16) !important;
+  box-shadow: 0 0 0 1px rgba(255, 152, 0, 0.22) inset !important;
+}
+
+html body.theme-halloween .progress {
+  background: linear-gradient(90deg, #e65100 0%, #ff6d00 48%, #ffb74d 100%) !important;
+  box-shadow: 0 0 9px rgba(255, 109, 0, 0.56) !important;
+}
+
+html body.theme-halloween .progress::after {
+  background: #fff3e0 !important;
+  border-color: #ff9800 !important;
+  box-shadow: 0 0 9px rgba(255, 152, 0, 0.88), 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+}
+
+html body.theme-halloween .action-btn {
+  color: #ffad42 !important;
+  text-shadow: 0 0 9px rgba(255, 109, 0, 0.38) !important;
+}
+
+html body.theme-halloween .action-btn:hover {
+  color: #ffe0b2 !important;
+  background-color: rgba(255, 109, 0, 0.16) !important;
+  border-color: rgba(255, 183, 77, 0.44) !important;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.28), 0 0 16px rgba(255, 109, 0, 0.20) !important;
+}
+
+html body.theme-halloween .action-btn-big {
+  color: #fff8ed !important;
+  border-color: rgba(255, 210, 140, 0.40) !important;
+  background: linear-gradient(135deg, #e65100 0%, #ff6d00 55%, #ff9800 100%) !important;
+  box-shadow: 0 6px 20px rgba(255, 87, 34, 0.34), 0 0 0 1px rgba(255, 243, 224, 0.16) inset !important;
+}
+
+html body.theme-halloween .action-btn-big:hover {
+  color: #fff !important;
+  background: linear-gradient(135deg, #ff6d00 0%, #ff9800 100%) !important;
+  box-shadow: 0 8px 24px rgba(255, 87, 34, 0.48), 0 0 0 1px rgba(255, 243, 224, 0.24) inset !important;
+}
+
+html body.theme-halloween .volume-panel,
+html body.theme-halloween .playlist-panel {
+  border-color: rgba(255, 152, 0, 0.34) !important;
+  background-color: rgba(40, 22, 23, 0.82) !important;
+  box-shadow: 0 20px 42px rgba(0, 0, 0, 0.42),
+    0 0 0 1px rgba(255, 152, 0, 0.12) inset,
+    0 0 24px rgba(255, 109, 0, 0.12) !important;
+}
+
+html body.theme-halloween .volume-slider-vertical::-webkit-slider-thumb {
+  border-color: #fff0df !important;
+  background: linear-gradient(135deg, #ffb74d, #e65100) !important;
+  box-shadow: 0 3px 10px rgba(255, 109, 0, 0.48) !important;
+}
+
+html body.theme-halloween .volume-slider-vertical::-moz-range-thumb {
+  border-color: #fff0df !important;
+  background: linear-gradient(135deg, #ffb74d, #e65100) !important;
+  box-shadow: 0 3px 10px rgba(255, 109, 0, 0.48) !important;
+}
+
+html body.theme-halloween .playlist-item {
+  border-color: rgba(255, 152, 0, 0.18) !important;
+  box-shadow: 0 2px 8px rgba(255, 109, 0, 0.08) !important;
+}
+
+html body.theme-halloween .playlist-item:hover,
+html body.theme-halloween .playlist-item.active {
+  background: rgba(255, 109, 0, 0.15) !important;
+  border-color: rgba(255, 183, 77, 0.70) !important;
+  box-shadow: 0 4px 16px rgba(255, 109, 0, 0.20), 0 0 0 1px rgba(255, 243, 224, 0.12) inset !important;
+}
+
+html body.theme-halloween .playlist-item.active {
+  border-left: 3px solid #ff9800 !important;
+}
+
+html body.theme-halloween .song-number,
+html body.theme-halloween .playing-icon,
+html body.theme-halloween .theme-music-setting.enabled strong {
+  color: #ffad42 !important;
+}
+
+html body.theme-halloween .theme-music-setting,
+html body.theme-halloween .theme-music-setting.enabled {
+  border-color: rgba(255, 152, 0, 0.34) !important;
+  background: rgba(255, 109, 0, 0.12) !important;
+}
+
+html body.theme-halloween .playlist-items::-webkit-scrollbar-thumb {
+  background: rgba(255, 183, 77, 0.62) !important;
+}
+
+html body.theme-halloween .playlist-items::-webkit-scrollbar-thumb:hover {
+  background: #ffcc80 !important;
+}
+
+html body.theme-halloween .sidebar-toggle,
+html body.theme-halloween .global-scroll-cue {
+  border-color: rgba(255, 152, 0, 0.54) !important;
+  background: rgba(40, 22, 23, 0.88) !important;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.34),
+    0 0 18px rgba(255, 109, 0, 0.18),
+    inset 0 0 0 1px rgba(255, 183, 77, 0.12) !important;
+}
+
+html body.theme-halloween .sidebar-toggle::before,
+html body.theme-halloween .global-scroll-cue::before {
+  background: radial-gradient(circle at 50% 50%, rgba(255, 152, 0, 0.20) 0, rgba(255, 109, 0, 0.10) 42%, rgba(117, 32, 143, 0.08) 68%, transparent 82%) !important;
+}
+
+html body.theme-halloween .sidebar-toggle:hover,
+html body.theme-halloween .global-scroll-cue:hover {
+  border-color: #ffb74d !important;
+  background: rgba(60, 29, 23, 0.96) !important;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.40),
+    0 0 24px rgba(255, 109, 0, 0.30),
+    inset 0 0 0 1px rgba(255, 183, 77, 0.18) !important;
+}
+
+html body.theme-halloween .sidebar-icon,
+html body.theme-halloween .global-scroll-cue svg {
+  color: #ffad42 !important;
+  text-shadow: 0 0 10px rgba(255, 109, 0, 0.50) !important;
+}
+
+html body.theme-halloween .sidebar-toggle:hover .sidebar-icon,
+html body.theme-halloween .global-scroll-cue:hover svg {
+  color: #ffe0b2 !important;
+}
+
+html body.theme-halloween .title-toast {
+  box-shadow: 0 8px 24px rgba(255, 87, 34, 0.34) !important;
+}
+
+/* One full-width seasonal glass layer at the top and after scrolling.
+   Article layouts otherwise constrain ::before to the sidebar width, while
+   home/mobile resets give it zero height. Override both dimensions here. */
+html body:is(.theme-halloween, .theme-christmas) #app .VPNav .VPNavBar {
+  --vp-nav-col-offset: 0px !important;
+}
+
+/* Christmas uses the strip's glass layer too, rather than a second,
+   stronger filter inherited from ordinary scrolled navigation. */
+html body.theme-christmas #app .VPNav,
+html body.theme-christmas #app .VPNav .VPNavBar {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+html body:is(.theme-halloween, .theme-christmas) #app .VPNav .VPNavBar::before {
+  display: block !important;
+  content: '' !important;
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  z-index: 0 !important;
+  border: 0 !important;
+  background: rgba(5, 9, 12, 0.22) !important;
+  box-shadow: none !important;
+  -webkit-backdrop-filter: blur(2px) !important;
+  backdrop-filter: blur(2px) !important;
+  pointer-events: none !important;
+}
+
+html body:is(.theme-halloween, .theme-christmas) #app .VPNav .VPNavBar > .wrapper {
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+/* Disable the ordinary layout's extra background/side-column overlays. */
+html body:is(.theme-halloween, .theme-christmas) #app .VPNav::before,
+html body:is(.theme-halloween, .theme-christmas) #app .VPNav::after,
+html body:is(.theme-halloween, .theme-christmas) #app .VPNav .VPNavBar::after {
+  display: none !important;
+  content: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+/* Fuwari blog accents follow the Halloween palette without changing the
+   shared blog stylesheet or any other theme. */
+html body.theme-halloween .fuwari-blog {
+  --fuwari-primary: #ff9a45;
+  --fuwari-accent-surface: #e76616;
+  --fuwari-on-accent: #2b1307;
+  --fuwari-soft: rgba(255, 124, 38, 0.16);
+  --fuwari-card-border: rgba(255, 152, 0, 0.19);
+}
+
+html body.theme-halloween .fuwari-blog .fuwari-weather__location svg {
+  color: #ff8a3d !important;
+}
+
+html body.theme-halloween .fuwari-blog .fuwari-calendar__weekdays span:first-child,
+html body.theme-halloween .fuwari-blog .fuwari-calendar__grid > button.is-sunday:not(.is-today) {
+  color: #ff9b73;
+}
+
+html body.theme-halloween .fuwari-blog .fuwari-calendar__weekdays span:last-child,
+html body.theme-halloween .fuwari-blog .fuwari-calendar__grid > button.is-saturday:not(.is-today) {
+  color: #ffc266;
+}
+
+html body.theme-halloween .fuwari-blog .fuwari-calendar__grid > button.is-today {
+  color: #2b1307;
+  background: linear-gradient(135deg, #e76616, #ffb74d);
+  box-shadow: 0 0 14px rgba(255, 132, 35, 0.26);
+}
+
+html body.theme-halloween .fuwari-blog .fuwari-toolbar :is(button, select):focus-visible,
+html body.theme-halloween .fuwari-blog .fuwari-search:focus-within {
+  outline: 2px solid rgba(255, 183, 77, 0.82);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(255, 109, 0, 0.15);
+}
+
+html body.theme-halloween .fuwari-blog .fuwari-toolbar__clear:hover {
+  color: #ffd180 !important;
+  background: rgba(255, 124, 38, 0.18) !important;
+}
+
+html body.theme-halloween .fuwari-blog .fuwari-post-card:hover {
+  border-color: rgba(255, 183, 77, 0.5);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.28), 0 0 20px rgba(255, 109, 0, 0.11);
+}
+
+/* The docs index is a separate Vue page from the Fuwari blog. Keep its
+   action buttons, card hover frame, and badges seasonal as well. */
+html body.theme-halloween.blog-index-page .blog-header-actions .new-post-btn {
+  border: 1px solid rgba(255, 183, 77, 0.66) !important;
+  background: linear-gradient(135deg, #e65100, #ff9800) !important;
+  color: #2b1307 !important;
+  box-shadow: 0 3px 12px rgba(255, 109, 0, 0.24), inset 0 1px 0 rgba(255, 224, 178, 0.24) !important;
+}
+
+html body.theme-halloween.blog-index-page .blog-header-actions .new-post-btn:is(:hover, :focus-visible) {
+  border-color: #ffe0b2 !important;
+  background: linear-gradient(135deg, #ff8f00, #ffc266) !important;
+  color: #281000 !important;
+  box-shadow: 0 6px 18px rgba(255, 109, 0, 0.38), inset 0 1px 0 rgba(255, 243, 224, 0.38) !important;
+  transform: translateY(-1px);
+}
+
+html body.theme-halloween.blog-index-page .cards > .card:is(:hover, .animation-complete:hover) {
+  border-color: #ffb74d !important;
+  box-shadow: 0 8px 26px rgba(255, 109, 0, 0.26), 0 4px 12px rgba(0, 0, 0, 0.34) !important;
+}
+
+html body.theme-halloween.blog-index-page .cards > .card:is(:hover, .animation-complete:hover) .title {
+  color: #ffb74d !important;
+}
+
+html body.theme-halloween.blog-index-page .cards .badges .badge.category,
+html body.theme-halloween.blog-index-page .blog-articles-grid .category,
+html body.theme-halloween #app .blog-post-meta-row .category {
+  border: 1px solid rgba(255, 183, 77, 0.78) !important;
+  background: rgba(181, 73, 9, 0.38) !important;
+  color: #ffd7a1 !important;
+}
+
+html body.theme-halloween.blog-index-page .cards .badges .badge.tag,
+html body.theme-halloween.blog-index-page .blog-articles-grid .badge.tag,
+html body.theme-halloween #app .blog-post-meta-row .tags {
+  border: 1px solid rgba(255, 152, 0, 0.48) !important;
+  background: rgba(68, 39, 25, 0.86) !important;
+  color: #ffc266 !important;
+}
+
+html body.theme-halloween #app .VPDocFooter .pager-link .title {
+  color: #ffb74d !important;
+}
+
+html body.theme-halloween #app .VPDocFooter .pager-link:is(:hover, :focus-visible) {
+  border-color: #ffb74d !important;
+  box-shadow: 0 2px 16px rgba(255, 109, 0, 0.22), 0 2px 12px rgba(0, 0, 0, 0.16) !important;
+}
+
+html body.theme-halloween #app .vote-panel .vote-button--up {
+  --vote-accent: #ffad42 !important;
 }

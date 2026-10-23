@@ -10,8 +10,7 @@ import halloweenPumpkinUrl from './assets/halloween/halloween1.png?url'
 // 萬聖節主題背景元件
 // 注意：不要在模組載入時就寫入 root 變數，會導致其他主題被覆蓋
 
-// 儲存 interval ids 以便清理
-let batIntervalIds = [];
+// 儲存南瓜動畫 interval，以便清理
 let pumpkinIntervalId = null;
 let mutationObserver = null;
 let navObserver = null;
@@ -85,24 +84,37 @@ function startHalloween() {
   batContainer.style.contain = 'paint';
 
   for (let i = 0; i < 12; i++) {
-    const bat = document.createElement('img');
-    bat.src = halloweenBatUrl;
-    bat.style.position = 'absolute';
-    bat.style.left = '0';
-    bat.style.top = '0';
-    bat.style.translate = `${Math.random()*100}vw ${Math.random()*100}vh`;
-    bat.style.width = '48px';
-    bat.style.height = 'auto';
-    bat.style.opacity = '0.7';
-    bat.style.transition = 'transform 1.2s, translate 3s';
-    bat.style.willChange = 'transform, translate';
-    batContainer.appendChild(bat);
+    const bat = document.createElement('div');
+    bat.className = 'halloween-bat';
+    bat.style.left = `${Math.random() * 92}vw`;
+    bat.style.top = `${Math.random() * 88}vh`;
+    bat.style.setProperty('--bat-drift-x', `${Math.random() * 64 - 32}px`);
+    bat.style.setProperty('--bat-drift-y', `${Math.random() * 42 - 21}px`);
+    bat.style.setProperty('--bat-flight-duration', `${7 + Math.random() * 5}s`);
+    bat.style.setProperty('--bat-flap-duration', `${0.44 + Math.random() * 0.2}s`);
+    bat.style.setProperty('--bat-flight-delay', `${Math.random() * -8}s`);
+    bat.style.setProperty('--bat-flap-delay', `${Math.random() * -0.8}s`);
 
-    const id = setInterval(()=>{
-      bat.style.translate = `${Math.random()*100}vw ${Math.random()*100}vh`;
-      bat.style.transform = `translateY(${Math.random()*40-20}px) rotate(${Math.random()*40-20}deg)`;
-    }, 2000 + Math.random()*1500);
-    batIntervalIds.push(id);
+    const leftWing = document.createElement('img');
+    leftWing.src = halloweenBatUrl;
+    leftWing.className = 'halloween-bat-wing halloween-bat-wing-left';
+    leftWing.alt = '';
+    leftWing.setAttribute('aria-hidden', 'true');
+
+    const rightWing = document.createElement('img');
+    rightWing.src = halloweenBatUrl;
+    rightWing.className = 'halloween-bat-wing halloween-bat-wing-right';
+    rightWing.alt = '';
+    rightWing.setAttribute('aria-hidden', 'true');
+
+    const body = document.createElement('img');
+    body.src = halloweenBatUrl;
+    body.className = 'halloween-bat-body';
+    body.alt = '';
+    body.setAttribute('aria-hidden', 'true');
+
+    bat.append(leftWing, rightWing, body);
+    batContainer.appendChild(bat);
   }
   document.body.appendChild(batContainer);
 
@@ -168,8 +180,6 @@ function stopHalloween() {
   const oldPumpkin = document.getElementById('halloween-pumpkin');
   if (oldPumpkin) oldPumpkin.remove();
 
-  batIntervalIds.forEach(id => clearInterval(id));
-  batIntervalIds = [];
   if (pumpkinIntervalId) {
     clearInterval(pumpkinIntervalId);
     pumpkinIntervalId = null;
@@ -272,6 +282,87 @@ onUnmounted(() => {
   position: fixed;
   inset: 0;
   z-index: -1;
-  background: #1a1a1a url('./assets/halloween/halloween2.png') repeat;
+  background-color: #1a1a1a;
+  background-image: url('./assets/halloween/halloween-theme-wide-background.webp');
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.halloween-bat {
+  position: absolute;
+  display: block;
+  width: 48px;
+  aspect-ratio: 1;
+  opacity: 0.72;
+  transform: translate3d(0, 0, 0);
+  animation: halloween-bat-flight var(--bat-flight-duration, 9s) ease-in-out var(--bat-flight-delay, 0s) infinite alternate;
+  will-change: transform;
+}
+
+.halloween-bat-wing,
+.halloween-bat-body {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.halloween-bat-wing {
+  z-index: 1;
+  transform-box: border-box;
+  will-change: transform;
+}
+
+.halloween-bat-wing-left {
+  clip-path: inset(0 50% 0 0);
+  /* The source sprite is a single bat: hinge the left wing at its shoulder. */
+  transform-origin: 40% 44%;
+  animation: halloween-bat-left-flap var(--bat-flap-duration, 0.54s) ease-in-out var(--bat-flap-delay, 0s) infinite alternate;
+}
+
+.halloween-bat-wing-right {
+  clip-path: inset(0 0 0 50%);
+  transform-origin: 60% 44%;
+  animation: halloween-bat-right-flap var(--bat-flap-duration, 0.54s) ease-in-out var(--bat-flap-delay, 0s) infinite alternate;
+}
+
+.halloween-bat-body {
+  z-index: 2;
+  /* Keep the head, shoulders, and wing roots stationary over the moving halves. */
+  clip-path: inset(33% 34% 10% 34%);
+}
+
+@keyframes halloween-bat-left-flap {
+  from { transform: rotate(12deg); }
+  to { transform: rotate(-17deg); }
+}
+
+@keyframes halloween-bat-right-flap {
+  from { transform: rotate(-12deg); }
+  to { transform: rotate(17deg); }
+}
+
+@keyframes halloween-bat-flight {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(-2deg); }
+  50% { transform: translate3d(var(--bat-drift-x), var(--bat-drift-y), 0) rotate(3deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .halloween-bat,
+  .halloween-bat-wing-left,
+  .halloween-bat-wing-right {
+    animation: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .halloween-background {
+    background-image: url('./assets/halloween/halloween-theme-mobile-background.webp');
+    background-position: center top;
+  }
 }
 </style>

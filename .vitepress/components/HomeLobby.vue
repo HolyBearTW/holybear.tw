@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { withBase } from 'vitepress'
 import {
   BookOpen,
   Code2,
@@ -14,6 +15,10 @@ import {
 } from 'lucide-vue-next'
 import homeLogoUrl from '../theme/assets/animations/logo.webp?url'
 import homeAvatarUrl from '../theme/assets/images/holybear-800.webp?url'
+import halloweenTechIslandAvatarUrl from '../theme/background/assets/halloween/halloween-tech-island-character.png?url'
+import { THEME_CHANGE_EVENT, THEME_STORAGE_KEY } from '../theme/background/themes'
+
+const halloweenHeroLogoUrl = withBase('/halloween_logo.png')
 
 const units = [
   {
@@ -115,6 +120,16 @@ const storyItems = [
 
 const heroRef = ref<HTMLElement | null>(null)
 const activeIndex = ref(0)
+const isHalloweenSelected = () => {
+  if (typeof document === 'undefined') return false
+  if (document.body.classList.contains('theme-halloween') || document.documentElement.dataset.backgroundTheme === 'halloween') return true
+  try {
+    return window.localStorage.getItem(THEME_STORAGE_KEY) === 'halloween'
+  } catch {
+    return false
+  }
+}
+const isHalloweenTheme = ref(isHalloweenSelected())
 const pointer = ref({ x: 0, y: 0, sx: 50, sy: 50 })
 const isAutoRotationPaused = ref(false)
 const viewportWidth = ref(1440)
@@ -133,6 +148,10 @@ let pointerBounds: DOMRect | null = null
 let pendingPointer: { clientX: number; clientY: number } | null = null
 let pointerFrameHandle: number | undefined
 let pointerFrameCount = 0
+
+const updateSeasonalAvatar = (event: Event) => {
+  isHalloweenTheme.value = (event as CustomEvent<{ theme?: string }>).detail?.theme === 'halloween'
+}
 
 const activeUnit = computed(() => units[activeIndex.value])
 
@@ -287,6 +306,9 @@ const getUnitStyle = (unit: typeof units[number], index: number) => ({
 })
 
 onMounted(() => {
+  isHalloweenTheme.value = isHalloweenSelected()
+  window.addEventListener(THEME_CHANGE_EVENT, updateSeasonalAvatar)
+
   syncViewportWidth()
   window.addEventListener('resize', syncViewportWidth, { passive: true })
 
@@ -309,6 +331,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   if (rotateTimer) window.clearInterval(rotateTimer)
+  window.removeEventListener(THEME_CHANGE_EVENT, updateSeasonalAvatar)
   cancelPointerFrame()
   if (staticTouchMediaQuery && staticTouchChangeHandler) {
     if (staticTouchMediaQuery.removeEventListener) {
@@ -337,7 +360,7 @@ onBeforeUnmount(() => {
         <div class="hero-copy">
           <div class="hero-brand-lockup">
             <div class="hero-logo-card">
-              <img :src="homeLogoUrl" alt="HolyBearTW" class="hero-logo no-zoom" decoding="async" fetchpriority="high">
+              <img :src="isHalloweenTheme ? halloweenHeroLogoUrl : homeLogoUrl" alt="HolyBearTW" class="hero-logo no-zoom" decoding="async" fetchpriority="high">
             </div>
           </div>
           <div class="hero-title-group">
@@ -391,7 +414,7 @@ onBeforeUnmount(() => {
           <div class="avatar-rig">
             <div class="avatar-halo" aria-hidden="true"></div>
             <div class="avatar-frame">
-              <img :src="homeAvatarUrl" alt="聖小熊" class="no-zoom" decoding="async" fetchpriority="high">
+              <img :src="isHalloweenTheme ? halloweenTechIslandAvatarUrl : homeAvatarUrl" alt="聖小熊" class="no-zoom" decoding="async" fetchpriority="high">
             </div>
           </div>
 
