@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { createHorizontalRepeater } from './sunsetDrawing'
 
 const props = defineProps<{ reducedMotion: boolean; limited: boolean; touchViewport: boolean }>()
 const emit = defineEmits<{ 'ready-change': [ready: boolean] }>()
@@ -55,6 +56,7 @@ let shipCellWidth = 256
 let shipCellHeight = 243
 let shipLoading: Promise<void> | undefined
 let desktopShipAvailable = true
+const cloudRepeater = createHorizontalRepeater()
 
 function setReady(value: boolean) {
   if (ready.value === value) return
@@ -168,12 +170,7 @@ function prepareLayers() {
 }
 
 function drawTiled(ctx: CanvasRenderingContext2D, image: HTMLImageElement, y: number, imageHeight: number, time: number, visibleLeft: number, visibleRight: number) {
-  const tileWidth = image.naturalWidth * imageHeight / image.naturalHeight
-  const phase = (time * 75.777) % tileWidth
-  const firstTile = Math.floor((visibleLeft + phase) / tileWidth)
-  for (let x = firstTile * tileWidth - phase; x < visibleRight; x += tileWidth) {
-    ctx.drawImage(image, x, y, tileWidth, imageHeight)
-  }
+  cloudRepeater.draw(ctx, image, y, imageHeight, time, visibleLeft, visibleRight)
 }
 
 function drawIsland(ctx: CanvasRenderingContext2D, index: number, time: number, motion: number) {
@@ -301,6 +298,7 @@ function handleContextLost(event: Event) {
 function handleContextRestored() {
   contextLost = false
   layerKey = ''
+  cloudRepeater.reset()
   resize()
   resume()
 }
@@ -345,6 +343,7 @@ onBeforeUnmount(() => {
   if (frontLayer) frontLayer.width = frontLayer.height = 1
   if (sunlightLayer) sunlightLayer.width = sunlightLayer.height = 1
   frontLayer = sunlightLayer = null
+  cloudRepeater.reset()
   context = null
 })
 </script>
