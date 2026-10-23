@@ -54,6 +54,7 @@ const gitCommitUrl = `https://github.com/HolyBearTW/holybear.tw/commit/${gitComm
 // 當前背景主題
 const currentBackgroundTheme = ref(defaultTheme)
 const loadingThemeReady = ref(false)
+let themeStartupFrame = 0
 const disableGlobalLoading = computed(() => (loadingThemeReady.value
     ? currentBackgroundTheme.value
     : typeof document !== 'undefined' ? document.documentElement.dataset.backgroundTheme ?? defaultTheme : defaultTheme
@@ -204,6 +205,7 @@ const updateBodyClass = (theme: string) => {
   // 添加當前主題 class
   if (theme && theme !== 'none' && (!isConstrainedDevice.value || theme === 'sunsetskycity')) {
     document.body.classList.add(`theme-${theme}`)
+    if (theme === 'christmas') document.documentElement.classList.add('dark')
     // 夕陽天空之城共用往天空之城的導航列、字色與閱讀表面規則。
     // 背景元件與選單仍由 currentBackgroundTheme 決定，切換時一併清除這個樣式 class。
     if (theme === 'sunsetskycity') document.body.classList.add('theme-uponthesky')
@@ -306,6 +308,12 @@ onMounted(() => {
     currentBackgroundTheme.value = initialTheme
     updateBodyClass(initialTheme)
     loadingThemeReady.value = true
+    themeStartupFrame = window.requestAnimationFrame(() => {
+        themeStartupFrame = window.requestAnimationFrame(() => {
+            document.documentElement.classList.remove('holy-bear-theme-startup')
+            themeStartupFrame = 0
+        })
+    })
     
     // 監聽主題切換事件
     window.addEventListener(THEME_CHANGE_EVENT, handleThemeChange)
@@ -319,6 +327,8 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (typeof window !== 'undefined') {
+    if (themeStartupFrame) window.cancelAnimationFrame(themeStartupFrame)
+    document.documentElement.classList.remove('holy-bear-theme-startup')
     window.removeEventListener(THEME_CHANGE_EVENT, handleThemeChange)
     window.removeEventListener('scroll', updateScrollTopClass)
     window.removeEventListener('hashchange', scheduleBlogHashAlignment)

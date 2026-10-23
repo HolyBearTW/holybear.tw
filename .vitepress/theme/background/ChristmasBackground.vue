@@ -251,43 +251,6 @@ onUnmounted(() => {
 </script>
 
 <style>
-/* --- Global Overrides --- */
-body.theme-christmas {
-  --vp-c-brand: #d93025 !important;
-  --vp-c-brand-light: #e57373 !important;
-  --vp-c-bg: #0a192f !important;
-  --vp-c-text-1: #e6f1ff !important;
-}
-
-/* Header Text Style (Sharper Glow) */
-body.theme-christmas h1,
-body.theme-christmas h2,
-body.theme-christmas h3,
-body.theme-christmas h4,
-body.theme-christmas h5,
-body.theme-christmas h6 {
-  color: #f0c44c !important;
-  text-shadow: 0 0 2px #ffffff, 0 0 8px #f0c44c, 0 0 14px #d93025 !important;
-}
-
-/* Nav Bar background */
-body.theme-christmas .VPNav,
-body.theme-christmas .VPNavBar,
-body.theme-christmas header,
-body.theme-christmas .VPPage .VPNav,
-body.theme-christmas .VPPage .VPNavBar {
-  background: linear-gradient(rgba(18, 18, 18, 0.75), rgba(18, 18, 18, 0.75)), url('./assets/christmas/christmas2.png') repeat-x 0% 0% !important;
-  background-size: auto 60px !important;
-  border-bottom: 2px solid rgb(240, 196, 76) !important;
-}
-
-/* Hide the yellow bottom border on blog pages */
-body.theme-christmas.is-blog-page .VPNav,
-body.theme-christmas.is-blog-page .VPNavBar,
-body.theme-christmas.is-blog-page header {
-  border-bottom: none !important;
-}
-
 /* --- Background Scene --- */
 .christmas-background {
   position: fixed;
@@ -397,13 +360,4 @@ body.theme-christmas.is-blog-page header {
 }
 .tree .tree-layer:nth-child(2) { transform: scale(1.2); }
 .tree .tree-layer:nth-child(3) { transform: scale(1.4); }
-
-/* Change logo and hero image for Christmas theme */
-body.theme-christmas .VPImage.logo {
-  content: url('./assets/christmas/christmas.png');
-}
-
-body.theme-christmas .VPHero .image-container .VPImage {
-  content: url('./assets/christmas/christmas.png');
-}
 </style>

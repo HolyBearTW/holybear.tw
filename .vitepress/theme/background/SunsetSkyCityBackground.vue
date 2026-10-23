@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import SunsetSkyCityCanvas from './SunsetSkyCityCanvas.vue'
-import './sky-theme-appearance.css'
-import './sunset-sky-city.css'
 
 const initialized = ref(false)
 const prefersReducedMotion = ref(false)

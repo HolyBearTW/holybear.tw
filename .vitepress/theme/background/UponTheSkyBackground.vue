@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useData } from 'vitepress'
-import './sky-theme-appearance.css'
 
 interface Point {
   x: number

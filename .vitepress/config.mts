@@ -38,7 +38,16 @@ const optimizedImageUrls: Record<string, string> = (() => {
     }
 })()
 
-const earlyLoadingMarkup = `<div id="holy-bear-boot-frame" class="brand-loading-frame" aria-hidden="true">
+const earlyLoadingMarkup = `<script id="holy-bear-theme-bootstrap">(() => {
+    const root = document.documentElement;
+    const theme = root.dataset.backgroundTheme;
+    root.classList.add('holy-bear-theme-startup');
+    if (theme && theme !== 'none' && (!root.classList.contains('holy-bear-constrained-device') || theme === 'sunsetskycity')) {
+        document.body.classList.add('theme-' + theme);
+        if (theme === 'sunsetskycity') document.body.classList.add('theme-uponthesky');
+        if (theme === 'christmas') root.classList.add('dark');
+    }
+})()</script><div id="holy-bear-boot-frame" class="brand-loading-frame" aria-hidden="true">
     <div class="brand-loading-ball">
         <img class="brand-loading-orb" src="/animations/holy-bear-orb-navbar.webp" decoding="sync" fetchpriority="high" alt="">
     </div>
@@ -56,6 +65,9 @@ const earlyLoadingMarkup = `<div id="holy-bear-boot-frame" class="brand-loading-
 </div>`
 
 const earlyLoadingStyle = `
+    html.holy-bear-theme-startup body * {
+        transition: none !important;
+    }
     @font-face {
         font-family: 'LINESeed';
         src: url('/fonts/LINESeedTW_OTF_Bd.woff2') format('woff2');
