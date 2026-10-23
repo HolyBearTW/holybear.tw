@@ -199,6 +199,23 @@ onBeforeUnmount(() => {
   margin: 0 auto 16px;
 }
 
+/* Keep pending footer ads measurable for AdSense without reserving empty space.
+   A filled slot returns to normal flow, so the footer always follows the ad. */
+#maplestory-root .maple-manual-ad-bottom:not(:has(ins.adsbygoogle[data-ad-status="filled"])) {
+  margin-bottom: 0;
+}
+
+#maplestory-root .maple-manual-ad-bottom .maple-manual-ad {
+  position: relative;
+}
+
+#maplestory-root .maple-manual-ad-bottom .adsense-slot:not(:has(ins.adsbygoogle[data-ad-status="filled"])) {
+  position: absolute;
+  top: 0;
+  inset-inline: 0;
+  pointer-events: none;
+}
+
 #maplestory-root .maple-manual-ad-bottom .maple-container-responsive-ad {
   width: 100%;
 }

@@ -5558,7 +5558,7 @@ html.dark body.is-blog-page .vote-panel .vote-button.active {
 }
 
 html:not(.dark) body .BlogVPFooter a {
-  text-shadow: none !important;
+  text-shadow: inherit !important;
 }
 
 html.dark body .BlogVPFooter a {
