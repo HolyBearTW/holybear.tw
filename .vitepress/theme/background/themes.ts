@@ -26,8 +26,8 @@ export const defaultTheme = 'sunsetskycity'
 export const THEME_STORAGE_KEY = 'vitepress-background-theme'
 
 // 一次性重設舊使用者的背景選擇；更新版本值即可安排下一次遷移。
-const THEME_RESET_VERSION_KEY = 'vitepress-background-theme-reset-version'
-const THEME_RESET_VERSION = 'sunset-sky-city-default-v1'
+export const THEME_RESET_VERSION_KEY = 'vitepress-background-theme-reset-version'
+export const THEME_RESET_VERSION = 'sunset-sky-city-default-v1'
 
 // 主題切換事件名稱
 export const THEME_CHANGE_EVENT = 'theme-change'

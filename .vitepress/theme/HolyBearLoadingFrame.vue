@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { nextTick, onMounted, onUnmounted, ref } from 'vue'
+import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import loadingOrbUrl from './assets/animations/holy-bear-orb-navbar.webp?inline'
 
 const isVisible = ref(true)
+const props = defineProps<{ disabled?: boolean }>()
 const isPopping = ref(false)
 const isLeaving = ref(false)
 const areInitialVisualsReady = ref(false)
@@ -22,16 +23,22 @@ let initialMinimumElapsed = false
 let initialFinishRequested = false
 let initialLoadingFinished = false
 let loadingStartedAt = 0
+let pageScrollLocked = false
 
 function restorePageScroll() {
-  document.body.style.overflow = previousBodyOverflow
-  document.documentElement.style.overflow = previousDocumentOverflow
+  if (pageScrollLocked) {
+    document.body.style.overflow = previousBodyOverflow
+    document.documentElement.style.overflow = previousDocumentOverflow
+    pageScrollLocked = false
+  }
   document.body.classList.remove('holy-bear-loading-active')
   document.documentElement.classList.remove('holy-bear-loading-active')
   window.dispatchEvent(new CustomEvent('holybear-loading-overlay-hidden'))
 }
 
 function lockPageScroll() {
+  if (pageScrollLocked) return
+  pageScrollLocked = true
   previousBodyOverflow = document.body.style.overflow
   previousDocumentOverflow = document.documentElement.style.overflow
   document.body.style.overflow = 'hidden'
@@ -68,6 +75,7 @@ function triggerPageEnter(isRouteNavigation = false) {
 }
 
 function startRouteLoading() {
+  if (props.disabled) return
   clearRouteTimers()
   if (pageEnterTimer) window.clearTimeout(pageEnterTimer)
   pageEnterTimer = undefined
@@ -109,6 +117,10 @@ function handleInternalNavigation(event: MouseEvent) {
 }
 
 function finishRouteLoading() {
+  if (props.disabled) {
+    window.dispatchEvent(new CustomEvent('holybear-loading-complete'))
+    return
+  }
   if (!routeLoadingPending) return
 
   if (!initialLoadingFinished && !initialMinimumElapsed) {
@@ -138,11 +150,35 @@ function finishRouteLoading() {
   }, Math.max(0, minimumVisibleTime - elapsed))
 }
 
+function dismissLoadingFrame() {
+  clearRouteTimers()
+  if (initialMinimumTimer) window.clearTimeout(initialMinimumTimer)
+  if (initialSafetyTimer) window.clearTimeout(initialSafetyTimer)
+  if (initialLoadHandler) window.removeEventListener('load', initialLoadHandler)
+  if (initialPopFrame) window.cancelAnimationFrame(initialPopFrame)
+  if (pageEnterTimer) window.clearTimeout(pageEnterTimer)
+  routeLoadingPending = false
+  initialLoadingFinished = true
+  initialMinimumElapsed = true
+  isVisible.value = false
+  document.getElementById('holy-bear-boot-frame')?.remove()
+  document.documentElement.classList.remove('holy-bear-booting')
+  document.body.classList.remove('holy-bear-page-enter', 'holy-bear-route-enter')
+  restorePageScroll()
+  initialPopFrame = window.requestAnimationFrame(() => {
+    initialPopFrame = undefined
+    window.dispatchEvent(new CustomEvent('holybear-loading-complete'))
+  })
+}
+
+watch(() => props.disabled, disabled => { if (disabled) dismissLoadingFrame() })
+
 onMounted(() => {
-  lockPageScroll()
   document.addEventListener('click', handleInternalNavigation, true)
   window.addEventListener('holybear-route-loading-start', startRouteLoading)
   window.addEventListener('holybear-route-loading-finish', finishRouteLoading)
+  if (props.disabled) { dismissLoadingFrame(); return }
+  lockPageScroll()
 
   // 首次進站不再使用固定時間關閉；內容完成後才退場，慢速裝置不會露出空白頁。
   routeLoadingPending = true

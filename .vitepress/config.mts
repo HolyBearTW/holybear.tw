@@ -9,6 +9,7 @@ import gitMetaPlugin from './git-meta.ts'
 import TelegramRoseBotDocsSidebar from './sidebars/Telegram-Rose-Bot-docs.sidebar.ts'
 import VitepressBlogDocsSidebar from './sidebars/Vitepress-Blog-docs-sidebar.ts'
 import SpoilerComponentDocsSidebar from './sidebars/spoiler-component-docs-sidebar.ts'
+import { defaultTheme, getAllThemeIds, THEME_RESET_VERSION, THEME_RESET_VERSION_KEY, THEME_STORAGE_KEY } from './theme/background/themes'
 import {
     FUNDING_CHOICES_SCRIPT_ID,
     FUNDING_CHOICES_SCRIPT_SRC,
@@ -95,6 +96,26 @@ const earlyLoadingStyle = `
     }
     html.holy-bear-booting #holy-bear-boot-frame {
         display: block;
+    }
+    html.holy-bear-theme-intro #holy-bear-boot-frame,
+    html.holy-bear-theme-intro .brand-loading-frame {
+        display: none !important;
+    }
+    html.holy-bear-theme-intro {
+        --sunset-boot-width: max(100vw, 177.777778vh);
+        --sunset-boot-left: calc((100vw - var(--sunset-boot-width)) / 2);
+        --sunset-intro-poster:
+            url('/themes/sunset-sky-city/intro-cloud-band.webp') repeat-x var(--sunset-boot-left) 74vh / auto 46vh,
+            url('/themes/sunset-sky-city/intro-clouds.webp') repeat-x var(--sunset-boot-left) 44vh / auto 64vh,
+            url('/themes/sunset-sky-city/intro-cloud-band.webp') repeat-x var(--sunset-boot-left) 42vh / auto 22vh,
+            linear-gradient(#565284, #7a6a99 16%, #b88594 32%, #e09a8b 46%, #f9bb80 60%, #fdd98e 80%) no-repeat 0 0 / 100vw 100vh;
+        background: var(--sunset-intro-poster);
+    }
+    html.holy-bear-theme-intro .mobile-flash-guard {
+        background: var(--sunset-intro-poster) !important;
+    }
+    @media (max-aspect-ratio: 1/1) {
+        html.holy-bear-theme-intro { --sunset-boot-left: calc(50vw - var(--sunset-boot-width) * .36); }
     }
     html.dark #holy-bear-boot-frame {
         background:
@@ -290,6 +311,27 @@ const earlyLoadingStyle = `
 
 const earlyLoadingScript = `(() => {
     const root = document.documentElement;
+    const themeBoot = ${JSON.stringify({ defaultTheme, ids: getAllThemeIds(), storageKey: THEME_STORAGE_KEY, resetKey: THEME_RESET_VERSION_KEY, resetVersion: THEME_RESET_VERSION })};
+    let initialTheme = themeBoot.defaultTheme;
+    try {
+        if (localStorage.getItem(themeBoot.resetKey) === themeBoot.resetVersion) {
+            const savedTheme = localStorage.getItem(themeBoot.storageKey);
+            if (themeBoot.ids.includes(savedTheme)) initialTheme = savedTheme;
+        }
+    } catch {}
+    const requestedTheme = window.location.hash.match(/^#theme-([a-z0-9]+)$/)?.[1];
+    if (themeBoot.ids.includes(requestedTheme)) initialTheme = requestedTheme;
+    root.dataset.backgroundTheme = initialTheme;
+    root.classList.toggle('holy-bear-theme-intro', initialTheme === 'sunsetskycity');
+    if (initialTheme === 'sunsetskycity') {
+        for (const file of ['intro-clouds.webp', 'intro-cloud-band.webp']) {
+            const preload = document.createElement('link');
+            preload.rel = 'preload';
+            preload.as = 'image';
+            preload.href = '/themes/sunset-sky-city/' + file;
+            document.head.appendChild(preload);
+        }
+    }
     const isHomeEntry = /^\\/(?:en\\/)?$/.test(window.location.pathname) && !window.location.hash;
 
     // Chrome can restore the previous homepage scroll position after the
@@ -336,7 +378,7 @@ const earlyLoadingScript = `(() => {
             ? prefersDark
             : false;
     root.classList.toggle('dark', shouldUseDark);
-    root.classList.add('holy-bear-booting');
+    root.classList.toggle('holy-bear-booting', initialTheme !== 'sunsetskycity');
 
     const deviceMemory = Number(navigator.deviceMemory || 0);
     const logicalProcessors = Number(navigator.hardwareConcurrency || 0);

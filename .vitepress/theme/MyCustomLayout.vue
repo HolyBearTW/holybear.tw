@@ -53,6 +53,11 @@ const gitCommitUrl = `https://github.com/HolyBearTW/holybear.tw/commit/${gitComm
 
 // 當前背景主題
 const currentBackgroundTheme = ref(defaultTheme)
+const loadingThemeReady = ref(false)
+const disableGlobalLoading = computed(() => (loadingThemeReady.value
+    ? currentBackgroundTheme.value
+    : typeof document !== 'undefined' ? document.documentElement.dataset.backgroundTheme ?? defaultTheme : defaultTheme
+) === 'sunsetskycity')
 const musicSidebarVisible = ref(false)
 const isConstrainedDevice = ref(
     typeof document !== 'undefined' && document.documentElement.classList.contains('holy-bear-constrained-device')
@@ -183,6 +188,7 @@ const handleThemeChange = (event: Event) => {
   // 更新 body class - 檢查 browser 環境避免 SSR 錯誤
 const updateBodyClass = (theme: string) => {
   if (typeof document === 'undefined') return
+    document.documentElement.classList.toggle('holy-bear-theme-intro', theme === 'sunsetskycity')
   
     // 動態獲取並移除所有主題 class
     const allThemeIds = getAllThemeIds()
@@ -299,6 +305,7 @@ onMounted(() => {
     const initialTheme = getInitialBackgroundTheme()
     currentBackgroundTheme.value = initialTheme
     updateBodyClass(initialTheme)
+    loadingThemeReady.value = true
     
     // 監聽主題切換事件
     window.addEventListener(THEME_CHANGE_EVENT, handleThemeChange)
@@ -719,7 +726,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <HolyBearLoadingFrame />
+    <HolyBearLoadingFrame :disabled="disableGlobalLoading" />
     <MigrationNotice :intro-finished="true" />
     <FloatingBgmPlayer @sidebar-visibility-change="musicSidebarVisible = $event" />
     <GlobalScrollCue :visible="musicSidebarVisible" />
