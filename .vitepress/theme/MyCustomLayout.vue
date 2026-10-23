@@ -196,7 +196,7 @@ const updateBodyClass = (theme: string) => {
     document.body.classList.toggle('portfolio-page', !!isPortfolioPage)
   
   // 添加當前主題 class
-  if (theme && theme !== 'none' && !isConstrainedDevice.value) {
+  if (theme && theme !== 'none' && (!isConstrainedDevice.value || theme === 'sunsetskycity')) {
     document.body.classList.add(`theme-${theme}`)
     // 夕陽天空之城共用往天空之城的導航列、字色與閱讀表面規則。
     // 背景元件與選單仍由 currentBackgroundTheme 決定，切換時一併清除這個樣式 class。
