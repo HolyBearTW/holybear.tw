@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { createHorizontalRepeater } from './sunsetDrawing'
+import { createHorizontalRepeater, getShipEntrance, getSmokeProgress } from './sunsetDrawing'
 
 const props = defineProps<{ reducedMotion: boolean; limited: boolean; touchViewport: boolean }>()
 const emit = defineEmits<{ 'ready-change': [ready: boolean] }>()
@@ -15,7 +15,10 @@ const files = {
   islands: 'sky-islands-D4wZQwGL.webp',
   islandRim: 'sky-islands-rim-CGOhUdzF.webp',
   birds: 'bird-flap-lzCQ1_H5.webp',
-  ship: 'ship-frames.webp'
+  ship: 'ship-frames.webp',
+  smoke1: 'smoke-puff-1-BLnSR1Up.webp',
+  smoke2: 'smoke-puff-2-Sj0F-KDp.webp',
+  smoke3: 'smoke-puff-3-DlXmAqPQ.webp'
 } as const
 type Asset = keyof typeof files
 const images = {} as Record<Asset, HTMLImageElement>
@@ -35,6 +38,13 @@ const flocks = [
   { y: 448, scale: .7, period: 68.57, offset: 45 },
   { y: 261.12, scale: .75, period: 53.33, offset: 17.33 }
 ]
+const smokePuffs = [
+  { asset: 'smoke2', x: -332.8, y: 236.8, w: 768, h: 652.8, dx: -153.6, dy: -281.6, rotation: -8, delay: 270 },
+  { asset: 'smoke1', x: 0, y: 506.88, w: 614.4, h: 522.24, dx: -102.4, dy: 256, rotation: 6, delay: 330 },
+  { asset: 'smoke3', x: -409.6, y: 565.76, w: 716.8, h: 609.28, dx: -179.2, dy: 256, rotation: -5, delay: 250 },
+  { asset: 'smoke3', x: 102.4, y: 166.4, w: 512, h: 435.2, dx: -76.8, dy: -281.6, rotation: 8, delay: 340 },
+  { asset: 'smoke1', x: -179.2, y: 408.32, w: 665.6, h: 565.76, dx: -153.6, dy: 179.2, rotation: -3, delay: 290 }
+] as const
 
 let context: CanvasRenderingContext2D | null = null
 let resizeObserver: ResizeObserver | undefined
@@ -46,6 +56,8 @@ let width = 1
 let height = 1
 let pixelRatio = 1
 let elapsed = 0
+let entranceElapsed = 0
+let entranceStarted = false
 let previousTick = 0
 let previousDraw = 0
 let frontLayer: HTMLCanvasElement | null = null
@@ -208,6 +220,25 @@ function drawBirds(ctx: CanvasRenderingContext2D, time: number, motion: number) 
   }
 }
 
+function drawSmoke(ctx: CanvasRenderingContext2D) {
+  if (props.reducedMotion || !entranceStarted || entranceElapsed >= 2000) return
+  for (const puff of smokePuffs) {
+    const image = images[puff.asset]
+    const phase = getSmokeProgress(entranceElapsed, puff.delay)
+    if (!image || !phase) continue
+    const fit = Math.min(puff.w / image.naturalWidth, puff.h / image.naturalHeight)
+    const w = image.naturalWidth * fit
+    const h = image.naturalHeight * fit
+    ctx.save()
+    ctx.globalAlpha = phase.opacity
+    ctx.translate(puff.x + puff.w / 2 + puff.dx * phase.travel, puff.y + puff.h / 2 + puff.dy * phase.travel)
+    ctx.rotate(puff.rotation * phase.travel * Math.PI / 180)
+    ctx.scale(phase.scale, phase.scale)
+    ctx.drawImage(image, -w / 2, -h / 2, w, h)
+    ctx.restore()
+  }
+}
+
 function draw() {
   const ctx = context
   if (!ctx || !assetsReady || contextLost || disposed) return
@@ -253,20 +284,28 @@ function draw() {
   }
 
   const frame = props.reducedMotion ? 0 : Math.floor((elapsed % 1970) / 1970 * 58)
+  const entrance = getShipEntrance(entranceElapsed, props.reducedMotion)
+  const shipTime = Math.max(0, entranceElapsed - 2000) / 1000 * motion
   ctx.save()
-  ctx.translate(915.2 - Math.sin(time / 7 * Math.PI * 2) * 3 * motion, 495.68 - Math.sin(time / 7 * Math.PI * 2) * 8 * motion)
-  ctx.rotate(Math.sin(time / 9 * Math.PI * 2) * .025 * motion)
-  const breathe = 1 + (1 - Math.cos(time / 8 * Math.PI * 2)) * .025 * motion
-  ctx.scale(breathe, breathe)
+  ctx.translate(915.2 + entrance.x - Math.sin(shipTime / 7 * Math.PI * 2) * 3 * motion, 495.68 - Math.sin(shipTime / 7 * Math.PI * 2) * 8 * motion)
+  ctx.rotate(entrance.rotation + Math.sin(shipTime / 9 * Math.PI * 2) * .025 * motion)
+  const breathe = 1 + (1 - Math.cos(shipTime / 8 * Math.PI * 2)) * .025 * motion
+  ctx.scale(entrance.scale * breathe, entrance.scale * breathe)
+  ctx.translate(0, entrance.y)
   ctx.drawImage(images.ship, (frame % 8) * shipCellWidth, Math.floor(frame / 8) * shipCellHeight, shipCellWidth, shipCellHeight, -198.4, -188.48, 396.8, 376.96)
   ctx.restore()
+  drawSmoke(ctx)
   setReady(true)
 }
 
 function render(time: number) {
   animationFrame = 0
   if (disposed || contextLost || document.hidden || !assetsReady) return
-  if (previousTick) elapsed += Math.min(time - previousTick, 100)
+  if (previousTick) {
+    const delta = Math.min(time - previousTick, 100)
+    elapsed += delta
+    if (entranceStarted) entranceElapsed += delta
+  }
   previousTick = time
   const interval = 1000 / (props.reducedMotion ? 15 : props.touchViewport || props.limited ? 30 : 60)
   if (!previousDraw || time - previousDraw >= interval - 1) {
@@ -287,6 +326,12 @@ function handleVisibilityChange() {
   resume()
 }
 
+function startEntrance() {
+  if (entranceStarted) return
+  entranceStarted = true
+  entranceElapsed = props.reducedMotion ? 2000 : 0
+}
+
 function handleContextLost(event: Event) {
   event.preventDefault()
   contextLost = true
@@ -304,6 +349,7 @@ function handleContextRestored() {
 }
 
 watch(() => [props.limited, props.reducedMotion, props.touchViewport], () => {
+  if (props.reducedMotion) entranceElapsed = Math.max(entranceElapsed, 2000)
   resize()
   if (assetsReady) void ensureShip().catch(error => console.warn('[Sunset Sky City] Unable to change ship quality:', error))
 })
@@ -318,10 +364,16 @@ onMounted(async () => {
   resizeObserver = new ResizeObserver(resize)
   resizeObserver.observe(canvas)
   document.addEventListener('visibilitychange', handleVisibilityChange)
+  window.addEventListener('holybear-loading-overlay-hidden', startEntrance)
+  if (!document.body.classList.contains('holy-bear-loading-active') && !document.documentElement.classList.contains('holy-bear-booting')) startEntrance()
   try {
     await Promise.all((Object.keys(files) as Asset[]).map(async key => {
       if (key === 'ship') await ensureShip()
-      else images[key] = await loadImage(files[key])
+      else if (key.startsWith('smoke')) {
+        if (!props.reducedMotion) {
+          try { images[key] = await loadImage(files[key]) } catch { /* The scene can enter without optional smoke. */ }
+        }
+      } else images[key] = await loadImage(files[key])
     }))
     if (disposed) return
     assetsReady = true
@@ -337,6 +389,7 @@ onBeforeUnmount(() => {
   if (animationFrame) cancelAnimationFrame(animationFrame)
   resizeObserver?.disconnect()
   document.removeEventListener('visibilitychange', handleVisibilityChange)
+  window.removeEventListener('holybear-loading-overlay-hidden', startEntrance)
   canvasRef.value?.removeEventListener('contextlost', handleContextLost)
   canvasRef.value?.removeEventListener('contextrestored', handleContextRestored)
   for (const key of Object.keys(images) as Asset[]) images[key].src = ''
