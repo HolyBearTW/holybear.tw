@@ -9,23 +9,30 @@
   overflow: hidden;
   isolation: isolate;
   pointer-events: none;
-  background: #8c6e9e;
+  background: var(--sunset-intro-poster, linear-gradient(#565284, #b88594 32%, #fdd98e 80%));
 }
 
 .sunset-sky-city-still {
   position: absolute;
   inset: 0;
-  background: url('/themes/sunset-sky-city/bg-hero-CNvxuPAE.webp') center / cover no-repeat;
+  background: var(--sunset-intro-poster, linear-gradient(#565284, #b88594 32%, #fdd98e 80%));
+}
+
+.sunset-sky-city-background.is-fallback .sunset-sky-city-still {
+  background: url('/themes/sunset-sky-city/sunset-panorama.webp') center / cover no-repeat;
 }
 
 .sunset-sky-city-still-ship {
+  display: none;
   position: absolute;
   top: 22%;
   left: 28%;
   width: max(15.5vw, 20vh);
   aspect-ratio: 800 / 760;
-  background: url('/themes/sunset-sky-city/ship-still-4vm4_cXx.webp') center / contain no-repeat;
+  background: url('/themes/sunset-sky-city/ship-still.webp') center / contain no-repeat;
 }
+
+.sunset-sky-city-background.is-fallback .sunset-sky-city-still-ship { display: block; }
 
 .sunset-sky-city-reading-mask {
   position: absolute;

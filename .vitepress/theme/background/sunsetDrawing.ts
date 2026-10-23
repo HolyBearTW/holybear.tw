@@ -2,7 +2,7 @@ export function createHorizontalRepeater() {
   let patterns = new WeakMap<HTMLImageElement, CanvasPattern>()
 
   return {
-    draw(context: CanvasRenderingContext2D, image: HTMLImageElement, y: number, imageHeight: number, time: number, visibleLeft: number, visibleRight: number) {
+    draw(context: CanvasRenderingContext2D, image: HTMLImageElement, y: number, imageHeight: number, time: number, visibleLeft: number, visibleRight: number, offset = 0) {
       let pattern = patterns.get(image)
       if (!pattern) {
         pattern = context.createPattern(image, 'repeat-x') ?? undefined
@@ -11,7 +11,7 @@ export function createHorizontalRepeater() {
       }
       const imageScale = imageHeight / image.naturalHeight
       const tileWidth = image.naturalWidth * imageScale
-      const phase = -(time * 75.777) % tileWidth
+      const phase = -(time * 75.777 + offset) % tileWidth
       const transform = context.getTransform()
       const drawX = (Math.round(phase * transform.a + transform.e) - transform.e) / transform.a
       const drawY = (Math.round(y * transform.d + transform.f) - transform.f) / transform.d
@@ -29,7 +29,7 @@ export function createHorizontalRepeater() {
   }
 }
 
-function cubicBezier(progress: number, x1: number, y1: number, x2: number, y2: number) {
+export function cubicBezier(progress: number, x1: number, y1: number, x2: number, y2: number) {
   if (progress <= 0) return 0
   if (progress >= 1) return 1
   const coordinate = (t: number, first: number, second: number) => 3 * (1 - t) ** 2 * t * first + 3 * (1 - t) * t ** 2 * second + t ** 3
@@ -41,6 +41,35 @@ function cubicBezier(progress: number, x1: number, y1: number, x2: number, y2: n
     else high = middle
   }
   return coordinate((low + high) / 2, y1, y2)
+}
+
+type Keyframes = readonly (readonly [number, number])[]
+export const easeInOut = (progress: number) => cubicBezier(progress, .42, 0, .58, 1)
+export const easeOut = (progress: number) => cubicBezier(progress, 0, 0, .58, 1)
+
+export function sampleKeyframes(progress: number, keyframes: Keyframes, easing = easeInOut) {
+  if (progress <= keyframes[0][0]) return keyframes[0][1]
+  for (let index = 1; index < keyframes.length; index++) {
+    const [end, to] = keyframes[index]
+    if (progress > end) continue
+    const [start, from] = keyframes[index - 1]
+    return from + (to - from) * easing((progress - start) / (end - start))
+  }
+  return keyframes[keyframes.length - 1][1]
+}
+
+export function progressAt(time: number, duration: number, delay = 0) {
+  return Math.max(0, Math.min(1, (time - delay) / duration))
+}
+
+export function cycleAt(time: number, duration: number, delay = 0, alternate = false) {
+  const cycles = Math.max(0, (time - delay) / duration)
+  const progress = cycles % 1
+  return alternate && Math.floor(cycles) % 2 ? 1 - progress : progress
+}
+
+export function getCloudRush(time: number, sky: boolean) {
+  return (sky ? 6287.36 : 4840.96) * easeInOut(progressAt(time, sky ? 2520 : 1680, 200))
 }
 
 export function getShipEntrance(elapsed: number, reducedMotion: boolean) {
@@ -56,11 +85,60 @@ export function getShipEntrance(elapsed: number, reducedMotion: boolean) {
 
 export function getSmokeProgress(elapsed: number, delay: number) {
   if (elapsed < delay || elapsed >= delay + 1400) return null
-  const progress = cubicBezier((elapsed - delay) / 1400, .2, .7, .3, 1)
+  const progress = (elapsed - delay) / 1400
+  const easing = (value: number) => cubicBezier(value, .2, .7, .3, 1)
   const expansion = Math.max(0, (progress - .1) / .9)
   return {
-    opacity: progress < .1 ? progress / .1 : 1 - expansion,
-    scale: progress < .1 ? .7 + 3 * progress : 1 + .45 * expansion,
-    travel: expansion
+    opacity: sampleKeyframes(progress, [[0, 0], [.1, 1], [1, 0]], easing),
+    scale: sampleKeyframes(progress, [[0, .7], [.1, 1], [1, 1.45]], easing),
+    travel: easing(expansion)
   }
+}
+
+export function getShipMotion(time: number, reducedMotion: boolean) {
+  const entrance = getShipEntrance(time, reducedMotion)
+  const bob = sampleKeyframes(cycleAt(time, 7000, 2000), [[0, 0], [.5, 1], [1, 0]])
+  const rock = sampleKeyframes(cycleAt(time, 9000, 2000), [[0, 0], [.25, .6], [.75, -.6], [1, 0]])
+  const breathe = sampleKeyframes(cycleAt(time, 8000, 2000), [[0, 1], [.5, 1.15], [1, 1]])
+  return {
+    x: 915.2 + entrance.x - 3.84 * bob,
+    y: 495.68 - 16.64 * bob,
+    scale: time >= 2000 ? breathe : entrance.scale,
+    rotation: time >= 2000 ? rock * Math.PI / 180 : entrance.rotation,
+    transformY: entrance.y
+  }
+}
+
+export function getRimOpacity(time: number, duration: number, delay = 0) {
+  if (time < 5600 + delay) return sampleKeyframes(progressAt(time, 2600, 3000), [[0, 0], [.15, 1], [1, 1]], easeOut)
+  return 1 - easeInOut(cycleAt(time, duration, 5600 + delay, true))
+}
+
+export function getIntroGlint(time: number, delay = 3000) {
+  return sampleKeyframes(progressAt(time, 2600, delay), [[0, 0], [.15, 1], [.6, 1], [1, 0]], easeOut)
+}
+
+export function getCloudFlash(time: number, back = false) {
+  const delay = back ? 7200 : 6800
+  if (time < delay) return getIntroGlint(time, back ? 3100 : 3000)
+  return sampleKeyframes(cycleAt(time, back ? 4200 : 3000, delay), back
+    ? [[0, 0], [.057142857143, 1], [.2, 0], [1, 0]]
+    : [[0, 0], [.08, 1], [.28, 0], [1, 0]])
+}
+
+export function getCloudGlow(time: number) {
+  if (time < 5600) return sampleKeyframes(progressAt(time, 2600, 3000), [[0, 0], [.15, 1], [.6, 1], [1, .45]], easeOut)
+  return .45 + .4 * easeInOut(cycleAt(time, 3400, 5600, true))
+}
+
+export function getBirdFrame(time: number, bird: number) {
+  const progress = cycleAt(time, [2200, 2600, 2000][bird], [0, -900, -1500][bird])
+  if (progress < .52) return Math.floor((progress % .26) / .02)
+  if (progress < .58) return 0
+  if (progress < .64) return 13
+  if (progress < .70) return 14
+  if (progress < .76) return 13
+  if (progress < .84) return 0
+  if (progress < .92) return 15
+  return 0
 }

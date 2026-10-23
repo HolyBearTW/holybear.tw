@@ -1261,10 +1261,15 @@ onBeforeUnmount(() => {
   }
 
   .hero-logo-card {
-    width: min(340px, calc(100vw - 24px));
+    width: clamp(184px, 54vw, 240px);
     box-shadow: none;
     filter: none;
     transform: none;
+  }
+
+  .hero-logo-card::before {
+    width: 94%;
+    height: 94%;
   }
 
   .hero-title-group {

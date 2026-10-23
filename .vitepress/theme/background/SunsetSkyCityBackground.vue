@@ -9,6 +9,9 @@ const prefersReducedMotion = ref(false)
 const isLimited = ref(false)
 const isTouchViewport = ref(false)
 const canvasReady = ref(false)
+const sceneFailed = ref(false)
+const hasRendered = ref(false)
+const updateReady = (ready: boolean) => { canvasReady.value = ready; if (ready) hasRendered.value = true }
 let motionPreference: MediaQueryList | undefined
 let viewportPreference: MediaQueryList | undefined
 let deviceObserver: MutationObserver | undefined
@@ -39,11 +42,11 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="sunset-sky-city-background" :data-renderer="initialized ? 'canvas' : 'loading'" aria-hidden="true">
+  <div class="sunset-sky-city-background" :class="{ 'is-fallback': sceneFailed || (hasRendered && !canvasReady) }" :data-renderer="initialized ? 'canvas' : 'loading'" aria-hidden="true">
     <div v-if="!canvasReady" class="sunset-sky-city-still">
       <div class="sunset-sky-city-still-ship"></div>
     </div>
-    <SunsetSkyCityCanvas v-if="initialized" :reduced-motion="prefersReducedMotion" :limited="isLimited" :touch-viewport="isTouchViewport" @ready-change="canvasReady = $event" />
+    <SunsetSkyCityCanvas v-if="initialized" :reduced-motion="prefersReducedMotion" :limited="isLimited" :touch-viewport="isTouchViewport" @ready-change="updateReady" @failed="sceneFailed = true" />
     <div class="sunset-sky-city-reading-mask"></div>
   </div>
 </template>
