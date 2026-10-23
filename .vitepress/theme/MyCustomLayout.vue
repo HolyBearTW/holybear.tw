@@ -20,8 +20,9 @@ import MobileNavScreenTranslations from './MobileNavScreenTranslations.vue'
 import { 
   defaultTheme, 
   THEME_CHANGE_EVENT,
+  THEME_RESET_VERSION_KEY,
   getAllThemeIds,
-  getInitialBackgroundTheme
+  getBackgroundThemeSelection
 } from './background/themes'
 
 // 背景主題只在實際選用時載入，避免首次進站解析全部動畫元件。
@@ -40,6 +41,9 @@ const Halloween = defineAsyncComponent(() => import('./background/HalloweenBackg
 const GravityFieldSimulation = defineAsyncComponent(() => import('./background/GravityFieldSimulation.vue'))
 
 const { isDark } = useData()
+const APPEARANCE_STORAGE_KEY = 'vitepress-theme-appearance'
+const HALLOWEEN_APPEARANCE_RESTORE_KEY = 'holybear-halloween-appearance-restore'
+let halloweenAppearanceFallback: { hasValue: boolean; value: string | null; wasDark: boolean } | null = null
 declare const __GIT_COMMIT_HASH__: string
 declare const __GIT_COMMIT_DATE__: string
 const copyrightStartYear = 2025
@@ -92,9 +96,78 @@ const mobileFlashGuardStyle = computed(() => ({
 // 動畫標誌
 let isAnimating = false;
 
+const readHalloweenAppearancePreference = () => {
+    try {
+        const stored = localStorage.getItem(HALLOWEEN_APPEARANCE_RESTORE_KEY)
+        if (!stored) return halloweenAppearanceFallback
+        const parsed = JSON.parse(stored)
+        if (typeof parsed?.hasValue !== 'boolean') return halloweenAppearanceFallback
+        return {
+            hasValue: parsed.hasValue,
+            value: typeof parsed.value === 'string' ? parsed.value : null,
+            wasDark: typeof parsed.wasDark === 'boolean' ? parsed.wasDark : halloweenAppearanceFallback?.wasDark ?? isDark.value
+        }
+    } catch {
+        return halloweenAppearanceFallback
+    }
+}
+
+const resolveSavedAppearance = (preference: { hasValue: boolean; value: string | null; wasDark: boolean }) => {
+    if (!preference.hasValue) return preference.wasDark
+    if (preference.value === 'dark') return true
+    if (preference.value === 'light') return false
+    if (preference.value === 'auto' && typeof window !== 'undefined') {
+        return window.matchMedia('(prefers-color-scheme: dark)').matches
+    }
+    return preference.wasDark
+}
+
+const lockHalloweenAppearance = () => {
+    if (typeof document === 'undefined') return
+
+    const root = document.documentElement
+    if (!root.classList.contains('halloween-appearance-locked')) {
+        const value = (() => {
+            try { return localStorage.getItem(APPEARANCE_STORAGE_KEY) } catch { return null }
+        })()
+        halloweenAppearanceFallback = { hasValue: value !== null, value, wasDark: isDark.value }
+        try {
+            if (localStorage.getItem(HALLOWEEN_APPEARANCE_RESTORE_KEY) === null) {
+                localStorage.setItem(HALLOWEEN_APPEARANCE_RESTORE_KEY, JSON.stringify(halloweenAppearanceFallback))
+            }
+        } catch {}
+    }
+
+    root.classList.add('halloween-appearance-locked', 'dark')
+    if (!isDark.value) isDark.value = true
+}
+
+const restoreHalloweenAppearance = () => {
+    if (typeof document === 'undefined') return
+
+    const preference = readHalloweenAppearancePreference()
+    const restoredDark = preference ? resolveSavedAppearance(preference) : isDark.value
+    if (isDark.value !== restoredDark) isDark.value = restoredDark
+
+    try {
+        if (preference) {
+            if (preference.hasValue && preference.value !== null) {
+                localStorage.setItem(APPEARANCE_STORAGE_KEY, preference.value)
+            } else {
+                localStorage.removeItem(APPEARANCE_STORAGE_KEY)
+            }
+        }
+        localStorage.removeItem(HALLOWEEN_APPEARANCE_RESTORE_KEY)
+    } catch {}
+
+    halloweenAppearanceFallback = null
+    document.documentElement.classList.remove('halloween-appearance-locked')
+    document.documentElement.classList.toggle('dark', restoredDark)
+}
+
 provide('toggle-appearance', async () => {
     // 1. 檢查
-    if (typeof document === 'undefined' || isAnimating) {
+    if (typeof document === 'undefined' || isAnimating || currentBackgroundTheme.value === 'halloween') {
         return
     }
 
@@ -189,6 +262,9 @@ const handleThemeChange = (event: Event) => {
   // 更新 body class - 檢查 browser 環境避免 SSR 錯誤
 const updateBodyClass = (theme: string) => {
   if (typeof document === 'undefined') return
+    document.documentElement.dataset.backgroundTheme = theme
+    if (theme === 'halloween') lockHalloweenAppearance()
+    else restoreHalloweenAppearance()
     document.documentElement.classList.toggle('holy-bear-theme-intro', theme === 'sunsetskycity')
   
     // 動態獲取並移除所有主題 class
@@ -210,6 +286,31 @@ const updateBodyClass = (theme: string) => {
     // 背景元件與選單仍由 currentBackgroundTheme 決定，切換時一併清除這個樣式 class。
     if (theme === 'sunsetskycity') document.body.classList.add('theme-uponthesky')
   }
+}
+
+let scheduledThemeTimer: number | undefined
+let appliedThemeResetVersion: string | null = null
+
+const syncScheduledTheme = () => {
+  if (typeof window === 'undefined') return
+  const selection = getBackgroundThemeSelection()
+  const phaseChanged = appliedThemeResetVersion !== null && appliedThemeResetVersion !== selection.resetVersion
+  appliedThemeResetVersion = selection.resetVersion
+  if (phaseChanged) {
+    window.dispatchEvent(new CustomEvent(THEME_CHANGE_EVENT, {
+      detail: { theme: selection.theme, userInitiated: false }
+    }))
+  }
+  if (scheduledThemeTimer !== undefined) window.clearTimeout(scheduledThemeTimer)
+  scheduledThemeTimer = undefined
+  if (selection.nextChangeAt !== null) {
+    const delay = Math.max(1, Math.min(selection.nextChangeAt - Date.now(), 2_147_483_647))
+    scheduledThemeTimer = window.setTimeout(syncScheduledTheme, delay)
+  }
+}
+
+const handleThemeResetStorage = (event: StorageEvent) => {
+  if (event.key === THEME_RESET_VERSION_KEY) syncScheduledTheme()
 }
 
 const updateScrollTopClass = () => {
@@ -304,7 +405,9 @@ onMounted(() => {
   // 只在客戶端執行 localStorage 和 DOM 操作
   if (typeof window !== 'undefined') {
     // 從 localStorage 載入主題
-    const initialTheme = getInitialBackgroundTheme()
+    const initialSelection = getBackgroundThemeSelection()
+    const initialTheme = initialSelection.theme
+    appliedThemeResetVersion = initialSelection.resetVersion
     currentBackgroundTheme.value = initialTheme
     updateBodyClass(initialTheme)
     loadingThemeReady.value = true
@@ -317,6 +420,11 @@ onMounted(() => {
     
     // 監聽主題切換事件
     window.addEventListener(THEME_CHANGE_EVENT, handleThemeChange)
+    window.addEventListener('focus', syncScheduledTheme)
+    window.addEventListener('pageshow', syncScheduledTheme)
+    window.addEventListener('storage', handleThemeResetStorage)
+    document.addEventListener('visibilitychange', syncScheduledTheme)
+    syncScheduledTheme()
     window.addEventListener('scroll', updateScrollTopClass, { passive: true })
     window.addEventListener('hashchange', scheduleBlogHashAlignment)
     document.addEventListener('click', handleBlogSidebarMenuToggle, true)
@@ -330,6 +438,11 @@ onUnmounted(() => {
     if (themeStartupFrame) window.cancelAnimationFrame(themeStartupFrame)
     document.documentElement.classList.remove('holy-bear-theme-startup')
     window.removeEventListener(THEME_CHANGE_EVENT, handleThemeChange)
+    window.removeEventListener('focus', syncScheduledTheme)
+    window.removeEventListener('pageshow', syncScheduledTheme)
+    window.removeEventListener('storage', handleThemeResetStorage)
+    document.removeEventListener('visibilitychange', syncScheduledTheme)
+    if (scheduledThemeTimer !== undefined) window.clearTimeout(scheduledThemeTimer)
     window.removeEventListener('scroll', updateScrollTopClass)
     window.removeEventListener('hashchange', scheduleBlogHashAlignment)
     document.removeEventListener('click', handleBlogSidebarMenuToggle, true)
@@ -397,6 +510,7 @@ onUnmounted(() => {
     })
 
     const route = useRoute()
+    watch(() => route.path, syncScheduledTheme)
 
     const isBlogArticlePage = computed(() => {
         const relativePath = page.value?.relativePath || ''

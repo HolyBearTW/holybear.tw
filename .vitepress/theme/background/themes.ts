@@ -19,35 +19,89 @@ export const backgroundThemes = [
   ['⬜ 無背景', '⬜ No BG', 'none', '⬜'],
 ] as const
 
-// 預設主題 (使用主題ID)
-export const defaultTheme = 'sunsetskycity'
-
 // 主題本地存儲鍵名
 export const THEME_STORAGE_KEY = 'vitepress-background-theme'
 
-// 一次性重設舊使用者的背景選擇；更新版本值即可安排下一次遷移。
+// 每個活動階段只重設一次，之後保留使用者在該階段的手動選擇。
 export const THEME_RESET_VERSION_KEY = 'vitepress-background-theme-reset-version'
 export const THEME_RESET_VERSION = 'sunset-sky-city-default-v1'
+
+export const BACKGROUND_THEME_BOOTSTRAP = {
+  ids: backgroundThemes.map(([, , themeId]) => themeId),
+  storageKey: THEME_STORAGE_KEY,
+  resetKey: THEME_RESET_VERSION_KEY,
+  phases: [
+    { startsAt: 0, theme: 'sunsetskycity', resetVersion: THEME_RESET_VERSION },
+    {
+      startsAt: Date.parse('2026-10-24T00:00:00+08:00'),
+      theme: 'halloween',
+      resetVersion: 'halloween-2026-start-v1'
+    },
+    {
+      startsAt: Date.parse('2026-11-01T00:00:00+08:00'),
+      theme: 'sunsetskycity',
+      resetVersion: 'halloween-2026-end-v1'
+    }
+  ]
+}
+
+type ThemeSelectionStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>
+
+// Self-contained so the head bootstrap can serialize the same resolver.
+// Select the phase at visitor runtime, even when the site was built earlier.
+export function resolveBackgroundThemeSelection(
+  config: typeof BACKGROUND_THEME_BOOTSTRAP,
+  storage: ThemeSelectionStorage | null,
+  now: number
+) {
+  let phase = config.phases[0]
+  let nextChangeAt: number | null = null
+  for (const candidate of config.phases) {
+    if (candidate.startsAt > now) {
+      nextChangeAt = candidate.startsAt
+      break
+    }
+    phase = candidate
+  }
+
+  let theme = phase.theme
+  if (storage) {
+    try {
+      if (storage.getItem(config.resetKey) !== phase.resetVersion) {
+        storage.removeItem(config.storageKey)
+        storage.setItem(config.storageKey, theme)
+        storage.setItem(config.resetKey, phase.resetVersion)
+      } else {
+        const savedTheme = storage.getItem(config.storageKey)
+        if (savedTheme && config.ids.includes(savedTheme as typeof config.ids[number])) {
+          theme = savedTheme
+        } else {
+          storage.setItem(config.storageKey, theme)
+        }
+      }
+    } catch {
+      // Storage may be unavailable; the scheduled default still applies.
+    }
+  }
+  return { theme, resetVersion: phase.resetVersion, nextChangeAt }
+}
+
+export function getBackgroundThemeSelection(now = Date.now()) {
+  let storage: ThemeSelectionStorage | null = null
+  if (typeof window !== 'undefined') {
+    try { storage = window.localStorage } catch {}
+  }
+  return resolveBackgroundThemeSelection(BACKGROUND_THEME_BOOTSTRAP, storage, now)
+}
+
+// This is also evaluated at browser startup, rather than fixed by the build.
+export const defaultTheme = resolveBackgroundThemeSelection(BACKGROUND_THEME_BOOTSTRAP, null, Date.now()).theme
 
 // 主題切換事件名稱
 export const THEME_CHANGE_EVENT = 'theme-change'
 
 export function getInitialBackgroundTheme() {
-  if (typeof window === 'undefined') return defaultTheme
-
-  if (localStorage.getItem(THEME_RESET_VERSION_KEY) !== THEME_RESET_VERSION) {
-    localStorage.removeItem(THEME_STORAGE_KEY)
-    localStorage.setItem(THEME_STORAGE_KEY, defaultTheme)
-    localStorage.setItem(THEME_RESET_VERSION_KEY, THEME_RESET_VERSION)
-    return defaultTheme
-  }
-
-  const savedTheme = localStorage.getItem(THEME_STORAGE_KEY)
-  const isKnownTheme = backgroundThemes.some(([, , themeId]) => themeId === savedTheme)
-  if (savedTheme && isKnownTheme) return savedTheme
-
-  localStorage.setItem(THEME_STORAGE_KEY, defaultTheme)
-  return defaultTheme
+  return getBackgroundThemeSelection().theme
 }
 
 // 生成導航欄配置 (供 config.mts 使用)

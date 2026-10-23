@@ -9,7 +9,7 @@ import gitMetaPlugin from './git-meta.ts'
 import TelegramRoseBotDocsSidebar from './sidebars/Telegram-Rose-Bot-docs.sidebar.ts'
 import VitepressBlogDocsSidebar from './sidebars/Vitepress-Blog-docs-sidebar.ts'
 import SpoilerComponentDocsSidebar from './sidebars/spoiler-component-docs-sidebar.ts'
-import { defaultTheme, getAllThemeIds, THEME_RESET_VERSION, THEME_RESET_VERSION_KEY, THEME_STORAGE_KEY } from './theme/background/themes'
+import { BACKGROUND_THEME_BOOTSTRAP, resolveBackgroundThemeSelection } from './theme/background/themes'
 import {
     FUNDING_CHOICES_SCRIPT_ID,
     FUNDING_CHOICES_SCRIPT_SRC,
@@ -42,10 +42,11 @@ const earlyLoadingMarkup = `<script id="holy-bear-theme-bootstrap">(() => {
     const root = document.documentElement;
     const theme = root.dataset.backgroundTheme;
     root.classList.add('holy-bear-theme-startup');
+    root.classList.toggle('halloween-appearance-locked', theme === 'halloween');
     if (theme && theme !== 'none' && (!root.classList.contains('holy-bear-constrained-device') || theme === 'sunsetskycity')) {
         document.body.classList.add('theme-' + theme);
         if (theme === 'sunsetskycity') document.body.classList.add('theme-uponthesky');
-        if (theme === 'christmas') root.classList.add('dark');
+        if (theme === 'christmas' || theme === 'halloween') root.classList.add('dark');
     }
 })()</script><div id="holy-bear-boot-frame" class="brand-loading-frame" aria-hidden="true">
     <div class="brand-loading-ball">
@@ -323,16 +324,16 @@ const earlyLoadingStyle = `
 
 const earlyLoadingScript = `(() => {
     const root = document.documentElement;
-    const themeBoot = ${JSON.stringify({ defaultTheme, ids: getAllThemeIds(), storageKey: THEME_STORAGE_KEY, resetKey: THEME_RESET_VERSION_KEY, resetVersion: THEME_RESET_VERSION })};
-    let initialTheme = themeBoot.defaultTheme;
-    try {
-        if (localStorage.getItem(themeBoot.resetKey) === themeBoot.resetVersion) {
-            const savedTheme = localStorage.getItem(themeBoot.storageKey);
-            if (themeBoot.ids.includes(savedTheme)) initialTheme = savedTheme;
-        }
-    } catch {}
+    const themeBoot = ${JSON.stringify(BACKGROUND_THEME_BOOTSTRAP)};
+    const resolveTheme = (${resolveBackgroundThemeSelection.toString()});
+    let themeStorage = null;
+    try { themeStorage = localStorage; } catch {}
+    let initialTheme = resolveTheme(themeBoot, themeStorage, Date.now()).theme;
     const requestedTheme = window.location.hash.match(/^#theme-([a-z0-9]+)$/)?.[1];
-    if (themeBoot.ids.includes(requestedTheme)) initialTheme = requestedTheme;
+    if (themeBoot.ids.includes(requestedTheme)) {
+        initialTheme = requestedTheme;
+        try { themeStorage?.setItem(themeBoot.storageKey, requestedTheme); } catch {}
+    }
     root.dataset.backgroundTheme = initialTheme;
     root.classList.toggle('holy-bear-theme-intro', initialTheme === 'sunsetskycity');
     if (initialTheme === 'sunsetskycity') {
@@ -379,11 +380,37 @@ const earlyLoadingScript = `(() => {
         }
     } catch {}
 
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const appearanceStorageKey = 'vitepress-theme-appearance';
+    const halloweenAppearanceRestoreKey = 'holybear-halloween-appearance-restore';
     let savedAppearance = null;
     try {
-        savedAppearance = localStorage.getItem('vitepress-theme-appearance');
+        savedAppearance = localStorage.getItem(appearanceStorageKey);
+        if (initialTheme === 'halloween') {
+            if (localStorage.getItem(halloweenAppearanceRestoreKey) === null) {
+                const wasDark = savedAppearance === 'dark' || (savedAppearance === 'auto' && prefersDark);
+                localStorage.setItem(halloweenAppearanceRestoreKey, JSON.stringify({
+                    hasValue: savedAppearance !== null,
+                    value: savedAppearance,
+                    wasDark
+                }));
+            }
+            localStorage.setItem(appearanceStorageKey, 'dark');
+            savedAppearance = 'dark';
+        } else {
+            const previousAppearance = localStorage.getItem(halloweenAppearanceRestoreKey);
+            if (previousAppearance !== null) {
+                const preference = JSON.parse(previousAppearance);
+                if (preference.hasValue && typeof preference.value === 'string') {
+                    localStorage.setItem(appearanceStorageKey, preference.value);
+                } else {
+                    localStorage.removeItem(appearanceStorageKey);
+                }
+                localStorage.removeItem(halloweenAppearanceRestoreKey);
+                savedAppearance = localStorage.getItem(appearanceStorageKey);
+            }
+        }
     } catch {}
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     const shouldUseDark = savedAppearance === 'dark'
         ? true
         : savedAppearance === 'auto'
@@ -636,13 +663,41 @@ const config = defineConfig({
                     localStorage.setItem(appearanceMigrationKey, appearanceMigrationVersion);
                 }
             } catch {}
-            const savedAppearance = localStorage.getItem('vitepress-theme-appearance');
+            const appearanceStorageKey = 'vitepress-theme-appearance';
+            const halloweenAppearanceRestoreKey = 'holybear-halloween-appearance-restore';
             const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            const shouldUseDark = savedAppearance === 'dark'
+            const initialTheme = root.dataset.backgroundTheme;
+            let savedAppearance = localStorage.getItem(appearanceStorageKey);
+            if (initialTheme === 'halloween') {
+                if (localStorage.getItem(halloweenAppearanceRestoreKey) === null) {
+                    const wasDark = savedAppearance === 'dark' || (savedAppearance === 'auto' && prefersDark);
+                    localStorage.setItem(halloweenAppearanceRestoreKey, JSON.stringify({
+                        hasValue: savedAppearance !== null,
+                        value: savedAppearance,
+                        wasDark
+                    }));
+                }
+                localStorage.setItem(appearanceStorageKey, 'dark');
+                savedAppearance = 'dark';
+            } else {
+                const previousAppearance = localStorage.getItem(halloweenAppearanceRestoreKey);
+                if (previousAppearance !== null) {
+                    const preference = JSON.parse(previousAppearance);
+                    if (preference.hasValue && typeof preference.value === 'string') {
+                        localStorage.setItem(appearanceStorageKey, preference.value);
+                    } else {
+                        localStorage.removeItem(appearanceStorageKey);
+                    }
+                    localStorage.removeItem(halloweenAppearanceRestoreKey);
+                    savedAppearance = localStorage.getItem(appearanceStorageKey);
+                }
+            }
+            const shouldUseDark = initialTheme === 'halloween' || savedAppearance === 'dark'
                 ? true
                 : savedAppearance === 'auto'
                     ? prefersDark
                     : false;
+            root.classList.toggle('halloween-appearance-locked', initialTheme === 'halloween');
             root.classList.toggle('dark', shouldUseDark);
         })()`],
         ['style', { id: 'holy-bear-boot-style' }, earlyLoadingStyle],

@@ -14,6 +14,11 @@ const { isDark } = useData()
 const router = useRouter()
 const currentTheme = ref<string>(defaultTheme)
 
+const handleThemeChange = (event: Event) => {
+  const theme = (event as CustomEvent<{ theme?: string }>).detail?.theme
+  if (theme) currentTheme.value = theme
+}
+
 // 切換主題的核心函數
 const changeTheme = (theme: string, userInitiated = false) => {
   console.log('切換主題到:', theme) // 調試用
@@ -99,6 +104,7 @@ onMounted(() => {
   const initialTheme = getInitialBackgroundTheme()
   currentTheme.value = initialTheme
   updateActiveState(initialTheme)
+  window.addEventListener(THEME_CHANGE_EVENT, handleThemeChange)
   
   // 使用捕獲階段監聽，確保能攔截到點擊
   document.addEventListener('click', handleClick, true)
@@ -115,6 +121,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  window.removeEventListener(THEME_CHANGE_EVENT, handleThemeChange)
   document.removeEventListener('click', handleClick, true)
   window.removeEventListener('hashchange', handleHashChange)
 })
