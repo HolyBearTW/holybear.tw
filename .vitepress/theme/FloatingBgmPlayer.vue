@@ -322,17 +322,16 @@ function toggleThemeMusicEnabled() {
 }
 
 function isMobileViewport() {
-  return typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches
+  return typeof window !== 'undefined' && window.matchMedia('(max-width: 768px), (max-height: 600px) and (hover: none) and (pointer: coarse)').matches
 }
 
 function handleLoadingComplete() {
-  isPageLoaded.value = true
-
-  if (isMobileViewport()) {
-    playerMinimized.value = true
-    musicInfoHidden.value = true
+  if (!isPageLoaded.value && isMobileViewport()) {
+    collapsePlayerToSidebarButton()
     showSidebarButton.value = true
   }
+
+  isPageLoaded.value = true
 
   startInitialPlaybackWhenReady()
 }
@@ -467,6 +466,8 @@ const themeHandler = (e) => {
 };
 
 onMounted(async () => {
+  // Initialize the mobile presentation before the player can become visible.
+  if (isMobileViewport()) collapsePlayerToSidebarButton()
   window.addEventListener('holybear-loading-complete', handleLoadingComplete)
   const shouldResetPlaylist = localStorage.getItem(PLAYLIST_RESET_VERSION_KEY) !== PLAYLIST_RESET_VERSION
   if (shouldResetPlaylist) {
@@ -706,7 +707,9 @@ watch(playerMinimized, (newVal) => {
 
 watch(musicInfoHidden, (newVal) => {
   if (newVal === true && playerMinimized.value) {
-    setTimeout(() => { showSidebarButton.value = true }, 400)
+    setTimeout(() => {
+      if (musicInfoHidden.value && playerMinimized.value && playerOpen.value) showSidebarButton.value = true
+    }, 400)
   } else {
     showSidebarButton.value = false
   }
