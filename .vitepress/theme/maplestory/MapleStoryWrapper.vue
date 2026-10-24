@@ -200,8 +200,9 @@ onBeforeUnmount(() => {
 }
 
 /* Keep pending footer ads measurable for AdSense without reserving empty space.
-   A filled slot returns to normal flow, so the footer always follows the ad. */
-#maplestory-root .maple-manual-ad-bottom:not(:has(ins.adsbygoogle[data-ad-status="filled"])) {
+   Both filled ads and Google's related-topic replacement occupy normal flow,
+   so the footer follows all visible content, including unfill-optimized units. */
+#maplestory-root .maple-manual-ad-bottom:not(:has(ins.adsbygoogle:is([data-ad-status="filled"], [data-ad-status="unfill-optimized"]))) {
   margin-bottom: 0;
 }
 
@@ -209,7 +210,7 @@ onBeforeUnmount(() => {
   position: relative;
 }
 
-#maplestory-root .maple-manual-ad-bottom .adsense-slot:not(:has(ins.adsbygoogle[data-ad-status="filled"])) {
+#maplestory-root .maple-manual-ad-bottom .adsense-slot:not(:has(ins.adsbygoogle:is([data-ad-status="filled"], [data-ad-status="unfill-optimized"]))) {
   position: absolute;
   top: 0;
   inset-inline: 0;
