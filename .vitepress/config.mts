@@ -66,9 +66,6 @@ const earlyLoadingMarkup = `<script id="holy-bear-theme-bootstrap">(() => {
 </div>`
 
 const earlyLoadingStyle = `
-    html.holy-bear-theme-startup body * {
-        transition: none !important;
-    }
     @font-face {
         font-family: 'LINESeed';
         src: url('/fonts/LINESeedTW_OTF_Bd.woff2') format('woff2');

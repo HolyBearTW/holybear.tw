@@ -150,6 +150,18 @@ function finishRouteLoading() {
   }, Math.max(0, minimumVisibleTime - elapsed))
 }
 
+function finishInitialPop(event?: TransitionEvent) {
+  if (initialMinimumElapsed || initialLoadingFinished) return
+  if (event && (
+    event.target !== event.currentTarget || event.propertyName !== 'transform' || !isPopping.value || isLeaving.value
+  )) return
+
+  if (initialMinimumTimer) window.clearTimeout(initialMinimumTimer)
+  initialMinimumTimer = undefined
+  initialMinimumElapsed = true
+  if (initialFinishRequested) finishRouteLoading()
+}
+
 function dismissLoadingFrame() {
   clearRouteTimers()
   if (initialMinimumTimer) window.clearTimeout(initialMinimumTimer)
@@ -190,15 +202,17 @@ onMounted(() => {
     document.getElementById('holy-bear-boot-frame')?.remove()
     document.documentElement.classList.remove('holy-bear-booting')
     initialPopFrame = window.requestAnimationFrame(() => {
-      initialPopFrame = undefined
-      if (routeLoadingPending) isPopping.value = true
+      // Paint the small logo before starting its spring transition.
+      initialPopFrame = window.requestAnimationFrame(() => {
+        initialPopFrame = undefined
+        if (!routeLoadingPending) return
+        isPopping.value = true
+        // Normally transitionend releases the exit after the spring settles.
+        // Keep a fallback for browsers that do not emit that event.
+        initialMinimumTimer = window.setTimeout(finishInitialPop, 1000)
+      })
     })
   })
-
-  initialMinimumTimer = window.setTimeout(() => {
-    initialMinimumElapsed = true
-    if (initialFinishRequested) finishRouteLoading()
-  }, 650)
 
   const requestInitialFinish = () => {
     const path = window.location.pathname.replace(/\/$/, '')
@@ -235,7 +249,7 @@ onUnmounted(() => {
 
 <template>
   <div v-show="isVisible && areInitialVisualsReady" class="brand-loading-frame" :class="{ 'is-popping': isPopping, 'is-leaving': isLeaving }" aria-hidden="true">
-    <div v-if="areInitialVisualsReady" class="brand-loading-ball">
+    <div v-if="areInitialVisualsReady" class="brand-loading-ball" @transitionend="finishInitialPop">
       <img
         class="brand-loading-orb"
         :src="loadingOrbUrl"

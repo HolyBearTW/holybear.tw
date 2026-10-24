@@ -401,6 +401,20 @@ const handleBlogSidebarMenuToggle = (event: MouseEvent) => {
   backdrop.click()
 }
 
+function settleStartupThemeColors() {
+    if (!document.documentElement.classList.contains('holy-bear-theme-startup')) return
+
+    // Finish only initial palette changes; keep entrance motion and fades running.
+    for (const animation of document.getAnimations()) {
+        const property = 'transitionProperty' in animation ? animation.transitionProperty : undefined
+        if (typeof property === 'string' && (
+            property === 'color' || property.endsWith('-color') || property === 'fill' || property === 'stroke'
+        )) {
+            animation.finish()
+        }
+    }
+}
+
 onMounted(() => {
   // 只在客戶端執行 localStorage 和 DOM 操作
   if (typeof window !== 'undefined') {
@@ -411,8 +425,11 @@ onMounted(() => {
     currentBackgroundTheme.value = initialTheme
     updateBodyClass(initialTheme)
     loadingThemeReady.value = true
+    settleStartupThemeColors()
     themeStartupFrame = window.requestAnimationFrame(() => {
+        settleStartupThemeColors()
         themeStartupFrame = window.requestAnimationFrame(() => {
+            settleStartupThemeColors()
             document.documentElement.classList.remove('holy-bear-theme-startup')
             themeStartupFrame = 0
         })
