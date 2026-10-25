@@ -20,8 +20,10 @@ interface RankingSnapshot {
   items: RankingEntry[];
 }
 
-const cacheOrigin = 'https://holybear.tw/__ranking-cache';
-const cacheHeaders = { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'public, max-age=604800' };
+// A new namespace avoids serving entries written before identity filtering.
+const cacheOrigin = 'https://holybear.tw/__ranking-cache-v3';
+const MAX_SNAPSHOT_AGE_MS = 300_000;
+const cacheHeaders = { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'public, max-age=300' };
 const characterRankCacheHeaders = { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'public, max-age=300' };
 const rankingCache = () => (caches as unknown as { default: Cache }).default;
 const pageKey = (filters: RankingFilters) => {
@@ -57,7 +59,11 @@ const readSnapshots = async (env: Env): Promise<RankingSnapshot[]> => {
     readCache<RankingSnapshot>(snapshotKey()).catch(() => null),
     readStaticSnapshot(env),
   ]);
-  return [cached, staticSnapshot].filter((snapshot): snapshot is RankingSnapshot => Boolean(snapshot));
+  return [cached, staticSnapshot].filter((snapshot): snapshot is RankingSnapshot => {
+    if (!snapshot) return false;
+    const age = Date.now() - Date.parse(snapshot.generatedAt);
+    return Number.isFinite(age) && age >= 0 && age <= MAX_SNAPSHOT_AGE_MS;
+  });
 };
 
 export const cacheRankingPage = (filters: RankingFilters, page: RankingPage) => writeCache(pageKey(filters), page);
@@ -69,6 +75,13 @@ export const cacheCharacterRankV2 = (name: string, result: unknown) => writeCach
 export const getCachedCharacterRankV2 = async (name: string) => (
   readCache<{ entry: RankingEntry; rank: number; total: number }>(characterRankV2Key(name))
 );
+
+export const invalidateCachedCharacterRank = async (name: string) => {
+  await Promise.all([
+    rankingCache().delete(characterKey(name)),
+    rankingCache().delete(characterRankV2Key(name)),
+  ]);
+};
 
 export const refreshRankingSnapshot = async (env: Env) => {
   const pageSize = getRuntimeConfig(env).rankingSnapshotSize;

@@ -11,6 +11,21 @@ describe('public MapleStory client requests', () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it('expires a ranking snapshot in memory without issuing additional requests', async () => {
+    const now = Date.now();
+    const clock = vi.spyOn(Date, 'now').mockReturnValue(now);
+    const fetchMock = vi.fn(async () => Response.json({
+      generatedAt: new Date(now).toISOString(), items: [{ characterName: '舊排名', rank: 1 }],
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+    const { fetchHolyBearRankingSnapshot } = await import('../../.vitepress/theme/maplestory/services/holyBearService');
+    expect((await fetchHolyBearRankingSnapshot()).get('舊排名')).toBe(1);
+    clock.mockReturnValue(now + 300_001);
+    expect((await fetchHolyBearRankingSnapshot()).size).toBe(0);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it('loads a basic profile without a maintenance bypass key', async () => {

@@ -16,6 +16,7 @@ interface GrowthAdminRow {
   last_synced_date: string | null;
   sync_target_date: string;
   sync_status: SyncStatus;
+  stop_reason: string | null;
   next_retry_at: string | null;
   latest_snapshot_date: string | null;
   report_updated_at: string | null;
@@ -96,6 +97,10 @@ export const onRequestGet: AppPagesFunction = async ({ env, request }) => {
           COALESCE(s.character_level, c.level) AS character_level,
           p.created_at, p.history_start_date, p.last_synced_date, p.sync_target_date,
           ${syncStatus} AS sync_status, p.next_retry_at,
+          CASE WHEN p.status = 'failed' AND (
+            p.last_error LIKE '角色已改名為%' OR p.last_error LIKE '此名字已不再對應原角色%'
+            OR p.last_error LIKE '舊名字已無法查詢%' OR p.last_error LIKE '官方已無法確認此角色%'
+          ) THEN '角色已改名或已失效，已停止自動更新' ELSE NULL END AS stop_reason,
           s.snapshot_date AS latest_snapshot_date,
           (SELECT MAX(updated_at) FROM growth_snapshots WHERE ocid = p.ocid) AS report_updated_at,
           (SELECT COUNT(*) FROM growth_snapshots WHERE ocid = p.ocid) AS snapshot_count
@@ -121,6 +126,7 @@ export const onRequestGet: AppPagesFunction = async ({ env, request }) => {
         lastSyncedDate: row.last_synced_date,
         syncTargetDate: row.sync_target_date,
         status: row.sync_status,
+        stopReason: row.stop_reason,
         nextRetryAt: row.next_retry_at,
         latestSnapshotDate: row.latest_snapshot_date,
         reportUpdatedAt: row.report_updated_at,

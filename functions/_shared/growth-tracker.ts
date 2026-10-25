@@ -1,5 +1,5 @@
 import type { Env } from './env';
-import { findCharacterByOcid } from './character-repository';
+import { findCharacterByOcid, invalidateCharacterStatement } from './character-repository';
 import {
   fetchNexonJson,
   NexonRequestError,
@@ -7,6 +7,7 @@ import {
   type NexonRequestMetric,
 } from './nexon-client';
 import { getRuntimeConfig } from './runtime-config';
+import { invalidateCachedCharacterRank } from './ranking-cache';
 
 export const GROWTH_HISTORY_START_DATE = '2025-10-15';
 const DAY_MS = 86_400_000;
@@ -212,22 +213,40 @@ export const createGrowthProfile = async (db: D1Database, ocid: string, targetDa
 };
 
 const assertValidGrowthIdentity = async (env: Env, ocid: string) => {
-  if (await findCharacterByOcid(env.DB, ocid)) return;
-  let basic: NexonBasicHistory;
+  const existing = await findCharacterByOcid(env.DB, ocid);
+  const checkedAt = nowIso();
   try {
-    basic = await fetchNexonJson<NexonBasicHistory>(
+    const basic = await fetchNexonJson<NexonBasicHistory>(
       env,
       `/character/basic?ocid=${encodeURIComponent(ocid)}`,
     );
+    if (!basic.character_name || !basic.world_name || !basic.character_class
+      || !Number.isSafeInteger(Number(basic.character_level)) || Number(basic.character_level) <= 0) {
+      throw new GrowthAdmissionError(400, 'invalid_growth_ocid', '這個角色識別碼無法由 NEXON 驗證');
+    }
+    const identity = await fetchNexonJson<{ ocid?: string }>(env, `/id?character_name=${encodeURIComponent(basic.character_name)}`);
+    if (!identity.ocid) throw new GrowthAdmissionError(503, 'growth_identity_unavailable', 'NEXON 角色驗證暫時無法使用，請稍後再試', 60);
+    if (identity.ocid !== ocid) {
+      if (existing && existing.isActive !== false) {
+        await invalidateCharacterStatement(
+          env.DB, ocid, existing.characterName, checkedAt, '此名字已不再對應原角色，已停止自動更新並移出排名',
+        ).run();
+        await invalidateCachedCharacterRank(existing.characterName).catch(() => undefined);
+      }
+      throw new GrowthAdmissionError(400, 'invalid_growth_ocid', '這個名字已不再對應原角色，無法建立舊角色的成長檔案');
+    }
+    return basic.character_name;
   } catch (error) {
+    if (error instanceof GrowthAdmissionError) throw error;
     if (error instanceof NexonRequestError && !error.retryable) {
+      if (existing && existing.isActive !== false && (error.status === 404 || error.nexonCode === 'OPENAPI00003')) {
+        await invalidateCharacterStatement(env.DB, ocid, existing.characterName, checkedAt,
+          '官方已無法確認此角色，已停止自動更新並移出排名').run();
+        await invalidateCachedCharacterRank(existing.characterName).catch(() => undefined);
+      }
       throw new GrowthAdmissionError(400, 'invalid_growth_ocid', '這個角色識別碼無法由 NEXON 驗證');
     }
     throw new GrowthAdmissionError(503, 'growth_identity_unavailable', 'NEXON 角色驗證暫時無法使用，請稍後再試', 60);
-  }
-  if (!basic.character_name || !basic.world_name || !basic.character_class
-    || !Number.isSafeInteger(Number(basic.character_level)) || Number(basic.character_level) <= 0) {
-    throw new GrowthAdmissionError(400, 'invalid_growth_ocid', '這個角色識別碼無法由 NEXON 驗證');
   }
 };
 
@@ -263,17 +282,17 @@ export const admitGrowthProfile = async (
     throw new GrowthAdmissionError(429, 'growth_generation_limit', '今日可建立的成長檔案已達上限，請稍後再試', 3600);
   }
 
-  await assertValidGrowthIdentity(env, ocid);
+  const characterName = await assertValidGrowthIdentity(env, ocid);
 
   // The capacity predicates and insert share one D1 statement. Concurrent
   // requests for the same OCID therefore create one row, while requests for
   // different OCIDs cannot all pass a stale application-side count.
   const inserted = await env.DB.prepare(`
     INSERT INTO growth_profiles (
-      ocid, scan_start_date, sync_target_date, status, phase,
+      ocid, scan_start_date, sync_target_date, status, phase, character_name,
       current_processing_date, created_at, updated_at
     )
-    SELECT ?1, ?2, ?3, 'pending', 'basic', ?2, ?4, ?4
+    SELECT ?1, ?2, ?3, 'pending', 'basic', ?8, ?2, ?4, ?4
     WHERE (SELECT COUNT(*) FROM growth_profiles WHERE created_at >= ?5) < ?6
       AND (SELECT COUNT(*) FROM growth_profiles WHERE status IN ('pending', 'retry')) < ?7
     ON CONFLICT(ocid) DO NOTHING
@@ -286,6 +305,7 @@ export const admitGrowthProfile = async (
     since,
     config.growthNewProfile24hLimit,
     config.growthPendingProfileLimit,
+    characterName,
   ).first<GrowthProfileRow>();
   if (inserted) return { profile: inserted, created: true };
 
@@ -310,7 +330,7 @@ export const scheduleGrowthProfiles = async (db: D1Database, targetDate = latest
         sync_target_date = ?1, current_processing_date = date(last_synced_date, '+1 day'),
         next_retry_at = NULL, last_error = NULL, completed_at = NULL,
         queue_version = queue_version + 1, updated_at = ?2
-      WHERE status IN ('completed', 'failed')
+      WHERE status = 'completed'
         AND (last_synced_date IS NULL OR last_synced_date < ?1)
     `).bind(targetDate, timestamp),
     db.prepare(`UPDATE growth_scheduler_state SET last_target_date = ?1, updated_at = ?2 WHERE id = 1`)
@@ -338,6 +358,13 @@ const isMissingHistoricalSnapshot = (error: unknown) => error instanceof NexonRe
   && error.status === 400
   && error.nexonCode === 'OPENAPI00003';
 
+class GrowthIdentityError extends Error {
+  readonly retryable = false;
+  constructor(message: string, readonly expectedName: string, readonly checkedAt: string) {
+    super(message);
+  }
+}
+
 const isEmptyBasicSnapshot = (basic: NexonBasicHistory, requestedDate: string) => (
   dateOnly(basic.date) === requestedDate
   && basic.character_name == null
@@ -352,7 +379,7 @@ const isEmptyBasicSnapshot = (basic: NexonBasicHistory, requestedDate: string) =
 
 const basicStatement = (
   db: D1Database,
-  ocid: string,
+  claim: GrowthClaim,
   requestedDate: string,
   basic: NexonBasicHistory,
   timestamp: string,
@@ -361,7 +388,9 @@ const basicStatement = (
     ocid, snapshot_date, source_date, character_name, world_name, job_name,
     character_level, character_exp, character_exp_rate, guild_name,
     liberation_status, fetched_at, updated_at
-  ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?12)
+  ) SELECT ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?12
+  WHERE EXISTS (SELECT 1 FROM growth_profiles
+    WHERE ocid = ?1 AND claim_token = ?13 AND queue_version = ?14 AND status IN ('pending', 'retry'))
   ON CONFLICT(ocid, snapshot_date) DO UPDATE SET
     source_date = excluded.source_date,
     character_name = excluded.character_name,
@@ -375,7 +404,7 @@ const basicStatement = (
     fetched_at = excluded.fetched_at,
     updated_at = excluded.updated_at
 `).bind(
-  ocid,
+  claim.row.ocid,
   requestedDate,
   dateOnly(basic.date),
   String(basic.character_name || ''),
@@ -387,6 +416,8 @@ const basicStatement = (
   basic.character_guild_name?.trim() || null,
   basic.liberation_quest_clear == null ? null : String(basic.liberation_quest_clear),
   timestamp,
+  claim.token,
+  claim.queueVersion,
 );
 
 const fetchBasicBatch = async (
@@ -409,6 +440,7 @@ const fetchBasicBatch = async (
   let firstValidDate: string | null = null;
   let latestName = row.character_name;
   const requestMetrics = createGrowthRequestInstrumentation();
+  let requests = dates.length;
   const settled = await runWithConcurrency(dates, dateConcurrency, 0, async (date) => {
     try {
       const basic = await fetchNexonJson<NexonBasicHistory>(
@@ -440,13 +472,68 @@ const fetchBasicBatch = async (
   if (rejected?.status === 'rejected') {
     throw annotateGrowthBatchFailure(rejected.reason, requestMetrics, batchStartedAt, dates.length);
   }
+  const validSnapshots = settled.flatMap((outcome) => (
+    outcome.status === 'fulfilled' && outcome.value.basic ? [outcome.value] : []
+  ));
+  const targetMissing = dates.includes(row.sync_target_date)
+    && !validSnapshots.some((snapshot) => snapshot.date === row.sync_target_date);
+  const nameChanged = Boolean(row.last_synced_date && row.character_name
+    && validSnapshots.some(({ basic }) => basic!.character_name !== row.character_name));
+  // Historical empty dates are normal. Only probe the current identity when
+  // the existing history requests indicate missing data or a possible rename.
+  // This uses no additional D1 reads and never writes empty daily snapshots.
+  if (dates.length && (validSnapshots.length === 0 || targetMissing || nameChanged)) {
+    requests += 1;
+    try {
+      let current: NexonBasicHistory;
+      try {
+        current = await fetchNexonJson<NexonBasicHistory>(
+          env, `/character/basic?ocid=${encodeURIComponent(row.ocid)}`,
+          undefined, (metric) => recordGrowthRequestMetric(requestMetrics, metric),
+        );
+      } catch (error) {
+        if (isMissingHistoricalSnapshot(error) || (error instanceof NexonRequestError && error.status === 404)) {
+          throw new GrowthIdentityError('官方已無法確認此角色，已停止自動更新並移出排名', row.character_name, timestamp);
+        }
+        throw error;
+      }
+      if (!current.character_name || !current.world_name || !current.character_class
+        || !Number.isSafeInteger(Number(current.character_level)) || Number(current.character_level) <= 0) {
+        throw new NexonRequestError('官方目前尚未提供完整角色資料，稍後重試', 200, true, 'invalid_basic_snapshot');
+      }
+      if (row.last_synced_date && row.character_name
+        && current.character_name.normalize('NFC') !== row.character_name.normalize('NFC')) {
+        throw new GrowthIdentityError(`角色已改名為「${current.character_name}」，已停止舊名字的自動更新`, row.character_name, timestamp);
+      }
+      // An obsolete OCID can retain readable basic/history data. Confirm the
+      // current name still resolves to this exact identity before continuing.
+      requests += 1;
+      let identity: { ocid?: string };
+      try {
+        identity = await fetchNexonJson<{ ocid?: string }>(
+          env, `/id?character_name=${encodeURIComponent(current.character_name)}`,
+          undefined, (metric) => recordGrowthRequestMetric(requestMetrics, metric),
+        );
+      } catch (error) {
+        if (isMissingHistoricalSnapshot(error) || (error instanceof NexonRequestError && error.status === 404)) {
+          throw new GrowthIdentityError('舊名字已無法查詢，已停止自動更新並移出排名', row.character_name, timestamp);
+        }
+        throw error;
+      }
+      if (!identity.ocid) throw new NexonRequestError('官方角色識別資料不完整，稍後重試', 200, true, 'missing_ocid');
+      if (identity.ocid !== row.ocid) {
+        throw new GrowthIdentityError('此名字已不再對應原角色，已停止舊角色的自動更新並移出排名', row.character_name, timestamp);
+      }
+    } catch (error) {
+      throw annotateGrowthBatchFailure(error, requestMetrics, batchStartedAt, requests);
+    }
+  }
   for (const outcome of settled) {
     if (outcome.status !== 'fulfilled' || !outcome.value.basic) continue;
     firstValidDate ||= outcome.value.date;
     latestName = outcome.value.basic.character_name || latestName;
-    statements.push(basicStatement(env.DB, row.ocid, outcome.value.date, outcome.value.basic, timestamp));
+    statements.push(basicStatement(env.DB, claim, outcome.value.date, outcome.value.basic, timestamp));
   }
-  const requests = dates.length;
   const snapshotMutations = statements.length;
   const processedDate = dates.at(-1) || row.basic_last_synced_date || row.scan_start_date;
   const basicComplete = processedDate >= row.sync_target_date;
@@ -500,7 +587,7 @@ const dojangValues = (payload: NexonDojangHistory) => {
 
 const dojangUpdateStatement = (
   db: D1Database,
-  ocid: string,
+  claim: GrowthClaim,
   snapshotDate: string,
   payload: NexonDojangHistory,
   timestamp: string,
@@ -511,7 +598,10 @@ const dojangUpdateStatement = (
       dojang_best_floor = ?3, dojang_best_time = ?4,
       dojang_record_date = ?5, dojang_state = ?6, updated_at = ?7
     WHERE ocid = ?1 AND snapshot_date = ?2
-  `).bind(ocid, snapshotDate, values.floor, values.time, values.recordDate, values.state, timestamp);
+      AND EXISTS (SELECT 1 FROM growth_profiles
+        WHERE ocid = ?1 AND claim_token = ?8 AND queue_version = ?9 AND status IN ('pending', 'retry'))
+  `).bind(claim.row.ocid, snapshotDate, values.floor, values.time, values.recordDate, values.state,
+    timestamp, claim.token, claim.queueVersion);
 };
 
 const finalizeDojang = async (
@@ -586,7 +676,7 @@ const fetchDojangBatch = async (
   for (const outcome of settled) {
     if (outcome.status !== 'fulfilled') continue;
     statements.push(dojangUpdateStatement(
-      env.DB, row.ocid, outcome.value.date, outcome.value.payload, timestamp,
+      env.DB, claim, outcome.value.date, outcome.value.payload, timestamp,
     ));
   }
   const requests = dates.length;
@@ -654,7 +744,7 @@ const failGrowthClaim = async (env: Env, claim: GrowthClaim, error: unknown) => 
     : null;
   const timestamp = nowIso();
   const message = error instanceof Error ? error.message : String(error);
-  await env.DB.prepare(`
+  const failedStatement = env.DB.prepare(`
     UPDATE growth_profiles SET
       status = ?3, attempt_count = attempt_count + 1,
       next_retry_at = ?4, last_error = ?5,
@@ -663,7 +753,16 @@ const failGrowthClaim = async (env: Env, claim: GrowthClaim, error: unknown) => 
   `).bind(
     claim.row.ocid, claim.token, retryable ? 'retry' : 'failed', retryAt,
     message.slice(0, 1000), timestamp, claim.queueVersion,
-  ).run();
+  );
+  if (error instanceof GrowthIdentityError) {
+    await env.DB.batch([
+      failedStatement,
+      invalidateCharacterStatement(env.DB, claim.row.ocid, error.expectedName, error.checkedAt, message.slice(0, 1000)),
+    ]);
+    await invalidateCachedCharacterRank(error.expectedName).catch(() => undefined);
+  } else {
+    await failedStatement.run();
+  }
   return { retryable, retryAt };
 };
 

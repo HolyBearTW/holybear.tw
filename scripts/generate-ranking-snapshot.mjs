@@ -15,12 +15,12 @@ const sqlite = (sql) => {
   return JSON.parse(result.stdout || '[]');
 };
 const [{ total = 0, generatedAt = new Date().toISOString() } = {}] = sqlite(
-  'SELECT COUNT(*) AS total, MAX(updated_at) AS generatedAt FROM characters',
+  'SELECT COUNT(*) AS total, MAX(updated_at) AS generatedAt FROM characters WHERE is_active = 1',
 );
 const rows = sqlite(`SELECT ocid, character_name AS characterName, world_name AS worldName,
   job_name AS jobName, level, combat_power AS combatPower,
   character_image AS characterImage, guild_name AS guildName
-  FROM characters ORDER BY combat_power DESC, ocid ASC LIMIT ${limit}`);
+  FROM characters WHERE is_active = 1 ORDER BY combat_power DESC, ocid ASC LIMIT ${limit}`);
 const items = rows.map((row, index) => ({
   ...row,
   rank: index + 1,

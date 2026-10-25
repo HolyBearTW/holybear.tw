@@ -89,7 +89,8 @@ describe('character metadata refresh queue', () => {
     }));
 
     const result = await getCharacterAlts(env, '主角色');
-    expect(result.alts).toContainEqual(expect.objectContaining({
+    expect(result.alts).toHaveLength(0);
+    expect(result.unverifiedAlts).toContainEqual(expect.objectContaining({
       characterName: '待補分身',
       metadataAvailable: false,
       level: null,
@@ -164,7 +165,8 @@ describe('character metadata refresh queue', () => {
     }));
 
     const result = await getCharacterAlts(env, '主角色');
-    expect(result.alts).toContainEqual(expect.objectContaining({
+    expect(result.alts).toHaveLength(0);
+    expect(result.unverifiedAlts).toContainEqual(expect.objectContaining({
       ocid: 'legacy-alt', metadataAvailable: false, level: null, characterImage: null,
     }));
     expect(local.sqlite.prepare(`SELECT status, reason, ocid FROM character_metadata_refresh

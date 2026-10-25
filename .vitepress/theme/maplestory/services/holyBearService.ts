@@ -46,21 +46,28 @@ export interface HolyBearCharacterResponse {
   discovered?: boolean;
 }
 
+export interface HolyBearAltRecord {
+  ocid: string | null;
+  characterName: string;
+  worldName: string;
+  jobName: string;
+  level: number | null;
+  combatPower: number | null;
+  characterImage: string | null;
+  guildName: string | null;
+  metadataAvailable: boolean;
+  lastCheckedAt: string | null;
+  isActive: boolean;
+  dataStatus: 'current' | 'stale' | 'unverified' | 'unavailable';
+}
+
 export interface HolyBearAltsResponse {
   character: HolyBearCharacterResponse['character'];
   accountGroup: { id: number; confidence: 'high' | 'probable' | 'unknown'; lastVerifiedAt: string | null } | null;
   confidence: 'high' | 'probable' | 'unknown';
-  alts: Array<{
-    ocid: string | null;
-    characterName: string;
-    worldName: string;
-    jobName: string;
-    level: number | null;
-    combatPower: number | null;
-    characterImage: string | null;
-    guildName: string | null;
-    metadataAvailable: boolean;
-  }>;
+  alts: HolyBearAltRecord[];
+  unverifiedAlts: HolyBearAltRecord[];
+  freshnessDays: number;
   lastVerifiedAt: string | null;
   resolution: {
     status: 'complete' | 'partial';
@@ -77,8 +84,8 @@ export interface HolyBearAltsResponse {
 
 const parseError = async (response: Response, fallback: string) => {
   try {
-    const payload = await response.json();
-    return payload?.error?.message || fallback;
+    const payload = await response.json() as { error?: { message?: unknown } } | null;
+    return typeof payload?.error?.message === 'string' ? payload.error.message : fallback;
   } catch {
     return fallback;
   }
@@ -121,12 +128,16 @@ export const fetchHolyBearAlts = async (name: string, signal?: AbortSignal): Pro
 };
 
 let rankingSnapshotPromise: Promise<Map<string, number>> | null = null;
+let rankingSnapshotValidUntil = 0;
 export const fetchHolyBearRankingSnapshot = () => {
   if (!rankingSnapshotPromise) {
     rankingSnapshotPromise = fetch('/maplestory/rankings/current.json', { cache: 'no-cache' })
       .then(async (response) => {
         if (!response.ok) throw new Error(`Ranking snapshot failed (${response.status})`);
-        const snapshot = await response.json() as { items?: HolyBearPowerRankingEntry[] };
+        const snapshot = await response.json() as { generatedAt?: string; items?: HolyBearPowerRankingEntry[] };
+        const generatedAt = Date.parse(snapshot.generatedAt || '');
+        if (!Number.isFinite(generatedAt) || generatedAt > Date.now()) return new Map<string, number>();
+        rankingSnapshotValidUntil = generatedAt + 300_000;
         return new Map((snapshot.items || []).map((item) => [
           item.characterName.normalize('NFC').toLocaleLowerCase('zh-TW'),
           item.rank,
@@ -134,7 +145,7 @@ export const fetchHolyBearRankingSnapshot = () => {
       })
       .catch(() => new Map<string, number>());
   }
-  return rankingSnapshotPromise;
+  return rankingSnapshotPromise.then((snapshot) => Date.now() <= rankingSnapshotValidUntil ? snapshot : new Map<string, number>());
 };
 
 export const invalidateHolyBearRankingCache = () => {

@@ -13,6 +13,7 @@ export const normalizeCharacterName = (name: string) => name.trim().normalize('N
 
 export const toPublicCharacter = (row: CharacterRow): PublicCharacter => ({
   ocid: row.ocid,
+  isActive: row.is_active !== 0,
   characterName: row.character_name,
   normalizedName: row.normalized_name,
   worldName: row.world_name,
@@ -36,7 +37,7 @@ export const findCharacterByName = async (db: D1Database, name: string) => {
   const row = await db.prepare(`
     SELECT * FROM characters
     WHERE normalized_name = ?1
-    ORDER BY updated_at DESC, ocid ASC
+    ORDER BY is_active DESC, updated_at DESC, ocid ASC
     LIMIT 1
   `).bind(normalizedName).first<CharacterRow>();
   return row ? toPublicCharacter(row) : null;
@@ -56,7 +57,7 @@ export const findCharacterByWorldAndName = async (db: D1Database, name: string, 
   const row = await db.prepare(`
     SELECT * FROM characters
     WHERE normalized_name = ?1 AND world_name = ?2
-    ORDER BY updated_at DESC, ocid ASC
+    ORDER BY is_active DESC, updated_at DESC, ocid ASC
     LIMIT 1
   `).bind(normalizedName, normalizedWorld).first<CharacterRow>();
   return row ? toPublicCharacter(row) : null;
@@ -96,6 +97,9 @@ export const canonicalNexonCharacterStatements = (
       nexon_updated_at, created_at, updated_at, nexon_requested_at
     ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?10, ?11, ?10, ?10, ?12)
     ON CONFLICT(ocid) DO UPDATE SET
+      is_active = 1,
+      invalidated_at = NULL,
+      invalidation_reason = NULL,
       character_name = excluded.character_name,
       normalized_name = excluded.normalized_name,
       world_name = excluded.world_name,
@@ -193,8 +197,21 @@ export const isCharacterFresh = (
   now = Date.now(),
 ) => {
   const timestamp = Date.parse(character.requestedAt ?? character.nexonUpdatedAt ?? character.updatedAt);
-  return Number.isFinite(timestamp) && now >= timestamp && now - timestamp <= freshnessSeconds * 1000;
+  return character.isActive !== false && Number.isFinite(timestamp)
+    && now >= timestamp && now - timestamp <= freshnessSeconds * 1000;
 };
+
+export const invalidateCharacterStatement = (
+  db: D1Database,
+  ocid: string,
+  expectedName: string,
+  checkedAt: string,
+  reason: string,
+) => db.prepare(`
+  UPDATE characters SET is_active = 0, invalidated_at = ?3, invalidation_reason = ?4
+  WHERE ocid = ?1 AND (?2 = '' OR normalized_name = ?2) AND is_active = 1
+    AND (nexon_requested_at IS NULL OR julianday(nexon_requested_at) <= julianday(?3))
+`).bind(ocid, normalizeCharacterName(expectedName), checkedAt, reason);
 
 export const characterSourceStatement = (
   db: D1Database, ocid: string, source: CharacterSourceWrite, observedAt = new Date().toISOString(),

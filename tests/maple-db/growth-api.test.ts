@@ -6,6 +6,7 @@ import { onRequestGet as getGrowthSiteKey } from '../../functions/api/growth/sit
 import { onRequestGet as getGrowthStatus } from '../../functions/api/growth/status';
 import type { Env } from '../../functions/_shared/env';
 import { createTestD1 } from './sqlite-d1';
+import { upsertCanonicalNexonCharacter } from '../../functions/_shared/character-repository';
 
 const OCID_A = 'a3e399217d603631033dd65ebaa08275';
 const OCID_B = 'b3e399217d603631033dd65ebaa08275';
@@ -50,8 +51,10 @@ beforeEach(() => {
     if (identityMode === 'invalid') {
       return Response.json({ error: { name: 'OPENAPI00003', message: 'invalid identifier' } }, { status: 400 });
     }
+    const url = new URL(input);
+    if (url.pathname.endsWith('/id')) return Response.json({ ocid: url.searchParams.get('character_name')?.replace('有效角色-', '') });
     return Response.json({
-      character_name: '有效角色',
+      character_name: `有效角色-${url.searchParams.get('ocid')}`,
       world_name: '艾麗亞',
       character_class: '卡蒂娜',
       character_level: 271,
@@ -103,6 +106,18 @@ describe('growth primary API', () => {
     expect(local.sqlite.prepare(`SELECT COUNT(*) AS count FROM growth_profiles`).get()?.count).toBe(1);
   });
 
+  it('does not admit a formerly cached character whose current identifier has become unavailable', async () => {
+    await upsertCanonicalNexonCharacter(env.DB, {
+      ocid: OCID_A, characterName: '失效舊名字', worldName: '艾麗亞', jobName: '主教',
+      level: 290, combatPower: 100, characterImage: 'image', guildName: null,
+    }, [{ source: 'nexon' }]);
+    identityMode = 'invalid';
+    const response = await requestFor(OCID_A);
+    expect(response.status).toBe(400);
+    expect(local.sqlite.prepare('SELECT COUNT(*) AS n FROM growth_profiles').get()?.n).toBe(0);
+    expect(local.sqlite.prepare('SELECT is_active FROM characters WHERE ocid=?').get(OCID_A)?.is_active).toBe(0);
+  });
+
   it('bypasses Turnstile, quota, and NEXON validation for an existing OCID', async () => {
     expect((await requestFor(OCID_A)).status).toBe(202);
     vi.mocked(fetch).mockClear();
@@ -145,7 +160,7 @@ describe('growth primary API', () => {
   it('safely admits different OCIDs as separate queued profiles', async () => {
     const responses = await Promise.all([requestFor(OCID_A), requestFor(OCID_B)]);
     expect(responses.map((response) => response.status)).toEqual([202, 202]);
-    expect(vi.mocked(fetch).mock.calls.filter(([input]) => input.includes('/turnstile/v0/siteverify'))).toHaveLength(2);
+    expect(vi.mocked(fetch).mock.calls.filter(([input]) => String(input).includes('/turnstile/v0/siteverify'))).toHaveLength(2);
     expect(local.sqlite.prepare(`SELECT COUNT(*) AS count FROM growth_profiles`).get()?.count).toBe(2);
     expect(local.sqlite.prepare(`SELECT COUNT(*) AS count FROM growth_profiles WHERE status='pending'`).get()?.count)
       .toBe(2);

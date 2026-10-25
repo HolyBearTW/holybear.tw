@@ -26,6 +26,7 @@ import {
 } from './account-signal-metrics';
 import { hashChampionRoster, hashCompleteUnionRaider, hashRaiderPresets } from './union-fingerprint';
 import { writeEvidencePayload } from './evidence-storage';
+import { classifyRelatedCharacters, type RelatedCharacterRecord } from './related-character-policy';
 import type {
   ChampionMember, UnionChampionResponse, UnionRaiderResponse, UnionSummaryResponse,
 } from './union-fingerprint';
@@ -72,28 +73,18 @@ interface AccountGroupResolution {
 const MAX_ACCOUNT_COMPONENT_CHARACTERS = 80;
 const D1_MUTATION_CHUNK_SIZE = 80;
 
-interface RelatedCharacterRecord {
-  ocid: string | null;
-  characterName: string;
-  worldName: string;
-  jobName: string;
-  level: number | null;
-  combatPower: number | null;
-  characterImage: string | null;
-  guildName: string | null;
-  metadataAvailable: boolean;
-}
-
 const listGroupCharacters = async (db: D1Database, groupId: number) => {
   const result = await db.prepare(`
     SELECT ocid, character_name AS characterName, world_name AS worldName,
       job_name AS jobName, level, combat_power AS combatPower,
-      character_image AS characterImage, guild_name AS guildName
+      character_image AS characterImage, guild_name AS guildName,
+      nexon_requested_at AS lastCheckedAt, is_active AS isActive
     FROM characters WHERE account_group_id = ?1
     ORDER BY combat_power DESC, ocid ASC
   `).bind(groupId).all<RelatedCharacterRecord>();
   return result.results.map((row) => ({
     ...row,
+    isActive: Boolean(row.isActive),
     level: Number(row.level) > 0 ? Number(row.level) : null,
     combatPower: Number.isFinite(Number(row.combatPower)) ? Number(row.combatPower) : null,
     characterImage: row.characterImage?.trim() || null,
@@ -550,26 +541,6 @@ export const syncCharacterAccountSignals = async (
   };
 };
 
-const mergeOfficialChampionMembers = (
-  groupedCharacters: RelatedCharacterRecord[],
-  championMembers: RelatedCharacterRecord[],
-) => {
-  const merged = new Map<string, RelatedCharacterRecord>();
-  for (const grouped of groupedCharacters) {
-    const name = grouped.characterName.trim().normalize('NFC');
-    if (name) merged.set(name.toLocaleLowerCase('zh-TW'), grouped);
-  }
-  for (const champion of championMembers) {
-    const name = champion.characterName.trim().normalize('NFC');
-    if (!name) continue;
-    const key = name.toLocaleLowerCase('zh-TW');
-    const grouped = merged.get(key);
-    if (grouped?.metadataAvailable) continue;
-    merged.set(key, champion.metadataAvailable ? champion : (grouped || champion));
-  }
-  return [...merged.values()];
-};
-
 const loadOfficialChampionMembers = async (
   env: Env,
   character: PublicCharacter,
@@ -586,8 +557,8 @@ const loadOfficialChampionMembers = async (
   const members = await Promise.all([...uniqueMembers.values()].map(async (member): Promise<RelatedCharacterRecord> => {
     const requestedName = String(member.champion_name || '').trim().normalize('NFC');
     const resolved = await findCharacterByWorldAndName(env.DB, requestedName, character.worldName);
-    if (!resolved || !isCanonicalCharacterMetadataComplete(resolved)) {
-      refreshes.push({
+    if (!resolved || resolved.isActive === false || !isCanonicalCharacterMetadataComplete(resolved)) {
+      if (resolved?.isActive !== false) refreshes.push({
         characterName: requestedName,
         expectedWorldName: character.worldName,
         ocid: resolved?.ocid,
@@ -603,6 +574,8 @@ const loadOfficialChampionMembers = async (
         characterImage: resolved?.characterImage?.trim() || null,
         guildName: resolved?.guildName ?? null,
         metadataAvailable: false,
+        lastCheckedAt: resolved?.requestedAt ?? null,
+        isActive: resolved?.isActive !== false,
       };
     }
     return {
@@ -615,6 +588,8 @@ const loadOfficialChampionMembers = async (
       characterImage: resolved.characterImage,
       guildName: resolved.guildName,
       metadataAvailable: true,
+      lastCheckedAt: resolved.requestedAt ?? null,
+      isActive: true,
     } satisfies RelatedCharacterRecord;
   }));
   await enqueueCharacterMetadataRefreshes(env.DB, refreshes);
@@ -679,7 +654,7 @@ export const getCharacterAlts = async (env: Env, characterName: string) => {
     : null;
   const groupedCharacters = groupId ? await listGroupCharacters(env.DB, groupId) : [];
   await enqueueCharacterMetadataRefreshes(env.DB, groupedCharacters
-    .filter((member) => !member.metadataAvailable)
+    .filter((member) => member.isActive && !member.metadataAvailable)
     .map((member) => ({
       characterName: member.characterName,
       expectedWorldName: member.worldName,
@@ -691,9 +666,9 @@ export const getCharacterAlts = async (env: Env, characterName: string) => {
     character,
     synced.championMembers,
   );
-  const alts = mergeOfficialChampionMembers(
-    groupedCharacters.filter((alt) => alt.ocid !== character.ocid),
-    officialChampionMembers,
+  const { alts, unverifiedAlts, freshnessDays } = classifyRelatedCharacters(
+    [...groupedCharacters, ...officialChampionMembers],
+    character.ocid,
   );
   const partialReasons = synced.failures.map(({ type, error }) => ({
     signalType: type,
@@ -705,6 +680,8 @@ export const getCharacterAlts = async (env: Env, characterName: string) => {
     accountGroup,
     confidence: accountGroup?.confidence || 'unknown',
     alts,
+    unverifiedAlts,
+    freshnessDays,
     lastVerifiedAt: accountGroup?.lastVerifiedAt || synced.lastVerifiedAt,
     resolution: {
       status: partialReasons.length ? 'partial' as const : 'complete' as const,
@@ -729,6 +706,7 @@ export const getCharacterAlts = async (env: Env, characterName: string) => {
     mergedGroupIds: synced.mergedGroupIds,
     finalGroupId: groupId,
     returnedAlts: alts.length,
+    unverifiedAlts: unverifiedAlts.length,
     resolution: result.resolution,
   }));
   return result;

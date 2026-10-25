@@ -61,7 +61,9 @@ export const canonicalUpdateGuard = `
       OR (julianday(excluded.nexon_updated_at) = julianday(characters.nexon_updated_at)
         AND julianday(excluded.nexon_requested_at) >= julianday(characters.nexon_requested_at))
     ELSE julianday(excluded.nexon_requested_at) >= julianday(COALESCE(characters.nexon_requested_at, characters.updated_at))
-  END`;
+  END
+  AND (characters.is_active = 1 OR characters.invalidated_at IS NULL
+    OR julianday(excluded.nexon_requested_at) >= julianday(characters.invalidated_at))`;
 
 export const stagingRequeueAssignments = `
   status = CASE WHEN character_import_staging.import_job_id IS NOT excluded.import_job_id

@@ -171,3 +171,20 @@ git diff --check
 | 共用樣本說明（新增） | `.vitepress/theme/maplestory/data/sampleNotice.ts` |
 | 測試（新增） | `tests/maple-db/guild-import.test.ts`、`tests/maple-db/sqlite-d1.ts` |
 | 操作文件（新增） | `scripts/README-guild-sampling.md` |
+
+## 角色失效、分身新鮮度與成長排程
+
+- 分身使用每個角色最後成功取得官方資料的 `nexon_requested_at`，不使用分組的 `updated_at`／`last_verified_at` 判斷新鮮度。30 天以內列在 `alts`，超過期限、缺少時間或已確認失效的紀錄列在 `unverifiedAlts`，不計入近期分身數量，也不逐筆查排名。
+- 過期分類在原本的分身查詢結果中完成，不新增補抓工作、定期全表掃描或狀態寫入。單純過期不會將角色判為失效，也不會移除仍有效角色的排名。
+- 一般角色重新查詢時會確認名字對應的 OCID，避免沿用仍有歷史資料的舊 OCID。明確的官方識別碼不存在、名字改屬其他 OCID，或成長同步確認舊名已變更時，才將舊紀錄標為 `is_active = 0`。暫時性的限流、逾時、5xx 與不完整回應不作為失效證據。
+- 確認失效時，同一筆狀態變更會停止既有成長／聯盟訊號工作；已儲存歷史不刪除。成長排程僅重新排入 `completed`，不再每日復活 `failed`。成長快照寫入也驗證原本的工作鎖，避免已停止工作的延遲回應繼續寫入。
+- 排行榜、個人名次、總數與新生成的靜態快照排除已確認失效的角色。有效總數沿用單列計數器，不在每次請求重新統計全表。重新確認有效的官方完整回應可恢復角色收錄，但不會因查看舊報告而重新啟用已停止的成長追蹤。
+- 排名快取與可用備援快照限制為 5 分鐘；過期快照不再恢復舊排名。D1 不可用且沒有近期快取時會回傳暫時無法取得，不使用長期過時排名。
+
+部署前先套用 `0019_character_identity_status.sql`，再部署 Pages 與兩個 consumer Workers。此 migration 新增有效狀態及有效總數，並一次重建既有排名索引，索引數量不增加；這是一次性 D1 操作，不是每日排程。
+
+```powershell
+npx wrangler d1 migrations apply holybear-maple-db-2 --remote --env production
+```
+
+測試使用本機記憶體 SQLite；不會清理或修改正式 D1。舊資料只會在既有查詢／同步取得明確失效證據時停止收錄，這項變更不會自動啟動全庫驗證。

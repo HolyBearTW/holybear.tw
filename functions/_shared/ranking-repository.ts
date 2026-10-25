@@ -20,7 +20,7 @@ export const parseRankingFilters = (url: URL): RankingFilters => {
 };
 
 const whereForFilters = (filters: RankingFilters) => {
-  const clauses: string[] = [];
+  const clauses: string[] = ['is_active = 1'];
   const bindings: unknown[] = [];
   if (filters.world) {
     bindings.push(filters.world);
@@ -56,16 +56,16 @@ export const getCombatPowerRanking = async (db: D1Database, filters: RankingFilt
   const where = whereForFilters(filters);
   const offset = (filters.page - 1) * filters.pageSize;
   let countRow: { total: number } | null;
-  if (where.sql) {
+  if (where.bindings.length) {
     countRow = await db.prepare(`SELECT COUNT(*) AS total FROM characters ${where.sql}`)
       .bind(...where.bindings).first<{ total: number }>();
   } else {
     try {
-      countRow = await db.prepare('SELECT characters_total AS total FROM database_stats WHERE id = 1')
+      countRow = await db.prepare('SELECT active_characters_total AS total FROM database_stats WHERE id = 1')
         .first<{ total: number }>();
     } catch (error) {
       if (!String(error).includes('no such table: database_stats')) throw error;
-      countRow = await db.prepare('SELECT COUNT(*) AS total FROM characters').first<{ total: number }>();
+      countRow = await db.prepare('SELECT COUNT(*) AS total FROM characters WHERE is_active = 1').first<{ total: number }>();
     }
   }
   const total = Number(countRow?.total) || 0;
@@ -92,25 +92,25 @@ export const getCharacterCombatPowerRank = async (db: D1Database, name: string) 
   const query = (totalSql: string) => db.prepare(`
     WITH target AS (
       SELECT * FROM characters
-      WHERE normalized_name = ?1
+      WHERE normalized_name = ?1 AND is_active = 1
       ORDER BY updated_at DESC, ocid ASC
       LIMIT 1
     )
     SELECT target.*,
       1 + (
         SELECT COUNT(*) FROM characters ranked
-        WHERE ranked.combat_power > target.combat_power
-           OR (ranked.combat_power = target.combat_power AND ranked.ocid < target.ocid)
+        WHERE ranked.is_active = 1 AND (ranked.combat_power > target.combat_power
+           OR (ranked.combat_power = target.combat_power AND ranked.ocid < target.ocid))
       ) AS rank,
       (${totalSql}) AS total
     FROM target
   `).bind(normalizedName).first<CharacterRow & { rank: number; total: number }>();
   let row: (CharacterRow & { rank: number; total: number }) | null;
   try {
-    row = await query('SELECT characters_total FROM database_stats WHERE id = 1');
+    row = await query('SELECT active_characters_total FROM database_stats WHERE id = 1');
   } catch (error) {
     if (!String(error).includes('no such table: database_stats')) throw error;
-    row = await query('SELECT COUNT(*) FROM characters');
+    row = await query('SELECT COUNT(*) FROM characters WHERE is_active = 1');
   }
   if (!row) return null;
   return { entry: toRankingEntry(row, Number(row.rank)), rank: Number(row.rank), total: Number(row.total) };

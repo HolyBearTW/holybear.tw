@@ -1,8 +1,9 @@
-import { findCharacterByName, isCharacterFresh, upsertCanonicalNexonCharacterWithStorage } from './character-repository';
+import { findCharacterByName, invalidateCharacterStatement, isCharacterFresh, upsertCanonicalNexonCharacterWithStorage } from './character-repository';
 import type { Env } from './env';
 import { HttpError } from './http';
 import { NexonRequestError, resolveNexonCharacter } from './nexon-client';
 import { getRuntimeConfig } from './runtime-config';
+import { invalidateCachedCharacterRank } from './ranking-cache';
 
 export const getOrDiscoverCharacter = async (env: Env, characterName: string) => {
   const existing = await findCharacterByName(env.DB, characterName);
@@ -11,8 +12,11 @@ export const getOrDiscoverCharacter = async (env: Env, characterName: string) =>
     return { character: existing, updatedAt: existing.updatedAt, stale: false, source: 'd1' as const };
   }
 
+  const checkedAt = new Date().toISOString();
   try {
-    const resolved = await resolveNexonCharacter(env, characterName, existing?.ocid);
+    // Resolve the requested name again, rather than trusting an old OCID whose
+    // historical basic data may still be readable after a rename/name reuse.
+    const resolved = await resolveNexonCharacter(env, characterName);
     const stored = await upsertCanonicalNexonCharacterWithStorage(env, resolved, [
       {
         source: 'nexon',
@@ -22,6 +26,16 @@ export const getOrDiscoverCharacter = async (env: Env, characterName: string) =>
       },
       { source: 'holybear_search', sourceCharacterId: resolved.characterName },
     ]);
+    if (existing && existing.isActive !== false && existing.ocid !== stored.character.ocid) {
+      await invalidateCharacterStatement(
+        env.DB, existing.ocid, existing.characterName, checkedAt,
+        '此名字已不再對應原角色，已停止舊角色的自動更新並移出排名',
+      ).run();
+      await invalidateCachedCharacterRank(existing.characterName).catch(() => undefined);
+    }
+    if (existing && existing.characterName !== stored.character.characterName) {
+      await invalidateCachedCharacterRank(existing.characterName).catch(() => undefined);
+    }
     return {
       character: stored.character,
       updatedAt: stored.character.updatedAt,
@@ -30,7 +44,18 @@ export const getOrDiscoverCharacter = async (env: Env, characterName: string) =>
       discovered: stored.created,
     };
   } catch (error) {
-    if (existing) {
+    if (error instanceof NexonRequestError && error.code === 'character_not_found'
+      && (error.status === 404 || error.nexonCode === 'OPENAPI00003')) {
+      if (existing) {
+        if (existing.isActive !== false) await invalidateCharacterStatement(
+          env.DB, existing.ocid, existing.characterName, checkedAt,
+          '官方已無法確認此角色，已停止自動更新並移出排名',
+        ).run();
+        await invalidateCachedCharacterRank(existing.characterName).catch(() => undefined);
+      }
+      throw new HttpError(404, 'character_not_found', '找不到這個角色');
+    }
+    if (existing && existing.isActive !== false) {
       return {
         character: existing,
         updatedAt: existing.updatedAt,

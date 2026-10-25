@@ -207,6 +207,9 @@ export const refreshCharacterMetadataBatch = async (env: Env) => {
         claim.row.character_name,
         claim.row.expected_world_name,
       );
+      if (existing?.isActive === false) {
+        throw new NexonRequestError('此角色已停止收錄', 404, false, 'character_not_found');
+      }
       if (existing && isCanonicalCharacterMetadataComplete(existing)) return existing;
       const character = await resolveNexonCharacter(
         env,

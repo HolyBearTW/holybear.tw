@@ -7,6 +7,7 @@ export type AccountConfidence = 'high' | 'probable' | 'unknown';
 
 export interface CharacterRow {
   ocid: string;
+  is_active?: number;
   character_name: string;
   normalized_name: string;
   world_name: string;
@@ -53,6 +54,7 @@ export interface CharacterSourceWrite {
 
 export interface PublicCharacter {
   ocid: string;
+  isActive?: boolean;
   characterName: string;
   normalizedName: string;
   worldName: string;

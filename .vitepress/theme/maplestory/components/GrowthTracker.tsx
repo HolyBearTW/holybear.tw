@@ -336,7 +336,11 @@ const GrowthTracker: React.FC<GrowthTrackerProps> = ({
     }
   };
 
-  if (loading || (status?.tracked && !submitted && !isCreating(status))) return null;
+  if (loading) return null;
+  if (status?.tracked && status.job?.status === 'failed') return (
+    <p role="status" className="mb-2 text-xs leading-relaxed text-amber-500">自動更新已停止：{status.job.error || '角色資料目前無法確認'}。已儲存的成長報告仍保留。</p>
+  );
+  if (status?.tracked && !submitted && !isCreating(status)) return null;
 
   const creating = isCreating(status) || (submitting && !captchaActive);
   const isInitialBackfill = !status?.lastSyncedDate;
@@ -372,7 +376,7 @@ const GrowthTracker: React.FC<GrowthTrackerProps> = ({
           role="note"
           className="maple-growth-create-tooltip absolute bottom-full right-0 z-50 mb-2 w-[min(18rem,calc(100vw-3rem))] rounded-lg border border-slate-200 bg-white/95 px-3 py-2 text-left text-xs leading-5 text-slate-700 shadow-xl shadow-slate-900/15 backdrop-blur-sm dark:border-slate-700 dark:bg-black/95 dark:text-slate-300 dark:shadow-black/50"
         >
-          <p>{`由本站使用 NEXON 官方歷史資料為 ${characterName} 建立永久追蹤；建立後會由伺服器每日自動更新。`}</p>
+          <p>{`由本站使用 NEXON 官方歷史資料為 ${characterName} 建立成長檔案；角色仍有效時會由伺服器每日自動更新。改名或識別碼失效時會停止舊資料的更新。`}</p>
           {creating && isInitialBackfill && (
             <p className="mt-1 text-slate-500">生成會在背景自動進行，可以關閉此頁面，稍後再回來查看。</p>
           )}

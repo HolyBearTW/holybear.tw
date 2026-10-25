@@ -5,6 +5,7 @@ import { onRequestGet as getRanking } from '../../functions/api/rankings/combat-
 import { onRequestGet as getCharacterRank } from '../../functions/api/rankings/character/[name]';
 
 afterEach(() => vi.unstubAllGlobals());
+const snapshotAt = new Date().toISOString();
 
 const entry = {
   ocid: 'ocid-1', characterName: '快取角色', worldName: '艾麗亞', jobName: '主教',
@@ -128,17 +129,17 @@ describe('ranking degraded mode', () => {
   it('paginates the compact CDN snapshot without reading D1 again', async () => {
     vi.stubGlobal('caches', { default: { match: vi.fn(async (request: Request) => (
       new URL(request.url).pathname.endsWith('/snapshot')
-        ? new Response(JSON.stringify({ generatedAt: '2026-09-04T00:00:00Z', total: 50, items: [entry] }))
+        ? new Response(JSON.stringify({ generatedAt: snapshotAt, total: 50, items: [entry] }))
         : undefined
     )) } });
     const result = await getCachedRankingPage({} as never, { page: 1, pageSize: 10 });
-    expect(result).toMatchObject({ degraded: true, snapshotAt: '2026-09-04T00:00:00Z', total: 50, items: [entry] });
+    expect(result).toMatchObject({ degraded: true, snapshotAt, total: 50, items: [entry] });
   });
 
   it('finds a character rank in the compact snapshot', async () => {
     vi.stubGlobal('caches', { default: { match: vi.fn(async (request: Request) => (
       new URL(request.url).pathname.endsWith('/snapshot')
-        ? new Response(JSON.stringify({ generatedAt: '2026-09-04T00:00:00Z', total: 50, items: [entry] }))
+        ? new Response(JSON.stringify({ generatedAt: snapshotAt, total: 50, items: [entry] }))
         : undefined
     )) } });
     expect(await getCachedCharacterRank({} as never, '快取角色')).toMatchObject({ degraded: true, rank: 1, total: 50 });
@@ -147,13 +148,13 @@ describe('ranking degraded mode', () => {
   it('falls through an incomplete cache snapshot to the Pages static asset', async () => {
     vi.stubGlobal('caches', { default: { match: vi.fn(async (request: Request) => (
       new URL(request.url).pathname.endsWith('/snapshot')
-        ? new Response(JSON.stringify({ generatedAt: '2026-09-04T00:00:00Z', total: 1294, items: [entry] }))
+        ? new Response(JSON.stringify({ generatedAt: snapshotAt, total: 1294, items: [entry] }))
         : undefined
     )) } });
     const env = {
       ASSETS: {
         fetch: vi.fn(async () => new Response(JSON.stringify({
-          generatedAt: '2026-09-04T01:00:00Z', total: 1294, items: [laterEntry],
+          generatedAt: snapshotAt, total: 1294, items: [laterEntry],
         }))),
       },
     };
@@ -167,7 +168,7 @@ describe('ranking degraded mode', () => {
   it('returns HTTP 200 cached rankings when D1 throws', async () => {
     vi.stubGlobal('caches', { default: { match: vi.fn(async (request: Request) => (
       new URL(request.url).pathname.endsWith('/snapshot')
-        ? new Response(JSON.stringify({ generatedAt: '2026-09-04T00:00:00Z', total: 50, items: [entry] }))
+        ? new Response(JSON.stringify({ generatedAt: snapshotAt, total: 50, items: [entry] }))
         : undefined
     )) } });
     const env = { DB: { prepare: vi.fn(() => { throw new Error('D1 quota exceeded'); }) } };
@@ -182,7 +183,7 @@ describe('ranking degraded mode', () => {
   it('returns cached character rank when D1 throws', async () => {
     vi.stubGlobal('caches', { default: { match: vi.fn(async (request: Request) => (
       new URL(request.url).pathname.endsWith('/snapshot')
-        ? new Response(JSON.stringify({ generatedAt: '2026-09-04T00:00:00Z', total: 50, items: [entry] }))
+        ? new Response(JSON.stringify({ generatedAt: snapshotAt, total: 50, items: [entry] }))
         : undefined
     )) } });
     const env = { DB: { prepare: vi.fn(() => { throw new Error('D1 unavailable'); }) } };
@@ -206,5 +207,18 @@ describe('incremental importer status', () => {
       d1_budget_date: '2026-09-04', d1_rows_read_estimate: 100, d1_rows_written_estimate: 200,
     }]);
     expect(metrics.counts).toMatchObject({ staging_total: 900, staging_updated: 100, resolved_ocid: 20, pending_resolution: 875, retry_pending: 3 });
+  });
+});
+
+describe('ranking snapshot freshness', () => {
+  it.each(['expired', 'future', 'invalid'])('does not restore old rankings from a %s snapshot', async (kind) => {
+    const generatedAt = kind === 'invalid' ? 'invalid'
+      : new Date(Date.now() + (kind === 'expired' ? -300_001 : 60_000)).toISOString();
+    vi.stubGlobal('caches', { default: { match: vi.fn(async (request: Request) => (
+      new URL(request.url).pathname.endsWith('/snapshot')
+        ? Response.json({ generatedAt, total: 1, items: [entry] }) : undefined
+    )) } });
+    expect(await getCachedRankingPage({} as never, { page: 1, pageSize: 10 })).toBeNull();
+    expect(await getCachedCharacterRank({} as never, entry.characterName)).toBeNull();
   });
 });

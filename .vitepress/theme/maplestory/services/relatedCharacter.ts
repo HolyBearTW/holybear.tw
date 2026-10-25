@@ -1,4 +1,5 @@
 export interface RelatedCharacter {
+  ocid: string | null;
   characterName: string;
   worldName: string;
   characterClass: string;
@@ -10,6 +11,8 @@ export interface RelatedCharacter {
   characterGuildName: string | null;
   characterDateCreate: string | null;
   metadataAvailable?: boolean;
+  lastCheckedAt: string | null;
+  dataStatus: 'current' | 'stale' | 'unverified' | 'unavailable';
 }
 
 interface D1AltRecord {
@@ -22,9 +25,12 @@ interface D1AltRecord {
   characterImage: string | null;
   guildName: string | null;
   metadataAvailable: boolean;
+  lastCheckedAt?: string | null;
+  dataStatus?: RelatedCharacter['dataStatus'];
 }
 
 export const fromD1Alt = (character: D1AltRecord): RelatedCharacter => ({
+  ocid: character.ocid,
   characterName: character.characterName,
   worldName: character.worldName,
   characterClass: character.jobName,
@@ -36,4 +42,6 @@ export const fromD1Alt = (character: D1AltRecord): RelatedCharacter => ({
   characterGuildName: character.guildName,
   characterDateCreate: null,
   metadataAvailable: character.metadataAvailable,
+  lastCheckedAt: character.lastCheckedAt ?? null,
+  dataStatus: character.dataStatus ?? 'unverified',
 });

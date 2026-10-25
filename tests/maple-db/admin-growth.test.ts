@@ -71,6 +71,14 @@ describe('shared administrator authorization', () => {
 });
 
 describe('read-only growth report administration', () => {
+  it('exposes a public stopped reason without returning raw diagnostics', async () => {
+    addProfile('stopped', '舊名字', 'failed');
+    local.sqlite.prepare(`UPDATE growth_profiles SET last_error=? WHERE ocid='stopped'`)
+      .run('角色已改名為「新名字」 private-diagnostic');
+    const body = await (await get()).json() as { reports: Array<{ stopReason: string }> };
+    expect(body.reports[0].stopReason).toBe('角色已改名或已失效，已停止自動更新');
+    expect(JSON.stringify(body)).not.toContain('private-diagnostic');
+  });
   it('uses actual snapshot writes as the report update time and prefers the latest historical identity', async () => {
     addProfile('a', '過去角色名稱');
     addSnapshot('a', '2026-10-06', '2026-10-07T01:00:00.000Z');

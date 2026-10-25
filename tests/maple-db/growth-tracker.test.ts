@@ -8,6 +8,8 @@ import {
 } from '../../functions/_shared/growth-tracker';
 import type { Env } from '../../functions/_shared/env';
 import { getRuntimeConfig } from '../../functions/_shared/runtime-config';
+import { findCharacterByOcid, invalidateCharacterStatement, upsertCanonicalNexonCharacter } from '../../functions/_shared/character-repository';
+import { getCharacterCombatPowerRank } from '../../functions/_shared/ranking-repository';
 import { createTestD1 } from './sqlite-d1';
 
 const OCID = 'a3e399217d603631033dd65ebaa08275';
@@ -54,6 +56,102 @@ afterEach(() => {
 });
 
 describe('persistent growth tracking', () => {
+  const seedDailyIdentity = async () => {
+    await upsertCanonicalNexonCharacter(env.DB, {
+      ocid: OCID, characterName: '舊名字', worldName: '艾麗亞', jobName: '卡蒂娜',
+      level: 271, combatPower: 100, characterImage: 'image', guildName: null,
+      requestedAt: '2025-10-17T18:00:00.000Z', observedAt: '2025-10-17T18:00:00.000Z',
+    }, [{ source: 'nexon' }]);
+    await createGrowthProfile(env.DB, OCID, '2025-10-17');
+    local.sqlite.prepare(`UPDATE growth_profiles SET character_name='舊名字', status='completed',
+      last_synced_date='2025-10-16', basic_last_synced_date='2025-10-16', dojang_last_synced_date='2025-10-16'
+      WHERE ocid=?`).run(OCID);
+  };
+
+  it('stops a missing current identity permanently instead of rescheduling empty reports every day', async () => {
+    await seedDailyIdentity();
+    vi.stubGlobal('fetch', vi.fn(async () => Response.json({ error: { name: 'OPENAPI00003' } }, { status: 400 })));
+    expect(await backfillGrowthBatch(env)).toMatchObject({ processed: 1, failed: 1, retry: 0, requests: 2 });
+    expect((await getGrowthStatus(env.DB, OCID)).job).toMatchObject({ status: 'failed', nextRetryAt: null });
+    expect((await findCharacterByOcid(env.DB, OCID))?.isActive).toBe(false);
+    expect(await getCharacterCombatPowerRank(env.DB, '舊名字')).toBeNull();
+    expect(local.sqlite.prepare('SELECT COUNT(*) AS n FROM growth_snapshots').get()?.n).toBe(0);
+    const stopped = local.sqlite.prepare('SELECT updated_at FROM growth_profiles').get()?.updated_at;
+    vi.mocked(fetch).mockClear();
+    vi.setSystemTime('2025-10-19T19:00:00.000Z');
+    expect(await backfillGrowthBatch(env)).toMatchObject({ processed: 0, requests: 0 });
+    expect(fetch).not.toHaveBeenCalled();
+    expect(local.sqlite.prepare('SELECT updated_at FROM growth_profiles').get()?.updated_at).toBe(stopped);
+  });
+
+  it('confirms a current rename before stopping the old profile and excludes its outdated ranking row', async () => {
+    await seedDailyIdentity();
+    vi.stubGlobal('fetch', vi.fn(async (input: string) => {
+      const url = new URL(input);
+      return Response.json(basic(url.searchParams.get('date') || '2025-10-17', { character_name: '新名字' }));
+    }));
+    expect(await backfillGrowthBatch(env)).toMatchObject({ processed: 1, failed: 1, retry: 0, requests: 2 });
+    expect((await getGrowthStatus(env.DB, OCID)).job?.error).toContain('角色已改名為「新名字」');
+    expect(await getCharacterCombatPowerRank(env.DB, '舊名字')).toBeNull();
+    expect(local.sqlite.prepare('SELECT COUNT(*) AS n FROM growth_snapshots').get()?.n).toBe(0);
+  });
+
+  it('keeps temporary current-identity failures retryable and leaves the character ranked', async () => {
+    await seedDailyIdentity();
+    vi.stubGlobal('fetch', vi.fn(async (input: string) => {
+      const url = new URL(input);
+      return url.searchParams.has('date')
+        ? Response.json({ error: { name: 'OPENAPI00003' } }, { status: 400 })
+        : new Response('temporary', { status: 503 });
+    }));
+    expect(await backfillGrowthBatch(env)).toMatchObject({ processed: 1, retry: 1, failed: 0, requests: 2 });
+    expect((await getGrowthStatus(env.DB, OCID)).job).toMatchObject({ status: 'pending' });
+    expect((await findCharacterByOcid(env.DB, OCID))?.isActive).toBe(true);
+    expect(await getCharacterCombatPowerRank(env.DB, '舊名字')).not.toBeNull();
+    vi.setSystemTime('2025-10-17T19:01:00.000Z');
+    vi.stubGlobal('fetch', vi.fn(async () => Response.json(basic('2025-10-17', { character_name: '舊名字' }))));
+    expect(await backfillGrowthBatch(env)).toMatchObject({ failed: 0, retry: 0 });
+    expect(local.sqlite.prepare('SELECT COUNT(*) AS n FROM growth_snapshots').get()?.n).toBe(1);
+  });
+
+  it('stops an obsolete name even when its old OCID still returns readable basic data', async () => {
+    await seedDailyIdentity();
+    vi.stubGlobal('fetch', vi.fn(async (input: string) => {
+      const url = new URL(input);
+      if (url.pathname.endsWith('/id') || url.searchParams.has('date')) {
+        return Response.json({ error: { name: 'OPENAPI00003' } }, { status: 400 });
+      }
+      return Response.json(basic('2025-10-17', { character_name: '舊名字' }));
+    }));
+    expect(await backfillGrowthBatch(env)).toMatchObject({ failed: 1, requests: 3 });
+    expect((await findCharacterByOcid(env.DB, OCID))?.isActive).toBe(false);
+  });
+
+  it('does not confuse historical pre-creation dates with an unavailable current character', async () => {
+    await createGrowthProfile(env.DB, OCID, '2025-10-17');
+    vi.stubGlobal('fetch', vi.fn(async (input: string) => {
+      const url = new URL(input);
+      if (url.pathname.endsWith('/id')) return Response.json({ ocid: OCID });
+      if (!url.searchParams.has('date')) return Response.json(basic('2025-10-17'));
+      return Response.json({ error: { name: 'OPENAPI00003' } }, { status: 400 });
+    }));
+    expect(await backfillGrowthBatch(env)).toMatchObject({ processed: 1, failed: 0, retry: 0, requests: 5 });
+    expect((await getGrowthStatus(env.DB, OCID)).job?.status).toBe('pending');
+  });
+
+  it('blocks late snapshot writes after another request invalidates an in-flight profile', async () => {
+    await seedDailyIdentity();
+    let release: ((response: Response) => void) | undefined;
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>((resolve) => { release = resolve; })));
+    const run = backfillGrowthBatch(env);
+    while (!release) await Promise.resolve();
+    await invalidateCharacterStatement(env.DB, OCID, '舊名字', '2025-10-17T19:00:00.000Z', '已停止更新').run();
+    release(Response.json(basic('2025-10-17', { character_name: '舊名字' })));
+    await run;
+    expect(local.sqlite.prepare('SELECT COUNT(*) AS n FROM growth_snapshots').get()?.n).toBe(0);
+    expect((await getGrowthStatus(env.DB, OCID)).job?.status).toBe('failed');
+  });
+
   it('accepts the Growth throughput clamps without changing date concurrency', () => {
     const config = getRuntimeConfig({
       ...env,

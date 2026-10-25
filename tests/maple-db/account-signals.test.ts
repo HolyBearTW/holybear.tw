@@ -156,6 +156,30 @@ afterEach(() => {
 });
 
 describe('account-signal queue and on-demand synchronization', () => {
+  it('classifies an expired complete alt without adding D1 statements, mutations or queue work', async () => {
+    installSignalApi();
+    await getCharacterAlts(env, '主角色');
+    const prepare = vi.spyOn(env.DB, 'prepare');
+    const changes = () => Number(local.sqlite.prepare('SELECT total_changes() AS n').get()?.n);
+    const freshBefore = changes();
+    const fresh = await getCharacterAlts(env, '主角色');
+    const freshMutations = changes() - freshBefore;
+    const freshStatements = prepare.mock.calls.map(([sql]) => sql.replace(/\s+/g, ' ').trim());
+    expect(fresh.alts.map((alt) => alt.characterName)).toContain('分身角色');
+    local.sqlite.exec(`UPDATE characters SET nexon_requested_at='2026-08-01T00:00:00.000Z' WHERE ocid='ocid-分身角色'`);
+    prepare.mockClear();
+    const staleBefore = changes();
+    const stale = await getCharacterAlts(env, '主角色');
+    expect(changes() - staleBefore).toBe(freshMutations);
+    expect(prepare.mock.calls.map(([sql]) => sql.replace(/\s+/g, ' ').trim())).toEqual(freshStatements);
+    expect(stale.alts).toHaveLength(0);
+    expect(stale.unverifiedAlts).toEqual([expect.objectContaining({
+      ocid: 'ocid-分身角色', dataStatus: 'stale', lastCheckedAt: '2026-08-01T00:00:00.000Z',
+    })]);
+    expect(local.sqlite.prepare('SELECT COUNT(*) AS n FROM character_metadata_refresh').get()?.n).toBe(0);
+    expect(local.sqlite.prepare(`SELECT is_active FROM characters WHERE ocid='ocid-分身角色'`).get()?.is_active).toBe(1);
+  });
+
   it('enqueues canonical writes and on-demand full sync completes the same queue row', async () => {
     installSignalApi();
     expect(local.sqlite.prepare(`SELECT status FROM account_signal_sync WHERE ocid='ocid-主角色'`).get()?.status)
@@ -744,7 +768,7 @@ describe('account-signal queue and on-demand synchronization', () => {
       WHERE trigger_character='失敗A' AND status='failed'`).get()?.count).toBe(1);
   });
 
-  it('returns 12 alts for the 神之小K／光之宅男小K convergence fixture before the second search', async () => {
+  it('keeps 9 current and 3 unverified alts in the convergence fixture before the second search', async () => {
     const grouped = ['神之小K', '光之宅男小K', ...Array.from({ length: 8 }, (_, index) => `既有分身${index + 1}`)];
     for (const name of grouped) await seedCharacter(name);
     await seedSignal('神之小K', 'k-first-edge');
@@ -754,9 +778,11 @@ describe('account-signal queue and on-demand synchronization', () => {
     installNamedSignalApi(['神之小K', '冠軍分身1', '冠軍分身2', '冠軍分身3']);
 
     const first = await getCharacterAlts(env, '神之小K');
-    expect(first.alts).toHaveLength(12);
+    expect(first.alts).toHaveLength(9);
+    expect(first.unverifiedAlts.map((alt) => alt.characterName).sort()).toEqual(['冠軍分身1', '冠軍分身2', '冠軍分身3']);
     const second = await getCharacterAlts(env, '光之宅男小K');
-    expect(second.alts).toHaveLength(12);
+    expect(second.alts).toHaveLength(9);
+    expect(second.unverifiedAlts).toHaveLength(3);
     expect(new Set(['神之小K', ...altNames(first)]))
       .toEqual(new Set(['光之宅男小K', ...altNames(second)]));
   });

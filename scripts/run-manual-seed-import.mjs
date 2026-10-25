@@ -387,7 +387,8 @@ export const canonicalSql = (row, character) => {
     ${sqlLiteral(character.characterImage)}, ${sqlLiteral(character.guildName)}, ${sqlLiteral(character.observedAt)},
     ${sqlLiteral(character.observedAt)}, ${sqlLiteral(character.nexonUpdatedAt ?? null)}, ${sqlLiteral(character.observedAt)}, ${sqlLiteral(character.observedAt)},
     ${sqlLiteral(character.requestedAt ?? character.observedAt)})
-  ON CONFLICT(ocid) DO UPDATE SET character_name=excluded.character_name, normalized_name=excluded.normalized_name,
+  ON CONFLICT(ocid) DO UPDATE SET is_active=1, invalidated_at=NULL, invalidation_reason=NULL,
+    character_name=excluded.character_name, normalized_name=excluded.normalized_name,
     world_name=excluded.world_name, job_name=excluded.job_name, level=excluded.level,
     combat_power=excluded.combat_power, character_image=excluded.character_image, guild_name=excluded.guild_name,
     first_seen_at=MIN(characters.first_seen_at, excluded.first_seen_at),

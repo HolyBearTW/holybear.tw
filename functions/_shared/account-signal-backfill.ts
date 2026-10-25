@@ -39,8 +39,8 @@ export const backfillAccountSignalBatch = async (
   const immediateResult = await env.DB.prepare(`
     SELECT c.* FROM characters c
     LEFT JOIN account_signal_sync s ON s.ocid = c.ocid AND s.signal_type = ?1
-    WHERE s.ocid IS NULL OR s.status = 'pending'
-      OR (s.status = 'retry' AND (s.next_retry_at IS NULL OR s.next_retry_at <= ?2))
+    WHERE c.is_active = 1 AND (s.ocid IS NULL OR s.status = 'pending'
+      OR (s.status = 'retry' AND (s.next_retry_at IS NULL OR s.next_retry_at <= ?2)))
     ORDER BY CASE
       WHEN s.ocid IS NULL OR s.status = 'pending' THEN 0
       WHEN s.status = 'retry' THEN 1
@@ -58,7 +58,7 @@ export const backfillAccountSignalBatch = async (
     const staleResult = await env.DB.prepare(`
       SELECT c.* FROM characters c
       JOIN account_signal_sync s ON s.ocid = c.ocid AND s.signal_type = ?1
-      WHERE s.status = 'completed' AND (s.completed_at IS NULL OR s.completed_at <= ?2)
+      WHERE c.is_active = 1 AND s.status = 'completed' AND (s.completed_at IS NULL OR s.completed_at <= ?2)
       ORDER BY COALESCE(s.completed_at, ''), c.ocid ASC LIMIT ?3
     `).bind(ACCOUNT_SIGNAL_TYPE, staleBefore, staleLimit).all<CharacterRow>();
     rows = reserveStale && immediateResult.results.length >= config.accountSignalBackfillBatchSize
@@ -187,7 +187,7 @@ export const backfillAccountChampionBatch = async (
       ON full_sync.ocid = c.ocid AND full_sync.signal_type = ?1
       AND full_sync.status = 'completed'
       AND (full_sync.claim_until IS NULL OR full_sync.claim_until <= ?2)
-    WHERE champion_sync.signal_type = ?3
+    WHERE c.is_active = 1 AND champion_sync.signal_type = ?3
       AND (
         champion_sync.status = 'pending'
         OR (champion_sync.status = 'retry'
