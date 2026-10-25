@@ -10,7 +10,7 @@ const member = (overrides: Partial<RelatedCharacterRecord> = {}): RelatedCharact
 });
 
 describe('related character freshness and identity', () => {
-  it('counts the exact 30-day boundary and separates expired, unknown and unavailable records', () => {
+  it('keeps known imported roles regardless of age or missing metadata timestamps, and separates only confirmed failures', () => {
     const result = classifyRelatedCharacters([
       member({ ocid: 'boundary', lastCheckedAt: new Date(now - 30 * 86_400_000).toISOString() }),
       member({ ocid: 'expired', lastCheckedAt: new Date(now - 30 * 86_400_000 - 1).toISOString() }),
@@ -19,11 +19,10 @@ describe('related character freshness and identity', () => {
       member({ ocid: 'invalid-time', lastCheckedAt: 'invalid' }),
       member({ ocid: 'unavailable', isActive: false }),
       member({ ocid: null, characterName: '尚未解析' }),
-    ], 'main-ocid', now);
-    expect(result.alts.map((alt) => alt.ocid)).toEqual(['boundary']);
-    expect(result.unverifiedAlts.map((alt) => alt.dataStatus)).toEqual([
-      'stale', 'unverified', 'unverified', 'unverified', 'unavailable', 'unverified',
-    ]);
+    ], 'main-ocid');
+    expect(result.alts.map((alt) => alt.ocid)).toEqual(['boundary', 'expired', 'missing-time', 'future-time', 'invalid-time', null]);
+    expect(result.unverifiedAlts.map((alt) => alt.ocid)).toEqual(['unavailable']);
+    expect(result.unverifiedAlts[0].dataStatus).toBe('unavailable');
   });
 
   it('deduplicates renamed OCIDs using the latest canonical time and excludes self by OCID', () => {
@@ -32,7 +31,7 @@ describe('related character freshness and identity', () => {
       member({ characterName: '新名字' }),
       member({ ocid: 'main-ocid', characterName: '主角色舊名' }),
       member({ ocid: null, characterName: '新名字' }),
-    ], 'main-ocid', now);
+    ], 'main-ocid');
     expect(result.alts.map((alt) => alt.characterName)).toEqual(['新名字']);
     expect(result.unverifiedAlts).toEqual([]);
   });
@@ -42,8 +41,8 @@ describe('related character freshness and identity', () => {
       member({ ocid: 'first' }), member({ ocid: 'second' }),
       member({ ocid: null, characterName: '同名', worldName: '艾麗亞' }),
       member({ ocid: null, characterName: '同名', worldName: '普力特' }),
-    ], 'main-ocid', now);
-    expect(result.alts).toHaveLength(2);
-    expect(result.unverifiedAlts).toHaveLength(2);
+    ], 'main-ocid');
+    expect(result.alts).toHaveLength(4);
+    expect(result.unverifiedAlts).toHaveLength(0);
   });
 });

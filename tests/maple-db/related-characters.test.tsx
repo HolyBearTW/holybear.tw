@@ -25,7 +25,7 @@ const alt = (overrides: Partial<HolyBearAltRecord> = {}): HolyBearAltRecord => (
 const data = { ocid: 'main-ocid', basic: { character_name: '主角色' } } as DashboardData;
 const respond = (alts: HolyBearAltRecord[], unverifiedAlts: HolyBearAltRecord[]) => {
   vi.mocked(fetchHolyBearAlts).mockResolvedValue({
-    alts, unverifiedAlts, freshnessDays: 30, resolution: { status: 'complete' },
+    alts, unverifiedAlts, resolution: { status: 'complete' },
   } as HolyBearAltsResponse);
 };
 
@@ -41,12 +41,29 @@ beforeEach(() => {
 afterEach(async () => { await act(async () => root.unmount()); container.remove(); });
 
 describe('related character display', () => {
-  it('excludes old records from the count, ranking requests and clickable search cards', async () => {
-    respond([alt()], [alt({ ocid: 'old-ocid', characterName: '舊名字', dataStatus: 'stale' })]);
+  it('keeps seven older imported roles in the normal list and loads ranks only for the visible page', async () => {
+    const names = Array.from({ length: 7 }, (_, index) => `匯入測試角色${index + 1}`);
+    respond(names.map((name, index) => alt({ ocid: `ocid-${index}`, characterName: name,
+      lastCheckedAt: '2026-09-09T00:00:00Z', dataStatus: 'stale' })), []);
+    await act(async () => root.render(<RelatedCharacters data={data} onSelectCharacter={vi.fn()} />));
+    expect(container.textContent).toContain('共發現 7 個分身');
+    expect(container.querySelector('details')).toBeNull();
+    expect(container.querySelectorAll('button[aria-label^="查詢分身 "]')).toHaveLength(5);
+    expect(fetchHolyBearCharacterRank).toHaveBeenCalledTimes(5);
+    const next = [...container.querySelectorAll('button')].find((button) => button.textContent?.trim() === '下一頁')!;
+    await act(async () => next.click());
+    expect(container.querySelectorAll('button[aria-label^="查詢分身 "]')).toHaveLength(2);
+    expect(fetchHolyBearCharacterRank).toHaveBeenCalledTimes(7);
+    const previous = [...container.querySelectorAll('button')].find((button) => button.textContent?.trim() === '上一頁')!;
+    await act(async () => previous.click());
+    expect(fetchHolyBearCharacterRank).toHaveBeenCalledTimes(7);
+  });
+  it('excludes only confirmed unavailable records from the count, ranking requests and clickable search cards', async () => {
+    respond([alt()], [alt({ ocid: 'old-ocid', characterName: '舊名字', dataStatus: 'unavailable', isActive: false })]);
     const select = vi.fn();
     await act(async () => root.render(<RelatedCharacters data={data} onSelectCharacter={select} />));
-    expect(container.textContent).toContain('近期資料 1 個分身');
-    expect(container.textContent).toContain('尚未重新確認 · 1 筆');
+    expect(container.textContent).toContain('共發現 1 個分身');
+    expect(container.textContent).toContain('舊名稱已無法查詢 · 1 筆');
     expect(container.querySelector('[aria-label="查詢分身 舊名字"]')).toBeNull();
     expect(fetchHolyBearCharacterRank).toHaveBeenCalledExactlyOnceWith('近期角色');
     await act(async () => (container.querySelector('[aria-label="查詢分身 近期角色"]') as HTMLButtonElement).click());
@@ -56,7 +73,7 @@ describe('related character display', () => {
   it('renders a pending-only result without fetching ranks or the ranking snapshot', async () => {
     respond([], [alt({ dataStatus: 'unavailable', isActive: false })]);
     await act(async () => root.render(<RelatedCharacters data={data} onSelectCharacter={vi.fn()} />));
-    expect(container.textContent).toContain('近期資料 0 個分身');
+    expect(container.textContent).toContain('共發現 0 個分身');
     expect(container.textContent).toContain('已停止收錄');
     expect(fetchHolyBearCharacterRank).not.toHaveBeenCalled();
     expect(fetchHolyBearRankingSnapshot).not.toHaveBeenCalled();

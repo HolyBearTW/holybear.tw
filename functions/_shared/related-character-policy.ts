@@ -1,6 +1,5 @@
-// Read-time policy only: expiry must not enqueue work or persist status changes.
-export const RELATED_CHARACTER_FRESHNESS_DAYS = 30;
-const MAX_AGE_MS = RELATED_CHARACTER_FRESHNESS_DAYS * 86_400_000;
+// Imported account relations remain known regardless of metadata age. Only
+// an explicit official identity failure can move a record out of the list.
 
 export interface RelatedCharacterRecord {
   ocid: string | null;
@@ -42,19 +41,15 @@ export const mergeRelatedCharacters = (members: RelatedCharacterRecord[]) => {
   return [...identified.values(), ...unresolved.values()];
 };
 
-export const classifyRelatedCharacters = (members: RelatedCharacterRecord[], currentOcid: string, now = Date.now()) => {
+export const classifyRelatedCharacters = (members: RelatedCharacterRecord[], currentOcid: string) => {
   const classified = mergeRelatedCharacters(members)
     .filter((member) => member.ocid !== currentOcid)
     .map((member) => {
-      const checkedAt = checkedTime(member);
-      const dataStatus: RelatedCharacterDataStatus = !member.isActive ? 'unavailable'
-        : !member.ocid || !Number.isFinite(checkedAt) || checkedAt > now ? 'unverified'
-          : now - checkedAt > MAX_AGE_MS ? 'stale' : 'current';
+      const dataStatus: RelatedCharacterDataStatus = member.isActive ? 'current' : 'unavailable';
       return { ...member, dataStatus };
     });
   return {
     alts: classified.filter((member) => member.dataStatus === 'current'),
     unverifiedAlts: classified.filter((member) => member.dataStatus !== 'current'),
-    freshnessDays: RELATED_CHARACTER_FRESHNESS_DAYS,
   };
 };

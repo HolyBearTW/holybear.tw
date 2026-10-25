@@ -80,17 +80,31 @@ afterEach(() => {
 });
 
 describe('character metadata refresh queue', () => {
-  it('queues a missing Champion member without resolving character APIs in /alts', async () => {
+  it('does not enqueue an unresolved Champion name that NEXON explicitly confirms unavailable', async () => {
     vi.stubGlobal('fetch', vi.fn(async (input: string) => {
       const path = new URL(input).pathname;
       const response = signalResponse(path);
       if (response) return response;
+      if (path.endsWith('/id')) return Response.json({ error: { name: 'OPENAPI00004' } }, { status: 400 });
+      throw new Error(`Unexpected endpoint ${path}`);
+    }));
+    const result = await getCharacterAlts(env, '主角色');
+    expect(result.alts).toHaveLength(0);
+    expect(result.unverifiedAlts).toEqual([expect.objectContaining({ characterName: '待補分身', ocid: null, dataStatus: 'unavailable' })]);
+    expect(local.sqlite.prepare('SELECT COUNT(*) AS n FROM character_metadata_refresh').get()?.n).toBe(0);
+  });
+  it('queues a missing Champion member after checking only its name, without resolving basic/stat in /alts', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: string) => {
+      const path = new URL(input).pathname;
+      const response = signalResponse(path);
+      if (response) return response;
+      if (path.endsWith('/id')) return Response.json({ ocid: 'alt-ocid' });
       throw new Error(`Unexpected character API call in /alts: ${path}`);
     }));
 
     const result = await getCharacterAlts(env, '主角色');
-    expect(result.alts).toHaveLength(0);
-    expect(result.unverifiedAlts).toContainEqual(expect.objectContaining({
+    expect(result.unverifiedAlts).toHaveLength(0);
+    expect(result.alts).toContainEqual(expect.objectContaining({
       characterName: '待補分身',
       metadataAvailable: false,
       level: null,
@@ -102,7 +116,8 @@ describe('character metadata refresh queue', () => {
       WHERE normalized_name='待補分身' AND expected_world_name='艾麗亞'`).get())
       .toMatchObject({ status: 'pending', reason: 'missing_character' });
     const paths = vi.mocked(fetch).mock.calls.map(([input]) => new URL(String(input)).pathname);
-    expect(paths.some((path) => path.endsWith('/id') || path.includes('/character/'))).toBe(false);
+    expect(paths.filter((path) => path.endsWith('/id'))).toHaveLength(1);
+    expect(paths.some((path) => path.includes('/character/'))).toBe(false);
   });
 
   it('consumes the queue through id then parallel basic/stat and enqueues account signals', async () => {
@@ -165,8 +180,8 @@ describe('character metadata refresh queue', () => {
     }));
 
     const result = await getCharacterAlts(env, '主角色');
-    expect(result.alts).toHaveLength(0);
-    expect(result.unverifiedAlts).toContainEqual(expect.objectContaining({
+    expect(result.unverifiedAlts).toHaveLength(0);
+    expect(result.alts).toContainEqual(expect.objectContaining({
       ocid: 'legacy-alt', metadataAvailable: false, level: null, characterImage: null,
     }));
     expect(local.sqlite.prepare(`SELECT status, reason, ocid FROM character_metadata_refresh

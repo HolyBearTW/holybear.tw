@@ -1,7 +1,7 @@
 import { findCharacterByName, invalidateCharacterStatement, isCharacterFresh, upsertCanonicalNexonCharacterWithStorage } from './character-repository';
 import type { Env } from './env';
 import { HttpError } from './http';
-import { NexonRequestError, resolveNexonCharacter } from './nexon-client';
+import { isUnavailableNameLookup, NexonRequestError, resolveNexonCharacter } from './nexon-client';
 import { getRuntimeConfig } from './runtime-config';
 import { invalidateCachedCharacterRank } from './ranking-cache';
 
@@ -44,8 +44,7 @@ export const getOrDiscoverCharacter = async (env: Env, characterName: string) =>
       discovered: stored.created,
     };
   } catch (error) {
-    if (error instanceof NexonRequestError && error.code === 'character_not_found'
-      && (error.status === 404 || error.nexonCode === 'OPENAPI00003')) {
+    if (isUnavailableNameLookup(error)) {
       if (existing) {
         if (existing.isActive !== false) await invalidateCharacterStatement(
           env.DB, existing.ocid, existing.characterName, checkedAt,

@@ -54,12 +54,12 @@ const RelatedCharacters: React.FC<RelatedCharactersProps> = ({
   const currentCharacterName = data.basic.character_name;
   const [members, setMembers] = React.useState<RelatedCharacter[]>([]);
   const [unverifiedMembers, setUnverifiedMembers] = React.useState<RelatedCharacter[]>([]);
-  const [freshnessDays, setFreshnessDays] = React.useState(30);
   const [status, setStatus] = React.useState<'loading' | 'ready' | 'empty' | 'error'>('loading');
   const [resolutionPartial, setResolutionPartial] = React.useState(false);
   const [page, setPage] = React.useState(1);
   const [pageInput, setPageInput] = React.useState('1');
   const [pageSize, setPageSize] = React.useState(getResponsivePageSize);
+  const rankCache = React.useRef(new Map<string, number | null>());
 
   React.useEffect(() => {
     const updatePageSize = () => setPageSize(getResponsivePageSize());
@@ -71,6 +71,7 @@ const RelatedCharacters: React.FC<RelatedCharactersProps> = ({
     const controller = new AbortController();
     setMembers([]);
     setUnverifiedMembers([]);
+    rankCache.current.clear();
     setStatus('loading');
     setResolutionPartial(false);
     setPage(1);
@@ -80,7 +81,6 @@ const RelatedCharacters: React.FC<RelatedCharactersProps> = ({
       .then((result) => {
         if (controller.signal.aborted) throw new DOMException('Aborted', 'AbortError');
         setResolutionPartial(result.resolution?.status === 'partial');
-        setFreshnessDays(result.freshnessDays || 30);
         const unique = new Map<string, RelatedCharacter>();
         for (const record of [...result.alts, ...(result.unverifiedAlts || [])]) {
           const member = fromD1Alt(record);
@@ -91,33 +91,15 @@ const RelatedCharacters: React.FC<RelatedCharactersProps> = ({
         }
         const allMembers = [...unique.values()];
         return {
-          current: allMembers.filter((member) => member.dataStatus === 'current'),
-          unverified: allMembers.filter((member) => member.dataStatus !== 'current'),
+          current: allMembers.filter((member) => member.dataStatus !== 'unavailable'),
+          unverified: allMembers.filter((member) => member.dataStatus === 'unavailable'),
         };
       })
-      .then(async (result) => {
-        const filteredMembers = result.current;
-        const rankingSnapshot = filteredMembers.length ? await fetchHolyBearRankingSnapshot() : new Map<string, number>();
-        const liveRanks = await Promise.allSettled(filteredMembers.map((member) => (
-          fetchHolyBearCharacterRank(member.characterName)
-        )));
+      .then((result) => {
         if (controller.signal.aborted) throw new DOMException('Aborted', 'AbortError');
-        const resolvedMembers = filteredMembers.map((member, index) => {
-          const liveRank = liveRanks[index].status === 'fulfilled'
-            ? liveRanks[index].value?.rank ?? null
-            : null;
-          return {
-            ...member,
-            // Prefer the live D1 rank because newly imported characters may not
-            // exist in the periodically generated static snapshot yet.
-            combatPowerRank: liveRanks[index].status === 'fulfilled' ? liveRank : rankingSnapshot.get(
-              member.characterName.normalize('NFC').toLocaleLowerCase('zh-TW'),
-            ) ?? null,
-          };
-        });
-        setMembers(resolvedMembers);
+        setMembers(result.current);
         setUnverifiedMembers(result.unverified);
-        setStatus(resolvedMembers.length + result.unverified.length > 0 ? 'ready' : 'empty');
+        setStatus(result.current.length + result.unverified.length > 0 ? 'ready' : 'empty');
       })
       .catch((error) => {
         if (error instanceof DOMException && error.name === 'AbortError') return;
@@ -128,6 +110,31 @@ const RelatedCharacters: React.FC<RelatedCharactersProps> = ({
 
     return () => controller.abort();
   }, [currentCharacterName, data.ocid]);
+
+  React.useEffect(() => {
+    if (status !== 'ready') return;
+    const visible = members.slice((page - 1) * pageSize, page * pageSize)
+      .filter((member) => !rankCache.current.has(member.ocid || `${member.worldName}:${member.characterName}`));
+    if (!visible.length) return;
+    let cancelled = false;
+    void (async () => {
+      const snapshot = await fetchHolyBearRankingSnapshot();
+      const ranks = await Promise.allSettled(visible.map((member) => fetchHolyBearCharacterRank(member.characterName)));
+      if (cancelled) return;
+      for (let index = 0; index < visible.length; index += 1) {
+        const member = visible[index];
+        const result = ranks[index];
+        const rank = result.status === 'fulfilled' ? result.value?.rank ?? null
+          : snapshot.get(member.characterName.normalize('NFC').toLocaleLowerCase('zh-TW')) ?? null;
+        rankCache.current.set(member.ocid || `${member.worldName}:${member.characterName}`, rank);
+      }
+      setMembers((previous) => previous.map((member) => ({
+        ...member,
+        combatPowerRank: rankCache.current.get(member.ocid || `${member.worldName}:${member.characterName}`) ?? null,
+      })));
+    })().catch(() => undefined);
+    return () => { cancelled = true; };
+  }, [members, page, pageSize, status]);
 
   const pageCount = Math.max(1, Math.ceil(members.length / pageSize));
 
@@ -162,7 +169,7 @@ const RelatedCharacters: React.FC<RelatedCharactersProps> = ({
             <h2 className="text-base font-bold text-slate-100">分身</h2>
           </div>
           {status === 'ready' && (
-            <span className="maple-related-count shrink-0 whitespace-nowrap text-xs text-cyan-300">近期資料 {members.length} 個分身</span>
+            <span className="maple-related-count shrink-0 whitespace-nowrap text-xs text-cyan-300">共發現 {members.length} 個分身</span>
           )}
         </div>
         <p className="mt-1 text-xs text-slate-500">依公開聯盟資料推定，並非 NEXON 官方 Account ID。</p>
@@ -241,13 +248,13 @@ const RelatedCharacters: React.FC<RelatedCharactersProps> = ({
 
       {status === 'ready' && unverifiedMembers.length > 0 && (
         <details className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
-          <summary className="cursor-pointer text-sm text-amber-200">尚未重新確認 · {unverifiedMembers.length} 筆</summary>
-          <p className="mt-2 text-xs leading-relaxed text-slate-400">以下紀錄超過 {freshnessDays} 天未更新、資料尚待確認，或已無法由官方查詢。名稱可能已變更，不計入上方數量，亦不提供舊名查詢。</p>
+          <summary className="cursor-pointer text-sm text-amber-200">舊名稱已無法查詢 · {unverifiedMembers.length} 筆</summary>
+          <p className="mt-2 text-xs leading-relaxed text-slate-400">以下紀錄已由 NEXON 確認舊名稱無法查詢，或該名字已不再對應原本角色。不計入上方數量，亦不提供舊名查詢。</p>
           <ul className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-5">
             {unverifiedMembers.map((character) => (
               <li key={character.ocid || `${character.worldName}:${character.characterName}`} className="min-w-0 rounded border border-slate-700/60 p-2 text-xs text-slate-400">
                 <span className="block break-all text-slate-300">{character.characterName}</span>
-                <span className="mt-1 block">{character.dataStatus === 'unavailable' ? '已停止收錄' : '尚未重新確認'}</span>
+                <span className="mt-1 block">已停止收錄</span>
                 <span className="mt-1 block">{formatCheckedDate(character.lastCheckedAt)}</span>
               </li>
             ))}

@@ -32,10 +32,18 @@ export class NexonRequestError extends Error {
     public readonly retryable: boolean,
     public readonly code = 'nexon_request_failed',
     public readonly nexonCode: string | null = null,
+    public readonly requestPath: string | null = null,
   ) {
     super(message);
   }
 }
+
+// A failure in basic/stat is not evidence that a name has disappeared. Only
+// the fixed, well-formed name lookup can establish that an old name is absent.
+export const isUnavailableNameLookup = (error: unknown) => error instanceof NexonRequestError
+  && !error.retryable && error.status === 400
+  && ['OPENAPI00003', 'OPENAPI00004'].includes(error.nexonCode || '')
+  && Boolean(error.requestPath?.startsWith('/id?character_name='));
 
 export interface NexonRequestMetric {
   path: string;
@@ -111,6 +119,7 @@ export const fetchNexonJson = async <T>(
           false,
           code,
           nexonCode,
+          path,
         );
       }
       lastError = new NexonRequestError(
@@ -119,6 +128,7 @@ export const fetchNexonJson = async <T>(
         true,
         'nexon_request_failed',
         nexonCode,
+        path,
       );
       const fallback = Math.min(30_000, 500 * (2 ** attempt));
       await wait(retryAfterMilliseconds(response, fallback));

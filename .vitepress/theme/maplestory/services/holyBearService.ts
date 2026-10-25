@@ -67,7 +67,6 @@ export interface HolyBearAltsResponse {
   confidence: 'high' | 'probable' | 'unknown';
   alts: HolyBearAltRecord[];
   unverifiedAlts: HolyBearAltRecord[];
-  freshnessDays: number;
   lastVerifiedAt: string | null;
   resolution: {
     status: 'complete' | 'partial';

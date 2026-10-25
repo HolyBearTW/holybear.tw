@@ -4,9 +4,14 @@ const debugPort = Number(process.env.CHROME_DEBUG_PORT || 9333)
 const baseUrl = process.env.MAPLE_DEV_URL || 'http://localhost:5173/maplestory/'
 const normalizedBaseUrl = baseUrl.replace(/\/$/, '')
 const action = process.argv[2] || 'inspect'
+const characterName = process.env.MAPLE_CHARACTER?.trim()
 const screenshotPath = process.argv[3]
 const viewportWidth = Number(process.env.CAPTURE_WIDTH || 1440)
 const viewportHeight = Number(process.env.CAPTURE_HEIGHT || 1100)
+
+if (action === 'equipment-api' && !characterName) {
+  throw new Error('equipment-api 模式需要透過 MAPLE_CHARACTER 指定角色名稱')
+}
 
 const targets = await fetch(`http://127.0.0.1:${debugPort}/json/list`).then((response) => response.json())
 const target = targets.find((item) => item.type === 'page')
@@ -722,7 +727,6 @@ if (action === 'dashboard-data') {
 }
 
 if (action === 'equipment-api') {
-  const characterName = process.env.MAPLE_CHARACTER || '怪獸小熊'
   const details = await evaluate(`(async () => {
     const apiKey = localStorage.getItem('nexon_api_key');
     if (!apiKey) return JSON.stringify({ ok: false, reason: 'nexon-api-key-not-found' });

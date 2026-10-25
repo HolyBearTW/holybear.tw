@@ -2,6 +2,7 @@ import type { Env } from './env';
 import { findCharacterByOcid, invalidateCharacterStatement } from './character-repository';
 import {
   fetchNexonJson,
+  isUnavailableNameLookup,
   NexonRequestError,
   runWithConcurrency,
   type NexonRequestMetric,
@@ -239,7 +240,8 @@ const assertValidGrowthIdentity = async (env: Env, ocid: string) => {
   } catch (error) {
     if (error instanceof GrowthAdmissionError) throw error;
     if (error instanceof NexonRequestError && !error.retryable) {
-      if (existing && existing.isActive !== false && (error.status === 404 || error.nexonCode === 'OPENAPI00003')) {
+      if (existing && existing.isActive !== false
+        && (error.status === 404 || error.nexonCode === 'OPENAPI00003' || isUnavailableNameLookup(error))) {
         await invalidateCharacterStatement(env.DB, ocid, existing.characterName, checkedAt,
           '官方已無法確認此角色，已停止自動更新並移出排名').run();
         await invalidateCachedCharacterRank(existing.characterName).catch(() => undefined);
@@ -492,7 +494,8 @@ const fetchBasicBatch = async (
           undefined, (metric) => recordGrowthRequestMetric(requestMetrics, metric),
         );
       } catch (error) {
-        if (isMissingHistoricalSnapshot(error) || (error instanceof NexonRequestError && error.status === 404)) {
+        if (isMissingHistoricalSnapshot(error) || isUnavailableNameLookup(error)
+          || (error instanceof NexonRequestError && error.status === 404)) {
           throw new GrowthIdentityError('官方已無法確認此角色，已停止自動更新並移出排名', row.character_name, timestamp);
         }
         throw error;
@@ -515,7 +518,8 @@ const fetchBasicBatch = async (
           undefined, (metric) => recordGrowthRequestMetric(requestMetrics, metric),
         );
       } catch (error) {
-        if (isMissingHistoricalSnapshot(error) || (error instanceof NexonRequestError && error.status === 404)) {
+        if (isMissingHistoricalSnapshot(error) || isUnavailableNameLookup(error)
+          || (error instanceof NexonRequestError && error.status === 404)) {
           throw new GrowthIdentityError('舊名字已無法查詢，已停止自動更新並移出排名', row.character_name, timestamp);
         }
         throw error;

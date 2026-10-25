@@ -98,4 +98,17 @@ describe('confirmed unavailable character identities', () => {
     expect((await findCharacterByOcid(env.DB, 'ocid-同名字'))?.isActive).toBe(false);
     expect(await getCharacterCombatPowerRank(env.DB, '同名字')).toMatchObject({ entry: { ocid: 'new-owner-ocid' }, total: 1 });
   });
+
+  it('recognizes an absent name reported as OPENAPI00004 but does not confuse a stat failure with name disappearance', async () => {
+    await seed('名稱查不到', 100, '2026-10-24T00:00:00.000Z');
+    vi.stubGlobal('fetch', vi.fn(async () => Response.json({ error: { name: 'OPENAPI00004' } }, { status: 400 })));
+    await expect(getOrDiscoverCharacter(env, '名稱查不到')).rejects.toMatchObject({ status: 404 });
+    expect((await findCharacterByOcid(env.DB, 'ocid-名稱查不到'))?.isActive).toBe(false);
+    await seed('仍有效', 100, '2026-10-24T00:00:00.000Z');
+    vi.stubGlobal('fetch', vi.fn(async (input: string) => {
+      if (new URL(input).pathname.endsWith('/id')) return Response.json({ ocid: 'ocid-仍有效' });
+      return Response.json({ error: { name: 'OPENAPI00004' } }, { status: 400 });
+    }));
+    expect(await getOrDiscoverCharacter(env, '仍有效')).toMatchObject({ stale: true, character: { isActive: true } });
+  });
 });

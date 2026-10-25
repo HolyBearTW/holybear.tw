@@ -118,7 +118,10 @@ describe('persistent growth tracking', () => {
     await seedDailyIdentity();
     vi.stubGlobal('fetch', vi.fn(async (input: string) => {
       const url = new URL(input);
-      if (url.pathname.endsWith('/id') || url.searchParams.has('date')) {
+      if (url.pathname.endsWith('/id')) {
+        return Response.json({ error: { name: 'OPENAPI00004' } }, { status: 400 });
+      }
+      if (url.searchParams.has('date')) {
         return Response.json({ error: { name: 'OPENAPI00003' } }, { status: 400 });
       }
       return Response.json(basic('2025-10-17', { character_name: '舊名字' }));

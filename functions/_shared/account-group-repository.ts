@@ -27,6 +27,7 @@ import {
 import { hashChampionRoster, hashCompleteUnionRaider, hashRaiderPresets } from './union-fingerprint';
 import { writeEvidencePayload } from './evidence-storage';
 import { classifyRelatedCharacters, type RelatedCharacterRecord } from './related-character-policy';
+import { verifyRelatedCharacterNames } from './related-character-verification';
 import type {
   ChampionMember, UnionChampionResponse, UnionRaiderResponse, UnionSummaryResponse,
 } from './union-fingerprint';
@@ -592,8 +593,7 @@ const loadOfficialChampionMembers = async (
       isActive: true,
     } satisfies RelatedCharacterRecord;
   }));
-  await enqueueCharacterMetadataRefreshes(env.DB, refreshes);
-  return members;
+  return { members, refreshes };
 };
 
 export const getCharacterAlts = async (env: Env, characterName: string) => {
@@ -653,23 +653,29 @@ export const getCharacterAlts = async (env: Env, characterName: string) => {
       .bind(groupId).first<{ id: number; confidence: string; lastVerifiedAt: string | null }>()
     : null;
   const groupedCharacters = groupId ? await listGroupCharacters(env.DB, groupId) : [];
-  await enqueueCharacterMetadataRefreshes(env.DB, groupedCharacters
+  const groupRefreshes: CharacterMetadataRefreshRequest[] = groupedCharacters
     .filter((member) => member.isActive && !member.metadataAvailable)
     .map((member) => ({
       characterName: member.characterName,
       expectedWorldName: member.worldName,
       ocid: member.ocid,
       reason: 'incomplete_metadata' as const,
-    })));
+    }));
   const officialChampionMembers = await loadOfficialChampionMembers(
     env,
     character,
     synced.championMembers,
   );
-  const { alts, unverifiedAlts, freshnessDays } = classifyRelatedCharacters(
-    [...groupedCharacters, ...officialChampionMembers],
-    character.ocid,
-  );
+  const verifiedMembers = await verifyRelatedCharacterNames(env,
+    [...groupedCharacters, ...officialChampionMembers.members], character.ocid);
+  const activeNames = new Set(verifiedMembers.filter((member) => member.isActive).map((member) => (
+    `${member.worldName.trim().normalize('NFC')}\u0000${member.characterName.trim().normalize('NFC').toLocaleLowerCase('zh-TW')}`
+  )));
+  await enqueueCharacterMetadataRefreshes(env.DB, [...groupRefreshes, ...officialChampionMembers.refreshes]
+    .filter((request) => activeNames.has(
+      `${request.expectedWorldName.trim().normalize('NFC')}\u0000${request.characterName.trim().normalize('NFC').toLocaleLowerCase('zh-TW')}`,
+    )));
+  const { alts, unverifiedAlts } = classifyRelatedCharacters(verifiedMembers, character.ocid);
   const partialReasons = synced.failures.map(({ type, error }) => ({
     signalType: type,
     reason: error instanceof NexonRequestError ? error.code : 'unexpected_error',
@@ -681,7 +687,6 @@ export const getCharacterAlts = async (env: Env, characterName: string) => {
     confidence: accountGroup?.confidence || 'unknown',
     alts,
     unverifiedAlts,
-    freshnessDays,
     lastVerifiedAt: accountGroup?.lastVerifiedAt || synced.lastVerifiedAt,
     resolution: {
       status: partialReasons.length ? 'partial' as const : 'complete' as const,
