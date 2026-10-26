@@ -3,7 +3,9 @@
 ## Production
 
 既有流程保持 `main` → `deploy-vitepress.yml` → `cloudflare-production` → Cloudflare Pages。
-連續推送先等待 5 秒，只發布最新 Commit；正式分支只允許向前推進。
+連續推送先等待 5 秒，只發布最新 Commit。發布前再次確認 HEAD 等於遠端 `main`，
+以指定生產分支舊 SHA 的 `--force-with-lease` 同步 `cloudflare-production`，
+讓 `main` 改寫歷史後也能部署；若生產分支在檢查後已被更新，則拒絕覆蓋。
 本次不變更 Production 的兩個 D1、R2、外部 Durable Object Worker、Secret 或 Access。
 `env.production` 的 `PAGES_DEPLOYMENT_ENV=production` 保留完整網站與既有 API 行為。
 

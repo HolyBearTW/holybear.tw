@@ -251,22 +251,18 @@ jobs:
           readonly release_ref="refs/heads/cloudflare-production"
           final_sha="$(git rev-parse HEAD)"
           remote_sha="$(git ls-remote --heads origin "$release_ref" | awk '{print $1}')"
+          main_sha="$(git ls-remote --exit-code --heads origin refs/heads/main | awk '{print $1}')"
 
-          if [ -n "$remote_sha" ]; then
-            git fetch --no-tags origin "$release_ref:refs/remotes/origin/cloudflare-production"
+          if [ "$final_sha" != "$main_sha" ]; then
+            echo "::error::目前 HEAD 已不是遠端 main 的最新 Commit，停止發布。"
+            exit 1
+          fi
 
-            if [ "$remote_sha" = "$final_sha" ]; then
-              echo "Cloudflare 生產分支已指向 ${final_sha}，無需重複發布。"
-            elif git merge-base --is-ancestor "$remote_sha" "$final_sha"; then
-              git push origin "${final_sha}:${release_ref}"
-            else
-              echo "::error::拒絕讓 Cloudflare 生產分支倒退或切換到分歧歷史。"
-              echo "目前遠端：${remote_sha}"
-              echo "準備發布：${final_sha}"
-              exit 1
-            fi
+          if [ "$remote_sha" = "$final_sha" ]; then
+            echo "Cloudflare 生產分支已指向 ${final_sha}，無需重複發布。"
           else
-            git push origin "${final_sha}:${release_ref}"
+            # main 改寫歷史後仍可同步；若生產分支已被更新，lease 會拒絕覆蓋。
+            git push --force-with-lease="${release_ref}:${remote_sha}" origin "${final_sha}:${release_ref}"
           fi
 
           echo "sha=${final_sha}" >> "$GITHUB_OUTPUT"
