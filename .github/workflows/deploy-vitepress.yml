@@ -31,7 +31,7 @@ jobs:
     steps:
       - name: 等待連續推送結束
         if: github.event_name == 'push'
-        run: sleep 60
+        run: sleep 5
 
       - name: 確認仍是分支最新 Commit
         id: latest
