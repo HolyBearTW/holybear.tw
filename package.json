@@ -27,7 +27,7 @@
     "animejs": "^4.5.0",
     "autoprefixer": "^10.6.1",
     "border-beam": "^1.4.1",
-    "chart.js": "^4.5.1",
+    "chart.js": "^4.6.1",
     "date-fns": "^4.4.0",
     "dompurify": "3.4.17",
     "firebase": "^13.0.0",
