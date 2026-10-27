@@ -1067,7 +1067,7 @@ const dojangRecord = (floorValue: unknown, timeValue: unknown) => {
 export const getGrowthHistory = async (db: D1Database, ocid: string, start: string, end: string) => {
   const profile = await getProfile(db, ocid);
   if (!profile) return null;
-  const [result, previousResult, soulEvents] = await Promise.all([db.prepare(`
+  const [result, previousResult, soulEvents, astraEvents] = await Promise.all([db.prepare(`
     SELECT * FROM growth_snapshots
     WHERE ocid = ?1 AND snapshot_date >= ?2 AND snapshot_date <= ?3
     ORDER BY snapshot_date ASC
@@ -1082,6 +1082,11 @@ export const getGrowthHistory = async (db: D1Database, ocid: string, start: stri
     ORDER BY snapshot_date ASC
   `).bind(ocid, start, end).all<{
     snapshot_date: string; event_type: string; before_value: string; after_value: string;
+  }>(), db.prepare(`
+    SELECT snapshot_date, before_value, after_value FROM growth_astra_events
+    WHERE ocid = ?1 AND snapshot_date >= ?2 AND snapshot_date <= ?3
+  `).bind(ocid, start, end).all<{
+    snapshot_date: string; before_value: string; after_value: string;
   }>()]);
   const snapshots = result.results;
   const previousSnapshot = previousResult.results[0];
@@ -1178,6 +1183,9 @@ export const getGrowthHistory = async (db: D1Database, ocid: string, start: stri
   }
   for (const soulEvent of soulEvents.results) {
     events.push(event(soulEvent.snapshot_date, soulEvent.event_type, soulEvent.before_value, soulEvent.after_value));
+  }
+  for (const astraEvent of astraEvents.results) {
+    events.push(event(astraEvent.snapshot_date, 'astra_acquired', astraEvent.before_value, astraEvent.after_value));
   }
   events.sort((left, right) => left.date.localeCompare(right.date));
   const activeDays = days.filter((day) => day.active).length;

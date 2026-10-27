@@ -1,6 +1,7 @@
 import type { Env } from '../functions/_shared/env';
 import { backfillGrowthBatch } from '../functions/_shared/growth-tracker';
 import { backfillGrowthSoulBatch } from '../functions/_shared/growth-soul';
+import { backfillGrowthAstraBatch } from '../functions/_shared/growth-astra';
 
 /**
  * Growth-only scheduler. All non-Growth queues remain owned by the slower
@@ -8,6 +9,18 @@ import { backfillGrowthSoulBatch } from '../functions/_shared/growth-soul';
  */
 export default {
   scheduled(_controller: ScheduledController, env: Env, context: ExecutionContext) {
+    context.waitUntil((async () => {
+      const startedAt = Date.now();
+      try {
+        for (let index = 0; index < 4 && Date.now() - startedAt < 15000; index += 1) {
+          const astra = await backfillGrowthAstraBatch(env);
+          if (!astra.processedDates) break;
+          console.info('scheduled growth astra batch completed', astra);
+        }
+      } catch (error) {
+        console.error('scheduled growth astra batch failed', error);
+      }
+    })());
     context.waitUntil((async () => {
       const startedAt = Date.now();
       try {
