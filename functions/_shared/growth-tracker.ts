@@ -444,13 +444,20 @@ const fetchBasicBatch = async (
   let firstValidDate: string | null = null;
   let latestName = row.character_name;
   const requestMetrics = createGrowthRequestInstrumentation();
-  let requests = dates.length;
+  let requests = 0;
   const settled = await runWithConcurrency(dates, dateConcurrency, 0, async (date) => {
+    let dateRequestStarted = false;
     try {
       const basic = await fetchNexonJson<NexonBasicHistory>(
         env,
         `/character/basic?ocid=${encodeURIComponent(row.ocid)}&date=${date}`,
-        () => consumeGrowthInvocationBudget(invocationBudget),
+        () => {
+          consumeGrowthInvocationBudget(invocationBudget);
+          if (!dateRequestStarted) {
+            dateRequestStarted = true;
+            requests += 1;
+          }
+        },
         (metric) => recordGrowthRequestMetric(requestMetrics, metric),
       );
       // TMS currently represents a valid historical date before character
@@ -478,7 +485,7 @@ const fetchBasicBatch = async (
       rejected.reason,
       requestMetrics,
       batchStartedAt,
-      requestMetrics.transportAttempts,
+      requests,
     );
   }
   const validSnapshots = settled.flatMap((outcome) => (
@@ -495,11 +502,15 @@ const fetchBasicBatch = async (
     try {
       let current: NexonBasicHistory;
       try {
+        let currentRequestStarted = false;
         current = await fetchNexonJson<NexonBasicHistory>(
           env, `/character/basic?ocid=${encodeURIComponent(row.ocid)}`,
           () => {
             consumeGrowthInvocationBudget(invocationBudget);
-            requests += 1;
+            if (!currentRequestStarted) {
+              currentRequestStarted = true;
+              requests += 1;
+            }
           },
           (metric) => recordGrowthRequestMetric(requestMetrics, metric),
         );
@@ -522,11 +533,15 @@ const fetchBasicBatch = async (
       // current name still resolves to this exact identity before continuing.
       let identity: { ocid?: string };
       try {
+        let identityRequestStarted = false;
         identity = await fetchNexonJson<{ ocid?: string }>(
           env, `/id?character_name=${encodeURIComponent(current.character_name)}`,
           () => {
             consumeGrowthInvocationBudget(invocationBudget);
-            requests += 1;
+            if (!identityRequestStarted) {
+              identityRequestStarted = true;
+              requests += 1;
+            }
           },
           (metric) => recordGrowthRequestMetric(requestMetrics, metric),
         );
@@ -546,7 +561,7 @@ const fetchBasicBatch = async (
         error,
         requestMetrics,
         batchStartedAt,
-        requestMetrics.transportAttempts,
+        requests,
       );
     }
   }
@@ -683,11 +698,19 @@ const fetchDojangBatch = async (
   const dates = Array.from({ length: count }, (_, index) => addDays(firstDate, index));
   const statements: D1PreparedStatement[] = [];
   const requestMetrics = createGrowthRequestInstrumentation();
+  let requests = 0;
   const settled = await runWithConcurrency(dates, dateConcurrency, 0, async (date) => {
+    let dateRequestStarted = false;
     const payload = await fetchNexonJson<NexonDojangHistory>(
       env,
       `/character/dojang?ocid=${encodeURIComponent(row.ocid)}&date=${date}`,
-      () => consumeGrowthInvocationBudget(invocationBudget),
+      () => {
+        consumeGrowthInvocationBudget(invocationBudget);
+        if (!dateRequestStarted) {
+          dateRequestStarted = true;
+          requests += 1;
+        }
+      },
       (metric) => recordGrowthRequestMetric(requestMetrics, metric),
     );
     return { date, payload };
@@ -698,7 +721,7 @@ const fetchDojangBatch = async (
       rejected.reason,
       requestMetrics,
       batchStartedAt,
-      requestMetrics.transportAttempts,
+      requests,
     );
   }
   for (const outcome of settled) {
@@ -707,7 +730,6 @@ const fetchDojangBatch = async (
       env.DB, claim, outcome.value.date, outcome.value.payload, timestamp,
     ));
   }
-  const requests = dates.length;
   const snapshotMutations = statements.length;
   const processedDate = dates.at(-1) || row.sync_target_date;
   if (processedDate >= row.sync_target_date) {

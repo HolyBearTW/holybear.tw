@@ -84,8 +84,8 @@ export const fetchNexonJson = async <T>(
     const timeout = setTimeout(() => controller.abort(), config.nexonRequestTimeoutMs);
     try {
       onRequest?.();
-      attempted = true;
       limiterWaitMs = await acquireNexonRateSlot(env);
+      attempted = true;
       const response = await fetch(`${NEXON_BASE_URL}${path}`, {
         headers: { 'x-nxopen-api-key': apiKey, accept: 'application/json' },
         cache: 'no-store',

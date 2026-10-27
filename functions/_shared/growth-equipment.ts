@@ -258,7 +258,7 @@ export const backfillGrowthEquipmentBatch = async (
 ) => {
   const config = getRuntimeConfig(env);
   if (invocationBudget && invocationBudget.usedRequests >= invocationBudget.maxRequests) {
-    return { processedDates: 0, processedProfiles: 0, completedProfiles: 0, requests: 0 };
+    return { processedDates: 0, processedProfiles: 0, completedProfiles: 0, requests: 0, transportAttempts: 0 };
   }
 
   const timestamp = new Date().toISOString();
@@ -291,13 +291,15 @@ export const backfillGrowthEquipmentBatch = async (
     LIMIT ?2
   `).bind(timestamp, config.growthEquipmentProfileConcurrency).all<EquipmentCandidate>();
 
-  if (candidateRows.results.length === 0) return { processedDates: 0, processedProfiles: 0, completedProfiles: 0, requests: 0 };
+  if (candidateRows.results.length === 0) {
+    return { processedDates: 0, processedProfiles: 0, completedProfiles: 0, requests: 0, transportAttempts: 0 };
+  }
 
   const remainingBudget = invocationBudget
     ? Math.max(0, invocationBudget.maxRequests - invocationBudget.usedRequests)
     : Number.POSITIVE_INFINITY;
   if (remainingBudget <= 0) {
-    return { processedDates: 0, processedProfiles: 0, completedProfiles: 0, requests: 0 };
+    return { processedDates: 0, processedProfiles: 0, completedProfiles: 0, requests: 0, transportAttempts: 0 };
   }
   const targetDateBudget = Math.min(
     remainingBudget,
@@ -366,9 +368,10 @@ export const backfillGrowthEquipmentBatch = async (
       claimedProfiles.push(outcome.value);
     }
   }
-  if (claimedProfiles.length === 0) return { processedDates: 0, processedProfiles: 0, completedProfiles: 0, requests: 0 };
+  if (claimedProfiles.length === 0) {
+    return { processedDates: 0, processedProfiles: 0, completedProfiles: 0, requests: 0, transportAttempts: 0 };
+  }
 
-  let firstError: unknown = null;
   const rowLimit = Number.isFinite(remainingBudget)
     ? Math.max(
         1,
@@ -439,7 +442,6 @@ export const backfillGrowthEquipmentBatch = async (
     if (outcome.status === 'fulfilled') {
       profileContexts.push(outcome.value);
     } else {
-      if (firstError === null) firstError = outcome.reason;
       const failedProfile = claimedProfiles[i];
       await releaseAndScheduleRetry(env, failedProfile.candidate.ocid, failedProfile.token).catch(() => undefined);
     }
@@ -454,6 +456,7 @@ export const backfillGrowthEquipmentBatch = async (
   }
 
   let requests = 0;
+  let transportAttempts = 0;
   await runWithConcurrency(dateTasks, config.growthEquipmentDateConcurrency, 0, async ({ profileIndex, rowIndex }) => {
     const context = profileContexts[profileIndex];
     if (context.failedError !== null) return;
@@ -477,15 +480,22 @@ export const backfillGrowthEquipmentBatch = async (
       return;
     }
 
+    let logicalRequestStarted = false;
     try {
       const payload = await fetchNexonJson<EquipmentHistory>(
         env,
         `/character/item-equipment?ocid=${encodeURIComponent(context.candidate.ocid)}&date=${row.snapshot_date}`,
         () => {
           consumeGrowthInvocationBudget(invocationBudget);
+          if (!logicalRequestStarted) {
+            logicalRequestStarted = true;
+            requests += 1;
+          }
+        },
+        () => {
+          transportAttempts += 1;
         },
       );
-      requests += 1;
       const observation = parseEquipmentPayload(payload, row);
       if (observation.astraName?.startsWith('阿斯特拉')) {
         context.earliestAstraIndex = Math.min(context.earliestAstraIndex, rowIndex);
@@ -522,7 +532,6 @@ export const backfillGrowthEquipmentBatch = async (
     profileContexts.map(async (context) => {
       const { candidate, token, soul, astra, rowLimit: contextRowLimit, rows, observations, failedError } = context;
       if (failedError !== null) {
-        if (firstError === null) firstError = failedError;
         await releaseAndScheduleRetry(env, candidate.ocid, token);
         return;
       }
@@ -679,22 +688,18 @@ export const backfillGrowthEquipmentBatch = async (
         if (soulComplete && astraComplete) {
           completedProfiles += 1;
         }
-      } catch (error) {
-        if (firstError === null) firstError = error;
+      } catch {
         await releaseAndScheduleRetry(env, candidate.ocid, token).catch(() => undefined);
       }
     }),
   );
-
-  if (firstError !== null && processedProfiles === 0) {
-    throw firstError;
-  }
 
   return {
     processedDates,
     processedProfiles,
     completedProfiles,
     requests,
+    transportAttempts,
     ocid: claimedProfiles[0].candidate.ocid,
   };
 };
