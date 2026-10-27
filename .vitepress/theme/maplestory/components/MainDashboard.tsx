@@ -31,6 +31,7 @@ import {
 import { getJobArtwork } from '../jobArtwork';
 import JobArtworkDecoration from './JobArtworkDecoration';
 import { formatMapleBigNumber } from '../services/shareCard';
+import { formatCharacterLiberationStage } from '../services/growthEventFormat';
 
 // Keep the calculator and its formula code out of the character result's first paint.
 const CharacterCalculatorModal = React.lazy(() => import('./CharacterCalculatorModal'));
@@ -405,6 +406,10 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
                          <div className="flex justify-between border-b border-slate-800/50 pb-1.5">
                             <span>武陵道場</span>
                             <span className="text-slate-300 font-mono">{data.dojo?.dojang_best_floor ? `${data.dojo.dojang_best_floor} 層` : '無紀錄'}</span>
+                         </div>
+                         <div className="flex justify-between border-b border-slate-800/50 pb-1.5">
+                            <span>武器解放</span>
+                            <span className="text-slate-300 font-mono">{formatCharacterLiberationStage(data.basic, data.equipment)}</span>
                          </div>
                          <div className="flex justify-between pt-0.5">
                             <span>更新時間</span>

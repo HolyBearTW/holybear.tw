@@ -72,6 +72,7 @@ const eventLabels: Record<string, string> = {
   soul_conversion: '靈魂武器完成轉換',
   soul_grade: '靈魂武器升階',
   astra_acquired: '阿斯特拉輔助武器取得',
+  destiny_phase2: '首次觀測到命運二階',
 };
 
 const GrowthTooltip = ({ active, payload }: any) => {
@@ -568,13 +569,14 @@ const CharacterGrowthHistory: React.FC<CharacterGrowthHistoryProps> = ({ data, a
 
         <div>
           <h4 className="text-sm font-semibold text-slate-200">角色成長大事記</h4>
-          <p className="mt-1 text-xs text-slate-500">記錄升級、改名、職業、世界、公會、解放狀態、武陵、靈魂武器及阿斯特拉輔助武器變化。</p>
+          <p className="mt-1 text-xs text-slate-500">記錄升級、改名、職業、世界、公會、解放狀態、命運武器、武陵、靈魂武器及阿斯特拉輔助武器變化。</p>
           {sortedEvents.length ? (
             <div className="relative mt-5">
               <span className="maple-growth-timeline-line absolute bottom-5 left-[11px] top-3 w-px bg-gradient-to-b from-emerald-400 via-emerald-700 to-slate-800" aria-hidden="true" />
               {sortedEvents.map((event, index) => {
                 const from = formatGrowthEventValue(event, 'before');
                 const to = formatGrowthEventValue(event, 'after');
+                const hideBeforeValue = event.type === 'destiny_phase2' && !event.from;
                 return (
                   <div key={`${event.date}-${event.type}-${index}`} className={`relative flex gap-4 ${index < sortedEvents.length - 1 ? 'pb-5' : ''}`}>
                     <div className="relative z-10 flex w-6 shrink-0 justify-center pt-4">
@@ -590,8 +592,12 @@ const CharacterGrowthHistory: React.FC<CharacterGrowthHistoryProps> = ({ data, a
                         <time className="maple-growth-event-date rounded-md bg-slate-950/70 px-2 py-1 font-mono text-[11px] text-slate-500">{event.date}</time>
                       </div>
                       <div className="mt-3 flex min-w-0 flex-wrap items-center gap-2 text-xs">
-                        <span className="maple-growth-event-before max-w-full break-words rounded-md border border-slate-700 bg-slate-950/70 px-2.5 py-1.5 text-slate-400">{from}</span>
-                        <span className="font-bold text-emerald-500" aria-label="變更為">→</span>
+                        {!hideBeforeValue && (
+                          <>
+                            <span className="maple-growth-event-before max-w-full break-words rounded-md border border-slate-700 bg-slate-950/70 px-2.5 py-1.5 text-slate-400">{from}</span>
+                            <span className="font-bold text-emerald-500" aria-label="變更為">→</span>
+                          </>
+                        )}
                         <span className="maple-growth-event-after max-w-full break-words rounded-md border border-emerald-900/70 bg-emerald-950/30 px-2.5 py-1.5 font-semibold text-emerald-300">{to}</span>
                       </div>
                     </article>

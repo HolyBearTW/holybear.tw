@@ -23,6 +23,7 @@ export interface CharacterBasic {
   character_image: string;
   character_date_create?: string;
   access_flag?: string; // Login status
+  liberation_quest_clear?: string | null;
   liberation_quest_clear_flag?: string;
 }
 
@@ -100,6 +101,7 @@ export interface EquipmentItem {
   starforce: string;
   scroll_upgrade: string;
   scroll_upgradable_count: string;
+  scroll_upgradeable_count?: string;
   golden_hammer_flag: string;
   cuttable_count: string;
   starforce_scroll_flag: string;

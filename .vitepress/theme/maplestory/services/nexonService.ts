@@ -1,7 +1,10 @@
 import { 
   CharacterBasic, CharacterEquipment, CharacterStat, DashboardData, OcidResponse
 } from '../types';
+import { normalizeCharacterBasic } from './growthEventFormat';
 import { maintenanceFetch } from './maintenanceAccess';
+
+export { normalizeCharacterBasic };
 
 // Official data is proxied through Pages Functions so NEXON_API_KEY never enters
 // the browser bundle. Existing apiKey parameters now carry only the maintenance
@@ -62,7 +65,7 @@ export const fetchCharacterBasic = async (characterName: string, apiKey: string)
       headers: { 'x-bypass-key': apiKey, accept: 'application/json' },
     });
     if (!basicRes.ok) throw new Error('Basic profile lookup failed');
-    const basic = await basicRes.json() as CharacterBasic;
+    const basic = normalizeCharacterBasic(await basicRes.json() as CharacterBasic);
     basicCharacterCache[normalizedName] = basic;
     return basic;
   } catch {
@@ -311,7 +314,7 @@ export const fetchCharacterData = async (characterName: string, apiKey: string, 
       throw new Error('Failed to fetch basic character details. API might be unstable or maintenance.');
   }
 
-  const basic: CharacterBasic = await basicRes.json();
+  const basic: CharacterBasic = normalizeCharacterBasic(await basicRes.json());
   const stat: CharacterStat = statRes.ok ? await statRes.json() : { final_stat: [] }; 
   const equipment: CharacterEquipment = equipRes.ok ? await equipRes.json() : { item_equipment: [] };
 
@@ -342,7 +345,7 @@ export const fetchCharacterData = async (characterName: string, apiKey: string, 
   const skill3 = await safeJson(skill3Res);
   const skill4 = await safeJson(skill4Res);
   
-  const basic7Days = await safeJson(basic7DaysRes);
+  const basic7Days = normalizeCharacterBasic(await safeJson(basic7DaysRes));
   const hexaMatrixStat = await safeJson(hexaStatRes);
   const cashItemEquipment = await safeJson(cashItemRes);
   const beautyEquipment = await safeJson(beautyRes);

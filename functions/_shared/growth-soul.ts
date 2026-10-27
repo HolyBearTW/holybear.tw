@@ -1,4 +1,11 @@
 import type { Env } from './env';
+import {
+  isDestinyWeaponPhase1,
+  isDestinyWeaponPhase2,
+  minIsoDate,
+  upsertDestinyPhase2EventStatement,
+  type EquipmentHistoryWeaponItem,
+} from './growth-equipment';
 import { fetchNexonJson, NexonRequestError, runWithConcurrency } from './nexon-client';
 import { getRuntimeConfig } from './runtime-config';
 
@@ -8,16 +15,12 @@ interface SoulTracking {
   highest_grade: number | null;
   previous_soul_name: string | null;
   previous_weapon_name: string | null;
+  earliest_destiny_phase1_date?: string | null;
+  earliest_destiny_phase2_date?: string | null;
 }
 
 interface EquipmentHistory {
-  item_equipment?: Array<{
-    item_equipment_part?: string;
-    item_equipment_slot?: string;
-    item_name?: string;
-    soul_name?: string | null;
-    soul_weapon_grade?: string | null;
-  }>;
+  item_equipment?: EquipmentHistoryWeaponItem[];
 }
 
 // The equipment endpoint returns the active preset in item_equipment.
@@ -29,7 +32,13 @@ const soulObservation = (payload: EquipmentHistory | null) => {
   const chinese = gradeText.match(/第?([一二三四五六七八九十])(?:階級|階段)?/);
   const grade = numeric >= 1 && numeric <= 10 ? numeric
     : chinese ? '一二三四五六七八九十'.indexOf(chinese[1]) + 1 : null;
-  return { grade, soulName: weapon?.soul_name?.trim() || null, weaponName: weapon?.item_name?.trim() || null };
+  return {
+    grade,
+    soulName: weapon?.soul_name?.trim() || null,
+    weaponName: weapon?.item_name?.trim() || null,
+    destinyPhase1: isDestinyWeaponPhase1(weapon),
+    destinyPhase2: isDestinyWeaponPhase2(weapon),
+  };
 };
 
 // This queue is separate from the basic/dojang queue: backfilling equipment
@@ -78,7 +87,14 @@ export const backfillGrowthSoulBatch = async (env: Env) => {
         return { date: row.snapshot_date, ...soulObservation(payload) };
       } catch (error) {
         if (error instanceof NexonRequestError && error.status === 400 && error.nexonCode === 'OPENAPI00003') {
-          return { date: row.snapshot_date, grade: null, soulName: null, weaponName: null };
+          return {
+            date: row.snapshot_date,
+            grade: null,
+            soulName: null,
+            weaponName: null,
+            destinyPhase1: false,
+            destinyPhase2: false,
+          };
         }
         throw error;
       }
@@ -88,10 +104,27 @@ export const backfillGrowthSoulBatch = async (env: Env) => {
     let highest = state.highest_grade;
     let previousSoulName = state.previous_soul_name;
     let previousWeaponName = state.previous_weapon_name;
+    let earliestDestinyPhase1Date = state.earliest_destiny_phase1_date ?? null;
+    let earliestDestinyPhase2Date = state.earliest_destiny_phase2_date ?? null;
+    let destinyTrackingChanged = false;
     const statements: D1PreparedStatement[] = [];
     for (const result of settled) {
       if (result.status !== 'fulfilled') continue;
-      const { date, grade, soulName, weaponName } = result.value;
+      const { date, grade, soulName, weaponName, destinyPhase1, destinyPhase2 } = result.value;
+      if (destinyPhase1) {
+        const updated = minIsoDate(earliestDestinyPhase1Date, date);
+        if (updated !== earliestDestinyPhase1Date) {
+          earliestDestinyPhase1Date = updated;
+          destinyTrackingChanged = true;
+        }
+      }
+      if (destinyPhase2) {
+        const updated = minIsoDate(earliestDestinyPhase2Date, date);
+        if (updated !== earliestDestinyPhase2Date) {
+          earliestDestinyPhase2Date = updated;
+          destinyTrackingChanged = true;
+        }
+      }
       if (grade !== null) {
         if (highest === null && previousSoulName && previousWeaponName && previousWeaponName === weaponName) {
           statements.push(env.DB.prepare(`
@@ -118,13 +151,35 @@ export const backfillGrowthSoulBatch = async (env: Env) => {
         previousWeaponName = weaponName;
       }
     }
+    if (earliestDestinyPhase2Date && destinyTrackingChanged) {
+      statements.push(
+        upsertDestinyPhase2EventStatement(
+          env.DB,
+          candidate.ocid,
+          token,
+          earliestDestinyPhase1Date,
+          earliestDestinyPhase2Date,
+        ),
+      );
+    }
     const processedDate = rows.results.at(-1)?.snapshot_date || candidate.basic_last_synced_date;
     statements.push(env.DB.prepare(`
       UPDATE growth_soul_tracking SET last_synced_date = ?3, highest_grade = ?4,
         previous_soul_name = ?5, previous_weapon_name = ?6,
-        claim_token = NULL, claim_until = NULL, retry_at = NULL, updated_at = ?7
+        earliest_destiny_phase1_date = ?7, earliest_destiny_phase2_date = ?8,
+        claim_token = NULL, claim_until = NULL, retry_at = NULL, updated_at = ?9
       WHERE ocid = ?1 AND claim_token = ?2
-    `).bind(candidate.ocid, token, processedDate, highest, previousSoulName, previousWeaponName, new Date().toISOString()));
+    `).bind(
+      candidate.ocid,
+      token,
+      processedDate,
+      highest,
+      previousSoulName,
+      previousWeaponName,
+      earliestDestinyPhase1Date,
+      earliestDestinyPhase2Date,
+      new Date().toISOString(),
+    ));
     await env.DB.batch(statements);
     return { processedDates: rows.results.length, ocid: candidate.ocid };
   } catch (error) {

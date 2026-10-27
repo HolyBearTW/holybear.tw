@@ -49,7 +49,7 @@ export interface GrowthHistoryDay {
 
 export interface GrowthHistoryEvent {
   date: string;
-  type: 'level' | 'name' | 'class' | 'world' | 'guild' | 'liberation' | 'dojang' | 'soul_conversion' | 'soul_grade' | 'astra_acquired' | string;
+  type: 'level' | 'name' | 'class' | 'world' | 'guild' | 'liberation' | 'dojang' | 'soul_conversion' | 'soul_grade' | 'astra_acquired' | 'destiny_phase2' | string;
   title?: string;
   from: string;
   to: string;

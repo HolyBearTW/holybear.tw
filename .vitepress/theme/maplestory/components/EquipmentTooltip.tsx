@@ -2,6 +2,7 @@ import React from 'react';
 import { Flame } from 'lucide-react';
 import { EquipmentItem, ItemOption, CharacterSetEffect } from '../types';
 import { inferPotentialLineGrade } from '../potentialInference';
+import { detectWeaponItemLiberationStage, formatWeaponLiberationStage } from '../services/growthEventFormat';
 import { TooltipWindowFrame, windowAsset, windowBg } from './TooltipWindowFrame';
 
 interface EquipmentTooltipProps {
@@ -724,6 +725,12 @@ const EquipmentTooltip: React.FC<EquipmentTooltipProps> = ({ item, setEffect, ch
               <div className="flex items-center text-[11px] leading-tight text-green-400">
                   <span className="text-slate-400 w-24 shrink-0 font-medium text-left text-green-400">套組效果</span>
                   <span>{matchedSet.set_name} ({matchedSet.total_set_count})</span>
+              </div>
+           )}
+           {isWeapon && formatWeaponLiberationStage(detectWeaponItemLiberationStage(item, slotType)) && (
+              <div className="flex items-center text-[11px] leading-tight text-amber-300">
+                  <span className="text-slate-400 w-24 shrink-0 font-medium text-left">解放階段</span>
+                  <span>{formatWeaponLiberationStage(detectWeaponItemLiberationStage(item, slotType))}</span>
               </div>
            )}
           </div>
