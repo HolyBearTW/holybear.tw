@@ -435,12 +435,12 @@ const GrowthTracker: React.FC<GrowthTrackerProps> = ({
               )}
               {updatingEquipmentHistory && !creatingProfile && (
                 <span className="maple-growth-progress-meta text-[10px] text-emerald-600/80 dark:text-emerald-400/70">
-                  正在同步靈魂武器與阿斯特拉紀錄
+                  正在同步靈魂武器、阿斯特拉與命運武器紀錄
                 </span>
               )}
               {isInitialBackfill && (
                 <span className="maple-growth-progress-hint text-center text-[10px] leading-4 text-emerald-700/80 dark:text-emerald-300/70">
-                  可以關閉此頁面；資料會在背景每分鐘分批處理，通常幾分鐘到 30 分鐘內完成，完成後再回來查看。
+                  可以關閉此頁面；歷史資料會在背景自動分批整理，實際完成時間會依待處理資料量而定，完成後即可查看成長報告。
                 </span>
               )}
             </div>

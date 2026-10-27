@@ -100,7 +100,7 @@ const MapleFeatureTour: React.FC<MapleFeatureTourProps> = ({
       availableSteps.push({
         id: 'growth-profile',
         title: '先建立角色的成長檔案',
-        description: '建立後會開始累積角色紀錄，之後就能查看年度成長日曆、角色大事記與近期排行榜。',
+        description: '按下「生成成長檔案」後，系統會在背景整理近一年官方歷史資料並每日自動更新，完成後即可查看年度成長日曆與角色成長大事記。',
         targetRef: growthTargetRef,
         icon: <Database className="h-5 w-5" />,
       });
