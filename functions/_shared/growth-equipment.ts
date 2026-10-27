@@ -48,7 +48,45 @@ interface EquipmentSnapshotRow {
   snapshot_date: string;
   soul_baseline: number;
   astra_baseline: number;
+  destiny_candidate?: number;
 }
+
+interface DestinyBackfillCandidate {
+  ocid: string;
+  target_date: string;
+  last_checked_date: string | null;
+}
+
+interface DestinyBackfillTracking {
+  ocid: string;
+  target_date: string;
+  last_checked_date: string | null;
+  status: 'pending' | 'completed';
+  claim_token: string | null;
+  claim_until: string | null;
+  retry_at: string | null;
+  completed_at: string | null;
+  updated_at: string;
+}
+
+const DESTINY_CANDIDATE_SNAPSHOT_SQL = `(
+  gs.liberation_status IN ('2', '3')
+  OR (
+    gs.snapshot_date < '2025-12-03'
+    AND gs.liberation_status = '1'
+    AND EXISTS (
+      SELECT 1 FROM growth_snapshots gs_pos
+      WHERE gs_pos.ocid = gs.ocid
+        AND gs_pos.liberation_status IN ('2', '3')
+    )
+    AND NOT EXISTS (
+      SELECT 1 FROM growth_snapshots gs_neg
+      WHERE gs_neg.ocid = gs.ocid
+        AND gs_neg.snapshot_date >= '2025-12-03'
+        AND gs_neg.liberation_status IN ('0', '1')
+    )
+  )
+)`;
 
 interface EquipmentObservation {
   date: string;
@@ -165,6 +203,7 @@ export const upsertDestinyPhase2EventStatement = (
   token: string,
   earliestPhase1Date: string | null,
   earliestPhase2Date: string,
+  tokenTable: 'growth_soul_tracking' | 'growth_destiny_backfill' = 'growth_soul_tracking',
 ) => {
   const hasPriorPhase1Evidence = Boolean(
     earliestPhase1Date && earliestPhase1Date < earliestPhase2Date,
@@ -174,7 +213,7 @@ export const upsertDestinyPhase2EventStatement = (
   return db.prepare(`
     INSERT INTO growth_soul_events (ocid, snapshot_date, event_type, before_value, after_value)
     SELECT ?1, ?2, 'destiny_phase2', ?3, ?4
-    WHERE EXISTS (SELECT 1 FROM growth_soul_tracking WHERE ocid = ?1 AND claim_token = ?5)
+    WHERE EXISTS (SELECT 1 FROM ${tokenTable} WHERE ocid = ?1 AND claim_token = ?5)
     ON CONFLICT(ocid) WHERE event_type = 'destiny_phase2' DO UPDATE SET
       snapshot_date = CASE
         WHEN excluded.snapshot_date < growth_soul_events.snapshot_date THEN excluded.snapshot_date
@@ -189,6 +228,44 @@ export const upsertDestinyPhase2EventStatement = (
         ELSE growth_soul_events.after_value
       END
   `).bind(ocid, earliestPhase2Date, beforeValue, afterValue, token);
+};
+
+export const ensureDestinyBackfillRegistered = async (
+  db: D1Database,
+  timestamp = new Date().toISOString(),
+) => {
+  await db.prepare(`
+    INSERT INTO growth_destiny_backfill (
+      ocid, target_date, last_checked_date, status, completed_at, updated_at
+    )
+    SELECT
+      s.ocid,
+      s.last_synced_date,
+      CASE WHEN EXISTS (
+        SELECT 1 FROM growth_snapshots gs
+        WHERE gs.ocid = s.ocid
+          AND gs.snapshot_date <= s.last_synced_date
+          AND ${DESTINY_CANDIDATE_SNAPSHOT_SQL}
+      ) THEN NULL ELSE s.last_synced_date END,
+      CASE WHEN EXISTS (
+        SELECT 1 FROM growth_snapshots gs
+        WHERE gs.ocid = s.ocid
+          AND gs.snapshot_date <= s.last_synced_date
+          AND ${DESTINY_CANDIDATE_SNAPSHOT_SQL}
+      ) THEN 'pending' ELSE 'completed' END,
+      CASE WHEN EXISTS (
+        SELECT 1 FROM growth_snapshots gs
+        WHERE gs.ocid = s.ocid
+          AND gs.snapshot_date <= s.last_synced_date
+          AND ${DESTINY_CANDIDATE_SNAPSHOT_SQL}
+      ) THEN NULL ELSE ?1 END,
+      ?1
+    FROM growth_soul_tracking s
+    WHERE s.last_synced_date IS NOT NULL
+      AND NOT EXISTS (
+        SELECT 1 FROM growth_destiny_backfill b WHERE b.ocid = s.ocid
+      )
+  `).bind(timestamp).run();
 };
 
 const dateSpanDays = (fromDate: string | null, toDate: string, defaultStart: string) => {
@@ -262,6 +339,8 @@ export const backfillGrowthEquipmentBatch = async (
   }
 
   const timestamp = new Date().toISOString();
+  await ensureDestinyBackfillRegistered(env.DB, timestamp);
+
   const candidateRows = await env.DB.prepare(`
     SELECT p.ocid, p.basic_last_synced_date,
       s.last_synced_date AS soul_last_synced_date,
@@ -270,12 +349,14 @@ export const backfillGrowthEquipmentBatch = async (
     FROM growth_profiles p
     LEFT JOIN growth_soul_tracking s ON s.ocid = p.ocid
     LEFT JOIN growth_astra_tracking a ON a.ocid = p.ocid
+    LEFT JOIN growth_destiny_backfill b ON b.ocid = p.ocid
     WHERE p.basic_last_synced_date IS NOT NULL
       AND (s.last_synced_date IS NULL OR s.last_synced_date < p.basic_last_synced_date
         OR (COALESCE(a.has_astra, 0) = 0
           AND (a.last_synced_date IS NULL OR a.last_synced_date < p.basic_last_synced_date)))
       AND (s.claim_until IS NULL OR s.claim_until <= ?1)
       AND (a.claim_until IS NULL OR a.claim_until <= ?1)
+      AND (b.claim_until IS NULL OR b.claim_until <= ?1)
       AND (s.last_synced_date >= p.basic_last_synced_date OR s.retry_at IS NULL OR s.retry_at <= ?1)
       AND (COALESCE(a.has_astra, 0) = 1 OR a.last_synced_date >= p.basic_last_synced_date
         OR a.retry_at IS NULL OR a.retry_at <= ?1)
@@ -333,11 +414,19 @@ export const backfillGrowthEquipmentBatch = async (
         env.DB.prepare(`
           UPDATE growth_soul_tracking SET claim_token = ?2, claim_until = ?3
           WHERE ocid = ?1 AND (claim_until IS NULL OR claim_until <= ?4)
+            AND NOT EXISTS (
+              SELECT 1 FROM growth_destiny_backfill b
+              WHERE b.ocid = ?1 AND b.claim_until IS NOT NULL AND b.claim_until > ?4
+            )
           RETURNING *
         `).bind(candidate.ocid, token, lease, timestamp),
         env.DB.prepare(`
           UPDATE growth_astra_tracking SET claim_token = ?2, claim_until = ?3
           WHERE ocid = ?1 AND (claim_until IS NULL OR claim_until <= ?4)
+            AND NOT EXISTS (
+              SELECT 1 FROM growth_destiny_backfill b
+              WHERE b.ocid = ?1 AND b.claim_until IS NOT NULL AND b.claim_until > ?4
+            )
           RETURNING *
         `).bind(candidate.ocid, token, lease, timestamp),
       ]);
@@ -385,27 +474,30 @@ export const backfillGrowthEquipmentBatch = async (
     claimedProfiles.map(async (profile) => {
       const { candidate, soul, astra } = profile;
       const rows = await env.DB.prepare(`
-        SELECT snapshot_date,
-          CASE WHEN ?3 IS NULL THEN snapshot_date = (
+        SELECT gs.snapshot_date AS snapshot_date,
+          CASE WHEN ?3 IS NULL THEN gs.snapshot_date = (
             SELECT MAX(snapshot_date) FROM growth_snapshots WHERE ocid = ?1 AND snapshot_date < '2026-07-29'
           ) ELSE 0 END AS soul_baseline,
-          CASE WHEN ?4 IS NULL AND ?5 = 0 THEN snapshot_date = (
+          CASE WHEN ?4 IS NULL AND ?5 = 0 THEN gs.snapshot_date = (
             SELECT MAX(snapshot_date) FROM growth_snapshots WHERE ocid = ?1 AND snapshot_date < '2026-07-15'
-          ) ELSE 0 END AS astra_baseline
-        FROM growth_snapshots
-        WHERE ocid = ?1 AND snapshot_date <= ?2 AND (
-          (?3 IS NOT NULL AND snapshot_date > ?3)
-          OR (?3 IS NULL AND snapshot_date >= '2026-07-29')
-          OR (?3 IS NULL AND snapshot_date = (
+          ) ELSE 0 END AS astra_baseline,
+          CASE WHEN (?3 IS NULL OR gs.snapshot_date > ?3) AND ${DESTINY_CANDIDATE_SNAPSHOT_SQL}
+            THEN 1 ELSE 0 END AS destiny_candidate
+        FROM growth_snapshots gs
+        WHERE gs.ocid = ?1 AND gs.snapshot_date <= ?2 AND (
+          (?3 IS NOT NULL AND gs.snapshot_date > ?3)
+          OR (?3 IS NULL AND gs.snapshot_date >= '2026-07-29')
+          OR (?3 IS NULL AND gs.snapshot_date = (
             SELECT MAX(snapshot_date) FROM growth_snapshots WHERE ocid = ?1 AND snapshot_date < '2026-07-29'
           ))
-          OR (?4 IS NOT NULL AND ?5 = 0 AND snapshot_date > ?4)
-          OR (?4 IS NULL AND ?5 = 0 AND snapshot_date >= '2026-07-15')
-          OR (?4 IS NULL AND ?5 = 0 AND snapshot_date = (
+          OR (?3 IS NULL AND ${DESTINY_CANDIDATE_SNAPSHOT_SQL})
+          OR (?4 IS NOT NULL AND ?5 = 0 AND gs.snapshot_date > ?4)
+          OR (?4 IS NULL AND ?5 = 0 AND gs.snapshot_date >= '2026-07-15')
+          OR (?4 IS NULL AND ?5 = 0 AND gs.snapshot_date = (
             SELECT MAX(snapshot_date) FROM growth_snapshots WHERE ocid = ?1 AND snapshot_date < '2026-07-15'
           ))
         )
-        ORDER BY snapshot_date LIMIT ?6
+        ORDER BY gs.snapshot_date LIMIT ?6
       `).bind(
         candidate.ocid,
         candidate.basic_last_synced_date,
@@ -464,8 +556,9 @@ export const backfillGrowthEquipmentBatch = async (
     const isSoulDate = context.soul.last_synced_date === null
       ? row.snapshot_date >= '2026-07-29' || Boolean(row.soul_baseline)
       : row.snapshot_date > context.soul.last_synced_date;
+    const isDestinyDate = Boolean(row.destiny_candidate);
 
-    if (!isSoulDate && rowIndex > context.earliestAstraIndex) {
+    if (!isSoulDate && !isDestinyDate && rowIndex > context.earliestAstraIndex) {
       context.observations[rowIndex] = {
         date: row.snapshot_date,
         soulBaseline: Boolean(row.soul_baseline),
@@ -551,7 +644,8 @@ export const backfillGrowthEquipmentBatch = async (
         let lastAstraDate: string | null = null;
         const statements: D1PreparedStatement[] = [];
 
-        for (const observation of observations) {
+        for (let rowIndex = 0; rowIndex < observations.length; rowIndex += 1) {
+          const observation = observations[rowIndex];
           if (!observation) continue;
           const {
             date,
@@ -567,6 +661,7 @@ export const backfillGrowthEquipmentBatch = async (
           const isSoulDate = soul.last_synced_date === null
             ? date >= '2026-07-29' || soulBaseline
             : date > soul.last_synced_date;
+          const isDestinyDate = Boolean(rows[rowIndex]?.destiny_candidate);
           const isAstraDate = astra.last_synced_date === null
             ? date >= '2026-07-15' || astraBaseline
             : date > astra.last_synced_date;
@@ -611,6 +706,8 @@ export const backfillGrowthEquipmentBatch = async (
               previousWeaponName = weaponName;
             }
             lastSoulDate = date;
+          } else if (isDestinyDate) {
+            lastSoulDate = date;
           }
 
           if (!hasAstra && isAstraDate) {
@@ -650,16 +747,31 @@ export const backfillGrowthEquipmentBatch = async (
               token,
               earliestDestinyPhase1Date,
               earliestDestinyPhase2Date,
+              'growth_soul_tracking',
             ),
           );
         }
 
         const now = new Date().toISOString();
+        const soulComplete = Boolean(soulDate && soulDate >= candidate.basic_last_synced_date);
+        const astraComplete = hasAstra || Boolean(astraDate && astraDate >= candidate.basic_last_synced_date);
+
         statements.push(
           env.DB.prepare(`
             UPDATE growth_soul_tracking SET last_synced_date = ?3, highest_grade = ?4,
               previous_soul_name = ?5, previous_weapon_name = ?6,
-              earliest_destiny_phase1_date = ?7, earliest_destiny_phase2_date = ?8,
+              earliest_destiny_phase1_date = CASE
+                WHEN earliest_destiny_phase1_date IS NULL THEN ?7
+                WHEN ?7 IS NULL THEN earliest_destiny_phase1_date
+                WHEN ?7 < earliest_destiny_phase1_date THEN ?7
+                ELSE earliest_destiny_phase1_date
+              END,
+              earliest_destiny_phase2_date = CASE
+                WHEN earliest_destiny_phase2_date IS NULL THEN ?8
+                WHEN ?8 IS NULL THEN earliest_destiny_phase2_date
+                WHEN ?8 < earliest_destiny_phase2_date THEN ?8
+                ELSE earliest_destiny_phase2_date
+              END,
               claim_token = NULL, claim_until = NULL, retry_at = NULL, updated_at = ?9
             WHERE ocid = ?1 AND claim_token = ?2
           `).bind(
@@ -680,16 +792,422 @@ export const backfillGrowthEquipmentBatch = async (
           `).bind(candidate.ocid, token, astraDate, previousItemName, hasAstra ? 1 : 0, now),
         );
 
+        // Brand-new profile (soul cursor was NULL): this scan already examined every Destiny
+        // candidate date up to soulDate, so record that as completed historical coverage
+        // (never overwriting an existing pending cursor for pre-existing profiles).
+        if (soul.last_synced_date === null && soulDate) {
+          statements.push(
+            env.DB.prepare(`
+              INSERT INTO growth_destiny_backfill (
+                ocid, target_date, last_checked_date, status, completed_at, updated_at
+              ) VALUES (?1, ?2, ?2, 'completed', ?3, ?3)
+              ON CONFLICT(ocid) DO NOTHING
+            `).bind(candidate.ocid, soulDate, now),
+          );
+        }
+
         await env.DB.batch(statements);
         processedDates += rows.length;
         processedProfiles += 1;
-        const soulComplete = Boolean(soulDate && soulDate >= candidate.basic_last_synced_date);
-        const astraComplete = hasAstra || Boolean(astraDate && astraDate >= candidate.basic_last_synced_date);
         if (soulComplete && astraComplete) {
           completedProfiles += 1;
         }
       } catch {
         await releaseAndScheduleRetry(env, candidate.ocid, token).catch(() => undefined);
+      }
+    }),
+  );
+
+  return {
+    processedDates,
+    processedProfiles,
+    completedProfiles,
+    requests,
+    transportAttempts,
+    ocid: claimedProfiles[0].candidate.ocid,
+  };
+};
+
+const releaseDestinyBackfillClaim = async (
+  env: Env,
+  ocid: string,
+  token: string,
+  scheduleRetry: boolean,
+) => {
+  const now = new Date().toISOString();
+  const retryAt = scheduleRetry ? new Date(Date.now() + 300_000).toISOString() : null;
+  await env.DB.prepare(`
+    UPDATE growth_destiny_backfill
+    SET claim_token = NULL, claim_until = NULL, retry_at = ?3, updated_at = ?4
+    WHERE ocid = ?1 AND claim_token = ?2
+  `).bind(ocid, token, retryAt, now).run();
+};
+
+export const backfillGrowthDestinyHistoryBatch = async (
+  env: Env,
+  invocationBudget?: GrowthInvocationBudget,
+) => {
+  const config = getRuntimeConfig(env);
+  if (invocationBudget && invocationBudget.usedRequests >= invocationBudget.maxRequests) {
+    return { processedDates: 0, processedProfiles: 0, completedProfiles: 0, requests: 0, transportAttempts: 0 };
+  }
+
+  const timestamp = new Date().toISOString();
+  await ensureDestinyBackfillRegistered(env.DB, timestamp);
+
+  const candidateRows = await env.DB.prepare(`
+    SELECT b.ocid, b.target_date, b.last_checked_date
+    FROM growth_destiny_backfill b
+    LEFT JOIN growth_soul_tracking s ON s.ocid = b.ocid
+    WHERE b.status = 'pending'
+      AND (b.claim_until IS NULL OR b.claim_until <= ?1)
+      AND (b.retry_at IS NULL OR b.retry_at <= ?1)
+      AND (s.claim_until IS NULL OR s.claim_until <= ?1)
+    ORDER BY
+      CASE WHEN b.last_checked_date IS NOT NULL THEN 0 ELSE 1 END,
+      b.ocid
+    LIMIT ?2
+  `).bind(timestamp, config.growthEquipmentProfileConcurrency).all<DestinyBackfillCandidate>();
+
+  if (candidateRows.results.length === 0) {
+    return { processedDates: 0, processedProfiles: 0, completedProfiles: 0, requests: 0, transportAttempts: 0 };
+  }
+
+  const remainingBudget = invocationBudget
+    ? Math.max(0, invocationBudget.maxRequests - invocationBudget.usedRequests)
+    : Number.POSITIVE_INFINITY;
+  if (remainingBudget <= 0) {
+    return { processedDates: 0, processedProfiles: 0, completedProfiles: 0, requests: 0, transportAttempts: 0 };
+  }
+
+  const targetDateBudget = Math.min(
+    remainingBudget,
+    Math.max(config.growthBackfillBatchSize * 2, config.growthEquipmentDateConcurrency),
+  );
+  const maxCandidateCount = Math.min(
+    config.growthEquipmentProfileConcurrency,
+    remainingBudget,
+  );
+  const selectedCandidates: DestinyBackfillCandidate[] = [];
+  let budgetedDates = 0;
+  for (const candidate of candidateRows.results) {
+    const estimated = Math.min(
+      config.growthBackfillBatchSize,
+      dateSpanDays(candidate.last_checked_date, candidate.target_date, '2025-12-03'),
+    );
+    if (selectedCandidates.length > 0 && budgetedDates + estimated > targetDateBudget) break;
+    selectedCandidates.push(candidate);
+    budgetedDates += estimated;
+    if (selectedCandidates.length >= maxCandidateCount) break;
+  }
+
+  const lease = new Date(Date.now() + config.growthClaimLeaseSeconds * 1_000).toISOString();
+  const claimOutcomes = await Promise.allSettled(
+    selectedCandidates.map(async (candidate) => {
+      const token = crypto.randomUUID();
+      const batchResult = await env.DB.batch([
+        env.DB.prepare(`INSERT INTO growth_soul_tracking (ocid, updated_at) VALUES (?1, ?2) ON CONFLICT(ocid) DO NOTHING`)
+          .bind(candidate.ocid, timestamp),
+        env.DB.prepare(`
+          UPDATE growth_destiny_backfill
+          SET claim_token = ?2, claim_until = ?3
+          WHERE ocid = ?1
+            AND status = 'pending'
+            AND (claim_until IS NULL OR claim_until <= ?4)
+            AND NOT EXISTS (
+              SELECT 1 FROM growth_soul_tracking s
+              WHERE s.ocid = ?1 AND s.claim_until IS NOT NULL AND s.claim_until > ?4
+            )
+          RETURNING *
+        `).bind(candidate.ocid, token, lease, timestamp),
+      ]);
+      const backfill = (batchResult[1] as D1Result<DestinyBackfillTracking>).results?.[0] ?? null;
+      if (!backfill) return null;
+      const soul = await env.DB.prepare(`
+        SELECT ocid, last_synced_date, claim_until, retry_at,
+          earliest_destiny_phase1_date, earliest_destiny_phase2_date
+        FROM growth_soul_tracking
+        WHERE ocid = ?1
+      `).bind(candidate.ocid).first<EquipmentTracking>();
+      return { candidate, token, backfill, soul };
+    }),
+  );
+
+  const claimedProfiles: Array<{
+    candidate: DestinyBackfillCandidate;
+    token: string;
+    backfill: DestinyBackfillTracking;
+    soul: EquipmentTracking | null;
+  }> = [];
+  for (const outcome of claimOutcomes) {
+    if (outcome.status === 'fulfilled' && outcome.value !== null) {
+      claimedProfiles.push(outcome.value);
+    }
+  }
+  if (claimedProfiles.length === 0) {
+    return { processedDates: 0, processedProfiles: 0, completedProfiles: 0, requests: 0, transportAttempts: 0 };
+  }
+
+  const rowLimit = Number.isFinite(remainingBudget)
+    ? Math.max(
+        1,
+        Math.min(
+          config.growthBackfillBatchSize,
+          Math.floor(remainingBudget / Math.max(1, claimedProfiles.length)),
+        ),
+      )
+    : config.growthBackfillBatchSize;
+
+  const snapshotOutcomes = await Promise.allSettled(
+    claimedProfiles.map(async (profile) => {
+      const { candidate, backfill } = profile;
+      const rows = await env.DB.prepare(`
+        SELECT gs.snapshot_date AS snapshot_date,
+          0 AS soul_baseline,
+          0 AS astra_baseline,
+          1 AS destiny_candidate
+        FROM growth_snapshots gs
+        WHERE gs.ocid = ?1
+          AND (?2 IS NULL OR gs.snapshot_date > ?2)
+          AND gs.snapshot_date <= ?3
+          AND (
+            ${DESTINY_CANDIDATE_SNAPSHOT_SQL}
+            OR NOT EXISTS (
+              SELECT 1 FROM growth_snapshots gs_any
+              WHERE gs_any.ocid = ?1
+                AND gs_any.snapshot_date <= ?3
+                AND gs_any.liberation_status IN ('2', '3')
+            )
+          )
+        ORDER BY gs.snapshot_date ASC
+        LIMIT ?4
+      `).bind(
+        candidate.ocid,
+        backfill.last_checked_date,
+        backfill.target_date,
+        rowLimit,
+      ).all<EquipmentSnapshotRow>();
+      return {
+        ...profile,
+        rowLimit,
+        rows: rows.results,
+        observations: new Array<EquipmentObservation | null>(rows.results.length).fill(null),
+        failedError: null as unknown,
+      };
+    }),
+  );
+
+  const profileContexts: Array<{
+    candidate: DestinyBackfillCandidate;
+    token: string;
+    backfill: DestinyBackfillTracking;
+    soul: EquipmentTracking | null;
+    rowLimit: number;
+    rows: EquipmentSnapshotRow[];
+    observations: Array<EquipmentObservation | null>;
+    failedError: unknown;
+  }> = [];
+
+  for (let i = 0; i < snapshotOutcomes.length; i += 1) {
+    const outcome = snapshotOutcomes[i];
+    if (outcome.status === 'fulfilled') {
+      profileContexts.push(outcome.value);
+    } else {
+      const failedProfile = claimedProfiles[i];
+      await releaseDestinyBackfillClaim(env, failedProfile.candidate.ocid, failedProfile.token, true)
+        .catch(() => undefined);
+    }
+  }
+
+  const dateTasks: Array<{ profileIndex: number; rowIndex: number }> = [];
+  for (let profileIndex = 0; profileIndex < profileContexts.length; profileIndex += 1) {
+    const { rows } = profileContexts[profileIndex];
+    for (let rowIndex = 0; rowIndex < rows.length; rowIndex += 1) {
+      dateTasks.push({ profileIndex, rowIndex });
+    }
+  }
+
+  let requests = 0;
+  let transportAttempts = 0;
+  // First-pass historical backfill intentionally does NOT stop early when Phase 1 + Phase 2
+  // are seen; every qualifying historical date up to target_date is verified in order.
+  await runWithConcurrency(dateTasks, config.growthEquipmentDateConcurrency, 0, async ({ profileIndex, rowIndex }) => {
+    const context = profileContexts[profileIndex];
+    if (context.failedError !== null) return;
+    const row = context.rows[rowIndex];
+
+    let logicalRequestStarted = false;
+    try {
+      const payload = await fetchNexonJson<EquipmentHistory>(
+        env,
+        `/character/item-equipment?ocid=${encodeURIComponent(context.candidate.ocid)}&date=${row.snapshot_date}`,
+        () => {
+          consumeGrowthInvocationBudget(invocationBudget);
+          if (!logicalRequestStarted) {
+            logicalRequestStarted = true;
+            requests += 1;
+          }
+        },
+        () => {
+          transportAttempts += 1;
+        },
+      );
+      context.observations[rowIndex] = parseEquipmentPayload(payload, row);
+    } catch (error) {
+      if (error instanceof NexonRequestError && error.status === 400 && error.nexonCode === 'OPENAPI00003') {
+        context.observations[rowIndex] = {
+          date: row.snapshot_date,
+          soulBaseline: false,
+          astraBaseline: false,
+          grade: null,
+          soulName: null,
+          weaponName: null,
+          astraName: null,
+          destinyPhase1: false,
+          destinyPhase2: false,
+        };
+        return;
+      }
+      if (context.failedError === null) {
+        context.failedError = error;
+      }
+    }
+  });
+
+  let processedDates = 0;
+  let processedProfiles = 0;
+  let completedProfiles = 0;
+
+  await Promise.allSettled(
+    profileContexts.map(async (context) => {
+      const { candidate, token, backfill, soul, rowLimit: contextRowLimit, rows, observations, failedError } = context;
+      const isBudgetExhausted = failedError instanceof NexonRequestError
+        && failedError.code === 'invocation_budget_exhausted';
+
+      // Determine the contiguous prefix of dates completed without gaps from index 0
+      const completedPrefix: EquipmentObservation[] = [];
+      for (const obs of observations) {
+        if (!obs) break;
+        completedPrefix.push(obs);
+      }
+
+      if (failedError !== null && completedPrefix.length === 0) {
+        await releaseDestinyBackfillClaim(env, candidate.ocid, token, !isBudgetExhausted);
+        return;
+      }
+
+      try {
+        let earliestDestinyPhase1Date = soul?.earliest_destiny_phase1_date ?? null;
+        let earliestDestinyPhase2Date = soul?.earliest_destiny_phase2_date ?? null;
+        let destinyTrackingChanged = false;
+
+        for (const obs of completedPrefix) {
+          if (obs.destinyPhase1) {
+            const updated = minIsoDate(earliestDestinyPhase1Date, obs.date);
+            if (updated !== earliestDestinyPhase1Date) {
+              earliestDestinyPhase1Date = updated;
+              destinyTrackingChanged = true;
+            }
+          }
+          if (obs.destinyPhase2) {
+            const updated = minIsoDate(earliestDestinyPhase2Date, obs.date);
+            if (updated !== earliestDestinyPhase2Date) {
+              earliestDestinyPhase2Date = updated;
+              destinyTrackingChanged = true;
+            }
+          }
+        }
+
+        const now = new Date().toISOString();
+        const allRowsCompleted = failedError === null && completedPrefix.length === rows.length;
+        const exhaustedRange = allRowsCompleted && (
+          rows.length < contextRowLimit
+          || (completedPrefix.at(-1)?.date ?? backfill.target_date) >= backfill.target_date
+        );
+        const nextCheckedDate = exhaustedRange
+          ? backfill.target_date
+          : completedPrefix.at(-1)?.date ?? backfill.last_checked_date;
+        const nextStatus: 'pending' | 'completed' = exhaustedRange ? 'completed' : 'pending';
+        const nextCompletedAt = exhaustedRange ? now : null;
+        const nextRetryAt = failedError !== null && !isBudgetExhausted
+          ? new Date(Date.now() + 300_000).toISOString()
+          : null;
+
+        const statements: D1PreparedStatement[] = [];
+        if (destinyTrackingChanged) {
+          statements.push(
+            env.DB.prepare(`
+              UPDATE growth_soul_tracking
+              SET
+                earliest_destiny_phase1_date = CASE
+                  WHEN earliest_destiny_phase1_date IS NULL THEN ?2
+                  WHEN ?2 IS NULL THEN earliest_destiny_phase1_date
+                  WHEN ?2 < earliest_destiny_phase1_date THEN ?2
+                  ELSE earliest_destiny_phase1_date
+                END,
+                earliest_destiny_phase2_date = CASE
+                  WHEN earliest_destiny_phase2_date IS NULL THEN ?3
+                  WHEN ?3 IS NULL THEN earliest_destiny_phase2_date
+                  WHEN ?3 < earliest_destiny_phase2_date THEN ?3
+                  ELSE earliest_destiny_phase2_date
+                END,
+                updated_at = ?4
+              WHERE ocid = ?1
+                AND EXISTS (
+                  SELECT 1 FROM growth_destiny_backfill b
+                  WHERE b.ocid = ?1 AND b.claim_token = ?5
+                )
+            `).bind(
+              candidate.ocid,
+              earliestDestinyPhase1Date,
+              earliestDestinyPhase2Date,
+              now,
+              token,
+            ),
+          );
+        }
+        if (earliestDestinyPhase2Date && destinyTrackingChanged) {
+          statements.push(
+            upsertDestinyPhase2EventStatement(
+              env.DB,
+              candidate.ocid,
+              token,
+              earliestDestinyPhase1Date,
+              earliestDestinyPhase2Date,
+              'growth_destiny_backfill',
+            ),
+          );
+        }
+        statements.push(
+          env.DB.prepare(`
+            UPDATE growth_destiny_backfill
+            SET last_checked_date = ?3,
+              status = ?4,
+              completed_at = ?5,
+              claim_token = NULL,
+              claim_until = NULL,
+              retry_at = ?6,
+              updated_at = ?7
+            WHERE ocid = ?1 AND claim_token = ?2
+          `).bind(
+            candidate.ocid,
+            token,
+            nextCheckedDate,
+            nextStatus,
+            nextCompletedAt,
+            nextRetryAt,
+            now,
+          ),
+        );
+
+        await env.DB.batch(statements);
+        processedDates += completedPrefix.length;
+        processedProfiles += 1;
+        if (nextStatus === 'completed') {
+          completedProfiles += 1;
+        }
+      } catch {
+        await releaseDestinyBackfillClaim(env, candidate.ocid, token, true).catch(() => undefined);
       }
     }),
   );

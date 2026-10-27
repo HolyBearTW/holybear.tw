@@ -1,6 +1,7 @@
 import type { Env } from '../functions/_shared/env';
 import { backfillGrowthBatch } from '../functions/_shared/growth-tracker';
 import {
+  backfillGrowthDestinyHistoryBatch,
   backfillGrowthEquipmentBatch,
   type GrowthInvocationBudget,
 } from '../functions/_shared/growth-equipment';
@@ -40,6 +41,26 @@ export default {
             ...equipment,
             logicalNexonRequests: equipment.requests,
             transportAttempts: equipment.transportAttempts,
+            invocationUsedRequests: budget.usedRequests,
+            elapsedMs: Date.now() - batchStartedAt,
+          });
+        }
+        // Only run historical Destiny weapon backfill after normal daily/initial equipment sync
+        // has no remaining work in this pass and while invocation time + request budgets remain.
+        for (
+          let index = 0;
+          index < config.growthEquipmentMaxBatchesPerInvocation
+            && Date.now() - startedAt < config.growthEquipmentInvocationBudgetMs
+            && budget.usedRequests < budget.maxRequests;
+          index += 1
+        ) {
+          const batchStartedAt = Date.now();
+          const destinyHistory = await backfillGrowthDestinyHistoryBatch(env, budget);
+          if (!destinyHistory.processedDates && !destinyHistory.processedProfiles) break;
+          console.info('scheduled growth destiny history batch completed', {
+            ...destinyHistory,
+            logicalNexonRequests: destinyHistory.requests,
+            transportAttempts: destinyHistory.transportAttempts,
             invocationUsedRequests: budget.usedRequests,
             elapsedMs: Date.now() - batchStartedAt,
           });
