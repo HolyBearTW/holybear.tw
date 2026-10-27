@@ -38,6 +38,8 @@ export default {
           if (!equipment.processedDates && !equipment.processedProfiles) break;
           console.info('scheduled growth equipment batch completed', {
             ...equipment,
+            logicalNexonRequests: equipment.requests,
+            transportAttempts: equipment.transportAttempts,
             invocationUsedRequests: budget.usedRequests,
             elapsedMs: Date.now() - batchStartedAt,
           });
@@ -56,10 +58,9 @@ export default {
             && budget.usedRequests < budget.maxRequests;
           pass += 1
         ) {
-          const result = await backfillGrowthBatch(env);
+          const result = await backfillGrowthBatch(env, budget);
           const passTransportAttempts = result.instrumentation.basic.transportAttempts
             + result.instrumentation.dojang.transportAttempts;
-          budget.usedRequests += Math.max(result.requests, passTransportAttempts);
           console.info('scheduled growth batch completed', {
             pass: pass + 1,
             claimed: result.claimed,
@@ -69,6 +70,7 @@ export default {
             failed: result.failed,
             batches: result.instrumentation.basic.batches + result.instrumentation.dojang.batches,
             logicalNexonRequests: result.requests,
+            transportAttempts: passTransportAttempts,
             invocationUsedRequests: budget.usedRequests,
             limiterWaitMs: result.instrumentation.basic.limiterWaitMs
               + result.instrumentation.dojang.limiterWaitMs,

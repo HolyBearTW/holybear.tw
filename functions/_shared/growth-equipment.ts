@@ -9,6 +9,19 @@ export interface GrowthInvocationBudget {
   maxRequests: number;
 }
 
+export const consumeGrowthInvocationBudget = (invocationBudget?: GrowthInvocationBudget) => {
+  if (!invocationBudget) return;
+  if (invocationBudget.usedRequests >= invocationBudget.maxRequests) {
+    throw new NexonRequestError(
+      '單次排程 NEXON API 請求預算已達上限，稍後繼續同步',
+      429,
+      true,
+      'invocation_budget_exhausted',
+    );
+  }
+  invocationBudget.usedRequests += 1;
+};
+
 interface EquipmentCandidate {
   ocid: string;
   basic_last_synced_date: string;
@@ -245,7 +258,7 @@ export const backfillGrowthEquipmentBatch = async (
 ) => {
   const config = getRuntimeConfig(env);
   if (invocationBudget && invocationBudget.usedRequests >= invocationBudget.maxRequests) {
-    return { processedDates: 0, processedProfiles: 0, completedProfiles: 0, requests: 0 };
+    return { processedDates: 0, processedProfiles: 0, completedProfiles: 0, requests: 0, transportAttempts: 0 };
   }
 
   const timestamp = new Date().toISOString();
@@ -278,14 +291,23 @@ export const backfillGrowthEquipmentBatch = async (
     LIMIT ?2
   `).bind(timestamp, config.growthEquipmentProfileConcurrency).all<EquipmentCandidate>();
 
-  if (candidateRows.results.length === 0) return { processedDates: 0, processedProfiles: 0, completedProfiles: 0, requests: 0 };
+  if (candidateRows.results.length === 0) {
+    return { processedDates: 0, processedProfiles: 0, completedProfiles: 0, requests: 0, transportAttempts: 0 };
+  }
 
   const remainingBudget = invocationBudget
-    ? Math.max(1, invocationBudget.maxRequests - invocationBudget.usedRequests)
+    ? Math.max(0, invocationBudget.maxRequests - invocationBudget.usedRequests)
     : Number.POSITIVE_INFINITY;
+  if (remainingBudget <= 0) {
+    return { processedDates: 0, processedProfiles: 0, completedProfiles: 0, requests: 0, transportAttempts: 0 };
+  }
   const targetDateBudget = Math.min(
     remainingBudget,
     Math.max(config.growthBackfillBatchSize * 2, config.growthEquipmentDateConcurrency),
+  );
+  const maxCandidateCount = Math.min(
+    config.growthEquipmentProfileConcurrency,
+    remainingBudget,
   );
   const selectedCandidates: EquipmentCandidate[] = [];
   let budgetedDates = 0;
@@ -294,7 +316,7 @@ export const backfillGrowthEquipmentBatch = async (
     if (selectedCandidates.length > 0 && budgetedDates + estimated > targetDateBudget) break;
     selectedCandidates.push(candidate);
     budgetedDates += estimated;
-    if (selectedCandidates.length >= config.growthEquipmentProfileConcurrency) break;
+    if (selectedCandidates.length >= maxCandidateCount) break;
   }
 
   const lease = new Date(Date.now() + config.growthClaimLeaseSeconds * 1_000).toISOString();
@@ -346,9 +368,19 @@ export const backfillGrowthEquipmentBatch = async (
       claimedProfiles.push(outcome.value);
     }
   }
-  if (claimedProfiles.length === 0) return { processedDates: 0, processedProfiles: 0, completedProfiles: 0, requests: 0 };
+  if (claimedProfiles.length === 0) {
+    return { processedDates: 0, processedProfiles: 0, completedProfiles: 0, requests: 0, transportAttempts: 0 };
+  }
 
-  let firstError: unknown = null;
+  const rowLimit = Number.isFinite(remainingBudget)
+    ? Math.max(
+        1,
+        Math.min(
+          config.growthBackfillBatchSize,
+          Math.floor(remainingBudget / Math.max(1, claimedProfiles.length)),
+        ),
+      )
+    : config.growthBackfillBatchSize;
   const snapshotOutcomes = await Promise.allSettled(
     claimedProfiles.map(async (profile) => {
       const { candidate, soul, astra } = profile;
@@ -380,10 +412,11 @@ export const backfillGrowthEquipmentBatch = async (
         soul.last_synced_date,
         astra.last_synced_date,
         astra.has_astra ?? 0,
-        config.growthBackfillBatchSize,
+        rowLimit,
       ).all<EquipmentSnapshotRow>();
       return {
         ...profile,
+        rowLimit,
         rows: rows.results,
         observations: new Array<EquipmentObservation | null>(rows.results.length).fill(null),
         earliestAstraIndex: Number.POSITIVE_INFINITY,
@@ -397,6 +430,7 @@ export const backfillGrowthEquipmentBatch = async (
     token: string;
     soul: EquipmentTracking;
     astra: EquipmentTracking;
+    rowLimit: number;
     rows: EquipmentSnapshotRow[];
     observations: Array<EquipmentObservation | null>;
     earliestAstraIndex: number;
@@ -408,7 +442,6 @@ export const backfillGrowthEquipmentBatch = async (
     if (outcome.status === 'fulfilled') {
       profileContexts.push(outcome.value);
     } else {
-      if (firstError === null) firstError = outcome.reason;
       const failedProfile = claimedProfiles[i];
       await releaseAndScheduleRetry(env, failedProfile.candidate.ocid, failedProfile.token).catch(() => undefined);
     }
@@ -423,6 +456,7 @@ export const backfillGrowthEquipmentBatch = async (
   }
 
   let requests = 0;
+  let transportAttempts = 0;
   await runWithConcurrency(dateTasks, config.growthEquipmentDateConcurrency, 0, async ({ profileIndex, rowIndex }) => {
     const context = profileContexts[profileIndex];
     if (context.failedError !== null) return;
@@ -446,13 +480,20 @@ export const backfillGrowthEquipmentBatch = async (
       return;
     }
 
+    let logicalRequestStarted = false;
     try {
-      requests += 1;
       const payload = await fetchNexonJson<EquipmentHistory>(
         env,
         `/character/item-equipment?ocid=${encodeURIComponent(context.candidate.ocid)}&date=${row.snapshot_date}`,
         () => {
-          if (invocationBudget) invocationBudget.usedRequests += 1;
+          consumeGrowthInvocationBudget(invocationBudget);
+          if (!logicalRequestStarted) {
+            logicalRequestStarted = true;
+            requests += 1;
+          }
+        },
+        () => {
+          transportAttempts += 1;
         },
       );
       const observation = parseEquipmentPayload(payload, row);
@@ -489,9 +530,8 @@ export const backfillGrowthEquipmentBatch = async (
   // failure on one profile never rolls back or blocks other profiles.
   await Promise.allSettled(
     profileContexts.map(async (context) => {
-      const { candidate, token, soul, astra, rows, observations, failedError } = context;
+      const { candidate, token, soul, astra, rowLimit: contextRowLimit, rows, observations, failedError } = context;
       if (failedError !== null) {
-        if (firstError === null) firstError = failedError;
         await releaseAndScheduleRetry(env, candidate.ocid, token);
         return;
       }
@@ -592,13 +632,13 @@ export const backfillGrowthEquipmentBatch = async (
         }
 
         if (soul.last_synced_date === null || soul.last_synced_date < candidate.basic_last_synced_date) {
-          soulDate = rows.length < config.growthBackfillBatchSize
+          soulDate = rows.length < contextRowLimit
             ? candidate.basic_last_synced_date : lastSoulDate ?? soul.last_synced_date;
         }
         if (hasAstra) {
           astraDate = candidate.basic_last_synced_date;
         } else if (astra.last_synced_date === null || astra.last_synced_date < candidate.basic_last_synced_date) {
-          astraDate = rows.length < config.growthBackfillBatchSize
+          astraDate = rows.length < contextRowLimit
             ? candidate.basic_last_synced_date : lastAstraDate ?? astra.last_synced_date;
         }
 
@@ -648,22 +688,18 @@ export const backfillGrowthEquipmentBatch = async (
         if (soulComplete && astraComplete) {
           completedProfiles += 1;
         }
-      } catch (error) {
-        if (firstError === null) firstError = error;
+      } catch {
         await releaseAndScheduleRetry(env, candidate.ocid, token).catch(() => undefined);
       }
     }),
   );
-
-  if (firstError !== null && processedProfiles === 0) {
-    throw firstError;
-  }
 
   return {
     processedDates,
     processedProfiles,
     completedProfiles,
     requests,
+    transportAttempts,
     ocid: claimedProfiles[0].candidate.ocid,
   };
 };
