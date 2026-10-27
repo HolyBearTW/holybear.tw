@@ -56,6 +56,33 @@ afterEach(() => {
 });
 
 describe('persistent growth tracking', () => {
+  it('reports equipment backfill separately from the existing growth profile status', async () => {
+    await createGrowthProfile(env.DB, OCID, '2026-08-10');
+    expect((await getGrowthStatus(env.DB, OCID)).equipmentSync).toMatchObject({
+      soul: { status: 'waiting', progress: 0, targetDate: null },
+      astra: { status: 'waiting', progress: 0, targetDate: null },
+    });
+    local.sqlite.prepare(`UPDATE growth_profiles SET status='completed', history_start_date='2026-07-15',
+      basic_last_synced_date='2026-08-10', last_synced_date='2026-08-10' WHERE ocid=?`).run(OCID);
+    local.sqlite.prepare(`INSERT INTO growth_soul_tracking
+      (ocid, last_synced_date, claim_until, updated_at) VALUES (?, '2026-08-04', '2999-01-01', 'now')`).run(OCID);
+    local.sqlite.prepare(`INSERT INTO growth_astra_tracking
+      (ocid, last_synced_date, retry_at, updated_at) VALUES (?, '2026-07-20', '2999-01-01', 'now')`).run(OCID);
+    const pending = await getGrowthStatus(env.DB, OCID);
+    expect(pending.status).toBe('completed');
+    expect(pending.equipmentSync).toMatchObject({
+      soul: { status: 'running', lastSyncedDate: '2026-08-04', targetDate: '2026-08-10' },
+      astra: { status: 'retry', lastSyncedDate: '2026-07-20', targetDate: '2026-08-10', nextRetryAt: '2999-01-01' },
+    });
+    expect(pending.equipmentSync?.soul.progress).toBeGreaterThan(0);
+    expect(pending.equipmentSync?.soul.progress).toBeLessThan(100);
+    local.sqlite.prepare(`UPDATE growth_soul_tracking SET claim_until=NULL, last_synced_date='2026-08-10'`).run();
+    local.sqlite.prepare(`UPDATE growth_astra_tracking SET retry_at=NULL, last_synced_date='2026-08-10'`).run();
+    expect((await getGrowthStatus(env.DB, OCID)).equipmentSync).toMatchObject({
+      soul: { status: 'completed', progress: 100 }, astra: { status: 'completed', progress: 100 },
+    });
+  });
+
   const seedDailyIdentity = async () => {
     await upsertCanonicalNexonCharacter(env.DB, {
       ocid: OCID, characterName: '舊名字', worldName: '艾麗亞', jobName: '卡蒂娜',

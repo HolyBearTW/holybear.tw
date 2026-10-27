@@ -5,6 +5,10 @@ export interface GrowthHistoryStatus {
   availableEndDate?: string | null;
   progress?: number;
   currentProcessingDate?: string | null;
+  equipmentSync?: {
+    soul: GrowthEquipmentSync;
+    astra: GrowthEquipmentSync;
+  };
   job?: {
     status?: 'pending' | 'running' | 'completed' | 'failed' | string;
     phase?: 'basic' | 'dojang';
@@ -13,6 +17,14 @@ export interface GrowthHistoryStatus {
     error?: string | null;
     nextRetryAt?: string | null;
   } | null;
+}
+
+export interface GrowthEquipmentSync {
+  status: 'waiting' | 'pending' | 'running' | 'retry' | 'completed';
+  progress: number;
+  lastSyncedDate: string | null;
+  targetDate: string | null;
+  nextRetryAt: string | null;
 }
 
 export interface GrowthHistoryDay {

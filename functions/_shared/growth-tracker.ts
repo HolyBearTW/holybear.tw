@@ -1000,6 +1000,35 @@ export const getGrowthStatus = async (db: D1Database, ocid: string) => {
   const row = await getProfile(db, ocid);
   const availableEndDate = latestAvailableGrowthDate();
   if (!row) return { tracked: false, availableEndDate, job: null };
+  const [soulSync, astraSync] = await Promise.all([
+    db.prepare(`SELECT last_synced_date, claim_until, retry_at FROM growth_soul_tracking WHERE ocid = ?1`)
+      .bind(ocid).first<{ last_synced_date: string | null; claim_until: string | null; retry_at: string | null }>(),
+    db.prepare(`SELECT last_synced_date, claim_until, retry_at FROM growth_astra_tracking WHERE ocid = ?1`)
+      .bind(ocid).first<{ last_synced_date: string | null; claim_until: string | null; retry_at: string | null }>(),
+  ]);
+  const equipmentStatus = (
+    sync: { last_synced_date: string | null; claim_until: string | null; retry_at: string | null } | null,
+    startDate: string,
+  ) => {
+    const targetDate = row.basic_last_synced_date;
+    const lastSyncedDate = sync?.last_synced_date ?? null;
+    const start = row.history_start_date && row.history_start_date > startDate ? row.history_start_date : startDate;
+    const total = targetDate ? Math.max(1, Math.floor((Date.parse(`${targetDate}T00:00:00Z`)
+      - Date.parse(`${start}T00:00:00Z`)) / DAY_MS) + 1) : 0;
+    const processed = lastSyncedDate ? Math.max(0, Math.floor((Date.parse(`${lastSyncedDate}T00:00:00Z`)
+      - Date.parse(`${start}T00:00:00Z`)) / DAY_MS) + 1) : 0;
+    const status = !targetDate ? 'waiting'
+      : lastSyncedDate && lastSyncedDate >= targetDate ? 'completed'
+        : sync?.claim_until && sync.claim_until > nowIso() ? 'running'
+          : sync?.retry_at ? 'retry' : 'pending';
+    return {
+      status,
+      progress: status === 'completed' ? 100 : total ? Math.max(0, Math.min(100, processed / total * 100)) : 0,
+      lastSyncedDate,
+      targetDate,
+      nextRetryAt: sync?.retry_at ?? null,
+    };
+  };
   const basicTotal = Math.max(1, Math.floor((Date.parse(`${row.sync_target_date}T00:00:00Z`)
     - Date.parse(`${row.scan_start_date}T00:00:00Z`)) / DAY_MS) + 1);
   const basicProcessed = row.basic_last_synced_date
@@ -1024,6 +1053,10 @@ export const getGrowthStatus = async (db: D1Database, ocid: string) => {
     status: row.status,
     progress: Math.max(0, Math.min(100, progress)),
     currentProcessingDate: row.current_processing_date,
+    equipmentSync: {
+      soul: equipmentStatus(soulSync, '2026-07-29'),
+      astra: equipmentStatus(astraSync, '2026-07-15'),
+    },
     job: {
       status: publicJobStatus(row),
       phase: row.phase,

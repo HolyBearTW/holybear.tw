@@ -14,7 +14,7 @@ import {
   fetchGrowthHistoryStatus,
   GrowthCharacterHistory,
 } from '../services/growthService';
-import type { GrowthHistoryDay, GrowthHistoryEvent } from '../services/growthTypes';
+import type { GrowthHistoryDay, GrowthHistoryEvent, GrowthHistoryStatus } from '../services/growthTypes';
 import { formatGrowthEventValue } from '../services/growthEventFormat';
 import { fetchWeeklyHistory } from '../services/nexonService';
 
@@ -241,6 +241,7 @@ const GrowthInsightPanels: React.FC<GrowthInsightPanelsProps> = ({
 
 const CharacterGrowthHistory: React.FC<CharacterGrowthHistoryProps> = ({ data, apiKey }) => {
   const [history, setHistory] = useState<GrowthCharacterHistory | null>(null);
+  const [equipmentSync, setEquipmentSync] = useState<GrowthHistoryStatus['equipmentSync']>();
   const [weeklyHistory, setWeeklyHistory] = useState<any[]>([]);
   const [weeklyLoading, setWeeklyLoading] = useState(true);
   const [loading, setLoading] = useState(true);
@@ -269,15 +270,19 @@ const CharacterGrowthHistory: React.FC<CharacterGrowthHistoryProps> = ({ data, a
   useEffect(() => {
     let cancelled = false;
     let pollTimer: ReturnType<typeof setTimeout> | null = null;
+    setEquipmentSync(undefined);
 
     const load = async () => {
       try {
         setError(null);
         const status = await fetchGrowthHistoryStatus(data.ocid);
         if (cancelled) return;
+        setEquipmentSync(status.equipmentSync);
 
         const jobStatus = status.job?.status;
         const updating = jobStatus === 'pending' || jobStatus === 'running';
+        const equipmentUpdating = status.equipmentSync && Object.values(status.equipmentSync)
+          .some((sync) => sync.status !== 'completed');
         if (!status.tracked || (updating && !status.lastSyncedDate)) {
           setHistory(null);
           setLoading(false);
@@ -295,6 +300,7 @@ const CharacterGrowthHistory: React.FC<CharacterGrowthHistoryProps> = ({ data, a
           : (status.availableEndDate || status.lastSyncedDate);
         if (!endDate) {
           setLoading(false);
+          if (equipmentUpdating) pollTimer = setTimeout(load, 5000);
           return;
         }
 
@@ -306,7 +312,7 @@ const CharacterGrowthHistory: React.FC<CharacterGrowthHistoryProps> = ({ data, a
         if (!cancelled) {
           setHistory(result);
           setLoading(false);
-          if (updating) pollTimer = setTimeout(load, 5000);
+          if (updating || equipmentUpdating) pollTimer = setTimeout(load, 5000);
         }
       } catch (caught) {
         if (!cancelled) {
@@ -570,6 +576,20 @@ const CharacterGrowthHistory: React.FC<CharacterGrowthHistoryProps> = ({ data, a
         <div>
           <h4 className="text-sm font-semibold text-slate-200">角色成長大事記</h4>
           <p className="mt-1 text-xs text-slate-500">記錄升級、改名、職業、世界、公會、解放狀態、武陵、靈魂武器及阿斯特拉輔助武器變化。</p>
+          {equipmentSync && (
+            <div className="mt-2 space-y-1 text-xs text-slate-500" aria-live="polite">
+              {([
+                ['靈魂武器', equipmentSync.soul],
+                ['阿斯特拉輔助武器', equipmentSync.astra],
+              ] as const).map(([label, sync]) => (
+                <p key={label}>
+                  {label}紀錄：{sync.status === 'waiting' ? '等待成長資料' : sync.status === 'retry' ? '同步暫時中斷，等待重試' : sync.status === 'completed' ? '已同步' : sync.status === 'pending' ? `等待同步 ${Math.floor(sync.progress)}%` : `同步中 ${Math.floor(sync.progress)}%`}
+                  {sync.lastSyncedDate && `，已更新至 ${sync.lastSyncedDate}`}
+                  {sync.targetDate && sync.status !== 'completed' && `（目前目標 ${sync.targetDate}）`}
+                </p>
+              ))}
+            </div>
+          )}
           {sortedEvents.length ? (
             <div className="relative mt-5">
               <span className="maple-growth-timeline-line absolute bottom-5 left-[11px] top-3 w-px bg-gradient-to-b from-emerald-400 via-emerald-700 to-slate-800" aria-hidden="true" />
