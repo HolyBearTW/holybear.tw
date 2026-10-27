@@ -9,7 +9,7 @@ import {
 } from './nexon-client';
 import { getRuntimeConfig } from './runtime-config';
 import { invalidateCachedCharacterRank } from './ranking-cache';
-import type { GrowthInvocationBudget } from './growth-equipment';
+import { consumeGrowthInvocationBudget, type GrowthInvocationBudget } from './growth-equipment';
 
 export const GROWTH_HISTORY_START_DATE = '2025-10-15';
 const DAY_MS = 86_400_000;
@@ -428,6 +428,7 @@ const fetchBasicBatch = async (
   claim: GrowthClaim,
   batchSize: number,
   dateConcurrency: number,
+  invocationBudget?: GrowthInvocationBudget,
 ) => {
   const batchStartedAt = Date.now();
   const { row } = claim;
@@ -449,7 +450,7 @@ const fetchBasicBatch = async (
       const basic = await fetchNexonJson<NexonBasicHistory>(
         env,
         `/character/basic?ocid=${encodeURIComponent(row.ocid)}&date=${date}`,
-        undefined,
+        () => consumeGrowthInvocationBudget(invocationBudget),
         (metric) => recordGrowthRequestMetric(requestMetrics, metric),
       );
       // TMS currently represents a valid historical date before character
@@ -473,7 +474,12 @@ const fetchBasicBatch = async (
   });
   const rejected = settled.find((outcome) => outcome.status === 'rejected');
   if (rejected?.status === 'rejected') {
-    throw annotateGrowthBatchFailure(rejected.reason, requestMetrics, batchStartedAt, dates.length);
+    throw annotateGrowthBatchFailure(
+      rejected.reason,
+      requestMetrics,
+      batchStartedAt,
+      requestMetrics.transportAttempts,
+    );
   }
   const validSnapshots = settled.flatMap((outcome) => (
     outcome.status === 'fulfilled' && outcome.value.basic ? [outcome.value] : []
@@ -486,13 +492,16 @@ const fetchBasicBatch = async (
   // the existing history requests indicate missing data or a possible rename.
   // This uses no additional D1 reads and never writes empty daily snapshots.
   if (dates.length && (validSnapshots.length === 0 || targetMissing || nameChanged)) {
-    requests += 1;
     try {
       let current: NexonBasicHistory;
       try {
         current = await fetchNexonJson<NexonBasicHistory>(
           env, `/character/basic?ocid=${encodeURIComponent(row.ocid)}`,
-          undefined, (metric) => recordGrowthRequestMetric(requestMetrics, metric),
+          () => {
+            consumeGrowthInvocationBudget(invocationBudget);
+            requests += 1;
+          },
+          (metric) => recordGrowthRequestMetric(requestMetrics, metric),
         );
       } catch (error) {
         if (isMissingHistoricalSnapshot(error) || isUnavailableNameLookup(error)
@@ -511,12 +520,15 @@ const fetchBasicBatch = async (
       }
       // An obsolete OCID can retain readable basic/history data. Confirm the
       // current name still resolves to this exact identity before continuing.
-      requests += 1;
       let identity: { ocid?: string };
       try {
         identity = await fetchNexonJson<{ ocid?: string }>(
           env, `/id?character_name=${encodeURIComponent(current.character_name)}`,
-          undefined, (metric) => recordGrowthRequestMetric(requestMetrics, metric),
+          () => {
+            consumeGrowthInvocationBudget(invocationBudget);
+            requests += 1;
+          },
+          (metric) => recordGrowthRequestMetric(requestMetrics, metric),
         );
       } catch (error) {
         if (isMissingHistoricalSnapshot(error) || isUnavailableNameLookup(error)
@@ -530,7 +542,12 @@ const fetchBasicBatch = async (
         throw new GrowthIdentityError('此名字已不再對應原角色，已停止舊角色的自動更新並移出排名', row.character_name, timestamp);
       }
     } catch (error) {
-      throw annotateGrowthBatchFailure(error, requestMetrics, batchStartedAt, requests);
+      throw annotateGrowthBatchFailure(
+        error,
+        requestMetrics,
+        batchStartedAt,
+        requestMetrics.transportAttempts,
+      );
     }
   }
   for (const outcome of settled) {
@@ -648,6 +665,7 @@ const fetchDojangBatch = async (
   claim: GrowthClaim,
   batchSize: number,
   dateConcurrency: number,
+  invocationBudget?: GrowthInvocationBudget,
 ) => {
   const batchStartedAt = Date.now();
   const { row } = claim;
@@ -669,14 +687,19 @@ const fetchDojangBatch = async (
     const payload = await fetchNexonJson<NexonDojangHistory>(
       env,
       `/character/dojang?ocid=${encodeURIComponent(row.ocid)}&date=${date}`,
-      undefined,
+      () => consumeGrowthInvocationBudget(invocationBudget),
       (metric) => recordGrowthRequestMetric(requestMetrics, metric),
     );
     return { date, payload };
   });
   const rejected = settled.find((outcome) => outcome.status === 'rejected');
   if (rejected?.status === 'rejected') {
-    throw annotateGrowthBatchFailure(rejected.reason, requestMetrics, batchStartedAt, dates.length);
+    throw annotateGrowthBatchFailure(
+      rejected.reason,
+      requestMetrics,
+      batchStartedAt,
+      requestMetrics.transportAttempts,
+    );
   }
   for (const outcome of settled) {
     if (outcome.status !== 'fulfilled') continue;
@@ -877,7 +900,15 @@ export const backfillGrowthBatch = async (env: Env, invocationBudget?: GrowthInv
       if (processed >= config.growthMaxBatchesPerInvocation
         || (processed > 0 && Date.now() - invocationStartedAt >= config.growthInvocationBudgetMs)
         || (invocationBudget != null && invocationBudget.usedRequests >= invocationBudget.maxRequests)) break;
-      const rows = eligibleResults.slice(offset, offset + config.growthProfileConcurrency);
+      const remainingBudget = invocationBudget
+        ? Math.max(0, invocationBudget.maxRequests - invocationBudget.usedRequests)
+        : Number.POSITIVE_INFINITY;
+      if (remainingBudget <= 0) break;
+      const rawRows = eligibleResults.slice(offset, offset + config.growthProfileConcurrency);
+      const maxClaims = Number.isFinite(remainingBudget)
+        ? Math.max(1, Math.min(rawRows.length, remainingBudget))
+        : rawRows.length;
+      const rows = rawRows.slice(0, maxClaims);
       const claimStartedAt = Date.now();
       const claimedRows = await Promise.all(
         rows.map((row) => claimProfile(env.DB, row, config.growthClaimLeaseSeconds)),
@@ -888,17 +919,26 @@ export const backfillGrowthBatch = async (env: Env, invocationBudget?: GrowthInv
         if (claim) claims.push(claim);
       }
       if (claims.length === 0) continue;
+      const perClaimBudget = Number.isFinite(remainingBudget)
+        ? Math.max(1, Math.floor(remainingBudget / claims.length))
+        : Number.POSITIVE_INFINITY;
       const settled = await runWithConcurrency(
         claims,
         config.growthProfileConcurrency,
         0,
-        async (claim) => claim.row.phase === 'basic'
-          ? fetchBasicBatch(
-            env, claim, config.growthBackfillBatchSize, config.growthDateConcurrency,
-          )
-          : fetchDojangBatch(
-            env, claim, config.growthBackfillBatchSize, config.growthDateConcurrency,
-          ),
+        async (claim) => {
+          const claimBatchSize = Math.max(
+            1,
+            Math.min(config.growthBackfillBatchSize, perClaimBudget),
+          );
+          return claim.row.phase === 'basic'
+            ? fetchBasicBatch(
+                env, claim, claimBatchSize, config.growthDateConcurrency, invocationBudget,
+              )
+            : fetchDojangBatch(
+                env, claim, claimBatchSize, config.growthDateConcurrency, invocationBudget,
+              );
+        },
       );
       processed += claims.length;
       for (let index = 0; index < claims.length; index += 1) {
@@ -906,12 +946,6 @@ export const backfillGrowthBatch = async (env: Env, invocationBudget?: GrowthInv
         if (outcome.status === 'fulfilled') {
           results.push(outcome.value);
           requests += outcome.value.requests;
-          if (invocationBudget) {
-            invocationBudget.usedRequests += Math.max(
-              outcome.value.requests,
-              outcome.value.instrumentation.transportAttempts,
-            );
-          }
           if ('complete' in outcome.value && outcome.value.complete) completed += 1;
           continue;
         }
@@ -923,12 +957,6 @@ export const backfillGrowthBatch = async (env: Env, invocationBudget?: GrowthInv
         })?.growthInstrumentation;
         if (failedInstrumentation) {
           requests += failedInstrumentation.requests;
-          if (invocationBudget) {
-            invocationBudget.usedRequests += Math.max(
-              failedInstrumentation.requests,
-              failedInstrumentation.transportAttempts,
-            );
-          }
         }
         results.push({
           ocid: claims[index].row.ocid,
@@ -1000,9 +1028,10 @@ export const backfillGrowthBatch = async (env: Env, invocationBudget?: GrowthInv
       claimD1Ms,
       pendingD1Ms,
       pending,
-      stoppedBy: processed >= config.growthMaxBatchesPerInvocation ? 'batch_budget'
-        : Date.now() - invocationStartedAt >= config.growthInvocationBudgetMs ? 'wall_budget'
-          : 'queue_empty',
+      stoppedBy: (invocationBudget && invocationBudget.usedRequests >= invocationBudget.maxRequests) ? 'request_budget'
+        : processed >= config.growthMaxBatchesPerInvocation ? 'batch_budget'
+          : Date.now() - invocationStartedAt >= config.growthInvocationBudgetMs ? 'wall_budget'
+            : 'queue_empty',
       basic: phaseSummary('basic'),
       dojang: phaseSummary('dojang'),
     },

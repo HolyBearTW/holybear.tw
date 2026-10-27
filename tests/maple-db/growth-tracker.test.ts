@@ -894,9 +894,93 @@ describe('persistent growth tracking', () => {
     const basicResult = await backfillGrowthBatch(env, budget);
     expect(basicResult.processed).toBe(1);
     expect(budget.usedRequests).toBe(2);
+    expect(basicResult.instrumentation.stoppedBy).toBe('request_budget');
 
     const equipResult = await backfillGrowthEquipmentBatch(env, budget);
     expect(equipResult).toMatchObject({ processedProfiles: 0, processedDates: 0, requests: 0 });
+  });
+
+  it('safely aborts in-flight retries and concurrent requests when GrowthInvocationBudget is exhausted without exceeding maxRequests', async () => {
+    env.GROWTH_BACKFILL_BATCH_SIZE = '4';
+    env.GROWTH_DATE_CONCURRENCY = '4';
+    env.GROWTH_PROFILE_CONCURRENCY = '2';
+    env.NEXON_RETRY_LIMIT = '3';
+    await createGrowthProfile(env.DB, OCID, '2025-10-18');
+    await createGrowthProfile(env.DB, SECOND_OCID, '2025-10-18');
+
+    let actualFetchCalls = 0;
+    vi.stubGlobal('fetch', vi.fn(async () => {
+      actualFetchCalls += 1;
+      return new Response('temporary 503', { status: 503, headers: { 'retry-after': '0' } });
+    }));
+
+    const budget = { usedRequests: 0, maxRequests: 3 };
+    const result = await backfillGrowthBatch(env, budget);
+    expect(budget.usedRequests).toBe(3);
+    expect(actualFetchCalls).toBe(3);
+    expect(result.instrumentation.stoppedBy).toBe('request_budget');
+
+    // Profiles that hit budget exhaustion must be released to retry, never permanently failed
+    const profiles = local.sqlite
+      .prepare('SELECT ocid, status, claim_token, basic_last_synced_date FROM growth_profiles ORDER BY ocid')
+      .all() as Array<{
+        ocid: string;
+        status: string;
+        claim_token: string | null;
+        basic_last_synced_date: string | null;
+      }>;
+    for (const p of profiles) {
+      expect(p.claim_token).toBeNull();
+      expect(p.basic_last_synced_date).toBeNull();
+      expect(['pending', 'retry']).toContain(p.status);
+    }
+  });
+
+  it('bounds equipment date queries by remaining GrowthInvocationBudget without prematurely marking the profile complete', async () => {
+    env.GROWTH_BACKFILL_BATCH_SIZE = '20';
+    env.GROWTH_EQUIPMENT_DATE_CONCURRENCY = '4';
+    await createGrowthProfile(env.DB, OCID, '2026-08-05');
+    const insertSnapshot = local.sqlite.prepare(`
+      INSERT INTO growth_snapshots (
+        ocid, snapshot_date, character_name, world_name, job_name,
+        character_level, character_exp, character_exp_rate, fetched_at, updated_at
+      ) VALUES (?, ?, '測試角色', '艾麗亞', '主教', 275, 0, 0, 'now', 'now')
+    `);
+    for (const date of ['2026-08-01', '2026-08-02', '2026-08-03', '2026-08-04', '2026-08-05']) {
+      insertSnapshot.run(OCID, date);
+    }
+    local.sqlite.prepare(`
+      UPDATE growth_profiles
+      SET status='completed', basic_last_synced_date='2026-08-05', last_synced_date='2026-08-05'
+      WHERE ocid=?
+    `).run(OCID);
+
+    let equipFetchCalls = 0;
+    vi.stubGlobal('fetch', vi.fn(async () => {
+      equipFetchCalls += 1;
+      return Response.json({ item_equipment: [] });
+    }));
+
+    // Only 2 requests remain in the shared budget
+    const budget = { usedRequests: 8, maxRequests: 10 };
+    const equipRes = await backfillGrowthEquipmentBatch(env, budget);
+    expect(equipFetchCalls).toBe(2);
+    expect(budget.usedRequests).toBe(10);
+    expect(equipRes).toMatchObject({
+      processedProfiles: 1,
+      completedProfiles: 0,
+      processedDates: 2,
+      requests: 2,
+    });
+
+    // Checkpoint must only advance to 2026-08-02 (the 2nd date), NOT jump to 2026-08-05
+    const soulRow = local.sqlite
+      .prepare('SELECT last_synced_date, claim_token FROM growth_soul_tracking WHERE ocid = ?')
+      .get(OCID) as { last_synced_date: string | null; claim_token: string | null };
+    expect(soulRow).toEqual({
+      last_synced_date: '2026-08-02',
+      claim_token: null,
+    });
   });
   it('records soul weapon conversion, grade upgrades, and Astra acquisition events accurately', async () => {
     await createGrowthProfile(env.DB, OCID, '2026-08-03');

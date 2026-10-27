@@ -56,10 +56,7 @@ export default {
             && budget.usedRequests < budget.maxRequests;
           pass += 1
         ) {
-          const result = await backfillGrowthBatch(env);
-          const passTransportAttempts = result.instrumentation.basic.transportAttempts
-            + result.instrumentation.dojang.transportAttempts;
-          budget.usedRequests += Math.max(result.requests, passTransportAttempts);
+          const result = await backfillGrowthBatch(env, budget);
           console.info('scheduled growth batch completed', {
             pass: pass + 1,
             claimed: result.claimed,
