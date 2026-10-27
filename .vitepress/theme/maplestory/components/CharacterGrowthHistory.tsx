@@ -69,6 +69,8 @@ const eventLabels: Record<string, string> = {
   guild: '公會變更',
   liberation: '解放任務完成狀態',
   dojang: '武陵紀錄變更',
+  soul_conversion: '靈魂武器完成轉換',
+  soul_grade: '靈魂武器升階',
 };
 
 const GrowthTooltip = ({ active, payload }: any) => {
@@ -566,7 +568,7 @@ const CharacterGrowthHistory: React.FC<CharacterGrowthHistoryProps> = ({ data, a
 
         <div>
           <h4 className="text-sm font-semibold text-slate-200">角色成長大事記</h4>
-          <p className="mt-1 text-xs text-slate-500">記錄升級、改名、職業、世界、公會、解放狀態和武陵變化。</p>
+          <p className="mt-1 text-xs text-slate-500">記錄升級、改名、職業、世界、公會、解放狀態、武陵及靈魂武器變化。</p>
           {sortedEvents.length ? (
             <div className="relative mt-5">
               <span className="maple-growth-timeline-line absolute bottom-5 left-[11px] top-3 w-px bg-gradient-to-b from-emerald-400 via-emerald-700 to-slate-800" aria-hidden="true" />

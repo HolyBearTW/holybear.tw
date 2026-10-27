@@ -1,5 +1,6 @@
 import type { Env } from '../functions/_shared/env';
 import { backfillGrowthBatch } from '../functions/_shared/growth-tracker';
+import { backfillGrowthSoulBatch } from '../functions/_shared/growth-soul';
 
 /**
  * Growth-only scheduler. All non-Growth queues remain owned by the slower
@@ -7,6 +8,18 @@ import { backfillGrowthBatch } from '../functions/_shared/growth-tracker';
  */
 export default {
   scheduled(_controller: ScheduledController, env: Env, context: ExecutionContext) {
+    context.waitUntil((async () => {
+      const startedAt = Date.now();
+      try {
+        for (let index = 0; index < 4 && Date.now() - startedAt < 15000; index += 1) {
+          const soul = await backfillGrowthSoulBatch(env);
+          if (!soul.processedDates) break;
+          console.info('scheduled growth soul batch completed', soul);
+        }
+      } catch (error) {
+        console.error('scheduled growth soul batch failed', error);
+      }
+    })());
     context.waitUntil((async () => {
       try {
         const result = await backfillGrowthBatch(env);
