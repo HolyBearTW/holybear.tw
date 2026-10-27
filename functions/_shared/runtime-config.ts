@@ -85,6 +85,29 @@ export const getRuntimeConfig = (env: Env) => ({
   ),
   growthBackfillBatchSize: integerSetting(env.GROWTH_BACKFILL_BATCH_SIZE, 20, 1, 50),
   growthDateConcurrency: integerSetting(env.GROWTH_DATE_CONCURRENCY, 4, 1, 4),
+  growthEquipmentDateConcurrency: integerSetting(env.GROWTH_EQUIPMENT_DATE_CONCURRENCY, 8, 1, 16),
+  growthEquipmentProfileConcurrency: integerSetting(env.GROWTH_EQUIPMENT_PROFILE_CONCURRENCY, 8, 1, 16),
+  growthEquipmentMaxBatchesPerInvocation: integerSetting(
+    env.GROWTH_EQUIPMENT_MAX_BATCHES_PER_INVOCATION,
+    32,
+    1,
+    96,
+  ),
+  growthEquipmentInvocationBudgetMs: integerSetting(
+    env.GROWTH_EQUIPMENT_INVOCATION_BUDGET_MS,
+    45_000,
+    5_000,
+    120_000,
+  ),
+  // Paid Workers default to 10,000 subrequests/invocation. 1,200 logical NEXON
+  // requests (~2,400 subrequests including rate-limiter DO calls) stays well
+  // within both the 10,000 subrequest ceiling and the 50 RPS * 45s budget.
+  growthInvocationRequestBudget: integerSetting(
+    env.GROWTH_INVOCATION_REQUEST_BUDGET,
+    1_200,
+    1,
+    4_500,
+  ),
   growthMaxBatchesPerInvocation: integerSetting(env.GROWTH_MAX_BATCHES_PER_INVOCATION, 12, 1, 96),
   growthInvocationBudgetMs: integerSetting(env.GROWTH_INVOCATION_BUDGET_MS, 45_000, 5_000, 120_000),
   growthProfileConcurrency: integerSetting(env.GROWTH_PROFILE_CONCURRENCY, 1, 1, 8),

@@ -6,6 +6,7 @@ import {
   getGrowthStatus,
   latestAvailableGrowthDate,
 } from '../../functions/_shared/growth-tracker';
+import { backfillGrowthEquipmentBatch } from '../../functions/_shared/growth-equipment';
 import type { Env } from '../../functions/_shared/env';
 import { getRuntimeConfig } from '../../functions/_shared/runtime-config';
 import { findCharacterByOcid, invalidateCharacterStatement, upsertCanonicalNexonCharacter } from '../../functions/_shared/character-repository';
@@ -663,6 +664,294 @@ describe('persistent growth tracking', () => {
     expect(history?.events.filter((item) => item.type === 'liberation')).toEqual([
       expect.objectContaining({ date: '2025-10-18', from: '1', to: '2' }),
       expect.objectContaining({ date: '2025-10-19', from: '2', to: 'future-stage' }),
+    ]);
+  });
+
+  it('completes daily profiles in basic+dojang pairs instead of leaving all profiles in dojang phase', async () => {
+    env.GROWTH_BACKFILL_BATCH_SIZE = '20';
+    env.GROWTH_MAX_BATCHES_PER_INVOCATION = '2';
+    env.GROWTH_PROFILE_CONCURRENCY = '1';
+    await createGrowthProfile(env.DB, OCID, '2025-10-17');
+    await createGrowthProfile(env.DB, SECOND_OCID, '2025-10-17');
+    for (const id of [OCID, SECOND_OCID]) {
+      local.sqlite.prepare(`
+        UPDATE growth_profiles
+        SET status='pending', phase='basic', last_synced_date='2025-10-16',
+          basic_last_synced_date='2025-10-16', dojang_last_synced_date='2025-10-16',
+          current_processing_date='2025-10-17', updated_at='2025-10-17T18:00:00.000Z'
+        WHERE ocid=?
+      `).run(id);
+    }
+    vi.stubGlobal('fetch', vi.fn(async (input: string) => {
+      const url = new URL(input);
+      const date = url.searchParams.get('date') || '2025-10-17';
+      if (url.pathname.endsWith('/character/basic')) return Response.json(basic(date));
+      return Response.json({ date, dojang_best_floor: 0, dojang_best_time: 0, date_dojang_record: null });
+    }));
+
+    const run = await backfillGrowthBatch(env);
+    expect(run).toMatchObject({ processed: 2, completed: 1, requests: 2 });
+    expect(local.sqlite.prepare(`SELECT status FROM growth_profiles WHERE ocid=?`).get(OCID))
+      .toMatchObject({ status: 'completed' });
+  });
+
+  it('batches multiple equipment profiles concurrently and skips redundant Astra-only dates after observation', async () => {
+    env.GROWTH_BACKFILL_BATCH_SIZE = '10';
+    env.GROWTH_EQUIPMENT_DATE_CONCURRENCY = '1';
+    env.GROWTH_EQUIPMENT_PROFILE_CONCURRENCY = '4';
+    await createGrowthProfile(env.DB, OCID, '2026-08-05');
+    await createGrowthProfile(env.DB, SECOND_OCID, '2026-08-05');
+    const insertSnapshot = local.sqlite.prepare(`
+      INSERT INTO growth_snapshots (
+        ocid, snapshot_date, character_name, world_name, job_name,
+        character_level, character_exp, character_exp_rate, fetched_at, updated_at
+      ) VALUES (?, ?, '測試角色', '艾麗亞', '主教', 275, 0, 0, 'now', 'now')
+    `);
+    for (const date of ['2026-08-01', '2026-08-02', '2026-08-03', '2026-08-04', '2026-08-05']) {
+      insertSnapshot.run(OCID, date);
+    }
+    insertSnapshot.run(SECOND_OCID, '2026-08-05');
+
+    local.sqlite.prepare(`UPDATE growth_profiles SET status='completed', basic_last_synced_date='2026-08-05' WHERE ocid IN (?, ?)`).run(OCID, SECOND_OCID);
+    // OCID already has soul synced through 2026-08-05, only Astra is pending from 2026-08-01.
+    local.sqlite.prepare(`INSERT INTO growth_soul_tracking (ocid, last_synced_date, highest_grade, updated_at) VALUES (?, '2026-08-05', 7, 'now')`).run(OCID);
+    local.sqlite.prepare(`INSERT INTO growth_astra_tracking (ocid, last_synced_date, previous_item_name, has_astra, updated_at) VALUES (?, '2026-07-31', '舊副武', 0, 'now')`).run(OCID);
+    // SECOND_OCID has only 1 daily date pending for both soul and astra.
+    local.sqlite.prepare(`INSERT INTO growth_soul_tracking (ocid, last_synced_date, highest_grade, updated_at) VALUES (?, '2026-08-04', 5, 'now')`).run(SECOND_OCID);
+    local.sqlite.prepare(`INSERT INTO growth_astra_tracking (ocid, last_synced_date, previous_item_name, has_astra, updated_at) VALUES (?, '2026-08-04', '舊副武B', 0, 'now')`).run(SECOND_OCID);
+
+    const requestedUrls: string[] = [];
+    vi.stubGlobal('fetch', vi.fn(async (input: string) => {
+      requestedUrls.push(String(input));
+      const url = new URL(input);
+      const targetOcid = url.searchParams.get('ocid');
+      const date = url.searchParams.get('date');
+      if (targetOcid === OCID && date === '2026-08-02') {
+        return Response.json({
+          item_equipment: [{ item_equipment_slot: '輔助武器', item_name: '阿斯特拉寶珠' }],
+        });
+      }
+      return Response.json({
+        item_equipment: [
+          { item_equipment_slot: '武器', item_name: '創世武器', soul_weapon_grade: '6' },
+          { item_equipment_slot: '輔助武器', item_name: '舊副武' },
+        ],
+      });
+    }));
+
+    const result = await backfillGrowthEquipmentBatch(env);
+    expect(result).toMatchObject({
+      processedProfiles: 2,
+      completedProfiles: 2,
+    });
+    // OCID only needed 2026-08-01 and 2026-08-02 (observed Astra on 08-02, so 08-03..08-05 were skipped),
+    // plus 1 request for SECOND_OCID on 2026-08-05 = 3 requests total instead of 6.
+    expect(result.requests).toBe(3);
+    expect(requestedUrls).toHaveLength(3);
+    expect(local.sqlite.prepare(`SELECT last_synced_date, has_astra FROM growth_astra_tracking WHERE ocid=?`).get(OCID))
+      .toMatchObject({ last_synced_date: '2026-08-05', has_astra: 1 });
+    expect(local.sqlite.prepare(`SELECT last_synced_date, highest_grade FROM growth_soul_tracking WHERE ocid=?`).get(SECOND_OCID))
+      .toMatchObject({ last_synced_date: '2026-08-05', highest_grade: 6 });
+  });
+
+  it('isolates per-profile API and D1.batch failures in multi-profile equipment sync so sibling profiles still commit', async () => {
+    env.GROWTH_BACKFILL_BATCH_SIZE = '10';
+    env.GROWTH_EQUIPMENT_DATE_CONCURRENCY = '2';
+    env.GROWTH_EQUIPMENT_PROFILE_CONCURRENCY = '4';
+    await createGrowthProfile(env.DB, OCID, '2026-08-02');
+    await createGrowthProfile(env.DB, SECOND_OCID, '2026-08-02');
+    const insertSnapshot = local.sqlite.prepare(`
+      INSERT INTO growth_snapshots (
+        ocid, snapshot_date, character_name, world_name, job_name,
+        character_level, character_exp, character_exp_rate, fetched_at, updated_at
+      ) VALUES (?, ?, '測試角色', '艾麗亞', '主教', 275, 0, 0, 'now', 'now')
+    `);
+    insertSnapshot.run(OCID, '2026-08-02');
+    insertSnapshot.run(SECOND_OCID, '2026-08-02');
+    local.sqlite.prepare(`UPDATE growth_profiles SET status='completed', basic_last_synced_date='2026-08-02' WHERE ocid IN (?, ?)`).run(OCID, SECOND_OCID);
+
+    vi.stubGlobal('fetch', vi.fn(async () => Response.json({
+      item_equipment: [
+        { item_equipment_slot: '武器', item_name: '創世武器', soul_weapon_grade: '7' },
+        { item_equipment_slot: '輔助武器', item_name: '阿斯特拉寶珠' },
+      ],
+    })));
+    const originalBatch = env.DB.batch.bind(env.DB);
+    let batchCallIndex = 0;
+    const batchSpy = vi.spyOn(env.DB, 'batch').mockImplementation(async (statements) => {
+      batchCallIndex += 1;
+      // Calls 1 and 2 are the isolated claim batches for the two profiles;
+      // Call 3 is the commit batch for the first profile.
+      if (batchCallIndex === 3) {
+        throw new Error('simulated D1 commit failure on first profile');
+      }
+      return originalBatch(statements);
+    });
+
+    const firstRun = await backfillGrowthEquipmentBatch(env);
+    batchSpy.mockRestore();
+    expect(firstRun).toMatchObject({
+      processedProfiles: 1,
+      completedProfiles: 1,
+    });
+
+    const soulRows = local.sqlite.prepare(`
+      SELECT ocid, last_synced_date, claim_token, retry_at
+      FROM growth_soul_tracking
+      ORDER BY ocid
+    `).all() as Array<{
+      ocid: string;
+      last_synced_date: string | null;
+      claim_token: string | null;
+      retry_at: string | null;
+    }>;
+    const failedRow = soulRows.find((r) => r.retry_at != null);
+    const succeededRow = soulRows.find((r) => r.last_synced_date === '2026-08-02');
+    expect(failedRow).toBeDefined();
+    expect(failedRow?.claim_token).toBeNull();
+    expect(succeededRow).toBeDefined();
+    expect(succeededRow?.claim_token).toBeNull();
+  });
+
+  it('advances 0-snapshot profiles in equipment sync without issuing NEXON requests', async () => {
+    await createGrowthProfile(env.DB, OCID, '2026-08-05');
+    local.sqlite.prepare(`
+      UPDATE growth_profiles
+      SET status='completed', basic_last_synced_date='2026-08-05'
+      WHERE ocid=?
+    `).run(OCID);
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await backfillGrowthEquipmentBatch(env);
+    expect(result).toMatchObject({
+      processedProfiles: 1,
+      completedProfiles: 1,
+      processedDates: 0,
+      requests: 0,
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(local.sqlite.prepare(`SELECT last_synced_date, claim_token FROM growth_soul_tracking WHERE ocid=?`).get(OCID))
+      .toMatchObject({ last_synced_date: '2026-08-05', claim_token: null });
+    expect(local.sqlite.prepare(`SELECT last_synced_date, claim_token FROM growth_astra_tracking WHERE ocid=?`).get(OCID))
+      .toMatchObject({ last_synced_date: '2026-08-05', claim_token: null });
+  });
+
+  it('respects active equipment claim leases and recovers expired leases', async () => {
+    await createGrowthProfile(env.DB, OCID, '2026-08-02');
+    local.sqlite.prepare(`
+      INSERT INTO growth_snapshots (
+        ocid, snapshot_date, character_name, world_name, job_name,
+        character_level, character_exp, character_exp_rate, fetched_at, updated_at
+      ) VALUES (?, '2026-08-02', '測試角色', '艾麗亞', '主教', 275, 0, 0, 'now', 'now')
+    `).run(OCID);
+    local.sqlite.prepare(`UPDATE growth_profiles SET status='completed', basic_last_synced_date='2026-08-02' WHERE ocid=?`).run(OCID);
+    const futureLease = new Date(Date.now() + 120_000).toISOString();
+    local.sqlite.prepare(`
+      INSERT INTO growth_soul_tracking (ocid, claim_token, claim_until, updated_at)
+      VALUES (?, 'other-worker', ?, 'now')
+    `).run(OCID, futureLease);
+
+    vi.stubGlobal('fetch', vi.fn(async () => Response.json({ item_equipment: [] })));
+    const blocked = await backfillGrowthEquipmentBatch(env);
+    expect(blocked).toMatchObject({ processedProfiles: 0, processedDates: 0 });
+
+    const expiredLease = new Date(Date.now() - 60_000).toISOString();
+    local.sqlite.prepare(`UPDATE growth_soul_tracking SET claim_until=? WHERE ocid=?`).run(expiredLease, OCID);
+
+    const recovered = await backfillGrowthEquipmentBatch(env);
+    expect(recovered).toMatchObject({ processedProfiles: 1, completedProfiles: 1, processedDates: 1 });
+  });
+
+  it('enforces shared GrowthInvocationBudget across basic, dojang, and equipment sync including retries', async () => {
+    env.GROWTH_BACKFILL_BATCH_SIZE = '1';
+    env.GROWTH_MAX_BATCHES_PER_INVOCATION = '10';
+    env.GROWTH_PROFILE_CONCURRENCY = '1';
+    env.NEXON_RETRY_LIMIT = '2';
+    await createGrowthProfile(env.DB, OCID, '2025-10-16');
+    local.sqlite.prepare(`
+      UPDATE growth_profiles
+      SET scan_start_date='2025-10-16', current_processing_date='2025-10-16'
+      WHERE ocid=?
+    `).run(OCID);
+
+    let attempts = 0;
+    vi.stubGlobal('fetch', vi.fn(async (input: string) => {
+      attempts += 1;
+      if (attempts === 1) {
+        return new Response('temporary 503', { status: 503, headers: { 'retry-after': '0' } });
+      }
+      const url = new URL(input);
+      const date = url.searchParams.get('date') || '2025-10-16';
+      if (url.pathname.endsWith('/character/basic')) return Response.json(basic(date));
+      if (url.pathname.endsWith('/character/dojang')) {
+        return Response.json({ date, dojang_best_floor: 0, dojang_best_time: 0, date_dojang_record: null });
+      }
+      return Response.json({ item_equipment: [] });
+    }));
+
+    const budget = { usedRequests: 0, maxRequests: 2 };
+    const basicResult = await backfillGrowthBatch(env, budget);
+    expect(basicResult.processed).toBe(1);
+    expect(budget.usedRequests).toBe(2);
+
+    const equipResult = await backfillGrowthEquipmentBatch(env, budget);
+    expect(equipResult).toMatchObject({ processedProfiles: 0, processedDates: 0, requests: 0 });
+  });
+  it('records soul weapon conversion, grade upgrades, and Astra acquisition events accurately', async () => {
+    await createGrowthProfile(env.DB, OCID, '2026-08-03');
+    const insertSnapshot = local.sqlite.prepare(`
+      INSERT INTO growth_snapshots (
+        ocid, snapshot_date, character_name, world_name, job_name,
+        character_level, character_exp, character_exp_rate, fetched_at, updated_at
+      ) VALUES (?, ?, '測試角色', '艾麗亞', '主教', 275, 0, 0, 'now', 'now')
+    `);
+    for (const date of ['2026-07-28', '2026-07-30', '2026-08-01', '2026-08-03']) {
+      insertSnapshot.run(OCID, date);
+    }
+    local.sqlite.prepare(`UPDATE growth_profiles SET status='completed', basic_last_synced_date='2026-08-03', last_synced_date='2026-08-03' WHERE ocid=?`).run(OCID);
+
+    vi.stubGlobal('fetch', vi.fn(async (input: string) => {
+      const date = new URL(input).searchParams.get('date');
+      if (date === '2026-07-28') {
+        return Response.json({
+          item_equipment: [
+            { item_equipment_slot: '武器', item_name: '創世法杖', soul_name: '偉大的露希妲寶珠' },
+            { item_equipment_slot: '輔助武器', item_name: '永恆魔道書' },
+          ],
+        });
+      }
+      if (date === '2026-07-30') {
+        return Response.json({
+          item_equipment: [
+            { item_equipment_slot: '武器', item_name: '創世法杖', soul_weapon_grade: '第5階段' },
+            { item_equipment_slot: '輔助武器', item_name: '永恆魔道書' },
+          ],
+        });
+      }
+      if (date === '2026-08-01') {
+        return Response.json({
+          item_equipment: [
+            { item_equipment_slot: '武器', item_name: '創世法杖', soul_weapon_grade: '7' },
+            { item_equipment_slot: '輔助武器', item_name: '阿斯特拉魔道書' },
+          ],
+        });
+      }
+      return Response.json({
+        item_equipment: [
+          { item_equipment_slot: '武器', item_name: '創世法杖', soul_weapon_grade: '7' },
+          { item_equipment_slot: '輔助武器', item_name: '阿斯特拉魔道書' },
+        ],
+      });
+    }));
+
+    const res = await backfillGrowthEquipmentBatch(env);
+    expect(res).toMatchObject({ processedProfiles: 1, completedProfiles: 1, processedDates: 4 });
+    const history = await getGrowthHistory(env.DB, OCID, '2026-07-28', '2026-08-03');
+    expect(history?.events.filter((e) => ['soul_conversion', 'soul_grade', 'astra_acquired'].includes(e.type))).toEqual([
+      expect.objectContaining({ date: '2026-07-30', type: 'soul_conversion', from: '偉大的露希妲寶珠', to: '靈魂武器第 5 階段' }),
+      expect.objectContaining({ date: '2026-08-01', type: 'soul_grade', from: '第 5 階段', to: '第 7 階段' }),
+      expect.objectContaining({ date: '2026-08-01', type: 'astra_acquired', from: '永恆魔道書', to: '阿斯特拉魔道書' }),
     ]);
   });
 });

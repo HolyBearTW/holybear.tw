@@ -9,6 +9,7 @@ import {
 } from './nexon-client';
 import { getRuntimeConfig } from './runtime-config';
 import { invalidateCachedCharacterRank } from './ranking-cache';
+import type { GrowthInvocationBudget } from './growth-equipment';
 
 export const GROWTH_HISTORY_START_DATE = '2025-10-15';
 const DAY_MS = 86_400_000;
@@ -770,7 +771,7 @@ const failGrowthClaim = async (env: Env, claim: GrowthClaim, error: unknown) => 
   return { retryable, retryAt };
 };
 
-export const backfillGrowthBatch = async (env: Env) => {
+export const backfillGrowthBatch = async (env: Env, invocationBudget?: GrowthInvocationBudget) => {
   const invocationStartedAt = Date.now();
   const config = getRuntimeConfig(env);
   const schedulerStartedAt = Date.now();
@@ -790,7 +791,8 @@ export const backfillGrowthBatch = async (env: Env) => {
   // profile remains ahead of daily incremental work. Daily profiles still use
   // updated_at ordering, which keeps their existing round-robin behavior.
   while (processed < config.growthMaxBatchesPerInvocation
-    && (processed === 0 || Date.now() - invocationStartedAt < config.growthInvocationBudgetMs)) {
+    && (processed === 0 || Date.now() - invocationStartedAt < config.growthInvocationBudgetMs)
+    && (!invocationBudget || invocationBudget.usedRequests < invocationBudget.maxRequests)) {
     const timestamp = nowIso();
     const remainingBatchBudget = config.growthMaxBatchesPerInvocation - processed;
     const eligibleStartedAt = Date.now();
@@ -809,6 +811,7 @@ export const backfillGrowthBatch = async (env: Env) => {
           AND (claim_until IS NULL OR claim_until <= ?1)
         ORDER BY
           CASE WHEN status = 'pending' THEN 0 ELSE 1 END,
+          CASE WHEN status = 'pending' AND phase = 'dojang' THEN 0 ELSE 1 END,
           updated_at,
           created_at,
           ocid
@@ -838,6 +841,7 @@ export const backfillGrowthBatch = async (env: Env) => {
               WHEN status = 'pending' THEN 1
               ELSE 2
             END,
+            CASE WHEN last_synced_date IS NOT NULL AND status = 'pending' AND phase = 'dojang' THEN 0 ELSE 1 END,
             CASE WHEN last_synced_date IS NULL THEN created_at ELSE updated_at END,
             created_at,
             ocid
@@ -856,6 +860,7 @@ export const backfillGrowthBatch = async (env: Env) => {
             WHEN status = 'pending' THEN 1
             ELSE 2
           END,
+          CASE WHEN last_synced_date IS NOT NULL AND status = 'pending' AND phase = 'dojang' THEN 0 ELSE 1 END,
           CASE WHEN last_synced_date IS NULL THEN created_at ELSE updated_at END,
           created_at,
           ocid
@@ -870,13 +875,16 @@ export const backfillGrowthBatch = async (env: Env) => {
     initialGroupsSinceDaily = includesDaily ? 0 : initialGroupsSinceDaily + 1;
     for (let offset = 0; offset < eligibleResults.length; offset += config.growthProfileConcurrency) {
       if (processed >= config.growthMaxBatchesPerInvocation
-        || (processed > 0 && Date.now() - invocationStartedAt >= config.growthInvocationBudgetMs)) break;
+        || (processed > 0 && Date.now() - invocationStartedAt >= config.growthInvocationBudgetMs)
+        || (invocationBudget != null && invocationBudget.usedRequests >= invocationBudget.maxRequests)) break;
       const rows = eligibleResults.slice(offset, offset + config.growthProfileConcurrency);
+      const claimStartedAt = Date.now();
+      const claimedRows = await Promise.all(
+        rows.map((row) => claimProfile(env.DB, row, config.growthClaimLeaseSeconds)),
+      );
+      claimD1Ms += Math.max(0, Date.now() - claimStartedAt);
       const claims: GrowthClaim[] = [];
-      for (const row of rows) {
-        const claimStartedAt = Date.now();
-        const claim = await claimProfile(env.DB, row, config.growthClaimLeaseSeconds);
-        claimD1Ms += Math.max(0, Date.now() - claimStartedAt);
+      for (const claim of claimedRows) {
         if (claim) claims.push(claim);
       }
       if (claims.length === 0) continue;
@@ -898,6 +906,12 @@ export const backfillGrowthBatch = async (env: Env) => {
         if (outcome.status === 'fulfilled') {
           results.push(outcome.value);
           requests += outcome.value.requests;
+          if (invocationBudget) {
+            invocationBudget.usedRequests += Math.max(
+              outcome.value.requests,
+              outcome.value.instrumentation.transportAttempts,
+            );
+          }
           if ('complete' in outcome.value && outcome.value.complete) completed += 1;
           continue;
         }
@@ -907,7 +921,15 @@ export const backfillGrowthBatch = async (env: Env) => {
         const failedInstrumentation = (outcome.reason as {
           growthInstrumentation?: GrowthBatchFailureInstrumentation;
         })?.growthInstrumentation;
-        if (failedInstrumentation) requests += failedInstrumentation.requests;
+        if (failedInstrumentation) {
+          requests += failedInstrumentation.requests;
+          if (invocationBudget) {
+            invocationBudget.usedRequests += Math.max(
+              failedInstrumentation.requests,
+              failedInstrumentation.transportAttempts,
+            );
+          }
+        }
         results.push({
           ocid: claims[index].row.ocid,
           phase: claims[index].row.phase,
