@@ -43,6 +43,16 @@ export const backfillGrowthAstraBatch = async (env: Env) => {
   if (!state) return { processedDates: 0 };
 
   try {
+    // Acquisition is recorded at most once. Once Astra has been observed,
+    // future equipment snapshots cannot change that result.
+    if (state.has_astra) {
+      await env.DB.prepare(`
+        UPDATE growth_astra_tracking SET last_synced_date = ?3, claim_token = NULL,
+          claim_until = NULL, retry_at = NULL, updated_at = ?4
+        WHERE ocid = ?1 AND claim_token = ?2
+      `).bind(candidate.ocid, token, candidate.basic_last_synced_date, new Date().toISOString()).run();
+      return { processedDates: 1, ocid: candidate.ocid };
+    }
     const config = getRuntimeConfig(env);
     const rows = await env.DB.prepare(`
       SELECT snapshot_date FROM growth_snapshots
@@ -94,7 +104,8 @@ export const backfillGrowthAstraBatch = async (env: Env) => {
         previousName = itemName;
       }
     }
-    const processedDate = rows.results.at(-1)?.snapshot_date || candidate.basic_last_synced_date;
+    const processedDate = hasAstra ? candidate.basic_last_synced_date
+      : rows.results.at(-1)?.snapshot_date || candidate.basic_last_synced_date;
     statements.push(env.DB.prepare(`
       UPDATE growth_astra_tracking SET last_synced_date = ?3, previous_item_name = ?4,
         has_astra = ?5, claim_token = NULL, claim_until = NULL, retry_at = NULL, updated_at = ?6

@@ -67,6 +67,29 @@ describe('growth Astra history', () => {
       .toContainEqual(expect.objectContaining({ type: 'astra_acquired', from: '創世琉', to: '阿斯特拉沙漏' }));
   });
 
+  it('stops equipment requests after the first Astra observation, including on later daily updates', async () => {
+    await seed(['2026-07-15', '2026-07-16', '2026-07-17', '2026-07-18']);
+    const fetchMock = vi.fn(async (input: string) => {
+      const before = new URL(input).searchParams.get('date') === '2026-07-15';
+      return Response.json({ item_equipment: [{ item_equipment_slot: '輔助武器',
+        item_name: before ? '原本的副武器' : '阿斯特拉寶珠' }] });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    await backfillGrowthAstraBatch(env);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(local.sqlite.prepare('SELECT last_synced_date, has_astra FROM growth_astra_tracking').get())
+      .toMatchObject({ last_synced_date: '2026-07-18', has_astra: 1 });
+    expect((await getGrowthHistory(env.DB, ocid, '2026-07-15', '2026-07-18'))?.events)
+      .toContainEqual(expect.objectContaining({ type: 'astra_acquired', from: '原本的副武器', to: '阿斯特拉寶珠' }));
+
+    local.sqlite.prepare(`UPDATE growth_profiles SET basic_last_synced_date='2026-07-19' WHERE ocid=?`).run(ocid);
+    await backfillGrowthAstraBatch(env);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(local.sqlite.prepare('SELECT last_synced_date FROM growth_astra_tracking').get()?.last_synced_date)
+      .toBe('2026-07-19');
+    expect(local.sqlite.prepare('SELECT COUNT(*) AS n FROM growth_astra_events').get()?.n).toBe(1);
+  });
+
   it('does not invent a previous weapon if Astra is the first observed equipment', async () => {
     await seed(['2026-07-15', '2026-07-16', '2026-07-17']);
     vi.stubGlobal('fetch', vi.fn(async (input: string) => {
