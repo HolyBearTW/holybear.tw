@@ -2,6 +2,21 @@ import type { Env } from './env';
 import { fetchNexonJson, NexonRequestError, runWithConcurrency } from './nexon-client';
 import { getRuntimeConfig } from './runtime-config';
 
+const DAY_MS = 86_400_000;
+
+export interface GrowthInvocationBudget {
+  usedRequests: number;
+  maxRequests: number;
+}
+
+interface EquipmentCandidate {
+  ocid: string;
+  basic_last_synced_date: string;
+  soul_last_synced_date: string | null;
+  astra_last_synced_date: string | null;
+  has_astra: number;
+}
+
 interface EquipmentTracking {
   ocid: string;
   last_synced_date: string | null;
@@ -14,6 +29,22 @@ interface EquipmentTracking {
   has_astra?: number;
 }
 
+interface EquipmentSnapshotRow {
+  snapshot_date: string;
+  soul_baseline: number;
+  astra_baseline: number;
+}
+
+interface EquipmentObservation {
+  date: string;
+  soulBaseline: boolean;
+  astraBaseline: boolean;
+  grade: number | null;
+  soulName: string | null;
+  weaponName: string | null;
+  astraName: string | null;
+}
+
 interface EquipmentHistory {
   item_equipment?: Array<{
     item_equipment_part?: string;
@@ -24,10 +55,80 @@ interface EquipmentHistory {
   }>;
 }
 
-export const backfillGrowthEquipmentBatch = async (env: Env) => {
+const dateSpanDays = (fromDate: string | null, toDate: string, defaultStart: string) => {
+  const start = fromDate ? Date.parse(`${fromDate}T00:00:00Z`) + DAY_MS : Date.parse(`${defaultStart}T00:00:00Z`);
+  const end = Date.parse(`${toDate}T00:00:00Z`);
+  if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) return 1;
+  return Math.max(1, Math.floor((end - start) / DAY_MS) + 1);
+};
+
+const estimateCandidateDates = (candidate: EquipmentCandidate, batchSize: number) => {
+  const soulPending = !candidate.soul_last_synced_date
+    || candidate.soul_last_synced_date < candidate.basic_last_synced_date;
+  const astraPending = !candidate.has_astra && (
+    !candidate.astra_last_synced_date
+    || candidate.astra_last_synced_date < candidate.basic_last_synced_date
+  );
+  const soulDays = soulPending
+    ? dateSpanDays(candidate.soul_last_synced_date, candidate.basic_last_synced_date, '2026-07-28')
+    : 0;
+  const astraDays = astraPending
+    ? dateSpanDays(candidate.astra_last_synced_date, candidate.basic_last_synced_date, '2026-07-14')
+    : 0;
+  return Math.min(batchSize, Math.max(1, soulDays, astraDays));
+};
+
+const parseEquipmentPayload = (
+  payload: EquipmentHistory,
+  row: EquipmentSnapshotRow,
+): EquipmentObservation => {
+  const items = payload.item_equipment || [];
+  const weapon = items.find((item) => item.item_equipment_slot === '武器' || item.item_equipment_part === '武器');
+  const gradeText = String(weapon?.soul_weapon_grade ?? '').trim();
+  const numericGrade = Number(gradeText.match(/\d+/)?.[0]);
+  const chineseGrade = gradeText.match(/第?([一二三四五六七八九十])(?:階級|階段)?/);
+  const grade = numericGrade >= 1 && numericGrade <= 10 ? numericGrade
+    : chineseGrade ? '一二三四五六七八九十'.indexOf(chineseGrade[1]) + 1 : null;
+  const astraItem = items.find((item) => item.item_equipment_slot === '阿斯特拉輔助武器神之子'
+    || item.item_equipment_part === '阿斯特拉輔助武器神之子')
+    || items.find((item) => item.item_equipment_slot === '輔助武器');
+  return {
+    date: row.snapshot_date,
+    soulBaseline: Boolean(row.soul_baseline),
+    astraBaseline: Boolean(row.astra_baseline),
+    grade,
+    soulName: weapon?.soul_name?.trim() || null,
+    weaponName: weapon?.item_name?.trim() || null,
+    astraName: astraItem?.item_name?.trim() || null,
+  };
+};
+
+const releaseAndScheduleRetry = async (env: Env, ocid: string, token: string) => {
+  const retryAt = new Date(Date.now() + 300_000).toISOString();
+  const now = new Date().toISOString();
+  await env.DB.batch([
+    env.DB.prepare(`UPDATE growth_soul_tracking SET claim_token = NULL, claim_until = NULL, retry_at = ?3, updated_at = ?4 WHERE ocid = ?1 AND claim_token = ?2`)
+      .bind(ocid, token, retryAt, now),
+    env.DB.prepare(`UPDATE growth_astra_tracking SET claim_token = NULL, claim_until = NULL, retry_at = ?3, updated_at = ?4 WHERE ocid = ?1 AND claim_token = ?2`)
+      .bind(ocid, token, retryAt, now),
+  ]);
+};
+
+export const backfillGrowthEquipmentBatch = async (
+  env: Env,
+  invocationBudget?: GrowthInvocationBudget,
+) => {
+  const config = getRuntimeConfig(env);
+  if (invocationBudget && invocationBudget.usedRequests >= invocationBudget.maxRequests) {
+    return { processedDates: 0, processedProfiles: 0, completedProfiles: 0, requests: 0 };
+  }
+
   const timestamp = new Date().toISOString();
-  const candidate = await env.DB.prepare(`
-    SELECT p.ocid, p.basic_last_synced_date
+  const candidateRows = await env.DB.prepare(`
+    SELECT p.ocid, p.basic_last_synced_date,
+      s.last_synced_date AS soul_last_synced_date,
+      a.last_synced_date AS astra_last_synced_date,
+      COALESCE(a.has_astra, 0) AS has_astra
     FROM growth_profiles p
     LEFT JOIN growth_soul_tracking s ON s.ocid = p.ocid
     LEFT JOIN growth_astra_tracking a ON a.ocid = p.ocid
@@ -40,200 +141,349 @@ export const backfillGrowthEquipmentBatch = async (env: Env) => {
       AND (s.last_synced_date >= p.basic_last_synced_date OR s.retry_at IS NULL OR s.retry_at <= ?1)
       AND (COALESCE(a.has_astra, 0) = 1 OR a.last_synced_date >= p.basic_last_synced_date
         OR a.retry_at IS NULL OR a.retry_at <= ?1)
-    ORDER BY MIN(COALESCE(s.updated_at, p.created_at), COALESCE(a.updated_at, p.created_at)), p.ocid
-    LIMIT 1
-  `).bind(timestamp).first<{ ocid: string; basic_last_synced_date: string }>();
-  if (!candidate) return { processedDates: 0 };
+    ORDER BY
+      CASE
+        WHEN s.last_synced_date IS NOT NULL
+          AND (COALESCE(a.has_astra, 0) = 1 OR a.last_synced_date IS NOT NULL)
+          THEN 0
+        ELSE 1
+      END,
+      p.created_at,
+      p.ocid
+    LIMIT ?2
+  `).bind(timestamp, config.growthEquipmentProfileConcurrency).all<EquipmentCandidate>();
 
-  await env.DB.batch([
-    env.DB.prepare(`INSERT INTO growth_soul_tracking (ocid, updated_at) VALUES (?1, ?2) ON CONFLICT(ocid) DO NOTHING`)
-      .bind(candidate.ocid, timestamp),
-    env.DB.prepare(`INSERT INTO growth_astra_tracking (ocid, updated_at) VALUES (?1, ?2) ON CONFLICT(ocid) DO NOTHING`)
-      .bind(candidate.ocid, timestamp),
-  ]);
-  const token = crypto.randomUUID();
-  const lease = new Date(Date.now() + 600_000).toISOString();
-  const soul = await env.DB.prepare(`
-    UPDATE growth_soul_tracking SET claim_token = ?2, claim_until = ?3
-    WHERE ocid = ?1 AND (claim_until IS NULL OR claim_until <= ?4)
-    RETURNING *
-  `).bind(candidate.ocid, token, lease, timestamp).first<EquipmentTracking>();
-  if (!soul) return { processedDates: 0 };
-  const astra = await env.DB.prepare(`
-    UPDATE growth_astra_tracking SET claim_token = ?2, claim_until = ?3
-    WHERE ocid = ?1 AND (claim_until IS NULL OR claim_until <= ?4)
-    RETURNING *
-  `).bind(candidate.ocid, token, lease, timestamp).first<EquipmentTracking>();
-  if (!astra) {
-    await env.DB.prepare(`UPDATE growth_soul_tracking SET claim_token = NULL, claim_until = NULL WHERE ocid = ?1 AND claim_token = ?2`)
-      .bind(candidate.ocid, token).run();
-    return { processedDates: 0 };
+  if (candidateRows.results.length === 0) return { processedDates: 0, processedProfiles: 0, completedProfiles: 0, requests: 0 };
+
+  const remainingBudget = invocationBudget
+    ? Math.max(1, invocationBudget.maxRequests - invocationBudget.usedRequests)
+    : Number.POSITIVE_INFINITY;
+  const targetDateBudget = Math.min(
+    remainingBudget,
+    Math.max(config.growthBackfillBatchSize * 2, config.growthEquipmentDateConcurrency),
+  );
+  const selectedCandidates: EquipmentCandidate[] = [];
+  let budgetedDates = 0;
+  for (const candidate of candidateRows.results) {
+    const estimated = estimateCandidateDates(candidate, config.growthBackfillBatchSize);
+    if (selectedCandidates.length > 0 && budgetedDates + estimated > targetDateBudget) break;
+    selectedCandidates.push(candidate);
+    budgetedDates += estimated;
+    if (selectedCandidates.length >= config.growthEquipmentProfileConcurrency) break;
   }
 
-  try {
-    const config = getRuntimeConfig(env);
-    const rows = await env.DB.prepare(`
-      SELECT snapshot_date,
-        snapshot_date = (SELECT MAX(snapshot_date) FROM growth_snapshots WHERE ocid = ?1 AND snapshot_date < '2026-07-29') AS soul_baseline,
-        snapshot_date = (SELECT MAX(snapshot_date) FROM growth_snapshots WHERE ocid = ?1 AND snapshot_date < '2026-07-15') AS astra_baseline
-      FROM growth_snapshots
-      WHERE ocid = ?1 AND snapshot_date <= ?2 AND (
-        (?3 IS NOT NULL AND snapshot_date > ?3)
-        OR (?3 IS NULL AND snapshot_date >= '2026-07-29')
-        OR (?3 IS NULL AND snapshot_date = (
-          SELECT MAX(snapshot_date) FROM growth_snapshots WHERE ocid = ?1 AND snapshot_date < '2026-07-29'
-        ))
-        OR (?4 IS NOT NULL AND ?5 = 0 AND snapshot_date > ?4)
-        OR (?4 IS NULL AND ?5 = 0 AND snapshot_date >= '2026-07-15')
-        OR (?4 IS NULL AND ?5 = 0 AND snapshot_date = (
-          SELECT MAX(snapshot_date) FROM growth_snapshots WHERE ocid = ?1 AND snapshot_date < '2026-07-15'
-        ))
-      )
-      ORDER BY snapshot_date LIMIT ?6
-    `).bind(candidate.ocid, candidate.basic_last_synced_date, soul.last_synced_date,
-      astra.last_synced_date, astra.has_astra ?? 0, config.growthBackfillBatchSize)
-      .all<{ snapshot_date: string; soul_baseline: number; astra_baseline: number }>();
-    const settled = await runWithConcurrency(rows.results, config.growthDateConcurrency, 0, async (row) => {
-      try {
-        const payload = await fetchNexonJson<EquipmentHistory>(env,
-          `/character/item-equipment?ocid=${encodeURIComponent(candidate.ocid)}&date=${row.snapshot_date}`);
-        const items = payload.item_equipment || [];
-        const weapon = items.find((item) => item.item_equipment_slot === '武器' || item.item_equipment_part === '武器');
-        const gradeText = String(weapon?.soul_weapon_grade ?? '').trim();
-        const numericGrade = Number(gradeText.match(/\d+/)?.[0]);
-        const chineseGrade = gradeText.match(/第?([一二三四五六七八九十])(?:階級|階段)?/);
-        const grade = numericGrade >= 1 && numericGrade <= 10 ? numericGrade
-          : chineseGrade ? '一二三四五六七八九十'.indexOf(chineseGrade[1]) + 1 : null;
-        const astraItem = items.find((item) => item.item_equipment_slot === '阿斯特拉輔助武器神之子'
-          || item.item_equipment_part === '阿斯特拉輔助武器神之子')
-          || items.find((item) => item.item_equipment_slot === '輔助武器');
-        return {
+  const lease = new Date(Date.now() + config.growthClaimLeaseSeconds * 1_000).toISOString();
+  // Claim each candidate in its own isolated D1 batch so a SQL error on one
+  // profile never aborts or rolls back other profiles in the same round.
+  const claimOutcomes = await Promise.allSettled(
+    selectedCandidates.map(async (candidate) => {
+      const token = crypto.randomUUID();
+      const batchResult = await env.DB.batch([
+        env.DB.prepare(`INSERT INTO growth_soul_tracking (ocid, updated_at) VALUES (?1, ?2) ON CONFLICT(ocid) DO NOTHING`)
+          .bind(candidate.ocid, timestamp),
+        env.DB.prepare(`INSERT INTO growth_astra_tracking (ocid, updated_at) VALUES (?1, ?2) ON CONFLICT(ocid) DO NOTHING`)
+          .bind(candidate.ocid, timestamp),
+        env.DB.prepare(`
+          UPDATE growth_soul_tracking SET claim_token = ?2, claim_until = ?3
+          WHERE ocid = ?1 AND (claim_until IS NULL OR claim_until <= ?4)
+          RETURNING *
+        `).bind(candidate.ocid, token, lease, timestamp),
+        env.DB.prepare(`
+          UPDATE growth_astra_tracking SET claim_token = ?2, claim_until = ?3
+          WHERE ocid = ?1 AND (claim_until IS NULL OR claim_until <= ?4)
+          RETURNING *
+        `).bind(candidate.ocid, token, lease, timestamp),
+      ]);
+      const soul = (batchResult[2] as D1Result<EquipmentTracking>).results?.[0] ?? null;
+      const astra = (batchResult[3] as D1Result<EquipmentTracking>).results?.[0] ?? null;
+      if (soul && astra) {
+        return { candidate, token, soul, astra };
+      }
+      if (soul) {
+        await env.DB.prepare(`UPDATE growth_soul_tracking SET claim_token = NULL, claim_until = NULL WHERE ocid = ?1 AND claim_token = ?2`)
+          .bind(candidate.ocid, token).run();
+      } else if (astra) {
+        await env.DB.prepare(`UPDATE growth_astra_tracking SET claim_token = NULL, claim_until = NULL WHERE ocid = ?1 AND claim_token = ?2`)
+          .bind(candidate.ocid, token).run();
+      }
+      return null;
+    }),
+  );
+
+  const claimedProfiles: Array<{
+    candidate: EquipmentCandidate;
+    token: string;
+    soul: EquipmentTracking;
+    astra: EquipmentTracking;
+  }> = [];
+  for (const outcome of claimOutcomes) {
+    if (outcome.status === 'fulfilled' && outcome.value !== null) {
+      claimedProfiles.push(outcome.value);
+    }
+  }
+  if (claimedProfiles.length === 0) return { processedDates: 0, processedProfiles: 0, completedProfiles: 0, requests: 0 };
+
+  let firstError: unknown = null;
+  const snapshotOutcomes = await Promise.allSettled(
+    claimedProfiles.map(async (profile) => {
+      const { candidate, soul, astra } = profile;
+      const rows = await env.DB.prepare(`
+        SELECT snapshot_date,
+          CASE WHEN ?3 IS NULL THEN snapshot_date = (
+            SELECT MAX(snapshot_date) FROM growth_snapshots WHERE ocid = ?1 AND snapshot_date < '2026-07-29'
+          ) ELSE 0 END AS soul_baseline,
+          CASE WHEN ?4 IS NULL AND ?5 = 0 THEN snapshot_date = (
+            SELECT MAX(snapshot_date) FROM growth_snapshots WHERE ocid = ?1 AND snapshot_date < '2026-07-15'
+          ) ELSE 0 END AS astra_baseline
+        FROM growth_snapshots
+        WHERE ocid = ?1 AND snapshot_date <= ?2 AND (
+          (?3 IS NOT NULL AND snapshot_date > ?3)
+          OR (?3 IS NULL AND snapshot_date >= '2026-07-29')
+          OR (?3 IS NULL AND snapshot_date = (
+            SELECT MAX(snapshot_date) FROM growth_snapshots WHERE ocid = ?1 AND snapshot_date < '2026-07-29'
+          ))
+          OR (?4 IS NOT NULL AND ?5 = 0 AND snapshot_date > ?4)
+          OR (?4 IS NULL AND ?5 = 0 AND snapshot_date >= '2026-07-15')
+          OR (?4 IS NULL AND ?5 = 0 AND snapshot_date = (
+            SELECT MAX(snapshot_date) FROM growth_snapshots WHERE ocid = ?1 AND snapshot_date < '2026-07-15'
+          ))
+        )
+        ORDER BY snapshot_date LIMIT ?6
+      `).bind(
+        candidate.ocid,
+        candidate.basic_last_synced_date,
+        soul.last_synced_date,
+        astra.last_synced_date,
+        astra.has_astra ?? 0,
+        config.growthBackfillBatchSize,
+      ).all<EquipmentSnapshotRow>();
+      return {
+        ...profile,
+        rows: rows.results,
+        observations: new Array<EquipmentObservation | null>(rows.results.length).fill(null),
+        earliestAstraIndex: Number.POSITIVE_INFINITY,
+        failedError: null as unknown,
+      };
+    }),
+  );
+
+  const profileContexts: Array<{
+    candidate: EquipmentCandidate;
+    token: string;
+    soul: EquipmentTracking;
+    astra: EquipmentTracking;
+    rows: EquipmentSnapshotRow[];
+    observations: Array<EquipmentObservation | null>;
+    earliestAstraIndex: number;
+    failedError: unknown;
+  }> = [];
+
+  for (let i = 0; i < snapshotOutcomes.length; i += 1) {
+    const outcome = snapshotOutcomes[i];
+    if (outcome.status === 'fulfilled') {
+      profileContexts.push(outcome.value);
+    } else {
+      if (firstError === null) firstError = outcome.reason;
+      const failedProfile = claimedProfiles[i];
+      await releaseAndScheduleRetry(env, failedProfile.candidate.ocid, failedProfile.token).catch(() => undefined);
+    }
+  }
+
+  const dateTasks: Array<{ profileIndex: number; rowIndex: number }> = [];
+  for (let profileIndex = 0; profileIndex < profileContexts.length; profileIndex += 1) {
+    const { rows } = profileContexts[profileIndex];
+    for (let rowIndex = 0; rowIndex < rows.length; rowIndex += 1) {
+      dateTasks.push({ profileIndex, rowIndex });
+    }
+  }
+
+  let requests = 0;
+  await runWithConcurrency(dateTasks, config.growthEquipmentDateConcurrency, 0, async ({ profileIndex, rowIndex }) => {
+    const context = profileContexts[profileIndex];
+    if (context.failedError !== null) return;
+    const row = context.rows[rowIndex];
+    const isSoulDate = context.soul.last_synced_date === null
+      ? row.snapshot_date >= '2026-07-29' || Boolean(row.soul_baseline)
+      : row.snapshot_date > context.soul.last_synced_date;
+
+    if (!isSoulDate && rowIndex > context.earliestAstraIndex) {
+      context.observations[rowIndex] = {
+        date: row.snapshot_date,
+        soulBaseline: Boolean(row.soul_baseline),
+        astraBaseline: Boolean(row.astra_baseline),
+        grade: null,
+        soulName: null,
+        weaponName: null,
+        astraName: null,
+      };
+      return;
+    }
+
+    try {
+      requests += 1;
+      const payload = await fetchNexonJson<EquipmentHistory>(
+        env,
+        `/character/item-equipment?ocid=${encodeURIComponent(context.candidate.ocid)}&date=${row.snapshot_date}`,
+        () => {
+          if (invocationBudget) invocationBudget.usedRequests += 1;
+        },
+      );
+      const observation = parseEquipmentPayload(payload, row);
+      if (observation.astraName?.startsWith('阿斯特拉')) {
+        context.earliestAstraIndex = Math.min(context.earliestAstraIndex, rowIndex);
+      }
+      context.observations[rowIndex] = observation;
+    } catch (error) {
+      if (error instanceof NexonRequestError && error.status === 400 && error.nexonCode === 'OPENAPI00003') {
+        context.observations[rowIndex] = {
           date: row.snapshot_date,
           soulBaseline: Boolean(row.soul_baseline),
           astraBaseline: Boolean(row.astra_baseline),
-          grade,
-          soulName: weapon?.soul_name?.trim() || null,
-          weaponName: weapon?.item_name?.trim() || null,
-          astraName: astraItem?.item_name?.trim() || null,
+          grade: null,
+          soulName: null,
+          weaponName: null,
+          astraName: null,
         };
+        return;
+      }
+      if (context.failedError === null) {
+        context.failedError = error;
+      }
+    }
+  });
+
+  let processedDates = 0;
+  let processedProfiles = 0;
+  let completedProfiles = 0;
+
+  // Commit each profile in its own isolated D1 batch transaction so a SQL
+  // failure on one profile never rolls back or blocks other profiles.
+  await Promise.allSettled(
+    profileContexts.map(async (context) => {
+      const { candidate, token, soul, astra, rows, observations, failedError } = context;
+      if (failedError !== null) {
+        if (firstError === null) firstError = failedError;
+        await releaseAndScheduleRetry(env, candidate.ocid, token);
+        return;
+      }
+
+      try {
+        let soulDate = soul.last_synced_date;
+        let highestGrade = soul.highest_grade ?? null;
+        let previousSoulName = soul.previous_soul_name ?? null;
+        let previousWeaponName = soul.previous_weapon_name ?? null;
+        let astraDate = astra.last_synced_date;
+        let previousItemName = astra.previous_item_name ?? null;
+        let hasAstra = Boolean(astra.has_astra);
+        let lastSoulDate: string | null = null;
+        let lastAstraDate: string | null = null;
+        const statements: D1PreparedStatement[] = [];
+
+        for (const observation of observations) {
+          if (!observation) continue;
+          const { date, soulBaseline, astraBaseline, grade, soulName, weaponName, astraName } = observation;
+          const isSoulDate = soul.last_synced_date === null
+            ? date >= '2026-07-29' || soulBaseline
+            : date > soul.last_synced_date;
+          const isAstraDate = astra.last_synced_date === null
+            ? date >= '2026-07-15' || astraBaseline
+            : date > astra.last_synced_date;
+
+          if (isSoulDate) {
+            if (grade !== null) {
+              if (highestGrade === null && previousSoulName && previousWeaponName && previousWeaponName === weaponName) {
+                statements.push(env.DB.prepare(`
+                  INSERT INTO growth_soul_events (ocid, snapshot_date, event_type, before_value, after_value)
+                  SELECT ?1, ?2, 'soul_conversion', ?3, ?4
+                  WHERE EXISTS (SELECT 1 FROM growth_soul_tracking WHERE ocid = ?1 AND claim_token = ?5)
+                  ON CONFLICT DO NOTHING
+                `).bind(candidate.ocid, date, previousSoulName, `靈魂武器第 ${grade} 階段`, token));
+              } else if (highestGrade !== null && grade > highestGrade) {
+                statements.push(env.DB.prepare(`
+                  INSERT INTO growth_soul_events (ocid, snapshot_date, event_type, before_value, after_value)
+                  SELECT ?1, ?2, 'soul_grade', ?3, ?4
+                  WHERE EXISTS (SELECT 1 FROM growth_soul_tracking WHERE ocid = ?1 AND claim_token = ?5)
+                  ON CONFLICT DO NOTHING
+                `).bind(candidate.ocid, date, `第 ${highestGrade} 階段`, `第 ${grade} 階段`, token));
+              }
+              highestGrade = Math.max(highestGrade ?? 0, grade);
+              previousSoulName = null;
+              previousWeaponName = null;
+            } else if (soulName) {
+              previousSoulName = soulName;
+              previousWeaponName = weaponName;
+            }
+            lastSoulDate = date;
+          }
+
+          if (!hasAstra && isAstraDate) {
+            if (astraName?.startsWith('阿斯特拉')) {
+              if (previousItemName) {
+                statements.push(env.DB.prepare(`
+                  INSERT INTO growth_astra_events (ocid, snapshot_date, before_value, after_value)
+                  SELECT ?1, ?2, ?3, ?4
+                  WHERE EXISTS (SELECT 1 FROM growth_astra_tracking WHERE ocid = ?1 AND claim_token = ?5)
+                  ON CONFLICT DO NOTHING
+                `).bind(candidate.ocid, date, previousItemName, astraName, token));
+              }
+              hasAstra = true;
+            } else if (astraName) {
+              previousItemName = astraName;
+            }
+            lastAstraDate = date;
+          }
+        }
+
+        if (soul.last_synced_date === null || soul.last_synced_date < candidate.basic_last_synced_date) {
+          soulDate = rows.length < config.growthBackfillBatchSize
+            ? candidate.basic_last_synced_date : lastSoulDate ?? soul.last_synced_date;
+        }
+        if (hasAstra) {
+          astraDate = candidate.basic_last_synced_date;
+        } else if (astra.last_synced_date === null || astra.last_synced_date < candidate.basic_last_synced_date) {
+          astraDate = rows.length < config.growthBackfillBatchSize
+            ? candidate.basic_last_synced_date : lastAstraDate ?? astra.last_synced_date;
+        }
+
+        const now = new Date().toISOString();
+        statements.push(
+          env.DB.prepare(`
+            UPDATE growth_soul_tracking SET last_synced_date = ?3, highest_grade = ?4,
+              previous_soul_name = ?5, previous_weapon_name = ?6,
+              claim_token = NULL, claim_until = NULL, retry_at = NULL, updated_at = ?7
+            WHERE ocid = ?1 AND claim_token = ?2
+          `).bind(candidate.ocid, token, soulDate, highestGrade, previousSoulName, previousWeaponName, now),
+          env.DB.prepare(`
+            UPDATE growth_astra_tracking SET last_synced_date = ?3, previous_item_name = ?4,
+              has_astra = ?5, claim_token = NULL, claim_until = NULL, retry_at = NULL, updated_at = ?6
+            WHERE ocid = ?1 AND claim_token = ?2
+          `).bind(candidate.ocid, token, astraDate, previousItemName, hasAstra ? 1 : 0, now),
+        );
+
+        await env.DB.batch(statements);
+        processedDates += rows.length;
+        processedProfiles += 1;
+        const soulComplete = Boolean(soulDate && soulDate >= candidate.basic_last_synced_date);
+        const astraComplete = hasAstra || Boolean(astraDate && astraDate >= candidate.basic_last_synced_date);
+        if (soulComplete && astraComplete) {
+          completedProfiles += 1;
+        }
       } catch (error) {
-        if (error instanceof NexonRequestError && error.status === 400 && error.nexonCode === 'OPENAPI00003') {
-          return {
-            date: row.snapshot_date,
-            soulBaseline: Boolean(row.soul_baseline),
-            astraBaseline: Boolean(row.astra_baseline),
-            grade: null,
-            soulName: null,
-            weaponName: null,
-            astraName: null,
-          };
-        }
-        throw error;
+        if (firstError === null) firstError = error;
+        await releaseAndScheduleRetry(env, candidate.ocid, token).catch(() => undefined);
       }
-    });
-    const rejected = settled.find((result) => result.status === 'rejected');
-    if (rejected?.status === 'rejected') throw rejected.reason;
+    }),
+  );
 
-    let soulDate = soul.last_synced_date;
-    let highestGrade = soul.highest_grade ?? null;
-    let previousSoulName = soul.previous_soul_name ?? null;
-    let previousWeaponName = soul.previous_weapon_name ?? null;
-    let astraDate = astra.last_synced_date;
-    let previousItemName = astra.previous_item_name ?? null;
-    let hasAstra = Boolean(astra.has_astra);
-    let lastSoulDate: string | null = null;
-    let lastAstraDate: string | null = null;
-    const statements: D1PreparedStatement[] = [];
-
-    for (const result of settled) {
-      if (result.status !== 'fulfilled') continue;
-      const { date, soulBaseline, astraBaseline, grade, soulName, weaponName, astraName } = result.value;
-      const isSoulDate = soul.last_synced_date === null
-        ? date >= '2026-07-29' || soulBaseline
-        : date > soul.last_synced_date;
-      const isAstraDate = astra.last_synced_date === null
-        ? date >= '2026-07-15' || astraBaseline
-        : date > astra.last_synced_date;
-
-      if (isSoulDate) {
-        if (grade !== null) {
-          if (highestGrade === null && previousSoulName && previousWeaponName && previousWeaponName === weaponName) {
-            statements.push(env.DB.prepare(`
-              INSERT INTO growth_soul_events (ocid, snapshot_date, event_type, before_value, after_value)
-              SELECT ?1, ?2, 'soul_conversion', ?3, ?4
-              WHERE EXISTS (SELECT 1 FROM growth_soul_tracking WHERE ocid = ?1 AND claim_token = ?5)
-              ON CONFLICT DO NOTHING
-            `).bind(candidate.ocid, date, previousSoulName, `靈魂武器第 ${grade} 階段`, token));
-          } else if (highestGrade !== null && grade > highestGrade) {
-            statements.push(env.DB.prepare(`
-              INSERT INTO growth_soul_events (ocid, snapshot_date, event_type, before_value, after_value)
-              SELECT ?1, ?2, 'soul_grade', ?3, ?4
-              WHERE EXISTS (SELECT 1 FROM growth_soul_tracking WHERE ocid = ?1 AND claim_token = ?5)
-              ON CONFLICT DO NOTHING
-            `).bind(candidate.ocid, date, `第 ${highestGrade} 階段`, `第 ${grade} 階段`, token));
-          }
-          highestGrade = Math.max(highestGrade ?? 0, grade);
-          previousSoulName = null;
-          previousWeaponName = null;
-        } else if (soulName) {
-          previousSoulName = soulName;
-          previousWeaponName = weaponName;
-        }
-        lastSoulDate = date;
-      }
-
-      if (!hasAstra && isAstraDate) {
-        if (astraName?.startsWith('阿斯特拉')) {
-          if (previousItemName) {
-            statements.push(env.DB.prepare(`
-              INSERT INTO growth_astra_events (ocid, snapshot_date, before_value, after_value)
-              SELECT ?1, ?2, ?3, ?4
-              WHERE EXISTS (SELECT 1 FROM growth_astra_tracking WHERE ocid = ?1 AND claim_token = ?5)
-              ON CONFLICT DO NOTHING
-            `).bind(candidate.ocid, date, previousItemName, astraName, token));
-          }
-          hasAstra = true;
-        } else if (astraName) {
-          previousItemName = astraName;
-        }
-        lastAstraDate = date;
-      }
-    }
-
-    if (soul.last_synced_date === null || soul.last_synced_date < candidate.basic_last_synced_date) {
-      soulDate = rows.results.length < config.growthBackfillBatchSize
-        ? candidate.basic_last_synced_date : lastSoulDate ?? soul.last_synced_date;
-    }
-    if (hasAstra) {
-      astraDate = candidate.basic_last_synced_date;
-    } else if (astra.last_synced_date === null || astra.last_synced_date < candidate.basic_last_synced_date) {
-      astraDate = rows.results.length < config.growthBackfillBatchSize
-        ? candidate.basic_last_synced_date : lastAstraDate ?? astra.last_synced_date;
-    }
-
-    const now = new Date().toISOString();
-    statements.push(env.DB.prepare(`
-      UPDATE growth_soul_tracking SET last_synced_date = ?3, highest_grade = ?4,
-        previous_soul_name = ?5, previous_weapon_name = ?6,
-        claim_token = NULL, claim_until = NULL, retry_at = NULL, updated_at = ?7
-      WHERE ocid = ?1 AND claim_token = ?2
-    `).bind(candidate.ocid, token, soulDate, highestGrade, previousSoulName, previousWeaponName, now));
-    statements.push(env.DB.prepare(`
-      UPDATE growth_astra_tracking SET last_synced_date = ?3, previous_item_name = ?4,
-        has_astra = ?5, claim_token = NULL, claim_until = NULL, retry_at = NULL, updated_at = ?6
-      WHERE ocid = ?1 AND claim_token = ?2
-    `).bind(candidate.ocid, token, astraDate, previousItemName, hasAstra ? 1 : 0, now));
-    await env.DB.batch(statements);
-    return { processedDates: rows.results.length, ocid: candidate.ocid };
-  } catch (error) {
-    const retryAt = new Date(Date.now() + 300_000).toISOString();
-    const now = new Date().toISOString();
-    await env.DB.batch([
-      env.DB.prepare(`UPDATE growth_soul_tracking SET claim_token = NULL, claim_until = NULL, retry_at = ?3, updated_at = ?4 WHERE ocid = ?1 AND claim_token = ?2`)
-        .bind(candidate.ocid, token, retryAt, now),
-      env.DB.prepare(`UPDATE growth_astra_tracking SET claim_token = NULL, claim_until = NULL, retry_at = ?3, updated_at = ?4 WHERE ocid = ?1 AND claim_token = ?2`)
-        .bind(candidate.ocid, token, retryAt, now),
-    ]);
-    throw error;
+  if (firstError !== null && processedProfiles === 0) {
+    throw firstError;
   }
+
+  return {
+    processedDates,
+    processedProfiles,
+    completedProfiles,
+    requests,
+    ocid: claimedProfiles[0].candidate.ocid,
+  };
 };
