@@ -4,6 +4,7 @@ import { DEFAULT_AI_MODEL, getAiModelOption, getGeminiModelsToTry, isCompatibleA
 import type { AiModelOption, CompatibleAiServiceConfig } from "../data/aiModels";
 import type { BossDamageAiSnapshot } from "../calculator/bossDamageCalculator";
 import { redactAiSecrets } from './aiErrorPrivacy';
+import { resolveCharacterLiberationDetails } from './growthEventFormat';
 
 // === Helper: 錯誤訊息美化 ===
 const extractRawErrorMessage = (error: any): string => {
@@ -48,7 +49,7 @@ const buildAiSnapshot = (data: DashboardData) => {
     name: item.item_name,
     level: item.item_level,
     starforce: Number(item.starforce) || 0,
-    scroll: `${item.scroll_upgrade || 0}/${(Number(item.scroll_upgrade) || 0) + (Number(item.scroll_upgradable_count) || 0)}`,
+    scroll: `${item.scroll_upgrade || 0}/${(Number(item.scroll_upgrade) || 0) + (Number(item.scroll_upgradable_count ?? item.scroll_upgradeable_count) || 0)}`,
     specialRingLevel: item.special_ring_level || undefined,
     potentialGrade: item.potential_option_grade || undefined,
     potentials: [item.potential_option_1, item.potential_option_2, item.potential_option_3].filter(Boolean),
@@ -92,6 +93,8 @@ const buildAiSnapshot = (data: DashboardData) => {
   const familiarList = familiar?.familiar_list || familiar?.familiar_info || [];
   const previous = data.character_basic_7days_ago;
 
+  const liberationDetails = resolveCharacterLiberationDetails(data.basic, data.equipment);
+
   return {
     profile: {
       name: data.basic.character_name,
@@ -100,7 +103,8 @@ const buildAiSnapshot = (data: DashboardData) => {
       level: data.basic.character_level,
       expRate: data.basic.character_exp_rate,
       guild: data.basic.character_guild_name,
-      liberationCleared: data.basic.liberation_quest_clear_flag,
+      liberationCleared: liberationDetails.rawLiberationStatus,
+      weaponLiberationStage: liberationDetails.label,
       dataDate: data.lastUpdated,
     },
     sevenDayGrowth: previous ? {
@@ -556,7 +560,7 @@ export const analyzeCharacter = async (data: DashboardData, bossDamageSnapshot: 
        - 不得因任何職業強弱印象自行調整 BOSS 可攻略難度；只能採用 BOSS 傷害計算機結果。
 
     1. **武器/能源階級：** 認定「命運武器」為目前最強武器；「米特拉的憤怒」為目前最強能源（漆黑裝備），其次是「創世武器 (Genesis)」，再來是「神秘冥界 (Arcane)」。
-       * **重要規則：** **創世/命運武器是固定素質，無法強化 (卷軸/星力)，主要檢查潛能、附加潛能與星火。** 請勿因其未衝卷或星力低而給予負評。
+       * **重要規則：** **創世武器與命運一階武器為固定 22 星、8 次 15% 咒文強化（+72 攻/魔）；命運二階武器解放後為 9 次 15% 咒文強化（+81 攻/魔），且星力上限開放至 25 星（剛完成二階時仍可能為 22 星）。** 主要檢查潛能、附加潛能與星火，請勿因固定強化規格或 22 星而給予負評。
        * **新版靈魂寶珠規則：** 官方已調整靈魂寶珠系統。資料中若有靈魂可作補充描述，但**未裝備靈魂寶珠不算缺陷、不得扣分，也不得列為必要改善項目**。
 
     2. **防具階級：** 「永恆裝備 (Eternal)」為頂標，其次是「滅龍騎士盔甲 (Dragon Knight/Breath of Divinity set)」，再來是神秘冥界。

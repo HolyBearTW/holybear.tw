@@ -954,4 +954,132 @@ describe('persistent growth tracking', () => {
       expect.objectContaining({ date: '2026-08-01', type: 'astra_acquired', from: '永恆魔道書', to: '阿斯特拉魔道書' }),
     ]);
   });
+
+  it('in backfillGrowthEquipmentBatch, backfilling an earlier Phase 1 snapshot only updates before_value without changing the Phase 2 event date', async () => {
+    await createGrowthProfile(env.DB, OCID, '2026-10-20');
+    const insertSnapshot = local.sqlite.prepare(`
+      INSERT INTO growth_snapshots (
+        ocid, snapshot_date, character_name, world_name, job_name,
+        character_level, character_exp, character_exp_rate, liberation_status, fetched_at, updated_at
+      ) VALUES (?, ?, '測試角色', '艾麗亞', '主教', 295, 0, 0, '2', 'now', 'now')
+    `);
+    insertSnapshot.run(OCID, '2026-10-20');
+    local.sqlite.prepare(`UPDATE growth_profiles SET status='completed', basic_last_synced_date='2026-10-20', last_synced_date='2026-10-20' WHERE ocid=?`).run(OCID);
+
+    const equipmentByDate: Record<string, { scroll_upgrade: string; attack_power: string }> = {
+      '2026-10-14': { scroll_upgrade: '8', attack_power: '72' },
+      '2026-10-20': { scroll_upgrade: '9', attack_power: '81' },
+    };
+
+    vi.stubGlobal('fetch', vi.fn(async (input: string) => {
+      const date = new URL(input).searchParams.get('date')!;
+      const eq = equipmentByDate[date];
+      return Response.json({
+        item_equipment: [{
+          item_equipment_slot: '武器',
+          item_name: '命運太刀',
+          scroll_upgrade: eq.scroll_upgrade,
+          scroll_upgradeable_count: '0',
+          starforce: '22',
+          item_base_option: { base_equipment_level: 250 },
+          item_etc_option: { attack_power: eq.attack_power, magic_power: '0' },
+        }],
+      });
+    }));
+
+    await backfillGrowthEquipmentBatch(env);
+    let history = await getGrowthHistory(env.DB, OCID, '2026-10-10', '2026-10-20');
+    expect(history?.events.filter((e) => e.type === 'destiny_phase2')).toEqual([
+      {
+        date: '2026-10-20',
+        type: 'destiny_phase2',
+        from: '',
+        to: '首次觀測到命運二階',
+      },
+    ]);
+
+    // Backfill earlier Phase 1 snapshot (2026-10-14)
+    insertSnapshot.run(OCID, '2026-10-14');
+    local.sqlite.prepare(`UPDATE growth_soul_tracking SET last_synced_date = NULL WHERE ocid = ?`).run(OCID);
+    local.sqlite.prepare(`UPDATE growth_astra_tracking SET last_synced_date = NULL WHERE ocid = ?`).run(OCID);
+
+    await backfillGrowthEquipmentBatch(env);
+    history = await getGrowthHistory(env.DB, OCID, '2026-10-10', '2026-10-20');
+    expect(history?.events.filter((e) => e.type === 'destiny_phase2')).toEqual([
+      {
+        date: '2026-10-20',
+        type: 'destiny_phase2',
+        from: '命運一階',
+        to: '命運二階',
+      },
+    ]);
+    const rawStatuses = local.sqlite
+      .prepare(`SELECT DISTINCT liberation_status FROM growth_snapshots WHERE ocid = ?`)
+      .all(OCID);
+    expect(rawStatuses).toEqual([{ liberation_status: '2' }]);
+  });
+
+  it('in backfillGrowthEquipmentBatch, backfilling an earlier Phase 2 snapshot advances the Phase 2 event date', async () => {
+    await createGrowthProfile(env.DB, OCID, '2026-10-20');
+    const insertSnapshot = local.sqlite.prepare(`
+      INSERT INTO growth_snapshots (
+        ocid, snapshot_date, character_name, world_name, job_name,
+        character_level, character_exp, character_exp_rate, liberation_status, fetched_at, updated_at
+      ) VALUES (?, ?, '測試角色', '艾麗亞', '主教', 295, 0, 0, '2', 'now', 'now')
+    `);
+    insertSnapshot.run(OCID, '2026-10-20');
+    local.sqlite.prepare(`UPDATE growth_profiles SET status='completed', basic_last_synced_date='2026-10-20', last_synced_date='2026-10-20' WHERE ocid=?`).run(OCID);
+
+    const equipmentByDate: Record<string, { scroll_upgrade: string; attack_power: string }> = {
+      '2026-10-15': { scroll_upgrade: '9', attack_power: '81' },
+      '2026-10-20': { scroll_upgrade: '9', attack_power: '81' },
+    };
+
+    vi.stubGlobal('fetch', vi.fn(async (input: string) => {
+      const date = new URL(input).searchParams.get('date')!;
+      const eq = equipmentByDate[date];
+      return Response.json({
+        item_equipment: [{
+          item_equipment_slot: '武器',
+          item_name: '命運太刀',
+          scroll_upgrade: eq.scroll_upgrade,
+          scroll_upgradeable_count: '0',
+          starforce: '22',
+          item_base_option: { base_equipment_level: 250 },
+          item_etc_option: { attack_power: eq.attack_power, magic_power: '0' },
+        }],
+      });
+    }));
+
+    await backfillGrowthEquipmentBatch(env);
+    let history = await getGrowthHistory(env.DB, OCID, '2026-10-10', '2026-10-20');
+    expect(history?.events.filter((e) => e.type === 'destiny_phase2')).toEqual([
+      {
+        date: '2026-10-20',
+        type: 'destiny_phase2',
+        from: '',
+        to: '首次觀測到命運二階',
+      },
+    ]);
+
+    // Backfill earlier Phase 2 snapshot (2026-10-15)
+    insertSnapshot.run(OCID, '2026-10-15');
+    local.sqlite.prepare(`UPDATE growth_soul_tracking SET last_synced_date = NULL WHERE ocid = ?`).run(OCID);
+    local.sqlite.prepare(`UPDATE growth_astra_tracking SET last_synced_date = NULL WHERE ocid = ?`).run(OCID);
+
+    await backfillGrowthEquipmentBatch(env);
+    history = await getGrowthHistory(env.DB, OCID, '2026-10-10', '2026-10-20');
+    expect(history?.events.filter((e) => e.type === 'destiny_phase2')).toEqual([
+      {
+        date: '2026-10-15',
+        type: 'destiny_phase2',
+        from: '',
+        to: '首次觀測到命運二階',
+      },
+    ]);
+    const eventCount = local.sqlite
+      .prepare(`SELECT COUNT(*) AS n FROM growth_soul_events WHERE ocid = ? AND event_type = 'destiny_phase2'`)
+      .get(OCID) as { n: number };
+    expect(eventCount.n).toBe(1);
+  });
 });

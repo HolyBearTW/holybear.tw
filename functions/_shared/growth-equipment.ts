@@ -25,6 +25,8 @@ interface EquipmentTracking {
   highest_grade?: number | null;
   previous_soul_name?: string | null;
   previous_weapon_name?: string | null;
+  earliest_destiny_phase1_date?: string | null;
+  earliest_destiny_phase2_date?: string | null;
   previous_item_name?: string | null;
   has_astra?: number;
 }
@@ -43,17 +45,138 @@ interface EquipmentObservation {
   soulName: string | null;
   weaponName: string | null;
   astraName: string | null;
+  destinyPhase1: boolean;
+  destinyPhase2: boolean;
+}
+
+export interface EquipmentHistoryWeaponItem {
+  item_equipment_part?: string;
+  item_equipment_slot?: string;
+  item_name?: string | null;
+  item_level?: number | string | null;
+  starforce?: string | number | null;
+  scroll_upgrade?: string | number | null;
+  scroll_upgradable_count?: string | number | null;
+  scroll_upgradeable_count?: string | number | null;
+  item_base_option?: {
+    base_equipment_level?: number | string | null;
+  } | null;
+  item_etc_option?: {
+    attack_power?: string | number | null;
+    magic_power?: string | number | null;
+  } | null;
+  soul_name?: string | null;
+  soul_weapon_grade?: string | null;
 }
 
 interface EquipmentHistory {
-  item_equipment?: Array<{
-    item_equipment_part?: string;
-    item_equipment_slot?: string;
-    item_name?: string | null;
-    soul_name?: string | null;
-    soul_weapon_grade?: string | null;
-  }>;
+  item_equipment?: EquipmentHistoryWeaponItem[];
 }
+
+export const isDestinyWeaponPhase2 = (
+  weapon: EquipmentHistoryWeaponItem | null | undefined,
+): boolean => {
+  if (!weapon) return false;
+  const slot = String(weapon.item_equipment_slot || '').trim();
+  const part = String(weapon.item_equipment_part || '').trim();
+  if (slot !== '武器' && part !== '武器') return false;
+
+  const itemName = String(weapon.item_name || '').trim();
+  if (!itemName.startsWith('命運')) return false;
+
+  const rawBaseLevel = weapon.item_base_option?.base_equipment_level ?? weapon.item_level;
+  const baseLevel = Number(rawBaseLevel);
+  if (Number.isFinite(baseLevel) && baseLevel > 0 && baseLevel !== 250) return false;
+
+  if (Number(weapon.scroll_upgrade) !== 9) return false;
+
+  const rawUpgradable = weapon.scroll_upgradable_count ?? weapon.scroll_upgradeable_count;
+  if (rawUpgradable !== undefined && rawUpgradable !== null && String(rawUpgradable).trim() !== '') {
+    if (Number(rawUpgradable) !== 0) return false;
+  }
+
+  const etcAttack = Number(weapon.item_etc_option?.attack_power ?? 0);
+  const etcMagic = Number(weapon.item_etc_option?.magic_power ?? 0);
+  return etcAttack === 81 || etcMagic === 81;
+};
+
+export const isDestinyWeaponPhase1 = (
+  weapon: EquipmentHistoryWeaponItem | null | undefined,
+): boolean => {
+  if (!weapon || isDestinyWeaponPhase2(weapon)) return false;
+  const slot = String(weapon.item_equipment_slot || '').trim();
+  const part = String(weapon.item_equipment_part || '').trim();
+  if (slot !== '武器' && part !== '武器') return false;
+
+  const itemName = String(weapon.item_name || '').trim();
+  if (!itemName.startsWith('命運')) return false;
+
+  const rawBaseLevel = weapon.item_base_option?.base_equipment_level ?? weapon.item_level;
+  const baseLevel = Number(rawBaseLevel);
+  if (Number.isFinite(baseLevel) && baseLevel > 0 && baseLevel !== 250) return false;
+
+  if (weapon.scroll_upgrade !== undefined && weapon.scroll_upgrade !== null && String(weapon.scroll_upgrade).trim() !== '') {
+    if (Number(weapon.scroll_upgrade) !== 8) return false;
+  }
+
+  const rawUpgradable = weapon.scroll_upgradable_count ?? weapon.scroll_upgradeable_count;
+  if (rawUpgradable !== undefined && rawUpgradable !== null && String(rawUpgradable).trim() !== '') {
+    if (Number(rawUpgradable) !== 0) return false;
+  }
+
+  const etcAttackRaw = weapon.item_etc_option?.attack_power;
+  const etcMagicRaw = weapon.item_etc_option?.magic_power;
+  if (etcAttackRaw !== undefined || etcMagicRaw !== undefined) {
+    const etcAttack = Number(etcAttackRaw ?? 0);
+    const etcMagic = Number(etcMagicRaw ?? 0);
+    if (etcAttack !== 72 && etcMagic !== 72) return false;
+  }
+
+  return true;
+};
+
+export const minIsoDate = (
+  left: string | null | undefined,
+  right: string | null | undefined,
+): string | null => {
+  const a = left?.trim() || null;
+  const b = right?.trim() || null;
+  if (!a) return b;
+  if (!b) return a;
+  return a <= b ? a : b;
+};
+
+export const upsertDestinyPhase2EventStatement = (
+  db: D1Database,
+  ocid: string,
+  token: string,
+  earliestPhase1Date: string | null,
+  earliestPhase2Date: string,
+) => {
+  const hasPriorPhase1Evidence = Boolean(
+    earliestPhase1Date && earliestPhase1Date < earliestPhase2Date,
+  );
+  const beforeValue = hasPriorPhase1Evidence ? '命運一階' : '';
+  const afterValue = hasPriorPhase1Evidence ? '命運二階' : '首次觀測到命運二階';
+  return db.prepare(`
+    INSERT INTO growth_soul_events (ocid, snapshot_date, event_type, before_value, after_value)
+    SELECT ?1, ?2, 'destiny_phase2', ?3, ?4
+    WHERE EXISTS (SELECT 1 FROM growth_soul_tracking WHERE ocid = ?1 AND claim_token = ?5)
+    ON CONFLICT(ocid) WHERE event_type = 'destiny_phase2' DO UPDATE SET
+      snapshot_date = CASE
+        WHEN excluded.snapshot_date < growth_soul_events.snapshot_date THEN excluded.snapshot_date
+        ELSE growth_soul_events.snapshot_date
+      END,
+      before_value = CASE
+        WHEN excluded.snapshot_date <= growth_soul_events.snapshot_date THEN excluded.before_value
+        ELSE growth_soul_events.before_value
+      END,
+      after_value = CASE
+        WHEN excluded.snapshot_date <= growth_soul_events.snapshot_date THEN excluded.after_value
+        ELSE growth_soul_events.after_value
+      END
+  `).bind(ocid, earliestPhase2Date, beforeValue, afterValue, token);
+};
 
 const dateSpanDays = (fromDate: string | null, toDate: string, defaultStart: string) => {
   const start = fromDate ? Date.parse(`${fromDate}T00:00:00Z`) + DAY_MS : Date.parse(`${defaultStart}T00:00:00Z`);
@@ -100,6 +223,8 @@ const parseEquipmentPayload = (
     soulName: weapon?.soul_name?.trim() || null,
     weaponName: weapon?.item_name?.trim() || null,
     astraName: astraItem?.item_name?.trim() || null,
+    destinyPhase1: isDestinyWeaponPhase1(weapon),
+    destinyPhase2: isDestinyWeaponPhase2(weapon),
   };
 };
 
@@ -315,6 +440,8 @@ export const backfillGrowthEquipmentBatch = async (
         soulName: null,
         weaponName: null,
         astraName: null,
+        destinyPhase1: false,
+        destinyPhase2: false,
       };
       return;
     }
@@ -343,6 +470,8 @@ export const backfillGrowthEquipmentBatch = async (
           soulName: null,
           weaponName: null,
           astraName: null,
+          destinyPhase1: false,
+          destinyPhase2: false,
         };
         return;
       }
@@ -372,6 +501,9 @@ export const backfillGrowthEquipmentBatch = async (
         let highestGrade = soul.highest_grade ?? null;
         let previousSoulName = soul.previous_soul_name ?? null;
         let previousWeaponName = soul.previous_weapon_name ?? null;
+        let earliestDestinyPhase1Date = soul.earliest_destiny_phase1_date ?? null;
+        let earliestDestinyPhase2Date = soul.earliest_destiny_phase2_date ?? null;
+        let destinyTrackingChanged = false;
         let astraDate = astra.last_synced_date;
         let previousItemName = astra.previous_item_name ?? null;
         let hasAstra = Boolean(astra.has_astra);
@@ -381,13 +513,38 @@ export const backfillGrowthEquipmentBatch = async (
 
         for (const observation of observations) {
           if (!observation) continue;
-          const { date, soulBaseline, astraBaseline, grade, soulName, weaponName, astraName } = observation;
+          const {
+            date,
+            soulBaseline,
+            astraBaseline,
+            grade,
+            soulName,
+            weaponName,
+            astraName,
+            destinyPhase1,
+            destinyPhase2,
+          } = observation;
           const isSoulDate = soul.last_synced_date === null
             ? date >= '2026-07-29' || soulBaseline
             : date > soul.last_synced_date;
           const isAstraDate = astra.last_synced_date === null
             ? date >= '2026-07-15' || astraBaseline
             : date > astra.last_synced_date;
+
+          if (destinyPhase1) {
+            const updated = minIsoDate(earliestDestinyPhase1Date, date);
+            if (updated !== earliestDestinyPhase1Date) {
+              earliestDestinyPhase1Date = updated;
+              destinyTrackingChanged = true;
+            }
+          }
+          if (destinyPhase2) {
+            const updated = minIsoDate(earliestDestinyPhase2Date, date);
+            if (updated !== earliestDestinyPhase2Date) {
+              earliestDestinyPhase2Date = updated;
+              destinyTrackingChanged = true;
+            }
+          }
 
           if (isSoulDate) {
             if (grade !== null) {
@@ -445,14 +602,37 @@ export const backfillGrowthEquipmentBatch = async (
             ? candidate.basic_last_synced_date : lastAstraDate ?? astra.last_synced_date;
         }
 
+        if (earliestDestinyPhase2Date && destinyTrackingChanged) {
+          statements.push(
+            upsertDestinyPhase2EventStatement(
+              env.DB,
+              candidate.ocid,
+              token,
+              earliestDestinyPhase1Date,
+              earliestDestinyPhase2Date,
+            ),
+          );
+        }
+
         const now = new Date().toISOString();
         statements.push(
           env.DB.prepare(`
             UPDATE growth_soul_tracking SET last_synced_date = ?3, highest_grade = ?4,
               previous_soul_name = ?5, previous_weapon_name = ?6,
-              claim_token = NULL, claim_until = NULL, retry_at = NULL, updated_at = ?7
+              earliest_destiny_phase1_date = ?7, earliest_destiny_phase2_date = ?8,
+              claim_token = NULL, claim_until = NULL, retry_at = NULL, updated_at = ?9
             WHERE ocid = ?1 AND claim_token = ?2
-          `).bind(candidate.ocid, token, soulDate, highestGrade, previousSoulName, previousWeaponName, now),
+          `).bind(
+            candidate.ocid,
+            token,
+            soulDate,
+            highestGrade,
+            previousSoulName,
+            previousWeaponName,
+            earliestDestinyPhase1Date,
+            earliestDestinyPhase2Date,
+            now,
+          ),
           env.DB.prepare(`
             UPDATE growth_astra_tracking SET last_synced_date = ?3, previous_item_name = ?4,
               has_astra = ?5, claim_token = NULL, claim_until = NULL, retry_at = NULL, updated_at = ?6
