@@ -30,8 +30,36 @@ const profileJoins = `
     AND s.snapshot_date = (SELECT MAX(snapshot_date) FROM growth_snapshots WHERE ocid = p.ocid)
 `;
 const hasReport = 'EXISTS (SELECT 1 FROM growth_snapshots WHERE ocid = p.ocid)';
-const syncStatus = `CASE WHEN p.status IN ('pending', 'retry') AND p.claim_until > ?1
-  THEN 'running' ELSE p.status END`;
+const soulPending = `p.basic_last_synced_date IS NOT NULL AND NOT EXISTS (
+  SELECT 1 FROM growth_soul_tracking s
+  WHERE s.ocid = p.ocid AND s.last_synced_date >= p.basic_last_synced_date
+)`;
+const astraPending = `p.basic_last_synced_date IS NOT NULL AND NOT EXISTS (
+  SELECT 1 FROM growth_astra_tracking a
+  WHERE a.ocid = p.ocid AND (a.has_astra = 1 OR a.last_synced_date >= p.basic_last_synced_date)
+)`;
+const equipmentPending = `(${soulPending} OR ${astraPending})`;
+const equipmentRunning = `p.basic_last_synced_date IS NOT NULL AND (
+  EXISTS (SELECT 1 FROM growth_soul_tracking s WHERE s.ocid = p.ocid
+    AND (s.last_synced_date IS NULL OR s.last_synced_date < p.basic_last_synced_date)
+    AND s.claim_until > ?1)
+  OR EXISTS (SELECT 1 FROM growth_astra_tracking a WHERE a.ocid = p.ocid
+    AND a.has_astra = 0 AND (a.last_synced_date IS NULL OR a.last_synced_date < p.basic_last_synced_date)
+    AND a.claim_until > ?1)
+)`;
+const equipmentRetry = `p.basic_last_synced_date IS NOT NULL AND (
+  EXISTS (SELECT 1 FROM growth_soul_tracking s WHERE s.ocid = p.ocid
+    AND (s.last_synced_date IS NULL OR s.last_synced_date < p.basic_last_synced_date)
+    AND s.retry_at IS NOT NULL)
+  OR EXISTS (SELECT 1 FROM growth_astra_tracking a WHERE a.ocid = p.ocid
+    AND a.has_astra = 0 AND (a.last_synced_date IS NULL OR a.last_synced_date < p.basic_last_synced_date)
+    AND a.retry_at IS NOT NULL)
+)`;
+const syncStatus = `CASE
+  WHEN (p.status IN ('pending', 'retry') AND p.claim_until > ?1) OR ${equipmentRunning} THEN 'running'
+  WHEN p.status = 'retry' OR ${equipmentRetry} THEN 'retry'
+  WHEN p.status = 'pending' OR ${equipmentPending} THEN 'pending'
+  ELSE p.status END`;
 
 const integerParam = (value: string | null, fallback: number, min: number, max: number) => {
   if (value === null) return fallback;
@@ -83,7 +111,7 @@ export const onRequestGet: AppPagesFunction = async ({ env, request }) => {
       env.DB.prepare(`
         SELECT COUNT(*) AS totalProfiles,
           COALESCE(SUM(${hasReport}), 0) AS generatedReports,
-          COALESCE(SUM(p.status IN ('pending', 'retry')), 0) AS syncingProfiles,
+          COALESCE(SUM(p.status IN ('pending', 'retry') OR ${equipmentPending}), 0) AS syncingProfiles,
           COALESCE(SUM(p.status = 'failed'), 0) AS failedProfiles
         FROM growth_profiles p
       `).first<{ totalProfiles: number; generatedReports: number; syncingProfiles: number; failedProfiles: number }>(),

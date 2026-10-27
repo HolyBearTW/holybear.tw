@@ -12,7 +12,7 @@
       <div v-if="dashboard" class="hb-admin-metrics" aria-label="成長報告概況">
         <article class="hb-admin-panel hb-admin-metric"><span>已建立追蹤</span><strong>{{ dashboard.summary.totalProfiles }}</strong><small>已要求生成報告的角色</small></article>
         <article class="hb-admin-panel hb-admin-metric"><span>已有成長報告</span><strong>{{ dashboard.summary.generatedReports }}</strong><small>已儲存歷史資料</small></article>
-        <article class="hb-admin-panel hb-admin-metric"><span>同步中／待同步</span><strong>{{ dashboard.summary.syncingProfiles }}</strong><small>包含首次生成與每日更新</small></article>
+        <article class="hb-admin-panel hb-admin-metric"><span>同步中／待同步</span><strong>{{ dashboard.summary.syncingProfiles }}</strong><small>包含成長報告、靈魂武器與阿斯特拉</small></article>
         <article class="hb-admin-panel hb-admin-metric"><span>已停止更新</span><strong>{{ dashboard.summary.failedProfiles }}</strong><small>仍保留已生成的報告</small></article>
       </div>
       <form class="hb-admin-panel hb-admin-filters" @submit.prevent="applyFilters">
@@ -36,7 +36,7 @@
                 <td><strong>{{ report.characterName || '角色資料尚未取得' }}</strong><small>{{ [report.worldName, report.jobName, report.level ? `Lv. ${report.level}` : ''].filter(Boolean).join(' · ') || '等待首次同步' }}</small><span class="hb-admin-ocid" :title="report.ocid">{{ report.ocid }}</span></td>
                 <td><time v-if="report.reportUpdatedAt" :datetime="report.reportUpdatedAt">{{ formatDate(report.reportUpdatedAt) }}</time><span v-else class="hb-admin-muted">尚未生成報告</span><small>建立追蹤：{{ formatDate(report.createdAt) }}</small></td>
                 <td><span v-if="report.latestSnapshotDate">{{ report.historyStartDate || report.latestSnapshotDate }} ～ {{ report.latestSnapshotDate }}</span><span v-else class="hb-admin-muted">尚無歷史資料</span><small>{{ report.snapshotCount }} 天資料 · 完整同步至 {{ report.lastSyncedDate || '尚未完成' }}</small></td>
-                <td><span class="hb-admin-status" :class="report.status">{{ statusLabels[report.status] }}</span><small>同步目標：{{ report.syncTargetDate }}</small><small v-if="report.status === 'retry' && report.nextRetryAt">下次重試：{{ formatDate(report.nextRetryAt) }}</small><small v-if="report.status === 'failed' && report.stopReason">{{ report.stopReason }}</small></td>
+                <td><span class="hb-admin-status" :class="report.status">{{ statusLabels[report.status] }}</span><small>同步目標：{{ report.syncTargetDate }}</small><small v-if="report.status === 'retry' && report.nextRetryAt">下次重試：{{ formatDate(report.nextRetryAt) }}</small><small v-if="report.stopReason">{{ report.stopReason }}</small></td>
               </tr>
             </tbody>
           </table>

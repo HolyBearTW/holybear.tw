@@ -1,7 +1,6 @@
 import type { Env } from '../functions/_shared/env';
 import { backfillGrowthBatch } from '../functions/_shared/growth-tracker';
-import { backfillGrowthSoulBatch } from '../functions/_shared/growth-soul';
-import { backfillGrowthAstraBatch } from '../functions/_shared/growth-astra';
+import { backfillGrowthEquipmentBatch } from '../functions/_shared/growth-equipment';
 
 /**
  * Growth-only scheduler. All non-Growth queues remain owned by the slower
@@ -13,24 +12,12 @@ export default {
       const startedAt = Date.now();
       try {
         for (let index = 0; index < 4 && Date.now() - startedAt < 15000; index += 1) {
-          const astra = await backfillGrowthAstraBatch(env);
-          if (!astra.processedDates) break;
-          console.info('scheduled growth astra batch completed', astra);
+          const equipment = await backfillGrowthEquipmentBatch(env);
+          if (!equipment.processedDates) break;
+          console.info('scheduled growth equipment batch completed', equipment);
         }
       } catch (error) {
-        console.error('scheduled growth astra batch failed', error);
-      }
-    })());
-    context.waitUntil((async () => {
-      const startedAt = Date.now();
-      try {
-        for (let index = 0; index < 4 && Date.now() - startedAt < 15000; index += 1) {
-          const soul = await backfillGrowthSoulBatch(env);
-          if (!soul.processedDates) break;
-          console.info('scheduled growth soul batch completed', soul);
-        }
-      } catch (error) {
-        console.error('scheduled growth soul batch failed', error);
+        console.error('scheduled growth equipment batch failed', error);
       }
     })());
     context.waitUntil((async () => {
