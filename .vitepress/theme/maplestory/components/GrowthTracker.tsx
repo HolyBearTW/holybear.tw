@@ -87,6 +87,14 @@ const isCreating = (status: GrowthHistoryStatus | null) => {
   return status?.job?.status === 'pending' || status?.job?.status === 'running';
 };
 
+const isEquipmentHistoryUpdating = (status: GrowthHistoryStatus | null) => (
+  Boolean(status?.tracked && status.equipmentSync
+    && Object.values(status.equipmentSync)
+      .some((sync) => sync.status === 'pending' || sync.status === 'running' || sync.status === 'retry'))
+);
+
+const isSyncing = (status: GrowthHistoryStatus | null) => isCreating(status) || isEquipmentHistoryUpdating(status);
+
 const parseStatusDate = (value?: string | null) => {
   if (!value) return null;
   const timestamp = Date.parse(`${value.split('T')[0]}T00:00:00Z`);
@@ -227,7 +235,7 @@ const GrowthTracker: React.FC<GrowthTrackerProps> = ({
       setSubmitted(true);
       window.dispatchEvent(new CustomEvent('maple-growth-profile-updated', { detail: { ocid } }));
       const result = await loadStatus();
-      if (result.tracked && !isCreating(result)) {
+      if (result.tracked && !isSyncing(result)) {
         notifyTrackingComplete();
       }
     } catch (err) {
@@ -289,13 +297,13 @@ const GrowthTracker: React.FC<GrowthTrackerProps> = ({
   }, [loading, onTrackingStatusChange, status]);
 
   React.useEffect(() => {
-    if (!isCreating(status)) return;
+    if (!isSyncing(status)) return;
 
     const timer = window.setInterval(() => {
       loadStatus()
         .then((result) => {
           setError(null);
-          if (result.tracked && !isCreating(result)) {
+          if (result.tracked && !isSyncing(result)) {
             notifyTrackingComplete();
           }
         })
@@ -337,14 +345,20 @@ const GrowthTracker: React.FC<GrowthTrackerProps> = ({
   };
 
   if (loading) return null;
-  if (status?.tracked && status.job?.status === 'failed') return (
+  if (status?.tracked && status.job?.status === 'failed' && !isEquipmentHistoryUpdating(status)) return (
     <p role="status" className="mb-2 text-xs leading-relaxed text-amber-500">自動更新已停止：{status.job.error || '角色資料目前無法確認'}。已儲存的成長報告仍保留。</p>
   );
-  if (status?.tracked && !submitted && !isCreating(status)) return null;
+  if (status?.tracked && !submitted && !isSyncing(status)) return null;
 
-  const creating = isCreating(status) || (submitting && !captchaActive);
+  const creatingProfile = isCreating(status);
+  const updatingEquipmentHistory = isEquipmentHistoryUpdating(status);
+  const creating = creatingProfile || updatingEquipmentHistory || (submitting && !captchaActive);
   const isInitialBackfill = !status?.lastSyncedDate;
-  const creationProgress = creating ? calculateCreationProgress(status) : null;
+  const equipmentProgress = status?.equipmentSync
+    ? Math.min(status.equipmentSync.soul.progress, status.equipmentSync.astra.progress)
+    : null;
+  const creationProgress = creatingProfile ? calculateCreationProgress(status)
+    : updatingEquipmentHistory ? equipmentProgress : null;
   const dailyProgress = status?.dailyLimit
     ? `今日已送出 ${status.dailySubmitted ?? 0} / ${status.dailyLimit}`
     : null;
@@ -389,11 +403,14 @@ const GrowthTracker: React.FC<GrowthTrackerProps> = ({
   if (creating || submitted || status?.tracked) {
     return (
       <div className="relative mb-2.5 w-full">
+        {status?.tracked && status.job?.status === 'failed' && (
+          <p role="status" className="mb-2 text-xs leading-relaxed text-amber-500">自動更新已停止：{status.job.error || '角色資料目前無法確認'}。已儲存的成長報告仍保留。</p>
+        )}
         <div className="maple-growth-progress-card flex min-h-10 w-full items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 px-10 py-2 text-xs text-emerald-800 dark:border-emerald-500/20 dark:bg-emerald-950/20 dark:text-emerald-300">
           {creating ? (
             <div className="flex w-full max-w-44 flex-col items-center gap-1.5">
               <div className="maple-growth-progress-header flex w-full items-center justify-between gap-2 text-[11px]">
-                <span>{isInitialBackfill ? '正在生成成長檔案' : '資料更新中'}</span>
+                <span>{updatingEquipmentHistory && !creatingProfile ? '大事記資料同步中' : isInitialBackfill ? '正在生成成長檔案' : '資料更新中'}</span>
                 {creationProgress !== null && <span className="maple-growth-progress-percent">{Math.round(creationProgress)}%</span>}
               </div>
               <div className="maple-growth-progress-track h-1.5 w-full overflow-hidden rounded-full bg-emerald-100 dark:bg-emerald-950">
@@ -414,6 +431,11 @@ const GrowthTracker: React.FC<GrowthTrackerProps> = ({
               {status?.job?.phase && status?.currentProcessingDate && (
                 <span className="maple-growth-progress-meta text-[10px] text-emerald-600/80 dark:text-emerald-400/70">
                   {status.job.phase === 'basic' ? '基本資料' : '武陵資料'} · 正在處理 {status.currentProcessingDate.replace(/-/g, '/')}
+                </span>
+              )}
+              {updatingEquipmentHistory && !creatingProfile && (
+                <span className="maple-growth-progress-meta text-[10px] text-emerald-600/80 dark:text-emerald-400/70">
+                  正在同步靈魂武器與阿斯特拉紀錄
                 </span>
               )}
               {isInitialBackfill && (
