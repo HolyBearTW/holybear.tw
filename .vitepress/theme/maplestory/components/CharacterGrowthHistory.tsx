@@ -576,8 +576,8 @@ const CharacterGrowthHistory: React.FC<CharacterGrowthHistoryProps> = ({ data, a
                 const from = formatGrowthEventValue(event, 'before');
                 const to = formatGrowthEventValue(event, 'after');
                 const hideBeforeValue = event.type === 'destiny_phase2' && !event.from;
-                const eventTitle = event.type === 'destiny_phase2' && event.from
-                  ? '命運武器階段提升（首次觀測）'
+                const eventTitle = event.type === 'destiny_phase2'
+                  ? event.from ? eventLabels.liberation : '首次觀測到命運二階'
                   : eventLabels[event.type] || event.title || event.type;
                 return (
                   <div key={`${event.date}-${event.type}-${index}`} className={`relative flex gap-4 ${index < sortedEvents.length - 1 ? 'pb-5' : ''}`}>
