@@ -72,7 +72,6 @@ const eventLabels: Record<string, string> = {
   soul_conversion: '靈魂武器完成轉換',
   soul_grade: '靈魂武器升階',
   astra_acquired: '阿斯特拉輔助武器取得',
-  destiny_phase2: '首次觀測到命運二階',
 };
 
 const GrowthTooltip = ({ active, payload }: any) => {
@@ -577,6 +576,9 @@ const CharacterGrowthHistory: React.FC<CharacterGrowthHistoryProps> = ({ data, a
                 const from = formatGrowthEventValue(event, 'before');
                 const to = formatGrowthEventValue(event, 'after');
                 const hideBeforeValue = event.type === 'destiny_phase2' && !event.from;
+                const eventTitle = event.type === 'destiny_phase2' && event.from
+                  ? '命運武器階段提升（首次觀測）'
+                  : eventLabels[event.type] || event.title || event.type;
                 return (
                   <div key={`${event.date}-${event.type}-${index}`} className={`relative flex gap-4 ${index < sortedEvents.length - 1 ? 'pb-5' : ''}`}>
                     <div className="relative z-10 flex w-6 shrink-0 justify-center pt-4">
@@ -586,7 +588,7 @@ const CharacterGrowthHistory: React.FC<CharacterGrowthHistoryProps> = ({ data, a
                     <article className="maple-growth-event-card min-w-0 flex-1 rounded-xl border border-slate-800 bg-slate-900/55 p-4 transition-colors hover:border-emerald-800/70">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
-                          <h5 className="text-sm font-bold text-slate-200">{eventLabels[event.type] || event.title || event.type}</h5>
+                          <h5 className="text-sm font-bold text-slate-200">{eventTitle}</h5>
                           {index === 0 && <span className="maple-growth-latest-badge rounded-full bg-emerald-950 px-2 py-0.5 text-[10px] font-bold text-emerald-300">最新</span>}
                         </div>
                         <time className="maple-growth-event-date rounded-md bg-slate-950/70 px-2 py-1 font-mono text-[11px] text-slate-500">{event.date}</time>
