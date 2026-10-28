@@ -99,6 +99,8 @@ export const createPhaseBudget = (
   };
 };
 
+const DESTINY_PHASE2_START_DATE = '2026-07-30';
+
 const destinyCandidateSnapshotSql = (targetDate: string) => `(
   gs.liberation_status IN ('2', '3')
   OR (
@@ -365,7 +367,7 @@ const parseEquipmentPayload = (
     weaponName: weapon?.item_name?.trim() || null,
     astraName: astraItem?.item_name?.trim() || null,
     destinyPhase1: isDestinyWeaponPhase1(weapon),
-    destinyPhase2: isDestinyWeaponPhase2(weapon),
+    destinyPhase2: row.snapshot_date >= DESTINY_PHASE2_START_DATE && isDestinyWeaponPhase2(weapon),
   };
 };
 
@@ -1005,6 +1007,7 @@ export const backfillGrowthDestinyHistoryBatch = async (
         FROM growth_snapshots gs
         WHERE gs.ocid = ?1
           AND (?2 IS NULL OR gs.snapshot_date > ?2)
+          AND gs.snapshot_date >= '${DESTINY_PHASE2_START_DATE}'
           AND gs.snapshot_date <= ?3
           AND (
             ${destinyCandidateSnapshotSql('?3')}
@@ -1121,18 +1124,12 @@ export const backfillGrowthDestinyHistoryBatch = async (
       }
 
       try {
-        let earliestDestinyPhase1Date = soul?.earliest_destiny_phase1_date ?? null;
+        // Phase 1 evidence is read from existing tracking; this pass only backfills Phase 2.
+        const earliestDestinyPhase1Date = soul?.earliest_destiny_phase1_date ?? null;
         let earliestDestinyPhase2Date = soul?.earliest_destiny_phase2_date ?? null;
         let destinyTrackingChanged = false;
 
         for (const obs of completedPrefix) {
-          if (obs.destinyPhase1) {
-            const updated = minIsoDate(earliestDestinyPhase1Date, obs.date);
-            if (updated !== earliestDestinyPhase1Date) {
-              earliestDestinyPhase1Date = updated;
-              destinyTrackingChanged = true;
-            }
-          }
           if (obs.destinyPhase2) {
             const updated = minIsoDate(earliestDestinyPhase2Date, obs.date);
             if (updated !== earliestDestinyPhase2Date) {
@@ -1163,27 +1160,20 @@ export const backfillGrowthDestinyHistoryBatch = async (
             env.DB.prepare(`
               UPDATE growth_soul_tracking
               SET
-                earliest_destiny_phase1_date = CASE
-                  WHEN earliest_destiny_phase1_date IS NULL THEN ?2
-                  WHEN ?2 IS NULL THEN earliest_destiny_phase1_date
-                  WHEN ?2 < earliest_destiny_phase1_date THEN ?2
-                  ELSE earliest_destiny_phase1_date
-                END,
                 earliest_destiny_phase2_date = CASE
-                  WHEN earliest_destiny_phase2_date IS NULL THEN ?3
-                  WHEN ?3 IS NULL THEN earliest_destiny_phase2_date
-                  WHEN ?3 < earliest_destiny_phase2_date THEN ?3
+                  WHEN earliest_destiny_phase2_date IS NULL THEN ?2
+                  WHEN ?2 IS NULL THEN earliest_destiny_phase2_date
+                  WHEN ?2 < earliest_destiny_phase2_date THEN ?2
                   ELSE earliest_destiny_phase2_date
                 END,
-                updated_at = ?4
+                updated_at = ?3
               WHERE ocid = ?1
                 AND EXISTS (
                   SELECT 1 FROM growth_destiny_backfill b
-                  WHERE b.ocid = ?1 AND b.claim_token = ?5
+                  WHERE b.ocid = ?1 AND b.claim_token = ?4
                 )
             `).bind(
               candidate.ocid,
-              earliestDestinyPhase1Date,
               earliestDestinyPhase2Date,
               now,
               token,
@@ -1323,7 +1313,7 @@ export const backfillGrowthDestinySpotCheckBatch = async (
       const latest = await env.DB.prepare(`
         SELECT MAX(snapshot_date) AS snapshot_date
         FROM growth_snapshots
-        WHERE ocid = ?1 AND snapshot_date <= ?2
+        WHERE ocid = ?1 AND snapshot_date >= '${DESTINY_PHASE2_START_DATE}' AND snapshot_date <= ?2
       `).bind(candidate.ocid, candidate.target_date).first<{ snapshot_date: string | null }>();
       return { candidate, token, date: latest?.snapshot_date ?? null };
     }),

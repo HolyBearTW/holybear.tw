@@ -1271,6 +1271,7 @@ describe('persistent growth tracking', () => {
     // Historical dates already synced by old equipment cursor up to 2026-10-26
     insertSnapshot.run(OCID, '2026-01-01', '2');
     insertSnapshot.run(OCID, '2026-03-01', '2');
+    insertSnapshot.run(OCID, '2026-08-01', '2');
     insertSnapshot.run(OCID, '2026-09-01', '2');
     insertSnapshot.run(OCID, '2026-10-26', '2');
 
@@ -1280,8 +1281,8 @@ describe('persistent growth tracking', () => {
       WHERE ocid=?
     `).run(OCID);
     local.sqlite.prepare(`
-      INSERT INTO growth_soul_tracking (ocid, last_synced_date, highest_grade, updated_at)
-      VALUES (?, '2026-10-26', 7, 'now')
+      INSERT INTO growth_soul_tracking (ocid, last_synced_date, highest_grade, earliest_destiny_phase1_date, updated_at)
+      VALUES (?, '2026-10-26', 7, '2026-01-01', 'now')
     `).run(OCID);
     local.sqlite.prepare(`
       INSERT INTO growth_astra_tracking (ocid, last_synced_date, has_astra, updated_at)
@@ -1291,6 +1292,7 @@ describe('persistent growth tracking', () => {
     const equipmentByDate: Record<string, { scroll_upgrade: string; attack_power: string }> = {
       '2026-01-01': { scroll_upgrade: '8', attack_power: '72' }, // Phase 1
       '2026-03-01': { scroll_upgrade: '8', attack_power: '72' }, // Phase 1
+      '2026-08-01': { scroll_upgrade: '8', attack_power: '72' }, // Phase 1
       '2026-09-01': { scroll_upgrade: '9', attack_power: '81' }, // Earlier Phase 2!
       '2026-10-26': { scroll_upgrade: '9', attack_power: '81' }, // Phase 2
       '2026-10-27': { scroll_upgrade: '9', attack_power: '81' }, // Daily incremental Phase 2
@@ -1314,8 +1316,7 @@ describe('persistent growth tracking', () => {
       });
     }));
 
-    // Step 1: Historical backfill batch 1 processes 2026-01-01, Batch 2 processes 2026-03-01
-    await backfillGrowthDestinyHistoryBatch(env);
+    // Step 1: Historical backfill starts after the Phase 2 release date.
     await backfillGrowthDestinyHistoryBatch(env);
 
     let backfillRow = local.sqlite
@@ -1323,11 +1324,11 @@ describe('persistent growth tracking', () => {
       .get(OCID) as { target_date: string; last_checked_date: string | null; status: string };
     expect(backfillRow).toEqual({
       target_date: '2026-10-26',
-      last_checked_date: '2026-03-01',
+      last_checked_date: '2026-08-01',
       status: 'pending',
     });
 
-    // Step 2: While historical backfill is still at 2026-03-01, daily incremental sync adds 2026-10-27 (Phase 2).
+    // Step 2: While historical backfill is still at 2026-08-01, daily incremental sync adds 2026-10-27 (Phase 2).
     insertSnapshot.run(OCID, '2026-10-27', '2');
     local.sqlite.prepare(`
       UPDATE growth_profiles
@@ -1339,7 +1340,7 @@ describe('persistent growth tracking', () => {
 
     // Daily sync must advance growth_soul_tracking.last_synced_date to 2026-10-27,
     // AND record 2026-10-27 as Phase 2 (with before_value='命運一階' since 2026-01-01 was already seen),
-    // BUT MUST NOT jump growth_destiny_backfill.last_checked_date past 2026-03-01!
+    // BUT MUST NOT jump growth_destiny_backfill.last_checked_date past 2026-08-01!
     const soulAfterDaily = local.sqlite
       .prepare('SELECT last_synced_date, earliest_destiny_phase1_date, earliest_destiny_phase2_date FROM growth_soul_tracking WHERE ocid = ?')
       .get(OCID) as { last_synced_date: string; earliest_destiny_phase1_date: string; earliest_destiny_phase2_date: string };
@@ -1353,7 +1354,7 @@ describe('persistent growth tracking', () => {
       .get(OCID) as { target_date: string; last_checked_date: string | null; status: string };
     expect(backfillRow).toEqual({
       target_date: '2026-10-26',
-      last_checked_date: '2026-03-01',
+      last_checked_date: '2026-08-01',
       status: 'pending',
     });
 
@@ -1380,6 +1381,8 @@ describe('persistent growth tracking', () => {
         to: '命運二階',
       },
     ]);
+
+    expect(requestedDates).toEqual(['2026-08-01', '2026-10-27', '2026-09-01', '2026-10-26']);
 
     // Step 4: Subsequent invocations after completion must issue 0 requests and create no duplicate events
     requestedDates.length = 0;
@@ -1421,8 +1424,8 @@ describe('persistent growth tracking', () => {
       WHERE ocid=?
     `).run(OCID);
     local.sqlite.prepare(`
-      INSERT INTO growth_soul_tracking (ocid, last_synced_date, updated_at)
-      VALUES (?, '2026-08-03', 'now')
+      INSERT INTO growth_soul_tracking (ocid, last_synced_date, earliest_destiny_phase1_date, updated_at)
+      VALUES (?, '2026-08-03', '2026-01-01', 'now')
     `).run(OCID);
 
     // Run 1: 2026-08-01 succeeds (Phase 1), 2026-08-02 fails with 429
@@ -1526,7 +1529,7 @@ describe('persistent growth tracking', () => {
     ]);
   });
 
-  it('handles pre-2025-12-03 liberation_status=1 Destiny weapons and does not skip Destiny dates due to Astra early-stop', async () => {
+  it('preserves early Phase 1 evidence without creating a Phase 2 event before release', async () => {
     env.GROWTH_DESTINY_BACKFILL_ENABLED = 'true';
     env.GROWTH_DESTINY_BACKFILL_SCOPE = 'full';
     env.GROWTH_BACKFILL_BATCH_SIZE = '10';
@@ -1578,7 +1581,7 @@ describe('persistent growth tracking', () => {
           ],
         });
       }
-      // 2026-07-20: Must NOT be skipped by Astra early-stop because it is a Destiny candidate date!
+      // 2026-07-20 has a Phase 2-shaped payload before release; it must not create a Phase 2 event.
       return Response.json({
         item_equipment: [
           {
@@ -1605,14 +1608,9 @@ describe('persistent growth tracking', () => {
     expect(requestedDates).toEqual(['2025-11-27', '2026-07-16', '2026-07-20']);
 
     const history = await getGrowthHistory(env.DB, OCID, '2025-11-01', '2026-07-20');
-    expect(history?.events.filter((e) => e.type === 'destiny_phase2')).toEqual([
-      {
-        date: '2026-07-20',
-        type: 'destiny_phase2',
-        from: '命運一階',
-        to: '命運二階',
-      },
-    ]);
+    expect(history?.events.filter((e) => e.type === 'destiny_phase2')).toEqual([]);
+    expect(local.sqlite.prepare('SELECT earliest_destiny_phase1_date, earliest_destiny_phase2_date FROM growth_soul_tracking WHERE ocid=?').get(OCID))
+      .toEqual({ earliest_destiny_phase1_date: '2025-11-27', earliest_destiny_phase2_date: null });
 
     // Raw liberation_status in growth_snapshots ('1' on 2025-11-27, '2' on July dates) must remain untouched
     const rawSnapshots = local.sqlite
