@@ -60,7 +60,7 @@ interface DestinyBackfillTracking {
   ocid: string;
   target_date: string;
   last_checked_date: string | null;
-  status: 'pending' | 'completed';
+  status: 'pending' | 'completed' | 'failed';
   scan_all: number;
   spot_check_status: 'not_applicable' | 'pending' | 'negative' | 'positive' | 'unavailable';
   spot_check_date: string | null;
@@ -1025,6 +1025,7 @@ export const backfillGrowthDestinyHistoryBatch = async (
         rows: rows.results,
         observations: new Array<EquipmentObservation | null>(rows.results.length).fill(null),
         failedError: null as unknown,
+        failedIndex: Number.POSITIVE_INFINITY,
       };
     }),
   );
@@ -1038,6 +1039,7 @@ export const backfillGrowthDestinyHistoryBatch = async (
     rows: EquipmentSnapshotRow[];
     observations: Array<EquipmentObservation | null>;
     failedError: unknown;
+    failedIndex: number;
   }> = [];
 
   for (let i = 0; i < snapshotOutcomes.length; i += 1) {
@@ -1086,7 +1088,9 @@ export const backfillGrowthDestinyHistoryBatch = async (
       );
       context.observations[rowIndex] = parseEquipmentPayload(payload, row);
     } catch (error) {
-      if (context.failedError === null) {
+      // Concurrent dates can fail out of order; keep the earliest gap and its error.
+      if (rowIndex < context.failedIndex) {
+        context.failedIndex = rowIndex;
         context.failedError = error;
       }
     }
@@ -1101,6 +1105,8 @@ export const backfillGrowthDestinyHistoryBatch = async (
       const { candidate, token, backfill, soul, rowLimit: contextRowLimit, rows, observations, failedError } = context;
       const isBudgetExhausted = failedError instanceof NexonRequestError
         && failedError.code === 'invocation_budget_exhausted';
+      const permanentError = failedError instanceof NexonRequestError
+        && failedError.status === 400 && !failedError.retryable ? failedError : null;
 
       // Determine the contiguous prefix of dates completed without gaps from index 0
       const completedPrefix: EquipmentObservation[] = [];
@@ -1109,7 +1115,7 @@ export const backfillGrowthDestinyHistoryBatch = async (
         completedPrefix.push(obs);
       }
 
-      if (failedError !== null && completedPrefix.length === 0) {
+      if (failedError !== null && completedPrefix.length === 0 && !permanentError) {
         await releaseDestinyBackfillClaim(env, candidate.ocid, token, !isBudgetExhausted);
         return;
       }
@@ -1145,9 +1151,9 @@ export const backfillGrowthDestinyHistoryBatch = async (
         const nextCheckedDate = exhaustedRange
           ? backfill.target_date
           : completedPrefix.at(-1)?.date ?? backfill.last_checked_date;
-        const nextStatus: 'pending' | 'completed' = exhaustedRange ? 'completed' : 'pending';
+        const nextStatus = permanentError ? 'failed' : exhaustedRange ? 'completed' : 'pending';
         const nextCompletedAt = exhaustedRange ? now : null;
-        const nextRetryAt = failedError !== null && !isBudgetExhausted
+        const nextRetryAt = failedError !== null && !isBudgetExhausted && !permanentError
           ? new Date(Date.now() + 300_000).toISOString()
           : null;
 
@@ -1205,7 +1211,10 @@ export const backfillGrowthDestinyHistoryBatch = async (
               claim_token = NULL,
               claim_until = NULL,
               retry_at = ?6,
-              updated_at = ?7
+              updated_at = ?7,
+              error_code = ?8,
+              error_message = ?9,
+              error_date = ?10
             WHERE ocid = ?1 AND claim_token = ?2
           `).bind(
             candidate.ocid,
@@ -1215,6 +1224,9 @@ export const backfillGrowthDestinyHistoryBatch = async (
             nextCompletedAt,
             nextRetryAt,
             now,
+            permanentError ? permanentError.nexonCode ?? 'HTTP_400' : null,
+            permanentError ? permanentError.message.slice(0, 500) : null,
+            permanentError ? rows[context.failedIndex].snapshot_date : null,
           ),
         );
 
@@ -1321,6 +1333,8 @@ export const backfillGrowthDestinySpotCheckBatch = async (
     token: string;
     date: string | null;
     result?: 'positive' | 'negative' | 'unavailable' | 'failed' | 'budget';
+    errorCode?: string;
+    errorMessage?: string;
   }> = [];
   for (const outcome of claimOutcomes) {
     if (outcome.status === 'fulfilled' && outcome.value) claimed.push(outcome.value);
@@ -1359,6 +1373,10 @@ export const backfillGrowthDestinySpotCheckBatch = async (
     } catch (error) {
       if (error instanceof NexonRequestError && error.code === 'invocation_budget_exhausted') {
         item.result = 'budget';
+      } else if (error instanceof NexonRequestError && error.status === 400 && !error.retryable) {
+        item.result = 'unavailable';
+        item.errorCode = error.nexonCode ?? 'HTTP_400';
+        item.errorMessage = error.message.slice(0, 500);
       } else {
         item.result = 'failed';
       }
@@ -1382,7 +1400,8 @@ export const backfillGrowthDestinySpotCheckBatch = async (
             UPDATE growth_destiny_backfill
             SET spot_check_status = 'positive', spot_check_date = ?3,
               scan_all = 1, status = 'pending', last_checked_date = NULL, completed_at = NULL,
-              claim_token = NULL, claim_until = NULL, retry_at = NULL, updated_at = ?4
+              claim_token = NULL, claim_until = NULL, retry_at = NULL, updated_at = ?4,
+              error_code = NULL, error_message = NULL, error_date = NULL
             WHERE ocid = ?1 AND claim_token = ?2
           `).bind(candidate.ocid, token, date, now).run();
           positives += 1;
@@ -1390,9 +1409,11 @@ export const backfillGrowthDestinySpotCheckBatch = async (
           await env.DB.prepare(`
             UPDATE growth_destiny_backfill
             SET spot_check_status = ?3, spot_check_date = ?4,
-              claim_token = NULL, claim_until = NULL, retry_at = NULL, updated_at = ?5
+              claim_token = NULL, claim_until = NULL, retry_at = NULL, updated_at = ?5,
+              error_code = ?6, error_message = ?7, error_date = ?8
             WHERE ocid = ?1 AND claim_token = ?2
-          `).bind(candidate.ocid, token, result, date, now).run();
+          `).bind(candidate.ocid, token, result, date, now,
+            item.errorCode ?? null, item.errorMessage ?? null, item.errorCode ? date : null).run();
         }
         processedProfiles += 1;
       } catch {

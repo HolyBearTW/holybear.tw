@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS growth_destiny_backfill (
   ocid TEXT PRIMARY KEY NOT NULL REFERENCES growth_profiles(ocid) ON DELETE CASCADE,
   target_date TEXT NOT NULL,
   last_checked_date TEXT,
-  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'completed')),
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'completed', 'failed')),
   -- 1 = scan every saved snapshot (used when a spot check found a Destiny weapon on a
   -- profile whose liberation_status never suggested one).
   scan_all INTEGER NOT NULL DEFAULT 0 CHECK (scan_all IN (0, 1)),
@@ -21,6 +21,11 @@ CREATE TABLE IF NOT EXISTS growth_destiny_backfill (
   spot_check_status TEXT NOT NULL DEFAULT 'not_applicable'
     CHECK (spot_check_status IN ('not_applicable', 'pending', 'negative', 'positive', 'unavailable')),
   spot_check_date TEXT,
+  -- After investigating a permanent failure, set status or spot_check_status back to
+  -- 'pending' for the affected OCID; keep last_checked_date unchanged when retrying.
+  error_code TEXT,
+  error_message TEXT,
+  error_date TEXT,
   claim_token TEXT,
   claim_until TEXT,
   retry_at TEXT,

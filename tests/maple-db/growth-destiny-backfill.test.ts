@@ -185,48 +185,138 @@ afterEach(() => {
 
 describe('Destiny historical backfill: real failure injection', () => {
   it.each(['history', 'spot check'] as const)(
-    'keeps the %s date retryable after HTTP 400 OPENAPI00003',
+    'stops the %s after HTTP 400 OPENAPI00003 and allows a manual retry',
     async (phase) => {
       const ocid = phase === 'history' ? OCID_Q1 : OCID_R;
-      const dates = ['2026-08-01', '2026-08-02'];
+      const dates = ['2026-08-01', '2026-08-02', '2026-08-03'];
       await seedCaughtUp(ocid, dates, phase === 'history' ? '2' : '1');
+      local.sqlite.prepare(`UPDATE growth_soul_tracking SET earliest_destiny_phase2_date='2026-07-30' WHERE ocid=?`).run(ocid);
+      local.sqlite.prepare(`
+        INSERT INTO growth_soul_events (ocid, snapshot_date, event_type, before_value, after_value)
+        VALUES (?, '2026-07-30', 'destiny_phase2', '', '首次觀測到命運二階')
+      `).run(ocid);
+      const originalEvent = [{ snapshot_date: '2026-07-30', before_value: '', after_value: '首次觀測到命運二階' }];
       env = makeEnv({
         GROWTH_DESTINY_BACKFILL_ENABLED: 'true',
         GROWTH_DESTINY_BACKFILL_SCOPE: 'full',
         GROWTH_EQUIPMENT_DATE_CONCURRENCY: '1',
       });
-      installFetch({}, () => Response.json(
-        { error: { name: 'OPENAPI00003', message: 'temporarily unavailable' } },
+      const failedDate = phase === 'history' ? dates[1] : dates[2];
+      installFetch({}, (call) => call.date === failedDate ? Response.json(
+        { error: { name: 'OPENAPI00003', message: 'Invalid identifier' } },
         { status: 400 },
-      ));
+      ) : null);
       const run = phase === 'history' ? backfillGrowthDestinyHistoryBatch : backfillGrowthDestinySpotCheckBatch;
       await run(env, { usedRequests: 0, maxRequests: 10 });
-      expect(calls.map((call) => call.date)).toEqual([phase === 'history' ? dates[0] : dates[1]]);
+      expect(calls.map((call) => call.date)).toEqual(phase === 'history' ? dates.slice(0, 2) : [dates[2]]);
       expect(backfillRow(ocid)).toMatchObject(phase === 'history'
-        ? { status: 'pending', last_checked_date: null, claim_token: null }
-        : { status: 'completed', spot_check_status: 'pending', claim_token: null });
-      expect(backfillRow(ocid).retry_at).toBeTruthy();
-      expect(phase2Events(ocid)).toEqual([]);
+        ? { status: 'failed', last_checked_date: dates[0] }
+        : { status: 'completed', spot_check_status: 'unavailable', spot_check_date: dates[2] });
+      expect(backfillRow(ocid)).toMatchObject({
+        error_code: 'OPENAPI00003', error_message: 'Invalid identifier', error_date: failedDate,
+        retry_at: null, claim_token: null,
+      });
+      expect(phase2Events(ocid)).toEqual(originalEvent);
 
       calls.length = 0;
+      vi.setSystemTime(new Date('2026-08-05T02:00:00+08:00'));
       await run(env, { usedRequests: 0, maxRequests: 10 });
-      expect(calls).toEqual([]); // Retry delay remains in force.
-      local.sqlite.prepare('UPDATE growth_destiny_backfill SET retry_at=NULL WHERE ocid=?').run(ocid);
-      installFetch({ [ocid]: { [dates[0]]: 'p1', [dates[1]]: 'p2' } });
+      await run(env, { usedRequests: 0, maxRequests: 10 });
+      expect(calls).toEqual([]); // A later cron does not retry a permanent failure.
+      local.sqlite.prepare(phase === 'history'
+        ? `UPDATE growth_destiny_backfill SET status='pending', retry_at=NULL WHERE ocid=?`
+        : `UPDATE growth_destiny_backfill SET spot_check_status='pending', retry_at=NULL WHERE ocid=?`
+      ).run(ocid);
+      installFetch({ [ocid]: { [dates[0]]: 'p1', [dates[1]]: 'p1', [dates[2]]: 'p2' } });
       await run(env, { usedRequests: 0, maxRequests: 10 });
       if (phase === 'spot check') {
-        expect(calls.map((call) => call.date)).toEqual([dates[1]]);
+        expect(calls.map((call) => call.date)).toEqual([dates[2]]);
         expect(backfillRow(ocid)).toMatchObject({ status: 'pending', scan_all: 1, spot_check_status: 'positive' });
         calls.length = 0;
         await backfillGrowthDestinyHistoryBatch(env, { usedRequests: 0, maxRequests: 10 });
       }
-      expect(calls.map((call) => call.date)).toEqual(dates);
-      expect(backfillRow(ocid)).toMatchObject({ status: 'completed', last_checked_date: dates[1] });
-      expect(phase2Events(ocid)).toEqual([
-        { snapshot_date: dates[1], before_value: '命運一階', after_value: '命運二階' },
-      ]);
+      expect(calls.map((call) => call.date)).toEqual(phase === 'history' ? dates.slice(1) : dates);
+      expect(backfillRow(ocid)).toMatchObject({
+        status: 'completed', last_checked_date: dates[2], error_code: null, error_message: null, error_date: null,
+      });
+      expect(phase2Events(ocid)).toEqual(originalEvent);
     },
   );
+
+  it('records a permanent 400 before any history date succeeds', async () => {
+    const dates = ['2026-08-01', '2026-08-02'];
+    await seedCaughtUp(OCID_Q1, dates, '2');
+    env = makeEnv({ GROWTH_DESTINY_BACKFILL_ENABLED: 'true', GROWTH_DESTINY_BACKFILL_SCOPE: 'full', GROWTH_EQUIPMENT_DATE_CONCURRENCY: '1' });
+    installFetch({}, () => Response.json({ error: { name: 'OPENAPI00004', message: 'Invalid parameter' } }, { status: 400 }));
+    await backfillGrowthDestinyHistoryBatch(env, { usedRequests: 0, maxRequests: 10 });
+    expect(calls.map((call) => call.date)).toEqual([dates[0]]);
+    expect(backfillRow(OCID_Q1)).toMatchObject({
+      status: 'failed', last_checked_date: null, error_code: 'OPENAPI00004', error_date: dates[0], retry_at: null,
+    });
+  });
+
+  it.each(['history', 'spot check'] as const)(
+    'keeps HTTP 400 OPENAPI00009 retryable for %s',
+    async (phase) => {
+      const ocid = phase === 'history' ? OCID_Q1 : OCID_R;
+      const dates = ['2026-08-01', '2026-08-02'];
+      await seedCaughtUp(ocid, dates, phase === 'history' ? '2' : '1');
+      env = makeEnv({
+        GROWTH_DESTINY_BACKFILL_ENABLED: 'true', GROWTH_DESTINY_BACKFILL_SCOPE: 'full',
+        GROWTH_EQUIPMENT_DATE_CONCURRENCY: '1', NEXON_RETRY_LIMIT: '1',
+      });
+      installFetch({}, () => Response.json(
+        { error: { name: 'OPENAPI00009', message: 'Data is being prepared' } },
+        { status: 400, headers: { 'retry-after': '0' } },
+      ));
+      const run = phase === 'history' ? backfillGrowthDestinyHistoryBatch : backfillGrowthDestinySpotCheckBatch;
+      await run(env, { usedRequests: 0, maxRequests: 10 });
+      expect(backfillRow(ocid)).toMatchObject(phase === 'history'
+        ? { status: 'pending', last_checked_date: null, error_code: null }
+        : { status: 'completed', spot_check_status: 'pending', error_code: null });
+      expect(backfillRow(ocid).retry_at).toBeTruthy();
+      calls.length = 0;
+      vi.setSystemTime(new Date('2026-08-04T02:06:00+08:00'));
+      installFetch();
+      await run(env, { usedRequests: 0, maxRequests: 10 });
+      expect(calls.map((call) => call.date)).toEqual(phase === 'history' ? dates : [dates[1]]);
+      expect(backfillRow(ocid)).toMatchObject(phase === 'history'
+        ? { status: 'completed', last_checked_date: dates[1] }
+        : { spot_check_status: 'negative' });
+    },
+  );
+
+  it('uses the earliest failed date when concurrent requests finish out of order', async () => {
+    const dates = ['2026-08-01', '2026-08-02', '2026-08-03'];
+    await seedCaughtUp(OCID_Q1, dates, '2');
+    env = makeEnv({
+      GROWTH_DESTINY_BACKFILL_ENABLED: 'true', GROWTH_DESTINY_BACKFILL_SCOPE: 'full',
+      GROWTH_EQUIPMENT_DATE_CONCURRENCY: '2', NEXON_RETRY_LIMIT: '1',
+    });
+    vi.stubGlobal('fetch', vi.fn(async (input: string) => {
+      const url = new URL(input);
+      const date = url.searchParams.get('date');
+      calls.push({ endpoint: 'item-equipment', ocid: url.searchParams.get('ocid'), date });
+      if (date === dates[0]) {
+        await new Promise((resolve) => setTimeout(resolve, 20));
+        return new Response('temporary 503', { status: 503, headers: { 'retry-after': '0' } });
+      }
+      return Response.json({ error: { name: 'OPENAPI00003', message: 'Invalid identifier' } }, { status: 400 });
+    }));
+    await backfillGrowthDestinyHistoryBatch(env, { usedRequests: 0, maxRequests: 10 });
+    expect(backfillRow(OCID_Q1)).toMatchObject({ status: 'pending', last_checked_date: null, error_code: null });
+    expect(backfillRow(OCID_Q1).retry_at).toBeTruthy();
+
+    vi.setSystemTime(new Date('2026-08-04T02:06:00+08:00'));
+    calls.length = 0;
+    installFetch({}, (call) => call.date === dates[1]
+      ? Response.json({ error: { name: 'OPENAPI00003', message: 'Invalid identifier' } }, { status: 400 })
+      : null);
+    await backfillGrowthDestinyHistoryBatch(env, { usedRequests: 0, maxRequests: 10 });
+    expect(backfillRow(OCID_Q1)).toMatchObject({
+      status: 'failed', last_checked_date: dates[0], error_code: 'OPENAPI00003', error_date: dates[1],
+    });
+  });
 
   it('keeps the cursor after a real 503 that exhausts retries, then resumes without skipping dates', async () => {
     env = makeEnv({
