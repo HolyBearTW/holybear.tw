@@ -6,7 +6,10 @@ import {
   getGrowthStatus,
   latestAvailableGrowthDate,
 } from '../../functions/_shared/growth-tracker';
-import { backfillGrowthEquipmentBatch } from '../../functions/_shared/growth-equipment';
+import {
+  backfillGrowthDestinyHistoryBatch,
+  backfillGrowthEquipmentBatch,
+} from '../../functions/_shared/growth-equipment';
 import type { Env } from '../../functions/_shared/env';
 import { getRuntimeConfig } from '../../functions/_shared/runtime-config';
 import { findCharacterByOcid, invalidateCharacterStatement, upsertCanonicalNexonCharacter } from '../../functions/_shared/character-repository';
@@ -1250,5 +1253,375 @@ describe('persistent growth tracking', () => {
       .prepare(`SELECT COUNT(*) AS n FROM growth_soul_events WHERE ocid = ? AND event_type = 'destiny_phase2'`)
       .get(OCID) as { n: number };
     expect(eventCount.n).toBe(1);
+  });
+
+  it('backfills historical Destiny weapon dates without early convergence and isolates historical cursor from daily incremental sync', async () => {
+    env.GROWTH_DESTINY_BACKFILL_ENABLED = 'true';
+    env.GROWTH_DESTINY_BACKFILL_SCOPE = 'full';
+    env.GROWTH_BACKFILL_BATCH_SIZE = '1';
+    env.GROWTH_EQUIPMENT_DATE_CONCURRENCY = '1';
+
+    await createGrowthProfile(env.DB, OCID, '2026-10-26');
+    const insertSnapshot = local.sqlite.prepare(`
+      INSERT INTO growth_snapshots (
+        ocid, snapshot_date, character_name, world_name, job_name,
+        character_level, character_exp, character_exp_rate, liberation_status, fetched_at, updated_at
+      ) VALUES (?, ?, '測試角色', '艾麗亞', '主教', 295, 0, 0, ?, 'now', 'now')
+    `);
+    // Historical dates already synced by old equipment cursor up to 2026-10-26
+    insertSnapshot.run(OCID, '2026-01-01', '2');
+    insertSnapshot.run(OCID, '2026-03-01', '2');
+    insertSnapshot.run(OCID, '2026-09-01', '2');
+    insertSnapshot.run(OCID, '2026-10-26', '2');
+
+    local.sqlite.prepare(`
+      UPDATE growth_profiles
+      SET status='completed', basic_last_synced_date='2026-10-26', last_synced_date='2026-10-26'
+      WHERE ocid=?
+    `).run(OCID);
+    local.sqlite.prepare(`
+      INSERT INTO growth_soul_tracking (ocid, last_synced_date, highest_grade, updated_at)
+      VALUES (?, '2026-10-26', 7, 'now')
+    `).run(OCID);
+    local.sqlite.prepare(`
+      INSERT INTO growth_astra_tracking (ocid, last_synced_date, has_astra, updated_at)
+      VALUES (?, '2026-10-26', 1, 'now')
+    `).run(OCID);
+
+    const equipmentByDate: Record<string, { scroll_upgrade: string; attack_power: string }> = {
+      '2026-01-01': { scroll_upgrade: '8', attack_power: '72' }, // Phase 1
+      '2026-03-01': { scroll_upgrade: '8', attack_power: '72' }, // Phase 1
+      '2026-09-01': { scroll_upgrade: '9', attack_power: '81' }, // Earlier Phase 2!
+      '2026-10-26': { scroll_upgrade: '9', attack_power: '81' }, // Phase 2
+      '2026-10-27': { scroll_upgrade: '9', attack_power: '81' }, // Daily incremental Phase 2
+    };
+
+    const requestedDates: string[] = [];
+    vi.stubGlobal('fetch', vi.fn(async (input: string) => {
+      const date = new URL(input).searchParams.get('date')!;
+      requestedDates.push(date);
+      const eq = equipmentByDate[date];
+      return Response.json({
+        item_equipment: [{
+          item_equipment_slot: '武器',
+          item_name: '命運太刀',
+          scroll_upgrade: eq.scroll_upgrade,
+          scroll_upgradeable_count: '0',
+          starforce: '22',
+          item_base_option: { base_equipment_level: 250 },
+          item_etc_option: { attack_power: eq.attack_power, magic_power: '0' },
+        }],
+      });
+    }));
+
+    // Step 1: Historical backfill batch 1 processes 2026-01-01, Batch 2 processes 2026-03-01
+    await backfillGrowthDestinyHistoryBatch(env);
+    await backfillGrowthDestinyHistoryBatch(env);
+
+    let backfillRow = local.sqlite
+      .prepare('SELECT target_date, last_checked_date, status FROM growth_destiny_backfill WHERE ocid = ?')
+      .get(OCID) as { target_date: string; last_checked_date: string | null; status: string };
+    expect(backfillRow).toEqual({
+      target_date: '2026-10-26',
+      last_checked_date: '2026-03-01',
+      status: 'pending',
+    });
+
+    // Step 2: While historical backfill is still at 2026-03-01, daily incremental sync adds 2026-10-27 (Phase 2).
+    insertSnapshot.run(OCID, '2026-10-27', '2');
+    local.sqlite.prepare(`
+      UPDATE growth_profiles
+      SET basic_last_synced_date='2026-10-27', last_synced_date='2026-10-27'
+      WHERE ocid=?
+    `).run(OCID);
+
+    await backfillGrowthEquipmentBatch(env);
+
+    // Daily sync must advance growth_soul_tracking.last_synced_date to 2026-10-27,
+    // AND record 2026-10-27 as Phase 2 (with before_value='命運一階' since 2026-01-01 was already seen),
+    // BUT MUST NOT jump growth_destiny_backfill.last_checked_date past 2026-03-01!
+    const soulAfterDaily = local.sqlite
+      .prepare('SELECT last_synced_date, earliest_destiny_phase1_date, earliest_destiny_phase2_date FROM growth_soul_tracking WHERE ocid = ?')
+      .get(OCID) as { last_synced_date: string; earliest_destiny_phase1_date: string; earliest_destiny_phase2_date: string };
+    expect(soulAfterDaily).toEqual({
+      last_synced_date: '2026-10-27',
+      earliest_destiny_phase1_date: '2026-01-01',
+      earliest_destiny_phase2_date: '2026-10-27',
+    });
+    backfillRow = local.sqlite
+      .prepare('SELECT target_date, last_checked_date, status FROM growth_destiny_backfill WHERE ocid = ?')
+      .get(OCID) as { target_date: string; last_checked_date: string | null; status: string };
+    expect(backfillRow).toEqual({
+      target_date: '2026-10-26',
+      last_checked_date: '2026-03-01',
+      status: 'pending',
+    });
+
+    // Step 3: Even though both Phase 1 (2026-01-01) and Phase 2 (2026-10-27) are already recorded,
+    // historical backfill must NOT stop early—it must continue scanning 2026-09-01 and 2026-10-26!
+    await backfillGrowthDestinyHistoryBatch(env); // scans 2026-09-01 (discovers earlier Phase 2!)
+    await backfillGrowthDestinyHistoryBatch(env); // scans 2026-10-26 and marks completed
+
+    backfillRow = local.sqlite
+      .prepare('SELECT target_date, last_checked_date, status FROM growth_destiny_backfill WHERE ocid = ?')
+      .get(OCID) as { target_date: string; last_checked_date: string | null; status: string };
+    expect(backfillRow).toEqual({
+      target_date: '2026-10-26',
+      last_checked_date: '2026-10-26',
+      status: 'completed',
+    });
+
+    const history = await getGrowthHistory(env.DB, OCID, '2026-01-01', '2026-10-27');
+    expect(history?.events.filter((e) => e.type === 'destiny_phase2')).toEqual([
+      {
+        date: '2026-09-01',
+        type: 'destiny_phase2',
+        from: '命運一階',
+        to: '命運二階',
+      },
+    ]);
+
+    // Step 4: Subsequent invocations after completion must issue 0 requests and create no duplicate events
+    requestedDates.length = 0;
+    const repeatRes = await backfillGrowthDestinyHistoryBatch(env);
+    expect(repeatRes).toEqual({
+      processedDates: 0,
+      processedProfiles: 0,
+      completedProfiles: 0,
+      requests: 0,
+      transportAttempts: 0,
+    });
+    expect(requestedDates).toEqual([]);
+    const eventCount = local.sqlite
+      .prepare(`SELECT COUNT(*) AS n FROM growth_soul_events WHERE ocid = ? AND event_type = 'destiny_phase2'`)
+      .get(OCID) as { n: number };
+    expect(eventCount.n).toBe(1);
+  });
+
+  it('safely resumes historical Destiny backfill after 429, 503, budget exhaustion, and expired worker lease without skipping dates', async () => {
+    env.GROWTH_DESTINY_BACKFILL_ENABLED = 'true';
+    env.GROWTH_DESTINY_BACKFILL_SCOPE = 'full';
+    env.GROWTH_BACKFILL_BATCH_SIZE = '5';
+    env.GROWTH_EQUIPMENT_DATE_CONCURRENCY = '1';
+    env.NEXON_RETRY_LIMIT = '1';
+
+    await createGrowthProfile(env.DB, OCID, '2026-08-03');
+    const insertSnapshot = local.sqlite.prepare(`
+      INSERT INTO growth_snapshots (
+        ocid, snapshot_date, character_name, world_name, job_name,
+        character_level, character_exp, character_exp_rate, liberation_status, fetched_at, updated_at
+      ) VALUES (?, ?, '測試角色', '艾麗亞', '主教', 295, 0, 0, '2', 'now', 'now')
+    `);
+    for (const date of ['2026-08-01', '2026-08-02', '2026-08-03']) {
+      insertSnapshot.run(OCID, date);
+    }
+    local.sqlite.prepare(`
+      UPDATE growth_profiles
+      SET status='completed', basic_last_synced_date='2026-08-03', last_synced_date='2026-08-03'
+      WHERE ocid=?
+    `).run(OCID);
+    local.sqlite.prepare(`
+      INSERT INTO growth_soul_tracking (ocid, last_synced_date, updated_at)
+      VALUES (?, '2026-08-03', 'now')
+    `).run(OCID);
+
+    // Run 1: 2026-08-01 succeeds (Phase 1), 2026-08-02 fails with 429
+    vi.stubGlobal('fetch', vi.fn(async (input: string) => {
+      const date = new URL(input).searchParams.get('date');
+      if (date === '2026-08-01') {
+        return Response.json({
+          item_equipment: [{
+            item_equipment_slot: '武器',
+            item_name: '命運太刀',
+            scroll_upgrade: '8',
+            scroll_upgradeable_count: '0',
+            starforce: '22',
+            item_base_option: { base_equipment_level: 250 },
+            item_etc_option: { attack_power: '72', magic_power: '0' },
+          }],
+        });
+      }
+      return new Response('rate limited', { status: 429, headers: { 'retry-after': '0' } });
+    }));
+
+    const run1 = await backfillGrowthDestinyHistoryBatch(env);
+    expect(run1).toMatchObject({
+      processedProfiles: 1,
+      completedProfiles: 0,
+      processedDates: 1,
+      requests: 2,
+      transportAttempts: 2,
+    });
+
+    // Cursor must stop at 2026-08-01 (must NOT skip failed 2026-08-02) and schedule retry_at
+    const stateAfter429 = local.sqlite
+      .prepare('SELECT last_checked_date, status, retry_at, claim_token FROM growth_destiny_backfill WHERE ocid = ?')
+      .get(OCID) as { last_checked_date: string | null; status: string; retry_at: string | null; claim_token: string | null };
+    expect(stateAfter429.last_checked_date).toBe('2026-08-01');
+    expect(stateAfter429.status).toBe('pending');
+    expect(stateAfter429.retry_at).toBeTruthy();
+    expect(stateAfter429.claim_token).toBeNull();
+
+    // Simulate a crashed worker holding an expired lease and due retry_at, plus budget cap = 1
+    const expiredLease = new Date(Date.now() - 60_000).toISOString();
+    local.sqlite.prepare(`
+      UPDATE growth_destiny_backfill
+      SET retry_at = NULL, claim_token = 'crashed-worker', claim_until = ?
+      WHERE ocid = ?
+    `).run(expiredLease, OCID);
+
+    const requestedInRun2: string[] = [];
+    vi.stubGlobal('fetch', vi.fn(async (input: string) => {
+      const date = new URL(input).searchParams.get('date')!;
+      requestedInRun2.push(date);
+      return Response.json({
+        item_equipment: [{
+          item_equipment_slot: '武器',
+          item_name: '命運太刀',
+          scroll_upgrade: '9',
+          scroll_upgradeable_count: '0',
+          starforce: '22',
+          item_base_option: { base_equipment_level: 250 },
+          item_etc_option: { attack_power: '81', magic_power: '0' },
+        }],
+      });
+    }));
+
+    // Run 2: recovers expired lease, processes 2026-08-02, stops cleanly due to 1-request budget
+    const budgetRun2 = { usedRequests: 0, maxRequests: 1 };
+    const run2 = await backfillGrowthDestinyHistoryBatch(env, budgetRun2);
+    expect(requestedInRun2).toEqual(['2026-08-02']);
+    expect(budgetRun2.usedRequests).toBe(1);
+    expect(run2).toMatchObject({
+      processedProfiles: 1,
+      completedProfiles: 0,
+      processedDates: 1,
+    });
+
+    // Run 3: finishes 2026-08-03 and marks status = completed
+    requestedInRun2.length = 0;
+    const run3 = await backfillGrowthDestinyHistoryBatch(env);
+    expect(requestedInRun2).toEqual(['2026-08-03']);
+    expect(run3).toMatchObject({
+      processedProfiles: 1,
+      completedProfiles: 1,
+      processedDates: 1,
+    });
+
+    const finalState = local.sqlite
+      .prepare('SELECT last_checked_date, status, completed_at FROM growth_destiny_backfill WHERE ocid = ?')
+      .get(OCID) as { last_checked_date: string; status: string; completed_at: string | null };
+    expect(finalState.last_checked_date).toBe('2026-08-03');
+    expect(finalState.status).toBe('completed');
+    expect(finalState.completed_at).toBeTruthy();
+
+    const history = await getGrowthHistory(env.DB, OCID, '2026-08-01', '2026-08-03');
+    expect(history?.events.filter((e) => e.type === 'destiny_phase2')).toEqual([
+      {
+        date: '2026-08-02',
+        type: 'destiny_phase2',
+        from: '命運一階',
+        to: '命運二階',
+      },
+    ]);
+  });
+
+  it('handles pre-2025-12-03 liberation_status=1 Destiny weapons and does not skip Destiny dates due to Astra early-stop', async () => {
+    env.GROWTH_DESTINY_BACKFILL_ENABLED = 'true';
+    env.GROWTH_DESTINY_BACKFILL_SCOPE = 'full';
+    env.GROWTH_BACKFILL_BATCH_SIZE = '10';
+    env.GROWTH_EQUIPMENT_DATE_CONCURRENCY = '2';
+
+    await createGrowthProfile(env.DB, OCID, '2026-07-20');
+    const insertSnapshot = local.sqlite.prepare(`
+      INSERT INTO growth_snapshots (
+        ocid, snapshot_date, character_name, world_name, job_name,
+        character_level, character_exp, character_exp_rate, liberation_status, fetched_at, updated_at
+      ) VALUES (?, ?, '測試角色', '艾麗亞', '主教', 295, 0, 0, ?, 'now', 'now')
+    `);
+    // Pre-2025-12-03 snapshot where NEXON basic API still returned '1' even though character already had Destiny Phase 1
+    insertSnapshot.run(OCID, '2025-11-27', '1');
+    // Post-2025-12-03 snapshots with '2', located in the < 2026-07-29 Astra window
+    insertSnapshot.run(OCID, '2026-07-16', '2');
+    insertSnapshot.run(OCID, '2026-07-20', '2');
+
+    local.sqlite.prepare(`
+      UPDATE growth_profiles
+      SET status='completed', basic_last_synced_date='2026-07-20', last_synced_date='2026-07-20'
+      WHERE ocid=?
+    `).run(OCID);
+
+    const requestedDates: string[] = [];
+    vi.stubGlobal('fetch', vi.fn(async (input: string) => {
+      const date = new URL(input).searchParams.get('date')!;
+      requestedDates.push(date);
+      if (date === '2025-11-27') {
+        return Response.json({
+          item_equipment: [{
+            item_equipment_slot: '武器',
+            item_name: '命運長杖',
+            scroll_upgrade: '8',
+            scroll_upgradeable_count: '0',
+            starforce: '22',
+            item_base_option: { base_equipment_level: 250 },
+            item_etc_option: { attack_power: '0', magic_power: '72' },
+          }],
+        });
+      }
+      if (date === '2026-07-16') {
+        // Character already equips Astra on 2026-07-16 (which sets earliestAstraIndex),
+        // AND wears a non-Destiny Genesis weapon on this day despite liberation_status = '2'.
+        return Response.json({
+          item_equipment: [
+            { item_equipment_slot: '武器', item_name: '創世長杖', scroll_upgrade: '8', item_base_option: { base_equipment_level: 200 } },
+            { item_equipment_slot: '輔助武器', item_name: '阿斯特拉魔道書' },
+          ],
+        });
+      }
+      // 2026-07-20: Must NOT be skipped by Astra early-stop because it is a Destiny candidate date!
+      return Response.json({
+        item_equipment: [
+          {
+            item_equipment_slot: '武器',
+            item_name: '命運長杖',
+            scroll_upgrade: '9',
+            scroll_upgradeable_count: '0',
+            starforce: '22',
+            item_base_option: { base_equipment_level: 250 },
+            item_etc_option: { attack_power: '0', magic_power: '81' },
+          },
+          { item_equipment_slot: '輔助武器', item_name: '阿斯特拉魔道書' },
+        ],
+      });
+    }));
+
+    const res = await backfillGrowthEquipmentBatch(env);
+    expect(res).toMatchObject({
+      processedProfiles: 1,
+      completedProfiles: 1,
+      processedDates: 3,
+      requests: 3,
+    });
+    expect(requestedDates).toEqual(['2025-11-27', '2026-07-16', '2026-07-20']);
+
+    const history = await getGrowthHistory(env.DB, OCID, '2025-11-01', '2026-07-20');
+    expect(history?.events.filter((e) => e.type === 'destiny_phase2')).toEqual([
+      {
+        date: '2026-07-20',
+        type: 'destiny_phase2',
+        from: '命運一階',
+        to: '命運二階',
+      },
+    ]);
+
+    // Raw liberation_status in growth_snapshots ('1' on 2025-11-27, '2' on July dates) must remain untouched
+    const rawSnapshots = local.sqlite
+      .prepare('SELECT snapshot_date, liberation_status FROM growth_snapshots WHERE ocid = ? ORDER BY snapshot_date')
+      .all(OCID);
+    expect(rawSnapshots).toEqual([
+      { snapshot_date: '2025-11-27', liberation_status: '1' },
+      { snapshot_date: '2026-07-16', liberation_status: '2' },
+      { snapshot_date: '2026-07-20', liberation_status: '2' },
+    ]);
   });
 });
