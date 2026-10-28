@@ -242,12 +242,26 @@ export const upsertDestinyPhase2EventStatement = (
   const hasPriorPhase1Evidence = Boolean(
     earliestPhase1Date && earliestPhase1Date < earliestPhase2Date,
   );
-  const beforeValue = hasPriorPhase1Evidence ? '命運一階' : '';
-  const afterValue = hasPriorPhase1Evidence ? '命運二階' : '首次觀測到命運二階';
   return db.prepare(`
+    WITH phase1_evidence AS (
+      SELECT CASE
+        WHEN ?3 = 1 THEN 1
+        ELSE EXISTS (
+          SELECT 1 FROM growth_snapshots
+          WHERE ocid = ?1
+            AND snapshot_date >= '2025-12-03'
+            AND snapshot_date < '2026-07-30'
+            AND snapshot_date < ?2
+            AND liberation_status = '2'
+        )
+      END AS has_prior_phase1
+    )
     INSERT INTO growth_soul_events (ocid, snapshot_date, event_type, before_value, after_value)
-    SELECT ?1, ?2, 'destiny_phase2', ?3, ?4
-    WHERE EXISTS (SELECT 1 FROM ${tokenTable} WHERE ocid = ?1 AND claim_token = ?5)
+    SELECT ?1, ?2, 'destiny_phase2',
+      CASE WHEN has_prior_phase1 THEN '命運一階' ELSE '' END,
+      CASE WHEN has_prior_phase1 THEN '命運二階' ELSE '首次觀測到命運二階' END
+    FROM phase1_evidence
+    WHERE EXISTS (SELECT 1 FROM ${tokenTable} WHERE ocid = ?1 AND claim_token = ?4)
     ON CONFLICT(ocid) WHERE event_type = 'destiny_phase2' DO UPDATE SET
       snapshot_date = CASE
         WHEN excluded.snapshot_date < growth_soul_events.snapshot_date THEN excluded.snapshot_date
@@ -261,7 +275,7 @@ export const upsertDestinyPhase2EventStatement = (
         WHEN excluded.snapshot_date <= growth_soul_events.snapshot_date THEN excluded.after_value
         ELSE growth_soul_events.after_value
       END
-  `).bind(ocid, earliestPhase2Date, beforeValue, afterValue, token);
+  `).bind(ocid, earliestPhase2Date, hasPriorPhase1Evidence ? 1 : 0, token);
 };
 
 export const ensureDestinyBackfillRegistered = async (

@@ -9,6 +9,7 @@ import {
 import {
   backfillGrowthDestinyHistoryBatch,
   backfillGrowthEquipmentBatch,
+  upsertDestinyPhase2EventStatement,
 } from '../../functions/_shared/growth-equipment';
 import type { Env } from '../../functions/_shared/env';
 import { getRuntimeConfig } from '../../functions/_shared/runtime-config';
@@ -1189,6 +1190,50 @@ describe('persistent growth tracking', () => {
       .prepare(`SELECT DISTINCT liberation_status FROM growth_snapshots WHERE ocid = ?`)
       .all(OCID);
     expect(rawStatuses).toEqual([{ liberation_status: '2' }]);
+  });
+
+  it('uses existing pre-Phase-2 Basic liberation history as reliable Phase 1 evidence', async () => {
+    await createGrowthProfile(env.DB, OCID, '2026-10-27');
+    const insertSnapshot = local.sqlite.prepare(`
+      INSERT INTO growth_snapshots (
+        ocid, snapshot_date, character_name, world_name, job_name,
+        character_level, character_exp, character_exp_rate, liberation_status, fetched_at, updated_at
+      ) VALUES (?, ?, '測試角色', '艾麗亞', '主教', 295, 0, 0, ?, 'now', 'now')
+    `);
+    insertSnapshot.run(OCID, '2025-12-02', '1');
+    insertSnapshot.run(OCID, '2025-12-03', '2');
+    insertSnapshot.run(OCID, '2026-10-27', '2');
+    local.sqlite.prepare(`
+      INSERT INTO growth_soul_tracking (ocid, earliest_destiny_phase1_date, claim_token, updated_at)
+      VALUES (?, NULL, 'claim', 'now')
+    `).run(OCID);
+
+    await upsertDestinyPhase2EventStatement(
+      env.DB,
+      OCID,
+      'claim',
+      null,
+      '2026-10-27',
+    ).run();
+
+    expect(local.sqlite.prepare(`
+      SELECT snapshot_date, before_value, after_value
+      FROM growth_soul_events WHERE ocid = ? AND event_type = 'destiny_phase2'
+    `).get(OCID)).toEqual({
+      snapshot_date: '2026-10-27',
+      before_value: '命運一階',
+      after_value: '命運二階',
+    });
+    expect(local.sqlite.prepare(`
+      SELECT earliest_destiny_phase1_date FROM growth_soul_tracking WHERE ocid = ?
+    `).get(OCID)).toEqual({ earliest_destiny_phase1_date: null });
+    expect(local.sqlite.prepare(`
+      SELECT snapshot_date, liberation_status FROM growth_snapshots WHERE ocid = ? ORDER BY snapshot_date
+    `).all(OCID)).toEqual([
+      { snapshot_date: '2025-12-02', liberation_status: '1' },
+      { snapshot_date: '2025-12-03', liberation_status: '2' },
+      { snapshot_date: '2026-10-27', liberation_status: '2' },
+    ]);
   });
 
   it('in backfillGrowthEquipmentBatch, backfilling an earlier Phase 2 snapshot advances the Phase 2 event date', async () => {
