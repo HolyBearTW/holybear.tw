@@ -183,6 +183,74 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
+describe('Destiny Phase 2 release date', () => {
+  it('starts candidate and spot-check history on July 30 while preserving stored Phase 1 evidence', async () => {
+    const dates = ['2025-11-27', '2026-07-29', '2026-07-30', '2026-07-31'];
+    await seedCaughtUp(OCID_Q1, dates, '2');
+    await seedCaughtUp(OCID_R, dates, '1');
+    local.sqlite.prepare(`UPDATE growth_soul_tracking SET earliest_destiny_phase1_date='2025-11-27' WHERE ocid=?`).run(OCID_Q1);
+    env = makeEnv({ GROWTH_DESTINY_BACKFILL_ENABLED: 'true', GROWTH_DESTINY_BACKFILL_SCOPE: 'full', GROWTH_EQUIPMENT_DATE_CONCURRENCY: '1' });
+    installFetch({
+      [OCID_Q1]: Object.fromEntries(dates.map((date) => [date, 'p2' as Kind])),
+      [OCID_R]: Object.fromEntries(dates.map((date) => [date, 'p2' as Kind])),
+    });
+
+    await backfillGrowthDestinyHistoryBatch(env, { usedRequests: 0, maxRequests: 20 });
+    expect(calls.map((call) => [call.ocid, call.date])).toEqual([[OCID_Q1, dates[2]], [OCID_Q1, dates[3]]]);
+    expect(phase2Events(OCID_Q1)).toEqual([
+      { snapshot_date: dates[2], before_value: '命運一階', after_value: '命運二階' },
+    ]);
+    expect(local.sqlite.prepare('SELECT earliest_destiny_phase1_date FROM growth_soul_tracking WHERE ocid=?').get(OCID_Q1))
+      .toEqual({ earliest_destiny_phase1_date: '2025-11-27' });
+
+    calls.length = 0;
+    await backfillGrowthDestinySpotCheckBatch(env, { usedRequests: 0, maxRequests: 20 });
+    await backfillGrowthDestinyHistoryBatch(env, { usedRequests: 0, maxRequests: 20 });
+    expect(calls.map((call) => [call.ocid, call.date])).toEqual([
+      [OCID_R, dates[3]], [OCID_R, dates[2]], [OCID_R, dates[3]],
+    ]);
+    expect(phase2Events(OCID_R)).toEqual([
+      { snapshot_date: dates[2], before_value: '', after_value: '首次觀測到命運二階' },
+    ]);
+    expect(local.sqlite.prepare('SELECT earliest_destiny_phase1_date FROM growth_soul_tracking WHERE ocid=?').get(OCID_R))
+      .toEqual({ earliest_destiny_phase1_date: null });
+
+    calls.length = 0;
+    await backfillGrowthDestinyHistoryBatch(env, { usedRequests: 0, maxRequests: 20 });
+    expect(calls).toEqual([]);
+    expect(backfillRow(OCID_Q1)).toMatchObject({ status: 'completed', last_checked_date: dates[3] });
+    expect(backfillRow(OCID_R)).toMatchObject({ status: 'completed', last_checked_date: dates[3] });
+  });
+
+  it('marks a spot check unavailable without requesting a pre-release snapshot', async () => {
+    await seedCaughtUp(OCID_R, ['2026-07-29'], '1');
+    env = makeEnv({ GROWTH_DESTINY_BACKFILL_ENABLED: 'true', GROWTH_DESTINY_BACKFILL_SCOPE: 'full' });
+    installFetch({ [OCID_R]: { '2026-07-29': 'p2' } });
+    await backfillGrowthDestinySpotCheckBatch(env, { usedRequests: 0, maxRequests: 10 });
+    expect(calls).toEqual([]);
+    expect(backfillRow(OCID_R)).toMatchObject({ spot_check_status: 'unavailable', spot_check_date: null });
+    expect(phase2Events(OCID_R)).toEqual([]);
+  });
+
+  it('rejects a July 29 Phase 2 observation and records July 30 in ordinary equipment sync', async () => {
+    const dates = ['2026-07-29', '2026-07-30'];
+    await seedCaughtUp(OCID_P, dates, '2');
+    local.sqlite.prepare(`UPDATE growth_soul_tracking SET last_synced_date='2026-07-28', earliest_destiny_phase1_date='2025-11-27' WHERE ocid=?`).run(OCID_P);
+    env = makeEnv({ GROWTH_BACKFILL_BATCH_SIZE: '1', GROWTH_EQUIPMENT_DATE_CONCURRENCY: '1' });
+    installFetch({ [OCID_P]: { [dates[0]]: 'p2', [dates[1]]: 'p2' } });
+
+    await backfillGrowthEquipmentBatch(env, { usedRequests: 0, maxRequests: 10 });
+    expect(phase2Events(OCID_P)).toEqual([]);
+    expect(local.sqlite.prepare('SELECT last_synced_date, earliest_destiny_phase1_date, earliest_destiny_phase2_date FROM growth_soul_tracking WHERE ocid=?').get(OCID_P))
+      .toEqual({ last_synced_date: dates[0], earliest_destiny_phase1_date: '2025-11-27', earliest_destiny_phase2_date: null });
+    await backfillGrowthEquipmentBatch(env, { usedRequests: 0, maxRequests: 10 });
+    expect(calls.map((call) => call.date)).toEqual(dates);
+    expect(phase2Events(OCID_P)).toEqual([
+      { snapshot_date: dates[1], before_value: '命運一階', after_value: '命運二階' },
+    ]);
+  });
+});
+
 describe('Destiny historical backfill: real failure injection', () => {
   it.each(['history', 'spot check'] as const)(
     'stops the %s after HTTP 400 OPENAPI00003 and allows a manual retry',
@@ -370,6 +438,7 @@ describe('Destiny historical backfill: real failure injection', () => {
     });
     const dates = dateRange('2026-08-01', 5);
     await seedCaughtUp(OCID_Q1, dates, '2');
+    local.sqlite.prepare(`UPDATE growth_soul_tracking SET earliest_destiny_phase1_date=? WHERE ocid=?`).run(dates[1], OCID_Q1);
     const equipment = {
       [OCID_Q1]: { [dates[0]]: 'p1', [dates[1]]: 'p1', [dates[2]]: 'p2', [dates[3]]: 'p2', [dates[4]]: 'p2' } as Record<string, Kind>,
     };
@@ -397,7 +466,7 @@ describe('Destiny historical backfill: real failure injection', () => {
     });
     expect(phase2Events(OCID_Q1)).toEqual([]);
     expect(local.sqlite.prepare('SELECT earliest_destiny_phase1_date AS p1, earliest_destiny_phase2_date AS p2 FROM growth_soul_tracking WHERE ocid = ?').get(OCID_Q1))
-      .toEqual({ p1: dates[0], p2: null });
+      .toEqual({ p1: dates[1], p2: null });
 
     // Resume with a fresh budget: nothing skipped, earliest Phase 2 is date 3.
     calls.length = 0;
@@ -558,21 +627,20 @@ describe('normal equipment snapshots and the historical gate', () => {
       { snapshot_date: '2026-08-03', event_type: 'soul_grade', before_value: '第 7 階段', after_value: '第 8 階段' },
     ]);
 
-    // Later enabling the full history must still discover the older candidate.
+    // The older candidate must not trigger a Phase 2 history request.
     calls.length = 0;
     env = makeEnv({ GROWTH_DESTINY_BACKFILL_ENABLED: 'true', GROWTH_DESTINY_BACKFILL_SCOPE: 'full' });
     await backfillGrowthDestinyHistoryBatch(env, { usedRequests: 0, maxRequests: 50 });
-    expect(calls.map((call) => call.date)).toEqual(['2026-01-01']);
+    expect(calls).toEqual([]);
     expect(backfillRow(OCID_P)).toMatchObject({ status: 'completed', target_date: '2026-08-03' });
-    expect(phase2Events(OCID_P)).toEqual([
-      { snapshot_date: '2026-01-01', before_value: '', after_value: '首次觀測到命運二階' },
-    ]);
+    expect(phase2Events(OCID_P)).toEqual([]);
   });
 
   it('keeps the original history target, Soul and Astra events when daily equipment advances', async () => {
     env = makeEnv({ GROWTH_DESTINY_BACKFILL_ENABLED: 'true', GROWTH_DESTINY_BACKFILL_SCOPE: 'full', GROWTH_EQUIPMENT_DATE_CONCURRENCY: '1' });
     const dates = ['2026-08-01', '2026-08-02', '2026-08-03'];
     await seedCaughtUp(OCID_Q1, dates, '2');
+    local.sqlite.prepare(`UPDATE growth_soul_tracking SET earliest_destiny_phase1_date='2026-01-01' WHERE ocid=?`).run(OCID_Q1);
     local.sqlite.prepare(`
       INSERT INTO growth_soul_events (ocid, snapshot_date, event_type, before_value, after_value)
       VALUES (?, '2026-07-01', 'soul_grade', '第 7 階段', '第 8 階段')
@@ -651,9 +719,9 @@ describe('Destiny historical backfill: spot check of profiles without candidate 
     });
     expect(backfillRow(OCID_S)).toBeUndefined();
     expect(local.sqlite.prepare('SELECT earliest_destiny_phase1_date AS p1, earliest_destiny_phase2_date AS p2 FROM growth_soul_tracking WHERE ocid = ?').get(OCID_R))
-      .toEqual({ p1: dates[1], p2: dates[2] });
+      .toEqual({ p1: null, p2: dates[2] });
     expect(phase2Events(OCID_R)).toEqual([
-      { snapshot_date: dates[2], before_value: '命運一階', after_value: '命運二階' },
+      { snapshot_date: dates[2], before_value: '', after_value: '首次觀測到命運二階' },
     ]);
     // Raw Basic liberation_status is untouched by equipment evidence.
     expect(local.sqlite.prepare('SELECT DISTINCT liberation_status AS s FROM growth_snapshots WHERE ocid = ?').all(OCID_R))
@@ -680,6 +748,7 @@ describe('Destiny historical backfill: spot check of profiles without candidate 
   it('retries a failed spot check and preserves it when a retry exhausts the request budget', async () => {
     const dates = ['2026-08-01', '2026-08-02', '2026-08-03'];
     await seedCaughtUp(OCID_R, dates, '1');
+    local.sqlite.prepare(`UPDATE growth_soul_tracking SET earliest_destiny_phase1_date='2026-01-01' WHERE ocid=?`).run(OCID_R);
     env = makeEnv({
       GROWTH_DESTINY_BACKFILL_ENABLED: 'true',
       GROWTH_DESTINY_BACKFILL_SCOPE: 'full',
