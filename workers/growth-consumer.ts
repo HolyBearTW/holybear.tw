@@ -2,7 +2,10 @@ import type { Env } from '../functions/_shared/env';
 import { backfillGrowthBatch } from '../functions/_shared/growth-tracker';
 import {
   backfillGrowthDestinyHistoryBatch,
+  backfillGrowthDestinySpotCheckBatch,
   backfillGrowthEquipmentBatch,
+  createPhaseBudget,
+  getDestinyBackfillGate,
   type GrowthInvocationBudget,
 } from '../functions/_shared/growth-equipment';
 import { getRuntimeConfig } from '../functions/_shared/runtime-config';
@@ -45,25 +48,37 @@ export default {
             elapsedMs: Date.now() - batchStartedAt,
           });
         }
-        // Only run historical Destiny weapon backfill after normal daily/initial equipment sync
-        // has no remaining work in this pass and while invocation time + request budgets remain.
-        for (
-          let index = 0;
-          index < config.growthEquipmentMaxBatchesPerInvocation
-            && Date.now() - startedAt < config.growthEquipmentInvocationBudgetMs
-            && budget.usedRequests < budget.maxRequests;
-          index += 1
-        ) {
-          const batchStartedAt = Date.now();
-          const destinyHistory = await backfillGrowthDestinyHistoryBatch(env, budget);
-          if (!destinyHistory.processedDates && !destinyHistory.processedProfiles) break;
-          console.info('scheduled growth destiny history batch completed', {
-            ...destinyHistory,
-            logicalNexonRequests: destinyHistory.requests,
-            transportAttempts: destinyHistory.transportAttempts,
-            invocationUsedRequests: budget.usedRequests,
-            elapsedMs: Date.now() - batchStartedAt,
-          });
+        // Historical Destiny backfill is opt-in (GROWTH_DESTINY_BACKFILL_ENABLED) and only runs after
+        // normal Basic, Dojang and daily Equipment sync, drawing from the SAME shared budget but
+        // capped by its own per-invocation request limit so it cannot starve daily work.
+        const destinyGate = getDestinyBackfillGate(env);
+        if (destinyGate.enabled) {
+          const destinyBudget = createPhaseBudget(budget, config.growthDestinyBackfillRequestBudget);
+          const destinyPhases = [
+            // Spot check first so a newly promoted profile is scanned in the same invocation.
+            { name: 'spot_check', run: backfillGrowthDestinySpotCheckBatch },
+            { name: 'history', run: backfillGrowthDestinyHistoryBatch },
+          ] as const;
+          for (const phase of destinyPhases) {
+            for (
+              let index = 0;
+              index < config.growthEquipmentMaxBatchesPerInvocation
+                && Date.now() - startedAt < config.growthEquipmentInvocationBudgetMs
+                && destinyBudget.usedRequests < destinyBudget.maxRequests;
+              index += 1
+            ) {
+              const batchStartedAt = Date.now();
+              const destinyResult = await phase.run(env, destinyBudget);
+              if (!destinyResult.processedDates && !destinyResult.processedProfiles) break;
+              console.info(`scheduled growth destiny ${phase.name} batch completed`, {
+                ...destinyResult,
+                logicalNexonRequests: destinyResult.requests,
+                transportAttempts: destinyResult.transportAttempts,
+                invocationUsedRequests: budget.usedRequests,
+                elapsedMs: Date.now() - batchStartedAt,
+              });
+            }
+          }
         }
       } catch (error) {
         console.error('scheduled growth equipment batch failed', error);

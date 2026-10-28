@@ -1256,6 +1256,8 @@ describe('persistent growth tracking', () => {
   });
 
   it('backfills historical Destiny weapon dates without early convergence and isolates historical cursor from daily incremental sync', async () => {
+    env.GROWTH_DESTINY_BACKFILL_ENABLED = 'true';
+    env.GROWTH_DESTINY_BACKFILL_SCOPE = 'full';
     env.GROWTH_BACKFILL_BATCH_SIZE = '1';
     env.GROWTH_EQUIPMENT_DATE_CONCURRENCY = '1';
 
@@ -1397,6 +1399,8 @@ describe('persistent growth tracking', () => {
   });
 
   it('safely resumes historical Destiny backfill after 429, 503, budget exhaustion, and expired worker lease without skipping dates', async () => {
+    env.GROWTH_DESTINY_BACKFILL_ENABLED = 'true';
+    env.GROWTH_DESTINY_BACKFILL_SCOPE = 'full';
     env.GROWTH_BACKFILL_BATCH_SIZE = '5';
     env.GROWTH_EQUIPMENT_DATE_CONCURRENCY = '1';
     env.NEXON_RETRY_LIMIT = '1';
@@ -1523,6 +1527,8 @@ describe('persistent growth tracking', () => {
   });
 
   it('handles pre-2025-12-03 liberation_status=1 Destiny weapons and does not skip Destiny dates due to Astra early-stop', async () => {
+    env.GROWTH_DESTINY_BACKFILL_ENABLED = 'true';
+    env.GROWTH_DESTINY_BACKFILL_SCOPE = 'full';
     env.GROWTH_BACKFILL_BATCH_SIZE = '10';
     env.GROWTH_EQUIPMENT_DATE_CONCURRENCY = '2';
 

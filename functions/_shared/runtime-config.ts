@@ -108,6 +108,16 @@ export const getRuntimeConfig = (env: Env) => ({
     1,
     4_500,
   ),
+  // Historical Destiny weapon backfill is opt-in: disabled unless explicitly 'true', and
+  // 'canary' scope (default) only processes GROWTH_DESTINY_BACKFILL_CANARY_OCIDS.
+  growthDestinyBackfillEnabled: env.GROWTH_DESTINY_BACKFILL_ENABLED === 'true',
+  growthDestinyBackfillScope: env.GROWTH_DESTINY_BACKFILL_SCOPE === 'full' ? 'full' as const : 'canary' as const,
+  growthDestinyBackfillCanaryOcids: (env.GROWTH_DESTINY_BACKFILL_CANARY_OCIDS ?? '')
+    .split(',')
+    .map((value) => value.trim().toLowerCase())
+    .filter((value) => /^[0-9a-f]{32}$/.test(value))
+    .slice(0, 20),
+  growthDestinyBackfillRequestBudget: integerSetting(env.GROWTH_DESTINY_BACKFILL_REQUEST_BUDGET, 200, 1, 1_200),
   growthMaxBatchesPerInvocation: integerSetting(env.GROWTH_MAX_BATCHES_PER_INVOCATION, 12, 1, 96),
   growthInvocationBudgetMs: integerSetting(env.GROWTH_INVOCATION_BUDGET_MS, 45_000, 5_000, 120_000),
   growthProfileConcurrency: integerSetting(env.GROWTH_PROFILE_CONCURRENCY, 1, 1, 8),
