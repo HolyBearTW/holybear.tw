@@ -36,7 +36,7 @@
     "lucide-vue-next": "^1.0.0",
     "markdown-it": "^15.0.3",
     "markdown-it-front-matter": "^0.2.4",
-    "medium-zoom": "^1.1.1",
+    "medium-zoom": "^1.1.2",
     "modern-screenshot": "4.7.0",
     "opencc-js": "^1.4.2",
     "pinia": "^3.0.4",
