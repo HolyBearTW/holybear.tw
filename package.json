@@ -25,7 +25,7 @@
     "@esotericsoftware/spine-webgl": "4.1.24",
     "@google/generative-ai": "^0.24.1",
     "animejs": "^4.5.0",
-    "autoprefixer": "^10.6.1",
+    "autoprefixer": "^10.6.2",
     "border-beam": "^1.4.1",
     "chart.js": "^4.6.1",
     "date-fns": "^4.4.0",
