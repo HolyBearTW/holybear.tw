@@ -13,7 +13,7 @@
     "markdown-it-task-lists": "^2.1.1",
     "sass-embedded": "^1.107.1",
     "sharp": "0.35.5",
-    "tailwindcss": "^4.3.3",
+    "tailwindcss": "^4.3.4",
     "typescript": "^7.0.2",
     "vite": "^8.3.5",
     "vitepress": "^2.0.0-alpha.21",
