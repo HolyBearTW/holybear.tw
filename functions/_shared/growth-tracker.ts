@@ -1228,6 +1228,8 @@ export const getGrowthHistory = async (db: D1Database, ocid: string, start: stri
     const rank = positiveGains.filter((value) => value <= gain).length;
     day.growthBucket = Math.max(1, Math.min(4, Math.ceil((rank / positiveGains.length) * 4)));
   }
+  const destinyPhase2Date = soulEvents.results
+    .find((row) => row.event_type === 'destiny_phase2')?.snapshot_date;
   const events: ReturnType<typeof event>[] = [];
   for (let index = 0; index < snapshots.length; index += 1) {
     const previous = snapshots[index - 1] || previousSnapshot;
@@ -1250,7 +1252,9 @@ export const getGrowthHistory = async (db: D1Database, ocid: string, start: stri
     }
     const previousLiberation = previous.liberation_status?.trim() || null;
     const currentLiberation = current.liberation_status?.trim() || null;
-    if (previousLiberation && currentLiberation && currentLiberation !== previousLiberation) {
+    if (previousLiberation && currentLiberation && currentLiberation !== previousLiberation
+      && !(previousLiberation === '2' && currentLiberation === '3'
+        && current.snapshot_date === destinyPhase2Date)) {
       events.push(event(current.snapshot_date, 'liberation', previousLiberation, currentLiberation));
     }
     const previousDojang = dojangRecord(previous.dojang_best_floor, previous.dojang_best_time);

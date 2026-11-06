@@ -671,6 +671,42 @@ describe('persistent growth tracking', () => {
     ]);
   });
 
+  it('deduplicates a same-day Basic 2-to-3 transition with equipment-confirmed Destiny Phase 2', async () => {
+    await createGrowthProfile(env.DB, OCID, '2026-09-25');
+    const insert = local.sqlite.prepare(`
+      INSERT INTO growth_snapshots (
+        ocid, snapshot_date, character_name, world_name, job_name,
+        character_level, character_exp, character_exp_rate, liberation_status, fetched_at, updated_at
+      ) VALUES (?, ?, '吳獨秀a', '艾麗亞', '主教', 295, 0, 0, ?, 'now', 'now')
+    `);
+    for (const [date, status] of [
+      ['2026-07-13', '1'], ['2026-07-14', '2'],
+      ['2026-09-24', '2'], ['2026-09-25', '3'],
+    ]) insert.run(OCID, date, status);
+
+    const basicOnly = await getGrowthHistory(env.DB, OCID, '2026-09-25', '2026-09-25');
+    expect(basicOnly?.events).toEqual([
+      expect.objectContaining({ date: '2026-09-25', type: 'liberation', from: '2', to: '3' }),
+    ]);
+
+    local.sqlite.prepare(`
+      INSERT INTO growth_soul_events (ocid, snapshot_date, event_type, before_value, after_value)
+      VALUES (?, '2026-09-25', 'destiny_phase2', '命運一階', '命運二階')
+    `).run(OCID);
+    const history = await getGrowthHistory(env.DB, OCID, '2026-07-13', '2026-09-25');
+    expect(history?.events).toEqual([
+      expect.objectContaining({ date: '2026-07-14', type: 'liberation', from: '1', to: '2' }),
+      expect.objectContaining({ date: '2026-09-25', type: 'destiny_phase2', from: '命運一階', to: '命運二階' }),
+    ]);
+    const singleDay = await getGrowthHistory(env.DB, OCID, '2026-09-25', '2026-09-25');
+    expect(singleDay?.events).toEqual([
+      expect.objectContaining({ date: '2026-09-25', type: 'destiny_phase2', from: '命運一階', to: '命運二階' }),
+    ]);
+    expect(local.sqlite.prepare(`
+      SELECT liberation_status FROM growth_snapshots WHERE ocid = ? AND snapshot_date = '2026-09-25'
+    `).get(OCID)).toEqual({ liberation_status: '3' });
+  });
+
   it('completes daily profiles in basic+dojang pairs instead of leaving all profiles in dojang phase', async () => {
     env.GROWTH_BACKFILL_BATCH_SIZE = '20';
     env.GROWTH_MAX_BATCHES_PER_INVOCATION = '2';
