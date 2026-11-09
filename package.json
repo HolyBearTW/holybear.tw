@@ -48,7 +48,7 @@
     "recharts": "^3.10.1",
     "swiper": "^14.4.0",
     "three": "^0.187.0",
-    "turndown": "^7.2.4",
+    "turndown": "^7.2.5",
     "vue-chartjs": "^5.3.4"
   },
   "overrides": {
