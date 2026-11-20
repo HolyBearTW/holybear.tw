@@ -3481,10 +3481,10 @@ lru-cache@^11.5.3:
   resolved "https://registry.yarnpkg.com/lru-cache/-/lru-cache-11.5.3.tgz#a7767b4034e35269562d2b9da2b185b5df70c421"
   integrity sha512-U4N8FgzmWxc8k1VH8Kr6lQg18U7Fjvby6wXHVRX/ZZ7IwWbRMgrRbP0Wrb5q5NVinryp4SQampHKdvtecItxUg==
 
-lucide-react@^1.73.0:
-  version "1.73.0"
-  resolved "https://registry.yarnpkg.com/lucide-react/-/lucide-react-1.73.0.tgz#70fb4bfc2a547bcb724cbc65e5feb8410adbbaa3"
-  integrity sha512-fVOzGviL9mTfHenG1PbCfIceavyGlnpYNSYr+aGZHLRymAJ7DTP6KHuqt0uBkCKAoenr1UVkwSbDIYt2xIesEQ==
+lucide-react@^1.74.0:
+  version "1.74.0"
+  resolved "https://registry.yarnpkg.com/lucide-react/-/lucide-react-1.74.0.tgz#b537db2e3db7cdc63e71f2b3f0cb24d61d410ed2"
+  integrity sha512-A1doIs/1fj1WnPbtIT7WRiM6Kvw5NUg+BtkoOh3Shpr4obwSDVt6WxCEcNH56EWprzuCoKle1OF0RqIkojwL1A==
 
 lucide-vue-next@^1.0.0:
   version "1.0.0"
